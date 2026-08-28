@@ -21,7 +21,7 @@ Det svåra är inte att spara kvitton. Det svåra är att avgörandet om avdrags
 
 ## 3. Avgränsning för första versionen
 
-**Målgrupp:** privatpersoner som äger en bostadsrätt.
+**Målgrupp:** privatpersoner som äger sin bostad. Hyresrätt stöds inte och ska inte modelleras – utan ägande finns ingen kapitalvinst och inget avdrag. `upplatelseform` har därför exakt två värden.
 
 Alla upplåtelseformer ska gå att registrera, men för fastigheter (villa, radhus, kedjehus) körs appen i insamlingsläge: kostnader, projekt, foton och årssummor fungerar, medan klassificeringsförslag, avdragsstatus och export är avstängda med tydlig förklaring att fastighetsreglerna inte är implementerade ännu. Femårsregeln och 5 000-gränsen får däremot beräknas, eftersom de är identiska oavsett upplåtelseform.
 
@@ -47,6 +47,30 @@ En reparation av något som gått sönder under den egna ägartiden är inte avd
 
 Sammanlagda förbättringsutgifter måste uppgå till minst 5 000 kr under ett och samma kalenderår för att något avdrag alls ska medges det året. Båda kategorierna summeras ihop vid prövningen. Understiger året tröskeln faller hela årets utgifter bort.
 
+**Prövningsordning.** Tröskeln prövas på årets avdragsgrundande belopp för hela bostaden, före ägarandel och före förslitning. Ägarandelen påverkar först det belopp som redovisas; förslitningen påverkar först exportens avdragsgilla kolumn. Ingen av dem får dras av innan tröskeln prövas.
+
+Undvik ordet *brutto* i kod och gränssnitt – det är tvetydigt, eftersom ROT och försäkringsersättning dras av redan innan tröskeln prövas. Använd `avdragsgrundande_belopp` för beloppet efter dessa avdrag men före ägarandel och förslitning.
+
+**Formel per kostnad.** Beräkningen sker i denna ordning och ingen annan:
+
+```
+avdragsgrundande_belopp = totalbelopp - rot_utnyttjat - forsakringsersattning
+reduktionsfaktor        = avdragsgrundande_belopp / totalbelopp
+bidrag(rad, projekt)    = rad.belopp * fordelningsandel * reduktionsfaktor
+```
+
+ROT och försäkringsersättning fördelas alltså proportionellt över kostnadens rader, aldrig mot en enskild rad. En kostnad vars rader bara är fördelade till 60 % bidrar med 60 % av det reducerade beloppet; resterande 40 % ligger kvar som okopplat och räknas inte alls.
+
+Årets summa är sedan summan av alla bidrag med `betaldatum` inom kalenderåret, och den jämförs mot `troskelbelopp`.
+
+**Vad som ingår i tröskelsumman.** Skilj på två sorters grindar. De som avgör om utgiften över huvud taget *är* en förbättringsutgift – `slitet_vid_tilltrade` och `battre_skick_vid_forsaljning` – exkluderar beloppet både från avdraget och från tröskelsumman. Faller någon av dem är åtgärden normalt underhåll, som inte är en förbättringsutgift och därför inte kan lyfta året över gränsen.
+
+Femårsfönstret fungerar tvärtom: det begränsar avdraget för en utgift som *var* en förbättringsutgift när den lades ned. En reparation utanför fönstret räknas därför in i sitt utgiftsårs tröskelsumma men dras inte av. Det spelar roll när samma år innehåller en grundförbättring, eftersom grundförbättringar saknar tidsgräns – reparationen kan då lyfta året över tröskeln och göra grundförbättringen avdragsgill.
+
+Detta är en tolkning, inte en verifierad regel; se `docs/regelkallor.md`.
+
+Rättsläget om tröskeln ska räknas per bostad eller per delägare är oklart – se `docs/regelkallor.md`. Appen räknar per bostad, men när användarens andel understiger 5 000 kr trots att bruttobeloppet passerar ska en upplysning visas om att bedömningen kan gå åt andra hållet.
+
 ### 4.3 Vad som inte får räknas med
 
 - Lös inredning och egendom som flyttar med ägaren (möbler, textilier, verktyg, torkställ)
@@ -61,17 +85,25 @@ Sammanlagda förbättringsutgifter måste uppgå till minst 5 000 kr under ett o
 
 ### 4.5 Förslitning
 
-En förbättrande reparation kan ha konsumerats delvis av slitage mellan åtgärden och försäljningen. Endast den kvarvarande delen är avdragsgill. Andelen bedöms av användaren vid försäljningen, inte vid inköpet – modellen ska ha ett fält för detta som är null fram till dess.
+En förbättrande reparation kan ha konsumerats delvis av slitage mellan åtgärden och försäljningen. Endast den kvarvarande delen är avdragsgill. Andelen bedöms av användaren vid försäljningen, inte vid inköpet – modellen ska ha ett fält för detta som är null fram till dess. Förslitningen påverkar aldrig tröskelprövningen, bara det belopp som hamnar i exportens avdragsgilla kolumn.
+
+### 4.6 Bevisning
+
+Formellt råder fri bevisning; kvitton är det vanliga men inte enda beviset. Gränssnittet ska därför aldrig påstå att ett avdrag är omöjligt utan kvitto, bara att underlaget är svagare.
 
 ### 4.7 Ägarandel
 
 Förbättringsutgifterna fördelas mellan delägarna efter ägarandel. Äger användaren halva bostaden ska underlaget visa halva beloppet. Detta gäller även när bara den ena personen använder appen.
 
+Ägarandelen tillhör relationen mellan person och bostad, inte bostaden i sig, och lagras därför på medlemskapstabellen. Det gör att en delägare som inte använder appen inte behöver modelleras – användarens egen andel räcker – samtidigt som två personer i samma hushåll kan ha var sin andel senare.
+
 Exporten ska hantera båda varianterna: antingen anges beloppen för hela bostaden med markering att de är gemensamma för flera delägare, eller så anges den egna andelen. Appen räknar fram individuella belopp och visar samtidigt bruttobeloppet, så att användaren kan välja variant och den andra delägaren kan använda samma sammanställning.
 
-### 4.6 Bevisning
+### 4.8 Insamlingsläge
 
-Formellt råder fri bevisning; kvitton är det vanliga men inte enda beviset. Gränssnittet ska därför aldrig påstå att ett avdrag är omöjligt utan kvitto, bara att underlaget är svagare.
+Regelmotorn är avstängd när `upplatelseform` är `fastighet`. Det är den enda grinden – `husform` är rent informativt och styr ingenting. I insamlingsläge fungerar kostnader, projekt, bilagor, femårsregeln och tröskelberäkningen, medan kategoriförslag, avdragsstatus och export är avstängda med en förklarande text.
+
+De fyra projektfrågorna ställs och lagras som vanligt, inklusive kategori – det är bara tolkningen av dem som är avstängd. Data ska alltså vara komplett den dag fastighetsreglerna implementeras, utan att användaren behöver gå tillbaka.
 
 ---
 
@@ -80,6 +112,8 @@ Formellt råder fri bevisning; kvitton är det vanliga men inte enda beviset. Gr
 ### Bostad
 | Fält | Typ | Not |
 |---|---|---|
+| namn | string? | visas i headern; faller tillbaka på adress, annars "Min bostad" |
+| adress | string? | |
 | upplatelseform | enum | `bostadsratt` \| `fastighet` – styr regelmotorn |
 | husform | enum? | villa/radhus/kedjehus, endast informativt |
 | tilltradesdatum | date | obligatoriskt, alla tidsberäkningar utgår härifrån |
@@ -89,17 +123,40 @@ Formellt råder fri bevisning; kvitton är det vanliga men inte enda beviset. Gr
 | uppskov_tidigare | int? | påverkar vinstberäkning, inte avdrag |
 | forsaljningsdatum | date? | sätts när bostaden markeras som såld |
 | forsaljningspris | int? | |
-| agarandel | decimal | procent, default 100 – se 4.7 |
 
 Obligatoriskt vid registrering: endast `upplatelseform` och `tilltradesdatum`. Allt annat ska gå att fylla i senare. Onboardingen måste vara avbrytbar.
 
-**Framtidssäkring som ska byggas in direkt.** Projekt, kostnader och baslinjeposter hänger på `bostad_id`, aldrig direkt på användaren – flera bostäder per användare ska kunna läggas till utan migrering. Kopplingen mellan användare och bostad går via en medlemskapstabell, inte ett `agare_id`-fält, så att ett hushåll med två personer kan dela en bostad senare. Båda är gratis nu och dyra sedan.
+### Medlemskap
+Kopplingen mellan användare och bostad. Finns från början även om det bara någonsin blir en rad per bostad i v1.
+
+| Fält | Typ | Not |
+|---|---|---|
+| anvandare_id | fk | |
+| bostad_id | fk | |
+| agarandel | decimal | procent, default 100 – se 4.7 |
+
+Projekt, kostnader och baslinjeposter hänger på `bostad_id`, aldrig direkt på användaren. Flera bostäder per användare och två personer per hushåll ska kunna läggas till utan migrering.
+
+### Regelparameter
+Skattereglernas numeriska värden lagras som data med giltighetsperiod, aldrig som konstanter i koden. Historiska poster ska räknas enligt de regler som gällde vid utgiftstillfället.
+
+| Fält | Typ | Not |
+|---|---|---|
+| nyckel | string | t.ex. `troskelbelopp`, `reparationsfonster_ar` |
+| varde | int | |
+| enhet | enum | `oren` \| `ar` – varde är enhetslöst utan denna |
+| giltig_fran | date | |
+| giltig_till | date? | null = gäller tills vidare |
+| kalla | string? | hänvisning för spårbarhet |
+
+Seedas med `troskelbelopp` = 500000 (ören) och `reparationsfonster_ar` = 5, båda med `giltig_fran` satt till 1970-01-01. Det är den undre gränsen: en kostnad med betaldatum före dess avvisas vid inmatning i stället för att beräkningen kastar fel senare. Saknas ett värde inom intervallet ska beräkningen kasta fel, aldrig tyst falla tillbaka på en konstant.
 
 ### Baslinjepost
 Dokumenterat skick vid tillträdet. Skapas helst vid onboarding, men ska kunna läggas till när som helst.
 
 | Fält | Typ |
 |---|---|
+| bostad_id | fk |
 | rum | string |
 | beskrivning | text (t.ex. "hål i vägg bakom garderob, sliten färg") |
 | bilagor | file[] (mäklarbild, besiktningsprotokoll, eget foto) |
@@ -109,13 +166,21 @@ Klassificeringen sitter här, inte på kostnaden.
 
 | Fält | Typ | Not |
 |---|---|---|
+| bostad_id | fk | |
 | namn | string | fritext, t.ex. "måla sovrum" |
-| ar | int | kalenderår; ett projekt över årsskifte delas i två |
+| ar | int | etikett för gruppering; auktoritativt år kommer från betaldatum |
 | kategori | enum | `grundforbattring` \| `reparation` |
 | baslinjepost_id | fk? | kopplingen till beviset |
 | motivering | text? | "hur vet du att det var slitet?" |
-| underlagsstyrka | enum | `dokumenterat` \| `svagt` – härleds av om baslinjepost finns |
+| slitet_vid_tilltrade | bool? | svaret på fråga 3; null tills frågan ställts |
+| battre_skick_vid_forsaljning | bool? | bekräftas vid försäljning, null fram till dess |
 | kvarvarande_andel | decimal? | förslitning, sätts vid försäljning, null fram till dess |
+
+**Året är en etikett, inte en sanning.** `ar` sätts som förval till betaldatumets år för den kostnad som skapade projektet, och till innevarande år om projektet skapas fristående. Det sätts när projektet skapas och används för gruppering i gränssnittet, men allt som räknas – tröskeln, femårsfönstret, exportens rader – utgår från kostnadernas `betaldatum`. Ett projekt vars kostnader spänner över ett årsskifte ger därför automatiskt två rader i exporten utan att användaren behöver dela projektet. Avviker en kostnads betaldatum från projektets år visas en upplysning, aldrig en blockering.
+
+**Fråga 3 och 4 lagras separat.** `slitet_vid_tilltrade` är användarens påstående, `baslinjepost_id` och `motivering` är belägget för det. Ett projekt med `kategori = reparation` och `slitet_vid_tilltrade = false` är inte avdragsgillt oavsett underlag – det återställer bara skicket från tillträdet.
+
+`underlagsstyrka` är **härledd, inte lagrad**: `dokumenterat` när `baslinjepost_id` är satt, annars `svagt`. Det finns inga andra värden. Den ligger medvetet på projektnivå och inte per kostnadsrad. Bevisfrågan gäller åtgärden, inte artikeln – en pensel har inte en egen bevissituation skild från färgen. Rör två väggar olika bevisläge är det två projekt, inte ett projekt med två styrkegrader.
 
 ### Kostnad
 Ett kvitto eller en faktura.
@@ -128,11 +193,23 @@ Ett kvitto eller en faktura.
 | dokumentdatum | date | |
 | betaldatum | date? | null = obetald, räknas inte in |
 | anlitad_entreprenor | bool | styr om fälten nedan visas |
-| arbetskostnad | int? | endast entreprenör |
-| materialkostnad | int? | endast entreprenör |
+| arbetskostnad | int? | endast entreprenör; del av totalbelopp |
+| materialkostnad | int? | endast entreprenör; del av totalbelopp |
 | rot_utnyttjat | int? | dras bort från underlaget |
 | forsakringsersattning | int? | dras bort från underlaget |
-| status | enum | `obetald` \| `okopplad` \| `kopplad` \| `arkiverad` |
+| arkiverad | bool | användarens val, default false |
+
+**Tillstånden är härledda, inte lagrade.** Endast `arkiverad` är ett fält, eftersom det är ett aktivt användarval. Övriga tillstånd beräknas:
+
+- *obetald* = `betaldatum` är null
+- *okopplad* = ingen kostnadsrad har en fördelning till ett projekt
+- *kopplad* = minst en rad är fördelad till ett projekt
+
+Betalning och projektkoppling är oberoende av varandra. En entreprenörsfaktura kan mycket väl vara både obetald och okopplad samtidigt, och en enda enum hade tvingat fram ett val mellan dem. Lagrade tillstånd som kan härledas glider dessutom isär från verkligheten vid varje redigering.
+
+Räknas in i årssumman gör en kostnad först när den har både betaldatum och projektkoppling och inte är arkiverad.
+
+**Begränsning för ROT och försäkringsersättning.** Båda ligger på kostnadsnivå medan fördelningen sker på radnivå. En kostnad som har `rot_utnyttjat` eller `forsakringsersattning` satt får därför bara fördelas till ett enda projekt – valideras vid sparande. Behöver en faktura delas mellan två projekt och bara den ena delen har ROT, registreras den som två kostnader. Detta är en medveten förenkling; alternativet vore att fördela avdragsposterna per rad, vilket komplicerar modellen kraftigt för ett sällsynt fall.
 
 ### Kostnadsrad
 Möjliggör att ett kvitto delas mellan projekt eller mellan projekt och privat.
@@ -145,6 +222,10 @@ Möjliggör att ett kvitto delas mellan projekt eller mellan projekt och privat.
 | fordelning | { projekt_id \| `privat`, andel }[] |
 
 Radnivå är obligatoriskt, inte en finess. Ett typiskt byggvarukvitto innehåller både projektmaterial och privata inköp.
+
+**En rad skapas alltid.** Registreras en kostnad utan artikelspecifikation skapas automatiskt en enda rad på hela totalbeloppet, med artikelnamnet satt till leverantören. "Dela upp" ersätter den raden med flera. Kostnad och rader har alltså aldrig olika totaler – summan av radernas belopp ska alltid vara lika med `totalbelopp`, och det valideras.
+
+**Fördelningen behöver inte vara fullständig.** Andelarna på en rad får summera till mindre än 100 %. Endast den fördelade delen räknas in i årssumman; resten ligger kvar som okopplat belopp och visas i den separata raden på översikten. Det gör att en delvis klassificerad kostnad aldrig blockerar och aldrig räknas dubbelt.
 
 ---
 
@@ -162,7 +243,7 @@ Lägg till kostnad (foto / PDF / manuellt)
                           hoppa över → inkorg
 ```
 
-Ingången är alltid en och samma knapp. Fråga aldrig användaren om dokumenttypen – "anlitade du någon?" beskriver vad som hände och träffar rätt även vid handskrivna kvitton från hantverkare. Förifyll ja när filen är PDF och innehåller organisationsnummer eller ordet ROT.
+Ingången är alltid en och samma knapp. Fråga aldrig användaren om dokumenttypen – "anlitade du någon?" beskriver vad som hände och träffar rätt även vid handskrivna kvitton från hantverkare. Förifyll ja när filen är en text-PDF vars innehåll rymmer ett organisationsnummer eller ordet ROT. Det är textutläsning ur PDF, inte OCR – bildkvitton och fotograferade fakturor får ingen förifyllning alls, och förvalet blir då nej.
 
 Både entreprenörsgrenen och projektvalet ska gå att lämna ofullständiga. Ett flöde som blockerar är ett flöde användaren avbryter.
 
@@ -173,7 +254,9 @@ Ställs en gång per projekt, aldrig per kvitto. Formuleras på vanlig svenska �
 1. Vad gjorde du? *(fritext → projektnamn)*
 2. Fanns det här förut, eller är det nytt? *(nytt → grundförbättring)*
 3. Var det slitet eller trasigt **när du flyttade in**? *(avgör om reparationen är avdragsgill)*
-4. Har du något som visar det? *(bifoga nu / koppla till baslinjepost / hoppa över)*
+4. Har du något som visar det? *(bifoga nu / koppla till befintlig baslinjepost / hoppa över)*
+
+Alternativet "bifoga nu" skapar en baslinjepost med bilagan och kopplar projektet till den. Projekt har inget eget bilagefält – allt bevis om skicket vid tillträdet hör hemma i baslinjen, oavsett när det lades in. Därmed förblir härledningen av `underlagsstyrka` konsekvent, och en bilaga ger `dokumenterat`.
 
 Tidsankaret i fråga 3 är kritiskt. "Var det slitet?" utan "när du flyttade in" ger fel svar, eftersom användare annars jämför med hur det såg ut dagen innan åtgärden.
 
@@ -208,7 +291,7 @@ Rubrik som inbjuder ("Lägg till din första kostnad"), en rad förklaring, en k
 - Progressfältet är **sand under tröskeln, orange över** – under tröskeln är läget inte bra, det är oavslutat. Inför inte rött eller grönt; se `docs/design.md`
 - Siffran heter "underlag", aldrig "avdrag" – ett belopp under tröskeln ger noll i avdrag
 - Okopplat belopp som separat rad
-- Projektlista med kategori och underlagsstyrka; "underlag saknas" är klickbar och blir användarens att-göra-lista
+- Projektlista med kategori och underlagsstyrka. Enum-värdet `svagt` visas som texten "underlag saknas" – det finns inga andra lägen än `dokumenterat` och `svagt`. Raden är klickbar och blir användarens att-göra-lista
 - Rad om femårshorisonten: "reparationer i år räknas vid försäljning till 20XX"
 
 ### Notiser
@@ -238,7 +321,9 @@ Exportpaketet består av:
 
 Levereras till egen mejl eller nedladdning. Ingen integration behövs.
 
-**Bygg exporten först.** Bestäm exakt vilka fält den behöver och låt datamodellen fyllas därefter. Byggs den sist upptäcks saknade uppgifter när det är för sent att samla in dem.
+**Delägarvarianten.** Exporten avgör utifrån medlemskapets `agarandel` om beloppen ska anges som individuella eller som gemensamma för flera delägare, och sätter markeringen därefter. Vid andel under 100 % redovisas bruttobeloppen tillsammans med den egna andelen i procent, så att båda delägarna kan använda samma sammanställning. Inget separat fält behövs – andelen räcker.
+
+**Lås exportens fältlista först.** Detta är vad steg 1 i byggordningen betyder: bestäm exakt vilka fält sammanställningen behöver och låt datamodellen följa av det. Själva PDF-genereringen byggs i steg 9. Låser man inte fältlistan tidigt upptäcks saknade uppgifter när det är för sent att samla in dem.
 
 ---
 
@@ -286,7 +371,7 @@ Projektsumma 791,95 kr, privat 229,00 kr.
 
 Kvittot är valt för att det innehåller de tre saker som gör inmatningen svår: avkortade artikelnamn från kassasystemet, en privat artikel bland projektmaterialet, och belopp med både tusentalsavgränsare och decimaler.
 
-Seeda även ett projekt kopplat till kvittot ("måla sovrum", 2026, kategori `reparation`, underlagsstyrka `svagt`) och två fiktiva projekt så att årssumman hamnar under tröskeln – det är det tillstånd flest användare befinner sig i och det som är svårast att formulera i gränssnittet.
+Seeda även ett projekt kopplat till kvittot ("måla sovrum", 2026, kategori `reparation`, utan baslinjepost – vilket ger härledd underlagsstyrka `svagt`) och två fiktiva projekt så att årssumman hamnar under tröskeln – det är det tillstånd flest användare befinner sig i och det som är svårast att formulera i gränssnittet.
 
 ---
 

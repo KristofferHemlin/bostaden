@@ -42,9 +42,21 @@ Detta är produktens kärna. Fel här ger felaktiga deklarationsunderlag. Approx
 
 **Tröskeln.** Sammanlagda förbättringsutgifter måste uppgå till minst 5 000 kr under ett och samma kalenderår för att något avdrag alls ska medges det året. Båda kategorierna summeras ihop vid prövningen. Understiger året tröskeln faller hela årets utgifter bort – inte bara mellanskillnaden.
 
+**Prövningsordning.** Beräkna i exakt denna ordning:
+
+```
+avdragsgrundande_belopp = totalbelopp - rot_utnyttjat - forsakringsersattning
+reduktionsfaktor        = avdragsgrundande_belopp / totalbelopp
+bidrag(rad, projekt)    = rad.belopp * fordelningsandel * reduktionsfaktor
+```
+
+Tröskeln prövas på årets summa av bidrag för hela bostaden – före ägarandel och före förslitning. Dra aldrig av något av dem innan tröskeln prövats. Använd inte ordet *brutto*; det är tvetydigt.
+
 **Året bestäms av betaldatum**, aldrig av fakturadatum eller dokumentdatum.
 
 **Räknas inte med:** lös inredning som flyttar med ägaren, eget arbete (endast material), den del av arbetskostnaden som motsvaras av utnyttjad ROT-skattereduktion, utgift täckt av försäkringsersättning, samt i bostadsrätt sådant föreningen ansvarar för.
+
+**Bättre skick vid försäljning.** En reparation är avdragsgill bara om bostaden är i bättre skick vid försäljningen än vid förvärvet. `battre_skick_vid_forsaljning` bekräftas av användaren när bostaden markeras som såld och är null fram till dess. Null blockerar aldrig inmatning eller översikt – bara exporten, som inte kan genereras innan försäljningen ändå är registrerad.
 
 **Förslitning.** En förbättrande reparation kan ha konsumerats delvis av slitage fram till försäljningen. Endast kvarvarande del är avdragsgill. `kvarvarande_andel` är null fram till försäljningen och sätts av användaren då.
 
@@ -70,6 +82,14 @@ Dessa fall måste finnas och passera:
 - ROT-reducerad del av arbetskostnad dras bort före summering
 - Vid ägarandel 50 % halveras beloppen i det individuella underlaget
 - Kvittorad markerad som privat ingår inte i något projekt
+- Rad fördelad till 60 % på ett projekt bidrar med 60 % av beloppet, inte hela
+- Projekt med kategori `reparation` och `slitet_vid_tilltrade` = false ger 0 kr avdragsgillt
+- Regelparameteruppslag för ett datum 2015 returnerar ett värde, kastar inte fel
+- Kostnad på 10 000 kr med 3 000 kr ROT, rad fördelad 60 %, bidrar med 4 200 kr
+- Projekt med `battre_skick_vid_forsaljning` = false ger 0 kr i exporten
+- `underlagsstyrka` beräknas ur `baslinjepost_id`, lagras inte
+- Reparation med `battre_skick_vid_forsaljning` = false ingår inte i årets tröskelsumma
+- Reparation utanför femårsfönstret ingår i sitt utgiftsårs tröskelsumma men dras inte av
 
 Kör testerna innan du säger att ett steg är klart.
 
@@ -83,7 +103,7 @@ Datum lagras som `date`, inte `timestamp`. Tidszon är irrelevant för alla dom�
 
 Projekt, kostnader och baslinjeposter hänger på `bostad_id`, aldrig direkt på användaren. Kopplingen användare–bostad går via en medlemskapstabell. Flera bostäder per användare och två personer per hushåll ska kunna läggas till utan migrering.
 
-Ett projekt tillhör ett kalenderår. Ett arbete som spänner över årsskiftet blir två projekt.
+`projekt.ar` är en etikett för gruppering. Allt som räknas – tröskel, femårsfönster, exportrader – utgår från kostnadernas `betaldatum`. Ett projekt vars kostnader spänner över ett årsskifte ger två rader i exporten automatiskt.
 
 Inga flöden får blockera. Ofullständiga uppgifter sparas som öppna poster i stället för att stoppa användaren.
 
@@ -91,7 +111,11 @@ Inga flöden får blockera. Ofullständiga uppgifter sparas som öppna poster i 
 
 Övrig felhantering ska finnas från början, inte läggas till sist: avbrutna uppladdningar, för stora filer, nätverksfel mot Supabase, användare som lämnar sidan mitt i inmatningen.
 
-**Regelparametrar versioneras.** Tröskelbeloppet och liknande värden lagras som data med giltighetsperiod, inte som konstanter. Ändras tröskeln 2029 ska poster från 2026 fortfarande räknas mot det belopp som gällde då.
+**Regelparametrar versioneras.** Tröskelbeloppet och liknande värden lagras i tabellen `regelparameter` med giltighetsperiod, aldrig som konstanter. All beräkning slår upp värdet för det aktuella datumet. Ändras tröskeln 2029 ska poster från 2026 fortfarande räknas mot det belopp som gällde då.
+
+**Tillstånd härleds, lagras inte.** På `kostnad` är `arkiverad` det enda lagrade tillståndet. Obetald, okopplad och kopplad beräknas ur `betaldatum` och radernas fördelningar. Betalning och projektkoppling är oberoende – en faktura kan vara både obetald och okopplad.
+
+**Ägarandel ligger på medlemskapet**, inte på bostaden. Andelen tillhör relationen mellan person och bostad.
 
 ---
 

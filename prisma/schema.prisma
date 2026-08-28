@@ -1,0 +1,187 @@
+// Datamodell for Bostadsunderlag. Foljer av docs/k6a-faltlista.md.
+// Svenska genomgaende, ASCII-translittererat i identifierare. Belopp lagras som
+// heltal i oren. Datum lagras som date, aldrig timestamp.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum upplatelseform {
+  bostadsratt
+  fastighet
+}
+
+enum husform {
+  villa
+  radhus
+  kedjehus
+}
+
+enum projektkategori {
+  grundforbattring
+  reparation
+}
+
+enum regelparameterenhet {
+  oren
+  ar
+}
+
+// En person. Speglar Supabase Auth (auth.users). id sätts till auth-anvandarens uuid.
+model anvandare {
+  id         String       @id @db.Uuid
+  epost      String       @unique
+  skapad_at  DateTime     @default(now())
+  medlemskap medlemskap[]
+}
+
+// Bostaden. Obligatoriskt vid registrering: endast upplatelseform och tilltradesdatum.
+model bostad {
+  id                String    @id @default(uuid()) @db.Uuid
+  namn              String?
+  upplatelseform    upplatelseform
+  husform           husform? // rent informativt, styr ingenting
+  tilltradesdatum   DateTime  @db.Date
+  kopeskilling      Int? // oren
+  kopkostnader      Int? // oren, stampelskatt/lagfart eller overlatelseavgift
+  kapitaltillskott  Int? // oren, endast bostadsratt
+  uppskov_tidigare  Int? // oren, paverkar vinstberakning, inte avdrag
+  forsaljningsdatum DateTime? @db.Date
+  forsaljningspris  Int? // oren
+  skapad_at         DateTime  @default(now())
+
+  medlemskap     medlemskap[]
+  projekt        projekt[]
+  kostnader      kostnad[]
+  baslinjeposter baslinjepost[]
+}
+
+// Kopplingen anvandare–bostad. Agarandelen tillhor relationen, inte bostaden.
+model medlemskap {
+  id           String   @id @default(uuid()) @db.Uuid
+  anvandare_id String   @db.Uuid
+  bostad_id    String   @db.Uuid
+  agarandel    Decimal  @default(100) @db.Decimal(5, 2) // procent
+  skapad_at    DateTime @default(now())
+
+  anvandare anvandare @relation(fields: [anvandare_id], references: [id], onDelete: Cascade)
+  bostad    bostad    @relation(fields: [bostad_id], references: [id], onDelete: Cascade)
+
+  @@unique([anvandare_id, bostad_id])
+}
+
+// Skattereglernas numeriska varden med giltighetsperiod. Aldrig konstanter i koden.
+model regelparameter {
+  id          String              @id @default(uuid()) @db.Uuid
+  nyckel      String // t.ex. troskelbelopp, reparationsfonster_ar
+  varde       Int
+  enhet       regelparameterenhet
+  giltig_fran DateTime            @db.Date
+  giltig_till DateTime?           @db.Date // null = tills vidare
+  kalla       String?
+
+  @@index([nyckel, giltig_fran])
+}
+
+// Dokumenterat skick vid tilltradet. Bevis for fraga 3 i projektfragorna.
+model baslinjepost {
+  id          String   @id @default(uuid()) @db.Uuid
+  bostad_id   String   @db.Uuid
+  rum         String
+  beskrivning String
+  skapad_at   DateTime @default(now())
+
+  bostad  bostad    @relation(fields: [bostad_id], references: [id], onDelete: Cascade)
+  bilagor bilaga[]
+  projekt projekt[]
+}
+
+// Klassificeringen sitter har, inte pa kostnaden. De fyra projektfragorna.
+model projekt {
+  id                           String          @id @default(uuid()) @db.Uuid
+  bostad_id                    String          @db.Uuid
+  namn                         String // fraga 1, fritext
+  ar                           Int // etikett for gruppering; auktoritativt ar kommer fran betaldatum
+  kategori                     projektkategori // fraga 2
+  baslinjepost_id              String?         @db.Uuid // fraga 4, belaget
+  motivering                   String? // fraga 4, "hur vet du att det var slitet?"
+  slitet_vid_tilltrade         Boolean? // fraga 3, null tills stalld
+  battre_skick_vid_forsaljning Boolean? // bekraftas vid forsaljning, null fram till dess
+  kvarvarande_andel            Decimal?        @db.Decimal(5, 4) // forslitning, 0..1, satts vid forsaljning
+  skapad_at                    DateTime        @default(now())
+
+  bostad       bostad          @relation(fields: [bostad_id], references: [id], onDelete: Cascade)
+  baslinjepost baslinjepost?   @relation(fields: [baslinjepost_id], references: [id])
+  fordelningar radfordelning[]
+}
+
+// Ett kvitto eller en faktura. Tillstand (obetald/okopplad/kopplad) harleds, lagras inte.
+model kostnad {
+  id                    String    @id @default(uuid()) @db.Uuid
+  bostad_id             String    @db.Uuid
+  leverantor            String
+  totalbelopp           Int // oren
+  dokumentdatum         DateTime  @db.Date
+  betaldatum            DateTime? @db.Date // null = obetald, raknas inte in
+  anlitad_entreprenor   Boolean   @default(false)
+  arbetskostnad         Int? // oren, endast entreprenor; del av totalbelopp
+  materialkostnad       Int? // oren, endast entreprenor; del av totalbelopp
+  rot_utnyttjat         Int? // oren, dras bort fran underlaget
+  forsakringsersattning Int? // oren, dras bort fran underlaget
+  arkiverad             Boolean   @default(false)
+  skapad_at             DateTime  @default(now())
+
+  bostad  bostad        @relation(fields: [bostad_id], references: [id], onDelete: Cascade)
+  rader   kostnadsrad[]
+  bilagor bilaga[]
+}
+
+// En rad pa kvittot. Summan av radernas belopp ska alltid vara lika med totalbelopp.
+model kostnadsrad {
+  id         String @id @default(uuid()) @db.Uuid
+  kostnad_id String @db.Uuid
+  artikel    String
+  belopp     Int // oren
+
+  kostnad      kostnad         @relation(fields: [kostnad_id], references: [id], onDelete: Cascade)
+  fordelningar radfordelning[]
+}
+
+// Fordelning av en rad till ett projekt eller till privat. Andelarna far summera
+// till mindre an 1 – resten ligger kvar som okopplat. Antingen privat=true och
+// projekt_id=null, eller privat=false och projekt_id satt (valideras i appen).
+model radfordelning {
+  id             String  @id @default(uuid()) @db.Uuid
+  kostnadsrad_id String  @db.Uuid
+  projekt_id     String? @db.Uuid
+  privat         Boolean @default(false)
+  andel          Decimal @db.Decimal(5, 4) // 0..1
+
+  kostnadsrad kostnadsrad @relation(fields: [kostnadsrad_id], references: [id], onDelete: Cascade)
+  projekt     projekt?    @relation(fields: [projekt_id], references: [id], onDelete: Cascade)
+
+  @@index([projekt_id])
+}
+
+// Permanent arkiv: kvittobild/PDF och betalningsunderlag. Uppladdning bekraftas
+// alltid innan flodet gar vidare – uppladdning_bekraftad satts nar servern svarat.
+model bilaga {
+  id                    String   @id @default(uuid()) @db.Uuid
+  kostnad_id            String?  @db.Uuid
+  baslinjepost_id       String?  @db.Uuid
+  lagringsnyckel        String   @unique // sokvag i Supabase Storage
+  filnamn               String
+  mimetyp               String
+  storlek               Int // bytes
+  uppladdning_bekraftad Boolean  @default(false)
+  skapad_at             DateTime @default(now())
+
+  kostnad      kostnad?      @relation(fields: [kostnad_id], references: [id], onDelete: Cascade)
+  baslinjepost baslinjepost? @relation(fields: [baslinjepost_id], references: [id], onDelete: Cascade)
+}

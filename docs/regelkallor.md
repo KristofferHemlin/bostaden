@@ -30,6 +30,18 @@ Samtliga uppgifter nedan kontrollerades **2026-08-28** mot Skatteverkets egna si
 
 ---
 
+## Öppna rättsfrågor
+
+**Räknas 5 000-gränsen per bostad eller per delägare?** Rättsläget är oklart. Etablerade skatteprogram utgår från att gränsen räknas per bostad, men noterar att enskilda skattegranskare kan anse att den ska räknas per delägare. Blankettanvisningarna talar om ett belopp per bostad.
+
+Appen räknar per bostad, vilket är den vanligare tolkningen och den mer generösa för användaren. När användarens egen andel understiger 5 000 kr trots att beloppet för hela bostaden passerar ska en upplysning visas om att bedömningen kan gå åt andra hållet. Kontrollerat 2026-08-28.
+
+**Vad ingår i tröskelsumman när en utgift inte är avdragsgill?** Ingen källa uttalar sig direkt. Appen tillämpar följande tolkning: en utgift som inte uppfyller villkoren för att *vara* en förbättringsutgift – där skicket inte förbättrats jämfört med tillträdet – är normalt underhåll och räknas varken av eller in i tröskelsumman. En utgift som var en förbättringsutgift men fallit ur femårsfönstret räknas däremot in i sitt utgiftsårs tröskelsumma utan att själv dras av, eftersom fönstret begränsar avdragsrätten snarare än utgiftens karaktär.
+
+Konsekvensen syns bara när samma år innehåller både en grundförbättring och en utfallen reparation. Bedömd 2026-08-28, ej verifierad mot källa.
+
+---
+
 ## Känt föränderligt
 
 Det här är sådant som har ändrats förr eller rimligen kan ändras. Kontrollera vid större omtag.

@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tokens harledda ur logotypen. Se docs/design.md. Bakgrunden ar aldrig vit,
+   svart forekommer inte, orange betyder handling. Inget morkt lage i v1. */
+:root {
+  --yta-bas: #f0e9df;
+  --yta-upphojd: #faf6f0;
+  --yta-nedsankt: #e4d8cc;
+
+  --text-primar: #0c2430;
+  --text-sekundar: #4a5c66;
+  --text-dampad: #6b7c85;
+
+  --accent: #cc6631;
+  --accent-mork: #a94e22;
+  --sand: #d8c0a8;
+
+  --linje: #dccfc0;
+}
+
+body {
+  background: var(--yta-bas);
+  color: var(--text-primar);
+}
