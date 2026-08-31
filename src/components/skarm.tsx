@@ -1,9 +1,15 @@
-// Genomgaende skarmstruktur (docs/design.md): smal header med bostadens namn och
-// en dampad andrarad, sedan innehallet i ETT kort pa --yta-upphojd. Inga kort i
-// kort. Ingen bottennavigation – man tar sig tillbaka, inte runt.
+// Genomgaende skarmstruktur (docs/design.md, Navigation): en toppradsapparat pa
+// --yta-upphojd med logotyp och bostadsnamn – och pa skrivbord aven huvudmenyn –
+// allt pa EN rad. Pa mobil ligger menyn i stallet fast i skarmens nederkant (se
+// Toppnavigering). Sedan innehallet centrerat i en kolumn pa hogst 620px i ETT
+// kort pa --yta-upphojd. Inga kort i kort. Sidrubriken upprepar aldrig
+// bostadsnamnet – den sager vad sidan visar ("Oversikt", "Projekt", ...).
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Toppnavigering } from "@/components/toppnavigering";
+
+const LOGO_SRC = "/kajin-hem-logo.png";
 
 export const INPUT_KLASS =
   "w-full rounded-lg border-0 bg-yta-nedsankt px-3 py-3 font-granssnitt text-base text-text-primar outline-none placeholder:text-text-dampad focus:ring-2 focus:ring-accent";
@@ -113,30 +119,42 @@ export function Skarm({
 }: SkarmProps) {
   return (
     <div className="min-h-screen w-full bg-yta-bas">
-      <main className="mx-auto w-full max-w-[620px] px-4 py-6 sm:py-10">
-        <header className="mb-4 px-1">
-          <div className="flex items-center gap-2">
-            <span
+      {/* Topprad pa --yta-upphojd: logotyp + bostadsnamn, och pa skrivbord aven
+          huvudmenyn – allt pa en rad (docs/design.md, Navigation). Pa mobil
+          hamnar <Toppnavigering> i stallet fast i nederkanten. */}
+      <div className="w-full border-b border-linje bg-yta-upphojd">
+        <div className="mx-auto flex w-full max-w-[620px] items-center justify-between gap-3 px-4 py-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <img
+              src={LOGO_SRC}
+              alt=""
               aria-hidden
-              className="inline-block h-3 w-3 rounded-[4px] bg-accent"
+              className="h-6 w-auto shrink-0 sm:h-7"
             />
-            <h1 className="font-rubrik text-xl text-text-primar sm:text-2xl">
-              {bostadsnamn}
-            </h1>
+            <div className="min-w-0">
+              <p className="truncate font-rubrik text-base text-text-primar sm:text-lg">
+                {bostadsnamn}
+              </p>
+              {andrarad ? (
+                <p className="truncate font-granssnitt text-xs text-text-dampad">
+                  {andrarad}
+                </p>
+              ) : null}
+            </div>
           </div>
-          {andrarad ? (
-            <p className="mt-0.5 pl-5 font-granssnitt text-sm text-text-dampad">
-              {andrarad}
-            </p>
-          ) : null}
-        </header>
+          <Toppnavigering />
+        </div>
+      </div>
 
+      {/* Nederkantsmarginal sa att innehallet inte doljs bakom den fasta
+          mobilnavigationen. */}
+      <main className="mx-auto w-full max-w-[620px] px-4 py-6 pb-28 sm:py-10 sm:pb-10">
         {bakLink(bakLank)}
 
         {rubrik ? (
-          <h2 className="mb-3 mt-1 px-1 font-rubrik text-lg text-text-primar">
+          <h1 className="mb-3 px-1 font-rubrik text-xl text-text-primar sm:text-2xl">
             {rubrik}
-          </h2>
+          </h1>
         ) : null}
 
         <div className="overflow-hidden rounded-xl bg-yta-upphojd">

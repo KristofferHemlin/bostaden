@@ -1,9 +1,9 @@
 "use server";
 
 // Inloggning via Supabase Auth. Tva satt pa samma sida: e-post + losenord som
-// forsta vag, magisk lank som alternativ (produktspec steg 2 – "bara fungerande",
-// ingen registreringsdesign). En enda action-ingang; knappen satter faltet
-// "avsikt".
+// forsta vag, magisk lank som alternativ. Att skapa konto ar ett eget flode
+// (/registrera) – ingen "skapa-konto"-avsikt har langre. En enda action-ingang;
+// knappen satter faltet "avsikt".
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -39,21 +39,6 @@ export async function hanteraAuth(
     });
     if (error) return { fel: oversattFel(error.message) };
     return { meddelande: `En inloggningslänk är på väg till ${epost}.` };
-  }
-
-  if (avsikt === "skapa-konto") {
-    if (!epost || losenord.length < 8) {
-      return { fel: "Lösenordet måste vara minst 8 tecken." };
-    }
-    const { data, error } = await supabase.auth.signUp({
-      email: epost,
-      password: losenord,
-    });
-    if (error) return { fel: oversattFel(error.message) };
-    if (data.session) redirect("/");
-    return {
-      meddelande: "Konto skapat. Bekräfta via mejlet vi skickat, logga sedan in.",
-    };
   }
 
   // avsikt === "logga-in" (default)

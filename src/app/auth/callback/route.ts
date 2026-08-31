@@ -1,6 +1,6 @@
 // Landningspunkt for magisk lank / OTP. Supabase skickar hit med ?code=... som
 // bytes mot en session, darefter vidare till oversikten (som i sin tur skickar
-// till /onboarding om ingen bostad finns).
+// till /registrera om ingen bostad finns).
 
 import { NextResponse, type NextRequest } from "next/server";
 import { skapaServerklient } from "@/lib/supabase/server";

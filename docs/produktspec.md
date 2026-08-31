@@ -113,7 +113,8 @@ De fyra projektfrågorna ställs och lagras som vanligt, inklusive kategori – 
 | Fält | Typ | Not |
 |---|---|---|
 | namn | string? | visas i headern; faller tillbaka på adress, annars "Min bostad" |
-| adress | string? | |
+| adress | string? | valfritt vid registrering |
+| ort | string? | valfritt vid registrering |
 | upplatelseform | enum | `bostadsratt` \| `fastighet` – styr regelmotorn |
 | husform | enum? | villa/radhus/kedjehus, endast informativt |
 | tilltradesdatum | date | obligatoriskt, alla tidsberäkningar utgår härifrån |

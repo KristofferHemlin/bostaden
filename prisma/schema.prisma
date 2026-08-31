@@ -45,6 +45,9 @@ model anvandare {
 model bostad {
   id                String    @id @default(uuid()) @db.Uuid
   namn              String?
+  adress            String? // valfritt; namn faller tillbaka pa adress i headern
+  ort               String? // valfritt
+  storlek           Int? // valfritt, boarea i kvadratmeter
   upplatelseform    upplatelseform
   husform           husform? // rent informativt, styr ingenting
   tilltradesdatum   DateTime  @db.Date

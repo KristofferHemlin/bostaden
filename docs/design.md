@@ -74,11 +74,25 @@ Ikoner sparsamt och tunna. Appen har få skärmar och behöver ingen ikonografis
 
 ---
 
+## Navigation
+
+**På mobil ligger navigationen fast i skärmens nederkant.** Fyra flikar i lika breda fält, förankrade mot underkanten, alltid synliga. Toppmeny på mobil kräver att tummen sträcker sig över hela skärmen och ska inte användas.
+
+Ovanför innehållet står då bara en enkel rad med logotypen och bostadens namn.
+
+**På skrivbord ligger logotyp, bostadsnamn och flikar på en och samma rad.** Inte logotyp på en våning och menyn på nästa – det ger tre horisontella band innan innehållet börjar och gör sidan tung i överkant.
+
+**Sidrubriken upprepar aldrig bostadens namn.** Det står redan i toppraden. Sidrubriken säger vad sidan visar: "Översikt", "Projekt", "Deklarationsunderlag".
+
+Aktiv flik markeras med ytskillnad, aldrig med orange.
+
+---
+
 ## Skrivbordsvyn
 
-Innehållet är detsamma, men sidan får ett ankare. Överst en rad i full bredd på `--yta-upphojd` med logotypen till vänster och bostadens namn bredvid, avgränsad nedåt med 1px `--linje`. Under den centreras innehållet i en kolumn på högst 620px.
+Innehållet centreras i en kolumn på högst 620px under toppraden.
 
-Utan den raden svävar kortet ensamt i en tom yta – det är vad som händer om skrivbordsvyn lämnas ospecificerad.
+Utan toppraden svävar kortet ensamt i en tom yta – det är vad som händer om skrivbordsvyn lämnas ospecificerad.
 
 På skrivbord ökar basstorleken på text ett steg och kortets innerpadding blir generösare. Layouten är fortfarande en enda kolumn – bygg aldrig sidofält eller rutnät. Appen har för lite innehåll för det och ska kännas som samma produkt på båda ställena.
 
@@ -129,6 +143,34 @@ Projekt och kostnader visas som rader avdelade med 1px linjer, inte som separata
 
 Ett tomt tillstånd säger aldrig bara att det är tomt. Det består av en tunn ikon, en rubrik som är en uppmaning, en till två rader förklaring, och en primärknapp i full bredd. Finns det en meningsfull uppgift som inte kräver data – som att lägga upp baslinjen – ligger den under som ett eget avsnitt med egen knapp i mindre storlek.
 
+### Progressfältet mot tröskeln
+
+Fältet visar årets belopp i förhållande till tröskeln, men fylls aldrig mer än helt. När tröskeln passerats står fyllningen kvar på full bredd i `--accent` och texten till höger säger att tröskeln är nådd – det överskjutande beloppet har ingen egen betydelse, eftersom allt över gränsen räknas ändå.
+
+### Registreringsflödet
+
+Att skapa konto är ett eget flöde, inte samma formulär som inloggningen med en extra knapp. Den som trycker "Skapa konto" ska veta vad som händer härnäst.
+
+**Ett steg visas i taget.** Tre steg: kontouppgifter, bostaden, lösenord. Inaktiva steg döljs helt – att rendera alla tre under varandra gör flödet längre än det gamla formuläret och får förloppsindikatorn att säga emot det användaren ser. Värden bevaras mellan stegen, men bara det aktiva steget är synligt.
+
+Förloppet visas som tre prickar över rubriken, med den aktiva i `--accent` och de övriga i `--sand`. Under prickarna en rad som säger "Steg 2 av 3". Inga numrerade noder med linjer emellan – det tar plats utan att säga mer.
+
+Varje steg har en egen rubrik, en rad förklaring, och en framåtknapp. Bakåt ska alltid gå. Det aktuella stegets obligatoriska fält valideras innan man kommer vidare.
+
+**Bostadssteget** har fyra fält: upplåtelseform, tillträdesdatum, adress och ort. Endast de två första är obligatoriska. Storlek och köpeskilling hör hemma i inställningar, inte här – de behövs inte för att komma igång och köpeskillingen är sällan något man har i huvudet.
+
+Upplåtelseform väljs med klickbara kort i rad, inte radioknappar. Korten är lättare att träffa på mobil och tydligare att avläsa. **Två kort: Bostadsrätt och Villa eller radhus.** Fritidshus är skattemässigt en fastighet och behöver inget eget val – ett tredje kort måste ändå mappa till samma värde och skapar en distinktion som modellen inte har.
+
+Inloggningssidan har ett formulär med en enda primärknapp, och en länk till registreringsflödet under.
+
+### Emoji
+
+Emoji används på exakt ett ställe: som symbol på korten för upplåtelseform i registreringen. De gör valet snabbare att avläsa och tillför värme i ett annars torrt formulär.
+
+Ingen annanstans. Inte i rubriker, knappar, meddelanderutor, tomma tillstånd eller notiser. Emoji renderas olika mellan plattformar, går inte att färgsätta och drar in ett uttryck som ligger utanför paletten – ett par stycken på ett ställe är en accent, spridda genom appen blir de brus.
+
+Behövs symboler någon annanstans används tunna ikoner i `--text-sekundar`.
+
 ### Meddelanderutor
 
 Information som förklarar ett tillstånd sätts i en ruta med `--sand` som bakgrund, `--text-primar` som text, samma hörnradie som inputfält, ingen ram och ingen ikon. Använd dem sparsamt – högst en per skärm.
@@ -138,4 +180,3 @@ Information som förklarar ett tillstånd sätts i en ruta med `--sand` som bakg
 ## Referens
 
 Logotypen ligger i `docs/`. Den ska inte ritas om, färgas om eller användas som ikon i gränssnittet.
-

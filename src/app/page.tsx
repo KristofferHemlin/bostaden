@@ -92,7 +92,7 @@ export default async function Oversikt() {
   const tomt = projekt.length === 0 && kostnader.length === 0;
 
   return (
-    <Skarm bostadsnamn={bostadsnamn} andrarad={andrarad}>
+    <Skarm bostadsnamn={bostadsnamn} andrarad={andrarad} rubrik="Översikt">
       {tomt ? (
         <div className="p-5">
           <p className="font-rubrik text-lg text-text-primar">
@@ -216,7 +216,13 @@ export default async function Oversikt() {
         </>
       )}
 
-      <div className="border-t border-linje p-4">
+      <div className="flex items-center justify-between border-t border-linje p-4">
+        <Link
+          href="/installningar"
+          className="font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
+        >
+          Inställningar
+        </Link>
         <form action={loggaUt}>
           <button
             type="submit"

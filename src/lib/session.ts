@@ -46,7 +46,10 @@ export async function hamtaAnvandare(): Promise<InloggadAnvandare | null> {
  *  3. Ingen rad          -> skapa. En kapplopning mot en parallell request som
  *     hann fore fangas som P2002 och svaljs – raden finns da anda.
  */
-async function sakerstallAnvandarrad(id: string, epost: string): Promise<void> {
+export async function sakerstallAnvandarrad(
+  id: string,
+  epost: string,
+): Promise<void> {
   const viaId = await prisma.anvandare.findUnique({ where: { id } });
   if (viaId) {
     if (viaId.epost !== epost) {
@@ -107,13 +110,15 @@ export async function hamtaAktivBostad(): Promise<AktivBostad | null> {
 
 /**
  * Krav for alla skarmar som forutsatter en bostad (projekt, kostnad, oversikt).
- * Skickar till /login utan session och till /onboarding utan bostad.
+ * Skickar till /login utan session och till /registrera utan bostad – dit gar
+ * bade den som inte har konto och den inloggade (t.ex. via e-postlank) som annu
+ * inte lagt upp nagon bostad.
  */
 export async function kravBostad(): Promise<AktivBostad> {
   const anvandare = await hamtaAnvandare();
   if (!anvandare) redirect("/login");
 
   const bostad = await hamtaAktivBostad();
-  if (!bostad) redirect("/onboarding");
+  if (!bostad) redirect("/registrera");
   return bostad;
 }

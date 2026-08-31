@@ -1,8 +1,13 @@
 "use client";
 
-// Steg 2: inloggning. E-post + losenord forst, med en vaxel till magisk lank.
-// Ingen registreringsdesign – "Skapa konto" ar bara en andra knapp i samma form.
+// Inloggningssidan (docs/design.md, Registreringsflodet): ett formular med en
+// enda primarknapp, och en lank till registreringsflodet under. Att skapa konto
+// ar ett eget flode (/registrera), inte en andra knapp har.
+//
+// E-postlank finns kvar som alternativ vag in – en textlank, ingen egen
+// primarknapp.
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import { hanteraAuth, type AuthResultat } from "./actions";
 import {
@@ -10,7 +15,6 @@ import {
   INPUT_KLASS,
   Meddelanderuta,
   PRIMARKNAPP_KLASS,
-  SEKUNDARKNAPP_KLASS,
 } from "@/components/skarm";
 
 const START: AuthResultat = {};
@@ -51,7 +55,7 @@ export default function LoginSida() {
             </Falt>
 
             {lage === "losenord" ? (
-              <Falt etikett="Lösenord" hjalp="Minst 8 tecken vid nytt konto.">
+              <Falt etikett="Lösenord">
                 <input
                   type="password"
                   name="losenord"
@@ -70,51 +74,42 @@ export default function LoginSida() {
               <Meddelanderuta>{resultat.meddelande}</Meddelanderuta>
             ) : null}
 
-            {lage === "losenord" ? (
-              <div className="flex flex-col gap-2">
-                <button
-                  type="submit"
-                  name="avsikt"
-                  value="logga-in"
-                  disabled={pagar}
-                  className={PRIMARKNAPP_KLASS}
-                >
-                  {pagar ? "Loggar in…" : "Logga in"}
-                </button>
-                <button
-                  type="submit"
-                  name="avsikt"
-                  value="skapa-konto"
-                  disabled={pagar}
-                  className={SEKUNDARKNAPP_KLASS}
-                >
-                  Skapa konto
-                </button>
-              </div>
-            ) : (
-              <button
-                type="submit"
-                name="avsikt"
-                value="magisk-lank"
-                disabled={pagar}
-                className={PRIMARKNAPP_KLASS}
-              >
-                {pagar ? "Skickar…" : "Skicka inloggningslänk"}
-              </button>
-            )}
+            <button
+              type="submit"
+              name="avsikt"
+              value={lage === "losenord" ? "logga-in" : "magisk-lank"}
+              disabled={pagar}
+              className={PRIMARKNAPP_KLASS}
+            >
+              {pagar
+                ? lage === "losenord"
+                  ? "Loggar in…"
+                  : "Skickar…"
+                : lage === "losenord"
+                  ? "Logga in"
+                  : "Skicka inloggningslänk"}
+            </button>
           </form>
 
-          <button
-            type="button"
-            onClick={() =>
-              setLage((l) => (l === "losenord" ? "magisk" : "losenord"))
-            }
-            className="mt-4 font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
-          >
-            {lage === "losenord"
-              ? "Logga in med e-postlänk i stället"
-              : "Logga in med lösenord i stället"}
-          </button>
+          <div className="mt-4 flex flex-col gap-2 border-t border-linje pt-4">
+            <Link
+              href="/registrera"
+              className="font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
+            >
+              Skapa konto
+            </Link>
+            <button
+              type="button"
+              onClick={() =>
+                setLage((l) => (l === "losenord" ? "magisk" : "losenord"))
+              }
+              className="text-left font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
+            >
+              {lage === "losenord"
+                ? "Logga in med e-postlänk i stället"
+                : "Logga in med lösenord i stället"}
+            </button>
+          </div>
         </div>
       </main>
     </div>

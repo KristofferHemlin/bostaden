@@ -25,3 +25,12 @@ body {
   background: var(--yta-bas);
   color: var(--text-primar);
 }
+
+/* Skrivbord: basstorleken pa text ett steg upp (docs/design.md, Skrivbordsvyn).
+   rem-baserad spacing i Tailwind foljer med, sa kortens innerpadding blir
+   generosare pa kopet. */
+@media (min-width: 640px) {
+  :root {
+    font-size: 106.25%;
+  }
+}
