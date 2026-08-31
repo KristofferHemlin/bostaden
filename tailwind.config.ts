@@ -15,6 +15,7 @@ export default {
         accent: "var(--accent)",
         "accent-mork": "var(--accent-mork)",
         sand: "var(--sand)",
+        "sand-mork": "var(--sand-mork)",
         linje: "var(--linje)",
       },
       fontFamily: {

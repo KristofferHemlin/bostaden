@@ -13,12 +13,15 @@ const prisma = new PrismaClient();
 /** "YYYY-MM-DD" -> Date vid midnatt UTC. Kolumnerna ar @db.Date, tid slangs bort. */
 const d = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
+// Seeden ar idempotent och radar bara sina EGNA rader, aldrig hela tabeller.
+// Riktiga Supabase-inloggade konton (annat id, annan epost) ror den aldrig.
 async function main() {
-  // Aterstall. Cascades tar projekt, kostnader, rader, fordelningar, medlemskap.
-  await prisma.regelparameter.deleteMany();
-  await prisma.bostad.deleteMany();
-  await prisma.anvandare.deleteMany();
-
+  // 1. Regelparametrar ar global konfiguration, inte anvandardata. Aterstall
+  //    bara de nycklar seeden ager – ev. senare tillagda parametrar lamnas kvar.
+  const seedNycklar = [...new Set(SEED_REGELPARAMETRAR.map((p) => p.nyckel))];
+  await prisma.regelparameter.deleteMany({
+    where: { nyckel: { in: seedNycklar } },
+  });
   await prisma.regelparameter.createMany({
     data: SEED_REGELPARAMETRAR.map((p) => ({
       nyckel: p.nyckel,
@@ -28,6 +31,18 @@ async function main() {
       giltig_till: p.giltig_till ? d(p.giltig_till) : null,
       kalla: "produktspec.md avsnitt 5 / docs/regelkallor.md",
     })),
+  });
+
+  // 2. Seed-bostaden identifieras pa sitt fasta id. Att radera den tar hela
+  //    tradet via cascader: medlemskap, projekt, kostnader, rader, fordelningar,
+  //    baslinjeposter, bilagor. Ingen annan bostad beros.
+  await prisma.bostad.deleteMany({ where: { id: SEED_BOSTAD.id } });
+
+  // 3. Seed-anvandaren: fast id och en sentinel-epost pa .local som ingen riktig
+  //    anvandare kan registrera. Bada villkoren gor att detta aldrig krockar med
+  //    ett inloggat konto.
+  await prisma.anvandare.deleteMany({
+    where: { OR: [{ id: DEV_ANVANDARE.id }, { epost: DEV_ANVANDARE.epost }] },
   });
 
   await prisma.anvandare.create({
@@ -102,7 +117,7 @@ async function main() {
   }
 
   console.log(
-    "Seed klar: 2 regelparametrar, 1 bostad + medlemskap, 3 projekt, 3 kostnader (Bauhaus-kvittot + 2 fiktiva).",
+    "Seed klar (idempotent): 2 regelparametrar, seed-bostad + seed-anvandare, 3 projekt, 3 kostnader.",
   );
 }
 

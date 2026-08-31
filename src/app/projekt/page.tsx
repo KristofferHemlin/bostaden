@@ -1,0 +1,99 @@
+// Steg 4: lista projekt, grupperade per ar-etikett. Varje rad ar klickbar och
+// blir anvandarens att-gora-lista (produktspec 7).
+
+import Link from "next/link";
+import { Listrad, PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
+import { bidragForKostnad, harledUnderlagsstyrka } from "@/doman/berakningar";
+import { bostadHeader } from "@/lib/bostad-header";
+import { hamtaBostadsdata } from "@/lib/doman-fran-db";
+import { formateraKronor } from "@/lib/format";
+import { kravBostad } from "@/lib/session";
+
+export const dynamic = "force-dynamic";
+
+export default async function ProjektlistaSida() {
+  const { bostadId } = await kravBostad();
+  const { bostad, projektRader, kostnader } = await hamtaBostadsdata(bostadId);
+  const { bostadsnamn, andrarad } = bostadHeader(bostad);
+
+  const rader = projektRader.map((p) => {
+    let belopp = 0;
+    for (const k of kostnader) {
+      if (k.arkiverad || !k.betaldatum) continue;
+      belopp += bidragForKostnad(k, p.id);
+    }
+    const svagt = harledUnderlagsstyrka(p) === "svagt";
+    const kategoriText =
+      p.kategori === "grundforbattring" ? "Grundförbättring" : "Reparation";
+    return {
+      id: p.id,
+      namn: p.namn,
+      ar: p.ar,
+      belopp,
+      status: svagt ? `${kategoriText} · underlag saknas` : kategoriText,
+      atgard: svagt,
+    };
+  });
+
+  const perAr = new Map<number, typeof rader>();
+  for (const r of rader) {
+    const lista = perAr.get(r.ar) ?? [];
+    lista.push(r);
+    perAr.set(r.ar, lista);
+  }
+  const arSorterade = [...perAr.keys()].sort((a, b) => b - a);
+
+  return (
+    <Skarm
+      bostadsnamn={bostadsnamn}
+      andrarad={andrarad}
+      rubrik="Projekt"
+      bakLank={{ href: "/", text: "Översikt" }}
+    >
+      {rader.length === 0 ? (
+        <div className="p-5">
+          <p className="font-rubrik text-lg text-text-primar">
+            Inga projekt än
+          </p>
+          <p className="mt-1 font-granssnitt text-sm text-text-dampad">
+            Ett projekt samlar allt du gjort med en och samma sak – till exempel
+            att måla sovrummet. Kvitton kopplas sedan till projektet.
+          </p>
+          <Link
+            href="/projekt/nytt"
+            className={`${PRIMARKNAPP_KLASS} mt-4`}
+          >
+            Skapa ditt första projekt
+          </Link>
+        </div>
+      ) : (
+        <>
+          {arSorterade.map((ar) => (
+            <div key={ar} className="border-b border-linje last:border-b-0">
+              <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
+                {ar}
+              </p>
+              <div className="divide-y divide-linje">
+                {perAr.get(ar)!.map((r) => (
+                  <Listrad
+                    key={r.id}
+                    href={`/projekt/${r.id}`}
+                    namn={r.namn}
+                    status={r.status}
+                    atgard={r.atgard}
+                    belopp={formateraKronor(r.belopp)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+          <div className="p-4">
+            <Link href="/projekt/nytt" className={PRIMARKNAPP_KLASS}>
+              Lägg till projekt
+            </Link>
+          </div>
+        </>
+      )}
+    </Skarm>
+  );
+}

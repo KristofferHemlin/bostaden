@@ -26,6 +26,7 @@ Härledda ur logotypen. Använd tokens, aldrig hex direkt i komponenter.
 --accent:         #CC6631;  /* bränd orange */
 --accent-mork:    #A94E22;  /* hover och nedtryckt */
 --sand:           #D8C0A8;
+--sand-mork:      #B99A76;  /* progressfyllning under troskeln */
 
 --linje:          #DCCFC0;
 ```
@@ -73,6 +74,18 @@ Ikoner sparsamt och tunna. Appen har få skärmar och behöver ingen ikonografis
 
 ---
 
+## Skrivbordsvyn
+
+Innehållet är detsamma, men sidan får ett ankare. Överst en rad i full bredd på `--yta-upphojd` med logotypen till vänster och bostadens namn bredvid, avgränsad nedåt med 1px `--linje`. Under den centreras innehållet i en kolumn på högst 620px.
+
+Utan den raden svävar kortet ensamt i en tom yta – det är vad som händer om skrivbordsvyn lämnas ospecificerad.
+
+På skrivbord ökar basstorleken på text ett steg och kortets innerpadding blir generösare. Layouten är fortfarande en enda kolumn – bygg aldrig sidofält eller rutnät. Appen har för lite innehåll för det och ska kännas som samma produkt på båda ställena.
+
+Logotypen syns i toppraden på skrivbord och som en liten markering till vänster om bostadsnamnet i mobil.
+
+---
+
 ## Mobilt först
 
 Designa mot 390px bredd. Allt annat är anpassning.
@@ -106,11 +119,11 @@ Innehållet ligger i ett enda kort på `--yta-upphojd` mot sidbakgrunden, med 1p
 
 Överst på översikten står årets summa. Etiketten "Underlag 2026" i dämpad text till vänster, beloppet stort och höger om det på samma baslinje. Under dem ett progressfält, och under det två rader småtext: tröskelbeloppet till vänster, återstående belopp till höger.
 
-Progressfältet är 6px högt med helt rundade ändar, spår i `--yta-nedsankt`, fyllning i `--sand` under tröskeln och `--accent` när tröskeln passerats.
+Progressfältet är 8px högt med helt rundade ändar, spår i `--yta-nedsankt` och fyllning i `--sand-mork` under tröskeln, `--accent` när tröskeln passerats. Fyllningen måste ha tydlig kontrast mot spåret – `--sand` mot `--yta-nedsankt` är för svagt och ska aldrig användas här.
 
 ### Listrader
 
-Projekt och kostnader visas som rader avdelade med 1px linjer, inte som separata kort. Varje rad har namnet på första raden och en dämpad andra rad med kategori eller status, med beloppet högerställt på samma höjd som namnet. Rader vars status kräver åtgärd får sin andra rad i `--accent` i stället för dämpad text – det är den enda platsen orange används i en lista.
+Projekt och kostnader visas som rader avdelade med 1px linjer, inte som separata kort. Varje rad har namnet på första raden och en dämpad andra rad med kategori eller status, med beloppet högerställt på samma höjd som namnet. Rader vars status kräver åtgärd markeras med en liten fylld prick i `--accent` före den dämpade texten, inte genom att färga hela raden. Med flera rader i samma läge blir orange text en vägg av varningar, och färgen tappar sin betydelse.
 
 ### Tomma tillstånd
 

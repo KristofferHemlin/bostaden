@@ -6,9 +6,12 @@
 import type { Kostnad, Projekt, Regelparameter } from "./typer";
 
 export const BOSTAD_ID = "10000000-0000-0000-0000-000000000001";
+// Fast id OCH en sentinel-epost pa en reserverad .local-doman som ingen riktig
+// Supabase-anvandare kan registrera. Bada garanterar att seeden aldrig krockar
+// med ett inloggat konto – aven om samma person loggar in med sin riktiga adress.
 export const DEV_ANVANDARE = {
   id: "00000000-0000-0000-0000-000000000001",
-  epost: "kristofferhemlin@gmail.com",
+  epost: "dev-seed@bostadsunderlag.local",
 };
 
 export const PROJEKT_MALA_SOVRUM = "20000000-0000-0000-0000-000000000001";
@@ -38,7 +41,7 @@ export const SEED_REGELPARAMETRAR: Regelparameter[] = [
 
 export const SEED_BOSTAD = {
   id: BOSTAD_ID,
-  namn: "Lagenheten pa Kvarnvagen",
+  namn: "Lägenheten på Kvarnvägen",
   upplatelseform: "bostadsratt" as const,
   husform: null,
   tilltradesdatum: "2021-03-01",
@@ -57,7 +60,7 @@ export const SEED_PROJEKT: SeedProjekt[] = [
   {
     id: PROJEKT_MALA_SOVRUM,
     bostad_id: BOSTAD_ID,
-    namn: "Mala sovrum",
+    namn: "Måla sovrum",
     ar: 2026,
     kategori: "reparation",
     baslinjepost_id: null, // utan baslinjepost => harledd underlagsstyrka "svagt"
@@ -69,7 +72,7 @@ export const SEED_PROJEKT: SeedProjekt[] = [
   {
     id: PROJEKT_KOKSBLANDARE,
     bostad_id: BOSTAD_ID,
-    namn: "Byta koksblandare",
+    namn: "Byta köksblandare",
     ar: 2026,
     kategori: "grundforbattring",
     baslinjepost_id: null,
@@ -138,7 +141,7 @@ export const SEED_KOSTNADER: SeedKostnad[] = [
         ],
       },
       {
-        artikel: "LIVING VAGGFARG HE",
+        artikel: "LIVING VÄGGFÄRG HE",
         belopp: 34_900,
         fordelningar: [
           { projekt_id: PROJEKT_MALA_SOVRUM, privat: false, andel: 1 },
@@ -166,7 +169,7 @@ export const SEED_KOSTNADER: SeedKostnad[] = [
     arkiverad: false,
     rader: [
       {
-        artikel: "Koksblandare",
+        artikel: "Köksblandare",
         belopp: 149_500,
         fordelningar: [
           { projekt_id: PROJEKT_KOKSBLANDARE, privat: false, andel: 1 },

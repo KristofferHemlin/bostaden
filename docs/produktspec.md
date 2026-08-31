@@ -340,18 +340,32 @@ Levereras till egen mejl eller nedladdning. Ingen integration behövs.
 
 ## 10. Byggordning
 
-1. Datamodell och exportformat – definiera K6A-utdata först, låt schemat följa
-2. Registrering (två obligatoriska fält) + manuell kostnadsinmatning
-3. Projekt med de fyra frågorna
-4. Årssumma mot tröskeln + översiktsskärm
-5. Filbilagor och arkiv
-6. Inkorg för okopplade kostnader
-7. Entreprenörsgrenen med ROT och betaldatum
-8. Baslinje med bilagor
-9. Export
-10. Notiser
+Byggordningen är en **tunn skiva genom hela produkten först**, inte lager för lager. Målet med etapp A är att kunna gå från konto till färdigt deklarationsunderlag utan att någon del är polerad. Först när flödet går att använda hela vägen är det meningsfullt att fördjupa enskilda delar.
 
-Steg 1–4 är en användbar app för en person. Bygg dem först och använd dem på riktigt innan resten.
+### Etapp A – genomgående flöde
+
+1. **Datamodell och exportformat** – definiera K6A-utdata först, låt schemat följa *(klart)*
+2. **Inloggning** – Supabase Auth med e-post, ingen registreringsdesign, bara fungerande
+3. **Onboarding** – skapa bostad med upplåtelseform och tillträdesdatum
+4. **Projekt** – skapa med de fyra frågorna, lista, öppna
+5. **Kostnad** – manuell inmatning av belopp, datum, leverantör, koppling till projekt
+6. **Översikt** – årssumma mot tröskeln, projektlista
+7. **Exportvy** – K6A-sammanställningen på skärm med de två summorna. Ingen PDF, inga bilagor, bara talen och raderna
+
+Efter steg 7 finns en app du kan använda på riktigt med ditt eget kvitto, hela vägen till ett underlag. Det är den punkt där produkten går att bedöma.
+
+### Etapp B – gör den bra
+
+8. Design och skrivbordsvy
+9. Filbilagor och arkiv
+10. Uppdelning av kvitton på radnivå
+11. Inkorg för okopplade kostnader
+12. Entreprenörsgrenen med ROT och betaldatum
+13. Baslinje med bilagor
+14. PDF-export med bilagepaket
+15. Notiser
+
+Ordningen inom etapp B styrs av vad som skaver när du använt etapp A, inte av listan ovan.
 
 ---
 
