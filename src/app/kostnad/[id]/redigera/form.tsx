@@ -7,7 +7,7 @@
 // = obetald = raknas inte in i arssumman.
 //
 // Ar kostnaden uppdelad pa flera rader visas belopp och projektkoppling som
-// lasta, med en forklaring – de andras per rad i ett senare steg.
+// lasta, med en lank till "Dela upp kvittot" dar raderna andras (steg 10).
 //
 // Borttagningen ligger sist, tydligt skild fran spara-knappen, och kraver ett
 // extra bekraftelsesteg. Den tar med bilagorna.
@@ -141,9 +141,15 @@ export function RedigeraKostnadForm({
           </Falt>
         ) : (
           <Meddelanderuta>
-            Det här kvittot är uppdelat på flera rader. Belopp och
-            projektkoppling ändras per rad, vilket kommer i ett senare steg. Här
-            går det att ändra leverantör och datum.
+            Det här kvittot är uppdelat på flera rader. Leverantör och datum
+            ändrar du här. Belopp och projektkoppling ligger på raderna –{" "}
+            <Link
+              href={`/kostnad/${kostnadId}/dela`}
+              className="underline hover:text-accent-mork"
+            >
+              dela upp kvittot
+            </Link>{" "}
+            för att ändra dem.
           </Meddelanderuta>
         )}
 

@@ -8,8 +8,8 @@
 // Har ligger ocksa redigering och borttagning av sjalva kostnaden (produktspec
 // 6.4). Leverantor och datum gar alltid att andra; belopp och projektkoppling
 // bara nar kostnaden ar "enkel" (en rad pa hela beloppet, hogst en fordelning) –
-// en uppdelad kostnad andras per rad, vilket hor till ett senare steg. Att ta
-// bort kostnaden helt tar med bilagorna, eftersom det ar en uttrycklig begaran.
+// en uppdelad kostnad andras per rad via delaUppKostnad (steg 10). Att ta bort
+// kostnaden helt tar med bilagorna, eftersom det ar en uttrycklig begaran.
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -21,6 +21,7 @@ import {
   taBortBilaga,
 } from "@/lib/lagring/bilagor";
 import { oreFranKronor } from "@/lib/format";
+import { tolkaUppdelning } from "@/lib/kostnadsuppdelning";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
@@ -131,6 +132,89 @@ export async function redigeraKostnad(
           }),
         ]
       : []),
+  ]);
+
+  revalideraKostnadsvyer(id);
+  redirect(`/kostnad/${id}`);
+}
+
+// Steg 10: dela upp ett kvitto pa radniva. Varje rad far en artikel, ett belopp
+// och ett mal (ett projekt, "privat" eller okopplat). Summan av radernas belopp
+// maste vara lika med kostnadens totalbelopp – valideras i tolkaUppdelning
+// tillsammans med ovriga invarianter. Raderna byggs om fran grunden i en
+// transaktion; det ar enklast och kan inte glida isar.
+export async function delaUppKostnad(
+  _foreg: KostnadRedigeraResultat,
+  formData: FormData,
+): Promise<KostnadRedigeraResultat> {
+  const { bostadId } = await kravBostad();
+  const id = String(formData.get("kostnad_id") ?? "");
+
+  const kostnad = await prisma.kostnad.findFirst({
+    where: { id, bostad_id: bostadId },
+    select: {
+      id: true,
+      totalbelopp: true,
+      rot_utnyttjat: true,
+      forsakringsersattning: true,
+    },
+  });
+  if (!kostnad) return { fel: "Kostnaden hittades inte." };
+
+  const artiklar = formData.getAll("artikel").map(String);
+  const belopp = formData.getAll("belopp").map(String);
+  const mal = formData.getAll("mal").map(String);
+  const andelar = formData.getAll("andel").map(String);
+
+  const indata = artiklar.map((artikel, i) => ({
+    artikel,
+    belopp: belopp[i] ?? "",
+    mal: mal[i] ?? "",
+    andel: andelar[i] ?? "",
+  }));
+
+  // ROT och forsakringsersattning ligger pa kostnadsniva men fordelas
+  // proportionellt over raderna (produktspec 4.2). Da maste raderna hallas till
+  // ett enda projekt, annars blir reduktionen inte entydig.
+  const endastEttProjekt =
+    (kostnad.rot_utnyttjat ?? 0) > 0 ||
+    (kostnad.forsakringsersattning ?? 0) > 0;
+
+  const tolkad = tolkaUppdelning(indata, kostnad.totalbelopp, {
+    endastEttProjekt,
+  });
+  if ("fel" in tolkad) return { fel: tolkad.fel };
+
+  if (tolkad.projektIder.length > 0) {
+    const funna = await prisma.projekt.findMany({
+      where: { id: { in: tolkad.projektIder }, bostad_id: bostadId },
+      select: { id: true },
+    });
+    if (funna.length !== tolkad.projektIder.length) {
+      return { fel: "Ett av de valda projekten finns inte." };
+    }
+  }
+
+  await prisma.$transaction([
+    prisma.kostnadsrad.deleteMany({ where: { kostnad_id: id } }),
+    ...tolkad.rader.map((rad) =>
+      prisma.kostnadsrad.create({
+        data: {
+          kostnad_id: id,
+          artikel: rad.artikel,
+          belopp: rad.belopp,
+          fordelningar: rad.fordelningar.length
+            ? {
+                create: rad.fordelningar.map((f) => ({
+                  projekt_id: f.projekt_id,
+                  privat: f.privat,
+                  andel: f.andel,
+                })),
+              }
+            : undefined,
+        },
+      }),
+    ),
   ]);
 
   revalideraKostnadsvyer(id);

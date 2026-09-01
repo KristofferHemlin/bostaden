@@ -1,7 +1,6 @@
-// Oppna en kostnad. Visar kvittots uppgifter, harlett tillstand och – i fokus
-// for steg 9 – bilageraden dar kvitton och betalningsunderlag laddas upp,
-// oppnas och tas bort. Raduppdelning och entreprenorsgrenen hor till senare
-// steg i etapp B.
+// Oppna en kostnad. Visar kvittots uppgifter, harlett tillstand, bilageraden
+// (steg 9) och – nar kvittot ar uppdelat – dess rader med respektive mal (steg
+// 10). Entreprenorsgrenen hor till ett senare steg i etapp B.
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -98,18 +97,73 @@ export default async function KostnadSida({
         />
       </section>
 
+      {kostnad.rader.length > 1 ? (
+        <section className="border-b border-linje">
+          <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
+            Rader
+          </p>
+          <div className="divide-y divide-linje">
+            {kostnad.rader.map((rad) => (
+              <div
+                key={rad.id}
+                className="flex items-baseline justify-between gap-3 px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-granssnitt text-sm text-text-primar">
+                    {rad.artikel}
+                  </p>
+                  <p className="mt-0.5 font-granssnitt text-xs text-text-dampad">
+                    {radMalText(rad)}
+                  </p>
+                </div>
+                <span className="shrink-0 font-rubrik text-sm tabular-nums text-text-primar">
+                  {formateraKronor(rad.belopp)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <Bilagor kostnadId={kostnad.id} bilagor={bilagor} />
 
-      <div className="border-t border-linje p-4">
+      <div className="flex flex-col gap-2 border-t border-linje p-4">
         <Link
           href={`/kostnad/${kostnad.id}/redigera`}
           className={SEKUNDARKNAPP_KLASS}
         >
           Ändra uppgifter
         </Link>
+        <Link
+          href={`/kostnad/${kostnad.id}/dela`}
+          className={SEKUNDARKNAPP_KLASS}
+        >
+          {kostnad.rader.length > 1
+            ? "Ändra radernas fördelning"
+            : "Dela upp kvittot"}
+        </Link>
       </div>
     </Skarm>
   );
+}
+
+/** Radens mal i klartext: projektnamn (med andel om under 100 %), "Privat" eller "Okopplad". */
+function radMalText(rad: {
+  fordelningar: {
+    privat: boolean;
+    andel: unknown;
+    projekt: { namn: string } | null;
+  }[];
+}): string {
+  if (rad.fordelningar.length === 0) return "Okopplad";
+  return rad.fordelningar
+    .map((f) => {
+      if (f.privat) return "Privat";
+      const andel = Number(f.andel);
+      const namn = f.projekt?.namn ?? "Okänt projekt";
+      return andel < 1 ? `${namn} · ${Math.round(andel * 100)} %` : namn;
+    })
+    .join(", ");
 }
 
 function Rad({
