@@ -17,6 +17,10 @@ export default {
         sand: "var(--sand)",
         "sand-mork": "var(--sand-mork)",
         linje: "var(--linje)",
+        "bg-info": "var(--bg-info)",
+        "text-info": "var(--text-info)",
+        "bg-klart": "var(--bg-klart)",
+        "text-klart": "var(--text-klart)",
       },
       fontFamily: {
         rubrik: ["Fraunces", "Georgia", "serif"],

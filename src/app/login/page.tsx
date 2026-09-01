@@ -8,7 +8,8 @@
 // primarknapp.
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useActionState, useState } from "react";
 import { hanteraAuth, type AuthResultat } from "./actions";
 import {
   Falt,
@@ -20,8 +21,20 @@ import {
 const START: AuthResultat = {};
 
 export default function LoginSida() {
+  // useSearchParams kraver en Suspense-grans i Next 15.
+  return (
+    <Suspense>
+      <LoginInnehall />
+    </Suspense>
+  );
+}
+
+function LoginInnehall() {
   const [lage, setLage] = useState<"losenord" | "magisk">("losenord");
   const [resultat, action, pagar] = useActionState(hanteraAuth, START);
+  // Registreringsflodet skickar hit med ?epost=... nar adressen redan har ett
+  // konto (docs/design.md, Registreringsflodet) – forifyll den da.
+  const forifyllEpost = useSearchParams().get("epost") ?? "";
 
   return (
     <div className="min-h-screen w-full bg-yta-bas">
@@ -49,6 +62,7 @@ export default function LoginSida() {
                 name="epost"
                 autoComplete="email"
                 required
+                defaultValue={forifyllEpost}
                 className={INPUT_KLASS}
                 placeholder="du@exempel.se"
               />

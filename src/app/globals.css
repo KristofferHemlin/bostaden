@@ -19,6 +19,14 @@
   --sand-mork: #b99a76;
 
   --linje: #dccfc0;
+
+  /* Tva dampade statusfarger – ENDAST till meddelanderutor (docs/design.md).
+     Bla for forklaringar som inte kraver nagot, gron for bekraftelser. Aldrig i
+     troskelfaltet, i listor, pa knappar eller som textfarg utanfor sina rutor. */
+  --bg-info: #dde7ec;
+  --text-info: #2c5568;
+  --bg-klart: #dfe8dc;
+  --text-klart: #3d5e3a;
 }
 
 body {

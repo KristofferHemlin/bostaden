@@ -216,13 +216,9 @@ export default async function Oversikt() {
         </>
       )}
 
-      <div className="flex items-center justify-between border-t border-linje p-4">
-        <Link
-          href="/installningar"
-          className="font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
-        >
-          Inställningar
-        </Link>
+      {/* Installningar nas via kugghjulet i navigationen (docs/design.md,
+          Navigation) och ligger inte langre har. */}
+      <div className="flex items-center justify-end border-t border-linje p-4">
         <form action={loggaUt}>
           <button
             type="submit"

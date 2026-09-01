@@ -4,7 +4,7 @@
 // Guard:
 //  - inloggad med bostad      -> /  (inget att gora har)
 //  - inloggad utan bostad     -> bara bostadssteget (t.ex. efter e-postlank)
-//  - ingen session            -> hela flodet: konto, bostad, losenord
+//  - ingen session            -> hela flodet: konto (e-post + losenord), bostad
 //
 // Ersatter den tidigare /onboarding-sidan.
 
@@ -36,7 +36,7 @@ export default async function RegistreraSida() {
           <p className="mt-1 font-granssnitt text-sm text-text-dampad">
             {endastBostad
               ? "Sista steget innan du kommer igång."
-              : "Tre korta steg: kontouppgifter, din bostad och lösenord."}
+              : "Två korta steg: konto och din bostad."}
           </p>
         </header>
 

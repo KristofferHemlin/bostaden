@@ -13,6 +13,10 @@
 // harledd underlagsstyrka "svagt", precis som seed-projektet "Mala sovrum".
 
 import { redirect } from "next/navigation";
+import {
+  tolkaProjektfragor,
+  type SlitetSvar,
+} from "@/doman/projektfragor";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
@@ -36,9 +40,12 @@ export async function skapaProjekt(
     return { fel: "Svara på om det var nytt eller fanns förut." };
   }
 
-  const kategori = fanns === "nytt" ? "grundforbattring" : "reparation";
-  const slitet_vid_tilltrade =
-    slitet === "ja" ? true : slitet === "nej" ? false : null;
+  // Fraga 3 stalls bara nar det fanns forut; for en grundforbattring blir
+  // slitet_vid_tilltrade alltid null aven om ett svar rakar folja med.
+  const { kategori, slitet_vid_tilltrade } = tolkaProjektfragor(
+    fanns,
+    slitet as SlitetSvar,
+  );
 
   const projekt = await prisma.projekt.create({
     data: {

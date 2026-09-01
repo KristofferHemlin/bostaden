@@ -85,6 +85,7 @@ export default async function KostnadslistaSida() {
                 status={r.status}
                 atgard={r.atgard}
                 belopp={r.belopp}
+                href={`/kostnad/${r.id}`}
               />
             ))}
           </div>

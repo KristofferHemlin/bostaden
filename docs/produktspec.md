@@ -113,8 +113,10 @@ De fyra projektfrågorna ställs och lagras som vanligt, inklusive kategori – 
 | Fält | Typ | Not |
 |---|---|---|
 | namn | string? | visas i headern; faller tillbaka på adress, annars "Min bostad" |
-| adress | string? | valfritt vid registrering |
-| ort | string? | valfritt vid registrering |
+| adress | string? | fritext eller vald från adresstjänst |
+| place_id | string? | Google Places-id, null vid fritext |
+| latitud | decimal? | |
+| longitud | decimal? | |
 | upplatelseform | enum | `bostadsratt` \| `fastighet` – styr regelmotorn |
 | husform | enum? | villa/radhus/kedjehus, endast informativt |
 | tilltradesdatum | date | obligatoriskt, alla tidsberäkningar utgår härifrån |
@@ -254,7 +256,7 @@ Ställs en gång per projekt, aldrig per kvitto. Formuleras på vanlig svenska �
 
 1. Vad gjorde du? *(fritext → projektnamn)*
 2. Fanns det här förut, eller är det nytt? *(nytt → grundförbättring)*
-3. Var det slitet eller trasigt **när du flyttade in**? *(avgör om reparationen är avdragsgill)*
+3. Var det slitet eller trasigt **när du flyttade in**? *(avgör om reparationen är avdragsgill; ställs bara när svaret på fråga 2 är att det fanns förut – för en grundförbättring saknar skicket betydelse)*
 4. Har du något som visar det? *(bifoga nu / koppla till befintlig baslinjepost / hoppa över)*
 
 Alternativet "bifoga nu" skapar en baslinjepost med bilagan och kopplar projektet till den. Projekt har inget eget bilagefält – allt bevis om skicket vid tillträdet hör hemma i baslinjen, oavsett när det lades in. Därmed förblir härledningen av `underlagsstyrka` konsekvent, och en bilaga ger `dokumenterat`.
@@ -331,9 +333,25 @@ Levereras till egen mejl eller nedladdning. Ingen integration behövs.
 ## 9. Uttryckligen utanför scope
 
 - Ingen integration mot Skatteverket – e-tjänsten har ingen import
-- Ingen OCR i första versionen; manuell inmatning och e-kvitton räcker
+- Ingen OCR i klassisk mening. Dokumentavläsning sker via språkmodell på hela dokumentet – se avsnittet Dokumentavläsning nedan
 - Ingen automatisk produktkategorisering av kvittorader. Volymen är fel för det (~20 relevanta inköp per år) och felaktiga förval blir tyst godkända, vilket producerar fel underlag med självförtroende
-- Ingen automatisk avläsning av entreprenörsfakturor – de saknar gemensam struktur
+- Ingen automatisk uppdelning av entreprenörsfakturor i arbets- och materialkostnad. Avläsningen fyller belopp, datum och leverantör; ROT och arbetsuppdelning anger användaren själv
+
+### Dokumentavläsning
+
+När en bilaga valts skickas den till en språkmodell som returnerar tre fält: datum, totalbelopp inklusive moms, och leverantör. Ingen egen OCR, ingen artikelkategorisering.
+
+**Filen analyseras innan kostnaden sparats.** Det är hela poängen – fälten ska vara ifyllda när användaren tittar på formuläret. Eftersom det ännu inte finns något `kostnad_id` och därmed ingen sökväg i lagringen, skickas filen direkt till analysendpointen och laddas upp först när kostnaden sparas. Alternativet – att ladda upp till en tillfällig plats och flytta filen efteråt – ger föräldralösa filer varje gång någon avbryter.
+
+**HEIC måste konverteras före analys.** Språkmodellen kan inte läsa formatet, och det är standardformatet på iPhone – alltså exakt de bilder produkten finns till för. Samma konvertering som används för miniatyrer körs i minnet före anropet. Att hoppa över HEIC tyst innebär att funktionen inte fungerar för majoriteten av kvittofoton.
+
+**Alla fel sväljs.** Nätverksfel, oläsbart dokument, timeout, saknad nyckel – inget av det får synas eller blockera. Formuläret fungerar exakt som utan analys.
+
+**Endast belopp i svenska kronor fylls i.** Är dokumentet i annan valuta returneras beloppet som null. All beräkning i appen antar kronor, och ett eurobelopp som hamnar i ett kronfält ger ett felaktigt underlag utan att något ser konstigt ut. Modellen ska uttryckligen instrueras att returnera null när valutan inte är SEK.
+
+**Värdena är förslag som ska granskas.** Ett belopp som lästs fel och sparats utan att någon tittat är värre än ett tomt fält, eftersom det ser rätt ut i underlaget flera år senare. Gränssnittet ska säga att fälten fyllts i automatiskt och behöver kontrolleras.
+
+**Modellvalet ska stå i proportion till uppgiften.** Att läsa tre fält ur ett kvitto är enkelt; använd den minsta modell som klarar det tillförlitligt och byt uppåt bara om träffsäkerheten visar sig otillräcklig. Kostnaden per anrop skiljer en storleksordning mellan modellerna, och kvaliteten på just den här uppgiften gör det inte.
 - Ingen värderingsintegration i v1. Lägg ett värderingsfält per tidpunkt i modellen och fyll det manuellt tills användarvolymen motiverar ett leverantörsavtal
 - Appen ger inte skatterådgivning. Vid gränsfall ska den hänvisa till Skatteverkets upplysningstjänst
 
@@ -407,3 +425,19 @@ Supabase valdes för att databas, auth och filhantering ska komma från samma le
 Kostnadsinmatning sker manuellt, via filuppladdning och via kamera. På mobil webb räcker `<input type="file" accept="image/*" capture="environment">` – inget kamera-API behövs.
 
 Fillagringen är värd särskild omsorg. Bilagorna är produktens mest långlivade värde: de ska överleva tio–tjugo år och en eventuell nedläggning av tjänsten. Bygg export av hela arkivet som en tidig funktion, inte en sen.
+
+### Bilagor och lagring
+
+**Bucketen är privat. Alltid.** Bilagorna är kvitton och fakturor med belopp, leverantörer och datum – ekonomiska handlingar som aldrig får ligga på en publik URL. En publik bucket innebär att vem som helst med länken kan läsa filen, för alltid, utan inloggning.
+
+**Åtkomst sker via signerade URL:er med kort livslängd**, genererade på servern efter att behörigheten kontrollerats mot medlemskapet. Klienten får aldrig en permanent länk, och servern litar aldrig på en sökväg som kommit från klienten – den härleds alltid från kostnadens id och användarens behörighet.
+
+**Sökvägsmönster:** `{bostad_id}/{kostnad_id}/{slumpat_filnamn}`. Användarens ursprungliga filnamn sparas i databasen, inte i sökvägen – filnamn från telefoner kan innehålla tecken som bryter sökvägar, och ett gissningsbart mönster gör åtkomstkontrollen till enda skyddet.
+
+**Tillåtna format:** JPG, PNG, HEIC och PDF. Max 10 MB per fil.
+
+**HEIC kräver särskild hantering.** Det är standardformatet på iPhone och kan inte visas av någon webbläsare. Filen ska sparas i original – det är originalhandlingen – men en visningsbar miniatyr i JPG genereras vid uppladdningen. Utan det ser användaren ett tomt fält där kvittot borde vara, vilket är precis det fel som förstör förtroendet för ett arkiv.
+
+**Bilagor raderas aldrig automatiskt.** Arkiveras eller avklassificeras en kostnad ligger filen kvar. Radering sker endast på uttrycklig begäran från användaren, och då tas både fil och databaspost bort.
+
+**Arkivexport tidigt.** En funktion som laddar ner samtliga bilagor som ett zip-arkiv med begripliga filnamn. Den ska finnas långt innan användaren behöver den, eftersom hela produktens löfte är att dokumentationen finns kvar.

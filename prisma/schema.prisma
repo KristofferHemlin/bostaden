@@ -45,8 +45,11 @@ model anvandare {
 model bostad {
   id                String    @id @default(uuid()) @db.Uuid
   namn              String?
-  adress            String? // valfritt; namn faller tillbaka pa adress i headern
-  ort               String? // valfritt
+  adress            String? // fritext eller vald fran adresstjanst; namn faller tillbaka pa adress i headern
+  place_id          String? // Google Places-id, null vid fritext
+  latitud           Decimal?  @db.Decimal(9, 6) // null vid fritext
+  longitud          Decimal?  @db.Decimal(9, 6) // null vid fritext
+  ort               String? // valfritt; fylls fran valt Places-forslag
   storlek           Int? // valfritt, boarea i kvadratmeter
   upplatelseform    upplatelseform
   husform           husform? // rent informativt, styr ingenting
@@ -178,7 +181,8 @@ model bilaga {
   id                    String   @id @default(uuid()) @db.Uuid
   kostnad_id            String?  @db.Uuid
   baslinjepost_id       String?  @db.Uuid
-  lagringsnyckel        String   @unique // sokvag i Supabase Storage
+  lagringsnyckel        String   @unique // sokvag till originalet i Supabase Storage
+  miniatyrnyckel        String?  @unique // JPG-miniatyr for HEIC; null for format som redan gar att visa
   filnamn               String
   mimetyp               String
   storlek               Int // bytes

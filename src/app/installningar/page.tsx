@@ -1,6 +1,7 @@
 // Installningssidan. Bostadsuppgifter som inte behovs for att komma igang:
-// storlek och kopeskilling (flyttade hit fran registreringen, se docs/design.md
-// Registreringsflodet). Nas via en lank fran oversikten.
+// storlek och kopeskilling. Kopeskillingen gar aven att ange i registreringens
+// bostadssteg (docs/design.md, Registreringsflodet). Nas via kugghjulet i
+// navigationen.
 
 import { Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";

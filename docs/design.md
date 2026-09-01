@@ -29,6 +29,11 @@ Härledda ur logotypen. Använd tokens, aldrig hex direkt i komponenter.
 --sand-mork:      #B99A76;  /* progressfyllning under troskeln */
 
 --linje:          #DCCFC0;
+
+--bg-info:        #DDE7EC;  /* förklarande rutor */
+--text-info:      #2C5568;
+--bg-klart:       #DFE8DC;  /* bekräftelser */
+--text-klart:     #3D5E3A;
 ```
 
 ### Regler
@@ -41,7 +46,11 @@ Härledda ur logotypen. Använd tokens, aldrig hex direkt i komponenter.
 
 **Orange får aldrig bära brödtext.** Kontrasten räcker för knappar, ikoner och stora tal, inte för löpande text.
 
-**Ingen femte färg för status.** Tröskelfältet är sand när det är ofullständigt och orange när det är fullt. Betydelsen "orange = klart" håller då ihop genom hela appen. Inför inte rött eller grönt.
+**Två dämpade statusfärger finns, och bara till meddelanderutor.** Blå för förklaringar som inte kräver något av användaren, grön för bekräftelser. Båda är avmättade och varma nog att sitta bredvid sand och orange utan att bryta uttrycket – hämta aldrig in klarblått eller signalgrönt från ett standardbibliotek.
+
+De används **aldrig** i tröskelfältet, i listor, på knappar eller som textfärg utanför sina rutor. Tröskelfältet är sand när det är ofullständigt och orange när det är fullt; betydelsen "orange = klart" ska hålla ihop genom hela appen.
+
+Rött förekommer inte alls. Formulärfel visas med `--accent` och en tydlig text – appen har inga tillstånd som är farliga nog att kräva en varningsfärg.
 
 **Inget mörkt läge i v1.** Varma cremepaletter inverterar illa och kräver en egen färguppsättning. Skjut upp det.
 
@@ -85,6 +94,10 @@ Ovanför innehållet står då bara en enkel rad med logotypen och bostadens nam
 **Sidrubriken upprepar aldrig bostadens namn.** Det står redan i toppraden. Sidrubriken säger vad sidan visar: "Översikt", "Projekt", "Deklarationsunderlag".
 
 Aktiv flik markeras med ytskillnad, aldrig med orange.
+
+**Inställningar är inte en likvärdig flik.** Den är en plats man besöker sällan och ska inte konkurrera med de fyra som används dagligen. Den visas som ett tunt kugghjul i `--text-sekundar`, tydligt skilt från fliktexterna: längst till höger i toppraden på skrivbord, och som sista position i bottenraden på mobil med etiketten under, så att den inte blir en gåta för den som inte känner igen symbolen.
+
+Kugghjulet är det enda ikonen i navigationen. Får de fyra flikarna ikoner blir raden ett ikonband och texterna överflödiga – det är inte den appen det här är.
 
 ---
 
@@ -143,21 +156,79 @@ Projekt och kostnader visas som rader avdelade med 1px linjer, inte som separata
 
 Ett tomt tillstånd säger aldrig bara att det är tomt. Det består av en tunn ikon, en rubrik som är en uppmaning, en till två rader förklaring, och en primärknapp i full bredd. Finns det en meningsfull uppgift som inte kräver data – som att lägga upp baslinjen – ligger den under som ett eget avsnitt med egen knapp i mindre storlek.
 
+### Bilagor
+
+Bilagor visas som en rad små miniatyrer under kostnadens uppgifter, med en `+`-ruta sist för att lägga till fler. Tryck på en miniatyr öppnar filen i helskärm. PDF-filer visas som en ikon med filnamnet under, inte som en tom ruta.
+
+Uppladdning sker via en knapp, inte en dra-och-släpp-yta – appen används i första hand på telefon, där dra-och-släpp inte finns. Knappen öppnar systemets filväljare, som på mobil ger både kamera och bildbibliotek.
+
+**Förhandsvisning direkt vid val, innan sparning.** Så snart en fil valts renderas dokumentet i full bredd under miniatyrraden, i en ram med tunn kant. Bilder visas som bild, PDF renderas som sin första sida – inte som en ikon.
+
+En ikon med filnamnet duger inte. Poängen med förhandsvisningen är att användaren ska kunna läsa av kvittot med egna ögon och jämföra mot de fält som fyllts i automatiskt. Går dokumentet inte att rendera visas ikonen som sista utväg, men det är ett undantag och inte utgångsläget.
+
+Förhandsvisningen ligger kvar medan man fyller i fälten, så att man kan kontrollera belopp och datum mot originalet utan att scrolla bort det.
+
+**Under uppladdning visas tydlig status**, och kostnaden sparas inte förrän servern bekräftat. En bild som tyst försvinner är det värsta som kan hända i en app vars hela syfte är att spara kvitton. Misslyckas uppladdningen visas felet med möjlighet att försöka igen, och filen släpps inte ur minnet dessförinnan.
+
+En kostnad utan bilaga är inget fel och ska inte markeras som ett. Underlagsstyrkan hör till projektet, inte till den enskilda kostnaden.
+
+### Kostnadsformulärets ordning
+
+**Bilagan ligger först, inte sist.** Den som just handlat vill fota kvittot och få resten ifyllt, inte skriva fem fält och sedan bifoga. Ordningen är: bilaga, sedan de fält analysen fyllt i, sedan projektkoppling.
+
+När en fil valts läses den av och belopp, datum och leverantör fylls i automatiskt. En bekräftelseruta i `--bg-klart` säger att fälten fyllts i och ska granskas. Rubriken över fälten blir "Granska uppgifterna" i stället för "Fyll i uppgifter" när analysen lyckats.
+
+**Analysen skriver aldrig över något användaren redan skrivit.** Bara tomma fält fylls. Och den blockerar aldrig: misslyckas den, tar för lång tid eller är formatet oläsbart, händer ingenting alls – inget felmeddelande, inga tomma fält som ser trasiga ut. Användaren fyller i som vanligt utan att veta att något försökte hjälpa till.
+
+Under avläsningen visas en diskret statusrad. Den ska gå att ignorera; fälten är redigerbara hela tiden.
+
 ### Progressfältet mot tröskeln
 
 Fältet visar årets belopp i förhållande till tröskeln, men fylls aldrig mer än helt. När tröskeln passerats står fyllningen kvar på full bredd i `--accent` och texten till höger säger att tröskeln är nådd – det överskjutande beloppet har ingen egen betydelse, eftersom allt över gränsen räknas ändå.
+
+### Projektfrågorna
+
+De fyra frågorna avgör om ett avdrag håller, så de får inte kortas bort – men de ska ställas så att man förstår dem utan att kunna skattereglerna.
+
+**Svarsalternativ är klickbara kort med kort text, inte radioknappar.** "Det fanns redan" och "Det är nytt". "Ja", "Nej", "Vet inte". Inga underrubriker i korten.
+
+Underrubriker gör alternativen till definitioner i stället för svar, och en definition läser alltid fel i det enskilda fallet – "Jag fräschade upp eller lagade något som redan var på plats" är inte något man säger om att måla sitt sovrum. Korta alternativ går att skumma på en sekund.
+
+**Varför frågan ställs ligger bakom en informationsknapp vid frågans rubrik.** En liten cirkel som fälls ut vid klick och förklarar vad svaret får för följd: att nytt räknas som grundförbättring utan tidsgräns, att jämförelsen görs mot tillträdesdagen, att en skada man själv orsakat inte ger avdrag.
+
+Klick, aldrig hover. Hover finns inte på telefon, och det är där appen används.
+
+**Fråga 3 visas bara när svaret på fråga 2 är att det fanns förut.** Är åtgärden ny eller en klar förbättring är det en grundförbättring, och skicket vid tillträdet saknar betydelse. Att ändå fråga gör formuläret längre och får användaren att tro att svaret spelar roll. I hälften av fallen halveras formuläret.
+
+**En "Se exempel"-länk vid frågorna** öppnar konkreta fall: målad vägg som var sliten, nytt kök, lagat hål efter egen tavla, bytt blandare som läckte. Det abstrakta blir begripligt genom exempel, inte genom bättre formuleringar – frågan måste vara generisk och blir därför alltid lite trubbig i det enskilda fallet.
+
+Fråga 4 om underlag ligger sist och blockerar aldrig.
 
 ### Registreringsflödet
 
 Att skapa konto är ett eget flöde, inte samma formulär som inloggningen med en extra knapp. Den som trycker "Skapa konto" ska veta vad som händer härnäst.
 
-**Ett steg visas i taget.** Tre steg: kontouppgifter, bostaden, lösenord. Inaktiva steg döljs helt – att rendera alla tre under varandra gör flödet längre än det gamla formuläret och får förloppsindikatorn att säga emot det användaren ser. Värden bevaras mellan stegen, men bara det aktiva steget är synligt.
+**Två steg, och kontot skapas i det första.** Steg 1 är e-post och lösenord tillsammans, steg 2 är bostaden. Kontot skapas när steg 1 skickas.
 
-Förloppet visas som tre prickar över rubriken, med den aktiva i `--accent` och de övriga i `--sand`. Under prickarna en rad som säger "Steg 2 av 3". Inga numrerade noder med linjer emellan – det tar plats utan att säga mer.
+Ordningen är avgörande. Ligger lösenordet sist får den som anger en redan registrerad e-postadress veta det först efter att ha fyllt i hela bostaden – och det är precis den situation som uppstår när någon glömt att de redan har ett konto. Med kontot i steg 1 kommer felet på första knapptrycket, efter två fält.
+
+Vid upptaget konto visas ett tydligt meddelande och en knapp till inloggningen med e-posten förifylld.
+
+**Ett steg visas i taget.** Inaktiva steg döljs helt – att rendera båda under varandra gör flödet längre än ett vanligt formulär och får förloppsindikatorn att säga emot det användaren ser. Värden bevaras mellan stegen, men bara det aktiva steget är synligt.
+
+Förloppet visas som prickar över rubriken, med den aktiva i `--accent` och den andra i `--sand`. Under prickarna en rad som säger "Steg 2 av 2". Inga numrerade noder med linjer emellan – det tar plats utan att säga mer.
 
 Varje steg har en egen rubrik, en rad förklaring, och en framåtknapp. Bakåt ska alltid gå. Det aktuella stegets obligatoriska fält valideras innan man kommer vidare.
 
-**Bostadssteget** har fyra fält: upplåtelseform, tillträdesdatum, adress och ort. Endast de två första är obligatoriska. Storlek och köpeskilling hör hemma i inställningar, inte här – de behövs inte för att komma igång och köpeskillingen är sällan något man har i huvudet.
+**Bostadssteget** har fem fält: upplåtelseform, tillträdesdatum, adress, ort och köpeskilling. Endast de två första är obligatoriska.
+
+Köpeskillingen ligger här trots att den är valfri, eftersom den hör till beskrivningen av bostaden och behövs för vinstberäkningen. Hjälptexten säger var man hittar den – på köpekontraktet eller överlåtelseavtalet – så att den som inte minns beloppet vet att det går att hoppa över och fylla i senare.
+
+Storlek hör hemma i inställningar, inte här. Den används inte i någon beräkning och behövs inte för att komma igång.
+
+**Adressfältet är alltid ett vanligt textfält.** När en adresstjänst är inkopplad visas förslag under fältet medan man skriver, och väljer man ett förslag fylls ort, `place_id` och koordinater i automatiskt. Men fältet får aldrig kräva ett valt förslag: nybyggda adresser, fritidshus och lantliga lägen saknas ofta i registren, och ett fält som bara accepterar träffar låser ute dem. Skriver användaren fritext sparas texten och koordinatfälten lämnas null.
+
+Tjänsten får inte heller blockera. Svarar den inte, eller saknas nyckel, fungerar fältet som vanlig fritext utan felmeddelande – förslagen är en hjälp, inte ett krav.
 
 Upplåtelseform väljs med klickbara kort i rad, inte radioknappar. Korten är lättare att träffa på mobil och tydligare att avläsa. **Två kort: Bostadsrätt och Villa eller radhus.** Fritidshus är skattemässigt en fastighet och behöver inget eget val – ett tredje kort måste ändå mappa till samma värde och skapar en distinktion som modellen inte har.
 

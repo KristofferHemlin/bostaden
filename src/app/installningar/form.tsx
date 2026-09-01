@@ -30,7 +30,7 @@ export function InstallningarForm({
 
       <Falt
         etikett="Köpeskilling"
-        hjalp="Vad du betalade för bostaden. Lämna tomt om du fyller i den senare."
+        hjalp="Vad du betalade för bostaden. Står på köpekontraktet eller överlåtelseavtalet. Lämna tomt om du fyller i den senare."
       >
         <input
           type="text"

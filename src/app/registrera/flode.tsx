@@ -1,9 +1,11 @@
 "use client";
 
 // Registreringsflodet (docs/design.md, Registreringsflodet): ett steg i taget.
-// Tre steg – kontouppgifter, bostaden, losenord. Inaktiva steg doljs HELT; att
-// rendera alla tre under varandra gor flodet langre an det gamla formuläret och
-// far forloppsindikatorn att saga emot det anvandaren ser.
+// TVA steg – konto (e-post + losenord) och bostaden. Kontot skapas nar steg 1
+// skickas; da kommer felet for en redan registrerad adress pa forsta
+// knapptrycket, efter tva falt, i stallet for efter hela bostaden. Inaktiva steg
+// doljs HELT; att rendera bada under varandra gor flodet langre an ett vanligt
+// formular och far forloppsindikatorn att saga emot det anvandaren ser.
 //
 // Alla falt ligger i samma formular sa att varden bevaras nar man bladdrar fram
 // och tillbaka – bara det aktiva stegets div far en display-klass, ovriga far
@@ -13,7 +15,7 @@
 // I lage `endastBostad` (inloggad utan bostad) visas bara bostadssteget.
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   Falt,
   INPUT_KLASS,
@@ -22,6 +24,7 @@ import {
   SEKUNDARKNAPP_KLASS,
 } from "@/components/skarm";
 import { slutforRegistrering, type RegistreringResultat } from "./actions";
+import { AdressFalt } from "./adress-falt";
 
 const START: RegistreringResultat = {};
 const EPOST = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -40,18 +43,31 @@ export function RegistreraFlode({
   const [resultat, action, pagar] = useActionState(slutforRegistrering, START);
 
   const forstaSteg = endastBostad ? 2 : 1;
-  const sistaSteg = endastBostad ? 2 : 3;
+  const sistaSteg = 2;
   const [steg, setSteg] = useState(forstaSteg);
+  // Kontot finns redan: inloggad (endastBostad) eller skapat i steg 1. Da gar
+  // steg 1 bara vidare utan att traffa servern pa nytt.
+  const [kontoRedan, setKontoRedan] = useState(endastBostad);
 
   const [epost, setEpost] = useState("");
+  const [losenord, setLosenord] = useState("");
   const [upplatelseform, setUpplatelseform] = useState("bostadsratt");
   const [tilltradesdatum, setTilltradesdatum] = useState("");
-  const [losenord, setLosenord] = useState("");
   const [lokaltFel, setLokaltFel] = useState<string | null>(null);
 
+  // Steg 1 skickades och kontot skapades pa servern – ga till bostadssteget.
+  useEffect(() => {
+    if (resultat.kontoSkapat) {
+      setKontoRedan(true);
+      setSteg(2);
+      setLokaltFel(null);
+    }
+  }, [resultat]);
+
   function validera(s: number): string | null {
-    if (s === 1 && !EPOST.test(epost.trim())) {
-      return "Fyll i en giltig e-postadress.";
+    if (s === 1) {
+      if (!EPOST.test(epost.trim())) return "Fyll i en giltig e-postadress.";
+      if (losenord.length < 8) return "Lösenordet måste vara minst 8 tecken.";
     }
     if (s === 2) {
       if (upplatelseform !== "bostadsratt" && upplatelseform !== "fastighet") {
@@ -61,9 +77,6 @@ export function RegistreraFlode({
       if (tilltradesdatum < "1970-01-01") {
         return "Tillträdesdatum före 1970 stöds inte.";
       }
-    }
-    if (s === 3 && losenord.length < 8) {
-      return "Lösenordet måste vara minst 8 tecken.";
     }
     return null;
   }
@@ -75,12 +88,17 @@ export function RegistreraFlode({
       setLokaltFel(fel);
       return;
     }
-    if (steg < sistaSteg) {
-      // Enter eller "Nästa" – ga vidare i stallet for att skicka formularet.
+    // Steg 1 nar kontot redan finns: bladdra vidare utan serveranrop.
+    if (steg === 1 && kontoRedan) {
       e.preventDefault();
       setLokaltFel(null);
-      setSteg(steg + 1);
+      setSteg(2);
+      return;
     }
+    // Ovriga fall lamnas till formularets action:
+    //  steg 1 -> skapaKonto, effekten ovan byter till steg 2
+    //  steg 2 -> spara bostaden
+    setLokaltFel(null);
   }
 
   function gaBak() {
@@ -97,13 +115,26 @@ export function RegistreraFlode({
       onSubmit={hanteraSubmit}
       className="flex flex-col gap-5 p-5"
     >
-      {!endastBostad ? <Forlopp steg={steg} av={3} /> : null}
+      {!endastBostad ? <Forlopp steg={steg} av={2} /> : null}
 
-      {/* STEG 1 – KONTOUPPGIFTER */}
+      {/* Vilket steg servern ska hantera. */}
+      <input type="hidden" name="fas" value={steg === 1 ? "konto" : "bostad"} />
+      {/* Kontot skapas i steg 1; authId bars vidare till steg 2 (utan
+          e-postbekraftelse finns ingen session att lasa det ur). */}
+      {resultat.authId ? (
+        <input type="hidden" name="authId" value={resultat.authId} />
+      ) : null}
+      <input
+        type="hidden"
+        name="harSession"
+        value={resultat.harSession ? "1" : "0"}
+      />
+
+      {/* STEG 1 – KONTO */}
       <div className={steg === 1 ? synligKlass : "hidden"}>
         <StegRubrik
-          rubrik="Kontouppgifter"
-          text="Vi börjar med din e-post. Lösenordet väljer du i sista steget."
+          rubrik="Konto"
+          text="E-post och lösenord. Kontot skapas när du går vidare."
         />
         <Falt etikett="E-post">
           <input
@@ -116,13 +147,23 @@ export function RegistreraFlode({
             placeholder="du@exempel.se"
           />
         </Falt>
+        <Falt etikett="Lösenord" hjalp="Minst 8 tecken.">
+          <input
+            type="password"
+            name="losenord"
+            autoComplete="new-password"
+            value={losenord}
+            onChange={(e) => setLosenord(e.target.value)}
+            className={INPUT_KLASS}
+          />
+        </Falt>
       </div>
 
       {/* STEG 2 – BOSTADEN */}
       <div className={steg === 2 ? synligKlass : "hidden"}>
         <StegRubrik
           rubrik="Bostaden"
-          text="Två uppgifter är obligatoriska. Adress och ort kan du hoppa över och fylla i senare."
+          text="Två uppgifter är obligatoriska. Resten kan du hoppa över och fylla i senare."
         />
 
         <div>
@@ -176,50 +217,34 @@ export function RegistreraFlode({
           />
         </Falt>
 
+        <AdressFalt />
+
         <Falt
-          etikett="Adress"
-          hjalp="Valfritt. Används som namn i toppen om inget annat anges."
+          etikett="Köpeskilling"
+          hjalp="Valfritt. Står på köpekontraktet eller överlåtelseavtalet – hoppa över och fyll i senare om du inte minns beloppet."
         >
           <input
             type="text"
-            name="adress"
-            autoComplete="street-address"
+            name="kopeskilling"
+            inputMode="numeric"
             className={INPUT_KLASS}
-            placeholder="t.ex. Kvarnvägen 12 B"
-          />
-        </Falt>
-
-        <Falt etikett="Ort" hjalp="Valfritt.">
-          <input
-            type="text"
-            name="ort"
-            autoComplete="address-level2"
-            className={INPUT_KLASS}
-            placeholder="t.ex. Göteborg"
-          />
-        </Falt>
-      </div>
-
-      {/* STEG 3 – LÖSENORD */}
-      <div className={steg === 3 ? synligKlass : "hidden"}>
-        <StegRubrik
-          rubrik="Lösenord"
-          text="Välj ett lösenord med minst 8 tecken. Sedan är du klar."
-        />
-        <Falt etikett="Lösenord" hjalp="Minst 8 tecken.">
-          <input
-            type="password"
-            name="losenord"
-            autoComplete="new-password"
-            value={losenord}
-            onChange={(e) => setLosenord(e.target.value)}
-            className={INPUT_KLASS}
+            placeholder="t.ex. 3 250 000"
           />
         </Falt>
       </div>
 
       {felText ? (
-        <p className="font-granssnitt text-sm text-accent-mork">{felText}</p>
+        <div className="flex flex-col gap-2">
+          <p className="font-granssnitt text-sm text-accent-mork">{felText}</p>
+          {steg === 1 && resultat.epostUpptagen ? (
+            <Link
+              href={`/login?epost=${encodeURIComponent(resultat.epost ?? epost)}`}
+              className={SEKUNDARKNAPP_KLASS}
+            >
+              Logga in i stället
+            </Link>
+          ) : null}
+        </div>
       ) : null}
       {resultat.meddelande ? (
         <Meddelanderuta>{resultat.meddelande}</Meddelanderuta>
@@ -227,15 +252,15 @@ export function RegistreraFlode({
 
       <div className="flex flex-col gap-2">
         <button type="submit" disabled={pagar} className={PRIMARKNAPP_KLASS}>
-          {steg < sistaSteg
-            ? "Nästa"
-            : pagar
-              ? endastBostad
+          {steg === 1 && !kontoRedan
+            ? pagar
+              ? "Skapar konto…"
+              : "Skapa konto"
+            : steg === 1
+              ? "Nästa"
+              : pagar
                 ? "Sparar…"
-                : "Skapar konto…"
-              : endastBostad
-                ? "Spara bostad"
-                : "Skapa konto"}
+                : "Spara bostad"}
         </button>
 
         {steg > forstaSteg ? (
@@ -261,8 +286,8 @@ function StegRubrik({ rubrik, text }: { rubrik: string; text: string }) {
   );
 }
 
-// Forlopp: tre prickar over rubriken, aktiv i --accent och ovriga i --sand, med
-// en rad "Steg X av Y" under (docs/design.md, Registreringsflodet). Inga
+// Forlopp: prickar over rubriken, aktiv i --accent och den andra i --sand, med
+// en rad "Steg X av 2" under (docs/design.md, Registreringsflodet). Inga
 // numrerade noder med linjer emellan.
 function Forlopp({ steg, av }: { steg: number; av: number }) {
   return (

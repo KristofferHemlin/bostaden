@@ -12,19 +12,23 @@
     "prisma:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "lagring:setup": "node --env-file-if-exists=.env --import tsx scripts/lagring-setup.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.122.0",
     "@prisma/client": "^6.3.0",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
+    "heic-convert": "^2.1.0",
     "next": "^15.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "sharp": "^0.35.4"
   },
   "devDependencies": {
     "@types/node": "^22.10.7",

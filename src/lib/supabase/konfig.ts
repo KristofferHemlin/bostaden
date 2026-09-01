@@ -27,6 +27,16 @@ export function supabaseNyckel(): string | undefined {
   );
 }
 
+/**
+ * Service-role-nyckeln. ENDAST server – aldrig NEXT_PUBLIC_, aldrig i
+ * klientbunten. Anvands av fillagringen (Storage): appen kontrollerar sjalv
+ * behorigheten mot medlemskapet och harleder alltid sokvagen pa servern, sa
+ * RLS pa storage.objects kringgas medvetet.
+ */
+export function supabaseServiceRoleNyckel(): string | undefined {
+  return rensa(process.env.SUPABASE_SERVICE_ROLE_KEY);
+}
+
 /** Bool-check som aldrig kastar – styr om appen kor med inloggning eller slapper igenom. */
 export function supabaseKonfigurerad(): boolean {
   const url = supabaseUrl();
@@ -62,4 +72,31 @@ export function kravSupabaseKonfig(): { url: string; nyckel: string } {
   }
 
   return { url: url as string, nyckel: nyckel as string };
+}
+
+/**
+ * Ger url + service-role-nyckel for fillagringen, eller kastar ett fel som
+ * namnger den variabel som saknas. Skiljd fran kravSupabaseKonfig eftersom
+ * lagringen kraver service-role och inte den publika nyckeln.
+ */
+export function kravLagringskonfig(): {
+  url: string;
+  serviceRoleNyckel: string;
+} {
+  const url = supabaseUrl();
+  const serviceRoleNyckel = supabaseServiceRoleNyckel();
+
+  const saknas: string[] = [];
+  if (!url) saknas.push(URL_NAMN);
+  if (!serviceRoleNyckel) saknas.push("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (saknas.length > 0) {
+    throw new Error(
+      `Fillagringen kan inte nås: ${saknas.join(
+        " och ",
+      )} saknas i miljön. Lägg till variabeln i .env (projektets rot) och kör "npm run lagring:setup" innan bilagor kan laddas upp.`,
+    );
+  }
+
+  return { url: url as string, serviceRoleNyckel: serviceRoleNyckel as string };
 }

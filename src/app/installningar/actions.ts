@@ -1,9 +1,10 @@
 "use server";
 
-// Installningssidan. Har bor de bostadsuppgifter som inte behovs for att komma
-// igang men som ar bra att fylla i nar man vet dem: storlek (boarea i kvm) och
-// kopeskilling (docs/design.md, Registreringsflodet – flyttade hit fran
-// registreringen). Tomt falt nollstaller vardet.
+// Installningssidan. Bostadsuppgifter som inte behovs for att komma igang men
+// som ar bra att fylla i nar man vet dem: storlek (boarea i kvm) och
+// kopeskilling. Kopeskillingen gar att ange redan i registreringens bostadssteg
+// (docs/design.md, Registreringsflodet) – den som hoppade over den dar fyller i
+// den har. Tomt falt nollstaller vardet.
 
 import { revalidatePath } from "next/cache";
 import { oreFranKronor } from "@/lib/format";
