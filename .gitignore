@@ -6,3 +6,6 @@ node_modules
 /coverage
 next-env.d.ts
 *.tsbuildinfo
+
+# Genererad kopia av pdf.js browser-byggena (se scripts/kopiera-pdfjs.mjs)
+/public/pdfjs

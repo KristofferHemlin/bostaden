@@ -7,6 +7,12 @@
 // Grundregel: saknade eller olasbara falt blir null, ALDRIG en gissning. Ett
 // gissat belopp som hamnar i ett deklarationsunderlag ser ratt ut i flera ar och
 // ar det varsta felet appen kan gora.
+//
+// Valuta: all berakning i appen antar svenska kronor. Ett eurobelopp i ett
+// kronfalt ger ett felaktigt underlag utan att nagot ser konstigt ut. Modellen
+// instrueras att returnera totalbelopp som null nar valutan inte ar SEK, och
+// detta backas upp har: sager modellens `valuta`-falt nagot annat an kronor
+// nollas beloppet oavsett vilket tal modellen rakat fylla i.
 
 import { oreFranKronor } from "@/lib/format";
 
@@ -47,8 +53,25 @@ const PLATSHALLARE = new Set([
   "-",
 ]);
 
+// Valutabeteckningar som betyder svenska kronor. Allt annat blockerar beloppet.
+const KRONOR = new Set(["sek", "kr", "kronor", "svenska kronor", "skr", "kr."]);
+
 function normaliserad(text: string): string {
   return text.normalize("NFD").replace(DIAKRITER, "").toLowerCase();
+}
+
+/**
+ * Sant nar modellens `valuta`-falt uttryckligen sager nagot annat an kronor.
+ * Saknas faltet (undefined/null/tomt) gors ingen invandning – da faller appen
+ * tillbaka pa att modellen sjalv ska ha nollat beloppet. Ett `valuta`-falt av
+ * fel typ behandlas konservativt: beloppet blockeras.
+ */
+function valutaBlockerarBelopp(varde: unknown): boolean {
+  if (varde === undefined || varde === null) return false;
+  if (typeof varde !== "string") return true;
+  const v = normaliserad(varde).trim();
+  if (v === "") return false;
+  return !KRONOR.has(v);
 }
 
 /** Plockar ut det forsta JSON-objektet ur ett textsvar, eller undefined. */
@@ -134,9 +157,12 @@ export function tolkaDokumentsvar(text: unknown): Dokumentfalt {
   }
 
   const o = rot as Record<string, unknown>;
+  const belopp = valutaBlockerarBelopp(o.valuta)
+    ? null
+    : tolkaBelopp(o.totalbelopp);
   return {
     datum: tolkaDatum(o.datum),
-    totalbelopp: tolkaBelopp(o.totalbelopp),
+    totalbelopp: belopp,
     leverantor: tolkaLeverantor(o.leverantor),
   };
 }

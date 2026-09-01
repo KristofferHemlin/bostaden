@@ -158,11 +158,27 @@ Ett tomt tillstånd säger aldrig bara att det är tomt. Det består av en tunn 
 
 ### Bilagor
 
-Bilagor visas som en rad små miniatyrer under kostnadens uppgifter, med en `+`-ruta sist för att lägga till fler. Tryck på en miniatyr öppnar filen i helskärm. PDF-filer visas som en ikon med filnamnet under, inte som en tom ruta.
+Bilagor visas som en rad små miniatyrer under kostnadens uppgifter, med en `+`-ruta sist för att lägga till fler. Tryck på en miniatyr öppnar filen i helskärm.
 
-Uppladdning sker via en knapp, inte en dra-och-släpp-yta – appen används i första hand på telefon, där dra-och-släpp inte finns. Knappen öppnar systemets filväljare, som på mobil ger både kamera och bildbibliotek.
+**Miniatyren för en PDF är en dokumentikon med etiketten "PDF" under**, centrerat i rutan. Aldrig filnamnet – ett kassasystemsgenererat namn som `Invoice_IMRInstitu_539370_Aug-2026.pdf` bryts mitt i ett ord, fyller rutan med brus och ser ut som ett fel. Vilken fil det är framgår av förhandsvisningen, som ändå visar den markerade bilagan.
 
-**Förhandsvisning direkt vid val, innan sparning.** Så snart en fil valts renderas dokumentet i full bredd under miniatyrraden, i en ram med tunn kant. Bilder visas som bild, PDF renderas som sin första sida – inte som en ikon.
+Miniatyrerna har samma storlek och hörnradie oavsett filtyp, så raden ser jämn ut när bilder och PDF blandas.
+
+**Webbläsarens filknapp visas aldrig.** Ingen "Välj filer"-knapp med filnamnet i grå text bredvid – den är ostylad, bryter mot resten av formuläret och säger inget om vad som händer.
+
+I stället är sista rutan i miniatyrraden en streckad ruta i samma storlek som miniatyrerna, med ett plustecken och texten "Lägg till". Den är hela uppladdningskontrollen: filinputen ligger dold bakom den. Under raden står en dämpad rad med tillåtna format och storleksgräns.
+
+Rubriken över raden är "Kvitto eller faktura". Uppladdning sker via klick, inte en dra-och-släpp-yta – appen används i första hand på telefon, där dra-och-släpp inte finns. Klicket öppnar systemets filväljare, som på mobil ger både kamera och bildbibliotek.
+
+**Ingen varning när bilaga saknas.** En kostnad utan kvitto är inget fel och ska inte markeras som ett – fri bevisning gäller, och underlagsstyrkan hör till projektet, inte till den enskilda kostnaden. En gul varningsruta om att avdraget kan underkännas är både felaktig och skrämmande, och den drar in en varningsfärg appen inte har.
+
+**Flera bilagor per kostnad.** En faktura och dess betalningsunderlag är två filer, och ett kvitto kan behöva fotograferas i flera delar. Miniatyrraden växer med en ruta per fil och en `+`-ruta sist. Varje miniatyr har ett kryss för att tas bort innan sparning.
+
+**Förhandsvisning direkt vid val, innan sparning.** Så snart en fil valts renderas dokumentet under miniatyrraden i en ram med tunn kant. Bilder visas som bild, PDF renderas som en bild av sin första sida – inte som en ikon.
+
+**PDF renderas som bild, aldrig med webbläsarens inbyggda visare.** En inbäddad PDF-visare tar med sig mörk bakgrund, verktygsrad och nedladdningsknappar, och gör ett litet kvitto till en skärmhög svart ruta. Rendera första sidan till en bild och visa den i samma format som ett fotograferat kvitto.
+
+Förhandsvisningen håller kvittots proportioner och blir aldrig högre än att fälten under är inom räckhåll. Finns flera bilagor visas den markerade.
 
 En ikon med filnamnet duger inte. Poängen med förhandsvisningen är att användaren ska kunna läsa av kvittot med egna ögon och jämföra mot de fält som fyllts i automatiskt. Går dokumentet inte att rendera visas ikonen som sista utväg, men det är ett undantag och inte utgångsläget.
 
@@ -171,6 +187,14 @@ Förhandsvisningen ligger kvar medan man fyller i fälten, så att man kan kontr
 **Under uppladdning visas tydlig status**, och kostnaden sparas inte förrän servern bekräftat. En bild som tyst försvinner är det värsta som kan hända i en app vars hela syfte är att spara kvitton. Misslyckas uppladdningen visas felet med möjlighet att försöka igen, och filen släpps inte ur minnet dessförinnan.
 
 En kostnad utan bilaga är inget fel och ska inte markeras som ett. Underlagsstyrkan hör till projektet, inte till den enskilda kostnaden.
+
+### Datum i kostnadsformuläret
+
+**Ett datumfält som utgångsläge.** Handlar man i butik är kvittots datum och betaldatumet samma dag, och två fält att fylla i är två för många. Fältet heter "Datum" och sätter båda värdena.
+
+Under fältet ligger en länk: "Betalades ett annat datum?". Klick fäller ut betaldatumet som eget fält, förifyllt med samma datum, redigerbart. Det är fakturafallet, och det är minoriteten.
+
+Att tömma betaldatumet gör kostnaden obetald, vilket innebär att den inte räknas in i årssumman. Den möjligheten ligger kvar i det utfällda läget med en förklarande rad.
 
 ### Kostnadsformulärets ordning
 

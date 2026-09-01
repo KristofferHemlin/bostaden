@@ -6,8 +6,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Kor pa alla sidor utom statiska filer och bilder.
+  // Kor pa alla sidor utom statiska filer och bilder. `pdfjs` ar de kopierade
+  // pdf.js-byggena i public/ – de laddas som moduler/worker och far inte
+  // omdirigeras till /login.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|pdfjs/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

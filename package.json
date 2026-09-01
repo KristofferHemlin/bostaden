@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "kopiera-pdfjs": "node scripts/kopiera-pdfjs.mjs",
+    "predev": "npm run kopiera-pdfjs",
     "dev": "next dev",
+    "prebuild": "npm run kopiera-pdfjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -25,6 +28,7 @@
     "@supabase/supabase-js": "^2.112.4",
     "heic-convert": "^2.1.0",
     "next": "^15.1.6",
+    "pdfjs-dist": "^5.6.205",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "server-only": "^0.0.1",

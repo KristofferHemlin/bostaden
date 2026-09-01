@@ -5,11 +5,12 @@ import {
 } from "@/lib/dokumentavlasning/tolkning";
 
 // Dokumentavlasningen (produktspec avsnitt 9) skickar kvittot till en sprakmodell
-// och far tillbaka tre falt: datum, totalbelopp inklusive moms och leverantor.
-// Modellsvaret ar text och ska tolkas DEFENSIVT: saknade eller olasbara falt blir
-// null, aldrig en gissning. Ett gissat belopp som hamnar i ett deklarations-
-// underlag ar det varsta felet appen kan gora – darfor testas parsningen fore
-// implementationen och tacker varje satt svaret kan vara trasigt pa.
+// och far tillbaka falten datum, totalbelopp inklusive moms, valuta och
+// leverantor. Modellsvaret ar text och ska tolkas DEFENSIVT: saknade eller
+// olasbara falt blir null, aldrig en gissning. Ett gissat belopp – eller ett
+// eurobelopp i ett kronfalt – som hamnar i ett deklarationsunderlag ar det
+// varsta felet appen kan gora. Darfor testas parsningen fore implementationen
+// och tacker varje satt svaret kan vara trasigt pa.
 
 describe("tolkaDokumentsvar: rent modellsvar", () => {
   it("tolkar ett rent JSON-objekt med alla tre falt", () => {
@@ -164,6 +165,60 @@ describe("tolkaDokumentsvar: totalbelopp (heltal oren, inklusive moms)", () => {
 
   it("avrundar oren korrekt vid flyttalsfel", () => {
     expect(tolkaDokumentsvar('{"totalbelopp":19.99}').totalbelopp).toBe(1999);
+  });
+});
+
+describe("tolkaDokumentsvar: valuta – bara kronbelopp slapps igenom", () => {
+  it("valuta SEK ger beloppet i oren", () => {
+    expect(
+      tolkaDokumentsvar('{"totalbelopp":1020.95,"valuta":"SEK"}').totalbelopp,
+    ).toBe(102095);
+  });
+
+  it("valuta 'kr' godtas ocksa", () => {
+    expect(
+      tolkaDokumentsvar('{"totalbelopp":499,"valuta":"kr"}').totalbelopp,
+    ).toBe(49900);
+  });
+
+  it("valuta EUR nollar beloppet aven om modellen fyllt i ett tal", () => {
+    expect(
+      tolkaDokumentsvar('{"totalbelopp":1020.95,"valuta":"EUR"}').totalbelopp,
+    ).toBe(null);
+  });
+
+  it("valuta USD nollar beloppet", () => {
+    expect(
+      tolkaDokumentsvar('{"totalbelopp":50,"valuta":"USD"}').totalbelopp,
+    ).toBe(null);
+  });
+
+  it("euro-kvitto: datum och leverantor tolkas anda, bara beloppet nollas", () => {
+    expect(
+      tolkaDokumentsvar(
+        '{"datum":"2026-08-22","totalbelopp":19.90,"valuta":"EUR","leverantor":"Lidl"}',
+      ),
+    ).toEqual({
+      datum: "2026-08-22",
+      totalbelopp: null,
+      leverantor: "Lidl",
+    });
+  });
+
+  it("modellen foljde instruktionen och nollade beloppet sjalv", () => {
+    expect(
+      tolkaDokumentsvar('{"totalbelopp":null,"valuta":"EUR"}').totalbelopp,
+    ).toBe(null);
+  });
+
+  it("valuta som saknas gor ingen invandning – beloppet slapps igenom", () => {
+    expect(tolkaDokumentsvar('{"totalbelopp":499}').totalbelopp).toBe(49900);
+  });
+
+  it("valuta av fel typ behandlas konservativt och nollar beloppet", () => {
+    expect(
+      tolkaDokumentsvar('{"totalbelopp":499,"valuta":978}').totalbelopp,
+    ).toBe(null);
   });
 });
 

@@ -22,15 +22,20 @@ import {
   type Dokumentfalt,
 } from "./tolkning";
 
-const MODELL = "claude-opus-5";
+// Att lasa tre falt ur ett kvitto kraver inte den storsta modellen och kostnaden
+// skiljer en storleksordning. Racker inte traffsakerheten, ga upp till
+// "claude-sonnet-5" (produktspec avsnitt 9, "Modellvalet ska sta i proportion").
+const MODELL = "claude-haiku-4-5-20251001";
 
 const INSTRUKTION = [
   "Du laser ett kvitto eller en faktura for kostnader nedlagda pa en bostad.",
   "Svara med ENBART ett JSON-objekt – ingen text runt om, inga kodstaket – med",
-  'exakt dessa nycklar: "datum", "totalbelopp", "leverantor".',
+  'exakt dessa nycklar: "datum", "totalbelopp", "valuta", "leverantor".',
   '- "datum": kvittots eller fakturans datum som "YYYY-MM-DD".',
+  '- "valuta": valutakoden dokumentet ar i, t.ex. "SEK" eller "EUR".',
   '- "totalbelopp": hela summan att betala inklusive moms, i kronor som ett tal',
-  "  med decimaler, t.ex. 1020.95.",
+  "  med decimaler, t.ex. 1020.95. Returnera null om dokumentet INTE ar i svenska",
+  "  kronor (SEK) – appen kan bara rakna pa kronbelopp.",
   '- "leverantor": butikens eller foretagets namn.',
   "Satt ett falt till null om det inte gar att lasa sakert ur dokumentet.",
   "Gissa aldrig – ett gissat varde ar varre an null.",
@@ -82,7 +87,6 @@ export async function analyseraDokument(fil: File): Promise<Dokumentfalt> {
     const svar = await klient.messages.create({
       model: MODELL,
       max_tokens: 512,
-      output_config: { effort: "low" },
       system: INSTRUKTION,
       messages: [
         {
