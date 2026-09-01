@@ -3,9 +3,10 @@
 // oppnas och tas bort. Raduppdelning och entreprenorsgrenen hor till senare
 // steg i etapp B.
 
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Bilagor } from "./bilagor";
-import { Skarm } from "@/components/skarm";
+import { SEKUNDARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import { harledKostnadstillstand } from "@/doman/berakningar";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
@@ -98,6 +99,15 @@ export default async function KostnadSida({
       </section>
 
       <Bilagor kostnadId={kostnad.id} bilagor={bilagor} />
+
+      <div className="border-t border-linje p-4">
+        <Link
+          href={`/kostnad/${kostnad.id}/redigera`}
+          className={SEKUNDARKNAPP_KLASS}
+        >
+          Ändra uppgifter
+        </Link>
+      </div>
     </Skarm>
   );
 }

@@ -125,6 +125,8 @@ Ett byggsteg är en commit. Det är den enda återställningspunkten när en ses
 
 Testdata seedas från ett riktigt kvitto med både projektmaterial och en privat artikel – se specen, avsnitt 11. Bygg aldrig mot påhittade belopp; de döljer formateringsbuggar och gör skärmarna omöjliga att bedöma.
 
+Ändra aldrig filer utanför projektkatalogen. Ser du något som borde rensas utanför den, påpeka det och låt användaren göra det.
+
 ---
 
 ## Arbetssätt

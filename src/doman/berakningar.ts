@@ -188,6 +188,44 @@ export function harledUnderlagsstyrka(projekt: {
   return projekt.baslinjepost_id ? "dokumenterat" : "svagt";
 }
 
+/**
+ * En "enkel" kostnad ar den form steg 5 skapar: exakt EN rad pa hela
+ * totalbeloppet med hogst en projektfordelning (andel 1, ej privat). Bara enkla
+ * kostnader kan andra belopp och projektkoppling i det vanliga
+ * redigeringsformularet – en uppdelad kostnad andras per rad, vilket hor till ett
+ * senare steg (produktspec 6.4: "dela upp ett kvitto som lagts helt pa ett
+ * projekt"). Datum och leverantor gar alltid att andra, aven pa en uppdelad.
+ */
+export function arEnkelKostnad(kostnad: Kostnad): boolean {
+  if (kostnad.rader.length !== 1) return false;
+  const rad = kostnad.rader[0];
+  if (rad.belopp !== kostnad.totalbelopp) return false;
+  if (rad.fordelningar.length === 0) return true;
+  if (rad.fordelningar.length > 1) return false;
+  const f = rad.fordelningar[0];
+  return !f.privat && f.projekt_id !== null && f.andel === 1;
+}
+
+/**
+ * De kostnader vars rader har en icke-privat fordelning (andel > 0) till
+ * projektet. Ett projekt med minst en sadan kostnad far inte tas bort forran
+ * kostnaderna flyttats eller kopplats loss – annars skulle borttagningen tyst
+ * avklassificera dem via cascaden pa radfordelning. Granssnittet visar listan i
+ * stallet for att bara neka.
+ */
+export function kostnaderKoppladeTillProjekt(
+  kostnader: Kostnad[],
+  projektId: string,
+): Kostnad[] {
+  return kostnader.filter((k) =>
+    k.rader.some((r) =>
+      r.fordelningar.some(
+        (f) => !f.privat && f.projekt_id === projektId && f.andel > 0,
+      ),
+    ),
+  );
+}
+
 export interface Kostnadstillstand {
   obetald: boolean;
   okopplad: boolean;

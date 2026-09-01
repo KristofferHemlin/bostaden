@@ -196,6 +196,53 @@ export async function taBortBilaga(
   return { ok: true };
 }
 
+/**
+ * Tar bort SAMTLIGA bilagor (fil + ev. miniatyr + databasrad) for en kostnad.
+ * Anvands nar kostnaden raderas helt – det ar en uttrycklig begaran fran
+ * anvandaren (produktspec 12: bilagor raderas aldrig automatiskt, bara pa
+ * uttrycklig begaran, och da tas bade fil och rad bort). Sokvagen kommer aldrig
+ * fran klienten: bilagorna slas upp ur kostnadens id efter behorighetskontroll
+ * mot medlemskapet. Kostnadsraden i sig tas bort av anroparen (cascaden stadar
+ * kvarvarande bilaga-rader), men vi rensar Storage forst sa att inga
+ * foraldralosa filer blir kvar.
+ */
+export async function taBortAllaBilagorForKostnad(
+  kostnadId: string,
+  anvandareId: string,
+): Promise<{ ok: boolean; fel?: string }> {
+  const kostnad = await prisma.kostnad.findUnique({
+    where: { id: kostnadId },
+    select: {
+      bostad_id: true,
+      bilagor: {
+        select: { id: true, lagringsnyckel: true, miniatyrnyckel: true },
+      },
+    },
+  });
+  if (!kostnad) return { ok: false, fel: "Kostnaden hittades inte." };
+
+  const medlem = await prisma.medlemskap.findFirst({
+    where: { anvandare_id: anvandareId, bostad_id: kostnad.bostad_id },
+    select: { id: true },
+  });
+  if (!medlem) return { ok: false, fel: "Kostnaden hittades inte." };
+
+  if (kostnad.bilagor.length === 0) return { ok: true };
+
+  const nycklar = kostnad.bilagor.flatMap((b) =>
+    b.miniatyrnyckel ? [b.lagringsnyckel, b.miniatyrnyckel] : [b.lagringsnyckel],
+  );
+  const { error } = await bilagelager().remove(nycklar);
+  if (error) {
+    return { ok: false, fel: `Kunde inte ta bort bilagorna: ${error.message}` };
+  }
+
+  await prisma.bilaga.deleteMany({
+    where: { id: { in: kostnad.bilagor.map((b) => b.id) } },
+  });
+  return { ok: true };
+}
+
 export interface Bilagevy {
   id: string;
   filnamn: string;

@@ -3,7 +3,12 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Listrad, PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
+import {
+  Listrad,
+  PRIMARKNAPP_KLASS,
+  SEKUNDARKNAPP_KLASS,
+  Skarm,
+} from "@/components/skarm";
 import { bidragForKostnad, harledUnderlagsstyrka } from "@/doman/berakningar";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
@@ -111,12 +116,18 @@ export default async function ProjektSida({
             })}
           </div>
         )}
-        <div className="p-4">
+        <div className="flex flex-col gap-2 p-4">
           <Link
             href={`/kostnad/nytt?projekt=${id}`}
             className={PRIMARKNAPP_KLASS}
           >
             Lägg till kostnad
+          </Link>
+          <Link
+            href={`/projekt/${id}/redigera`}
+            className={SEKUNDARKNAPP_KLASS}
+          >
+            Ändra projektet
           </Link>
         </div>
       </section>
