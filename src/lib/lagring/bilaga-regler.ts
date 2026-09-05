@@ -11,6 +11,12 @@
 
 export const MAX_BILAGA_BYTES = 10 * 1024 * 1024;
 
+// Bucketnamnet bor har, inte i den server-only klienten: webblasaren laddar upp
+// bilagan DIREKT till Storage via en signerad URL (filen far aldrig passera en
+// serverless-funktion – Vercels 4,5 MB-grans pa request-body), sa bade
+// klientkoden och serverkoden maste kunna dra namnet fran samma stalle.
+export const BILAGOR_BUCKET = "bilagor";
+
 export interface Bilageformat {
   /** Normaliserad MIME-typ som filen lagras med. */
   mimetyp: string;
@@ -145,4 +151,46 @@ export function lagringsnyckel(
 /** Miniatyren ligger bredvid originalet under samma kostnad, alltid som .jpg. */
 export function miniatyrnyckel(originalnyckel: string): string {
   return `${originalnyckel.replace(/\.[^./]+$/, "")}.miniatyr.jpg`;
+}
+
+// Ett slumpat filnamn: en UUID plus andelse. Nar webblasaren laddat upp en fil
+// mot en signerad URL rapporterar den in vilken nyckel den anvande – servern
+// litar aldrig pa den rakt av utan kraver att den ligger under ratt prefix och
+// slutar pa exakt detta monster. Ingen "..", ingen annan bostad, ingen annan
+// kostnad.
+const SLUMPAT_FILNAMN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z0-9]+$/;
+
+/**
+ * Sant bara om nyckeln ligger under exakt {bostad_id}/{kostnad_id}/ och slutar
+ * pa ett slumpat filnamn – dvs. ser ut precis som en nyckel servern sjalv skulle
+ * ha delat ut. Anvands nar klienten rapporterar in vad den laddat upp.
+ */
+export function nyckelHorTillKostnad(
+  nyckel: string,
+  bostadId: string,
+  kostnadId: string,
+): boolean {
+  const prefix = `${bostadId}/${kostnadId}/`;
+  return (
+    nyckel.startsWith(prefix) &&
+    SLUMPAT_FILNAMN.test(nyckel.slice(prefix.length))
+  );
+}
+
+/**
+ * Kan bilagan visas som en bild i granssnittet? JPG/PNG alltid; HEIC bara nar en
+ * JPG-miniatyr faktiskt genererades (miniatyrgenereringen far misslyckas utan
+ * att blockera uppladdningen – da visas dokumentikonen i stallet); PDF aldrig
+ * (den renderas separat med pdf.js).
+ */
+export function arVisningsbarBild(
+  mimetyp: string,
+  harMiniatyr: boolean,
+): boolean {
+  const format = kannIgenFormat(mimetyp, "");
+  if (!format) return false;
+  if (format.andelse === "pdf") return false;
+  if (format.kraverMiniatyr) return harMiniatyr;
+  return format.mimetyp.startsWith("image/");
 }

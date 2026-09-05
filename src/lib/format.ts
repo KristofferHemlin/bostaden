@@ -16,6 +16,14 @@ export function formateraKronor(oren: number): string {
 }
 
 /**
+ * Som formateraKronor men tal null – ett UTKAST har inget belopp an. Visas som
+ * ett tankstreck, aldrig "0 kr" (det vore ett riktigt belopp).
+ */
+export function formateraKronorEllerStreck(oren: number | null): string {
+  return oren === null ? "–" : formateraKronor(oren);
+}
+
+/**
  * Tolkar en kronsträng fran ett inmatningsfalt till heltal oren. Tar bade
  * "1 020,95", "1020.95" och "1020" – tusentalsavgransare (mellanslag, hart
  * mellanslag, punkt som grupp) tas bort, komma eller punkt som decimaltecken.

@@ -9,6 +9,13 @@
 // leverantorer och datum, ekonomiska handlingar som aldrig far ligga pa en
 // publik URL. Atkomst sker via korta signerade URL:er som servern skapar efter
 // behorighetskontroll mot medlemskapet (produktspec avsnitt 12).
+//
+// fileSizeLimit ar inte bara kosmetik: sedan bilagorna laddas upp DIREKT fran
+// webblasaren (via signerade URL:er, forbi alla serverless-funktioner) ar
+// bucketens egen 10 MB-grans den sista sparren som Storage sjalv upprätthaller,
+// oavsett vad klienten pastar. Samma bucket rymmer aven de temporara
+// avlasningsfilerna under prefixet `avlas/` (raderas efter analysen; en daglig
+// stad-route tar rester – se src/app/api/stada-avlas/route.ts).
 
 import { createClient } from "@supabase/supabase-js";
 

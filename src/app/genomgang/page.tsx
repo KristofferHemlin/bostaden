@@ -39,8 +39,11 @@ export default async function GenomgangSida() {
   ]);
   const { bostadsnamn, andrarad } = bostadHeader(bostad);
 
-  const kvittoDatum = (k: (typeof kostnadRader)[number]) =>
-    isoDatum(k.betaldatum ?? k.dokumentdatum);
+  const kvittoDatum = (k: (typeof kostnadRader)[number]) => {
+    // Ett utkast saknar bade betaldatum och dokumentdatum.
+    const d = k.betaldatum ?? k.dokumentdatum;
+    return d ? isoDatum(d) : null;
+  };
 
   // Oklassificerade: varken i en hog eller i "Raknas inte".
   const oklassificerade = kostnadRader

@@ -1,9 +1,9 @@
 "use server";
 
-// Bilagor pa en befintlig kostnad: lagg till och ta bort. Uppladdningen
-// bekraftas mot Storage innan resultatet returneras (produktspec 12) – vid fel
-// slapper klienten aldrig filen ur input-faltet. Radering sker bara pa
-// uttrycklig begaran, aldrig automatiskt.
+// Bilagor pa en befintlig kostnad: tas bort har, laggs till direkt fran
+// webblasaren mot Storage (se src/app/kostnad/bilaga-actions.ts – filen passerar
+// aldrig en serverless-funktion). Radering sker bara pa uttrycklig begaran,
+// aldrig automatiskt.
 //
 // Har ligger ocksa redigering och borttagning av sjalva kostnaden (produktspec
 // 6.4). Leverantor och datum gar alltid att andra; belopp och projektkoppling
@@ -16,7 +16,6 @@ import { redirect } from "next/navigation";
 import { arEnkelKostnad } from "@/doman/berakningar";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import {
-  laddaUppKostnadsbilaga,
   taBortAllaBilagorForKostnad,
   taBortBilaga,
 } from "@/lib/lagring/bilagor";
@@ -60,6 +59,10 @@ export async function redigeraKostnad(
     include: { rader: { include: { fordelningar: true } } },
   });
   if (!kostnad) return { fel: "Kostnaden hittades inte." };
+  if (kostnad.totalbelopp === null) {
+    // Ett utkast kompletteras i inmatningsformularet, inte har.
+    return { fel: "Kvittot är fortfarande ett utkast. Komplettera det först." };
+  }
 
   const leverantor = String(formData.get("leverantor") ?? "").trim();
   const dokumentdatum = String(formData.get("dokumentdatum") ?? "").trim();
@@ -160,6 +163,9 @@ export async function delaUppKostnad(
     },
   });
   if (!kostnad) return { fel: "Kostnaden hittades inte." };
+  if (kostnad.totalbelopp === null) {
+    return { fel: "Kvittot är fortfarande ett utkast. Komplettera det först." };
+  }
 
   const artiklar = formData.getAll("artikel").map(String);
   const belopp = formData.getAll("belopp").map(String);
@@ -268,39 +274,13 @@ export async function taBortKostnad(
   redirect("/kostnad");
 }
 
-export async function laddaUppBilagor(
-  _foreg: BilagaResultat,
-  formData: FormData,
-): Promise<BilagaResultat> {
-  const { bostadId } = await kravBostad();
-  const kostnadId = String(formData.get("kostnad_id") ?? "");
-
-  const kostnad = await prisma.kostnad.findFirst({
-    where: { id: kostnadId, bostad_id: bostadId },
-    select: { id: true },
-  });
-  if (!kostnad) return { fel: "Kostnaden hittades inte." };
-
-  const filer = formData
-    .getAll("bilagor")
-    .filter((f): f is File => f instanceof File && f.size > 0);
-  if (filer.length === 0) return { fel: "Välj minst en fil att ladda upp." };
-
-  for (const fil of filer) {
-    const resultat = await laddaUppKostnadsbilaga({
-      bostadId,
-      kostnadId,
-      fil,
-    });
-    if (!resultat.ok) {
-      return {
-        fel: `${fil.name || "Filen"}: ${resultat.fel ?? "uppladdningen misslyckades."}`,
-      };
-    }
-  }
-
+// Uppladdning av bilagor till en befintlig kostnad gors nu direkt fran
+// webblasaren mot Storage via de signerade URL:erna i
+// src/app/kostnad/bilaga-actions.ts. Efter bekraftad uppladdning kallar
+// klienten revalideraKostnadssida for att ladda om bilageraden.
+export async function revalideraKostnadssida(kostnadId: string): Promise<void> {
+  await kravBostad();
   revalidatePath(`/kostnad/${kostnadId}`);
-  return { ok: true };
 }
 
 export async function taBortBilagaAction(

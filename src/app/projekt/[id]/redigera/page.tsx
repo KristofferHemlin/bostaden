@@ -47,8 +47,9 @@ export default async function RedigeraProjektSida({
     const original = kostnadRader.find((x) => x.id === k.id)!;
     return {
       id: k.id,
-      leverantor: original.leverantor,
-      belopp: formateraKronor(original.totalbelopp),
+      // Ett utkast kan inte vara kopplat (det har inga rader) – falten ar satta.
+      leverantor: original.leverantor ?? "",
+      belopp: formateraKronor(original.totalbelopp ?? 0),
     };
   });
 

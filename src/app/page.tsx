@@ -180,14 +180,24 @@ export default async function Oversikt() {
           <div className="divide-y divide-linje border-b border-linje">
             {senasteKvitton.map((k) => {
               const notering = k.anteckning?.trim();
-              const datum = isoDatum(k.betaldatum ?? k.dokumentdatum);
+              // Ett utkast: kvittot valt men uppgifterna inte ifyllda an.
+              const utkast = k.totalbelopp === null;
+              const datumRad = k.betaldatum ?? k.dokumentdatum;
+              const datum = datumRad ? isoDatum(datumRad) : null;
               return (
                 <Listrad
                   key={k.id}
-                  href={`/kostnad/${k.id}`}
-                  namn={notering || k.leverantor}
-                  status={notering ? `${k.leverantor} · ${datum}` : datum}
-                  belopp={formateraKronor(k.totalbelopp)}
+                  href={utkast ? `/kostnad/nytt?utkast=${k.id}` : `/kostnad/${k.id}`}
+                  namn={notering || k.leverantor || "Utkast"}
+                  status={
+                    utkast
+                      ? "Utkast · komplettera uppgifterna"
+                      : notering
+                        ? `${k.leverantor} · ${datum ?? ""}`
+                        : (datum ?? "")
+                  }
+                  atgard={utkast}
+                  belopp={utkast ? undefined : formateraKronor(k.totalbelopp ?? 0)}
                 />
               );
             })}

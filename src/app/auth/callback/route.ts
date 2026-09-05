@@ -10,13 +10,23 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const nasta = searchParams.get("next") ?? "/";
 
+  // Bakom Vercels proxy ar request.nextUrl.origin deployets interna adress
+  // (t.ex. den slumpade *.vercel.app-hosten), inte domanen anvandaren surfar
+  // pa. x-forwarded-host + x-forwarded-proto ger den publika adressen. Lokalt
+  // saknas rubrikerna och origin ar redan ratt. `nasta` tvingas till en
+  // relativ sokvag sa att en manipulerad ?next= inte kan omdirigera bort.
+  const proxad = request.headers.get("x-forwarded-host");
+  const protokoll = request.headers.get("x-forwarded-proto") ?? "https";
+  const bas = proxad ? `${protokoll}://${proxad}` : origin;
+  const mal = nasta.startsWith("/") && !nasta.startsWith("//") ? nasta : "/";
+
   if (code) {
     const supabase = await skapaServerklient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}${nasta}`);
+      return NextResponse.redirect(`${bas}${mal}`);
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?fel=lank`);
+  return NextResponse.redirect(`${bas}/login?fel=lank`);
 }

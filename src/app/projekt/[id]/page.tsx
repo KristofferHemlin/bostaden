@@ -117,7 +117,7 @@ export default async function ProjektSida({
               return (
                 <Listrad
                   key={k.id}
-                  namn={original.leverantor}
+                  namn={original.leverantor ?? "Kvitto"}
                   status={
                     k.betaldatum
                       ? `Betald ${k.betaldatum}`

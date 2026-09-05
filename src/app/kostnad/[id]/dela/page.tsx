@@ -4,7 +4,7 @@
 // radernas belopp maste vara lika med totalbeloppet; det valideras vid sparning.
 // En redan uppdelad kostnad oppnas har med sina befintliga rader ifyllda.
 
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { DelaUppForm } from "./form";
 import { Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
@@ -44,6 +44,8 @@ export default async function DelaUppSida({
     }),
   ]);
   if (!kostnad) notFound();
+  // Ett utkast har inga rader att dela – det kompletteras i inmatningsformularet.
+  if (kostnad.totalbelopp === null) redirect(`/kostnad/nytt?utkast=${id}`);
 
   const { bostadsnamn, andrarad } = bostadHeader(bostad);
 
@@ -72,7 +74,7 @@ export default async function DelaUppSida({
       bostadsnamn={bostadsnamn}
       andrarad={andrarad}
       rubrik="Dela upp kvittot"
-      bakLank={{ href: `/kostnad/${id}`, text: kostnad.leverantor }}
+      bakLank={{ href: `/kostnad/${id}`, text: kostnad.leverantor ?? "Kvitto" }}
     >
       <DelaUppForm
         kostnadId={id}

@@ -14,7 +14,7 @@
 
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
-import { kannIgenFormat } from "@/lib/lagring/bilaga-regler";
+import type { Bilageformat } from "@/lib/lagring/bilaga-regler";
 import { heicTillJpegMiniatyr } from "@/lib/lagring/miniatyr";
 import {
   TOMT_DOKUMENTFALT,
@@ -44,19 +44,21 @@ const INSTRUKTION = [
 type Bildmediatyp = "image/jpeg" | "image/png";
 
 /**
- * Skickar en vald fil till modellen och returnerar datum, totalbelopp (oren,
- * inklusive moms) och leverantor. Kastar aldrig – vid varje fel returneras
- * TOMT_DOKUMENTFALT.
+ * Skickar ett redan inlast dokument till modellen och returnerar datum,
+ * totalbelopp (oren, inklusive moms) och leverantor. Kastar aldrig – vid varje
+ * fel returneras TOMT_DOKUMENTFALT.
+ *
+ * Bufferten kommer fran Storage: webblasaren laddar upp filen dit direkt (den
+ * passerar aldrig en serverless-funktion) och servern laser ner den for analys.
  */
-export async function analyseraDokument(fil: File): Promise<Dokumentfalt> {
+export async function analyseraDokumentbuffert(
+  original: Buffer,
+  format: Bilageformat,
+): Promise<Dokumentfalt> {
   try {
     const nyckel = process.env.ANTHROPIC_API_KEY;
     if (!nyckel) return { ...TOMT_DOKUMENTFALT };
 
-    const format = kannIgenFormat(fil.type, fil.name);
-    if (!format) return { ...TOMT_DOKUMENTFALT };
-
-    const original = Buffer.from(await fil.arrayBuffer());
     const klient = new Anthropic({ apiKey: nyckel });
 
     const dokumentblock: Anthropic.ContentBlockParam =

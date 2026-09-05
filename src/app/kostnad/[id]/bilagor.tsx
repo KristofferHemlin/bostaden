@@ -1,20 +1,22 @@
 "use client";
 
 // Bilageraden pa en kostnad (docs/design.md, "Bilagor"): en rad sma miniatyrer
-// med en +-ruta sist. Tryck pa en miniatyr oppnar filen i helskarm. PDF visas
-// som en ikon med filnamnet under, inte som en tom ruta.
+// med en +-ruta sist. Tryck pa en miniatyr oppnar filen i helskarm. PDF – och
+// HEIC vars miniatyr inte gick att generera – visas som en ikon med filnamnet
+// under, inte som en tom ruta.
 //
-// Uppladdning sker via knappen, inte en dra-och-slapp-yta. Under uppladdning
-// visas tydlig status; misslyckas den visas felet med mojlighet att forsoka
-// igen och filen slapps inte ur input-faltet. Radering kraver ett extra
+// Uppladdningen gar DIREKT fran webblasaren till Supabase Storage via en
+// signerad URL (filen passerar aldrig en serverless-funktion). Under
+// uppladdningen visas tydlig status; misslyckas den visas felet med mojlighet
+// att forsoka igen och filen slapps inte ur minnet. Radering kraver ett extra
 // bekraftelsesteg – den ar permanent.
 
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
-import {
-  laddaUppBilagor,
-  taBortBilagaAction,
-  type BilagaResultat,
-} from "./actions";
+import { revalideraKostnadssida, taBortBilagaAction } from "./actions";
+import type { BilagaResultat } from "./actions";
+import { valideraBilaga } from "@/lib/lagring/bilaga-regler";
+import { laddaUppKostnadsbilaga } from "@/lib/lagring/bilaga-klient";
 import type { Bilagevy } from "@/lib/lagring/bilagor";
 
 const START: BilagaResultat = {};
@@ -32,24 +34,70 @@ export function Bilagor({
   kostnadId: string;
   bilagor: Bilagevy[];
 }) {
-  const [uppladd, laddaUpp, laddarUpp] = useActionState(laddaUppBilagor, START);
+  const router = useRouter();
+
+  // Filerna lever i state tills servern bekraftat varje uppladdning – en tyst
+  // misslyckad uppladdning ar det varsta som kan handa i den har appen.
+  const [koa, setKoa] = useState<File[]>([]);
+  const [laddarUpp, setLaddarUpp] = useState(false);
+  const [uppladdningsfel, setUppladdningsfel] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const [radera, raderaAction, raderar] = useActionState(
     taBortBilagaAction,
     START,
   );
   const [bekraftaId, setBekraftaId] = useState<string | null>(null);
 
-  const formRef = useRef<HTMLFormElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Bekraftad uppladdning: rensa faltet. Vid fel behalls filen kvar.
-  useEffect(() => {
-    if (uppladd.ok && inputRef.current) inputRef.current.value = "";
-  }, [uppladd]);
-
   useEffect(() => {
     if (radera.ok) setBekraftaId(null);
   }, [radera]);
+
+  async function laddaUpp(filer: File[]) {
+    if (filer.length === 0) return;
+    setLaddarUpp(true);
+    setUppladdningsfel(null);
+    setKoa(filer);
+
+    const kvar = [...filer];
+    while (kvar.length > 0) {
+      const fil = kvar[0];
+      const resultat = await laddaUppKostnadsbilaga(kostnadId, fil);
+      if (!resultat.ok) {
+        setUppladdningsfel(
+          `${fil.name || "Filen"}: ${resultat.fel ?? "uppladdningen misslyckades."}`,
+        );
+        setKoa(kvar); // det som aterstar ligger kvar for nytt forsok
+        setLaddarUpp(false);
+        return;
+      }
+      kvar.shift();
+      setKoa([...kvar]);
+    }
+
+    setLaddarUpp(false);
+    if (inputRef.current) inputRef.current.value = "";
+    await revalideraKostnadssida(kostnadId);
+    router.refresh();
+  }
+
+  function valjFiler(lista: FileList | null) {
+    if (!lista || lista.length === 0) return;
+    const filer = Array.from(lista);
+    // Samma grind som servern, direkt vid valet.
+    for (const fil of filer) {
+      const grind = valideraBilaga({
+        mimetyp: fil.type,
+        storlek: fil.size,
+        filnamn: fil.name,
+      });
+      if (!grind.ok) {
+        setUppladdningsfel(`${fil.name || "Filen"}: ${grind.fel}`);
+        return;
+      }
+    }
+    void laddaUpp(filer);
+  }
 
   return (
     <div className="p-4">
@@ -61,25 +109,25 @@ export function Bilagor({
         {bilagor.map((b) => (
           <div key={b.id} className="flex w-16 flex-col items-center gap-1">
             <a
-              href={`/bilaga/${b.id}?variant=${b.arPdf ? "original" : "visning"}`}
+              href={`/bilaga/${b.id}?variant=${b.arBild ? "visning" : "original"}`}
               target="_blank"
               rel="noopener noreferrer"
               className={`${RUTA} overflow-hidden transition-colors hover:bg-sand`}
               title={b.filnamn}
             >
-              {b.arPdf ? (
-                <>
-                  <PdfIkon />
-                  <span className="mt-1 line-clamp-2 px-1 font-granssnitt text-[10px] leading-tight text-text-sekundar">
-                    {b.filnamn}
-                  </span>
-                </>
-              ) : (
+              {b.arBild ? (
                 <img
                   src={`/bilaga/${b.id}?variant=visning`}
                   alt={b.filnamn}
                   className="h-full w-full object-cover"
                 />
+              ) : (
+                <>
+                  <DokumentIkon />
+                  <span className="mt-1 line-clamp-2 px-1 font-granssnitt text-[10px] leading-tight text-text-sekundar">
+                    {b.filnamn}
+                  </span>
+                </>
               )}
             </a>
 
@@ -117,50 +165,46 @@ export function Bilagor({
           </div>
         ))}
 
-        <form ref={formRef} action={laddaUpp} className="w-16">
-          <input type="hidden" name="kostnad_id" value={kostnadId} />
-          <label
-            className={`${RUTA} cursor-pointer text-text-sekundar transition-colors hover:bg-sand`}
-          >
-            <input
-              ref={inputRef}
-              type="file"
-              name="bilagor"
-              multiple
-              accept={ACCEPT}
-              className="sr-only"
-              onChange={(e) => {
-                if (e.target.files && e.target.files.length > 0) {
-                  formRef.current?.requestSubmit();
-                }
-              }}
-            />
-            <span aria-hidden className="text-xl leading-none">
-              +
-            </span>
-            <span className="mt-0.5 font-granssnitt text-[10px]">
-              {laddarUpp ? "Laddar upp…" : "Lägg till"}
-            </span>
-          </label>
-        </form>
+        <label
+          className={`${RUTA} cursor-pointer text-text-sekundar transition-colors hover:bg-sand`}
+        >
+          <input
+            ref={inputRef}
+            type="file"
+            multiple
+            accept={ACCEPT}
+            className="sr-only"
+            disabled={laddarUpp}
+            onChange={(e) => valjFiler(e.target.files)}
+          />
+          <span aria-hidden className="text-xl leading-none">
+            +
+          </span>
+          <span className="mt-0.5 font-granssnitt text-[10px]">
+            {laddarUpp ? "Laddar upp…" : "Lägg till"}
+          </span>
+        </label>
       </div>
 
       {laddarUpp ? (
         <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
-          Laddar upp – kostnaden sparas inte förrän servern bekräftat.
+          Laddar upp{koa.length > 1 ? ` (${koa.length} kvar)` : ""} – bilagan
+          sparas inte förrän servern bekräftat.
         </p>
       ) : null}
 
-      {uppladd.fel ? (
+      {uppladdningsfel ? (
         <div className="mt-2 font-granssnitt text-sm text-accent-mork">
-          <p>{uppladd.fel}</p>
-          <button
-            type="button"
-            onClick={() => formRef.current?.requestSubmit()}
-            className="mt-1 underline"
-          >
-            Försök igen
-          </button>
+          <p>{uppladdningsfel}</p>
+          {koa.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => void laddaUpp(koa)}
+              className="mt-1 underline"
+            >
+              Försök igen
+            </button>
+          ) : null}
         </div>
       ) : null}
 
@@ -170,7 +214,7 @@ export function Bilagor({
         </p>
       ) : null}
 
-      {bilagor.length === 0 && !laddarUpp && !uppladd.fel ? (
+      {bilagor.length === 0 && !laddarUpp && !uppladdningsfel ? (
         <p className="mt-2 font-granssnitt text-sm text-text-dampad">
           Inga bilagor än. En kostnad utan kvitto är inget fel – underlaget blir
           bara svagare.
@@ -180,7 +224,7 @@ export function Bilagor({
   );
 }
 
-function PdfIkon() {
+function DokumentIkon() {
   return (
     <svg
       viewBox="0 0 24 24"

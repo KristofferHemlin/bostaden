@@ -23,10 +23,12 @@ import type { Kostnad, Projektkategori } from "./typer";
 /** Ett kvitto som visas i fas 1, tillplattat till det forslagen behover. */
 export interface GenomgangsKvitto {
   id: string;
-  leverantor: string;
+  /** null for ett utkast som annu inte fatt sina uppgifter. */
+  leverantor: string | null;
   anteckning: string | null;
-  /** Narhets- och sorteringsdatum: betaldatum om det finns, annars dokumentdatum. "YYYY-MM-DD". */
-  datum: string;
+  /** Narhets- och sorteringsdatum: betaldatum om det finns, annars dokumentdatum.
+   *  "YYYY-MM-DD", eller null for ett utkast utan datum. */
+  datum: string | null;
 }
 
 export interface Hogforslag {
@@ -69,13 +71,13 @@ function kortaNamn(text: string): string {
  * var dar. Saknas anteckning anvands leverantoren. Tom lista -> "Ny hog".
  */
 export function hogNamnForslag(
-  kvitton: { anteckning: string | null; leverantor: string }[],
+  kvitton: { anteckning: string | null; leverantor: string | null }[],
 ): string {
   const forsta = kvitton[0];
   if (!forsta) return "Ny hög";
   const anteckning = forsta.anteckning?.trim();
   if (anteckning) return kortaNamn(anteckning);
-  return forsta.leverantor.trim() || "Ny hög";
+  return forsta.leverantor?.trim() || "Ny hög";
 }
 
 // ---- Forslagsmotorn ------------------------------------------------------------
@@ -128,7 +130,8 @@ function jaccard(a: Set<string>, b: Set<string>): number {
   return snitt / (a.size + b.size - snitt);
 }
 
-function dagarMellan(a: string, b: string): number {
+function dagarMellan(a: string | null, b: string | null): number {
+  if (!a || !b) return Number.POSITIVE_INFINITY; // utkast utan datum – ingen narhet
   const ta = Date.parse(`${a}T00:00:00.000Z`);
   const tb = Date.parse(`${b}T00:00:00.000Z`);
   if (!Number.isFinite(ta) || !Number.isFinite(tb)) return Number.POSITIVE_INFINITY;
@@ -167,7 +170,7 @@ export function foreslaHogar(kvitton: GenomgangsKvitto[]): Hogforslag[] {
   const berikade: Berikat[] = kvitton.map((kvitto, index) => ({
     kvitto,
     index,
-    leverantor: normaleraLeverantor(kvitto.leverantor),
+    leverantor: normaleraLeverantor(kvitto.leverantor ?? ""),
     tokens: tokenisera(kvitto.anteckning),
   }));
 
@@ -204,7 +207,7 @@ export function foreslaHogar(kvitton: GenomgangsKvitto[]): Hogforslag[] {
   }
 
   const sorteraKvitton = (a: Berikat, b: Berikat) =>
-    a.kvitto.datum.localeCompare(b.kvitto.datum) ||
+    (a.kvitto.datum ?? "").localeCompare(b.kvitto.datum ?? "") ||
     a.kvitto.id.localeCompare(b.kvitto.id);
 
   const forslag: Hogforslag[] = [];

@@ -385,7 +385,13 @@ Levereras till egen mejl eller nedladdning. Ingen integration behövs.
 
 När en bilaga valts skickas den till en språkmodell som returnerar tre fält: datum, totalbelopp inklusive moms, och leverantör. Ingen egen OCR, ingen artikelkategorisering.
 
-**Filen analyseras innan kostnaden sparats.** Det är hela poängen – fälten ska vara ifyllda när användaren tittar på formuläret. Eftersom det ännu inte finns något `kostnad_id` och därmed ingen sökväg i lagringen, skickas filen direkt till analysendpointen och laddas upp först när kostnaden sparas. Alternativet – att ladda upp till en tillfällig plats och flytta filen efteråt – ger föräldralösa filer varje gång någon avbryter.
+**Kostnaden skapas som utkast så snart en fil valts.** Då finns ett `kostnad_id`, filen laddas upp direkt till sin riktiga plats i lagringen, och analysen läser den därifrån. Filen laddas upp en gång, inte två.
+
+Alternativet – en tillfällig plats som städas i efterhand – ger dubbel uppladdning på mobil och föräldralösa filer varje gång någon stänger fliken mitt i. Ett utkast i databasen är ett bättre problem: det är synligt, det tillhör en användare, och det går att rensa eller fylla i.
+
+**Utkastet är en verklig funktion, inte en teknisk biprodukt.** Avbryter användaren mitt i inmatningen ligger kvittot kvar med sin bild. Att fånga kvittot är det brådskande; belopp och anteckning kan fyllas i senare. Ett utkast utan belopp visas i listan med sin bild och en uppmaning att komplettera, och räknas inte in i någon summa.
+
+Utkast som blivit liggande utan att kompletteras hör hemma i samma genomgång som allt annat – de är oklassificerade kostnader som saknar uppgifter, inte skräp att rensa bort automatiskt.
 
 **HEIC måste konverteras före analys.** Språkmodellen kan inte läsa formatet, och det är standardformatet på iPhone – alltså exakt de bilder produkten finns till för. Samma konvertering som används för miniatyrer körs i minnet före anropet. Att hoppa över HEIC tyst innebär att funktionen inte fungerar för majoriteten av kvittofoton.
 

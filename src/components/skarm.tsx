@@ -35,16 +35,26 @@ export function Listrad({
   belopp,
   href,
   atgard,
+  bild,
 }: {
   namn: string;
   status?: string;
   belopp?: string;
   href?: string;
   atgard?: boolean;
+  /** Liten miniatyr till vanster – anvands for utkast som annu bara ar en bild. */
+  bild?: { src: string; alt: string };
 }) {
   const innehall = (
     <div className="flex items-baseline justify-between gap-3 p-4">
-      <div className="min-w-0">
+      {bild ? (
+        <img
+          src={bild.src}
+          alt={bild.alt}
+          className="h-10 w-10 shrink-0 self-center rounded-md object-cover"
+        />
+      ) : null}
+      <div className="min-w-0 flex-1">
         <p className="truncate font-granssnitt text-base text-text-primar">
           {namn}
         </p>

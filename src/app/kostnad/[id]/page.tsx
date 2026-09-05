@@ -8,7 +8,7 @@
 // rad med namnet; ar det inte kopplat visas ingen rad alls, inte "Inget".
 
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { aterforTillGenomgang } from "./actions";
 import { Bilagor } from "./bilagor";
 import { SEKUNDARKNAPP_KLASS, Skarm } from "@/components/skarm";
@@ -38,6 +38,9 @@ export default async function KostnadSida({
   });
   if (!kostnad) notFound();
 
+  // Ett utkast har inga uppgifter att visa – dess plats ar kompletteringsformularet.
+  if (kostnad.totalbelopp === null) redirect(`/kostnad/nytt?utkast=${kostnad.id}`);
+
   const bostad = await prisma.bostad.findUniqueOrThrow({
     where: { id: bostadId },
   });
@@ -56,21 +59,23 @@ export default async function KostnadSida({
   ];
 
   const anteckning = kostnad.anteckning?.trim();
+  // Utkast har redirectats bort ovan – har ar leverantor, datum och belopp satta.
+  const datum = kostnad.betaldatum ?? kostnad.dokumentdatum;
 
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
       andrarad={andrarad}
-      rubrik={anteckning || kostnad.leverantor}
+      rubrik={anteckning || kostnad.leverantor || "Kvitto"}
       bakLank={{ href: "/kostnad", text: "Kostnader" }}
     >
       <section className="space-y-2 border-b border-linje p-4 font-granssnitt text-sm">
-        <Rad etikett="Belopp" varde={formateraKronor(kostnad.totalbelopp)} />
         <Rad
-          etikett="Datum"
-          varde={isoDatum(kostnad.betaldatum ?? kostnad.dokumentdatum)}
+          etikett="Belopp"
+          varde={formateraKronor(kostnad.totalbelopp ?? 0)}
         />
-        <Rad etikett="Leverantör" varde={kostnad.leverantor} />
+        <Rad etikett="Datum" varde={datum ? isoDatum(datum) : "–"} />
+        <Rad etikett="Leverantör" varde={kostnad.leverantor ?? "–"} />
         {grupperingar.length > 0 ? (
           <p className="pt-1 text-text-dampad">
             Hör till {grupperingar.join(", ")}

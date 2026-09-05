@@ -4,7 +4,7 @@
 // uppdelad kostnad andras per rad i ett senare steg. Har ligger ocksa
 // borttagningen av hela kostnaden, med bekraftelsesteg.
 
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { RedigeraKostnadForm } from "./form";
 import { Skarm } from "@/components/skarm";
 import { arEnkelKostnad } from "@/doman/berakningar";
@@ -42,6 +42,8 @@ export default async function RedigeraKostnadSida({
     }),
   ]);
   if (!kostnad) notFound();
+  // Ett utkast kompletteras i inmatningsformularet, inte i redigeringen.
+  if (kostnad.totalbelopp === null) redirect(`/kostnad/nytt?utkast=${id}`);
 
   const { bostadsnamn, andrarad } = bostadHeader(bostad);
   const enkel = arEnkelKostnad(tillDomanKostnad(kostnad));
@@ -57,17 +59,19 @@ export default async function RedigeraKostnadSida({
       bostadsnamn={bostadsnamn}
       andrarad={andrarad}
       rubrik="Ändra kostnad"
-      bakLank={{ href: `/kostnad/${id}`, text: kostnad.leverantor }}
+      bakLank={{ href: `/kostnad/${id}`, text: kostnad.leverantor ?? "Kvitto" }}
     >
       <RedigeraKostnadForm
         kostnadId={id}
         enkel={enkel}
         projekt={projekt}
         varden={{
-          leverantor: kostnad.leverantor,
+          leverantor: kostnad.leverantor ?? "",
           totalbelopp: orenTillFalt(kostnad.totalbelopp),
           totalbeloppVisning: kostnad.totalbelopp,
-          dokumentdatum: isoDatum(kostnad.dokumentdatum),
+          dokumentdatum: kostnad.dokumentdatum
+            ? isoDatum(kostnad.dokumentdatum)
+            : "",
           betaldatum: kostnad.betaldatum ? isoDatum(kostnad.betaldatum) : "",
           projektId: kopplatProjektId,
         }}

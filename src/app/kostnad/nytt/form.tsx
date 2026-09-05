@@ -19,12 +19,21 @@
 // innan sparning. Under raden en dampad rad med format och storleksgrans. Ingen
 // varning nar bilaga saknas. Avlasningen kors pa den forsta bilagan.
 //
-// Nar en fil valts skickas den forsta direkt till /kostnad/nytt/avlas (inte via
-// lagringen – uppladdningen sker fortfarande forst nar kostnaden sparas). Svaret
-// fyller BARA tomma falt och skriver aldrig over nagot anvandaren skrivit. Alla
-// fel svaljs tyst: ingen statusrad blir kvar, inget felmeddelande, formularet
-// fungerar exakt som utan analys. Under avlasningen visas en diskret statusrad,
-// och nar falt fyllts i en bekraftelseruta i --bg-klart med uppmaning att granska.
+// UTKAST (produktspec, avsnittet "Dokumentavlasning"). Nar den forsta filen
+// valts skapas kostnaden direkt som ett utkast (skapaUtkast) och filen laddas
+// upp till sin RIKTIGA plats via en signerad URL – aldrig via en
+// serverless-funktion. Analysen laser filen darifran. Svaret fyller BARA tomma
+// falt och skriver aldrig over nagot anvandaren skrivit. Alla fel svaljs tyst:
+// formularet fungerar exakt som utan analys. Under avlasningen visas en diskret
+// statusrad, och nar falt fyllts i en bekraftelseruta med uppmaning att granska.
+//
+// Sparningen UPPDATERAR utkastet (sparaKostnad med utkast_id) – inget nytt
+// skapas. Avbryter anvandaren ligger kvittot kvar som ett utkast; det syns i
+// listan och i genomgangen och rensas aldrig automatiskt. Valjs ingen fil alls
+// skapar sparningen en ny kostnad som vanligt.
+//
+// Aterupptas ett utkast (?utkast= pa lanken fran listan) visas de redan
+// uppladdade bilagorna och analysen kors om pa den forsta om falten ar tomma.
 //
 // Forhandsvisningen (docs/design.md, "Bilagor") RENDERAR den forsta bilagan i
 // full bredd under miniatyrraden – bild som bild, PDF renderad till en bild av
@@ -51,8 +60,13 @@
 // kvitto som inte delas upp sparas i sin helhet.
 
 import Link from "next/link";
-import { useActionState, useEffect, useRef, useState } from "react";
-import { skapaKostnad, type KostnadResultat } from "./actions";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { skapaUtkast, sparaKostnad, type KostnadResultat } from "./actions";
+import {
+  analyseraBilaga,
+  taBortBilaga,
+} from "@/app/kostnad/bilaga-actions";
 import { BeloppFalt } from "@/components/belopp-falt";
 import { Falt, INPUT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
 import {
@@ -60,7 +74,9 @@ import {
   formateraKronor,
   oreFranKronor,
 } from "@/lib/format";
+import { laddaUppKostnadsbilaga } from "@/lib/lagring/bilaga-klient";
 import { kannIgenFormat } from "@/lib/lagring/bilaga-regler";
+import type { Bilagevy } from "@/lib/lagring/bilagor";
 
 const START: KostnadResultat = {};
 
@@ -92,12 +108,6 @@ interface Forhandsvisning {
   /** Renderad bild att visa i full bredd, null medan en PDF fortfarande renderas. */
   bildUrl: string | null;
   arPdf: boolean;
-}
-
-interface Avlasningssvar {
-  datum: string | null;
-  totalbelopp: number | null;
-  leverantor: string | null;
 }
 
 /** En rad i den utfallbara uppdelningen. Inga procenttal – bara "privat" eller ej. */
@@ -163,18 +173,51 @@ function orenTillFalt(oren: number): string {
   return (oren / 100).toFixed(2).replace(".", ",");
 }
 
+export interface Utkast {
+  id: string;
+  anteckning: string | null;
+  bilagor: Bilagevy[];
+}
+
+/** Status for en fil som valts i den har sessionen. */
+interface Filstatus {
+  pagar: boolean;
+  bilagaId?: string;
+  fel?: string;
+}
+
 export function NyKostnadForm({
   projekt,
   forvaltProjekt,
+  utkast,
 }: {
   projekt: Projektval[];
   forvaltProjekt?: string;
+  utkast?: Utkast;
 }) {
-  const [resultat, dispatch, pagar] = useActionState(skapaKostnad, START);
+  const router = useRouter();
 
-  // Bilagorna lever i state, inte i filinputen: en FileList gar inte att ta bort
-  // enskilda poster ur. Vid sparning lagger vi in dem i formdatan for hand.
+  // Kostnaden sparas via server action, sedan laddar webblasaren upp ev.
+  // aterstaende bilagor direkt mot Storage. Egen pagar/resultat-state sa att
+  // hela sekvensen kan kedjas.
+  const [resultat, setResultat] = useState<KostnadResultat>(START);
+  const [pagar, setPagar] = useState(false);
+
+  // Utkastet: skapas nar den forsta filen valts (eller foljer med fran ?utkast=).
+  // Sparningen uppdaterar det i stallet for att skapa nagot nytt.
+  const [utkastId, setUtkastId] = useState<string | null>(utkast?.id ?? null);
+  const utkastPromiseRef = useRef<Promise<string> | null>(null);
+  const analysKordRef = useRef(false);
+
+  // Bilagor som redan ligger i Storage (nar ett utkast aterupptas).
+  const [befintliga, setBefintliga] = useState<Bilagevy[]>(
+    utkast?.bilagor ?? [],
+  );
+
+  // Filer valda i den har sessionen. Behalls som File-objekt for
+  // forhandsvisningen; laddas upp direkt mot Storage nar de valjs.
   const [filer, setFiler] = useState<File[]>([]);
+  const [filstatus, setFilstatus] = useState<Record<string, Filstatus>>({});
   const filInputRef = useRef<HTMLInputElement | null>(null);
 
   // Forhandsvisning direkt vid val, innan sparning – ett filnamn i gra text ar
@@ -206,7 +249,7 @@ export function NyKostnadForm({
   const [avlasningFyllde, setAvlasningFyllde] = useState(false);
 
   // "Vad gallde det?" – valfri fritext, sparas i kostnadens anteckning.
-  const [anteckning, setAnteckning] = useState("");
+  const [anteckning, setAnteckning] = useState(utkast?.anteckning ?? "");
 
   // Hopfalld genvag langst ned: koppla kostnaden direkt till nagot som redan
   // lagts in. Bara befintliga grupperingar – inga nya, inga fragor. Forifylls
@@ -225,11 +268,22 @@ export function NyKostnadForm({
   ]);
   const [nastaNyckel, setNastaNyckel] = useState(2);
 
-  // Vilken bilaga som visas i forhandsvisningen. Klick pa en miniatyr byter.
-  // Klamps mot listans langd sa att den aldrig pekar utanfor efter en borttagning.
+  // Miniatyrraden ar befintliga bilagor (fran ett aterupptaget utkast) foljda av
+  // filerna som valts nu. Vilken som visas i forhandsvisningen – klick pa en
+  // miniatyr byter. Klamps mot listans langd.
+  const poster: (
+    | { typ: "befintlig"; b: Bilagevy }
+    | { typ: "fil"; fil: File }
+  )[] = [
+    ...befintliga.map((b) => ({ typ: "befintlig" as const, b })),
+    ...filer.map((fil) => ({ typ: "fil" as const, fil })),
+  ];
   const [valdIndex, setValdIndex] = useState(0);
-  const sakerValdIndex = Math.min(valdIndex, Math.max(0, filer.length - 1));
-  const forhandsFil = filer[sakerValdIndex] ?? null;
+  const sakerValdIndex = Math.min(valdIndex, Math.max(0, poster.length - 1));
+  const valdPost = poster[sakerValdIndex] ?? null;
+  const forhandsFil = valdPost?.typ === "fil" ? valdPost.fil : null;
+
+  const uppladdningPagar = Object.values(filstatus).some((s) => s.pagar);
 
   // Miniatyrraden: bilder (JPG/PNG) far en liten miniatyr; PDF och HEIC far en
   // dokumentikon med formatetiketten under (aldrig filnamnet), centrerad i en
@@ -304,19 +358,38 @@ export function NyKostnadForm({
     };
   }, [forhandsFil]);
 
-  async function avlas(fil: File) {
+  // Aterupptat utkast: kor avlasningen pa den forsta redan uppladdade bilagan.
+  // analysera() fyller bara tomma falt, sa det ar tryggt aven om nagot redan
+  // skrivits (t.ex. vid en omladdning). Kors en gang.
+  useEffect(() => {
+    if (analysKordRef.current) return;
+    const forsta = utkast?.bilagor[0];
+    if (!forsta) return;
+    analysKordRef.current = true;
+    void analysera(forsta.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Skapar utkastet en gang och lamnar tillbaka dess id. Sammanfallande anrop
+  // (flera filer valda samtidigt) delar samma lofte.
+  function sakerstallUtkast(): Promise<string> {
+    if (utkastId) return Promise.resolve(utkastId);
+    if (!utkastPromiseRef.current) {
+      utkastPromiseRef.current = skapaUtkast().then((r) => {
+        setUtkastId(r.kostnadId);
+        return r.kostnadId;
+      });
+    }
+    return utkastPromiseRef.current;
+  }
+
+  // Kor dokumentavlasningen pa en (redan uppladdad) bilaga och fyller BARA tomma
+  // falt. Alla fel svaljs – formularet ska fungera exakt som utan analys.
+  async function analysera(bilagaId: string) {
     setAvlasningPagar(true);
     try {
-      const kropp = new FormData();
-      kropp.append("fil", fil);
-      const svar = await fetch("/kostnad/nytt/avlas", {
-        method: "POST",
-        body: kropp,
-      });
-      if (!svar.ok) return;
-      const data = (await svar.json()) as Avlasningssvar;
+      const data = await analyseraBilaga({ bilagaId });
 
-      // Bara tomma falt fylls – aldrig over nagot anvandaren hunnit skriva.
       const nu = faltRef.current;
       const nasta = { ...nu };
       let fyllde = false;
@@ -337,28 +410,73 @@ export function NyKostnadForm({
         setAvlasningFyllde(true);
       }
     } catch {
-      // Alla fel svaljs – formularet ska fungera exakt som utan analys.
+      // Alla fel svaljs.
     } finally {
       setAvlasningPagar(false);
     }
   }
 
-  function laggTillFiler(valda: FileList | null) {
+  // Laddar upp en vald fil direkt mot Storage och bekraftar den. Den forsta
+  // bilagan som lyckas triggar dokumentavlasningen.
+  async function laddaEn(kostnadId: string, fil: File) {
+    const nyckel = filnyckel(fil);
+    setFilstatus((s) => ({ ...s, [nyckel]: { pagar: true } }));
+    const r = await laddaUppKostnadsbilaga(kostnadId, fil);
+    setFilstatus((s) => ({
+      ...s,
+      [nyckel]: {
+        pagar: false,
+        bilagaId: r.bilagaId,
+        fel: r.ok ? undefined : (r.fel ?? "uppladdningen misslyckades"),
+      },
+    }));
+    if (r.ok && r.bilagaId && !analysKordRef.current) {
+      analysKordRef.current = true;
+      void analysera(r.bilagaId);
+    }
+  }
+
+  async function laggTillFiler(valda: FileList | null) {
     if (!valda || valda.length === 0) return;
-    const redan = new Set(filer.map(filnyckel));
-    const tillagda = Array.from(valda).filter((f) => !redan.has(filnyckel(f)));
+    const redan = new Set([
+      ...filer.map(filnyckel),
+      ...befintliga.map((b) => b.filnamn),
+    ]);
+    const tillagda = Array.from(valda).filter(
+      (f) => !redan.has(filnyckel(f)) && !redan.has(f.name),
+    );
     if (tillagda.length === 0) return;
-    const blirForsta = filer.length === 0;
     setFiler((prev) => [...prev, ...tillagda]);
-    // Avlasningen kors pa den forsta bilagan – bara nar den precis lagts till.
-    if (blirForsta) void avlas(tillagda[0]);
+
+    const kostnadId = await sakerstallUtkast();
+    for (const fil of tillagda) {
+      await laddaEn(kostnadId, fil);
+    }
   }
 
   function taBortFil(index: number) {
+    const fil = filer[index];
+    if (fil) {
+      const st = filstatus[filnyckel(fil)];
+      if (st?.bilagaId) {
+        void taBortBilaga({ bilagaId: st.bilagaId }).catch(() => {});
+      }
+      setFilstatus((s) => {
+        const nasta = { ...s };
+        delete nasta[filnyckel(fil)];
+        return nasta;
+      });
+    }
     setFiler((prev) => prev.filter((_, i) => i !== index));
-    // Behall den visuellt valda bilagan: en borttagning fore den flyttar ner
-    // dess index med ett. Klampningen i sakerValdIndex sköter sista fallet.
-    setValdIndex((v) => (index < v ? v - 1 : v));
+    const posterIndex = befintliga.length + index;
+    setValdIndex((v) => (posterIndex < v ? v - 1 : v));
+  }
+
+  function taBortBefintlig(id: string) {
+    const index = befintliga.findIndex((b) => b.id === id);
+    void taBortBilaga({ bilagaId: id }).catch(() => {});
+    setBefintliga((prev) => prev.filter((b) => b.id !== id));
+    setValdIndex((v) => (index >= 0 && index < v ? v - 1 : v));
   }
 
   function andraRad(nyckel: number, delvis: Partial<Uppdelningsrad>) {
@@ -395,15 +513,17 @@ export function NyKostnadForm({
   const uppdelningAktiv =
     delaUpp && rader.some((r) => r.artikel.trim() !== "" || r.belopp.trim() !== "");
 
-  // Sparningen: lagg bilagorna och uppdelningsraderna fran state i formdatan for
-  // hand, dispatcha sedan.
-  function skicka(formData: FormData) {
-    formData.delete("bilagor");
-    for (const fil of filer) formData.append("bilagor", fil);
+  // Sparningen: uppdatera utkastet (eller skapa en ny kostnad om ingen fil
+  // valdes) via server action, ladda upp ev. bilagor som annu inte kommit fram,
+  // ga sedan till startskarmen. Uppdelningsraderna laggs in i formdatan for hand.
+  async function skicka(formData: FormData) {
+    setPagar(true);
+    setResultat(START);
 
-    for (const namn of ["rad_artikel", "rad_belopp", "rad_privat"]) {
+    for (const namn of ["bilagor", "rad_artikel", "rad_belopp", "rad_privat"]) {
       formData.delete(namn);
     }
+    formData.set("utkast_id", utkastId ?? "");
     if (uppdelningAktiv) {
       for (const r of rader) {
         formData.append("rad_artikel", r.artikel);
@@ -412,7 +532,34 @@ export function NyKostnadForm({
       }
     }
 
-    dispatch(formData);
+    const sparad = await sparaKostnad(formData);
+    if (sparad.fel || !sparad.kostnadId) {
+      setResultat(sparad.fel ? sparad : { fel: "Kostnaden kunde inte sparas." });
+      setPagar(false);
+      return;
+    }
+
+    // Nastan alltid ar bilagorna redan uppladdade (det sker nar filen valjs).
+    // Kvar ar bara de som misslyckades – forsok en sista gang. En tyst
+    // misslyckad uppladdning ar det varsta som kan handa i den har appen.
+    const kvar = filer.filter((f) => !filstatus[filnyckel(f)]?.bilagaId);
+    for (const fil of kvar) {
+      const r = await laddaUppKostnadsbilaga(sparad.kostnadId, fil);
+      if (!r.ok) {
+        setResultat({
+          fel: `Kostnaden sparades, men ${fil.name || "en bilaga"} kunde inte laddas upp: ${r.fel ?? "okänt fel."}`,
+          kostnadId: sparad.kostnadId,
+        });
+        setPagar(false);
+        return;
+      }
+      setFilstatus((s) => ({
+        ...s,
+        [filnyckel(fil)]: { pagar: false, bilagaId: r.bilagaId },
+      }));
+    }
+
+    router.push("/");
   }
 
   return (
@@ -424,12 +571,13 @@ export function NyKostnadForm({
         </span>
 
         <div className="flex flex-wrap items-start gap-2">
-          {miniatyrer.map((m, i) => {
-            const flera = miniatyrer.length > 1;
+          {/* Redan uppladdade bilagor (aterupptaget utkast). */}
+          {befintliga.map((b, i) => {
+            const flera = poster.length > 1;
             const vald = i === sakerValdIndex;
             return (
               <div
-                key={`${m.namn}-${i}`}
+                key={b.id}
                 className={`${RUTA} ${
                   flera && vald
                     ? "ring-2 ring-inset ring-text-primar"
@@ -438,7 +586,59 @@ export function NyKostnadForm({
                       : ""
                 }`}
               >
-                {/* Klick pa sjalva rutan valjer vilken bilaga som visas nedan. */}
+                <button
+                  type="button"
+                  onClick={() => setValdIndex(i)}
+                  aria-pressed={vald}
+                  aria-label={`Visa ${b.filnamn} i förhandsvisningen`}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  {b.arBild ? (
+                    <img
+                      src={`/bilaga/${b.id}?variant=visning`}
+                      alt={b.filnamn}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex flex-col items-center gap-0.5">
+                      <DokumentGlyf />
+                      <span className="font-granssnitt text-[10px] font-medium leading-none text-text-sekundar">
+                        {b.arPdf ? "PDF" : "FIL"}
+                      </span>
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => taBortBefintlig(b.id)}
+                  aria-label={`Ta bort ${b.filnamn}`}
+                  className="absolute right-0.5 top-0.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-yta-upphojd text-text-primar"
+                >
+                  <KryssGlyf />
+                </button>
+              </div>
+            );
+          })}
+
+          {/* Filer valda nu – med uppladdningsstatus i hornet. */}
+          {miniatyrer.map((m, j) => {
+            const i = befintliga.length + j;
+            const flera = poster.length > 1;
+            const vald = i === sakerValdIndex;
+            const st = filstatus[filnyckel(filer[j])];
+            return (
+              <div
+                key={`${m.namn}-${j}`}
+                className={`${RUTA} ${
+                  st?.fel ? "ring-2 ring-inset ring-accent-mork" : ""
+                } ${
+                  flera && vald
+                    ? "ring-2 ring-inset ring-text-primar"
+                    : flera
+                      ? "opacity-60 transition-opacity hover:opacity-100"
+                      : ""
+                }`}
+              >
                 <button
                   type="button"
                   onClick={() => setValdIndex(i)}
@@ -461,9 +661,14 @@ export function NyKostnadForm({
                     </span>
                   )}
                 </button>
+                {st?.pagar ? (
+                  <span className="absolute inset-0 z-10 flex items-center justify-center bg-yta-nedsankt/70">
+                    <SnurraGlyf />
+                  </span>
+                ) : null}
                 <button
                   type="button"
-                  onClick={() => taBortFil(i)}
+                  onClick={() => taBortFil(j)}
                   aria-label={`Ta bort ${m.namn}`}
                   className="absolute right-0.5 top-0.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-yta-upphojd text-text-primar"
                 >
@@ -495,12 +700,33 @@ export function NyKostnadForm({
           accept={BILAGA_ACCEPT}
           tabIndex={-1}
           onChange={(e) => {
-            laggTillFiler(e.target.files);
+            void laggTillFiler(e.target.files);
             e.target.value = "";
           }}
           className="hidden"
         />
       </div>
+
+      {/* En redan uppladdad bilaga (aterupptaget utkast) – visas via den
+          signerade visningslanken, ingen lokal rendering. */}
+      {valdPost?.typ === "befintlig" ? (
+        <div className="relative overflow-hidden rounded-lg border border-linje bg-yta-nedsankt">
+          {avlasningPagar ? (
+            <span className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-yta-upphojd">
+              <SnurraGlyf />
+            </span>
+          ) : null}
+          {valdPost.b.arBild ? (
+            <img
+              src={`/bilaga/${valdPost.b.id}?variant=visning`}
+              alt={`Förhandsvisning av ${valdPost.b.filnamn}`}
+              className="max-h-[55vh] w-full object-contain"
+            />
+          ) : (
+            <DokumentIkon namn={valdPost.b.filnamn} />
+          )}
+        </div>
+      ) : null}
 
       {/* Den valda bilagan renderad i full bredd – att jamfora falten mot. PDF
           som en bild av forsta sidan, aldrig webblasarens visare. Ikonen ar
@@ -811,6 +1037,16 @@ export function NyKostnadForm({
       ) : null}
 
       <input type="hidden" name="projekt_id" value={kopplatMal?.id ?? ""} />
+      <input type="hidden" name="utkast_id" value={utkastId ?? ""} />
+
+      {/* En misslyckad uppladdning vid filvalet blockerar inte sparningen
+          (kvittot ligger kvar som utkast) men visas sa att den gar att gora om
+          via krysset och ett nytt val. */}
+      {Object.values(filstatus).some((s) => s.fel) ? (
+        <p className="font-granssnitt text-sm text-accent-mork">
+          En bilaga kunde inte laddas upp. Ta bort den och välj filen igen.
+        </p>
+      ) : null}
 
       {resultat.fel ? (
         <div className="font-granssnitt text-sm text-accent-mork">
@@ -826,8 +1062,18 @@ export function NyKostnadForm({
         </div>
       ) : null}
 
-      <button type="submit" disabled={pagar} className={PRIMARKNAPP_KLASS}>
-        {pagar ? "Sparar…" : "Spara kostnad"}
+      <button
+        type="submit"
+        disabled={pagar || uppladdningPagar}
+        className={PRIMARKNAPP_KLASS}
+      >
+        {pagar
+          ? "Sparar…"
+          : uppladdningPagar
+            ? "Laddar upp bilagan…"
+            : utkast
+              ? "Spara kvittot"
+              : "Spara kostnad"}
       </button>
     </form>
   );

@@ -34,7 +34,10 @@ export interface Kostnadsrad {
 
 export interface Kostnad {
   id: string;
-  totalbelopp: number; // oren
+  /** oren. null = UTKAST: kvittot valt och uppladdat men uppgifterna inte
+   *  ifyllda an. Ett utkast raknas inte in nagonstans (arssumma, troskel,
+   *  export) och rensas aldrig automatiskt. */
+  totalbelopp: number | null;
   betaldatum: string | null; // YYYY-MM-DD, null = obetald
   rot_utnyttjat: number; // oren, 0 om inget
   forsakringsersattning: number; // oren, 0 om inget

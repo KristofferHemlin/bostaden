@@ -6,7 +6,7 @@
 
 import Link from "next/link";
 import { Listrad, PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
-import { harledKostnadstillstand } from "@/doman/berakningar";
+import { arUtkast, harledKostnadstillstand } from "@/doman/berakningar";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
@@ -16,10 +16,14 @@ import { kravBostad } from "@/lib/session";
 export const dynamic = "force-dynamic";
 
 function statusText(
-  original: { betaldatum: Date | null; arkiverad: boolean },
+  original: { betaldatum: Date | null; arkiverad: boolean; totalbelopp: number | null },
   tillstand: { obetald: boolean; okopplad: boolean },
 ): { status: string; atgard: boolean } {
   if (original.arkiverad) return { status: "Räknas inte med", atgard: false };
+  // Ett utkast: kvittot valt och uppladdat men uppgifterna inte ifyllda an.
+  if (arUtkast(original)) {
+    return { status: "Utkast · komplettera uppgifterna", atgard: true };
+  }
   if (tillstand.obetald) {
     return { status: "Obetald · räknas inte in än", atgard: true };
   }
@@ -37,7 +41,14 @@ export default async function KostnadslistaSida() {
     prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } }),
     prisma.kostnad.findMany({
       where: { bostad_id: bostadId },
-      include: { rader: { include: { fordelningar: true } } },
+      include: {
+        rader: { include: { fordelningar: true } },
+        bilagor: {
+          select: { id: true },
+          orderBy: { skapad_at: "asc" },
+          take: 1,
+        },
+      },
       orderBy: [{ skapad_at: "desc" }],
     }),
   ]);
@@ -46,12 +57,23 @@ export default async function KostnadslistaSida() {
   const rader = kostnadRader.map((k) => {
     const tillstand = harledKostnadstillstand(tillDomanKostnad(k));
     const { status, atgard } = statusText(k, tillstand);
+    const utkast = arUtkast(k);
+    const forstaBilaga = k.bilagor[0];
     return {
       id: k.id,
-      leverantor: k.leverantor,
-      belopp: formateraKronor(k.totalbelopp),
+      // Ett utkast har ingen leverantor an – visa kvittot och en uppmaning.
+      leverantor: k.leverantor ?? "Utkast",
+      belopp: utkast ? undefined : formateraKronor(k.totalbelopp ?? 0),
       status,
       atgard,
+      href: utkast ? `/kostnad/nytt?utkast=${k.id}` : `/kostnad/${k.id}`,
+      bild:
+        utkast && forstaBilaga
+          ? {
+              src: `/bilaga/${forstaBilaga.id}?variant=visning`,
+              alt: "Kvittobild",
+            }
+          : undefined,
     };
   });
 
@@ -85,7 +107,8 @@ export default async function KostnadslistaSida() {
                 status={r.status}
                 atgard={r.atgard}
                 belopp={r.belopp}
-                href={`/kostnad/${r.id}`}
+                href={r.href}
+                bild={r.bild}
               />
             ))}
           </div>

@@ -22,16 +22,17 @@ import {
 } from "./actions";
 import { PRIMARKNAPP_KLASS, SEKUNDARKNAPP_KLASS } from "@/components/skarm";
 import { hogNamnForslag } from "@/doman/genomgang";
-import { formateraKronor } from "@/lib/format";
+import { formateraKronorEllerStreck } from "@/lib/format";
 
 const START: GenomgangResultat = {};
 
 interface Kvitto {
   id: string;
-  leverantor: string;
+  /** null for ett utkast som annu bara ar en uppladdad bild. */
+  leverantor: string | null;
   anteckning: string | null;
-  belopp: number;
-  datum: string;
+  belopp: number | null;
+  datum: string | null;
 }
 
 interface Hog {
@@ -47,11 +48,12 @@ interface Forslag {
 }
 
 function kvittoRubrik(k: Kvitto): string {
-  return k.anteckning?.trim() || k.leverantor;
+  return k.anteckning?.trim() || k.leverantor || "Utkast – komplettera uppgifterna";
 }
 
 function kvittoUnderrad(k: Kvitto): string {
-  return `${k.leverantor} · ${k.datum}`;
+  const delar = [k.leverantor, k.datum].filter((d): d is string => !!d);
+  return delar.length > 0 ? delar.join(" · ") : "Ännu inga uppgifter";
 }
 
 export function Fas1({
@@ -159,7 +161,7 @@ export function Fas1({
                           {kvittoRubrik(k)}
                         </span>
                         <span className="shrink-0 tabular-nums text-text-dampad">
-                          {formateraKronor(k.belopp)}
+                          {formateraKronorEllerStreck(k.belopp)}
                         </span>
                       </li>
                     ))}
@@ -231,7 +233,7 @@ export function Fas1({
                       </span>
                       <span className="flex shrink-0 items-baseline gap-3">
                         <span className="tabular-nums text-text-dampad">
-                          {formateraKronor(k.belopp)}
+                          {formateraKronorEllerStreck(k.belopp)}
                         </span>
                         <form action={flyttaAction}>
                           <input
@@ -322,7 +324,7 @@ export function Fas1({
                       </span>
                     </span>
                     <span className="shrink-0 font-rubrik text-base tabular-nums text-text-primar">
-                      {formateraKronor(k.belopp)}
+                      {formateraKronorEllerStreck(k.belopp)}
                     </span>
                   </label>
                 </li>
@@ -417,7 +419,7 @@ export function Fas1({
                   </span>
                   <span className="flex shrink-0 items-baseline gap-3">
                     <span className="font-granssnitt text-sm tabular-nums text-text-dampad">
-                      {formateraKronor(k.belopp)}
+                      {formateraKronorEllerStreck(k.belopp)}
                     </span>
                     <form action={aterforAction}>
                       <input type="hidden" name="kostnad_id" value={k.id} />

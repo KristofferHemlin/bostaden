@@ -20,12 +20,18 @@ export function kalenderAr(datum: string): number {
   return ar;
 }
 
+/** Ett utkast: kvittot valt och uppladdat, men uppgifterna inte ifyllda an. */
+export function arUtkast(kostnad: { totalbelopp: number | null }): boolean {
+  return kostnad.totalbelopp === null;
+}
+
 /**
  * Avdragsgrundande belopp for en kostnad: totalbelopp minus ROT och
  * forsakringsersattning. Fore agarandel och fore forslitning. Ordet "brutto"
- * undviks medvetet – det ar tvetydigt.
+ * undviks medvetet – det ar tvetydigt. Ett utkast (utan belopp) bidrar med 0.
  */
 export function avdragsgrundandeBelopp(kostnad: Kostnad): number {
+  if (kostnad.totalbelopp === null) return 0;
   return (
     kostnad.totalbelopp -
     kostnad.rot_utnyttjat -
@@ -38,7 +44,7 @@ export function avdragsgrundandeBelopp(kostnad: Kostnad): number {
  * kostnadens rader: avdragsgrundande_belopp / totalbelopp.
  */
 export function reduktionsfaktor(kostnad: Kostnad): number {
-  if (kostnad.totalbelopp <= 0) return 0;
+  if (kostnad.totalbelopp === null || kostnad.totalbelopp <= 0) return 0;
   return avdragsgrundandeBelopp(kostnad) / kostnad.totalbelopp;
 }
 
@@ -91,6 +97,7 @@ export function arssummaForBostad(indata: ArssummeIndata, ar: number): number {
   let summa = 0;
   for (const kostnad of indata.kostnader) {
     if (kostnad.arkiverad) continue;
+    if (arUtkast(kostnad)) continue;
     if (kostnad.betaldatum === null) continue;
     if (kalenderAr(kostnad.betaldatum) !== ar) continue;
     for (const projektId of projektIder) {
@@ -119,6 +126,7 @@ export function inlagtArsbelopp(
   let summa = 0;
   for (const kostnad of indata.kostnader) {
     if (kostnad.arkiverad) continue;
+    if (arUtkast(kostnad)) continue;
     if (kostnad.betaldatum === null) continue;
     if (kalenderAr(kostnad.betaldatum) !== ar) continue;
     const faktor = reduktionsfaktor(kostnad);
@@ -236,6 +244,7 @@ export function harledUnderlagsstyrka(projekt: {
  * projekt"). Datum och leverantor gar alltid att andra, aven pa en uppdelad.
  */
 export function arEnkelKostnad(kostnad: Kostnad): boolean {
+  if (kostnad.totalbelopp === null) return false; // utkast – inga rader an
   if (kostnad.rader.length !== 1) return false;
   const rad = kostnad.rader[0];
   if (rad.belopp !== kostnad.totalbelopp) return false;

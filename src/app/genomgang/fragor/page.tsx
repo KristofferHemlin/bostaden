@@ -45,12 +45,17 @@ export default async function FragorSida() {
       .filter((k) =>
         k.rader.some((r) => r.fordelningar.some((f) => f.projekt_id === h.id)),
       )
-      .map((k) => ({
-        id: k.id,
-        rubrik: k.anteckning?.trim() || k.leverantor,
-        underrad: `${k.leverantor} · ${isoDatum(k.betaldatum ?? k.dokumentdatum)}`,
-        belopp: k.totalbelopp,
-      })),
+      .map((k) => {
+        // Bara kopplade kostnader kommer hit – aldrig ett utkast (det har inga
+        // rader). Falten ar alltsa satta; coalesce for typernas skull.
+        const datum = k.betaldatum ?? k.dokumentdatum;
+        return {
+          id: k.id,
+          rubrik: k.anteckning?.trim() || k.leverantor || "Kvitto",
+          underrad: `${k.leverantor ?? ""} · ${datum ? isoDatum(datum) : ""}`,
+          belopp: k.totalbelopp ?? 0,
+        };
+      }),
   }));
 
   return (

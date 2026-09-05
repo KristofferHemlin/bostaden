@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "kopiera-pdfjs": "node scripts/kopiera-pdfjs.mjs",
+    "postinstall": "prisma generate && npm run kopiera-pdfjs",
     "predev": "npm run kopiera-pdfjs",
     "dev": "next dev",
     "prebuild": "npm run kopiera-pdfjs",

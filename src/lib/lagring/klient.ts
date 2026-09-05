@@ -9,8 +9,9 @@
 import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { kravLagringskonfig } from "@/lib/supabase/konfig";
+import { BILAGOR_BUCKET } from "./bilaga-regler";
 
-export const BILAGOR_BUCKET = "bilagor";
+export { BILAGOR_BUCKET };
 
 let cachad: SupabaseClient | null = null;
 
