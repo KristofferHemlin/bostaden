@@ -114,7 +114,7 @@ model projekt {
   bostad_id                    String          @db.Uuid
   namn                         String // fraga 1, fritext
   ar                           Int // etikett for gruppering; auktoritativt ar kommer fran betaldatum
-  kategori                     projektkategori // fraga 2
+  kategori                     projektkategori? // fraga 2; null tills klassificeringsgenomgangens fas 2 svarat
   baslinjepost_id              String?         @db.Uuid // fraga 4, belaget
   motivering                   String? // fraga 4, "hur vet du att det var slitet?"
   slitet_vid_tilltrade         Boolean? // fraga 3, null tills stalld
@@ -141,6 +141,7 @@ model kostnad {
   rot_utnyttjat         Int? // oren, dras bort fran underlaget
   forsakringsersattning Int? // oren, dras bort fran underlaget
   arkiverad             Boolean   @default(false)
+  anteckning            String? // "Vad gallde det?" – valfri fritext, bar minnet till klassificeringen (produktspec 2b)
   skapad_at             DateTime  @default(now())
 
   bostad  bostad        @relation(fields: [bostad_id], references: [id], onDelete: Cascade)

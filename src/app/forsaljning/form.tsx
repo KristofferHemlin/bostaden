@@ -1,8 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { markeraSald, type ForsaljningResultat } from "./actions";
+import { BeloppFalt } from "@/components/belopp-falt";
 import { Falt, INPUT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
+import { formateraBeloppInmatning } from "@/lib/format";
 
 const START: ForsaljningResultat = {};
 
@@ -50,6 +52,7 @@ export function ForsaljningForm({
   redanSald: boolean;
 }) {
   const [resultat, action, pagar] = useActionState(markeraSald, START);
+  const [pris, setPris] = useState(() => formateraBeloppInmatning(forvaltPris));
 
   return (
     <form action={action} className="flex flex-col gap-6 p-5">
@@ -70,11 +73,10 @@ export function ForsaljningForm({
         etikett="Försäljningspris"
         hjalp="Valfritt här. Används i vinstberäkningen, inte i avdragsunderlaget. T.ex. 3 450 000."
       >
-        <input
-          type="text"
+        <BeloppFalt
           name="forsaljningspris"
-          inputMode="decimal"
-          defaultValue={forvaltPris}
+          value={pris}
+          onValueChange={setPris}
           className={INPUT_KLASS}
           placeholder="0,00"
         />

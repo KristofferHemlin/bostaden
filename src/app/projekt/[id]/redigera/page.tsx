@@ -66,7 +66,11 @@ export default async function RedigeraProjektSida({
         varden={{
           namn: projekt.namn,
           fanns:
-            projekt.kategori === "grundforbattring" ? "nytt" : "fanns",
+            projekt.kategori === "grundforbattring"
+              ? "nytt"
+              : projekt.kategori === "reparation"
+                ? "fanns"
+                : "",
           slitet:
             projekt.slitet_vid_tilltrade === true
               ? "ja"

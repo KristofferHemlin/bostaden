@@ -19,13 +19,14 @@ import {
   taBortKostnad,
   type KostnadRedigeraResultat,
 } from "../actions";
+import { BeloppFalt } from "@/components/belopp-falt";
 import {
   Falt,
   INPUT_KLASS,
   Meddelanderuta,
   PRIMARKNAPP_KLASS,
 } from "@/components/skarm";
-import { formateraKronor } from "@/lib/format";
+import { formateraBeloppInmatning, formateraKronor } from "@/lib/format";
 
 const START: KostnadRedigeraResultat = {};
 
@@ -56,6 +57,9 @@ export function RedigeraKostnadForm({
   const [resultat, spara, sparar] = useActionState(redigeraKostnad, START);
   const [radera, raderaAction, raderar] = useActionState(taBortKostnad, START);
   const [bekraftaRadera, setBekraftaRadera] = useState(false);
+  const [totalbelopp, setTotalbelopp] = useState(() =>
+    formateraBeloppInmatning(varden.totalbelopp),
+  );
 
   return (
     <>
@@ -75,12 +79,11 @@ export function RedigeraKostnadForm({
 
         {enkel ? (
           <Falt etikett="Totalbelopp" hjalp="Hela kvittosumman, t.ex. 1 020,95.">
-            <input
-              type="text"
+            <BeloppFalt
               name="totalbelopp"
-              inputMode="decimal"
               required
-              defaultValue={varden.totalbelopp}
+              value={totalbelopp}
+              onValueChange={setTotalbelopp}
               className={INPUT_KLASS}
               placeholder="0,00"
             />

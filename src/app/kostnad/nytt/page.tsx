@@ -1,8 +1,12 @@
 // Steg 5: manuell kostnadsinmatning.
+//
+// Ingen grind pa "har du ett projekt an?" – docs/design.md, "Projektet uppstar,
+// det administreras inte": anvandaren ska aldrig behova skapa ett projekt som en
+// egen uppgift innan ett kvitto kan laggas in. Skrivs ett nytt namn i "Vad horde
+// det har till?" skapas grupperingen nar kostnaden sparas.
 
-import Link from "next/link";
 import { NyKostnadForm } from "./form";
-import { PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
+import { Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -34,19 +38,7 @@ export default async function NyKostnadSida({
       rubrik="Ny kostnad"
       bakLank={{ href: "/", text: "Översikt" }}
     >
-      {projekt.length === 0 ? (
-        <div className="p-5">
-          <p className="font-granssnitt text-sm text-text-primar">
-            Du behöver ett projekt att koppla kostnaden till. Skapa ett först –
-            det tar under en minut.
-          </p>
-          <Link href="/projekt/nytt" className={`${PRIMARKNAPP_KLASS} mt-4`}>
-            Skapa projekt
-          </Link>
-        </div>
-      ) : (
-        <NyKostnadForm projekt={projekt} forvaltProjekt={forvaltProjekt} />
-      )}
+      <NyKostnadForm projekt={projekt} forvaltProjekt={forvaltProjekt} />
     </Skarm>
   );
 }

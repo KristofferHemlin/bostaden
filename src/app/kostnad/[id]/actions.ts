@@ -221,6 +221,22 @@ export async function delaUppKostnad(
   redirect(`/kostnad/${id}`);
 }
 
+// Ett kvitto som hamnat i "Raknas inte med" (arkiverad) foras tillbaka till
+// klassificeringsgenomgangen. Ordet "arkiverad" visas aldrig for anvandaren.
+export async function aterforTillGenomgang(formData: FormData): Promise<void> {
+  const { bostadId } = await kravBostad();
+  const id = String(formData.get("kostnad_id") ?? "");
+
+  await prisma.kostnad.updateMany({
+    where: { id, bostad_id: bostadId },
+    data: { arkiverad: false },
+  });
+
+  revalideraKostnadsvyer(id);
+  revalidatePath("/genomgang");
+  redirect(`/kostnad/${id}`);
+}
+
 export async function taBortKostnad(
   _foreg: KostnadRedigeraResultat,
   formData: FormData,

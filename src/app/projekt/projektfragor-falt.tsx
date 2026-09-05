@@ -1,35 +1,53 @@
 "use client";
 
 // De fyra projektfragorna (produktspec 6.2, docs/design.md "Projektfragorna").
-// Delas av bade skapa-flodet (steg 4) och redigeringen (steg 6.4) sa att de
-// stalls EXAKT likadant pa bada stallen – fragorna avgor om ett avdrag haller
-// och far inte glida isar mellan formularen.
+// Fragorna avgor om ett avdrag haller och far inte glida isar mellan formularen,
+// darfor bor sjalva fragorna i <Projektfragor> och delas ordagrant av:
+//
+//   * skapa-projekt-flodet (steg 4, projekt/nytt)
+//   * redigeringen (steg 6.4, projekt/[id]/redigera)
+//   * kostnadsformularet (docs/design.md, "Projektet uppstar, det administreras
+//     inte") – nar anvandaren skriver ett nytt namn i "Vad horde det har till?"
+//     falls samma fragor ut i samma formular och projektet skapas nar kostnaden
+//     sparas.
+//
+// <Projektfragor> ar helt kontrollerad och renderar INGA namngivna falt – den
+// omslutande <form>:en agar serialiseringen och kan darmed doljas eller byta
+// faltnamn. <ProjektfragorFalt> ar det kombinerade faltet som skapa- och
+// redigeringsflodena anvander: "Vad gjorde du?" plus fragorna plus de dolda
+// falten `namn`, `fanns`, `slitet` och `motivering`.
 //
 // Svarsalternativen ar klickbara kort med ren, kort text – inga underrubriker.
 // Varfor varje fraga stalls ligger bakom en informationsknapp som falls ut vid
 // KLICK (hover finns inte pa telefon). Fraga 3 visas BARA nar svaret pa fraga 2
 // ar att det fanns forut. "Se exempel" oppnar konkreta fall. Fraga 4
 // (motivering) ligger sist och blockerar aldrig.
-//
-// Komponenten ager fragornas tillstand och renderar egna dolda falt, sa att den
-// omslutande <form>:ens action far `namn`, `fanns`, `slitet` och `motivering`.
 
 import { useState } from "react";
 import { Falt, INPUT_KLASS } from "@/components/skarm";
 
-export interface ProjektfragorVarden {
-  namn: string;
-  fanns: "" | "fanns" | "nytt";
-  slitet: "" | "ja" | "nej" | "vet-inte";
+export type FannsSvar = "" | "fanns" | "nytt";
+export type SlitetSvar = "" | "ja" | "nej" | "vet-inte";
+
+/** Svaren pa fraga 2–4. Fraga 1 (namnet) hor till det omslutande faltet. */
+export interface ProjektfragorSvar {
+  fanns: FannsSvar;
+  slitet: SlitetSvar;
   motivering: string;
 }
 
-const TOMT: ProjektfragorVarden = {
-  namn: "",
+export const TOMMA_SVAR: ProjektfragorSvar = {
   fanns: "",
   slitet: "",
   motivering: "",
 };
+
+/** Skapa- och redigeringsflodenas varden: fraga 1:s namn plus svaren. */
+export interface ProjektfragorVarden extends ProjektfragorSvar {
+  namn: string;
+}
+
+const TOMT: ProjektfragorVarden = { namn: "", ...TOMMA_SVAR };
 
 function Kortval({
   vald,
@@ -105,70 +123,56 @@ const FOLJD_FANNS =
 const FOLJD_SLITET =
   "Jämförelsen görs mot hur bostaden såg ut på tillträdesdagen, inte dagen innan du åtgärdade något. En reparation som återställer en skada du själv orsakat under din ägartid ger inte avdrag – den återställer bara skicket från tillträdet.";
 
-export function ProjektfragorFalt({
-  initial,
+/**
+ * Fraga 2–4, helt kontrollerade. Fraga 3 renderas bara nar `varden.fanns`
+ * ar "fanns"; att valja "nytt" nollar samtidigt slitet-svaret sa att en
+ * grundforbattring aldrig bar med sig ett skicksvar.
+ */
+export function Projektfragor({
+  varden,
+  onChange,
 }: {
-  initial?: ProjektfragorVarden;
+  varden: ProjektfragorSvar;
+  onChange: (delvis: Partial<ProjektfragorSvar>) => void;
 }) {
-  const start = initial ?? TOMT;
-  const [namn, setNamn] = useState(start.namn);
-  const [fanns, setFanns] = useState<"" | "fanns" | "nytt">(start.fanns);
-  const [slitet, setSlitet] = useState<"" | "ja" | "nej" | "vet-inte">(
-    start.slitet,
-  );
-  const [motivering, setMotivering] = useState(start.motivering);
   const [visaExempel, setVisaExempel] = useState(false);
 
   return (
     <div className="flex flex-col gap-6">
-      <Falt etikett="Vad gjorde du?">
-        <input
-          type="text"
-          value={namn}
-          onChange={(e) => setNamn(e.target.value)}
-          required
-          className={INPUT_KLASS}
-          placeholder="t.ex. måla sovrum"
-        />
-      </Falt>
-
       {/* Fraga 2 – fanns forut eller nytt. */}
       <Fraga rubrik="Fanns det här förut, eller är det nytt?" foljd={FOLJD_FANNS}>
         <Kortval
-          vald={fanns === "fanns"}
+          vald={varden.fanns === "fanns"}
           text="Det fanns redan"
-          onClick={() => setFanns("fanns")}
+          onClick={() => onChange({ fanns: "fanns" })}
         />
         <Kortval
-          vald={fanns === "nytt"}
+          vald={varden.fanns === "nytt"}
           text="Det är nytt"
-          onClick={() => {
-            setFanns("nytt");
-            setSlitet("");
-          }}
+          onClick={() => onChange({ fanns: "nytt", slitet: "" })}
         />
       </Fraga>
 
       {/* Fraga 3 – bara nar det fanns forut. */}
-      {fanns === "fanns" ? (
+      {varden.fanns === "fanns" ? (
         <Fraga
           rubrik="Var det slitet eller trasigt när du flyttade in?"
           foljd={FOLJD_SLITET}
         >
           <Kortval
-            vald={slitet === "ja"}
+            vald={varden.slitet === "ja"}
             text="Ja"
-            onClick={() => setSlitet("ja")}
+            onClick={() => onChange({ slitet: "ja" })}
           />
           <Kortval
-            vald={slitet === "nej"}
+            vald={varden.slitet === "nej"}
             text="Nej"
-            onClick={() => setSlitet("nej")}
+            onClick={() => onChange({ slitet: "nej" })}
           />
           <Kortval
-            vald={slitet === "vet-inte"}
+            vald={varden.slitet === "vet-inte"}
             text="Vet inte"
-            onClick={() => setSlitet("vet-inte")}
+            onClick={() => onChange({ slitet: "vet-inte" })}
           />
         </Fraga>
       ) : null}
@@ -190,29 +194,67 @@ export function ProjektfragorFalt({
         ) : null}
       </div>
 
-      {/* Dolda falt sa att serverns action far samma varden som korten visar.
-          Nar det ar nytt skickas slitet tomt – fraga 3 ar inte relevant da. */}
-      <input type="hidden" name="namn" value={namn} />
-      <input type="hidden" name="fanns" value={fanns} />
-      <input
-        type="hidden"
-        name="slitet"
-        value={fanns === "fanns" ? slitet : ""}
-      />
-
       <Falt
         etikett="Har du något som visar det?"
         hjalp="Valfritt, blockerar inget."
       >
         <textarea
-          name="motivering"
           rows={3}
-          value={motivering}
-          onChange={(e) => setMotivering(e.target.value)}
+          value={varden.motivering}
+          onChange={(e) => onChange({ motivering: e.target.value })}
           className={INPUT_KLASS}
           placeholder="t.ex. mäklarbilden visar fläckig vägg bakom garderoben"
         />
       </Falt>
+    </div>
+  );
+}
+
+/**
+ * Det kombinerade faltet i skapa- och redigeringsflodena: "Vad gjorde du?"
+ * plus fragorna, med de dolda falten `namn`, `fanns`, `slitet` och
+ * `motivering` sa att serverns action far exakt samma varden som korten visar.
+ * Nar det ar nytt skickas slitet tomt – fraga 3 ar inte relevant da.
+ */
+export function ProjektfragorFalt({
+  initial,
+}: {
+  initial?: ProjektfragorVarden;
+}) {
+  const start = initial ?? TOMT;
+  const [namn, setNamn] = useState(start.namn);
+  const [svar, setSvar] = useState<ProjektfragorSvar>({
+    fanns: start.fanns,
+    slitet: start.slitet,
+    motivering: start.motivering,
+  });
+
+  return (
+    <div className="flex flex-col gap-6">
+      <Falt etikett="Vad gjorde du?">
+        <input
+          type="text"
+          value={namn}
+          onChange={(e) => setNamn(e.target.value)}
+          required
+          className={INPUT_KLASS}
+          placeholder="t.ex. måla sovrum"
+        />
+      </Falt>
+
+      <Projektfragor
+        varden={svar}
+        onChange={(delvis) => setSvar((s) => ({ ...s, ...delvis }))}
+      />
+
+      <input type="hidden" name="namn" value={namn} />
+      <input type="hidden" name="fanns" value={svar.fanns} />
+      <input
+        type="hidden"
+        name="slitet"
+        value={svar.fanns === "fanns" ? svar.slitet : ""}
+      />
+      <input type="hidden" name="motivering" value={svar.motivering} />
     </div>
   );
 }

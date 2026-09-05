@@ -15,9 +15,51 @@ Det svåra är inte att spara kvitton. Det svåra är att avgörandet om avdrags
 ## 2. Vad produkten gör
 
 1. Samlar kostnader (kvitton och fakturor) med bild eller PDF som permanent arkiv
-2. Klassificerar dem via projekt, inte per kvitto
-3. Bevakar den årliga 5 000-kronorströskeln medan året fortfarande går att påverka
-4. Producerar ett deklarationsunderlag i hjälpblankett SKV 2197:s form vid försäljning
+2. Bevakar den årliga 5 000-kronorströskeln medan året fortfarande går att påverka
+3. Klassificerar allt vid försäljningen, i en guide som går igenom det sparade
+4. Producerar ett deklarationsunderlag i hjälpblankett SKV 2197:s form
+
+## 2b. Två faser, inte en
+
+Detta är produktens viktigaste designbeslut och det som skiljer den från en kvittoapp med kategorier.
+
+**Under ägandet gör appen en enda sak: sparar kvitton.** Fota eller ladda upp, låt avläsningen fylla i belopp och datum, skriv en rad om vad det gällde. Klart på tio sekunder. Inga kategorier, inga skattefrågor, inget som måste bli rätt.
+
+**Vid försäljningen gör appen den svåra delen.** Då går en guide igenom allt som sparats och ställer klassificeringsfrågorna – en gång, i lugn och ro, när användaren har tid och ser hela bilden.
+
+Skälet är att klassificeringen inte behövs förrän vid försäljningen. Femårsregeln, skickbedömningen, gränsen mellan grundförbättring och reparation – allt det används först i deklarationen. Att fråga vid inköpet innebär att ställa den svåraste frågan i produktens sämsta ögonblick: när användaren står i en butik, inte vet om hen ska sälja, och bara vill bli klar.
+
+Konsekvensen av att fråga för tidigt är inte att svaren blir fel. Konsekvensen är att kvittot aldrig läggs in. En app som fångar allt oklassificerat är oändligt mycket mer värd än en app som klassificerar perfekt men används tre gånger.
+
+**Klassificering är alltid möjlig, aldrig obligatorisk.** Den som vill gruppera och svara på frågorna under ägandet kan göra det när som helst, och får då exakta siffror. Den som inte gör det får ungefärliga siffror under tiden och guidas igenom allt vid försäljningen.
+
+**Vad som blir ungefärligt utan klassificering:** årssumman visar allt som lagts in, inte bara det som är avdragsgillt, och femårshorisonten kan inte skiljas ut. Gränssnittet ska vara ärligt med det – "du har lagt in 4 210 kr i år" är ett annat påstående än "4 210 kr är avdragsgilla", och tröskelraden ska säga att beloppet är preliminärt tills allt klassificerats.
+
+### Klassificeringsgenomgången
+
+Genomgången är två faser: gruppera först, klassificera sedan. Skälet är att skattefrågorna hör till åtgärden, inte till kvittot – med hundra kvitton och tio åtgärder ska frågorna ställas tio gånger, inte hundra.
+
+**Fas 1: gruppera.** Alla oklassificerade kvitton visas sorterade på datum, med anteckning, leverantör och belopp. Användaren drar ihop dem i högar. Appen föreslår grupper utifrån tre signaler: samma leverantör, närhet i tid, och likhet i anteckningarnas text. Tre Bauhaus-kvitton inom en månad med liknande anteckning blir ett förslag som bekräftas eller bryts isär.
+
+Förslag är alltid förslag. Ingen hög skapas utan att användaren godkänt den.
+
+Högens namn föreslås från första kvittots anteckning och går att ändra. Det namnet blir grupperingens namn och hamnar i K6A-underlagets åtgärdskolumn, så det ska vara begripligt för någon som inte var där.
+
+**"Räknas inte" är en egen hög.** Dit dras kvitton som var privata eller av annat skäl inte hör till underlaget. Den högen ställer inga frågor, och de kvittona dyker aldrig upp i genomgången igen. Bilaga och belopp ligger kvar i arkivet – det är en klassificering, inte en radering.
+
+**Fas 2: klassificera.** För varje hög ställs de fyra frågorna en gång, med högens kvitton synliga bredvid. Det är först här skatteterminologin blir relevant, och då har användaren redan bestämt vad högen är.
+
+Högar som redan klassificerats visas inte alls. Genomgången blir kortare varje gång och slutar med en tom lista för den som gör den löpande.
+
+**Genomgången går att avbryta när som helst.** Det som grupperats och besvarats sparas; resten ligger kvar som oklassificerat. Hundra kvitton ska inte kräva en obruten session.
+
+**Klassificeringen sker på användarens initiativ.** Det finns en väg in – "Klassificera det du lagt in" – som går igenom oklassificerade kostnader en i taget. Den startas när användaren själv vill, inte när appen tycker. Vid försäljningen är samma genomgång ett obligatoriskt steg innan underlaget kan tas fram.
+
+Redan klassificerade kostnader hoppas över. Genomgången blir därför kortare varje gång, och den som gör den löpande möter till slut en tom lista.
+
+Appen påminner inte om klassificeringen enligt något schema. Att lägga in kvitton ska aldrig kännas som att man ådragit sig en skuld.
+
+**Anteckningen bär minnet.** Fältet "Vad gällde det?" är fritext och det enda som krävs utöver belopp och datum. Åtta år senare är det den raden plus bilden som gör klassificeringen möjlig, så gränssnittet ska uppmuntra en beskrivande mening snarare än ett ord: "målade om sovrummet, väggarna var slitna sedan vi flyttade in" är guld vid försäljningen.
 
 ## 3. Avgränsning för första versionen
 
@@ -201,6 +243,7 @@ Ett kvitto eller en faktura.
 | rot_utnyttjat | int? | dras bort från underlaget |
 | forsakringsersattning | int? | dras bort från underlaget |
 | arkiverad | bool | användarens val, default false |
+| anteckning | text? | "Vad gällde det?" – bär minnet till klassificeringen
 
 **Tillstånden är härledda, inte lagrade.** Endast `arkiverad` är ett fält, eftersom det är ett aktivt användarval. Övriga tillstånd beräknas:
 
@@ -292,10 +335,11 @@ Rubrik som inbjuder ("Lägg till din första kostnad"), en rad förklaring, en k
 ### Översikt
 - Årssumma mot 5 000-tröskeln med progressfält
 - Progressfältet är **sand under tröskeln, orange över** – under tröskeln är läget inte bra, det är oavslutat. Inför inte rött eller grönt; se `docs/design.md`
-- Siffran heter "underlag", aldrig "avdrag" – ett belopp under tröskeln ger noll i avdrag
-- Okopplat belopp som separat rad
-- Projektlista med kategori och underlagsstyrka. Enum-värdet `svagt` visas som texten "underlag saknas" – det finns inga andra lägen än `dokumenterat` och `svagt`. Raden är klickbar och blir användarens att-göra-lista
-- Rad om femårshorisonten: "reparationer i år räknas vid försäljning till 20XX"
+- Siffran heter **"Inlagt 2026"**, aldrig "underlag" och aldrig "avdrag". Den visar summan av allt som lagts in, klassificerat eller ej. Att kalla den något annat vore ett påstående appen inte kan stå för innan klassificeringen är gjord
+- Under progressfältet en rad som förklarar tröskeln och att beloppet är preliminärt tills allt klassificerats. När inget oklassificerat återstår faller den bort
+- Antal oklassificerade kostnader som en klickbar rad in i genomgången, när det finns några
+- Lista över det som lagts in, senaste först, med anteckningen som radtext
+- Klassificerade kostnader visas grupperade under sin gruppering med kategori och underlagsstyrka. Enum-värdet `svagt` visas som texten "underlag saknas" – det finns inga andra lägen än `dokumenterat` och `svagt`
 
 ### Notiser
 Sparsamt. Tre motiverade:

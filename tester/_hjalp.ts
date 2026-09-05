@@ -21,7 +21,7 @@ export function projekt(over: Partial<Projekt> = {}): Projekt {
   return {
     id: over.id ?? "p1",
     namn: over.namn ?? "Projekt",
-    kategori: over.kategori ?? "grundforbattring",
+    kategori: over.kategori === undefined ? "grundforbattring" : over.kategori,
     baslinjepost_id: over.baslinjepost_id ?? null,
     slitet_vid_tilltrade:
       over.slitet_vid_tilltrade === undefined ? null : over.slitet_vid_tilltrade,

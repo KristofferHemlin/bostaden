@@ -101,19 +101,58 @@ export function arssummaForBostad(indata: ArssummeIndata, ar: number): number {
 }
 
 /**
+ * Arets "Inlagt"-belopp for oversikten (produktspec avsnitt 2b och 7): summan av
+ * allt som lagts in under aret, klassificerat eller ej. Till skillnad fran
+ * arssummaForBostad kravs ingen projektkoppling – aven okopplade kostnader raknas
+ * med, eftersom klassificeringen skjuts upp till en egen genomgang. Privat-
+ * markerade rader raknas bort (de lades inte pa bostaden), och ROT/
+ * forsakringsersattning dras av proportionellt via reduktionsfaktorn precis som i
+ * arssumman. En arkiverad kostnad eller en kostnad utan betaldatum raknas aldrig.
+ *
+ * Talet ar preliminart: "du har lagt in 4 210 kr i ar" ar ett annat pastaende an
+ * "4 210 kr ar avdragsgilla".
+ */
+export function inlagtArsbelopp(
+  indata: { kostnader: Kostnad[] },
+  ar: number,
+): number {
+  let summa = 0;
+  for (const kostnad of indata.kostnader) {
+    if (kostnad.arkiverad) continue;
+    if (kostnad.betaldatum === null) continue;
+    if (kalenderAr(kostnad.betaldatum) !== ar) continue;
+    const faktor = reduktionsfaktor(kostnad);
+    for (const rad of kostnad.rader) {
+      const privatAndel = rad.fordelningar.reduce(
+        (s, f) => (f.privat ? s + f.andel : s),
+        0,
+      );
+      summa += rad.belopp * Math.max(0, 1 - privatAndel) * faktor;
+    }
+  }
+  return avrunda(summa);
+}
+
+/**
  * Ar projektets bidrag over huvud taget en forbattringsutgift? Grindarna
  * `slitet_vid_tilltrade` och `battre_skick_vid_forsaljning` avgor det – ar nagon
  * av dem `false` ar atgarden normalt underhall och exkluderas bade fran avdraget
  * OCH fran troskelsumman (produktspec 4.2). Femarsfonstret raknas inte hit: en
  * reparation utanfor fonstret VAR en forbattringsutgift nar den lades ned och
  * ingar darfor i sitt utgiftsars troskelsumma, aven om den inte dras av.
- * `null` (fragan inte besvarad) exkluderar inte – bara ett uttryckligt `false`.
+ * `null` pa en grind (fragan inte besvarad) exkluderar inte – bara ett
+ * uttryckligt `false`.
+ *
+ * `kategori = null` (hogen ar grupperad men inte klassificerad) exkluderar
+ * daremot: en hog som annu inte gatt igenom fas 2 far inte lyfta aret over
+ * troskeln. Sa fort fas 2 satt kategorin rors talet igen.
  */
 export function arBidragForbattringsutgift(projekt: {
-  kategori: Projektkategori;
+  kategori: Projektkategori | null;
   slitet_vid_tilltrade: boolean | null;
   battre_skick_vid_forsaljning: boolean | null;
 }): boolean {
+  if (projekt.kategori === null) return false;
   if (projekt.kategori !== "reparation") return true;
   return (
     projekt.slitet_vid_tilltrade !== false &&

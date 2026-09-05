@@ -16,6 +16,7 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useState } from "react";
+import { BeloppFalt } from "@/components/belopp-falt";
 import {
   Falt,
   INPUT_KLASS,
@@ -53,6 +54,7 @@ export function RegistreraFlode({
   const [losenord, setLosenord] = useState("");
   const [upplatelseform, setUpplatelseform] = useState("bostadsratt");
   const [tilltradesdatum, setTilltradesdatum] = useState("");
+  const [kopeskilling, setKopeskilling] = useState("");
   const [lokaltFel, setLokaltFel] = useState<string | null>(null);
 
   // Steg 1 skickades och kontot skapades pa servern – ga till bostadssteget.
@@ -223,10 +225,10 @@ export function RegistreraFlode({
           etikett="Köpeskilling"
           hjalp="Valfritt. Står på köpekontraktet eller överlåtelseavtalet – hoppa över och fyll i senare om du inte minns beloppet."
         >
-          <input
-            type="text"
+          <BeloppFalt
             name="kopeskilling"
-            inputMode="numeric"
+            value={kopeskilling}
+            onValueChange={setKopeskilling}
             className={INPUT_KLASS}
             placeholder="t.ex. 3 250 000"
           />

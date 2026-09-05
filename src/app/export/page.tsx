@@ -173,6 +173,44 @@ export default async function ExportSida() {
           agarandel={ex.agarandel_procent}
         />
 
+        {ex.oklassificerade_hogar.length > 0 ? (
+          <section className="border-b border-linje p-4">
+            <p className="font-granssnitt text-sm font-medium text-text-primar">
+              Behöver klassificeras
+            </p>
+            <p className="mt-1 font-granssnitt text-xs text-text-dampad">
+              De här högarna är grupperade men har inte gått igenom frågorna, så
+              de ingår inte i talen ovan. Kör klassificeringsgenomgången för att
+              ta med dem.
+            </p>
+            <ul className="mt-2 divide-y divide-linje border-t border-linje">
+              {ex.oklassificerade_hogar.map((h) => (
+                <li
+                  key={`${h.namn}-${h.ar}`}
+                  className="flex items-baseline justify-between gap-3 py-2 font-granssnitt text-sm"
+                >
+                  <span className="flex items-center gap-1.5 text-text-primar">
+                    <span
+                      aria-hidden
+                      className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
+                    />
+                    {h.namn}
+                  </span>
+                  <span className="flex shrink-0 items-baseline gap-3 tabular-nums">
+                    <span className="text-text-sekundar">{h.ar}</span>
+                    <span className="text-text-primar">
+                      {formateraKronor(h.belopp_brutto)}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <Link href="/genomgang" className={`${SEKUNDARKNAPP_KLASS} mt-3`}>
+              Till klassificeringen
+            </Link>
+          </section>
+        ) : null}
+
         {varningar.length > 0 ? (
           <section className="border-b border-linje p-4">
             <p className="font-granssnitt text-sm font-medium text-text-primar">

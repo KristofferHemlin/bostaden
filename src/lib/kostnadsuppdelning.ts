@@ -30,6 +30,33 @@ export type UppdelningsResultat =
   | { rader: Kostnadsrad[]; projektIder: string[] }
   | { fel: string };
 
+export interface InlineUppdelningsrad {
+  artikel: string;
+  belopp: string;
+  /** Markerad som privat i formularet. Allt annat hor till det valda malet. */
+  privat: boolean;
+}
+
+/**
+ * Kostnadsformularets inline-uppdelning (docs/design.md, "Uppdelning av kvitto
+ * vid inmatning") har inga procenttal och inget malval per rad: en rad ar
+ * antingen privat eller sa hor den till den befintliga gruppering kostnaden ev.
+ * kopplats till. Har oversatts den formen till tolkaUppdelnings indata. Icke-
+ * privata rader far `mal` = `projektMal` (ett projekt-id). Ar `projektMal` tom
+ * blir de okopplade (ingen fordelning), precis som ett kvitto utan koppling.
+ */
+export function inlineUppdelningTillIndata(
+  rader: InlineUppdelningsrad[],
+  projektMal: string,
+): UppdelningsradIndata[] {
+  return rader.map((r) => ({
+    artikel: r.artikel,
+    belopp: r.belopp,
+    mal: r.privat ? "privat" : projektMal,
+    andel: "",
+  }));
+}
+
 export function tolkaUppdelning(
   indata: UppdelningsradIndata[],
   totalbelopp: number,

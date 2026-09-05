@@ -50,6 +50,65 @@ export function oreFranKronor(text: string): number | null {
   return Number.isFinite(summa) && summa >= 0 ? summa : null;
 }
 
+/**
+ * Normaliserar ett belopp som anvandaren skriver eller klistrar in till svensk
+ * visningsform: hart mellanslag var tredje heltalssiffra, komma som
+ * decimaltecken, hogst tva decimaler (docs/design.md, Typografi – "Det galler
+ * aven medan man skriver"). Talet behalls medan man skriver: ett avslutande
+ * komma ("1 020,") lamnas kvar sa att nasta tecken blir en decimal.
+ *
+ * Tolkning av avgransare, sa att inklistrade belopp fungerar oavsett form:
+ *   - Komma ar alltid decimaltecken. Sista kommat vinner; tidigare tas bort.
+ *   - Punkt ar decimaltecken ENDAST nar det saknas komma, det finns exakt en
+ *     punkt och den foljs av hogst tva siffror ("1020.95" -> "1 020,95",
+ *     "5." -> "5,"). Annars ar punkten en tusentalsavgransare ("4.000.000" ->
+ *     "4 000 000", "4.000" -> "4 000").
+ *   - Mellanslag, hart mellanslag, "kr", minus och allt annat tas bort.
+ *
+ * Tom eller osiffrig indata ger tom strang. Funktionen ar idempotent, och
+ * resultatet lases korrekt av oreFranKronor.
+ */
+export function formateraBeloppInmatning(text: string): string {
+  const rensad = text.replace(/[^\d.,]/g, "");
+  if (rensad === "") return "";
+
+  const harKomma = rensad.includes(",");
+  let heltalRa: string;
+  /** null = ingen decimaldel skrevs alls (behall inget avslutande komma). */
+  let decimalRa: string | null;
+
+  if (harKomma) {
+    const sista = rensad.lastIndexOf(",");
+    heltalRa = rensad.slice(0, sista).replace(/[.,]/g, "");
+    decimalRa = rensad.slice(sista + 1).replace(/[.,]/g, "");
+  } else {
+    const punkter = (rensad.match(/\./g) ?? []).length;
+    const sista = rensad.lastIndexOf(".");
+    const efterSista = sista === -1 ? "" : rensad.slice(sista + 1);
+    if (punkter === 1 && efterSista.length <= 2) {
+      heltalRa = rensad.slice(0, sista);
+      decimalRa = efterSista;
+    } else {
+      heltalRa = rensad.replace(/\./g, "");
+      decimalRa = null;
+    }
+  }
+
+  const harDecimalavgransare = harKomma || decimalRa !== null;
+
+  // Inledande nollor bort, men behall en ensam 0.
+  heltalRa = heltalRa.replace(/^0+(?=\d)/, "");
+  const heltalGrupperat =
+    heltalRa === ""
+      ? harDecimalavgransare
+        ? "0"
+        : ""
+      : heltalRa.replace(/\B(?=(\d{3})+(?!\d))/g, HART_MELLANSLAG);
+
+  if (!harDecimalavgransare) return heltalGrupperat;
+  return `${heltalGrupperat},${(decimalRa ?? "").slice(0, 2)}`;
+}
+
 /** Date -> "YYYY-MM-DD" i UTC. Kolumnerna ar @db.Date, tid ar irrelevant. */
 export function isoDatum(d: Date): string {
   return d.toISOString().slice(0, 10);

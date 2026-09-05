@@ -19,7 +19,7 @@ function statusText(
   original: { betaldatum: Date | null; arkiverad: boolean },
   tillstand: { obetald: boolean; okopplad: boolean },
 ): { status: string; atgard: boolean } {
-  if (original.arkiverad) return { status: "Arkiverad", atgard: false };
+  if (original.arkiverad) return { status: "Räknas inte med", atgard: false };
   if (tillstand.obetald) {
     return { status: "Obetald · räknas inte in än", atgard: true };
   }
@@ -65,14 +65,14 @@ export default async function KostnadslistaSida() {
       {rader.length === 0 ? (
         <div className="p-5">
           <p className="font-rubrik text-lg text-text-primar">
-            Lägg till din första kostnad
+            Lägg till ditt första kvitto
           </p>
           <p className="mt-1 font-granssnitt text-sm text-text-dampad">
             Fånga kvittot medan det är färskt. Att koppla det till ett projekt kan
             vänta – oklassificerade kostnader ligger kvar här tills du hinner.
           </p>
           <Link href="/kostnad/nytt" className={`${PRIMARKNAPP_KLASS} mt-4`}>
-            Lägg till kostnad
+            Lägg till kvitto
           </Link>
         </div>
       ) : (
@@ -91,7 +91,7 @@ export default async function KostnadslistaSida() {
           </div>
           <div className="p-4">
             <Link href="/kostnad/nytt" className={PRIMARKNAPP_KLASS}>
-              Lägg till kostnad
+              Lägg till kvitto
             </Link>
           </div>
         </>

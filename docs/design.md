@@ -69,6 +69,12 @@ Båda finns på Google Fonts. Fraunces mjuka serif matchar logotypens geometri; 
 
 Svensk formatering genomgående: `1 020,95 kr` med hårt mellanslag som tusentalsavgränsare och komma som decimaltecken.
 
+**Det gäller även medan man skriver.** Ett beloppsfält formaterar löpande: `4000000` blir `4 000 000` under inmatningen. Långa siffersträngar utan avgränsare går inte att läsa av, och just i den här appen är det belopp man ska kontrollera mot ett kvitto – en nolla för mycket ska synas direkt, inte upptäckas i deklarationen.
+
+Formateringen får aldrig störa inmatningen: markören ska stanna där användaren har den, det ska gå att radera bakåt genom avgränsarna, och klistrar man in ett belopp från annat håll ska både `4000000`, `4 000 000` och `4.000.000` tolkas rätt. Fälten använder numeriskt tangentbord på mobil.
+
+Gäller alla beloppsfält: köpeskilling, totalbelopp, uppdelningens rader, och allt som tillkommer senare.
+
 ---
 
 ## Form
@@ -144,7 +150,9 @@ Innehållet ligger i ett enda kort på `--yta-upphojd` mot sidbakgrunden, med 1p
 
 ### Metrikblock
 
-Överst på översikten står årets summa. Etiketten "Underlag 2026" i dämpad text till vänster, beloppet stort och höger om det på samma baslinje. Under dem ett progressfält, och under det två rader småtext: tröskelbeloppet till vänster, återstående belopp till höger.
+Överst på översikten står årets summa. Etiketten "Inlagt 2026" i dämpad text till vänster, beloppet stort och höger om det på samma baslinje. Under dem ett progressfält, och under det två rader småtext: tröskelbeloppet till vänster, återstående belopp till höger.
+
+Etiketten säger "Inlagt", aldrig "Underlag" eller "Avdrag". Siffran är summan av allt som lagts in, klassificerat eller ej, och appen kan inte påstå mer än så innan klassificeringen är gjord. Finns oklassificerade kostnader står en rad under fältet om att beloppet är preliminärt.
 
 Progressfältet är 8px högt med helt rundade ändar, spår i `--yta-nedsankt` och fyllning i `--sand-mork` under tröskeln, `--accent` när tröskeln passerats. Fyllningen måste ha tydlig kontrast mot spåret – `--sand` mot `--yta-nedsankt` är för svagt och ska aldrig användas här.
 
@@ -154,7 +162,43 @@ Projekt och kostnader visas som rader avdelade med 1px linjer, inte som separata
 
 ### Tomma tillstånd
 
-Ett tomt tillstånd säger aldrig bara att det är tomt. Det består av en tunn ikon, en rubrik som är en uppmaning, en till två rader förklaring, och en primärknapp i full bredd. Finns det en meningsfull uppgift som inte kräver data – som att lägga upp baslinjen – ligger den under som ett eget avsnitt med egen knapp i mindre storlek.
+Ett tomt tillstånd säger aldrig bara att det är tomt. Det består av en rubrik som är en uppmaning, en till två rader som förklarar varför, och en primärknapp i full bredd.
+
+**Handlingen heter "Lägg till kvitto", inte kostnad eller utgift.** Kvitto är det konkreta – det man håller i handen och det appen läser av. Utgift och kostnad låter som bokföring, och bokföring är inte vad någon vill ägna sin söndag åt.
+
+**En enda primärknapp.** Ingen knapp för att skapa en gruppering – det är inte vägen in i produkten, och ordet *projekt* hör inte hemma på en landningsskärm. Två jämnstora knappar tvingar fram ett val innan användaren vet vad alternativen betyder.
+
+### Förstaskärmen för en ny användare
+
+Den som just skapat kontot vet inte varför hen ska spara kvitton. Ingen gör det spontant – man gör det när man förstår att det är pengar den dagen bostaden säljs. Skärmen ska säga det, inte förutsätta det.
+
+Överst logotypen och bostaden med adress, upplåtelseform och tillträdesår: "Ulriksborgsgatan 7 – bostadsrätt sedan juni 2022". Det är personligt, och det bekräftar att registreringen blev rätt.
+
+Under den en rubrik i stil med "Spara kvittona nu, dra av dem när du säljer" och en till två meningar om att renoveringar minskar vinstskatten men måste kunna styrkas – och att kvitton bleknar och mejl försvinner. Sedan knappen.
+
+**Ingen introduktionsrundtur och inga påhittade siffror.** Rundturer läses inte och skjuter upp det man ska göra. Löften om hur mycket man sparar vet vi ingenting om.
+
+Baslinjen erbjuds inte här. Den är värdefull men kräver att man letar fram gamla bilder, och det är fel första uppgift – förstaskärmen ska ha exakt en sak att göra.
+
+### Kvittots detaljvy
+
+Ett sparat kvitto visar anteckningen som rubrik, sedan belopp, datum och leverantör, och bilagorna under. Ingenting annat.
+
+**Ingen statusrad, ingen projektrad, ingen prick.** Oklassificerad är det normala tillståndet och kan vara det i åratal – att märka det som en brist motsäger hela produkten. Ord som "saknar", "oklassificerad" och "projekt" hör inte hemma på den här skärmen.
+
+Är kvittot kopplat till en gruppering visas den som en dämpad rad med namnet. Är det inte kopplat visas ingen rad alls, inte "Inget".
+
+Två åtgärder ligger under: **"Ändra uppgifter"** och **"Var något på kvittot privat?"**. Den senare ersätter "Dela upp kvittot" – uppdelning är ett begrepp ur vår modell, medan frågan om något var privat är något användaren kan svara på utan att veta något om skatteregler. Formuleringen är densamma som vid inmatningen, så det är tydligt att det är samma sak.
+
+**Efter att ett kvitto sparats går flödet till startskärmen**, inte till detaljvyn. Den som just sparat vill se att det kom fram och kunna lägga in nästa, inte betrakta en post. Det nyss tillagda kvittot ligger överst i listan, vilket är bekräftelse nog.
+
+### Startskärmen med innehåll
+
+Så snart något lagts in ersätts uppmaningen av metrikblocket och **de sex senast tillagda kvittona**, senaste först. Varje rad visar anteckningen som huvudtext, med leverantör och datum dämpat under, och beloppet högerställt.
+
+Anteckningen som huvudtext är avsiktligt. "Målade om sovrummet" säger vad raden är; "BAUHAUS" gör det inte. Saknas anteckning används leverantören.
+
+Under listan en länk till alla kvitton. Sex rader räcker för att känna igen sig och se att det man nyss lade in kom fram, utan att skärmen blir en lista.
 
 ### Bilagor
 
@@ -196,6 +240,28 @@ Under fältet ligger en länk: "Betalades ett annat datum?". Klick fäller ut be
 
 Att tömma betaldatumet gör kostnaden obetald, vilket innebär att den inte räknas in i årssumman. Den möjligheten ligger kvar i det utfällda läget med en förklarande rad.
 
+### Inmatningen ställer inga skattefrågor
+
+Att lägga in ett kvitto ska ta tio sekunder och aldrig kräva ett beslut användaren inte är redo att fatta. Formuläret innehåller bilaga, belopp, datum, leverantör och ett fritextfält – ingenting annat.
+
+Fritextfältet heter **"Vad gällde det?"** och är det enda som bär betydelse framåt. Hjälptexten uppmuntrar en beskrivande mening, inte ett ord: "målade om sovrummet, väggarna var slitna sedan vi flyttade in" är vad som gör klassificeringen möjlig åtta år senare. "Färg" är det inte.
+
+Fältet är inte obligatoriskt. Ett kvitto utan anteckning är bättre än inget kvitto.
+
+**Ingen gruppering, inga kategorier, inga frågor vid inmatningen.** De fyra frågorna hör hemma i klassificeringsgenomgången, som användaren startar när hen själv vill. Ordet *projekt* förekommer inte i inmatningsflödet.
+
+Den som ändå vill koppla direkt kan göra det – ett valfritt fält för befintlig gruppering finns längst ned, hopfällt. Men det är en genväg för den vane, inte vägen in.
+
+### Uppdelning av kvitto vid inmatning
+
+**Uppdelning är utfällbar, aldrig ett krav.** Under totalbeloppet ligger en länk: "Var något på kvittot privat?". Klick fäller ut raderna i samma formulär, precis som betaldatumet. Ett kvitto som inte delas upp hör i sin helhet till det valda projektet.
+
+Förvalet när man fäller ut är **två rader** – en till projektet och en privat. En "lägg till rad"-knapp finns för de sällsynta fall där ett kvitto rör två olika åtgärder, men den syns inte förrän man behöver den.
+
+**Inga procenttal, ingen "fördelning", ingen "andel" i gränssnittet.** Användaren anger artikel och belopp, och markerar vad som är privat. Systemet räknar ut resten. Den som ska använda appen är en person som målat sitt sovrum, inte en bokförare.
+
+**Avläsningen får fylla i artiklar och belopp, men aldrig fördelningen.** Modellen kan läsa kvittoraderna, men den kan inte veta att ett torkställ är privat och en pensel inte – det beror på åtgärden, inte på kvittot. Ett felaktigt förval här blir tyst godkänt och ger ett för högt underlag.
+
 ### Kostnadsformulärets ordning
 
 **Bilagan ligger först, inte sist.** Den som just handlat vill fota kvittot och få resten ifyllt, inte skriva fem fält och sedan bifoga. Ordningen är: bilaga, sedan de fält analysen fyllt i, sedan projektkoppling.
@@ -204,7 +270,9 @@ När en fil valts läses den av och belopp, datum och leverantör fylls i automa
 
 **Analysen skriver aldrig över något användaren redan skrivit.** Bara tomma fält fylls. Och den blockerar aldrig: misslyckas den, tar för lång tid eller är formatet oläsbart, händer ingenting alls – inget felmeddelande, inga tomma fält som ser trasiga ut. Användaren fyller i som vanligt utan att veta att något försökte hjälpa till.
 
-Under avläsningen visas en diskret statusrad. Den ska gå att ignorera; fälten är redigerbara hela tiden.
+Under avläsningen visas en liten roterande indikator i förhandsvisningens övre hörn, tillsammans med en diskret statusrad. Indikatorn behövs för att avläsningen tar några sekunder och en text under bilden är lätt att missa – utan den ser det ut som att ingenting händer.
+
+Indikatorn försvinner när svaret kommit, oavsett om något fylldes i eller inte. Fälten är redigerbara hela tiden och avläsningen blockerar aldrig.
 
 ### Progressfältet mot tröskeln
 

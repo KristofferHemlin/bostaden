@@ -23,6 +23,17 @@ export default async function ProjektlistaSida() {
       belopp += bidragForKostnad(k, p.id);
     }
     const svagt = harledUnderlagsstyrka(p) === "svagt";
+    if (p.kategori === null) {
+      // En hog fran klassificeringsgenomgangens fas 1 som annu inte klassificerats.
+      return {
+        id: p.id,
+        namn: p.namn,
+        ar: p.ar,
+        belopp,
+        status: "Behöver klassificeras",
+        atgard: true,
+      };
+    }
     const kategoriText =
       p.kategori === "grundforbattring" ? "Grundförbättring" : "Reparation";
     return {

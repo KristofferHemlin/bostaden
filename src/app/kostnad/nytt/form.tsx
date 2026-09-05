@@ -1,11 +1,17 @@
 "use client";
 
-// Steg 5 + 9 + dokumentavlasning (produktspec avsnitt 9, docs/design.md
-// "Kostnadsformularets ordning", "Bilagor", "Datum i kostnadsformularet").
+// Steg 5 + 9 + dokumentavlasning (produktspec avsnitt 2b och 9, docs/design.md
+// "Kostnadsformularets ordning", "Bilagor", "Datum i kostnadsformularet",
+// "Inmatningen staller inga skattefragor", "Uppdelning av kvitto vid inmatning").
 //
-// Ordning: BILAGAN FORST, sedan belopp, datum och leverantor, sedan
-// projektkoppling. Den som just handlat vill fota kvittot och fa resten ifyllt,
-// inte skriva fem falt och sedan bifoga.
+// INGA SKATTEFRAGOR VID INMATNINGEN. Klassificeringen (de fyra fragorna,
+// kategori, femarsfonstret) gors i en egen genomgang nar anvandaren sjalv vill.
+// Formularet innehaller bilaga, belopp, datum, leverantor och fritextfaltet
+// "Vad gallde det?" – ingenting annat. Ordet "projekt" syns inte har.
+//
+// Ordning: BILAGAN FORST, sedan belopp, datum, leverantor och "Vad gallde det?".
+// Den som just handlat vill fota kvittot och fa resten ifyllt, inte skriva fem
+// falt och sedan bifoga.
 //
 // Bilagor: webblasarens filknapp visas ALDRIG. Sista rutan i miniatyrraden ar en
 // streckad "Lagg till"-ruta med filinputen dold bakom. Flera filer tas emot –
@@ -29,11 +35,31 @@
 // lank "Betalades ett annat datum?" som faller ut betaldatumet som eget falt,
 // forifyllt med samma datum. Tomt betaldatum = obetald = raknas inte in i
 // arssumman.
+//
+// "Vad gallde det?": valfritt fritextfalt som sparas i kostnadens anteckning.
+// Atta ar senare ar den raden plus bilagan det som gor klassificeringen mojlig,
+// sa hjalptexten uppmuntrar en beskrivande mening, inte ett ord.
+//
+// Langst ned en hopfalld genvag for den vane: koppla kostnaden direkt till nagot
+// som redan lagts in. Bara befintliga grupperingar – inga nya, inga fragor. Det
+// ar en genvag, inte vagen in, och doljs helt nar inget finns att koppla till.
+//
+// "Var nagot pa kvittot privat?": utfallbar uppdelning under totalbeloppet, precis
+// som betaldatumet. Tva rader som forval – en privat, resten sparas som vanligt.
+// Inga procenttal: anvandaren anger artikel och belopp och markerar vad som ar
+// privat. En "Lagg till rad"-knapp visas forst nar raderna ar ifyllda. Ett
+// kvitto som inte delas upp sparas i sin helhet.
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { skapaKostnad, type KostnadResultat } from "./actions";
+import { BeloppFalt } from "@/components/belopp-falt";
 import { Falt, INPUT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
+import {
+  formateraBeloppInmatning,
+  formateraKronor,
+  oreFranKronor,
+} from "@/lib/format";
 import { kannIgenFormat } from "@/lib/lagring/bilaga-regler";
 
 const START: KostnadResultat = {};
@@ -72,6 +98,14 @@ interface Avlasningssvar {
   datum: string | null;
   totalbelopp: number | null;
   leverantor: string | null;
+}
+
+/** En rad i den utfallbara uppdelningen. Inga procenttal – bara "privat" eller ej. */
+interface Uppdelningsrad {
+  artikel: string;
+  belopp: string;
+  privat: boolean;
+  nyckel: number;
 }
 
 // pdf.js laddas forst nar en PDF ska visas (haller det borta fran
@@ -170,6 +204,26 @@ export function NyKostnadForm({
 
   const [avlasningPagar, setAvlasningPagar] = useState(false);
   const [avlasningFyllde, setAvlasningFyllde] = useState(false);
+
+  // "Vad gallde det?" – valfri fritext, sparas i kostnadens anteckning.
+  const [anteckning, setAnteckning] = useState("");
+
+  // Hopfalld genvag langst ned: koppla kostnaden direkt till nagot som redan
+  // lagts in. Bara befintliga grupperingar – inga nya, inga fragor. Forifylls
+  // fran ?projekt= pa lanken fran en grupperings sida.
+  const forvaltMal = projekt.find((p) => p.id === forvaltProjekt) ?? null;
+  const [kopplaOppen, setKopplaOppen] = useState(forvaltMal !== null);
+  const [valtProjektId, setValtProjektId] = useState(forvaltMal?.id ?? "");
+  const valtProjekt = projekt.find((p) => p.id === valtProjektId) ?? null;
+  const kopplatMal = kopplaOppen ? valtProjekt : null;
+
+  // Utfallbar uppdelning – tva rader som forval, en privat och resten.
+  const [delaUpp, setDelaUpp] = useState(false);
+  const [rader, setRader] = useState<Uppdelningsrad[]>([
+    { artikel: "", belopp: "", privat: false, nyckel: 0 },
+    { artikel: "", belopp: "", privat: true, nyckel: 1 },
+  ]);
+  const [nastaNyckel, setNastaNyckel] = useState(2);
 
   // Vilken bilaga som visas i forhandsvisningen. Klick pa en miniatyr byter.
   // Klamps mot listans langd sa att den aldrig pekar utanfor efter en borttagning.
@@ -271,7 +325,7 @@ export function NyKostnadForm({
         fyllde = true;
       }
       if (data.totalbelopp != null && nu.belopp.trim() === "") {
-        nasta.belopp = orenTillFalt(data.totalbelopp);
+        nasta.belopp = formateraBeloppInmatning(orenTillFalt(data.totalbelopp));
         fyllde = true;
       }
       if (data.datum && nu.datum.trim() === "") {
@@ -307,10 +361,57 @@ export function NyKostnadForm({
     setValdIndex((v) => (index < v ? v - 1 : v));
   }
 
-  // Sparningen: lagg bilagorna fran state i formdatan for hand, dispatcha sedan.
+  function andraRad(nyckel: number, delvis: Partial<Uppdelningsrad>) {
+    setRader((prev) =>
+      prev.map((r) => (r.nyckel === nyckel ? { ...r, ...delvis } : r)),
+    );
+  }
+
+  function laggTillRad() {
+    setRader((prev) => [
+      ...prev,
+      { artikel: "", belopp: "", privat: false, nyckel: nastaNyckel },
+    ]);
+    setNastaNyckel((n) => n + 1);
+  }
+
+  function taBortRad(nyckel: number) {
+    setRader((prev) => prev.filter((r) => r.nyckel !== nyckel));
+  }
+
+  // Loppande summa mot totalbeloppet – ingen sparr i sig (servern ar sanningen),
+  // men utan den gar raderna nastan aldrig ihop pa ett langt kvitto. Aldrig
+  // orange: "gar ihop" ar en bekraftelseruta i --bg-klart.
+  const totalOren = oreFranKronor(falt.belopp) ?? 0;
+  const summaOren = rader.reduce(
+    (s, r) => s + (oreFranKronor(r.belopp) ?? 0),
+    0,
+  );
+  const differens = totalOren - summaOren;
+  const garIhop = totalOren > 0 && differens === 0;
+  const raderIfyllda = rader.every(
+    (r) => r.artikel.trim() !== "" && r.belopp.trim() !== "",
+  );
+  const uppdelningAktiv =
+    delaUpp && rader.some((r) => r.artikel.trim() !== "" || r.belopp.trim() !== "");
+
+  // Sparningen: lagg bilagorna och uppdelningsraderna fran state i formdatan for
+  // hand, dispatcha sedan.
   function skicka(formData: FormData) {
     formData.delete("bilagor");
     for (const fil of filer) formData.append("bilagor", fil);
+
+    for (const namn of ["rad_artikel", "rad_belopp", "rad_privat"]) {
+      formData.delete(namn);
+    }
+    if (uppdelningAktiv) {
+      for (const r of rader) {
+        formData.append("rad_artikel", r.artikel);
+        formData.append("rad_belopp", r.belopp);
+        formData.append("rad_privat", r.privat ? "1" : "");
+      }
+    }
+
     dispatch(formData);
   }
 
@@ -405,7 +506,16 @@ export function NyKostnadForm({
           som en bild av forsta sidan, aldrig webblasarens visare. Ikonen ar
           sista utvag nar renderingen misslyckas. */}
       {forhandsvisning ? (
-        <div className="overflow-hidden rounded-lg border border-linje bg-yta-nedsankt">
+        <div className="relative overflow-hidden rounded-lg border border-linje bg-yta-nedsankt">
+          {/* Liten roterande indikator i ovre hornet under avlasningen – en text
+              under bilden ar latt att missa (docs/design.md,
+              "Kostnadsformularets ordning"). Forsvinner nar svaret kommit,
+              oavsett utfall. */}
+          {avlasningPagar ? (
+            <span className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-yta-upphojd">
+              <SnurraGlyf />
+            </span>
+          ) : null}
           {renderFel ? (
             <DokumentIkon namn={forhandsvisning.namn} />
           ) : forhandsvisning.bildUrl ? (
@@ -443,18 +553,136 @@ export function NyKostnadForm({
         {avlasningFyllde ? "Granska uppgifterna" : "Fyll i uppgifter"}
       </h2>
 
-      <Falt etikett="Totalbelopp" hjalp="Hela kvittosumman, t.ex. 1 020,95.">
-        <input
-          type="text"
-          name="totalbelopp"
-          inputMode="decimal"
-          required
-          value={falt.belopp}
-          onChange={(e) => setFalt((f) => ({ ...f, belopp: e.target.value }))}
-          className={INPUT_KLASS}
-          placeholder="0,00"
-        />
-      </Falt>
+      <div>
+        <Falt etikett="Totalbelopp" hjalp="Hela kvittosumman, t.ex. 1 020,95.">
+          <BeloppFalt
+            name="totalbelopp"
+            required
+            value={falt.belopp}
+            onValueChange={(v) => setFalt((f) => ({ ...f, belopp: v }))}
+            className={INPUT_KLASS}
+            placeholder="0,00"
+          />
+        </Falt>
+
+        {/* Utfallbar uppdelning – samma monster som betaldatumet nedan. */}
+        {delaUpp ? (
+          <div className="mt-3 flex flex-col gap-4 rounded-lg bg-yta-nedsankt p-4">
+            <p className="font-granssnitt text-sm text-text-sekundar">
+              Skriv vad som var privat och hur mycket det kostade.{" "}
+              {kopplatMal ? (
+                <>
+                  Resten hör till{" "}
+                  <span className="text-text-primar">{kopplatMal.namn}</span>.
+                </>
+              ) : (
+                "Resten sparas som vanligt på kvittot."
+              )}
+            </p>
+
+            <div className="flex flex-col gap-4">
+              {rader.map((r, index) => (
+                <div
+                  key={r.nyckel}
+                  className="flex flex-col gap-3 border-t border-linje pt-4 first:border-0 first:pt-0"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
+                      Rad {index + 1}
+                    </span>
+                    {rader.length > 2 ? (
+                      <button
+                        type="button"
+                        onClick={() => taBortRad(r.nyckel)}
+                        className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
+                      >
+                        Ta bort
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <Falt etikett="Vad avser raden?">
+                    <input
+                      type="text"
+                      value={r.artikel}
+                      onChange={(e) =>
+                        andraRad(r.nyckel, { artikel: e.target.value })
+                      }
+                      className={INPUT_KLASS}
+                      placeholder="t.ex. Väggfärg"
+                    />
+                  </Falt>
+
+                  <Falt etikett="Belopp">
+                    <BeloppFalt
+                      value={r.belopp}
+                      onValueChange={(v) => andraRad(r.nyckel, { belopp: v })}
+                      className={INPUT_KLASS}
+                      placeholder="0,00"
+                    />
+                  </Falt>
+
+                  <label className="flex items-center gap-2.5 font-granssnitt text-sm text-text-primar">
+                    <input
+                      type="checkbox"
+                      checked={r.privat}
+                      onChange={(e) =>
+                        andraRad(r.nyckel, { privat: e.target.checked })
+                      }
+                      className="h-4 w-4 accent-accent"
+                    />
+                    Privat – räknas inte med
+                  </label>
+                </div>
+              ))}
+            </div>
+
+            {raderIfyllda ? (
+              <button
+                type="button"
+                onClick={laggTillRad}
+                className="self-start font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
+              >
+                Lägg till rad
+              </button>
+            ) : null}
+
+            {garIhop ? (
+              <p className="rounded-lg bg-bg-klart px-3 py-2 font-granssnitt text-sm text-text-klart">
+                Raderna går ihop med totalbeloppet.
+              </p>
+            ) : totalOren > 0 ? (
+              <p className="font-granssnitt text-sm text-text-sekundar">
+                Raderna täcker{" "}
+                <span className="tabular-nums text-text-primar">
+                  {formateraKronor(summaOren)}
+                </span>{" "}
+                av {formateraKronor(totalOren)} –{" "}
+                <span className="tabular-nums text-text-primar">
+                  {formateraKronor(Math.abs(differens))}
+                </span>{" "}
+                {differens >= 0 ? "kvar" : "för mycket"}.
+              </p>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={() => setDelaUpp(false)}
+              className="self-start font-granssnitt text-xs text-text-sekundar underline"
+            >
+              Hela kvittot hörde till samma sak
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setDelaUpp(true)}
+            className="mt-1.5 font-granssnitt text-sm text-text-sekundar underline"
+          >
+            Var något på kvittot privat?
+          </button>
+        )}
+      </div>
 
       {/* Ett datumfalt som utgangslage – satter bade kvittots datum och
           betaldatum (docs/design.md, "Datum i kostnadsformularet"). */}
@@ -522,23 +750,67 @@ export function NyKostnadForm({
         />
       </Falt>
 
+      {/* Det enda faltet som bar betydelse framat. Fritext, aldrig obligatoriskt.
+          Ordet "projekt" finns inte i inmatningsflodet – klassificeringen gors i
+          en egen genomgang nar anvandaren sjalv vill. */}
       <Falt
-        etikett="Koppla till projekt"
-        hjalp="Går att lämna tomt – kostnaden sparas då oklassificerad."
+        etikett="Vad gällde det?"
+        hjalp="En beskrivande mening gör att du känner igen kvittot om flera år, t.ex. ”målade om sovrummet, väggarna var slitna sedan vi flyttade in”. Kan lämnas tomt."
       >
-        <select
-          name="projekt_id"
-          defaultValue={forvaltProjekt ?? ""}
-          className={INPUT_KLASS}
-        >
-          <option value="">– inget projekt –</option>
-          {projekt.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.namn} ({p.ar})
-            </option>
-          ))}
-        </select>
+        <textarea
+          name="anteckning"
+          value={anteckning}
+          onChange={(e) => setAnteckning(e.target.value)}
+          rows={3}
+          className={`${INPUT_KLASS} min-h-[4.5rem] resize-y`}
+          placeholder="t.ex. målade om sovrummet, väggarna var slitna sedan vi flyttade in"
+        />
       </Falt>
+
+      {/* Hopfalld genvag for den vane: koppla direkt till nagot som redan lagts
+          in. Bara befintliga grupperingar, inga fragor. Doljs nar inget finns. */}
+      {projekt.length > 0 ? (
+        <div>
+          {kopplaOppen ? (
+            <>
+              <Falt etikett="Koppla till något du redan lagt in">
+                <select
+                  value={valtProjektId}
+                  onChange={(e) => setValtProjektId(e.target.value)}
+                  className={INPUT_KLASS}
+                >
+                  <option value="">Välj…</option>
+                  {projekt.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.namn}
+                    </option>
+                  ))}
+                </select>
+              </Falt>
+              <button
+                type="button"
+                onClick={() => {
+                  setKopplaOppen(false);
+                  setValtProjektId("");
+                }}
+                className="mt-1 font-granssnitt text-xs text-text-sekundar underline"
+              >
+                Koppla senare i stället
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setKopplaOppen(true)}
+              className="font-granssnitt text-sm text-text-sekundar underline"
+            >
+              Koppla till något du redan lagt in
+            </button>
+          )}
+        </div>
+      ) : null}
+
+      <input type="hidden" name="projekt_id" value={kopplatMal?.id ?? ""} />
 
       {resultat.fel ? (
         <div className="font-granssnitt text-sm text-accent-mork">
@@ -590,6 +862,22 @@ function DokumentGlyf() {
     >
       <path d="M14 3v5h5" />
       <path d="M18 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8l6 6v10a2 2 0 0 1-2 2z" />
+    </svg>
+  );
+}
+
+function SnurraGlyf() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      aria-hidden
+      className="h-4 w-4 animate-spin text-text-sekundar"
+    >
+      <path d="M12 3a9 9 0 1 0 9 9" />
     </svg>
   );
 }

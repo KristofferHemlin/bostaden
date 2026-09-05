@@ -1,7 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import { BeloppFalt } from "@/components/belopp-falt";
 import { Falt, INPUT_KLASS, Meddelanderuta, PRIMARKNAPP_KLASS } from "@/components/skarm";
+import { formateraBeloppInmatning } from "@/lib/format";
 import { sparaInstallningar, type InstallningarResultat } from "./actions";
 
 const START: InstallningarResultat = {};
@@ -14,6 +16,9 @@ export function InstallningarForm({
   kopeskilling: string;
 }) {
   const [resultat, action, pagar] = useActionState(sparaInstallningar, START);
+  const [kopeskillingFalt, setKopeskillingFalt] = useState(() =>
+    formateraBeloppInmatning(kopeskilling),
+  );
 
   return (
     <form action={action} className="flex flex-col gap-5 p-5">
@@ -32,11 +37,10 @@ export function InstallningarForm({
         etikett="Köpeskilling"
         hjalp="Vad du betalade för bostaden. Står på köpekontraktet eller överlåtelseavtalet. Lämna tomt om du fyller i den senare."
       >
-        <input
-          type="text"
+        <BeloppFalt
           name="kopeskilling"
-          inputMode="numeric"
-          defaultValue={kopeskilling}
+          value={kopeskillingFalt}
+          onValueChange={setKopeskillingFalt}
           className={INPUT_KLASS}
           placeholder="t.ex. 3 250 000"
         />

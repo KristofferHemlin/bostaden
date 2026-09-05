@@ -52,8 +52,12 @@ export default async function ProjektSida({
   });
   const kostnader = kostnadRader.map(tillDomanKostnad);
 
-  const kategoriText =
-    projekt.kategori === "grundforbattring" ? "Grundförbättring" : "Reparation";
+  const oklassificerad = projekt.kategori === null;
+  const kategoriText = oklassificerad
+    ? "Behöver klassificeras"
+    : projekt.kategori === "grundforbattring"
+      ? "Grundförbättring"
+      : "Reparation";
   const svagt = harledUnderlagsstyrka(projekt) === "svagt";
 
   return (
@@ -64,25 +68,35 @@ export default async function ProjektSida({
       bakLank={{ href: "/projekt", text: "Projekt" }}
     >
       <section className="space-y-2 border-b border-linje p-4 font-granssnitt text-sm">
-        <Rad etikett="Kategori" varde={kategoriText} />
+        <Rad etikett="Kategori" varde={kategoriText} atgard={oklassificerad} />
         <Rad etikett="År (etikett)" varde={String(projekt.ar)} />
-        <Rad
-          etikett="Nytt eller fanns förut"
-          varde={
-            projekt.kategori === "grundforbattring"
-              ? "Nytt / klar förbättring"
-              : "Fanns förut, uppfräschat"
-          }
-        />
-        <Rad
-          etikett="Slitet vid inflytt"
-          varde={jaNejVetInte(projekt.slitet_vid_tilltrade)}
-        />
+        {oklassificerad ? null : (
+          <>
+            <Rad
+              etikett="Nytt eller fanns förut"
+              varde={
+                projekt.kategori === "grundforbattring"
+                  ? "Nytt / klar förbättring"
+                  : "Fanns förut, uppfräschat"
+              }
+            />
+            <Rad
+              etikett="Slitet vid inflytt"
+              varde={jaNejVetInte(projekt.slitet_vid_tilltrade)}
+            />
+          </>
+        )}
         <Rad
           etikett="Underlag"
           varde={svagt ? "underlag saknas" : "dokumenterat"}
-          atgard={svagt}
+          atgard={svagt && !oklassificerad}
         />
+        {oklassificerad ? (
+          <p className="pt-1 text-text-sekundar">
+            Den här högen är grupperad men har inte gått igenom frågorna. Den
+            räknas inte in i underlaget förrän den klassificerats.
+          </p>
+        ) : null}
         {projekt.motivering ? (
           <p className="pt-1 text-text-sekundar">{projekt.motivering}</p>
         ) : null}
@@ -117,11 +131,16 @@ export default async function ProjektSida({
           </div>
         )}
         <div className="flex flex-col gap-2 p-4">
+          {oklassificerad ? (
+            <Link href="/genomgang/fragor" className={PRIMARKNAPP_KLASS}>
+              Klassificera högen
+            </Link>
+          ) : null}
           <Link
             href={`/kostnad/nytt?projekt=${id}`}
-            className={PRIMARKNAPP_KLASS}
+            className={oklassificerad ? SEKUNDARKNAPP_KLASS : PRIMARKNAPP_KLASS}
           >
-            Lägg till kostnad
+            Lägg till kvitto
           </Link>
           <Link
             href={`/projekt/${id}/redigera`}

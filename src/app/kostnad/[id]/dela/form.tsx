@@ -15,8 +15,13 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { delaUppKostnad, type KostnadRedigeraResultat } from "../actions";
+import { BeloppFalt } from "@/components/belopp-falt";
 import { Falt, INPUT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
-import { formateraKronor, oreFranKronor } from "@/lib/format";
+import {
+  formateraBeloppInmatning,
+  formateraKronor,
+  oreFranKronor,
+} from "@/lib/format";
 
 const START: KostnadRedigeraResultat = {};
 
@@ -51,7 +56,11 @@ export function DelaUppForm({
   const [resultat, spara, sparar] = useActionState(delaUppKostnad, START);
 
   const [rader, setRader] = useState<Rad[]>(() =>
-    startRader.map((r, i) => ({ ...r, nyckel: i })),
+    startRader.map((r, i) => ({
+      ...r,
+      belopp: formateraBeloppInmatning(r.belopp),
+      nyckel: i,
+    })),
   );
   const [nastaNyckel, setNastaNyckel] = useState(startRader.length);
 
@@ -145,13 +154,9 @@ export function DelaUppForm({
               </Falt>
 
               <Falt etikett="Belopp">
-                <input
-                  type="text"
-                  inputMode="decimal"
+                <BeloppFalt
                   value={r.belopp}
-                  onChange={(e) =>
-                    andraRad(r.nyckel, { belopp: e.target.value })
-                  }
+                  onValueChange={(v) => andraRad(r.nyckel, { belopp: v })}
                   className={INPUT_KLASS}
                   placeholder="0,00"
                 />

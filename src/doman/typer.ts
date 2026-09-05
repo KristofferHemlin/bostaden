@@ -45,7 +45,8 @@ export interface Kostnad {
 export interface Projekt {
   id: string;
   namn: string;
-  kategori: Projektkategori;
+  /** null = hogen ar grupperad men annu inte klassificerad (fas 2 i genomgangen). */
+  kategori: Projektkategori | null;
   baslinjepost_id: string | null;
   slitet_vid_tilltrade: boolean | null;
   battre_skick_vid_forsaljning: boolean | null;

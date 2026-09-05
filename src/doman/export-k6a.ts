@@ -44,6 +44,16 @@ export interface K6aSida {
   summa_individuellt: number;
 }
 
+/** En hog som grupperats men inte klassificerats (kategori = null). Hor inte
+ *  hemma pa nagon av de tva sidorna, men far aldrig utelamnas tyst – da undrar
+ *  man varfor summan ar lag. Visas i en egen lista med sitt belopp. */
+export interface OklassificeradHog {
+  namn: string;
+  ar: number;
+  /** Oren, efter ROT/forsakring, fore agarandel. Samma bidrag som en klassificerad hog. */
+  belopp_brutto: number;
+}
+
 export interface K6aExport {
   genererad_for_datum: string;
   agarandel_procent: number;
@@ -54,6 +64,8 @@ export interface K6aExport {
   ruta4_individuellt: number;
   ruta5_brutto: number;
   ruta5_individuellt: number;
+  /** Hogar som fortfarande behover klassificeras (fas 2). Tom nar allt ar gjort. */
+  oklassificerade_hogar: OklassificeradHog[];
   varningar: string[];
 }
 
@@ -127,10 +139,27 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
   // 3. Bygg rader.
   const sida1: K6aExportrad[] = [];
   const sida2: K6aExportrad[] = [];
+  const oklassificerade: OklassificeradHog[] = [];
 
   for (const cell of celler.values()) {
     const p = cell.projekt;
     const { ar } = cell;
+
+    // Ogrupperad -> klassificerad kommer forst i genomgangen. En hog utan
+    // kategori har inte gatt igenom fas 2 an: den hor inte hemma pa nagon sida,
+    // men listas separat sa att man ser vad som fattas.
+    if (p.kategori === null) {
+      oklassificerade.push({
+        namn: p.namn,
+        ar,
+        belopp_brutto: avrunda(cell.belopp),
+      });
+      varningar.push(
+        `Högen "${p.namn}" (${ar}) är grupperad men inte klassificerad än och ingår inte i underlaget. Gå igenom frågorna för att ta med den.`,
+      );
+      continue;
+    }
+
     const troskelbelopp = slaUppRegelparameter(
       regelparametrar,
       "troskelbelopp",
@@ -206,6 +235,9 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
     a.ar - b.ar || a.atgard.localeCompare(b.atgard, "sv");
   sida1.sort(sortera);
   sida2.sort(sortera);
+  oklassificerade.sort(
+    (a, b) => a.ar - b.ar || a.namn.localeCompare(b.namn, "sv"),
+  );
 
   const summera = (tal: number[]) => tal.reduce((s, x) => s + x, 0);
   const s1b = summera(sida1.map((r) => r.belopp_brutto));
@@ -223,6 +255,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
     ruta4_individuellt: s1i,
     ruta5_brutto: s2b,
     ruta5_individuellt: s2i,
+    oklassificerade_hogar: oklassificerade,
     varningar,
   };
 }
