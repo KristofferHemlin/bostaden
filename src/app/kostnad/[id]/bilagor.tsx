@@ -216,7 +216,7 @@ export function Bilagor({
 
       {bilagor.length === 0 && !laddarUpp && !uppladdningsfel ? (
         <p className="mt-2 font-granssnitt text-sm text-text-dampad">
-          Inga bilagor än. En kostnad utan kvitto är inget fel – underlaget blir
+          Inga bilagor än. Ett kvitto utan bild är inget fel – underlaget blir
           bara svagare.
         </p>
       ) : null}

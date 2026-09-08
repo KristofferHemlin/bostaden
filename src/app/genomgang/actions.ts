@@ -142,6 +142,38 @@ export async function skapaHog(
   return {};
 }
 
+/**
+ * Doper om en hog direkt i grupperingsvyn. Namnet foreslas fran forsta kvittots
+ * anteckning, men forslaget ar ofta leverantoren – och hogens namn hamnar i
+ * K6A-underlagets atgardskolumn, dar det ska sta vad utgiften avser. Bara hogar
+ * som annu inte gatt igenom fragorna (kategori = null) doper man om har;
+ * klassificerade hogar andras via projektets redigering.
+ */
+export async function dopOmHog(
+  _foreg: GenomgangResultat,
+  formData: FormData,
+): Promise<GenomgangResultat> {
+  const { bostadId } = await kravBostad();
+
+  const projektId = String(formData.get("projekt_id") ?? "");
+  const namn = String(formData.get("namn") ?? "").trim();
+
+  if (!namn) return { fel: "Ge högen ett namn." };
+
+  const projekt = await prisma.projekt.findFirst({
+    where: { id: projektId, bostad_id: bostadId },
+    select: { id: true, kategori: true },
+  });
+  if (!projekt) return { fel: "Högen hittades inte." };
+  if (projekt.kategori !== null) {
+    return { fel: "Den högen är redan klassificerad och byter namn via projektet." };
+  }
+
+  await prisma.projekt.update({ where: { id: projekt.id }, data: { namn } });
+  revalidera();
+  return {};
+}
+
 export async function laggIHog(
   _foreg: GenomgangResultat,
   formData: FormData,

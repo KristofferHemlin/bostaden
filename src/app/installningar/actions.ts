@@ -34,13 +34,17 @@ export async function sparaInstallningar(
     }
   }
 
-  let kopeskilling: number | null = null;
+  // kopeskilling lagras som BigInt (Int tar slut vid ~21,5 miljoner kr). Tolkas
+  // som heltal oren och gors om till bigint fore skrivningen.
+  let kopeskillingOren: number | null = null;
   if (kopeskillingText !== "") {
-    kopeskilling = oreFranKronor(kopeskillingText);
-    if (kopeskilling === null || kopeskilling <= 0) {
+    kopeskillingOren = oreFranKronor(kopeskillingText);
+    if (kopeskillingOren === null || kopeskillingOren <= 0) {
       return { fel: "Köpeskilling anges som ett belopp, t.ex. 3 250 000." };
     }
   }
+  const kopeskilling =
+    kopeskillingOren === null ? null : BigInt(kopeskillingOren);
 
   await prisma.bostad.update({
     where: { id: bostadId },

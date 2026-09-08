@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import {
   aterforFranRaknasInte,
+  dopOmHog,
   flyttaUturHog,
   laggIHog,
   raknasInte,
@@ -75,6 +76,7 @@ export function Fas1({
   const [laggRes, laggAction] = useActionState(laggIHog, START);
   const [flyttaRes, flyttaAction] = useActionState(flyttaUturHog, START);
   const [raknasRes, raknasAction] = useActionState(raknasInte, START);
+  const [dopOmRes, dopOmAction] = useActionState(dopOmHog, START);
   const [aterforRes, aterforAction] = useActionState(
     aterforFranRaknasInte,
     START,
@@ -85,6 +87,7 @@ export function Fas1({
     laggRes.fel ||
     flyttaRes.fel ||
     raknasRes.fel ||
+    dopOmRes.fel ||
     aterforRes.fel;
 
   function vaxlaVald(id: string) {
@@ -117,13 +120,29 @@ export function Fas1({
     (f) => !avfardade.has(f.kvitto_ider.join(",")),
   );
 
+  const kvarAttGa = oklassificerade.length;
+  const antalHogar = hogar.length;
+
   return (
     <div className="flex flex-col">
+      {/* Overst: hur langt man kommit. "Hog 1 av 4" i frågesteget racker inte –
+          med hundra kvitton ar det har skillnaden mellan att fortsatta och sluta. */}
+      <div className="flex items-baseline justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-3 font-granssnitt text-sm">
+        <span className="text-text-primar">
+          {kvarAttGa === 0
+            ? "Inga kvitton kvar att gå igenom"
+            : `${kvarAttGa} kvitto${kvarAttGa === 1 ? "" : "n"} kvar att gå igenom`}
+        </span>
+        <span className="shrink-0 tabular-nums text-text-sekundar">
+          {antalHogar} hög{antalHogar === 1 ? "" : "ar"} hittills
+        </span>
+      </div>
+
       <div className="border-b border-linje p-4">
         <p className="rounded-lg bg-sand px-3 py-3 font-granssnitt text-sm text-text-primar">
-          Först grupperar du kvittona i högar – en hög per sak du gjort. Sedan
-          svarar du på fyra frågor per hög. Du kan avbryta när som helst; det du
-          grupperat sparas.
+          Först grupperar du kvittona i högar – en hög per sak du gjort. En hög
+          kan bestå av ett enda kvitto. Sedan svarar du på fyra frågor per hög.
+          Du kan avbryta när som helst; det du grupperat sparas.
         </p>
       </div>
 
@@ -219,9 +238,26 @@ export function Fas1({
           <div className="divide-y divide-linje">
             {hogar.map((h) => (
               <div key={h.id} className="p-4">
-                <p className="font-granssnitt text-base text-text-primar">
-                  {h.namn}
-                </p>
+                {/* Namnet redigeras dar hogen syns, inte forst i frågesteget –
+                    forslaget ar ofta leverantoren, och namnet hamnar i
+                    K6A-underlagets atgardskolumn. */}
+                <form action={dopOmAction} className="flex items-center gap-2">
+                  <input type="hidden" name="projekt_id" value={h.id} />
+                  <input
+                    type="text"
+                    name="namn"
+                    defaultValue={h.namn}
+                    key={h.namn}
+                    aria-label="Högens namn"
+                    className="min-w-0 flex-1 rounded-lg border-0 bg-yta-nedsankt px-3 py-2 font-granssnitt text-base text-text-primar outline-none focus:ring-2 focus:ring-accent"
+                  />
+                  <button
+                    type="submit"
+                    className="shrink-0 font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
+                  >
+                    Byt namn
+                  </button>
+                </form>
                 <ul className="mt-2 space-y-1.5">
                   {h.kvitton.map((k) => (
                     <li
@@ -336,7 +372,9 @@ export function Fas1({
         {valda.size > 0 ? (
           <div className="flex flex-col gap-3 border-t border-linje bg-yta-nedsankt/40 p-4">
             <p className="font-granssnitt text-sm text-text-sekundar">
-              {valda.size} kvitto{valda.size === 1 ? "" : "n"} valda
+              {valda.size === 1
+                ? "1 kvitto valt"
+                : `${valda.size} kvitton valda`}
             </p>
             <form
               action={(fd) => {
@@ -358,12 +396,16 @@ export function Fas1({
                 name="namn"
                 defaultValue={namnForslagFraval}
                 key={namnForslagFraval}
-                placeholder="Vad hörde de här till?"
+                placeholder={
+                  valda.size === 1
+                    ? "Vad gällde kvittot?"
+                    : "Vad hörde de här till?"
+                }
                 className="w-full rounded-lg border-0 bg-yta-upphojd px-3 py-2 font-granssnitt text-sm text-text-primar outline-none focus:ring-2 focus:ring-accent"
                 aria-label="Nya högens namn"
               />
               <button type="submit" className={PRIMARKNAPP_KLASS}>
-                Skapa ny hög av valda
+                {valda.size === 1 ? "Skapa hög av kvittot" : "Skapa ny hög av valda"}
               </button>
             </form>
             <form

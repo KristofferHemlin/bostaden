@@ -24,6 +24,7 @@
 // (motivering) ligger sist och blockerar aldrig.
 
 import { useState } from "react";
+import { fraga3Relevant } from "@/doman/projektfragor";
 import { Falt, INPUT_KLASS } from "@/components/skarm";
 
 export type FannsSvar = "" | "fanns" | "nytt";
@@ -153,8 +154,8 @@ export function Projektfragor({
         />
       </Fraga>
 
-      {/* Fraga 3 – bara nar det fanns forut. */}
-      {varden.fanns === "fanns" ? (
+      {/* Fraga 3 – bara nar det fanns forut (fraga3Relevant, en sanning). */}
+      {fraga3Relevant(varden.fanns) ? (
         <Fraga
           rubrik="Var det slitet eller trasigt när du flyttade in?"
           foljd={FOLJD_SLITET}
@@ -252,7 +253,7 @@ export function ProjektfragorFalt({
       <input
         type="hidden"
         name="slitet"
-        value={svar.fanns === "fanns" ? svar.slitet : ""}
+        value={fraga3Relevant(svar.fanns) ? svar.slitet : ""}
       />
       <input type="hidden" name="motivering" value={svar.motivering} />
     </div>

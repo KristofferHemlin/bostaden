@@ -55,7 +55,10 @@ export interface OklassificeradHog {
 }
 
 export interface K6aExport {
-  genererad_for_datum: string;
+  /** Forsaljningsdatum ("YYYY-MM-DD"), eller null nar bostaden inte ar sald an. */
+  genererad_for_datum: string | null;
+  /** Falskt nar bostaden inte ar sald: sida 2 saknar da avdragsgill del. */
+  sald: boolean;
   agarandel_procent: number;
   delagarvariant: "egen" | "gemensam_med_andel";
   sida1: K6aSida;
@@ -89,21 +92,24 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
 
   if (bostad.upplatelseform !== "bostadsratt") {
     throw new Error(
-      "Export ar avstangd i insamlingslage (upplatelseform = fastighet).",
+      "Export är avstängd i insamlingsläge (upplåtelseform = fastighet).",
     );
   }
-  if (!bostad.forsaljningsdatum) {
-    throw new Error(
-      "Export kan inte genereras innan bostaden ar markerad som sald.",
-    );
-  }
-
-  const forsaljningsAr = kalenderAr(bostad.forsaljningsdatum);
-  const fonsterAr = slaUppRegelparameter(
-    regelparametrar,
-    "reparationsfonster_ar",
-    bostad.forsaljningsdatum,
-  );
+  // Sidan gar alltid att oppna, aven innan bostaden ar sald (docs/design.md,
+  // Exportvyn). Utan forsaljningsdatum ar sida 1 anda komplett – grundforbattringar
+  // saknar tidsgrans bakat – medan sida 2 visar sina rader utan avdragsgill del,
+  // eftersom femarsfonstret och forslitningen bada utgar fran forsaljningsdatumet.
+  const sald = bostad.forsaljningsdatum !== null;
+  const forsaljningsAr = bostad.forsaljningsdatum
+    ? kalenderAr(bostad.forsaljningsdatum)
+    : null;
+  const fonsterAr = bostad.forsaljningsdatum
+    ? slaUppRegelparameter(
+        regelparametrar,
+        "reparationsfonster_ar",
+        bostad.forsaljningsdatum,
+      )
+    : null;
   const varningar: string[] = [];
 
   // 1. Alla bidrag per (projekt, kalenderar ur betaldatum).
@@ -179,37 +185,50 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
       if (!troskelOk) beloppBrutto = 0;
     } else {
       let grindOk = troskelOk;
-      if (!reparationInomFemarsfonster(ar, forsaljningsAr, fonsterAr)) {
+      // Femarsfonstret och "battre skick vid forsaljningen" utgar bada fran
+      // forsaljningsdatumet. Utan datum provas de inte – raden visas anda, men
+      // utan avdragsgill del (docs/design.md, Exportvyn).
+      if (
+        forsaljningsAr !== null &&
+        fonsterAr !== null &&
+        !reparationInomFemarsfonster(ar, forsaljningsAr, fonsterAr)
+      ) {
         grindOk = false;
       }
       if (p.slitet_vid_tilltrade !== true) {
         grindOk = false;
         if (p.slitet_vid_tilltrade === null) {
           radVarningar.push(
-            `Projekt "${p.namn}": fragan om skick vid tilltradet ar inte besvarad.`,
+            `Projekt "${p.namn}": frågan om skick vid tillträdet är inte besvarad.`,
           );
         }
       }
-      if (p.battre_skick_vid_forsaljning !== true) {
+      if (sald && p.battre_skick_vid_forsaljning !== true) {
         grindOk = false;
         if (p.battre_skick_vid_forsaljning === null) {
           radVarningar.push(
-            `Projekt "${p.namn}": battre skick vid forsaljningen ar inte bekraftat.`,
+            `Projekt "${p.namn}": bättre skick vid försäljningen är inte bekräftat.`,
           );
         }
       }
       if (!grindOk) beloppBrutto = 0;
 
-      let kvar = p.kvarvarande_andel;
-      if (kvar === null) {
-        kvar = 1;
-        if (beloppBrutto > 0) {
-          radVarningar.push(
-            `Projekt "${p.namn}": kvarvarande andel efter forslitning ar inte satt, antar 100 %.`,
-          );
+      if (!sald) {
+        // Forslitningen (kvarvarande_andel) satts av anvandaren vid forsaljningen
+        // och ar null fram till dess – ingen avdragsgill del gar att rakna ut an.
+        avdragsgillDelBrutto = null;
+      } else {
+        let kvar = p.kvarvarande_andel;
+        if (kvar === null) {
+          kvar = 1;
+          if (beloppBrutto > 0) {
+            radVarningar.push(
+              `Projekt "${p.namn}": kvarvarande andel efter förslitning är inte satt, antar 100 %.`,
+            );
+          }
         }
+        avdragsgillDelBrutto = avrunda(beloppBrutto * kvar);
       }
-      avdragsgillDelBrutto = avrunda(beloppBrutto * kvar);
     }
 
     const rad: K6aExportrad = {
@@ -247,6 +266,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
 
   return {
     genererad_for_datum: bostad.forsaljningsdatum,
+    sald,
     agarandel_procent: medlemskap.agarandel,
     delagarvariant: medlemskap.agarandel < 100 ? "gemensam_med_andel" : "egen",
     sida1: { rader: sida1, summa_brutto: s1b, summa_individuellt: s1i },

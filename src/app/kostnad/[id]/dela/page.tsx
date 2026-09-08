@@ -47,7 +47,7 @@ export default async function DelaUppSida({
   // Ett utkast har inga rader att dela – det kompletteras i inmatningsformularet.
   if (kostnad.totalbelopp === null) redirect(`/kostnad/nytt?utkast=${id}`);
 
-  const { bostadsnamn, andrarad } = bostadHeader(bostad);
+  const { bostadsnamn } = bostadHeader(bostad);
 
   // Utgangslaget: kostnadens befintliga rader. En kostnad har alltid minst en
   // rad; ar den odelad (en rad pa hela beloppet) far anvandaren en tom rad till
@@ -72,7 +72,6 @@ export default async function DelaUppSida({
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      andrarad={andrarad}
       rubrik="Dela upp kvittot"
       bakLank={{ href: `/kostnad/${id}`, text: kostnad.leverantor ?? "Kvitto" }}
     >

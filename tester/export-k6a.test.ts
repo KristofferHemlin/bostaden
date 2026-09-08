@@ -305,20 +305,150 @@ describe("K6A-exporten", () => {
           },
         }),
       ),
-    ).toThrow(/insamlingslage/);
+    ).toThrow(/insamlingsläge/);
   });
 
-  it("export kan inte genereras innan bostaden ar markerad som sald", () => {
+});
+
+describe("K6A-exporten utan forsaljningsdatum", () => {
+  const osald = {
+    upplatelseform: "bostadsratt" as const,
+    tilltradesdatum: "2010-01-01",
+    forsaljningsdatum: null,
+  };
+
+  it("gar att bygga och markerar bostaden som osald", () => {
+    const ex = byggK6aExport(bygg({ bostad: osald }));
+    expect(ex.sald).toBe(false);
+    expect(ex.genererad_for_datum).toBeNull();
+  });
+
+  it("sida 1 ar komplett – grundforbattring saknar tidsgrans", () => {
+    const p = projekt({
+      id: "p1",
+      kategori: "grundforbattring",
+      namn: "Nytt kok",
+    });
+    const k = kostnad({
+      id: "k1",
+      betaldatum: "2015-04-01",
+      totalbelopp: 800_000,
+      projekt_id: "p1",
+    });
+    const ex = byggK6aExport(
+      bygg({ bostad: osald, projekt: [p], kostnader: [k] }),
+    );
+    expect(
+      ex.sida1.rader.find((r) => r.atgard === "Nytt kok")?.belopp_brutto,
+    ).toBe(800_000);
+    expect(ex.ruta4_brutto).toBe(800_000);
+  });
+
+  it("sida 2 visar rader men ingen avdragsgill del och ruta 5 ar 0", () => {
+    const p = projekt({
+      id: "p1",
+      kategori: "reparation",
+      namn: "Slipa golv",
+      slitet_vid_tilltrade: true,
+    });
+    const k = kostnad({
+      id: "k1",
+      betaldatum: "2024-04-01",
+      totalbelopp: 800_000,
+      projekt_id: "p1",
+    });
+    const ex = byggK6aExport(
+      bygg({ bostad: osald, projekt: [p], kostnader: [k] }),
+    );
+    const rad = ex.sida2.rader.find((r) => r.atgard === "Slipa golv");
+    expect(rad?.belopp_brutto).toBe(800_000);
+    expect(rad?.avdragsgill_del_brutto).toBeNull();
+    expect(rad?.avdragsgill_del_individuellt).toBeNull();
+    expect(ex.ruta5_brutto).toBe(0);
+    expect(ex.ruta5_individuellt).toBe(0);
+  });
+
+  it("femarsfonstret provas inte utan forsaljningsdatum", () => {
+    const p = projekt({
+      id: "p1",
+      kategori: "reparation",
+      namn: "Mala om",
+      slitet_vid_tilltrade: true,
+    });
+    const k = kostnad({
+      id: "k1",
+      betaldatum: "2013-04-01",
+      totalbelopp: 800_000,
+      projekt_id: "p1",
+    });
+    const ex = byggK6aExport(
+      bygg({ bostad: osald, projekt: [p], kostnader: [k] }),
+    );
+    expect(
+      ex.sida2.rader.find((r) => r.atgard === "Mala om")?.belopp_brutto,
+    ).toBe(800_000);
+  });
+
+  it("slitet_vid_tilltrade = false nollar raden aven utan forsaljningsdatum", () => {
+    const p = projekt({
+      id: "p1",
+      kategori: "reparation",
+      namn: "Laga trasig ruta",
+      slitet_vid_tilltrade: false,
+    });
+    const k = kostnad({
+      id: "k1",
+      betaldatum: "2024-04-01",
+      totalbelopp: 800_000,
+      projekt_id: "p1",
+    });
+    const ex = byggK6aExport(
+      bygg({ bostad: osald, projekt: [p], kostnader: [k] }),
+    );
+    expect(
+      ex.sida2.rader.find((r) => r.atgard === "Laga trasig ruta")?.belopp_brutto,
+    ).toBe(0);
+  });
+
+  it("troskeln galler fortfarande sida 1 utan forsaljningsdatum", () => {
+    const p = projekt({
+      id: "p1",
+      kategori: "grundforbattring",
+      namn: "Liten atgard",
+    });
+    const k = kostnad({
+      id: "k1",
+      betaldatum: "2024-04-01",
+      totalbelopp: 421_000,
+      projekt_id: "p1",
+    });
+    const ex = byggK6aExport(
+      bygg({ bostad: osald, projekt: [p], kostnader: [k] }),
+    );
+    expect(ex.ruta4_brutto).toBe(0);
+  });
+
+  it("oklassificerade hogar listas som vanligt utan forsaljningsdatum", () => {
+    const p = projekt({ id: "p1", kategori: null, namn: "Badrum" });
+    const k = kostnad({
+      id: "k1",
+      betaldatum: "2024-04-01",
+      totalbelopp: 800_000,
+      projekt_id: "p1",
+    });
+    const ex = byggK6aExport(
+      bygg({ bostad: osald, projekt: [p], kostnader: [k] }),
+    );
+    expect(ex.oklassificerade_hogar.map((h) => h.namn)).toContain("Badrum");
+  });
+
+  it("export ar fortfarande avstangd i insamlingslage utan forsaljningsdatum", () => {
     expect(() =>
       byggK6aExport(
         bygg({
-          bostad: {
-            upplatelseform: "bostadsratt",
-            tilltradesdatum: "2010-01-01",
-            forsaljningsdatum: null,
-          },
+          bostad: { ...osald, upplatelseform: "fastighet" },
         }),
       ),
-    ).toThrow(/sald/);
+    ).toThrow(/insamlingsläge/);
   });
 });

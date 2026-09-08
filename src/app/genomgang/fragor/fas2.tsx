@@ -17,6 +17,7 @@ import {
   TOMMA_SVAR,
   type ProjektfragorSvar,
 } from "@/app/projekt/projektfragor-falt";
+import { fraga3Relevant } from "@/doman/projektfragor";
 import { Falt, INPUT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
 import { formateraKronor } from "@/lib/format";
 
@@ -141,7 +142,7 @@ function HogFormular({
         <input
           type="hidden"
           name="slitet"
-          value={svar.fanns === "fanns" ? svar.slitet : ""}
+          value={fraga3Relevant(svar.fanns) ? svar.slitet : ""}
         />
         <input type="hidden" name="motivering" value={svar.motivering} />
 

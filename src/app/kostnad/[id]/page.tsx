@@ -44,7 +44,7 @@ export default async function KostnadSida({
   const bostad = await prisma.bostad.findUniqueOrThrow({
     where: { id: bostadId },
   });
-  const { bostadsnamn, andrarad } = bostadHeader(bostad);
+  const { bostadsnamn } = bostadHeader(bostad);
 
   const bilagor = await listaKostnadsbilagor(kostnad.id);
 
@@ -65,9 +65,8 @@ export default async function KostnadSida({
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      andrarad={andrarad}
       rubrik={anteckning || kostnad.leverantor || "Kvitto"}
-      bakLank={{ href: "/kostnad", text: "Kostnader" }}
+      bakLank={{ href: "/kostnad", text: "Kvitton" }}
     >
       <section className="space-y-2 border-b border-linje p-4 font-granssnitt text-sm">
         <Rad

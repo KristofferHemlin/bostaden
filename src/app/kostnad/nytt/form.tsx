@@ -534,7 +534,7 @@ export function NyKostnadForm({
 
     const sparad = await sparaKostnad(formData);
     if (sparad.fel || !sparad.kostnadId) {
-      setResultat(sparad.fel ? sparad : { fel: "Kostnaden kunde inte sparas." });
+      setResultat(sparad.fel ? sparad : { fel: "Kvittot kunde inte sparas." });
       setPagar(false);
       return;
     }
@@ -547,7 +547,7 @@ export function NyKostnadForm({
       const r = await laddaUppKostnadsbilaga(sparad.kostnadId, fil);
       if (!r.ok) {
         setResultat({
-          fel: `Kostnaden sparades, men ${fil.name || "en bilaga"} kunde inte laddas upp: ${r.fel ?? "okänt fel."}`,
+          fel: `Kvittot sparades, men ${fil.name || "en bilaga"} kunde inte laddas upp: ${r.fel ?? "okänt fel."}`,
           kostnadId: sparad.kostnadId,
         });
         setPagar(false);
@@ -934,8 +934,8 @@ export function NyKostnadForm({
               />
             </Falt>
             <p className="mt-1 font-granssnitt text-xs text-text-dampad">
-              Styr vilket år kostnaden räknas till. Lämna tomt om den inte är
-              betald än – då räknas den inte in i årssumman förrän du fyllt i
+              Styr vilket år kvittot räknas till. Lämna tomt om det inte är
+              betalt än – då räknas det inte in i årssumman förrän du fyllt i
               datumet.
             </p>
             <button
@@ -1056,7 +1056,7 @@ export function NyKostnadForm({
               href={`/kostnad/${resultat.kostnadId}`}
               className="mt-1 inline-block underline"
             >
-              Öppna kostnaden och försök igen
+              Öppna kvittot och försök igen
             </Link>
           ) : null}
         </div>
@@ -1073,7 +1073,7 @@ export function NyKostnadForm({
             ? "Laddar upp bilagan…"
             : utkast
               ? "Spara kvittot"
-              : "Spara kostnad"}
+              : "Spara kvitto"}
       </button>
     </form>
   );

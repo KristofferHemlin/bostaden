@@ -101,9 +101,19 @@ Ovanför innehållet står då bara en enkel rad med logotypen och bostadens nam
 
 Aktiv flik markeras med ytskillnad, aldrig med orange.
 
-**Inställningar är inte en likvärdig flik.** Den är en plats man besöker sällan och ska inte konkurrera med de fyra som används dagligen. Den visas som ett tunt kugghjul i `--text-sekundar`, tydligt skilt från fliktexterna: längst till höger i toppraden på skrivbord, och som sista position i bottenraden på mobil med etiketten under, så att den inte blir en gåta för den som inte känner igen symbolen.
+**Inställningar är inte en likvärdig flik.** Den är en plats man besöker sällan och ska inte konkurrera med de fyra som används dagligen. Den visas som ett tunt kugghjul i `--text-sekundar` längst till höger i toppraden – på både mobil och skrivbord.
 
-Kugghjulet är det enda ikonen i navigationen. Får de fyra flikarna ikoner blir raden ett ikonband och texterna överflödiga – det är inte den appen det här är.
+Kugghjulet hör aldrig hemma i bottenraden. Etiketten "Inställningar" är dubbelt så bred som de andra fliktexterna och gör raden ojämn, och en femte flik trängs mot kanten på en smal skärm. Bottenraden är fyra jämnbreda flikar, ingenting annat. I toppraden balanserar kugghjulet dessutom logotypen på motsatt sida.
+
+**Bottenraden har ikon och etikett på varje flik.** Det är den etablerade mobilkonventionen och den användare känner igen från alla andra appar. Ikonen gör att man hittar rätt utan att läsa; etiketten gör att man förstår vad man hittat.
+
+Ikonerna är tunna linjeikoner i samma vikt som kugghjulet, aldrig fyllda. Aktiv flik markeras med ytskillnad precis som förut, aldrig med orange – orange är fortfarande reserverat för en handling per skärm.
+
+Raden blir högre med två våningar, och det är accepterat. Igenkänningen är värd ytan.
+
+**Ikonen måste bära sin flik.** En symbol som kräver att man redan vet vad fliken heter tillför ingenting. Har en flik ingen begriplig symbol är det ett tecken på att flikens namn är otydligt, inte att ikonen ska hittas på.
+
+På skrivbord ligger flikarna kvar som ren text i toppraden – där finns ingen tumme att spara och ingen konvention att följa.
 
 ---
 
@@ -116,6 +126,16 @@ Utan toppraden svävar kortet ensamt i en tom yta – det är vad som händer om
 På skrivbord ökar basstorleken på text ett steg och kortets innerpadding blir generösare. Layouten är fortfarande en enda kolumn – bygg aldrig sidofält eller rutnät. Appen har för lite innehåll för det och ska kännas som samma produkt på båda ställena.
 
 Logotypen syns i toppraden på skrivbord och som en liten markering till vänster om bostadsnamnet i mobil.
+
+**Toppraden visar bara adressen.** Ingen andrarad med upplåtelseform och tillträdesår – de är uppgifter man sätter en gång och sedan aldrig behöver se. De hör hemma i inställningarna.
+
+**Logotypen och adressen är en länk till översikten.** Standardkonvention och gratis.
+
+**Sidrubriken upprepar aldrig adressen.** Står "Ulriksborgsgatan 7" i toppraden ska sidan under heta "Översikt", inte samma adress en gång till.
+
+**Bostadsnamnet får den plats det behöver på bred skärm.** Att kapa "Ulriksborgsgatan 7" till "Ulriksborgsga…" på en skrivbordsskärm är bakvänt – utrymmet finns. Avkortning hör hemma på smala skärmar, inte breda.
+
+Men det får inte radbrytas. Toppraden är en rad, alltid – namnet ska ligga på en linje med flikarna och kugghjulet. Ge rubriken utrymme att växa i bredd i stället för att låta den vika ner sig och trycka isär raden.
 
 ---
 
@@ -132,6 +152,12 @@ Kamerainmatning använder `<input type="file" accept="image/*" capture="environm
 
 ---
 
+## Ordval i gränssnittet
+
+**Användaren möter alltid ordet "kvitto".** Menyfliken, rubrikerna, knapparna. Aldrig "kostnad" och aldrig "utgift" – de låter som bokföring, och en meny som säger "Kostnader" bredvid en rubrik som säger "Senaste kvitton" får det att se ut som två olika saker.
+
+Entiteten heter fortfarande `kostnad` i kod, tabeller och rutter. Användarens språk och kodens språk behöver inte vara samma.
+
 ## Undvik
 
 Vit bakgrund. Svart text. Skuggor och gradienter. Flera orange element på samma skärm. Rött och grönt för status. Ikonrader i navigationen. Animationer utöver enkla övergångar. Tomma tillstånd som bara säger att det är tomt.
@@ -146,15 +172,27 @@ Det finns inga designfiler, mockuper eller skärmbilder. Detta dokument är den 
 
 Varje skärm byggs uppifrån och ned i samma ordning: en smal header med bostadens namn och en dämpad andra rad med upplåtelseform och tillträdesår, sedan sidans innehåll, inget bottenfält. Appen har för få skärmar för navigation – man tar sig tillbaka, inte runt.
 
-Innehållet ligger i ett enda kort på `--yta-upphojd` mot sidbakgrunden, med 1px `--linje` som avdelare mellan sektioner inuti. Inga kort inuti kort.
+Innehållet ligger i kort på `--yta-upphojd` mot sidbakgrunden, med 1px `--linje` som avdelare mellan sektioner inuti. Inga kort inuti kort.
+
+**Innehåll av olika slag hör hemma i olika kort.** På översikten är metriken ett kort och kvittolistan ett annat, med luft emellan. Att lägga metrik, lista, primärknapp och utloggning i samma yta med bara linjer emellan gör skärmen till en vägg som är svår att skumma.
 
 ### Metrikblock
 
 Överst på översikten står årets summa. Etiketten "Inlagt 2026" i dämpad text till vänster, beloppet stort och höger om det på samma baslinje. Under dem ett progressfält, och under det två rader småtext: tröskelbeloppet till vänster, återstående belopp till höger.
 
-Etiketten säger "Inlagt", aldrig "Underlag" eller "Avdrag". Siffran är summan av allt som lagts in, klassificerat eller ej, och appen kan inte påstå mer än så innan klassificeringen är gjord. Finns oklassificerade kostnader står en rad under fältet om att beloppet är preliminärt.
+Etiketten säger "Inlagt", aldrig "Underlag" eller "Avdrag". Siffran är summan av allt som lagts in, klassificerat eller ej, och appen kan inte påstå mer än så innan klassificeringen är gjord.
 
-Progressfältet är 8px högt med helt rundade ändar, spår i `--yta-nedsankt` och fyllning i `--sand-mork` under tröskeln, `--accent` när tröskeln passerats. Fyllningen måste ha tydlig kontrast mot spåret – `--sand` mot `--yta-nedsankt` är för svagt och ska aldrig användas här.
+Finns oklassificerade kostnader står **en enda kort rad** under fältet: "Preliminärt tills kvittona klassificerats." Förklaringen av vad tröskeln innebär – att hela årets belopp faller bort, inte bara mellanskillnaden – ligger bakom en informationsknapp, samma mönster som projektfrågorna. Tre rader brödtext ovanför kvittolistan gör förklaringen till huvudsaken i stället för siffran.
+
+Progressfältet är 8px högt med helt rundade ändar, spår i `--yta-nedsankt` och fyllning i `--sand-mork` under tröskeln, `--accent` när tröskeln passerats.
+
+**Orange kräver att allt är klassificerat.** Finns oklassificerade kvitton är fyllningen `--sand-mork` oavsett belopp, eftersom siffran då är en preliminär summa och inte ett avdrag. Ett fullt orange fält signalerar att något är avklarat, och det är det inte förrän frågorna är besvarade. Fyllningen måste ha tydlig kontrast mot spåret – `--sand` mot `--yta-nedsankt` är för svagt och ska aldrig användas här.
+
+### Kvittolistan
+
+Raderna visar **anteckningen som huvudtext**, med leverantör och datum dämpat under – samma presentation som på startskärmen. Saknas anteckning används leverantören. Att samma data presenteras olika på två skärmar får listan att se ut som en annan sorts innehåll än den är.
+
+**Kvitton grupperas per år med tydlig avdelare.** Tröskeln gäller per kalenderår och åren är helt skilda åt i underlaget – en lista där 2025 och 2026 glöser samman döljer produktens viktigaste struktur. Årsrubriken är en egen rad på `--yta-nedsankt` med årtalet och årets summa högerställd.
 
 ### Listrader
 
@@ -194,11 +232,33 @@ Två åtgärder ligger under: **"Ändra uppgifter"** och **"Var något på kvitt
 
 ### Startskärmen med innehåll
 
-Så snart något lagts in ersätts uppmaningen av metrikblocket och **de sex senast tillagda kvittona**, senaste först. Varje rad visar anteckningen som huvudtext, med leverantör och datum dämpat under, och beloppet högerställt.
+**En hälsning med namn överst.** "Hej Kristoffer" och under den bostadens adress. Det gör skärmen till användarens egen i stället för till en rapport, och det kostar ingenting.
+
+**Tre små nyckeltal på rad**, inte en stor siffra med en lång förklaring under. Ett block som ska bära både beloppet, tröskeln och en brasklapp blir tungt att läsa; tre korta kort går att uppfatta på en blick.
+
+| Kort | Innehåll | Länkar till |
+|---|---|---|
+| Inlagt i år | Årets summa | Alla kvitton |
+| Antal kvitton | Hur många som lagts in totalt | Alla kvitton |
+| Senast tillagt | Datum för det senaste | Det kvittot |
+
+Alla tre korten är klickbara. Ett tal som visar något man vill se närmare på ska gå att trycka på.
+
+Etiketten är alltid **"Inlagt i år"**, aldrig "Totalt avdragsgillt". Det senare är ett påstående appen inte kan stå för innan klassificeringen är gjord, och att sätta det i grönt gör påståendet ännu starkare. Nyckeltalen bär inga statusfärger alls.
+
+På mobil ligger de tre korten i en rad med mindre text, inte staplade – tre staplade kort tar över hela skärmen och skjuter ner kvittolistan.
+
+**Tröskelraden ligger under nyckeltalen**, i full bredd: progressfältet, tröskelbeloppet, och den korta raden om att beloppet är preliminärt.
+
+**Primärknappen ligger ovanför kvittolistan, inte under.** Att lägga till ett kvitto är skälet att appen finns och den handling som utförs oftast – den ska inte kräva att man scrollar förbi sex rader för att nås. Knappen ligger direkt under tröskelraden, i full bredd.
+
+**Kvittolistan är ett eget kort** med rubriken "Senaste kvitton" och en länk "Visa alla" högerställd i samma rad. De sex senast tillagda, senaste först. Varje rad visar anteckningen som huvudtext, med leverantör och datum dämpat under, och beloppet högerställt.
 
 Anteckningen som huvudtext är avsiktligt. "Målade om sovrummet" säger vad raden är; "BAUHAUS" gör det inte. Saknas anteckning används leverantören.
 
-Under listan en länk till alla kvitton. Sex rader räcker för att känna igen sig och se att det man nyss lade in kom fram, utan att skärmen blir en lista.
+**Inga kategorimärkningar på raderna.** Ett kvitto är oklassificerat i normalfallet, och en etikett som säger "Underhåll" antyder både att klassificering skett och att den är kvittots egenskap snarare än åtgärdens.
+
+Raden om oklassificerade kvitton ligger kvar som en klickbar ingång till genomgången, ovanför listan.
 
 ### Bilagor
 
@@ -333,6 +393,40 @@ Emoji används på exakt ett ställe: som symbol på korten för upplåtelseform
 Ingen annanstans. Inte i rubriker, knappar, meddelanderutor, tomma tillstånd eller notiser. Emoji renderas olika mellan plattformar, går inte att färgsätta och drar in ett uttryck som ligger utanför paletten – ett par stycken på ett ställe är en accent, spridda genom appen blir de brus.
 
 Behövs symboler någon annanstans används tunna ikoner i `--text-sekundar`.
+
+### Klassificeringsgenomgången
+
+**Högar ska gå att döpa om i grupperingsvyn.** Namnet föreslås från första kvittots anteckning, men förslaget är ofta leverantören – och högens namn hamnar i deklarationsunderlagets åtgärdskolumn, där det ska stå vad utgiften avser. En rad som säger "K-Bygg Sverige AB" i stället för "Ny köksfläkt" är inte begriplig för någon som inte var där.
+
+Namnet redigeras där högen syns, inte först i frågesteget.
+
+**Visa hur mycket som återstår.** Överst i grupperingsvyn en rad med antal kvitton kvar att gå igenom och antal högar hittills. I frågesteget räcker "Hög 1 av 4", men i fas 1 finns ingen känsla för hur långt man kommit – och med hundra kvitton är det skillnaden mellan att fortsätta och att sluta.
+
+**En hög ska gå att skapa av ett enda kvitto.** Alla åtgärder består inte av flera inköp.
+
+**Fråga 3 måste dyka upp när svaret på fråga 2 är "Det fanns redan".** Den är villkorad, inte borttagen – utan den kan en reparations avdragsrätt inte avgöras, och det är hela skälet till att genomgången finns.
+
+**ÅÄÖ i all text som användaren ser.** ASCII-translitterering gäller identifierare i koden, aldrig meddelanden. "battre skick vid forsaljningen ar inte bekraftat" ser ut som ett fel, för det är det.
+
+### Exportvyn
+
+**Sidan går alltid att öppna, också innan bostaden är såld.** Att kräva ett försäljningsdatum för att ens få titta lär användaren att sidan inte är för hönom, och nyfikenheten på vad man samlat ihop är både legitim och nyttig – den är hela skälet att fortsätta lägga in kvitton.
+
+Utan försäljningsdatum visas:
+
+- **Sida 1 komplett.** Grundförbättringar saknar tidsgräns bakåt och påverkas inte av när bostaden säljs. Summan till ruta 4 är verklig.
+- **Sida 2 med sina rader men utan avdragsgill kolumn**, och en förklaring: femårsregeln och förslitningen utgår från försäljningsdatumet, så det går inte att räkna ut ännu.
+- **Oklassificerade högar** som vanligt.
+
+"Markera som såld" ligger som en knapp längst ned på sidan, aldrig som en spärr framför den.
+
+Poängen är att sidan ska vara meningsfull under hela ägandet i stället för en tom skärm i tio år som plötsligt blir viktig.
+
+**Samma information står aldrig två gånger.** Oklassificerade högar redovisas i en enda lista med namn, år och belopp, en åtgärdsprick och en knapp till genomgången. Ingen andra lista som upprepar samma högar i längre meningar – konsekvensen sägs en gång, i en rad ovanför listan.
+
+En varning per hög som fyller fyra rader var gör skärmen till en vägg av text, och läsaren slutar läsa vid den andra punkten.
+
+**Summorna dämpas när de är ofullständiga.** Två stora nollor på en skärm som heter Deklarationsunderlag ser trasigt ut. Finns oklassificerade högar sätts talen i `--text-sekundar` i stället för `--text-primar`, så att blicken går till listan över det som återstår. När allt är klassificerat får de full tyngd.
 
 ### Meddelanderutor
 

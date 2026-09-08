@@ -23,7 +23,7 @@ export default async function FragorSida() {
       orderBy: { skapad_at: "asc" },
     }),
   ]);
-  const { bostadsnamn, andrarad } = bostadHeader(bostad);
+  const { bostadsnamn } = bostadHeader(bostad);
 
   // Varje hogs kvitton – leverantor, anteckning, belopp, datum – for panelen
   // bredvid fragorna.
@@ -61,7 +61,6 @@ export default async function FragorSida() {
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      andrarad={andrarad}
       rubrik="Frågorna, en hög i taget"
       bakLank={{ href: "/genomgang", text: "Grupperingen" }}
     >

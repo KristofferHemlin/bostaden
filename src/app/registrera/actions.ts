@@ -89,14 +89,17 @@ export async function slutforRegistrering(
   }
 
   // Kopeskilling ar valfri (docs/design.md, Registreringsflodet). Anges i kronor
-  // i faltet, lagras som heltal oren.
-  let kopeskilling: number | null = null;
+  // i faltet, tolkas som heltal oren och lagras som BigInt – Int (Postgres int4)
+  // tar slut vid ~21,5 miljoner kr, vilket en villaforsaljning kan overstiga.
+  let kopeskillingOren: number | null = null;
   if (kopeskillingText !== "") {
-    kopeskilling = oreFranKronor(kopeskillingText);
-    if (kopeskilling === null || kopeskilling <= 0) {
+    kopeskillingOren = oreFranKronor(kopeskillingText);
+    if (kopeskillingOren === null || kopeskillingOren <= 0) {
       return { fel: "Köpeskilling anges som ett belopp, t.ex. 3 250 000." };
     }
   }
+  const kopeskilling =
+    kopeskillingOren === null ? null : BigInt(kopeskillingOren);
 
   let authId: string;
   let harSession: boolean;

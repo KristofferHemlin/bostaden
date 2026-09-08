@@ -16,18 +16,19 @@ const grupperat = new Intl.NumberFormat("sv-SE");
 export default async function InstallningarSida() {
   const { bostadId } = await kravBostad();
   const bostad = await prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } });
-  const { bostadsnamn, andrarad } = bostadHeader(bostad);
+  const { bostadsnamn } = bostadHeader(bostad);
 
   const storlek = bostad.storlek != null ? String(bostad.storlek) : "";
+  // kopeskilling ar BigInt (oren). Heltalsdivisionen ger hela kronor utan att
+  // nagot tappas; Intl.NumberFormat.format tar bigint direkt.
   const kopeskilling =
     bostad.kopeskilling != null
-      ? grupperat.format(Math.round(bostad.kopeskilling / 100))
+      ? grupperat.format(bostad.kopeskilling / 100n)
       : "";
 
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      andrarad={andrarad}
       rubrik="Inställningar"
       bakLank={{ href: "/", text: "Översikt" }}
     >

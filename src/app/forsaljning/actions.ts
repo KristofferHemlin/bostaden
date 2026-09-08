@@ -1,8 +1,10 @@
 "use server";
 
-// Steg 7: markera bostaden som sald. Exporten kraver `forsaljningsdatum` (ankaret
-// for femarsfonstret) och kan inte genereras innan dess. I samma veva satts de
-// tva projektuppgifter som ocksa ar null fram till forsaljningen:
+// Steg 7: markera bostaden som sald. `forsaljningsdatum` ar ankaret for
+// femarsfonstret och forslitningen – exportens sida 2 kan inte raknas ut innan
+// dess (sida 1 och exportvyn i ovrigt fungerar anda, se src/app/export/page.tsx).
+// I samma veva satts de tva projektuppgifter som ocksa ar null fram till
+// forsaljningen:
 //
 //   - battre_skick_vid_forsaljning : bekraftas av anvandaren nu (produktspec 4.1)
 //   - kvarvarande_andel            : forslitningens kvarvarande del (produktspec 4.5)
@@ -53,13 +55,17 @@ export async function markeraSald(
     };
   }
 
-  let forsaljningspris: number | null = null;
+  // oreFranKronor ger ett heltal (number) som ar exakt for alla realistiska
+  // belopp; kolumnen ar BigInt, sa vardet gors om till bigint fore skrivningen.
+  let forsaljningsprisOren: number | null = null;
   if (prisText !== "") {
-    forsaljningspris = oreFranKronor(prisText);
-    if (forsaljningspris === null || forsaljningspris <= 0) {
+    forsaljningsprisOren = oreFranKronor(prisText);
+    if (forsaljningsprisOren === null || forsaljningsprisOren <= 0) {
       return { fel: "Försäljningspriset går inte att tolka. Lämna tomt eller ange t.ex. 3 450 000." };
     }
   }
+  const forsaljningspris =
+    forsaljningsprisOren === null ? null : BigInt(forsaljningsprisOren);
 
   // Reparationsprojekten hamtas fran DB – klientens id:n valideras darmed mot
   // agarskapet. Grundforbattringar ror vi inte.

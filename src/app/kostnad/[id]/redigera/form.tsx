@@ -119,15 +119,15 @@ export function RedigeraKostnadForm({
             />
           </Falt>
           <p className="mt-1 font-granssnitt text-xs text-text-dampad">
-            Styr vilket år kostnaden räknas till. Lämna tomt om den inte är
-            betald än – då räknas den inte in i årssumman.
+            Styr vilket år kvittot räknas till. Lämna tomt om det inte är
+            betalt än – då räknas det inte in i årssumman.
           </p>
         </div>
 
         {enkel ? (
           <Falt
             etikett="Koppla till projekt"
-            hjalp="Går att lämna tomt – kostnaden blir då oklassificerad."
+            hjalp="Går att lämna tomt – kvittot blir då oklassificerat."
           >
             <select
               name="projekt_id"
@@ -181,7 +181,7 @@ export function RedigeraKostnadForm({
           <form action={raderaAction} className="flex flex-col gap-3">
             <input type="hidden" name="kostnad_id" value={kostnadId} />
             <p className="font-granssnitt text-sm text-text-primar">
-              Ta bort kostnaden och alla dess bilagor? Det går inte att ångra.
+              Ta bort kvittot och alla dess bilagor? Det går inte att ångra.
             </p>
             {radera.fel ? (
               <p className="font-granssnitt text-sm text-accent-mork">
@@ -194,7 +194,7 @@ export function RedigeraKostnadForm({
                 disabled={raderar}
                 className="font-granssnitt text-sm font-medium text-text-primar underline disabled:opacity-60"
               >
-                {raderar ? "Tar bort…" : "Ja, ta bort kostnaden"}
+                {raderar ? "Tar bort…" : "Ja, ta bort kvittot"}
               </button>
               <button
                 type="button"
@@ -211,7 +211,7 @@ export function RedigeraKostnadForm({
             onClick={() => setBekraftaRadera(true)}
             className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
           >
-            Ta bort kostnaden
+            Ta bort kvittot
           </button>
         )}
       </div>

@@ -3,6 +3,12 @@
 // kolumnen for avdragsgill del efter forslitning, och de tva summorna utpekade
 // som ruta 4 och ruta 5. Ingen PDF, inga bilagor – det ar steg 9/14.
 //
+// Sidan gar alltid att oppna, aven innan bostaden ar sald (docs/design.md,
+// Exportvyn). Utan forsaljningsdatum visas sida 1 komplett (grundforbattringar
+// saknar tidsgrans) och sida 2 med sina rader men utan avdragsgill kolumn –
+// femarsregeln och forslitningen utgar fran forsaljningsdatumet. "Markera som
+// sald" ligger da som en knapp langst ned, aldrig som en sparr framfor sidan.
+//
 // All berakning bor i src/doman/export-k6a.ts. Har komponeras den bara. Ingen ny
 // domanregel. Struktur och farger: docs/design.md (metrikblock-monstret ateranvands
 // for ruta 4/5; inget rott/gront for status).
@@ -31,15 +37,13 @@ export default async function ExportSida() {
   const { bostadId, agarandel } = await kravBostad();
   const { bostad, projekt, kostnader, regelparametrar } =
     await hamtaBostadsdata(bostadId);
-  const { bostadsnamn, andrarad } = bostadHeader(bostad);
+  const { bostadsnamn } = bostadHeader(bostad);
 
   const insamlingslage = bostad.upplatelseform === "fastighet";
-  const sald = bostad.forsaljningsdatum !== null;
 
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      andrarad={andrarad}
       rubrik="Deklarationsunderlag"
       bakLank={{ href: "/", text: "Översikt" }}
     >
@@ -58,24 +62,6 @@ export default async function ExportSida() {
           </Meddelanderuta>
           <Link href="/" className={`${SEKUNDARKNAPP_KLASS} mt-4`}>
             Till översikten
-          </Link>
-        </div>
-      );
-    }
-
-    if (!sald) {
-      return (
-        <div className="p-5">
-          <p className="font-rubrik text-lg text-text-primar">
-            Bostaden är inte såld än
-          </p>
-          <p className="mt-1 font-granssnitt text-sm text-text-dampad">
-            Sammanställningen bygger på försäljningsåret – femårsfönstret för
-            reparationer räknas bakåt därifrån. Markera bostaden som såld med
-            datum, så genereras underlaget här.
-          </p>
-          <Link href="/forsaljning" className={`${PRIMARKNAPP_KLASS} mt-4`}>
-            Markera som såld
           </Link>
         </div>
       );
@@ -112,7 +98,11 @@ export default async function ExportSida() {
     }
 
     const gemensam = ex.delagarvariant === "gemensam_med_andel";
-    const varningar = [...new Set(ex.varningar)];
+    // Summorna dampas nar underlaget ar ofullstandigt (docs/design.md,
+    // Exportvyn): tva stora tal pa en skarm som heter Deklarationsunderlag ser
+    // trasigt ut nar de anda inte galler. Full tyngd forst nar allt ar
+    // klassificerat, sa att blicken gar till listan over det som aterstar.
+    const harOklassificerade = ex.oklassificerade_hogar.length > 0;
 
     return (
       <>
@@ -120,7 +110,7 @@ export default async function ExportSida() {
           <div className="flex justify-between gap-3">
             <span>Försäljningsdatum</span>
             <span className="tabular-nums text-text-primar">
-              {ex.genererad_for_datum}
+              {ex.genererad_for_datum ?? "Inte såld än"}
             </span>
           </div>
           <div className="flex justify-between gap-3">
@@ -154,26 +144,39 @@ export default async function ExportSida() {
           individuellt={ex.ruta4_individuellt}
           gemensam={gemensam}
           agarandel={ex.agarandel_procent}
+          dampad={harOklassificerade}
         />
 
         <SidaBlock
           etikett="Sida 2 · Förbättrande reparationer"
           rader={ex.sida2.rader}
           gemensam={gemensam}
-          visaAvdragsgill
+          visaAvdragsgill={ex.sald}
           tomtText="Inga förbättrande reparationer registrerade."
         />
 
-        <RutaCallout
-          rubrik="Förs till K6, ruta 5"
-          underrad="Summa sida 2 – avdragsgill del efter förslitning"
-          brutto={ex.ruta5_brutto}
-          individuellt={ex.ruta5_individuellt}
-          gemensam={gemensam}
-          agarandel={ex.agarandel_procent}
-        />
+        {ex.sald ? (
+          <RutaCallout
+            rubrik="Förs till K6, ruta 5"
+            underrad="Summa sida 2 – avdragsgill del efter förslitning"
+            brutto={ex.ruta5_brutto}
+            individuellt={ex.ruta5_individuellt}
+            gemensam={gemensam}
+            agarandel={ex.agarandel_procent}
+            dampad={harOklassificerade}
+          />
+        ) : (
+          <div className="border-b border-linje p-4">
+            <Meddelanderuta>
+              Femårsregeln och förslitningen räknas bakåt från
+              försäljningsdatumet, så den avdragsgilla delen på sida 2 går inte
+              att beräkna förrän bostaden är markerad som såld. Sida 1 påverkas
+              inte – grundförbättringar har ingen tidsgräns.
+            </Meddelanderuta>
+          </div>
+        )}
 
-        {ex.oklassificerade_hogar.length > 0 ? (
+        {harOklassificerade ? (
           <section className="border-b border-linje p-4">
             <p className="font-granssnitt text-sm font-medium text-text-primar">
               Behöver klassificeras
@@ -211,32 +214,16 @@ export default async function ExportSida() {
           </section>
         ) : null}
 
-        {varningar.length > 0 ? (
-          <section className="border-b border-linje p-4">
-            <p className="font-granssnitt text-sm font-medium text-text-primar">
-              Gå igenom innan du skriver av talen
-            </p>
-            <ul className="mt-2 space-y-1.5">
-              {varningar.map((v) => (
-                <li
-                  key={v}
-                  className="flex gap-2 font-granssnitt text-sm text-text-sekundar"
-                >
-                  <span
-                    aria-hidden
-                    className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
-                  />
-                  {v}
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-
         <div className="p-4">
-          <Link href="/forsaljning" className={SEKUNDARKNAPP_KLASS}>
-            Ändra försäljningsuppgifter
-          </Link>
+          {ex.sald ? (
+            <Link href="/forsaljning" className={SEKUNDARKNAPP_KLASS}>
+              Ändra försäljningsuppgifter
+            </Link>
+          ) : (
+            <Link href="/forsaljning" className={PRIMARKNAPP_KLASS}>
+              Markera som såld
+            </Link>
+          )}
         </div>
       </>
     );
@@ -350,6 +337,7 @@ function RutaCallout({
   individuellt,
   gemensam,
   agarandel,
+  dampad,
 }: {
   rubrik: string;
   underrad: string;
@@ -357,6 +345,9 @@ function RutaCallout({
   individuellt: number;
   gemensam: boolean;
   agarandel: number;
+  /** Finns oklassificerade högar är talet ofullständigt och sätts i
+   *  --text-sekundar i stället för --text-primar (docs/design.md, Exportvyn). */
+  dampad: boolean;
 }) {
   return (
     <section className="border-b border-linje p-4">
@@ -364,7 +355,11 @@ function RutaCallout({
         <span className="font-granssnitt text-sm text-text-sekundar">
           {rubrik}
         </span>
-        <span className="font-rubrik text-3xl tabular-nums text-text-primar">
+        <span
+          className={`font-rubrik text-3xl tabular-nums ${
+            dampad ? "text-text-sekundar" : "text-text-primar"
+          }`}
+        >
           {formateraKronor(gemensam ? individuellt : brutto)}
         </span>
       </div>

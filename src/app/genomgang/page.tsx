@@ -37,7 +37,7 @@ export default async function GenomgangSida() {
       orderBy: { skapad_at: "asc" },
     }),
   ]);
-  const { bostadsnamn, andrarad } = bostadHeader(bostad);
+  const { bostadsnamn } = bostadHeader(bostad);
 
   const kvittoDatum = (k: (typeof kostnadRader)[number]) => {
     // Ett utkast saknar bade betaldatum och dokumentdatum.
@@ -95,7 +95,6 @@ export default async function GenomgangSida() {
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      andrarad={andrarad}
       rubrik="Klassificera det du lagt in"
       bakLank={{ href: "/", text: "Översikt" }}
     >

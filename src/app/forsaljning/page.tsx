@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ForsaljningForm, type Reparationsprojekt } from "./form";
 import { Meddelanderuta, SEKUNDARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
-import { isoDatum } from "@/lib/format";
+import { isoDatum, orenTillFalt } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
@@ -20,19 +20,13 @@ function procentStrang(andel: unknown): string {
   return String(Number(tal.toFixed(2)));
 }
 
-function kronorStrang(oren: number | null): string {
-  if (oren === null) return "";
-  // Ren inmatningssträng, inte formaterad utskrift: "34500" -> "345,00".
-  return (oren / 100).toFixed(2).replace(".", ",");
-}
-
 export default async function ForsaljningSida() {
   const { bostadId } = await kravBostad();
 
   const bostad = await prisma.bostad.findUniqueOrThrow({
     where: { id: bostadId },
   });
-  const { bostadsnamn, andrarad } = bostadHeader(bostad);
+  const { bostadsnamn } = bostadHeader(bostad);
 
   const insamlingslage = bostad.upplatelseform === "fastighet";
 
@@ -53,7 +47,6 @@ export default async function ForsaljningSida() {
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      andrarad={andrarad}
       rubrik={redanSald ? "Försäljningsuppgifter" : "Markera som såld"}
       bakLank={{ href: "/", text: "Översikt" }}
     >
@@ -82,7 +75,11 @@ export default async function ForsaljningSida() {
             forvaltDatum={
               bostad.forsaljningsdatum ? isoDatum(bostad.forsaljningsdatum) : ""
             }
-            forvaltPris={kronorStrang(bostad.forsaljningspris)}
+            forvaltPris={
+              bostad.forsaljningspris === null
+                ? ""
+                : orenTillFalt(bostad.forsaljningspris)
+            }
             redanSald={redanSald}
           />
         </>

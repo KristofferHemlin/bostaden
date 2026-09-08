@@ -45,7 +45,7 @@ export default async function RedigeraKostnadSida({
   // Ett utkast kompletteras i inmatningsformularet, inte i redigeringen.
   if (kostnad.totalbelopp === null) redirect(`/kostnad/nytt?utkast=${id}`);
 
-  const { bostadsnamn, andrarad } = bostadHeader(bostad);
+  const { bostadsnamn } = bostadHeader(bostad);
   const enkel = arEnkelKostnad(tillDomanKostnad(kostnad));
 
   // Nuvarande projektkoppling: for en enkel kostnad ar det hogst ett projekt.
@@ -57,8 +57,7 @@ export default async function RedigeraKostnadSida({
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      andrarad={andrarad}
-      rubrik="Ändra kostnad"
+      rubrik="Ändra kvitto"
       bakLank={{ href: `/kostnad/${id}`, text: kostnad.leverantor ?? "Kvitto" }}
     >
       <RedigeraKostnadForm

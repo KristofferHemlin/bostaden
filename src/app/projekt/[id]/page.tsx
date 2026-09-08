@@ -40,7 +40,7 @@ export default async function ProjektSida({
   const bostad = await prisma.bostad.findUniqueOrThrow({
     where: { id: bostadId },
   });
-  const { bostadsnamn, andrarad } = bostadHeader(bostad);
+  const { bostadsnamn } = bostadHeader(bostad);
 
   const kostnadRader = await prisma.kostnad.findMany({
     where: {
@@ -63,7 +63,6 @@ export default async function ProjektSida({
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      andrarad={andrarad}
       rubrik={projekt.namn}
       bakLank={{ href: "/projekt", text: "Projekt" }}
     >

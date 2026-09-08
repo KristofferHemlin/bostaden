@@ -54,12 +54,14 @@ model bostad {
   upplatelseform    upplatelseform
   husform           husform? // rent informativt, styr ingenting
   tilltradesdatum   DateTime  @db.Date
-  kopeskilling      Int? // oren
-  kopkostnader      Int? // oren, stampelskatt/lagfart eller overlatelseavgift
-  kapitaltillskott  Int? // oren, endast bostadsratt
-  uppskov_tidigare  Int? // oren, paverkar vinstberakning, inte avdrag
+  // Vinstberakningens belopp. BigInt, inte Int: Postgres int4 tar slut vid
+  // 2147483647 oren (~21,5 miljoner kr) och en villaforsaljning kan ligga hogre.
+  kopeskilling      BigInt? // oren
+  kopkostnader      BigInt? // oren, stampelskatt/lagfart eller overlatelseavgift
+  kapitaltillskott  BigInt? // oren, endast bostadsratt
+  uppskov_tidigare  BigInt? // oren, paverkar vinstberakning, inte avdrag
   forsaljningsdatum DateTime? @db.Date
-  forsaljningspris  Int? // oren
+  forsaljningspris  BigInt? // oren
   skapad_at         DateTime  @default(now())
 
   medlemskap     medlemskap[]

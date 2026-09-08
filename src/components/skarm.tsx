@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Toppnavigering } from "@/components/toppnavigering";
+import { Installningslank, Toppnavigering } from "@/components/toppnavigering";
 
 const LOGO_SRC = "/kajin-hem-logo.png";
 
@@ -112,19 +112,48 @@ export function Falt({
   );
 }
 
+/**
+ * Ett kort pa --yta-upphojd mot sidbakgrunden (docs/design.md, "Genomgaende
+ * struktur"). Innehall av olika slag hor hemma i OLIKA kort, med luft emellan –
+ * pa oversikten ar metriken ett kort och kvittolistan ett annat. Anvands med
+ * <Skarm egnaKort>, som da later sidan komponera sina egna kort i stallet for
+ * att svepa in allt i ett.
+ */
+export function Kort({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`overflow-hidden rounded-xl bg-yta-upphojd${
+        className ? ` ${className}` : ""
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
 export interface SkarmProps {
   bostadsnamn: string;
-  andrarad?: string;
   rubrik?: string;
   bakLank?: { href: string; text: string };
+  /**
+   * Later sidan komponera sina egna <Kort> med luft emellan i stallet for att
+   * <Skarm> sveper in alla children i ETT kort. Anvands pa oversikten.
+   */
+  egnaKort?: boolean;
   children: ReactNode;
 }
 
 export function Skarm({
   bostadsnamn,
-  andrarad,
   rubrik,
   bakLank,
+  egnaKort,
   children,
 }: SkarmProps) {
   return (
@@ -133,26 +162,35 @@ export function Skarm({
           huvudmenyn – allt pa en rad (docs/design.md, Navigation). Pa mobil
           hamnar <Toppnavigering> i stallet fast i nederkanten. */}
       <div className="w-full border-b border-linje bg-yta-upphojd">
-        <div className="mx-auto flex w-full max-w-[620px] items-center justify-between gap-3 px-4 py-3">
-          <div className="flex min-w-0 items-center gap-2.5">
+        <div className="mx-auto flex w-full max-w-[620px] items-center gap-3 px-4 py-3">
+          {/* Tre zoner pa en rad (docs/design.md, Skrivbordsvyn): adressen till
+              vanster med sin egen plats, kugghjulet till hoger, flikarna i
+              utrymmet daremellan. Adressen (flex-1, min-w-0) tar den plats som
+              blir over och kapas med ellips nar den ar for lang – aldrig av
+              flikarna, som star med sin fulla bredd och aldrig krymper.
+              Logotypen och adressen ar samtidigt lanken till oversikten. */}
+          <Link
+            href="/"
+            aria-label="Till översikten"
+            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
             <img
               src={LOGO_SRC}
               alt=""
               aria-hidden
               className="h-6 w-auto shrink-0 sm:h-7"
             />
-            <div className="min-w-0">
-              <p className="truncate font-rubrik text-base text-text-primar sm:text-lg">
-                {bostadsnamn}
-              </p>
-              {andrarad ? (
-                <p className="truncate font-granssnitt text-xs text-text-dampad">
-                  {andrarad}
-                </p>
-              ) : null}
-            </div>
-          </div>
+            {/* Toppraden visar BARA adressen: ingen andrarad med upplatelseform
+                och tilltradesar. Raden ar ALLTID en rad – namnet far aldrig
+                radbryta, och kapas med ellips nar det inte ryms. */}
+            <p className="truncate font-rubrik text-base text-text-primar sm:text-lg">
+              {bostadsnamn}
+            </p>
+          </Link>
           <Toppnavigering />
+          {/* Kugghjulet ligger i toppraden pa bade mobil och skrivbord, langst
+              till hoger (docs/design.md, Navigation). */}
+          <Installningslank />
         </div>
       </div>
 
@@ -167,9 +205,13 @@ export function Skarm({
           </h1>
         ) : null}
 
-        <div className="overflow-hidden rounded-xl bg-yta-upphojd">
-          {children}
-        </div>
+        {egnaKort ? (
+          <div className="flex flex-col gap-4 sm:gap-5">{children}</div>
+        ) : (
+          <div className="overflow-hidden rounded-xl bg-yta-upphojd">
+            {children}
+          </div>
+        )}
       </main>
     </div>
   );

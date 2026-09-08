@@ -4,15 +4,22 @@
 //   * Tom databas: rubrik som uppmaning, ett par meningar om varfor kvitton ska
 //     sparas, och en primarknapp "Lagg till kvitto". Ingen rundtur, inget
 //     baslinjekort, inga pahittade siffror.
-//   * Med innehall: metrikblocket (arets inlagda belopp mot 5 000-troskeln) och
-//     de sex senast tillagda kvittona, senaste forst. Under listan en lank till
-//     alla kvitton.
+//   * Med innehall: bostadens adress som rubrik, tre sma nyckeltal pa rad
+//     (arets summa, antal kvitton, senast tillagt), troskelraden i full bredd,
+//     primarknappen, och till sist kvittolistan som eget kort.
 //
 // Ingen inmatning har – bara lasning. All berakning bor i src/doman.
 
 import Link from "next/link";
 import { loggaUt } from "@/app/login/actions";
-import { Listrad, Meddelanderuta, PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
+import {
+  Kort,
+  Listrad,
+  Meddelanderuta,
+  PRIMARKNAPP_KLASS,
+  Skarm,
+} from "@/components/skarm";
+import { TroskelInfo } from "@/app/troskel-info";
 import {
   harledKostnadstillstand,
   inlagtArsbelopp,
@@ -32,23 +39,28 @@ export const dynamic = "force-dynamic";
 export default async function Oversikt() {
   const { bostadId } = await kravBostad();
   const { bostad, kostnader, regelparametrar } = await hamtaBostadsdata(bostadId);
-  const { bostadsnamn, andrarad } = bostadHeader(bostad);
+  const { bostadsnamn } = bostadHeader(bostad);
 
   // De sex senast tillagda kvittona for listan – egen lasning eftersom domanens
-  // kostnadstyp inte bar leverantor, anteckning eller dokumentdatum.
-  const senasteKvitton = await prisma.kostnad.findMany({
-    where: { bostad_id: bostadId, arkiverad: false },
-    orderBy: { skapad_at: "desc" },
-    take: 6,
-    select: {
-      id: true,
-      leverantor: true,
-      anteckning: true,
-      totalbelopp: true,
-      betaldatum: true,
-      dokumentdatum: true,
-    },
-  });
+  // kostnadstyp inte bar leverantor, anteckning eller dokumentdatum. Antal
+  // kvitton lases separat: listan ar kapad till sex.
+  const [senasteKvitton, antalKvitton] = await Promise.all([
+    prisma.kostnad.findMany({
+      where: { bostad_id: bostadId, arkiverad: false },
+      orderBy: { skapad_at: "desc" },
+      take: 6,
+      select: {
+        id: true,
+        leverantor: true,
+        anteckning: true,
+        totalbelopp: true,
+        betaldatum: true,
+        dokumentdatum: true,
+        skapad_at: true,
+      },
+    }),
+    prisma.kostnad.count({ where: { bostad_id: bostadId, arkiverad: false } }),
+  ]);
 
   const VISAT_AR = new Date().getUTCFullYear();
   const inomVisatAr = (betaldatum: string | null) =>
@@ -79,18 +91,43 @@ export default async function Oversikt() {
       harledKostnadstillstand(k).okopplad,
   );
 
+  // Orange kraver att ALLT ar klassificerat (docs/design.md, Metrikblock).
+  // Finns oklassificerade kvitton ar fyllningen --sand-mork oavsett belopp,
+  // eftersom siffran da ar en preliminar summa och inte ett avdrag. Ett fullt
+  // orange falt signalerar att nagot ar avklarat, och det ar det inte forran
+  // fragorna ar besvarade.
+  const orangeFyllning = naddTroskel && !oklassificeratFinns;
+
   // Antal oklassificerade kvitton totalt (ej arsbundet) – en klickbar rad in i
   // klassificeringsgenomgangen (produktspec 7). Visas bara nar det finns nagra.
   const antalOklassificerade = kostnader.filter(arOklassificerad).length;
 
+  // "Senast tillagt": datum for det kvitto som lades in sist. Nyckeltalet lankar
+  // till just det kvittot (docs/design.md, "Startskarmen med innehall") – till
+  // kompletteringen om det annu bara ar ett utkast, annars till detaljvyn.
+  const senasteKvitto = senasteKvitton[0];
+  const senastTillagt = senasteKvitto
+    ? isoDatum(senasteKvitto.skapad_at)
+    : "–";
+  const senastTillagtHref = senasteKvitto
+    ? senasteKvitto.totalbelopp === null
+      ? `/kostnad/nytt?utkast=${senasteKvitto.id}`
+      : `/kostnad/${senasteKvitto.id}`
+    : "/kostnad";
+
   const tomt = kostnader.length === 0;
 
   return (
-    <Skarm bostadsnamn={bostadsnamn} andrarad={andrarad} rubrik="Översikt">
+    // egnaKort: pa oversikten hor nyckeltal, troskelrad och kvittolista hemma i
+    // OLIKA kort med luft emellan (docs/design.md, "Genomgaende struktur" och
+    // "Startskarmen med innehall").
+    // Sidrubriken upprepar aldrig adressen (docs/design.md, Skrivbordsvyn): den
+    // star redan i toppraden, sa sidan under heter "Oversikt".
+    <Skarm bostadsnamn={bostadsnamn} rubrik="Översikt" egnaKort>
       {tomt ? (
         // Forstaskarmen: den som just skapat kontot vet inte varfor kvitton ska
         // sparas. Skarmen ska saga det, inte forutsatta det.
-        <div className="p-5">
+        <Kort className="p-5">
           <p className="font-rubrik text-lg text-text-primar">
             Spara kvittona nu, dra av dem när du säljer
           </p>
@@ -102,136 +139,178 @@ export default async function Oversikt() {
           <Link href="/kostnad/nytt" className={`${PRIMARKNAPP_KLASS} mt-5`}>
             Lägg till kvitto
           </Link>
-        </div>
+        </Kort>
       ) : (
         <>
           {insamlingslage ? (
-            <div className="border-b border-linje p-4">
+            <Kort className="p-4">
               <Meddelanderuta>
-                Fastighetsreglerna är inte implementerade ännu. Kostnader,
+                Fastighetsreglerna är inte implementerade ännu. Kvitton,
                 projekt och årssummor fungerar, men klassificeringsförslag,
                 avdragsstatus och export är avstängda.
               </Meddelanderuta>
-            </div>
+            </Kort>
           ) : null}
 
-          {/* Metrikblock: arets inlagda belopp mot 5 000-troskeln. Etiketten
-              sager "Inlagt", aldrig "Underlag" eller "Avdrag" – siffran ar
-              summan av allt som lagts in, klassificerat eller ej. */}
-          <section className="border-b border-linje p-4">
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="font-granssnitt text-sm text-text-dampad">
-                Inlagt {VISAT_AR}
-              </span>
-              <span className="font-rubrik text-2xl tabular-nums text-text-primar">
-                {formateraKronor(inlagt)}
-              </span>
-            </div>
-            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-yta-nedsankt">
-              <div
-                className={`h-full rounded-full ${
-                  naddTroskel ? "bg-accent" : "bg-sand-mork"
-                }`}
-                style={{ width: `${fyllnadsgrad.toFixed(2)}%` }}
-              />
-            </div>
-            <div className="mt-2 flex items-baseline justify-between gap-3 font-granssnitt text-xs tabular-nums text-text-dampad">
-              <span>Tröskel {formateraKronor(troskelbelopp)}</span>
-              <span>
-                {naddTroskel
-                  ? "tröskeln nådd"
-                  : `${formateraKronor(aterstaende)} kvar`}
-              </span>
-            </div>
-            {oklassificeratFinns ? (
-              <p className="mt-2 font-granssnitt text-xs text-text-dampad">
-                Beloppet är preliminärt tills kostnaderna klassificerats – det
-                visar allt som lagts in, inte bara det som blir avdragsgillt. Når
-                året inte tröskeln faller hela årets belopp bort, inte bara
-                mellanskillnaden.
-              </p>
-            ) : null}
-          </section>
-
-          {/* Oklassificerade kvitton som en klickbar rad in i genomgangen
-              (produktspec 7). Faller bort nar inget oklassificerat aterstar. */}
-          {antalOklassificerade > 0 ? (
-            <Link
-              href="/genomgang"
-              className="block border-b border-linje p-4 transition-colors hover:bg-yta-nedsankt"
-            >
-              <span className="flex items-center gap-1.5 font-granssnitt text-sm text-text-primar">
-                <span
-                  aria-hidden
-                  className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
-                />
-                {antalOklassificerade} kvitto
-                {antalOklassificerade === 1 ? "" : "n"} att klassificera
-              </span>
-              <span className="mt-0.5 block font-granssnitt text-xs text-text-dampad">
-                Gruppera dem i högar och svara på fyra frågor per hög.
-              </span>
-            </Link>
-          ) : null}
-
-          {/* De sex senast tillagda kvittona, senaste forst. Anteckningen ar
-              huvudtext ("Målade om sovrummet" sager vad raden ar, "BAUHAUS"
-              inte); saknas den anvands leverantoren. */}
-          <div className="divide-y divide-linje border-b border-linje">
-            {senasteKvitton.map((k) => {
-              const notering = k.anteckning?.trim();
-              // Ett utkast: kvittot valt men uppgifterna inte ifyllda an.
-              const utkast = k.totalbelopp === null;
-              const datumRad = k.betaldatum ?? k.dokumentdatum;
-              const datum = datumRad ? isoDatum(datumRad) : null;
-              return (
-                <Listrad
-                  key={k.id}
-                  href={utkast ? `/kostnad/nytt?utkast=${k.id}` : `/kostnad/${k.id}`}
-                  namn={notering || k.leverantor || "Utkast"}
-                  status={
-                    utkast
-                      ? "Utkast · komplettera uppgifterna"
-                      : notering
-                        ? `${k.leverantor} · ${datum ?? ""}`
-                        : (datum ?? "")
-                  }
-                  atgard={utkast}
-                  belopp={utkast ? undefined : formateraKronor(k.totalbelopp ?? 0)}
-                />
-              );
-            })}
-          </div>
-
-          <div className="border-b border-linje p-4">
-            <Link
+          {/* Tre sma nyckeltal pa rad, i egna kort. Pa mobil ligger de kvar i en
+              rad med mindre text, aldrig staplade (docs/design.md, "Startskarmen
+              med innehall"). Inga statusfarger. Alla tre ar klickbara: "Inlagt"
+              och "Antal kvitton" till hela kvittolistan, "Senast tillagt" till
+              just det kvittot. */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <Nyckeltal
+              etikett={`Inlagt ${VISAT_AR}`}
+              varde={formateraKronor(inlagt)}
               href="/kostnad"
-              className="font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
-            >
-              Visa alla kvitton
-            </Link>
+            />
+            <Nyckeltal
+              etikett="Antal kvitton"
+              varde={String(antalKvitton)}
+              href="/kostnad"
+            />
+            <Nyckeltal
+              etikett="Senast tillagt"
+              varde={senastTillagt}
+              href={senastTillagtHref}
+            />
           </div>
 
-          <div className="p-4">
-            <Link href="/kostnad/nytt" className={PRIMARKNAPP_KLASS}>
-              Lägg till kvitto
-            </Link>
-          </div>
+          {/* Troskelraden i full bredd: progressfalt, troskelbelopp och den korta
+              preliminarraden med informationsknappen. Etiketten "Inlagt" bor pa
+              nyckeltalet ovan, inte har. */}
+          <Kort>
+            <section className="p-4">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-yta-nedsankt">
+                <div
+                  className={`h-full rounded-full ${
+                    orangeFyllning ? "bg-accent" : "bg-sand-mork"
+                  }`}
+                  style={{ width: `${fyllnadsgrad.toFixed(2)}%` }}
+                />
+              </div>
+              <div className="mt-2 flex items-baseline justify-between gap-3 font-granssnitt text-xs tabular-nums text-text-dampad">
+                <span>Tröskel {formateraKronor(troskelbelopp)}</span>
+                <span>
+                  {naddTroskel
+                    ? "tröskeln nådd"
+                    : `${formateraKronor(aterstaende)} kvar`}
+                </span>
+              </div>
+              {oklassificeratFinns ? <TroskelInfo /> : null}
+            </section>
+          </Kort>
+
+          {/* Primaratgarden – direkt under troskelraden, ovanfor kvittolistan
+              (docs/design.md, "Startskarmen med innehall"). */}
+          <Link href="/kostnad/nytt" className={PRIMARKNAPP_KLASS}>
+            Lägg till kvitto
+          </Link>
+
+          {/* Kvittolistan som eget kort: rubriken "Senaste kvitton" och en
+              hogerstalld lank "Visa alla" i samma rad. */}
+          <Kort>
+            <div className="flex items-baseline justify-between gap-3 border-b border-linje p-4">
+              <h2 className="font-rubrik text-base text-text-primar">
+                Senaste kvitton
+              </h2>
+              <Link
+                href="/kostnad"
+                className="shrink-0 font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
+              >
+                Visa alla
+              </Link>
+            </div>
+
+            {/* Oklassificerade kvitton som en klickbar rad in i genomgangen
+                (produktspec 7), ovanfor listan. Faller bort nar inget
+                oklassificerat aterstar. */}
+            {antalOklassificerade > 0 ? (
+              <Link
+                href="/genomgang"
+                className="block border-b border-linje p-4 transition-colors hover:bg-yta-nedsankt"
+              >
+                <span className="flex items-center gap-1.5 font-granssnitt text-sm text-text-primar">
+                  <span
+                    aria-hidden
+                    className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
+                  />
+                  {antalOklassificerade} kvitto
+                  {antalOklassificerade === 1 ? "" : "n"} att klassificera
+                </span>
+                <span className="mt-0.5 block font-granssnitt text-xs text-text-dampad">
+                  Gruppera dem i högar och svara på fyra frågor per hög.
+                </span>
+              </Link>
+            ) : null}
+
+            {/* De sex senast tillagda kvittona, senaste forst. Anteckningen ar
+                huvudtext ("Målade om sovrummet" sager vad raden ar, "BAUHAUS"
+                inte); saknas den anvands leverantoren. */}
+            <div className="divide-y divide-linje">
+              {senasteKvitton.map((k) => {
+                const notering = k.anteckning?.trim();
+                // Ett utkast: kvittot valt men uppgifterna inte ifyllda an.
+                const utkast = k.totalbelopp === null;
+                const datumRad = k.betaldatum ?? k.dokumentdatum;
+                const datum = datumRad ? isoDatum(datumRad) : null;
+                return (
+                  <Listrad
+                    key={k.id}
+                    href={utkast ? `/kostnad/nytt?utkast=${k.id}` : `/kostnad/${k.id}`}
+                    namn={notering || k.leverantor || "Utkast"}
+                    status={
+                      utkast
+                        ? "Utkast · komplettera uppgifterna"
+                        : notering
+                          ? `${k.leverantor} · ${datum ?? ""}`
+                          : (datum ?? "")
+                    }
+                    atgard={utkast}
+                    belopp={utkast ? undefined : formateraKronor(k.totalbelopp ?? 0)}
+                  />
+                );
+              })}
+            </div>
+          </Kort>
         </>
       )}
 
-      {/* Installningar nas via kugghjulet i navigationen (docs/design.md,
-          Navigation) och ligger inte langre har. */}
-      <div className="flex items-center justify-end border-t border-linje p-4">
-        <form action={loggaUt}>
-          <button
-            type="submit"
-            className="font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
-          >
-            Logga ut
-          </button>
-        </form>
-      </div>
+      {/* Logga ut – diskret, utan kort. Installningarna nas via kugghjulet i
+          toppraden (docs/design.md, Navigation) och ligger inte langre har. */}
+      <form action={loggaUt} className="flex justify-end px-1">
+        <button
+          type="submit"
+          className="font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
+        >
+          Logga ut
+        </button>
+      </form>
     </Skarm>
+  );
+}
+
+// Ett nyckeltal: dampad etikett over ett varde i Fraunces med tabulara siffror.
+// Litet kort, ingen statusfarg (docs/design.md, "Startskarmen med innehall").
+// Alltid klickbart – ett tal man vill se narmare pa ska ga att trycka pa.
+function Nyckeltal({
+  etikett,
+  varde,
+  href,
+}: {
+  etikett: string;
+  varde: string;
+  href: string;
+}) {
+  return (
+    <Link href={href} className="block">
+      <Kort className="p-3 transition-colors hover:bg-yta-nedsankt">
+        <p className="font-granssnitt text-[11px] leading-tight text-text-dampad">
+          {etikett}
+        </p>
+        <p className="mt-1 font-rubrik text-sm tabular-nums text-text-primar sm:text-base">
+          {varde}
+        </p>
+      </Kort>
+    </Link>
   );
 }

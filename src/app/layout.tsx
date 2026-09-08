@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Bostadsunderlag",
   description:
-    "Samlar och klassificerar kostnader nedlagda pa den egna bostaden infor forsaljning.",
+    "Samlar och klassificerar kostnader nedlagda på den egna bostaden inför försäljning.",
 };
 
 export default function RootLayout({

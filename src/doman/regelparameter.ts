@@ -18,7 +18,7 @@ export function slaUppRegelparameter(
   );
   if (!traff) {
     throw new Error(
-      `Ingen regelparameter "${nyckel}" galler for ${datum}. Berakningen avbryts hellre an att gissa.`,
+      `Ingen regelparameter "${nyckel}" gäller för ${datum}. Beräkningen avbryts hellre än att gissa.`,
     );
   }
   return traff.varde;

@@ -38,7 +38,7 @@ export default async function RedigeraProjektSida({
   ]);
   if (!projekt) notFound();
 
-  const { bostadsnamn, andrarad } = bostadHeader(bostad);
+  const { bostadsnamn } = bostadHeader(bostad);
 
   const blockerande = kostnaderKoppladeTillProjekt(
     kostnadRader.map(tillDomanKostnad),
@@ -56,7 +56,6 @@ export default async function RedigeraProjektSida({
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      andrarad={andrarad}
       rubrik="Ändra projekt"
       bakLank={{ href: `/projekt/${id}`, text: projekt.namn }}
     >

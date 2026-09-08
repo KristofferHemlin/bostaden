@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function ProjektlistaSida() {
   const { bostadId } = await kravBostad();
   const { bostad, projektRader, kostnader } = await hamtaBostadsdata(bostadId);
-  const { bostadsnamn, andrarad } = bostadHeader(bostad);
+  const { bostadsnamn } = bostadHeader(bostad);
 
   const rader = projektRader.map((p) => {
     let belopp = 0;
@@ -57,7 +57,6 @@ export default async function ProjektlistaSida() {
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      andrarad={andrarad}
       rubrik="Projekt"
       bakLank={{ href: "/", text: "Översikt" }}
     >

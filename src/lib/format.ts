@@ -117,6 +117,25 @@ export function formateraBeloppInmatning(text: string): string {
   return `${heltalGrupperat},${(decimalRa ?? "").slice(0, 2)}`;
 }
 
+/**
+ * Orebelopp -> ren inmatningsstrang som ett beloppsfalt kan visa, t.ex.
+ * `345000000` -> `"3450000,00"` (formateraBeloppInmatning grupperar sedan
+ * heltalsdelen). Motsvarar `(oren / 100).toFixed(2)` men tar aven `bigint`:
+ * forsaljningspris, kopeskilling m.fl. pa bostaden lagras som BigInt eftersom
+ * `Int` (Postgres int4) tar slut vid ~21,5 miljoner kronor. For bigint delas
+ * kron- och oredelen med heltalsaritmetik sa att inget tappas oavsett hur stort
+ * beloppet ar.
+ */
+export function orenTillFalt(oren: number | bigint): string {
+  if (typeof oren === "number") {
+    return (oren / 100).toFixed(2).replace(".", ",");
+  }
+  const negativ = oren < 0n;
+  const abs = negativ ? -oren : oren;
+  const ore = (abs % 100n).toString().padStart(2, "0");
+  return `${negativ ? "-" : ""}${abs / 100n},${ore}`;
+}
+
 /** Date -> "YYYY-MM-DD" i UTC. Kolumnerna ar @db.Date, tid ar irrelevant. */
 export function isoDatum(d: Date): string {
   return d.toISOString().slice(0, 10);

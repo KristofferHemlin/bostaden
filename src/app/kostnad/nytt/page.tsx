@@ -35,7 +35,7 @@ export default async function NyKostnadSida({
       select: { id: true, namn: true, ar: true },
     }),
   ]);
-  const { bostadsnamn, andrarad } = bostadHeader(bostad);
+  const { bostadsnamn } = bostadHeader(bostad);
 
   let utkast: { id: string; anteckning: string | null; bilagor: Awaited<
     ReturnType<typeof listaKostnadsbilagor>
@@ -59,8 +59,7 @@ export default async function NyKostnadSida({
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      andrarad={andrarad}
-      rubrik={utkast ? "Komplettera kvittot" : "Ny kostnad"}
+      rubrik={utkast ? "Komplettera kvittot" : "Nytt kvitto"}
       bakLank={{ href: "/", text: "Översikt" }}
     >
       <NyKostnadForm

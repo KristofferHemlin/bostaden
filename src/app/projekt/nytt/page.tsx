@@ -13,12 +13,11 @@ export default async function NyttProjektSida() {
   const bostad = await prisma.bostad.findUniqueOrThrow({
     where: { id: bostadId },
   });
-  const { bostadsnamn, andrarad } = bostadHeader(bostad);
+  const { bostadsnamn } = bostadHeader(bostad);
 
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      andrarad={andrarad}
       rubrik="Nytt projekt"
       bakLank={{ href: "/projekt", text: "Projekt" }}
     >
