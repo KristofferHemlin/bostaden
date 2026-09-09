@@ -63,7 +63,6 @@ export const SEED_PROJEKT: SeedProjekt[] = [
     namn: "Måla sovrum",
     ar: 2026,
     kategori: "reparation",
-    baslinjepost_id: null, // utan baslinjepost => harledd underlagsstyrka "svagt"
     motivering: null,
     slitet_vid_tilltrade: null, // de fyra fragorna stalls pa riktigt i steg 3
     battre_skick_vid_forsaljning: null,
@@ -75,7 +74,6 @@ export const SEED_PROJEKT: SeedProjekt[] = [
     namn: "Byta köksblandare",
     ar: 2026,
     kategori: "grundforbattring",
-    baslinjepost_id: null,
     motivering: null,
     slitet_vid_tilltrade: null,
     battre_skick_vid_forsaljning: null,
@@ -87,7 +85,6 @@ export const SEED_PROJEKT: SeedProjekt[] = [
     namn: "Nya taklampor i hallen",
     ar: 2026,
     kategori: "reparation",
-    baslinjepost_id: null,
     motivering: null,
     slitet_vid_tilltrade: null,
     battre_skick_vid_forsaljning: null,

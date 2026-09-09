@@ -1,5 +1,6 @@
-// Steg 4: oppna ett projekt. Visar de fyra svaren, harledd underlagsstyrka och
-// de kostnader som kopplats hit. Harifran lagger man till en kostnad.
+// Steg 4: oppna ett projekt. Visar de fyra svaren och de kostnader som kopplats
+// hit. Harifran lagger man till en kostnad. Fraga 4:s fritext (`motivering`)
+// visas som en egen rad nar den ar ifylld – den ar det enda som bar bevisningen.
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,7 +10,7 @@ import {
   SEKUNDARKNAPP_KLASS,
   Skarm,
 } from "@/components/skarm";
-import { bidragForKostnad, harledUnderlagsstyrka } from "@/doman/berakningar";
+import { bidragForKostnad } from "@/doman/berakningar";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { formateraKronor } from "@/lib/format";
@@ -58,7 +59,6 @@ export default async function ProjektSida({
     : projekt.kategori === "grundforbattring"
       ? "Grundförbättring"
       : "Reparation";
-  const svagt = harledUnderlagsstyrka(projekt) === "svagt";
 
   return (
     <Skarm
@@ -85,11 +85,6 @@ export default async function ProjektSida({
             />
           </>
         )}
-        <Rad
-          etikett="Underlag"
-          varde={svagt ? "underlag saknas" : "dokumenterat"}
-          atgard={svagt && !oklassificerad}
-        />
         {oklassificerad ? (
           <p className="pt-1 text-text-sekundar">
             Den här högen är grupperad men har inte gått igenom frågorna. Den

@@ -1,7 +1,7 @@
-// Redigera ett projekt (produktspec 6.4): namn, de fyra fragornas svar och
-// kopplingen till baslinjepost. Omklassificering rakas om i arssumman sa fort
-// vyerna revalideras. Ett projekt med kopplade kostnader gar inte att ta bort –
-// sidan visar vilka kostnader som blockerar i stallet for att bara neka.
+// Redigera ett projekt (produktspec 6.4): namn och de fyra fragornas svar, dar
+// fraga 4 ar ren fritext (`motivering`). Omklassificering rakas om i arssumman
+// sa fort vyerna revalideras. Ett projekt med kopplade kostnader gar inte att ta
+// bort – sidan visar vilka kostnader som blockerar i stallet for att bara neka.
 
 import { notFound } from "next/navigation";
 import { RedigeraProjektForm } from "./form";
@@ -23,14 +23,9 @@ export default async function RedigeraProjektSida({
   const { id } = await params;
   const { bostadId } = await kravBostad();
 
-  const [projekt, bostad, baslinjeposter, kostnadRader] = await Promise.all([
+  const [projekt, bostad, kostnadRader] = await Promise.all([
     prisma.projekt.findFirst({ where: { id, bostad_id: bostadId } }),
     prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } }),
-    prisma.baslinjepost.findMany({
-      where: { bostad_id: bostadId },
-      orderBy: { skapad_at: "asc" },
-      select: { id: true, rum: true, beskrivning: true },
-    }),
     prisma.kostnad.findMany({
       where: { bostad_id: bostadId },
       include: { rader: { include: { fordelningar: true } } },
@@ -61,7 +56,6 @@ export default async function RedigeraProjektSida({
     >
       <RedigeraProjektForm
         projektId={id}
-        baslinjeposter={baslinjeposter}
         blockerande={blockerande}
         varden={{
           namn: projekt.namn,
@@ -78,7 +72,6 @@ export default async function RedigeraProjektSida({
                 ? "nej"
                 : "",
           motivering: projekt.motivering ?? "",
-          baslinjepostId: projekt.baslinjepost_id ?? "",
         }}
       />
     </Skarm>

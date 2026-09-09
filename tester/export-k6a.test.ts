@@ -294,18 +294,59 @@ describe("K6A-exporten", () => {
     expect(ex.ruta5_brutto).toBe(550_000);
   });
 
-  it("export ar avstangd i insamlingslage (fastighet)", () => {
-    expect(() =>
-      byggK6aExport(
-        bygg({
-          bostad: {
-            upplatelseform: "fastighet",
-            tilltradesdatum: "2010-01-01",
-            forsaljningsdatum: "2032-06-01",
-          },
-        }),
-      ),
-    ).toThrow(/insamlingsläge/);
+  it("fastighet ger samma underlag som bostadsratt – ingen domanskillnad", () => {
+    const p = projekt({
+      id: "p1",
+      kategori: "grundforbattring",
+      namn: "Nytt kok",
+    });
+    const rep = projekt({
+      id: "p2",
+      kategori: "reparation",
+      namn: "Slipa golv",
+      slitet_vid_tilltrade: true,
+      battre_skick_vid_forsaljning: true,
+      kvarvarande_andel: 1,
+    });
+    const k1 = kostnad({
+      id: "k1",
+      betaldatum: "2015-04-01",
+      totalbelopp: 800_000,
+      projekt_id: "p1",
+    });
+    const k2 = kostnad({
+      id: "k2",
+      betaldatum: "2030-04-01",
+      totalbelopp: 550_000,
+      projekt_id: "p2",
+    });
+
+    const br = byggK6aExport(
+      bygg({
+        bostad: {
+          upplatelseform: "bostadsratt",
+          tilltradesdatum: "2010-01-01",
+          forsaljningsdatum: "2032-06-01",
+        },
+        projekt: [p, rep],
+        kostnader: [k1, k2],
+      }),
+    );
+    const fast = byggK6aExport(
+      bygg({
+        bostad: {
+          upplatelseform: "fastighet",
+          tilltradesdatum: "2010-01-01",
+          forsaljningsdatum: "2032-06-01",
+        },
+        projekt: [p, rep],
+        kostnader: [k1, k2],
+      }),
+    );
+
+    expect(fast).toEqual(br);
+    expect(fast.ruta4_brutto).toBe(800_000);
+    expect(fast.ruta5_brutto).toBe(550_000);
   });
 
 });
@@ -442,13 +483,26 @@ describe("K6A-exporten utan forsaljningsdatum", () => {
     expect(ex.oklassificerade_hogar.map((h) => h.namn)).toContain("Badrum");
   });
 
-  it("export ar fortfarande avstangd i insamlingslage utan forsaljningsdatum", () => {
-    expect(() =>
-      byggK6aExport(
-        bygg({
-          bostad: { ...osald, upplatelseform: "fastighet" },
-        }),
-      ),
-    ).toThrow(/insamlingsläge/);
+  it("fastighet utan forsaljningsdatum bygger som bostadsratt", () => {
+    const p = projekt({
+      id: "p1",
+      kategori: "grundforbattring",
+      namn: "Nytt kok",
+    });
+    const k = kostnad({
+      id: "k1",
+      betaldatum: "2015-04-01",
+      totalbelopp: 800_000,
+      projekt_id: "p1",
+    });
+    const ex = byggK6aExport(
+      bygg({
+        bostad: { ...osald, upplatelseform: "fastighet" },
+        projekt: [p],
+        kostnader: [k],
+      }),
+    );
+    expect(ex.sald).toBe(false);
+    expect(ex.ruta4_brutto).toBe(800_000);
   });
 });

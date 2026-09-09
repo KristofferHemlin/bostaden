@@ -20,9 +20,10 @@ Ingen inlämningsintegration. Exporten producerar:
    kolumn) → K6 ruta 5.
 3. **En bilage-PDF** med alla bilagor i samma ordning som raderna.
 
-Exporten kan bara genereras när bostaden är markerad som såld
-(`bostad.forsaljningsdatum` satt) och `bostad.upplatelseform = bostadsratt`
-(fastighet kör i insamlingsläge – regelmotorn och exporten är avstängda).
+Exporten genereras för alla upplåtelseformer – beräkningsreglerna är identiska
+(produktspec 4.8). `upplatelseform` styr bara vilket blankettnamn sammanställningen
+pekar på: **K5 för fastighet, K6 för bostadsrätt**. SKV 2197 är samma hjälpblankett
+för båda.
 
 ---
 
@@ -31,7 +32,7 @@ Exporten kan bara genereras när bostaden är markerad som såld
 | Fält | Källa i modellen | Används till |
 |---|---|---|
 | `forsaljningsdatum` | `bostad.forsaljningsdatum` | Grinden för att exporten alls går att skapa; ankaret för femårsfönstret |
-| `upplatelseform` | `bostad.upplatelseform` | `fastighet` = export avstängd |
+| `upplatelseform` | `bostad.upplatelseform` | Blankettnamnet i sammanställningen: K5 för fastighet, K6 för bostadsrätt. Ingen skillnad i beräkningen |
 | `tilltradesdatum` | `bostad.tilltradesdatum` | Referenspunkt för "bättre skick vid försäljning än vid förvärvet" |
 | `agarandel_procent` | `medlemskap.agarandel` | Avgör delägarvariant och räknar fram individuella belopp |
 | `troskelbelopp` (per år) | `regelparameter` nyckel `troskelbelopp`, uppslag på `${år}-12-31` | Tröskelprövningen per kalenderår |
@@ -167,10 +168,6 @@ Bilagorna läggs i samma ordning som raderna i sammanställningen:
 3. Per kostnad: `bilaga`-poster med `uppladdning_bekraftad = true`, sorterade på
    `skapad_at`.
 
-`underlagsstyrka` (`dokumenterat` / `svagt`) tas med per rad som **informativt**
-fält – härlett ur `projekt.baslinjepost_id`, aldrig lagrat. SKV 2197 har ingen
-sådan kolumn; fältet är till för redogörelsen och för att ranka rader som att-göra.
-
 ---
 
 ## 10. Fältlista → schema
@@ -182,13 +179,13 @@ Varje fält exporten behöver har en hemvist i modellen:
 | Åtgärd, kategori, år-etikett | `projekt.namn`, `projekt.kategori`, `projekt.ar` |
 | Skick-grindar | `projekt.slitet_vid_tilltrade`, `projekt.battre_skick_vid_forsaljning` |
 | Förslitning | `projekt.kvarvarande_andel` |
-| Underlagsstyrka (härledd) | `projekt.baslinjepost_id` |
+| Motivering (fråga 4, fritext) | `projekt.motivering` |
 | Belopp, betaldatum (=år) | `kostnad.totalbelopp`, `kostnad.betaldatum` |
 | ROT, försäkringsersättning | `kostnad.rot_utnyttjat`, `kostnad.forsakringsersattning` |
 | Uteslut arkiverat | `kostnad.arkiverad` |
 | Radbelopp och fördelning | `kostnadsrad.belopp`, `radfordelning.projekt_id / privat / andel` |
 | Ägarandel, delägarvariant | `medlemskap.agarandel` |
-| Såld? Insamlingsläge? | `bostad.forsaljningsdatum`, `bostad.upplatelseform` |
+| Såld? Blankettnamn (K5/K6) | `bostad.forsaljningsdatum`, `bostad.upplatelseform` |
 | Referenspunkt för skick | `bostad.tilltradesdatum` |
 | Tröskel och femårsfönster (versionerat) | `regelparameter.nyckel / varde / enhet / giltig_fran / giltig_till` |
 | Bilagor i radordning | `bilaga.kostnad_id`, `bilaga.skapad_at`, `bilaga.uppladdning_bekraftad` |

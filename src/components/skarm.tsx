@@ -112,15 +112,28 @@ export function Falt({
   etikett,
   children,
   hjalp,
+  obligatoriskt,
 }: {
   etikett: string;
   children: ReactNode;
   hjalp?: string;
+  /**
+   * Liten markering vid etiketten for obligatoriska falt (docs/design.md,
+   * "Hjalptexter under falt"). Ersatter hjalptexter som bara sa "Obligatoriskt"
+   * eller "Valfritt". Anvands bara pa formular dar bade obligatoriska och
+   * valfria falt forekommer – dar alla falt kravs sager markeringen inget.
+   */
+  obligatoriskt?: boolean;
 }) {
   return (
     <label className="block">
       <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
         {etikett}
+        {obligatoriskt ? (
+          <span aria-hidden className="ml-0.5 text-text-dampad">
+            *
+          </span>
+        ) : null}
       </span>
       {children}
       {hjalp ? (
@@ -222,6 +235,12 @@ export function Kort({
 export interface SkarmProps {
   bostadsnamn: string;
   rubrik?: string;
+  /**
+   * Valfritt block direkt under sidrubriken – t.ex. en informationsknapp vid
+   * listans rubrik (docs/design.md, "Grupperingslistan"). Ligger utanfor
+   * innehallskortet, som ett syskon till <h1>.
+   */
+  rubrikExtra?: ReactNode;
   bakLank?: { href: string; text: string };
   /**
    * Later sidan komponera sina egna <Kort> med luft emellan i stallet for att
@@ -234,6 +253,7 @@ export interface SkarmProps {
 export function Skarm({
   bostadsnamn,
   rubrik,
+  rubrikExtra,
   bakLank,
   egnaKort,
   children,
@@ -286,6 +306,8 @@ export function Skarm({
             {rubrik}
           </h1>
         ) : null}
+
+        {rubrikExtra ? <div className="mb-3 px-1">{rubrikExtra}</div> : null}
 
         {egnaKort ? (
           <div className="flex flex-col gap-4 sm:gap-5">{children}</div>

@@ -1,9 +1,9 @@
 "use client";
 
 // Redigeringsformular for ett projekt (produktspec 6.4, docs/design.md).
-// Fragorna 1-4 kommer fran <ProjektfragorFalt> – samma som skapa-flodet. Utover
-// dem: kopplingen till baslinjepost (fraga 4:s belagg), som styr harledd
-// underlagsstyrka.
+// Fragorna 1-4 kommer fran <ProjektfragorFalt> – samma komponent som
+// genomgangens fas 2. Fraga 4 ar ren fritext (`motivering`) och ar det enda som
+// bar bevisningen; nagon baslinje att koppla till finns inte.
 //
 // Borttagningen ligger sist. Har projektet kopplade kostnader visas de i stallet
 // for en delete-knapp – de maste flyttas eller kopplas loss forst. Annars ett
@@ -20,15 +20,9 @@ import {
   ProjektfragorFalt,
   type ProjektfragorVarden,
 } from "../../projektfragor-falt";
-import { Falt, INPUT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
+import { PRIMARKNAPP_KLASS } from "@/components/skarm";
 
 const START: ProjektResultat = {};
-
-interface Baslinjepostval {
-  id: string;
-  rum: string;
-  beskrivning: string;
-}
 
 interface Blockerande {
   id: string;
@@ -38,21 +32,16 @@ interface Blockerande {
 
 export function RedigeraProjektForm({
   projektId,
-  baslinjeposter,
   blockerande,
   varden,
 }: {
   projektId: string;
-  baslinjeposter: Baslinjepostval[];
   blockerande: Blockerande[];
-  varden: ProjektfragorVarden & { baslinjepostId: string };
+  varden: ProjektfragorVarden;
 }) {
   const [resultat, spara, sparar] = useActionState(redigeraProjekt, START);
   const [radera, raderaAction, raderar] = useActionState(taBortProjekt, START);
   const [bekraftaRadera, setBekraftaRadera] = useState(false);
-
-  const visaBaslinjeval =
-    baslinjeposter.length > 0 || varden.baslinjepostId !== "";
 
   return (
     <>
@@ -60,39 +49,6 @@ export function RedigeraProjektForm({
         <input type="hidden" name="projekt_id" value={projektId} />
 
         <ProjektfragorFalt initial={varden} />
-
-        {/* Fraga 4:s belagg – kopplingen till en baslinjepost. Dokumenterad
-            koppling ger harledd underlagsstyrka "dokumenterat", annars "svagt". */}
-        {visaBaslinjeval ? (
-          <Falt
-            etikett="Koppla till baslinjepost"
-            hjalp="Baslinjeposten är beviset för skicket vid tillträdet. Med en koppling blir underlaget dokumenterat."
-          >
-            <select
-              name="baslinjepost_id"
-              defaultValue={varden.baslinjepostId}
-              className={INPUT_KLASS}
-            >
-              <option value="">– ingen –</option>
-              {baslinjeposter.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.rum} – {b.beskrivning.slice(0, 60)}
-                </option>
-              ))}
-            </select>
-          </Falt>
-        ) : (
-          <div>
-            <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
-              Koppla till baslinjepost
-            </span>
-            <p className="font-granssnitt text-sm text-text-dampad">
-              Inga baslinjeposter att koppla till ännu. De läggs till i ett
-              senare steg.
-            </p>
-            <input type="hidden" name="baslinjepost_id" value="" />
-          </div>
-        )}
 
         {resultat.fel ? (
           <p className="font-granssnitt text-sm text-accent-mork">

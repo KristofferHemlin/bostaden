@@ -10,12 +10,19 @@
 //
 // Entiteten heter fortfarande `kostnad` i kod och rutter (docs/design.md,
 // "Ordval i granssnittet") – bara det anvandaren moter byter till "kvitto".
+//
+// Ingangen till klassificeringsgenomgangen ligger HAR, inte pa startskarmen
+// (docs/design.md, Kvittolistan): en rad overst i listan med atgardsprick.
+// Kvittolistan ar dar man gar for att se sina kvitton, och det ar dar man
+// marker att nagra saknar gruppering.
 
 import Link from "next/link";
 import { UtkastRaderaKnapp } from "./utkast-radera";
 import { Listrad, PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import { arUtkast } from "@/doman/berakningar";
+import { arOklassificerad } from "@/doman/genomgang";
 import { bostadHeader } from "@/lib/bostad-header";
+import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -53,11 +60,18 @@ export default async function KvittolistaSida() {
           orderBy: { skapad_at: "asc" },
           take: 1,
         },
+        rader: { include: { fordelningar: true } },
       },
       orderBy: [{ skapad_at: "desc" }],
     }),
   ]);
   const { bostadsnamn } = bostadHeader(bostad);
+
+  // Ingangen till genomgangen: antal kvitton som varken ar arkiverade eller
+  // kopplade till en hog. Visas som en rad overst i listan nar det finns nagra.
+  const antalOklassificerade = kostnadRader.filter((k) =>
+    arOklassificerad(tillDomanKostnad(k)),
+  ).length;
 
   // Gruppera i insattningsordning (nyast forst) och sortera sedan grupperna:
   // kvitton utan datum overst, darefter aren fallande.
@@ -146,6 +160,23 @@ export default async function KvittolistaSida() {
         </div>
       ) : (
         <>
+          {/* Ingangen till klassificeringsgenomgangen – en rad overst i listan
+              med atgardsprick (docs/design.md, Kvittolistan). Faller bort nar
+              inget oklassificerat aterstar. */}
+          {antalOklassificerade > 0 ? (
+            <Link
+              href="/genomgang"
+              className="flex items-center gap-1.5 border-b border-linje p-4 font-granssnitt text-sm text-text-primar transition-colors hover:bg-yta-nedsankt"
+            >
+              <span
+                aria-hidden
+                className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
+              />
+              {antalOklassificerade} kvitto
+              {antalOklassificerade === 1 ? "" : "n"} att klassificera
+            </Link>
+          ) : null}
+
           {sorterade.map((grupp) => (
             <div key={grupp.nyckel || "utan-datum"}>
               {/* Arsrubrik: egen rad pa --yta-nedsankt med artalet och arets

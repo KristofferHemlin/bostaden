@@ -105,6 +105,8 @@ Aktiv flik markeras med ytskillnad, aldrig med orange.
 
 Kugghjulet hör aldrig hemma i bottenraden. Etiketten "Inställningar" är dubbelt så bred som de andra fliktexterna och gör raden ojämn, och en femte flik trängs mot kanten på en smal skärm. Bottenraden är fyra jämnbreda flikar, ingenting annat. I toppraden balanserar kugghjulet dessutom logotypen på motsatt sida.
 
+**Flikordningen är Översikt, Kvitton, Projekt, Deklaration.** Ordningen följer hur ofta man går dit: kvittolistan är näst efter översikten den man använder mest, medan grupperingarna besöks sällan och deklarationen först vid försäljning.
+
 **Bottenraden har ikon och etikett på varje flik.** Det är den etablerade mobilkonventionen och den användare känner igen från alla andra appar. Ikonen gör att man hittar rätt utan att läsa; etiketten gör att man förstår vad man hittat.
 
 Ikonerna är tunna linjeikoner i samma vikt som kugghjulet, aldrig fyllda. Aktiv flik markeras med ytskillnad precis som förut, aldrig med orange – orange är fortfarande reserverat för en handling per skärm.
@@ -196,6 +198,12 @@ Raderna visar **anteckningen som huvudtext**, med leverantör och datum dämpat 
 
 Raderingen tar med bilagorna. Ett utkast utan sin bild är ingenting.
 
+**Ingen markering av underlagsstyrka.** Baslinjen är borttagen ur produkten – se produktspec. Det som bär bevisningen är fritextsvaret på fråga 4, och det hör hemma på grupperingens detaljvy, inte som en etikett i en lista.
+
+**Ingången till klassificeringen ligger här, inte på startskärmen.** En rad överst i listan – "N kvitton att klassificera" med åtgärdsprick – som leder till genomgången. Kvittolistan är där man går för att se sina kvitton, och det är där man märker att några saknar gruppering.
+
+På startskärmen finns ingen sådan sektion. Att möta en påminnelse varje gång appen öppnas gör klassificeringen till en skuld man ådrar sig när man sparar ett kvitto, och det var precis vad tvåfasmodellen skulle undvika. Att en rad bland de sex senaste är oklassificerad får visas med en diskret prick på just den raden, inget mer.
+
 **Kvitton grupperas per år med tydlig avdelare.** Tröskeln gäller per kalenderår och åren är helt skilda åt i underlaget – en lista där 2025 och 2026 glöser samman döljer produktens viktigaste struktur. Årsrubriken är en egen rad på `--yta-nedsankt` med årtalet och årets summa högerställd.
 
 ### Listrader
@@ -220,7 +228,7 @@ Under den en rubrik i stil med "Spara kvittona nu, dra av dem när du säljer" o
 
 **Ingen introduktionsrundtur och inga påhittade siffror.** Rundturer läses inte och skjuter upp det man ska göra. Löften om hur mycket man sparar vet vi ingenting om.
 
-Baslinjen erbjuds inte här. Den är värdefull men kräver att man letar fram gamla bilder, och det är fel första uppgift – förstaskärmen ska ha exakt en sak att göra.
+Förstaskärmen har exakt en sak att göra. Inget andra kort, ingen sidouppgift.
 
 ### Kvittots detaljvy
 
@@ -278,7 +286,7 @@ I stället är sista rutan i miniatyrraden en streckad ruta i samma storlek som 
 
 Rubriken över raden är "Kvitto eller faktura". Uppladdning sker via klick, inte en dra-och-släpp-yta – appen används i första hand på telefon, där dra-och-släpp inte finns. Klicket öppnar systemets filväljare, som på mobil ger både kamera och bildbibliotek.
 
-**Ingen varning när bilaga saknas.** En kostnad utan kvitto är inget fel och ska inte markeras som ett – fri bevisning gäller, och underlagsstyrkan hör till projektet, inte till den enskilda kostnaden. En gul varningsruta om att avdraget kan underkännas är både felaktig och skrämmande, och den drar in en varningsfärg appen inte har.
+**Ingen varning när bilaga saknas.** En kostnad utan kvitto är inget fel och ska inte markeras som ett – fri bevisning gäller. En gul varningsruta om att avdraget kan underkännas är både felaktig och skrämmande, och den drar in en varningsfärg appen inte har.
 
 **Flera bilagor per kostnad.** En faktura och dess betalningsunderlag är två filer, och ett kvitto kan behöva fotograferas i flera delar. Miniatyrraden växer med en ruta per fil och en `+`-ruta sist. Varje miniatyr har ett kryss för att tas bort innan sparning.
 
@@ -317,6 +325,24 @@ Varje extra rad – också en hopfälld – säger att det finns mer att göra h
 Allt det görs i efterhand när man har tid, och inget av det är brådskande – till skillnad från att fånga kvittot medan det finns.
 
 **Undantag: ROT-raden.** Den visas alltid, men är utfälld när avläsningen hittat ett belopp och hopfälld annars. Att dölja den helt när ingenting lästs av gör fältet onåbart när avläsningen misslyckas, när nyckeln saknas eller när kvittot är handskrivet – och användaren vet då inte ens att det finns.
+
+### Hjälptexter under fält
+
+**En hjälptext ska svara på en fråga användaren faktiskt har.** Var hittar jag det här? Vad räknas hit? Vad händer om jag hoppar över?
+
+Den ska aldrig förklara systemets logik, upprepa vad fältets tillstånd redan visar, eller finnas bara för att fältet ser tomt ut utan.
+
+Tre exempel på texter som ska bort:
+
+- "Valfritt." Om obligatoriska fält är markerade behövs ingen text på de andra. Fyra rader som säger valfritt gör sidan brusig utan att tillföra något.
+- "Används som namn i toppen om inget annat anges." Det är vår interna logik. Ingen undrar det.
+- "Alla tidsberäkningar utgår härifrån." Sant men irrelevant för den som ska fylla i ett datum.
+
+Och en som ska vara kvar: "Står på köpekontraktet. Går att fylla i senare." Den säger var uppgiften finns och att man kan hoppa över – båda är verkliga frågor.
+
+**Obligatoriskt markeras på fältet, inte i en mening under.** En liten markering vid etiketten räcker.
+
+Håll texten till en rad. Behövs mer förklaring hör den hemma bakom en informationsknapp.
 
 ### Utfällbara sektioner
 
@@ -440,6 +466,34 @@ Namnet redigeras där högen syns, inte först i frågesteget.
 **Fråga 3 måste dyka upp när svaret på fråga 2 är "Det fanns redan".** Den är villkorad, inte borttagen – utan den kan en reparations avdragsrätt inte avgöras, och det är hela skälet till att genomgången finns.
 
 **ÅÄÖ i all text som användaren ser.** ASCII-translitterering gäller identifierare i koden, aldrig meddelanden. "battre skick vid forsaljningen ar inte bekraftat" ser ut som ett fel, för det är det.
+
+### Grupperingslistan
+
+Varje rad visar grupperingens namn, belopp och kategori. Kategorin står som ren text – "Grundförbättring" eller "Reparation" – utan färg, prick eller etikett.
+
+**En informationsknapp vid listans rubrik förklarar vad kategorierna betyder.** Grundförbättring: något tillfördes eller standarden höjdes, ingen tidsgräns bakåt. Reparation: något fräschades upp eller lagades, avdragsgill bara inom fem år före försäljningen och bara om bostaden är i bättre skick än vid tillträdet.
+
+Förklaringen ligger bakom knappen, inte som brödtext ovanför listan. Den som redan vet ska inte behöva läsa förbi den varje gång.
+
+**Ingen primärknapp i det tomma tillståndet.** Grupperingar uppstår ur klassificeringen, inte som en egen uppgift. Rubrik, en rad förklaring och en textlänk till genomgången räcker.
+
+Det är ett undantag från regeln att tomma tillstånd har en primärknapp. Regeln gäller skärmar där det finns en handling som är vägen framåt – finns ingen sådan handling är knappen en uppmaning att göra något som inte hör hemma där.
+
+### Inställningssidan
+
+Här ligger allt som beskriver bostaden men inte behövs för att komma igång. Fälten är valfria, och sidan ska aldrig kännas som ett formulär man måste fylla i.
+
+**Uppgifter om bostaden:** adress, ort, storlek, köpeskilling, köpkostnader, ägarandel. För bostadsrätt även kapitaltillskott; för fastighet inte, eftersom det inte finns.
+
+Hjälptexten för köpkostnader skiljer sig: lagfart, pantbrev och inköpsprovision för fastighet, överlåtelseavgift för bostadsrätt.
+
+**Kapitaltillskott är värt en egen förklaring.** Föreningens amorteringar under innehavstiden är avdragsgilla och framgår av uppgiften föreningen lämnar vid försäljning. Det är ofta tiotusentals kronor som missas helt – större belopp än de flesta renoveringar. Hjälptexten säger var uppgiften hämtas.
+
+**Storlek används inte i någon beräkning i dag**, men ligger kvar avsiktligt: den behövs för en framtida värdering av bostaden, och den är lätt att svara på. Ta inte bort den som ett oanvänt fält.
+
+**Utloggningen ligger längst ned**, som en sekundärknapp avskild med en linje. Inte en primärknapp – utloggning är ingen huvudhandling och ska inte dra blicken från det man kom hit för. Den hör inte hemma på startskärmen.
+
+Sidan ska gå att lämna halvfylld. Ingen validering utöver att angivna belopp är tolkbara.
 
 ### Exportvyn
 

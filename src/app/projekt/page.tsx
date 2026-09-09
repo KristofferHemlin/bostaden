@@ -2,8 +2,9 @@
 // blir anvandarens att-gora-lista (produktspec 7).
 
 import Link from "next/link";
-import { Listrad, PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
-import { bidragForKostnad, harledUnderlagsstyrka } from "@/doman/berakningar";
+import { KategoriInfo } from "./kategori-info";
+import { Listrad, Skarm } from "@/components/skarm";
+import { bidragForKostnad } from "@/doman/berakningar";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
 import { formateraKronor } from "@/lib/format";
@@ -22,7 +23,6 @@ export default async function ProjektlistaSida() {
       if (k.arkiverad || !k.betaldatum) continue;
       belopp += bidragForKostnad(k, p.id);
     }
-    const svagt = harledUnderlagsstyrka(p) === "svagt";
     if (p.kategori === null) {
       // En hog fran klassificeringsgenomgangens fas 1 som annu inte klassificerats.
       return {
@@ -41,8 +41,8 @@ export default async function ProjektlistaSida() {
       namn: p.namn,
       ar: p.ar,
       belopp,
-      status: svagt ? `${kategoriText} · underlag saknas` : kategoriText,
-      atgard: svagt,
+      status: kategoriText,
+      atgard: false,
     };
   });
 
@@ -58,6 +58,7 @@ export default async function ProjektlistaSida() {
     <Skarm
       bostadsnamn={bostadsnamn}
       rubrik="Projekt"
+      rubrikExtra={rader.length > 0 ? <KategoriInfo /> : undefined}
       bakLank={{ href: "/", text: "Översikt" }}
     >
       {rader.length === 0 ? (
@@ -65,16 +66,22 @@ export default async function ProjektlistaSida() {
           <p className="font-rubrik text-lg text-text-primar">
             Inga projekt än
           </p>
+          {/* Ingen primärknapp här. En primärknapp skulle säga att det finns en
+              handling som är vägen framåt, och det gör det inte – grupperingar
+              skapas inte som en egen uppgift utan uppstår ur klassificeringen.
+              En textlänk till genomgången räcker (docs/design.md, "Tomma
+              tillstånd": ingen knapp för att skapa en gruppering). */}
           <p className="mt-1 font-granssnitt text-sm text-text-dampad">
             Ett projekt samlar allt du gjort med en och samma sak – till exempel
-            att måla sovrummet. Kvitton kopplas sedan till projektet.
+            att måla sovrummet. Grupperingar skapas när du{" "}
+            <Link
+              href="/genomgang"
+              className="underline hover:text-accent-mork"
+            >
+              klassificerar dina kvitton
+            </Link>
+            .
           </p>
-          <Link
-            href="/projekt/nytt"
-            className={`${PRIMARKNAPP_KLASS} mt-4`}
-          >
-            Skapa ditt första projekt
-          </Link>
         </div>
       ) : (
         <>
@@ -97,11 +104,6 @@ export default async function ProjektlistaSida() {
               </div>
             </div>
           ))}
-          <div className="p-4">
-            <Link href="/projekt/nytt" className={PRIMARKNAPP_KLASS}>
-              Lägg till projekt
-            </Link>
-          </div>
         </>
       )}
     </Skarm>

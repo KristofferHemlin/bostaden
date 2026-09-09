@@ -6,7 +6,6 @@ import {
   arBidragForbattringsutgift,
   avrunda,
   bidragForKostnad,
-  harledUnderlagsstyrka,
   individuelltBelopp,
   kalenderAr,
   reparationInomFemarsfonster,
@@ -31,8 +30,6 @@ export interface K6aExportrad {
   /** Sida 2: efter forslitning. Sida 1: null. */
   avdragsgill_del_brutto: number | null;
   avdragsgill_del_individuellt: number | null;
-  /** Informativt, ej blankettfalt. Harlett ur projekt.baslinjepost_id. */
-  underlagsstyrka: "dokumenterat" | "svagt";
   /** Kostnader som bidrog, for bilage-PDF:ns ordning. */
   kostnad_ider: string[];
   varningar: string[];
@@ -90,11 +87,10 @@ interface Cell {
 export function byggK6aExport(indata: K6aIndata): K6aExport {
   const { bostad, medlemskap, projekt, kostnader, regelparametrar } = indata;
 
-  if (bostad.upplatelseform !== "bostadsratt") {
-    throw new Error(
-      "Export är avstängd i insamlingsläge (upplåtelseform = fastighet).",
-    );
-  }
+  // Berakningsreglerna ar identiska for bostadsratt och fastighet (produktspec
+  // 4.8, docs/regelkallor.md). upplatelseform styr bara granssnittet – framfor
+  // allt blankettnamnet (K5/K6) i exportvyn – aldrig nagot harinne.
+  //
   // Sidan gar alltid att oppna, aven innan bostaden ar sald (docs/design.md,
   // Exportvyn). Utan forsaljningsdatum ar sida 1 anda komplett – grundforbattringar
   // saknar tidsgrans bakat – medan sida 2 visar sina rader utan avdragsgill del,
@@ -242,7 +238,6 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
         avdragsgillDelBrutto === null
           ? null
           : individuelltBelopp(avdragsgillDelBrutto, medlemskap.agarandel),
-      underlagsstyrka: harledUnderlagsstyrka(p),
       kostnad_ider: [...cell.kostnadIder].sort(),
       varningar: radVarningar,
     };

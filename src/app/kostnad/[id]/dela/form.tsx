@@ -162,10 +162,7 @@ export function DelaUppForm({
                 />
               </Falt>
 
-              <Falt
-                etikett="Hör raden till"
-                hjalp="Okopplat räknas inte in i årssumman – lika lite som privat."
-              >
+              <Falt etikett="Hör raden till">
                 <select
                   value={r.mal}
                   onChange={(e) => andraRad(r.nyckel, { mal: e.target.value })}
@@ -184,7 +181,7 @@ export function DelaUppForm({
               {arProjekt ? (
                 <Falt
                   etikett="Andel till projektet"
-                  hjalp="Lämna på 100 % om hela radens belopp hör dit. En lägre andel lämnar resten okopplad."
+                  hjalp="100 % om hela radens belopp hör dit. En lägre andel lämnar resten okopplad."
                 >
                   <div className="flex items-center gap-2">
                     <input

@@ -87,7 +87,6 @@ Dessa fall måste finnas och passera:
 - Regelparameteruppslag för ett datum 2015 returnerar ett värde, kastar inte fel
 - Kostnad på 10 000 kr med 3 000 kr ROT, rad fördelad 60 %, bidrar med 4 200 kr
 - Projekt med `battre_skick_vid_forsaljning` = false ger 0 kr i exporten
-- `underlagsstyrka` beräknas ur `baslinjepost_id`, lagras inte
 - Reparation med `battre_skick_vid_forsaljning` = false ingår inte i årets tröskelsumma
 - Reparation utanför femårsfönstret ingår i sitt utgiftsårs tröskelsumma men dras inte av
 
@@ -101,7 +100,7 @@ Belopp lagras som heltal i ören. Formatera först vid utskrift.
 
 Datum lagras som `date`, inte `timestamp`. Tidszon är irrelevant för alla domänberäkningar och skapar bara årsskiftesbuggar.
 
-Projekt, kostnader och baslinjeposter hänger på `bostad_id`, aldrig direkt på användaren. Kopplingen användare–bostad går via en medlemskapstabell. Flera bostäder per användare och två personer per hushåll ska kunna läggas till utan migrering.
+Projekt och kostnader hänger på `bostad_id`, aldrig direkt på användaren. Kopplingen användare–bostad går via en medlemskapstabell. Flera bostäder per användare och två personer per hushåll ska kunna läggas till utan migrering.
 
 `projekt.ar` är en etikett för gruppering. Allt som räknas – tröskel, femårsfönster, exportrader – utgår från kostnadernas `betaldatum`. Ett projekt vars kostnader spänner över ett årsskifte ger två rader i exporten automatiskt.
 
@@ -124,8 +123,6 @@ Inga flöden får blockera. Ofullständiga uppgifter sparas som öppna poster i 
 Ett byggsteg är en commit. Det är den enda återställningspunkten när en session refaktorerar något som fungerade.
 
 Testdata seedas från ett riktigt kvitto med både projektmaterial och en privat artikel – se specen, avsnitt 11. Bygg aldrig mot påhittade belopp; de döljer formateringsbuggar och gör skärmarna omöjliga att bedöma.
-
-Ändra aldrig filer utanför projektkatalogen. Ser du något som borde rensas utanför den, påpeka det och låt användaren göra det.
 
 ---
 

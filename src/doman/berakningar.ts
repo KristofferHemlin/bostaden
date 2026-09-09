@@ -1,10 +1,4 @@
-import type {
-  Kostnad,
-  Kostnadsrad,
-  Projekt,
-  Projektkategori,
-  Underlagsstyrka,
-} from "./typer";
+import type { Kostnad, Kostnadsrad, Projekt, Projektkategori } from "./typer";
 
 /** Avrundar till hela oren. Anvands forst pa slutliga aggregat, aldrig mitt i en kedja. */
 export function avrunda(oren: number): number {
@@ -223,16 +217,6 @@ export function individuelltBelopp(
   agarandelProcent: number,
 ): number {
   return avrunda(belopp * (agarandelProcent / 100));
-}
-
-/**
- * Underlagsstyrka ar harledd, aldrig lagrad: dokumenterat nar en baslinjepost ar
- * kopplad, annars svagt. Inga andra varden. "svagt" visas i UI som "underlag saknas".
- */
-export function harledUnderlagsstyrka(projekt: {
-  baslinjepost_id: string | null;
-}): Underlagsstyrka {
-  return projekt.baslinjepost_id ? "dokumenterat" : "svagt";
 }
 
 /**

@@ -282,12 +282,9 @@ export function AdressFalt() {
             </ul>
           ) : null}
         </div>
-        <span className="mt-1 block font-granssnitt text-xs text-text-dampad">
-          Valfritt. Används som namn i toppen om inget annat anges.
-        </span>
       </div>
 
-      <Falt etikett="Ort" hjalp="Valfritt.">
+      <Falt etikett="Ort">
         <input
           type="text"
           name="ort"

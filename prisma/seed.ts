@@ -35,7 +35,7 @@ async function main() {
 
   // 2. Seed-bostaden identifieras pa sitt fasta id. Att radera den tar hela
   //    tradet via cascader: medlemskap, projekt, kostnader, rader, fordelningar,
-  //    baslinjeposter, bilagor. Ingen annan bostad beros.
+  //    bilagor. Ingen annan bostad beros.
   await prisma.bostad.deleteMany({ where: { id: SEED_BOSTAD.id } });
 
   // 3. Seed-anvandaren: fast id och en sentinel-epost pa .local som ingen riktig
@@ -75,7 +75,6 @@ async function main() {
         namn: p.namn,
         ar: p.ar,
         kategori: p.kategori,
-        baslinjepost_id: p.baslinjepost_id,
         motivering: p.motivering,
         slitet_vid_tilltrade: p.slitet_vid_tilltrade,
         battre_skick_vid_forsaljning: p.battre_skick_vid_forsaljning,

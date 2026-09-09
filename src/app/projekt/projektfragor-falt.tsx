@@ -4,7 +4,7 @@
 // Fragorna avgor om ett avdrag haller och far inte glida isar mellan formularen,
 // darfor bor sjalva fragorna i <Projektfragor> och delas ordagrant av:
 //
-//   * skapa-projekt-flodet (steg 4, projekt/nytt)
+//   * klassificeringsgenomgangens fas 2 (genomgang/fragor)
 //   * redigeringen (steg 6.4, projekt/[id]/redigera)
 //   * kostnadsformularet (docs/design.md, "Projektet uppstar, det administreras
 //     inte") – nar anvandaren skriver ett nytt namn i "Vad horde det har till?"
@@ -20,8 +20,9 @@
 // Svarsalternativen ar klickbara kort med ren, kort text – inga underrubriker.
 // Varfor varje fraga stalls ligger bakom en informationsknapp som falls ut vid
 // KLICK (hover finns inte pa telefon). Fraga 3 visas BARA nar svaret pa fraga 2
-// ar att det fanns forut. "Se exempel" oppnar konkreta fall. Fraga 4
-// (motivering) ligger sist och blockerar aldrig.
+// ar att det fanns forut. "Se exempel" oppnar konkreta fall. Fraga 4 ("Hur vet
+// du det?") ar ren fritext, ligger sist och blockerar aldrig – den bar hela
+// bevisningen, det finns ingen baslinje eller bilaga att koppla till.
 
 import { useState } from "react";
 import { fraga3Relevant } from "@/doman/projektfragor";
@@ -195,10 +196,7 @@ export function Projektfragor({
         ) : null}
       </div>
 
-      <Falt
-        etikett="Har du något som visar det?"
-        hjalp="Valfritt, blockerar inget."
-      >
+      <Falt etikett="Hur vet du det?">
         <textarea
           rows={3}
           value={varden.motivering}
@@ -232,7 +230,7 @@ export function ProjektfragorFalt({
 
   return (
     <div className="flex flex-col gap-6">
-      <Falt etikett="Vad gjorde du?">
+      <Falt etikett="Vad gjorde du?" obligatoriskt>
         <input
           type="text"
           value={namn}

@@ -39,7 +39,10 @@ export default async function ExportSida() {
     await hamtaBostadsdata(bostadId);
   const { bostadsnamn } = bostadHeader(bostad);
 
-  const insamlingslage = bostad.upplatelseform === "fastighet";
+  // Enda skillnaden mellan upplatelseformerna i den har vyn: huvudblanketten som
+  // de tva talen skrivs av till (produktspec 4.8). SKV 2197 ar samma
+  // hjalpblankett for bada.
+  const blankett = bostad.upplatelseform === "fastighet" ? "K5" : "K6";
 
   return (
     <Skarm
@@ -52,21 +55,6 @@ export default async function ExportSida() {
   );
 
   function renderaInnehall() {
-    if (insamlingslage) {
-      return (
-        <div className="p-5">
-          <Meddelanderuta>
-            Bostaden körs i insamlingsläge (fastighet). Fastighetsreglerna är inte
-            implementerade ännu, så avdragsstatus och export är avstängda.
-            Kostnader, projekt och årssummor fungerar som vanligt.
-          </Meddelanderuta>
-          <Link href="/" className={`${SEKUNDARKNAPP_KLASS} mt-4`}>
-            Till översikten
-          </Link>
-        </div>
-      );
-    }
-
     const indata: K6aIndata = {
       bostad: {
         upplatelseform: bostad.upplatelseform,
@@ -125,7 +113,7 @@ export default async function ExportSida() {
           <Meddelanderuta>
             {gemensam
               ? "Din ägarandel är under 100 %. Sammanställningen visar både hela bostadens belopp och din andel, så att den andra delägaren kan använda samma underlag."
-              : "Sammanställningen följer hjälpblankett SKV 2197 (K6A). Den lämnas inte in – spara den. Bilagepaketet som PDF kommer i ett senare steg."}
+              : `Sammanställningen följer Skatteverkets hjälpblankett SKV 2197 och pekar ut vad som förs till ${blankett}. Den lämnas inte in – spara den. Bilagepaketet som PDF kommer i ett senare steg.`}
           </Meddelanderuta>
         </div>
 
@@ -138,7 +126,7 @@ export default async function ExportSida() {
         />
 
         <RutaCallout
-          rubrik="Förs till K6, ruta 4"
+          rubrik={`Förs till ${blankett}, ruta 4`}
           underrad="Summa sida 1 – grundförbättringar"
           brutto={ex.ruta4_brutto}
           individuellt={ex.ruta4_individuellt}
@@ -157,7 +145,7 @@ export default async function ExportSida() {
 
         {ex.sald ? (
           <RutaCallout
-            rubrik="Förs till K6, ruta 5"
+            rubrik={`Förs till ${blankett}, ruta 5`}
             underrad="Summa sida 2 – avdragsgill del efter förslitning"
             brutto={ex.ruta5_brutto}
             individuellt={ex.ruta5_individuellt}
@@ -291,11 +279,6 @@ function SidaBlock({
                         ) : null}
                         {r.atgard}
                       </span>
-                      {r.underlagsstyrka === "svagt" ? (
-                        <span className="mt-0.5 block text-xs text-text-dampad">
-                          underlag saknas
-                        </span>
-                      ) : null}
                       {r.varningar.map((v) => (
                         <span
                           key={v}

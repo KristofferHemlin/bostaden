@@ -138,7 +138,7 @@ export function RegistreraFlode({
           rubrik="Konto"
           text="E-post och lösenord. Kontot skapas när du går vidare."
         />
-        <Falt etikett="E-post">
+        <Falt etikett="E-post" obligatoriskt>
           <input
             type="email"
             name="epost"
@@ -149,7 +149,7 @@ export function RegistreraFlode({
             placeholder="du@exempel.se"
           />
         </Falt>
-        <Falt etikett="Lösenord" hjalp="Minst 8 tecken.">
+        <Falt etikett="Lösenord" obligatoriskt hjalp="Minst 8 tecken.">
           <input
             type="password"
             name="losenord"
@@ -199,17 +199,9 @@ export function RegistreraFlode({
             })}
           </div>
           <input type="hidden" name="upplatelseform" value={upplatelseform} />
-          <p className="mt-1.5 font-granssnitt text-xs text-text-dampad">
-            För villa och radhus körs appen i insamlingsläge: kostnader, projekt
-            och årssummor fungerar, men klassificering och export är avstängda
-            tills fastighetsreglerna är på plats.
-          </p>
         </div>
 
-        <Falt
-          etikett="Tillträdesdatum"
-          hjalp="Obligatoriskt. Alla tidsberäkningar utgår härifrån."
-        >
+        <Falt etikett="Tillträdesdatum" obligatoriskt>
           <input
             type="date"
             name="tilltradesdatum"
@@ -223,7 +215,7 @@ export function RegistreraFlode({
 
         <Falt
           etikett="Köpeskilling"
-          hjalp="Valfritt. Står på köpekontraktet eller överlåtelseavtalet – hoppa över och fyll i senare om du inte minns beloppet."
+          hjalp="Står på köpekontraktet eller överlåtelseavtalet. Går att fylla i senare."
         >
           <BeloppFalt
             name="kopeskilling"

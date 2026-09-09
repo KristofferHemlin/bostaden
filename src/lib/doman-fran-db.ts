@@ -29,7 +29,6 @@ export function tillDomanProjekt(p: PrismaProjekt): DomanProjekt {
     id: p.id,
     namn: p.namn,
     kategori: p.kategori,
-    baslinjepost_id: p.baslinjepost_id,
     slitet_vid_tilltrade: p.slitet_vid_tilltrade,
     battre_skick_vid_forsaljning: p.battre_skick_vid_forsaljning,
     kvarvarande_andel:

@@ -3,7 +3,6 @@ import {
   arssummaForBostad,
   avdragsgrundandeArsbelopp,
   bidragForKostnad,
-  harledUnderlagsstyrka,
 } from "@/doman/berakningar";
 import { slaUppRegelparameter } from "@/doman/regelparameter";
 import {
@@ -33,10 +32,11 @@ describe("Bauhaus-kvittot ur produktspec avsnitt 11", () => {
     expect(privat).toBe(22_900);
   });
 
-  it("projektet 'Mala sovrum' saknar baslinjepost och far harledd underlagsstyrka svagt", () => {
+  it("projektet 'Mala sovrum' ar en reparation som annu inte fatt sina fyra svar", () => {
     const p = SEED_PROJEKT.find((x) => x.id === PROJEKT_MALA_SOVRUM)!;
-    expect(p.baslinjepost_id).toBeNull();
-    expect(harledUnderlagsstyrka(p)).toBe("svagt");
+    expect(p.kategori).toBe("reparation");
+    expect(p.slitet_vid_tilltrade).toBeNull();
+    expect(p.motivering).toBeNull();
   });
 
   it("arssumman 2026 hamnar under troskeln och ger 0 kr avdragsgillt", () => {

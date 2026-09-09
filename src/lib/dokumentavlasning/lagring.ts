@@ -19,6 +19,11 @@ import { TOMT_DOKUMENTFALT, type Dokumentfalt } from "./tolkning";
  * den. Kastar aldrig – vid varje fel (saknad nyckel, fel bostad, oläsbar fil,
  * timeout) returneras TOMT_DOKUMENTFALT sa att formularet fungerar exakt som
  * utan analys.
+ *
+ * Avlasningen kors EN GANG per bilaga. `dokument_analyserad` satts nar
+ * sprakmodellanropet gjorts – oavsett utfall – och nasta gang utkastet oppnas
+ * hoppas avlasningen over. Ett aterupptat utkast visar da sina sparade varden
+ * direkt i stallet for att kosta ett anrop och en vantan for ingenting.
  */
 export async function analyseraKostnadsbilaga(params: {
   bostadId: string;
@@ -31,6 +36,7 @@ export async function analyseraKostnadsbilaga(params: {
         lagringsnyckel: true,
         filnamn: true,
         mimetyp: true,
+        dokument_analyserad: true,
         kostnad: { select: { bostad_id: true } },
       },
     });
@@ -38,6 +44,9 @@ export async function analyseraKostnadsbilaga(params: {
     if (!bilaga || bilaga.kostnad?.bostad_id !== params.bostadId) {
       return { ...TOMT_DOKUMENTFALT };
     }
+    // Redan avlast en gang – returnera tomt sa att formularet visar sina
+    // sparade varden utan nytt anrop.
+    if (bilaga.dokument_analyserad) return { ...TOMT_DOKUMENTFALT };
 
     const format = kannIgenFormat(bilaga.mimetyp, bilaga.filnamn);
     if (!format) return { ...TOMT_DOKUMENTFALT };
@@ -48,7 +57,20 @@ export async function analyseraKostnadsbilaga(params: {
     if (error || !blob) return { ...TOMT_DOKUMENTFALT };
 
     const original = Buffer.from(await blob.arrayBuffer());
-    return await analyseraDokumentbuffert(original, format);
+    const falt = await analyseraDokumentbuffert(original, format);
+
+    // Anropet ar gjort. Markera bilagan oavsett utfall sa att avlasningen inte
+    // gors om. En misslyckad markering far inte svalja resultatet.
+    try {
+      await prisma.bilaga.update({
+        where: { id: params.bilagaId },
+        data: { dokument_analyserad: true },
+      });
+    } catch {
+      // Nasta oppning kor avlasningen igen – inte varre an dagens beteende.
+    }
+
+    return falt;
   } catch {
     return { ...TOMT_DOKUMENTFALT };
   }

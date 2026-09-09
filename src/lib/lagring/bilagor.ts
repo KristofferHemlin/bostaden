@@ -357,6 +357,9 @@ export interface Bilagevy {
   /** Kan visas som en bild i granssnittet. Falskt for PDF och for HEIC vars
    *  miniatyr inte gick att generera – da visas dokumentikonen i stallet. */
   arBild: boolean;
+  /** Sant nar dokumentavlasningen redan korts pa bilagan (oavsett utfall). Ett
+   *  aterupptat utkast kor da inte avlasningen om. */
+  analyserad: boolean;
 }
 
 /** Bilagorna for en kostnad, i uppladdningsordning. */
@@ -366,12 +369,19 @@ export async function listaKostnadsbilagor(
   const rader = await prisma.bilaga.findMany({
     where: { kostnad_id: kostnadId },
     orderBy: { skapad_at: "asc" },
-    select: { id: true, filnamn: true, mimetyp: true, miniatyrnyckel: true },
+    select: {
+      id: true,
+      filnamn: true,
+      mimetyp: true,
+      miniatyrnyckel: true,
+      dokument_analyserad: true,
+    },
   });
   return rader.map((b) => ({
     id: b.id,
     filnamn: b.filnamn,
     arPdf: b.mimetyp === "application/pdf",
     arBild: arVisningsbarBild(b.mimetyp, b.miniatyrnyckel !== null),
+    analyserad: b.dokument_analyserad,
   }));
 }

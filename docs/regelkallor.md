@@ -42,6 +42,30 @@ Konsekvensen syns bara när samma år innehåller både en grundförbättring oc
 
 ---
 
+## Fastigheter (villa, radhus, kedjehus)
+
+Kontrollerat 2026-09-09 mot Skatteverkets sidor och SKV 379 "Försäljning av småhus".
+
+**Beräkningsreglerna är identiska med bostadsrätt.** Samma två kategorier, samma tröskel på 5 000 kr per kalenderår räknat på båda kategorierna sammanlagt, samma femårsfönster för reparationer, samma avräkning av ROT och försäkringsersättning. Samma hjälpblankett SKV 2197, och beloppen förs till punkt 4 respektive 5 precis som för bostadsrätt.
+
+Domänlogiken behöver därför inte ändras för fastigheter.
+
+**Det som skiljer:**
+
+| | Bostadsrätt | Fastighet |
+|---|---|---|
+| Blankett | K6 | K5 |
+| Föreningens ansvar | Begränsar vad som är din utgift | Finns inte – allt är ditt |
+| Kapitaltillskott | Avdragsgillt | Finns inte |
+| Köpkostnader | Överlåtelseavgift | Lagfart, pantbrev, inköpsprovision |
+| Identifiering | Föreningens namn | Fastighetsbeteckning |
+
+Vinsten beskattas till 22/30 i båda fallen.
+
+**Ej kontrollerat i denna genomgång:** om tomt, trädgård och utvändiga anläggningar behandlas annorlunda än byggnaden. Inget i källorna tyder på det, men det är värt att verifiera innan appen används för en försäljning där sådana poster är stora.
+
+Har man köpt en tomt och byggt hus på den räknas tomtens köpeskilling som inköpspris och nybyggnadskostnaderna som förbättringsutgifter.
+
 ## Känt föränderligt
 
 Det här är sådant som har ändrats förr eller rimligen kan ändras. Kontrollera vid större omtag.

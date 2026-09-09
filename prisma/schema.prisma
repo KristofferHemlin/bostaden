@@ -64,10 +64,9 @@ model bostad {
   forsaljningspris  BigInt? // oren
   skapad_at         DateTime  @default(now())
 
-  medlemskap     medlemskap[]
-  projekt        projekt[]
-  kostnader      kostnad[]
-  baslinjeposter baslinjepost[]
+  medlemskap medlemskap[]
+  projekt    projekt[]
+  kostnader  kostnad[]
 }
 
 // Kopplingen anvandare–bostad. Agarandelen tillhor relationen, inte bostaden.
@@ -97,19 +96,6 @@ model regelparameter {
   @@index([nyckel, giltig_fran])
 }
 
-// Dokumenterat skick vid tilltradet. Bevis for fraga 3 i projektfragorna.
-model baslinjepost {
-  id          String   @id @default(uuid()) @db.Uuid
-  bostad_id   String   @db.Uuid
-  rum         String
-  beskrivning String
-  skapad_at   DateTime @default(now())
-
-  bostad  bostad    @relation(fields: [bostad_id], references: [id], onDelete: Cascade)
-  bilagor bilaga[]
-  projekt projekt[]
-}
-
 // Klassificeringen sitter har, inte pa kostnaden. De fyra projektfragorna.
 model projekt {
   id                           String          @id @default(uuid()) @db.Uuid
@@ -117,15 +103,13 @@ model projekt {
   namn                         String // fraga 1, fritext
   ar                           Int // etikett for gruppering; auktoritativt ar kommer fran betaldatum
   kategori                     projektkategori? // fraga 2; null tills klassificeringsgenomgangens fas 2 svarat
-  baslinjepost_id              String?         @db.Uuid // fraga 4, belaget
-  motivering                   String? // fraga 4, "hur vet du att det var slitet?"
+  motivering                   String? // fraga 4, "hur vet du det?" – fritext, bar hela bevisningen
   slitet_vid_tilltrade         Boolean? // fraga 3, null tills stalld
   battre_skick_vid_forsaljning Boolean? // bekraftas vid forsaljning, null fram till dess
   kvarvarande_andel            Decimal?        @db.Decimal(5, 4) // forslitning, 0..1, satts vid forsaljning
   skapad_at                    DateTime        @default(now())
 
   bostad       bostad          @relation(fields: [bostad_id], references: [id], onDelete: Cascade)
-  baslinjepost baslinjepost?   @relation(fields: [baslinjepost_id], references: [id])
   fordelningar radfordelning[]
 }
 
@@ -183,15 +167,17 @@ model radfordelning {
 model bilaga {
   id                    String   @id @default(uuid()) @db.Uuid
   kostnad_id            String?  @db.Uuid
-  baslinjepost_id       String?  @db.Uuid
   lagringsnyckel        String   @unique // sokvag till originalet i Supabase Storage
   miniatyrnyckel        String?  @unique // JPG-miniatyr for HEIC; null for format som redan gar att visa
   filnamn               String
   mimetyp               String
   storlek               Int // bytes
   uppladdning_bekraftad Boolean  @default(false)
+  // Dokumentavlasningen kors en gang per bilaga. Satts nar sprakmodellanropet
+  // gjorts – oavsett utfall – sa att ett aterupptaget utkast hoppar over
+  // avlasningen och visar sina redan sparade varden direkt.
+  dokument_analyserad   Boolean  @default(false)
   skapad_at             DateTime @default(now())
 
-  kostnad      kostnad?      @relation(fields: [kostnad_id], references: [id], onDelete: Cascade)
-  baslinjepost baslinjepost? @relation(fields: [baslinjepost_id], references: [id], onDelete: Cascade)
+  kostnad kostnad? @relation(fields: [kostnad_id], references: [id], onDelete: Cascade)
 }

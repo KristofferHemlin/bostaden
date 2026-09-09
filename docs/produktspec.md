@@ -63,9 +63,9 @@ Appen påminner inte om klassificeringen enligt något schema. Att lägga in kvi
 
 ## 3. Avgränsning för första versionen
 
-**Målgrupp:** privatpersoner som äger sin bostad. Hyresrätt stöds inte och ska inte modelleras – utan ägande finns ingen kapitalvinst och inget avdrag. `upplatelseform` har därför exakt två värden.
+**Målgrupp:** privatpersoner som äger sin bostad – bostadsrätt eller fastighet. Hyresrätt stöds inte och ska inte modelleras: utan ägande finns ingen kapitalvinst och inget avdrag. `upplatelseform` har därför exakt två värden.
 
-Alla upplåtelseformer ska gå att registrera, men för fastigheter (villa, radhus, kedjehus) körs appen i insamlingsläge: kostnader, projekt, foton och årssummor fungerar, medan klassificeringsförslag, avdragsstatus och export är avstängda med tydlig förklaring att fastighetsreglerna inte är implementerade ännu. Femårsregeln och 5 000-gränsen får däremot beräknas, eftersom de är identiska oavsett upplåtelseform.
+Båda stöds fullt ut. Beräkningsreglerna är identiska; skillnaderna är kosmetiska och räknas upp i 4.8.
 
 Modellera upplåtelseform som ett riktigt fält från start. Hårdkoda aldrig bostadsrättsantaganden i schemat.
 
@@ -141,11 +141,17 @@ Förbättringsutgifterna fördelas mellan delägarna efter ägarandel. Äger anv
 
 Exporten ska hantera båda varianterna: antingen anges beloppen för hela bostaden med markering att de är gemensamma för flera delägare, eller så anges den egna andelen. Appen räknar fram individuella belopp och visar samtidigt bruttobeloppet, så att användaren kan välja variant och den andra delägaren kan använda samma sammanställning.
 
-### 4.8 Insamlingsläge
+### 4.8 Skillnader mellan upplåtelseformerna
 
-Regelmotorn är avstängd när `upplatelseform` är `fastighet`. Det är den enda grinden – `husform` är rent informativt och styr ingenting. I insamlingsläge fungerar kostnader, projekt, bilagor, femårsregeln och tröskelberäkningen, medan kategoriförslag, avdragsstatus och export är avstängda med en förklarande text.
+**Insamlingsläget är borttaget.** Fastigheter stöds fullt ut. Beräkningsreglerna är identiska med bostadsrätt – samma kategorier, samma tröskel, samma femårsfönster, samma avräkning av ROT och försäkringsersättning, samma hjälpblankett SKV 2197 med punkt 4 och 5. Se `docs/regelkallor.md`.
 
-De fyra projektfrågorna ställs och lagras som vanligt, inklusive kategori – det är bara tolkningen av dem som är avstängd. Data ska alltså vara komplett den dag fastighetsreglerna implementeras, utan att användaren behöver gå tillbaka.
+`upplatelseform` styr därför bara tre saker i gränssnittet:
+
+- **Blankettnamnet i exporten.** K5 för fastighet, K6 för bostadsrätt.
+- **Kapitaltillskott** visas bara för bostadsrätt. Det finns inte för fastighet.
+- **Köpkostnadernas hjälptext.** Lagfart, pantbrev och inköpsprovision för fastighet; överlåtelseavgift för bostadsrätt.
+
+Ingen skillnad i domänlogiken. `husform` är fortfarande rent informativt.
 
 ---
 
@@ -180,7 +186,7 @@ Kopplingen mellan användare och bostad. Finns från början även om det bara n
 | bostad_id | fk | |
 | agarandel | decimal | procent, default 100 – se 4.7 |
 
-Projekt, kostnader och baslinjeposter hänger på `bostad_id`, aldrig direkt på användaren. Flera bostäder per användare och två personer per hushåll ska kunna läggas till utan migrering.
+Projekt och kostnader hänger på `bostad_id`, aldrig direkt på användaren. Flera bostäder per användare och två personer per hushåll ska kunna läggas till utan migrering.
 
 ### Regelparameter
 Skattereglernas numeriska värden lagras som data med giltighetsperiod, aldrig som konstanter i koden. Historiska poster ska räknas enligt de regler som gällde vid utgiftstillfället.
@@ -196,16 +202,6 @@ Skattereglernas numeriska värden lagras som data med giltighetsperiod, aldrig s
 
 Seedas med `troskelbelopp` = 500000 (ören) och `reparationsfonster_ar` = 5, båda med `giltig_fran` satt till 1970-01-01. Det är den undre gränsen: en kostnad med betaldatum före dess avvisas vid inmatning i stället för att beräkningen kastar fel senare. Saknas ett värde inom intervallet ska beräkningen kasta fel, aldrig tyst falla tillbaka på en konstant.
 
-### Baslinjepost
-Dokumenterat skick vid tillträdet. Skapas helst vid onboarding, men ska kunna läggas till när som helst.
-
-| Fält | Typ |
-|---|---|
-| bostad_id | fk |
-| rum | string |
-| beskrivning | text (t.ex. "hål i vägg bakom garderob, sliten färg") |
-| bilagor | file[] (mäklarbild, besiktningsprotokoll, eget foto) |
-
 ### Projekt
 Klassificeringen sitter här, inte på kostnaden.
 
@@ -215,7 +211,6 @@ Klassificeringen sitter här, inte på kostnaden.
 | namn | string | fritext, t.ex. "måla sovrum" |
 | ar | int | etikett för gruppering; auktoritativt år kommer från betaldatum |
 | kategori | enum | `grundforbattring` \| `reparation` |
-| baslinjepost_id | fk? | kopplingen till beviset |
 | motivering | text? | "hur vet du att det var slitet?" |
 | slitet_vid_tilltrade | bool? | svaret på fråga 3; null tills frågan ställts |
 | battre_skick_vid_forsaljning | bool? | bekräftas vid försäljning, null fram till dess |
@@ -223,9 +218,13 @@ Klassificeringen sitter här, inte på kostnaden.
 
 **Året är en etikett, inte en sanning.** `ar` sätts som förval till betaldatumets år för den kostnad som skapade projektet, och till innevarande år om projektet skapas fristående. Det sätts när projektet skapas och används för gruppering i gränssnittet, men allt som räknas – tröskeln, femårsfönstret, exportens rader – utgår från kostnadernas `betaldatum`. Ett projekt vars kostnader spänner över ett årsskifte ger därför automatiskt två rader i exporten utan att användaren behöver dela projektet. Avviker en kostnads betaldatum från projektets år visas en upplysning, aldrig en blockering.
 
-**Fråga 3 och 4 lagras separat.** `slitet_vid_tilltrade` är användarens påstående, `baslinjepost_id` och `motivering` är belägget för det. Ett projekt med `kategori = reparation` och `slitet_vid_tilltrade = false` är inte avdragsgillt oavsett underlag – det återställer bara skicket från tillträdet.
+**Fråga 3 och 4 lagras separat.** `slitet_vid_tilltrade` är användarens påstående, `motivering` är hur hen vet det. Ett projekt med `kategori = reparation` och `slitet_vid_tilltrade = false` är inte avdragsgillt oavsett motivering – det återställer bara skicket från tillträdet.
 
-`underlagsstyrka` är **härledd, inte lagrad**: `dokumenterat` när `baslinjepost_id` är satt, annars `svagt`. Det finns inga andra värden. Den ligger medvetet på projektnivå och inte per kostnadsrad. Bevisfrågan gäller åtgärden, inte artikeln – en pensel har inte en egen bevissituation skild från färgen. Rör två väggar olika bevisläge är det två projekt, inte ett projekt med två styrkegrader.
+**Ingen baslinje, ingen underlagsstyrka.** En tidigare version av modellen hade en `baslinjepost` med foton och besiktningsprotokoll från tillträdet, och en härledd `underlagsstyrka` som visade om ett projekt hade den kopplingen.
+
+Den är borttagen. Skälet är inte att bevisning saknar betydelse, utan att ingen fotograferar sin lägenhet innan de renoverar. Den som får en fråga från Skatteverket berättar hur det såg ut, och fri bevisning gäller. `motivering` – fritextsvaret på fråga 4 – är den realistiska versionen av samma sak, och den kostar användaren en mening i stället för en fotosession.
+
+Bevisfrågan gäller åtgärden, inte artikeln. En pensel har inte en egen bevissituation skild från färgen.
 
 ### Kostnad
 Ett kvitto eller en faktura.
@@ -300,13 +299,13 @@ Ställs en gång per projekt, aldrig per kvitto. Formuleras på vanlig svenska �
 1. Vad gjorde du? *(fritext → projektnamn)*
 2. Fanns det här förut, eller är det nytt? *(nytt → grundförbättring)*
 3. Var det slitet eller trasigt **när du flyttade in**? *(avgör om reparationen är avdragsgill; ställs bara när svaret på fråga 2 är att det fanns förut – för en grundförbättring saknar skicket betydelse)*
-4. Har du något som visar det? *(bifoga nu / koppla till befintlig baslinjepost / hoppa över)*
+4. Hur vet du det? *(fritext, valfritt)*
 
-Alternativet "bifoga nu" skapar en baslinjepost med bilagan och kopplar projektet till den. Projekt har inget eget bilagefält – allt bevis om skicket vid tillträdet hör hemma i baslinjen, oavsett när det lades in. Därmed förblir härledningen av `underlagsstyrka` konsekvent, och en bilaga ger `dokumenterat`.
+Svaret sparas som `motivering`. En mening räcker: "mäklarbilden visar fläckig vägg bakom garderoben" eller "väggarna var gulnade när vi flyttade in". Det är vad man skulle säga till Skatteverket om frågan kom, och det är allt som behövs.
 
 Tidsankaret i fråga 3 är kritiskt. "Var det slitet?" utan "när du flyttade in" ger fel svar, eftersom användare annars jämför med hur det såg ut dagen innan åtgärden.
 
-Fråga 4 blockerar aldrig – den sätter bara `underlagsstyrka`.
+Fråga 4 blockerar aldrig och påverkar ingen beräkning. Den bevarar resonemanget.
 
 ### 6.3 Inkorg för okopplade kostnader
 
@@ -330,7 +329,7 @@ Måste finnas från början: omklassificera projekt, dela upp ett kvitto som lag
 ## 7. Skärmar
 
 ### Tomt tillstånd
-Rubrik som inbjuder ("Lägg till din första kostnad"), en rad förklaring, en knapp. Under den ett baslinjekort: den enda uppgiften som blir svårare för varje månad som går, och därför rätt sak att peka på när inget annat finns.
+Rubrik som inbjuder, en rad förklaring, en knapp. Ingenting annat.
 
 ### Översikt
 - Årssumma mot 5 000-tröskeln med progressfält
@@ -339,7 +338,7 @@ Rubrik som inbjuder ("Lägg till din första kostnad"), en rad förklaring, en k
 - Under progressfältet en rad som förklarar tröskeln och att beloppet är preliminärt tills allt klassificerats. När inget oklassificerat återstår faller den bort
 - Antal oklassificerade kostnader som en klickbar rad in i genomgången, när det finns några
 - Lista över det som lagts in, senaste först, med anteckningen som radtext
-- Klassificerade kostnader visas grupperade under sin gruppering med kategori och underlagsstyrka. Enum-värdet `svagt` visas som texten "underlag saknas" – det finns inga andra lägen än `dokumenterat` och `svagt`
+- Klassificerade kostnader visas grupperade under sin gruppering med kategori. Ingen markering av underlagsstyrka
 
 ### Notiser
 Sparsamt. Tre motiverade:
@@ -430,7 +429,6 @@ Efter steg 7 finns en app du kan använda på riktigt med ditt eget kvitto, hela
 10. Uppdelning av kvitton på radnivå
 11. Inkorg för okopplade kostnader
 12. Entreprenörsgrenen med ROT och betaldatum
-13. Baslinje med bilagor
 14. PDF-export med bilagepaket
 15. Notiser
 
@@ -454,7 +452,7 @@ Projektsumma 791,95 kr, privat 229,00 kr.
 
 Kvittot är valt för att det innehåller de tre saker som gör inmatningen svår: avkortade artikelnamn från kassasystemet, en privat artikel bland projektmaterialet, och belopp med både tusentalsavgränsare och decimaler.
 
-Seeda även ett projekt kopplat till kvittot ("måla sovrum", 2026, kategori `reparation`, utan baslinjepost – vilket ger härledd underlagsstyrka `svagt`) och två fiktiva projekt så att årssumman hamnar under tröskeln – det är det tillstånd flest användare befinner sig i och det som är svårast att formulera i gränssnittet.
+Seeda även ett projekt kopplat till kvittot ("måla sovrum", 2026, kategori `reparation`) och två fiktiva projekt så att årssumman hamnar under tröskeln – det är det tillstånd flest användare befinner sig i och det som är svårast att formulera i gränssnittet.
 
 ---
 

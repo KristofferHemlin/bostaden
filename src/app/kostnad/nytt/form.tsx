@@ -330,14 +330,17 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
     };
   }, [forhandsFil]);
 
-  // Aterupptat utkast: kor avlasningen pa den forsta redan uppladdade bilagan.
-  // analysera() fyller bara tomma falt, sa det ar tryggt aven om nagot redan
-  // skrivits (t.ex. vid en omladdning). Kors en gang.
+  // Aterupptat utkast: kor avlasningen pa den forsta redan uppladdade bilagan,
+  // men bara om den inte redan analyserats. Avlasningen kors en gang per bilaga
+  // – ar den gjord visar formularet sina sparade varden direkt, utan ett
+  // sprakmodellanrop och en vantan for ingenting. analysera() fyller bara tomma
+  // falt, sa det ar tryggt aven om nagot redan skrivits (t.ex. vid en omladdning).
   useEffect(() => {
     if (analysKordRef.current) return;
     const forsta = utkast?.bilagor[0];
     if (!forsta) return;
     analysKordRef.current = true;
+    if (forsta.analyserad) return;
     void analysera(forsta.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -724,7 +727,11 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
         {avlasningFyllde ? "Granska uppgifterna" : "Fyll i uppgifter"}
       </h2>
 
-      <Falt etikett="Totalbelopp" hjalp="Hela kvittosumman, t.ex. 1 020,95.">
+      <Falt
+        etikett="Totalbelopp"
+        obligatoriskt
+        hjalp="Hela kvittosumman, t.ex. 1 020,95."
+      >
         <BeloppFalt
           name="totalbelopp"
           required
@@ -760,7 +767,7 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
       {/* Ett datumfalt satter bade dokumentdatum och betaldatum till samma dag
           (docs/design.md, "Datum i kostnadsformularet"). En avvikande betaldag
           hor till "Andra uppgifter". */}
-      <Falt etikett="Datum">
+      <Falt etikett="Datum" obligatoriskt>
         <input
           type="date"
           required
@@ -770,7 +777,7 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
         />
       </Falt>
 
-      <Falt etikett="Leverantör">
+      <Falt etikett="Leverantör" obligatoriskt>
         <input
           type="text"
           name="leverantor"
@@ -794,7 +801,7 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
           en egen genomgang nar anvandaren sjalv vill. */}
       <Falt
         etikett="Vad gällde det?"
-        hjalp="En beskrivande mening gör att du känner igen kvittot om flera år, t.ex. ”målade om sovrummet, väggarna var slitna sedan vi flyttade in”. Kan lämnas tomt."
+        hjalp="En beskrivande mening, inte ett ord – det är den som gör kvittot begripligt om flera år."
       >
         <textarea
           name="anteckning"

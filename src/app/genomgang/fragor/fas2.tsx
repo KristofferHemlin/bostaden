@@ -121,7 +121,7 @@ function HogFormular({
       <form action={action} className="flex flex-col gap-6 p-5">
         <input type="hidden" name="projekt_id" value={hog.id} />
 
-        <Falt etikett="Vad gjorde du?">
+        <Falt etikett="Vad gjorde du?" obligatoriskt>
           <input
             type="text"
             value={namn}

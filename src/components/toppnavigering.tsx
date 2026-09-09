@@ -1,6 +1,9 @@
 "use client";
 
-// Huvudmeny for alla inloggade sidor: Oversikt, Projekt, Kvitton, Deklaration.
+// Huvudmeny for alla inloggade sidor: Oversikt, Kvitton, Projekt, Deklaration.
+// Ordningen foljer hur ofta man gar dit (docs/design.md, Navigation): kvitto-
+// listan ar nast efter oversikten den man anvander mest, grupperingarna besoks
+// sallan och deklarationen forst vid forsaljning.
 // Fliken heter "Kvitton" mot anvandaren (docs/design.md, "Ordval i
 // granssnittet") aven om rutten och entiteten fortfarande heter kostnad. Fliken
 // till /export heter "Deklaration" – sidan heter Deklarationsunderlag, och
@@ -40,16 +43,16 @@ interface NavPost {
 const POSTER: NavPost[] = [
   { href: "/", text: "Översikt", aktiv: (s) => s === "/", Ikon: HusIkon },
   {
-    href: "/projekt",
-    text: "Projekt",
-    aktiv: (s) => s === "/projekt" || s.startsWith("/projekt/"),
-    Ikon: MappIkon,
-  },
-  {
     href: "/kostnad",
     text: "Kvitton",
     aktiv: (s) => s === "/kostnad" || s.startsWith("/kostnad/"),
     Ikon: KvittoIkon,
+  },
+  {
+    href: "/projekt",
+    text: "Projekt",
+    aktiv: (s) => s === "/projekt" || s.startsWith("/projekt/"),
+    Ikon: MappIkon,
   },
   {
     href: "/export",

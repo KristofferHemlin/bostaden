@@ -1,24 +1,20 @@
 "use server";
 
-// Steg 4: skapa projekt via de fyra fragorna (produktspec 6.2). Fragorna stalls
-// EN gang per projekt, aldrig per kvitto, och pa vanlig svenska – anvandaren ska
-// aldrig behova veta vad en grundforbattring heter.
+// Steg 6.4: rattning i efterhand for ett befintligt projekt. Sjalva skapandet
+// sker inte via nagon egen sida langre (rutten /projekt/nytt ar borttagen) utan
+// i klassificeringsgenomgangen och i kostnadsformularet.
 //
-//   1. Vad gjorde du?                         -> namn (fritext)
-//   2. Fanns det forut, eller ar det nytt?    -> nytt => grundforbattring
-//   3. Var det slitet nar du FLYTTADE IN?     -> slitet_vid_tilltrade
-//   4. Har du nagot som visar det?            -> motivering (blockerar aldrig)
+// De fyra fragorna (produktspec 6.2), pa vanlig svenska:
 //
-// baslinjepost och bilagor hor till etapp B (steg 13). Utan baslinjepost blir
-// harledd underlagsstyrka "svagt", precis som seed-projektet "Mala sovrum".
+//   1. Vad gjorde du?                      -> namn (fritext)
+//   2. Fanns det forut, eller ar det nytt? -> nytt => grundforbattring
+//   3. Var det slitet nar du FLYTTADE IN?  -> slitet_vid_tilltrade
+//   4. Hur vet du det?                     -> motivering (fritext, blockerar aldrig)
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { kostnaderKoppladeTillProjekt } from "@/doman/berakningar";
-import {
-  tolkaProjektfragor,
-  type SlitetSvar,
-} from "@/doman/projektfragor";
+import { tolkaProjektfragor, type SlitetSvar } from "@/doman/projektfragor";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -36,48 +32,10 @@ function revalideraProjektvyer(projektId: string): void {
   revalidatePath("/export");
 }
 
-export async function skapaProjekt(
-  _foreg: ProjektResultat,
-  formData: FormData,
-): Promise<ProjektResultat> {
-  const { bostadId } = await kravBostad();
-
-  const namn = String(formData.get("namn") ?? "").trim();
-  const fanns = String(formData.get("fanns") ?? ""); // "nytt" | "fanns"
-  const slitet = String(formData.get("slitet") ?? ""); // "ja" | "nej" | "vet-inte"
-  const motivering = String(formData.get("motivering") ?? "").trim();
-
-  if (!namn) return { fel: "Skriv vad du gjorde." };
-  if (fanns !== "nytt" && fanns !== "fanns") {
-    return { fel: "Svara på om det var nytt eller fanns förut." };
-  }
-
-  // Fraga 3 stalls bara nar det fanns forut; for en grundforbattring blir
-  // slitet_vid_tilltrade alltid null aven om ett svar rakar folja med.
-  const { kategori, slitet_vid_tilltrade } = tolkaProjektfragor(
-    fanns,
-    slitet as SlitetSvar,
-  );
-
-  const projekt = await prisma.projekt.create({
-    data: {
-      bostad_id: bostadId,
-      namn,
-      // Etikett for gruppering. Auktoritativt ar kommer fran betaldatum.
-      ar: new Date().getUTCFullYear(),
-      kategori,
-      slitet_vid_tilltrade,
-      motivering: motivering || null,
-    },
-  });
-
-  redirect(`/projekt/${projekt.id}`);
-}
-
-// Steg 6.4: rattning i efterhand. Andra namn, de fyra fragornas svar och
-// kopplingen till baslinjepost. Omklassificering (fraga 2/3) andrar `kategori`
-// och `slitet_vid_tilltrade`, vilket slaar igenom i arets troskelsumma sa fort
-// vyerna revalideras – inget lagras harlett.
+// Omklassificering (fraga 2/3) andrar `kategori` och `slitet_vid_tilltrade`,
+// vilket slaar igenom i arets troskelsumma sa fort vyerna revalideras – inget
+// lagras harlett. Fraga 4:s fritext (`motivering`) ar det enda som bar
+// bevisningen.
 export async function redigeraProjekt(
   _foreg: ProjektResultat,
   formData: FormData,
@@ -95,7 +53,6 @@ export async function redigeraProjekt(
   const fanns = String(formData.get("fanns") ?? "");
   const slitet = String(formData.get("slitet") ?? "");
   const motivering = String(formData.get("motivering") ?? "").trim();
-  const baslinjepostId = String(formData.get("baslinjepost_id") ?? "").trim();
 
   if (!namn) return { fel: "Skriv vad du gjorde." };
   if (fanns !== "nytt" && fanns !== "fanns") {
@@ -107,16 +64,6 @@ export async function redigeraProjekt(
     slitet as SlitetSvar,
   );
 
-  let kopplatBaslinjepost: string | null = null;
-  if (baslinjepostId !== "") {
-    const baslinjepost = await prisma.baslinjepost.findFirst({
-      where: { id: baslinjepostId, bostad_id: bostadId },
-      select: { id: true },
-    });
-    if (!baslinjepost) return { fel: "Den valda baslinjeposten finns inte." };
-    kopplatBaslinjepost = baslinjepost.id;
-  }
-
   await prisma.projekt.update({
     where: { id },
     data: {
@@ -124,7 +71,6 @@ export async function redigeraProjekt(
       kategori,
       slitet_vid_tilltrade,
       motivering: motivering || null,
-      baslinjepost_id: kopplatBaslinjepost,
     },
   });
 

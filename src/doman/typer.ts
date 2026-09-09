@@ -4,8 +4,6 @@
 
 export type Projektkategori = "grundforbattring" | "reparation";
 
-export type Underlagsstyrka = "dokumenterat" | "svagt";
-
 export type Regelparameterenhet = "oren" | "ar";
 
 export type Upplatelseform = "bostadsratt" | "fastighet";
@@ -50,7 +48,6 @@ export interface Projekt {
   namn: string;
   /** null = hogen ar grupperad men annu inte klassificerad (fas 2 i genomgangen). */
   kategori: Projektkategori | null;
-  baslinjepost_id: string | null;
   slitet_vid_tilltrade: boolean | null;
   battre_skick_vid_forsaljning: boolean | null;
   kvarvarande_andel: number | null; // 0..1, null fram till forsaljningen

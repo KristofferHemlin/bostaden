@@ -56,10 +56,7 @@ export function ForsaljningForm({
 
   return (
     <form action={action} className="flex flex-col gap-6 p-5">
-      <Falt
-        etikett="Försäljningsdatum"
-        hjalp="Styr femårsfönstret för reparationer och krävs för att exporten ska gå att skapa."
-      >
+      <Falt etikett="Försäljningsdatum" obligatoriskt>
         <input
           type="date"
           name="forsaljningsdatum"
@@ -69,16 +66,13 @@ export function ForsaljningForm({
         />
       </Falt>
 
-      <Falt
-        etikett="Försäljningspris"
-        hjalp="Valfritt här. Används i vinstberäkningen, inte i avdragsunderlaget. T.ex. 3 450 000."
-      >
+      <Falt etikett="Försäljningspris">
         <BeloppFalt
           name="forsaljningspris"
           value={pris}
           onValueChange={setPris}
           className={INPUT_KLASS}
-          placeholder="0,00"
+          placeholder="t.ex. 3 450 000"
         />
       </Falt>
 
@@ -133,7 +127,7 @@ export function ForsaljningForm({
 
               <Falt
                 etikett="Kvarvarande andel efter förslitning"
-                hjalp="Procent, 0–100. Hur mycket av åtgärden som inte förbrukats av slitage fram till försäljningen. Tomt = inte bedömt än."
+                hjalp="Andel som finns kvar oförsliten, i procent (0–100)."
               >
                 <input
                   type="text"

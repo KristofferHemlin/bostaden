@@ -2,8 +2,8 @@
 // och "Startskarmen med innehall"):
 //
 //   * Tom databas: rubrik som uppmaning, ett par meningar om varfor kvitton ska
-//     sparas, och en primarknapp "Lagg till kvitto". Ingen rundtur, inget
-//     baslinjekort, inga pahittade siffror.
+//     sparas, och en primarknapp "Lagg till kvitto". Ingen rundtur, inga
+//     pahittade siffror.
 //   * Med innehall: bostadens adress som rubrik, tre sma nyckeltal pa rad
 //     (arets summa, antal kvitton, senast tillagt), troskelraden i full bredd,
 //     primarknappen, och till sist kvittolistan som eget kort.
@@ -11,11 +11,9 @@
 // Ingen inmatning har – bara lasning. All berakning bor i src/doman.
 
 import Link from "next/link";
-import { loggaUt } from "@/app/login/actions";
 import {
   Kort,
   Listrad,
-  Meddelanderuta,
   PRIMARKNAPP_KLASS,
   Skarm,
 } from "@/components/skarm";
@@ -66,8 +64,6 @@ export default async function Oversikt() {
   const inomVisatAr = (betaldatum: string | null) =>
     betaldatum !== null && kalenderAr(betaldatum) === VISAT_AR;
 
-  const insamlingslage = bostad.upplatelseform === "fastighet";
-
   const troskelbelopp = slaUppRegelparameter(
     regelparametrar,
     "troskelbelopp",
@@ -98,9 +94,14 @@ export default async function Oversikt() {
   // fragorna ar besvarade.
   const orangeFyllning = naddTroskel && !oklassificeratFinns;
 
-  // Antal oklassificerade kvitton totalt (ej arsbundet) – en klickbar rad in i
-  // klassificeringsgenomgangen (produktspec 7). Visas bara nar det finns nagra.
-  const antalOklassificerade = kostnader.filter(arOklassificerad).length;
+  // Ingen klassificeringssektion pa startskarmen (docs/design.md, Kvittolistan):
+  // en paminnelse vid varje oppning gor klassificeringen till en skuld man adrar
+  // sig nar man sparar ett kvitto. Ingangen ligger i stallet i kvittolistan. Att
+  // en av de sex senaste raderna ar oklassificerad far dock visas med en diskret
+  // prick pa just den raden – inget mer.
+  const oklassificeradeIder = new Set(
+    kostnader.filter(arOklassificerad).map((k) => k.id),
+  );
 
   // "Senast tillagt": datum for det kvitto som lades in sist. Nyckeltalet lankar
   // till just det kvittot (docs/design.md, "Startskarmen med innehall") – till
@@ -142,16 +143,6 @@ export default async function Oversikt() {
         </Kort>
       ) : (
         <>
-          {insamlingslage ? (
-            <Kort className="p-4">
-              <Meddelanderuta>
-                Fastighetsreglerna är inte implementerade ännu. Kvitton,
-                projekt och årssummor fungerar, men klassificeringsförslag,
-                avdragsstatus och export är avstängda.
-              </Meddelanderuta>
-            </Kort>
-          ) : null}
-
           {/* Tre sma nyckeltal pa rad, i egna kort. Pa mobil ligger de kvar i en
               rad med mindre text, aldrig staplade (docs/design.md, "Startskarmen
               med innehall"). Inga statusfarger. Alla tre ar klickbara: "Inlagt"
@@ -221,28 +212,6 @@ export default async function Oversikt() {
               </Link>
             </div>
 
-            {/* Oklassificerade kvitton som en klickbar rad in i genomgangen
-                (produktspec 7), ovanfor listan. Faller bort nar inget
-                oklassificerat aterstar. */}
-            {antalOklassificerade > 0 ? (
-              <Link
-                href="/genomgang"
-                className="block border-b border-linje p-4 transition-colors hover:bg-yta-nedsankt"
-              >
-                <span className="flex items-center gap-1.5 font-granssnitt text-sm text-text-primar">
-                  <span
-                    aria-hidden
-                    className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
-                  />
-                  {antalOklassificerade} kvitto
-                  {antalOklassificerade === 1 ? "" : "n"} att klassificera
-                </span>
-                <span className="mt-0.5 block font-granssnitt text-xs text-text-dampad">
-                  Gruppera dem i högar och svara på fyra frågor per hög.
-                </span>
-              </Link>
-            ) : null}
-
             {/* De sex senast tillagda kvittona, senaste forst. Anteckningen ar
                 huvudtext ("Målade om sovrummet" sager vad raden ar, "BAUHAUS"
                 inte); saknas den anvands leverantoren. */}
@@ -265,7 +234,7 @@ export default async function Oversikt() {
                           ? `${k.leverantor} · ${datum ?? ""}`
                           : (datum ?? "")
                     }
-                    atgard={utkast}
+                    atgard={utkast || oklassificeradeIder.has(k.id)}
                     belopp={utkast ? undefined : formateraKronor(k.totalbelopp ?? 0)}
                   />
                 );
@@ -274,17 +243,6 @@ export default async function Oversikt() {
           </Kort>
         </>
       )}
-
-      {/* Logga ut – diskret, utan kort. Installningarna nas via kugghjulet i
-          toppraden (docs/design.md, Navigation) och ligger inte langre har. */}
-      <form action={loggaUt} className="flex justify-end px-1">
-        <button
-          type="submit"
-          className="font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
-        >
-          Logga ut
-        </button>
-      </form>
     </Skarm>
   );
 }

@@ -84,7 +84,7 @@ export function RedigeraKostnadForm({
       <form action={spara} className="flex flex-col gap-5 p-5">
         <input type="hidden" name="kostnad_id" value={kostnadId} />
 
-        <Falt etikett="Leverantör">
+        <Falt etikett="Leverantör" obligatoriskt>
           <input
             type="text"
             name="leverantor"
@@ -98,6 +98,7 @@ export function RedigeraKostnadForm({
         {enkel ? (
           <Falt
             etikett="Totalbelopp"
+            obligatoriskt
             hjalp="Hela kvittosumman, t.ex. 1 020,95."
           >
             <BeloppFalt
@@ -120,7 +121,7 @@ export function RedigeraKostnadForm({
           </div>
         )}
 
-        <Falt etikett="Kvittots datum">
+        <Falt etikett="Kvittots datum" obligatoriskt>
           <input
             type="date"
             name="dokumentdatum"
@@ -140,8 +141,7 @@ export function RedigeraKostnadForm({
             />
           </Falt>
           <p className="mt-1 font-granssnitt text-xs text-text-dampad">
-            Styr vilket år kvittot räknas till. Lämna tomt om det inte är betalt
-            än – då räknas det inte in i årssumman.
+            Lämna tomt om fakturan inte är betald än.
           </p>
         </div>
 
@@ -169,10 +169,7 @@ export function RedigeraKostnadForm({
         </UtfallbarSektion>
 
         {enkel ? (
-          <Falt
-            etikett="Koppla till projekt"
-            hjalp="Går att lämna tomt – kvittot blir då oklassificerat."
-          >
+          <Falt etikett="Koppla till projekt">
             <select
               name="projekt_id"
               defaultValue={varden.projektId}
