@@ -62,9 +62,7 @@
 // knapp "Fick du ROT-avdrag?" med en tunn chevron till hoger, ingen understruken
 // lank. Den renderas alltid; `rotOppen` styr chevronens lage och sätts nar
 // avlasningen last ett ROT-belopp. Ett enda falt, ROT-beloppet i kronor, aldrig
-// i procent. `anlitad_entreprenor` harleds pa servern ur att ett ROT-belopp
-// finns. En kostnad med ROT far bara kopplas till ett projekt (produktspec 5);
-// relevant forst vid uppdelning, som gors i efterhand.
+// i procent – det ar det enda inmatningen fragar om av en entreprenorsfaktura.
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -791,8 +789,7 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
         />
       </Falt>
 
-      {/* Datumfaltet matar bada de dolda datumfalten till samma dag.
-          anlitad_entreprenor harleds pa servern ur att ett ROT-belopp finns. */}
+      {/* Datumfaltet matar bada de dolda datumfalten till samma dag. */}
       <input type="hidden" name="dokumentdatum" value={falt.datum} />
       <input type="hidden" name="betaldatum" value={falt.datum} />
 

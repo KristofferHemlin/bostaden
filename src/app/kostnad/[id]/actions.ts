@@ -78,12 +78,11 @@ export async function redigeraKostnad(
   const betaldatum = String(formData.get("betaldatum") ?? "").trim();
   const projektId = String(formData.get("projekt_id") ?? "").trim();
 
-  // ROT-avdraget (docs/design.md, "ROT-avdrag"). Ett enda falt, far lamnas
-  // tomt. anlitad_entreprenor harleds ur att ett ROT-belopp finns.
+  // ROT-avdraget (docs/design.md, "ROT-avdrag"). Ett enda falt, far lamnas tomt,
+  // anges i kronor.
   const rotUtnyttjat = positivtEllerNull(
     oreFranKronor(String(formData.get("rot_utnyttjat") ?? "")),
   );
-  const anlitadEntreprenor = rotUtnyttjat !== null;
 
   if (!leverantor) return { fel: "Fyll i leverantör." };
   if (!DATUM.test(dokumentdatum)) return { fel: "Fyll i kvittots datum." };
@@ -118,10 +117,7 @@ export async function redigeraKostnad(
   const dok = new Date(`${dokumentdatum}T00:00:00.000Z`);
   const bet = betaldatum ? new Date(`${betaldatum}T00:00:00.000Z`) : null;
 
-  const rotFalt = {
-    anlitad_entreprenor: anlitadEntreprenor,
-    rot_utnyttjat: rotUtnyttjat,
-  };
+  const rotFalt = { rot_utnyttjat: rotUtnyttjat };
 
   const enkel = arEnkelKostnad(tillDomanKostnad(kostnad));
 

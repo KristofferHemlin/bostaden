@@ -13,9 +13,8 @@
 // har ocksa – ett enda falt, ROT-beloppet i kronor. Den foljer samma monster
 // som i inmatningsformularet (docs/design.md, "Utfallbara sektioner"): en knapp
 // med en tunn chevron till hoger, ingen understruken lank. Hopfalld tills den
-// redan har ett varde, far lamnas tom. `anlitad_entreprenor` harleds pa servern
-// ur att ett ROT-belopp finns. En kostnad med ROT far bara vara kopplad till ett
-// projekt (produktspec 5) – valideras i actionen.
+// redan har ett varde, far lamnas tom. En kostnad med ROT far bara vara kopplad
+// till ett projekt (produktspec 5) – valideras i actionen.
 //
 // Borttagningen ligger sist, tydligt skild fran spara-knappen, och kraver ett
 // extra bekraftelsesteg. Den tar med bilagorna.
@@ -147,8 +146,7 @@ export function RedigeraKostnadForm({
 
         {/* "Fick du ROT-avdrag?" – ett enda fält, ROT-beloppet i kronor
             (docs/design.md, "ROT-avdrag"). Knapp med chevron, öppen från start
-            när fältet redan har ett värde. anlitad_entreprenor härleds på
-            servern ur att ett belopp finns. */}
+            när fältet redan har ett värde. */}
         <UtfallbarSektion
           etikett="Fick du ROT-avdrag?"
           oppen={rotOppen}

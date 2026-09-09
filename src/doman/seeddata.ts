@@ -96,9 +96,6 @@ interface SeedKostnad extends Kostnad {
   bostad_id: string;
   leverantor: string;
   dokumentdatum: string;
-  anlitad_entreprenor: boolean;
-  arbetskostnad: number | null;
-  materialkostnad: number | null;
 }
 
 export const SEED_KOSTNADER: SeedKostnad[] = [
@@ -109,9 +106,6 @@ export const SEED_KOSTNADER: SeedKostnad[] = [
     totalbelopp: 102_095, // 1 020,95 kr inkl 25 % moms
     dokumentdatum: "2026-08-22",
     betaldatum: "2026-08-22", // betalt med kort
-    anlitad_entreprenor: false,
-    arbetskostnad: null,
-    materialkostnad: null,
     rot_utnyttjat: 0,
     forsakringsersattning: 0,
     arkiverad: false,
@@ -158,9 +152,6 @@ export const SEED_KOSTNADER: SeedKostnad[] = [
     totalbelopp: 149_500, // 1 495,00 kr
     dokumentdatum: "2026-04-10",
     betaldatum: "2026-04-12",
-    anlitad_entreprenor: false,
-    arbetskostnad: null,
-    materialkostnad: null,
     rot_utnyttjat: 0,
     forsakringsersattning: 0,
     arkiverad: false,
@@ -181,9 +172,6 @@ export const SEED_KOSTNADER: SeedKostnad[] = [
     totalbelopp: 69_000, // 690,00 kr
     dokumentdatum: "2026-06-01",
     betaldatum: "2026-06-03",
-    anlitad_entreprenor: false,
-    arbetskostnad: null,
-    materialkostnad: null,
     rot_utnyttjat: 0,
     forsakringsersattning: 0,
     arkiverad: false,

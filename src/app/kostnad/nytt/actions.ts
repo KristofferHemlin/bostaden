@@ -1,10 +1,10 @@
 "use server";
 
-// Steg 5 + produktspec 2b + avsnittet "Dokumentavlasning" + docs/design.md
-// ("Inmatningen staller inga skattefragor", "Uppdelning av kvitto vid
-// inmatning"). Manuell kostnadsinmatning: belopp, datum, leverantor och den
-// valfria anteckningen "Vad gallde det?". Inga skattefragor, ingen kategori,
-// inget projekt skapas har – klassificeringen gors i en egen genomgang.
+// Steg 5 + produktspec 2b + 6.1 + avsnittet "Dokumentavlasning" + docs/design.md
+// ("Inmatningen staller inga skattefragor"). Manuell kostnadsinmatning: fem falt
+// – bilaga, belopp, datum, leverantor och den valfria anteckningen "Vad gallde
+// det?" – plus ROT-raden. Inga skattefragor, ingen kategori, inget projekt
+// skapas har – klassificeringen gors i en egen genomgang.
 //
 // UTKAST. Nar anvandaren valjer en fil i formularet skapas kostnaden direkt som
 // ett utkast (skapaUtkast) – en kostnad utan belopp – och filen laddas upp till
@@ -13,26 +13,17 @@
 // vanligt. Avbryter anvandaren ligger kvittot kvar som ett utkast – det rensas
 // aldrig automatiskt.
 //
-// Projektkoppling ar en genvag, inte vagen in. `projekt_id` (om satt) kopplar
-// kostnaden till en BEFINTLIG gruppering. Nya grupperingar skapas inte harifran.
-//
-// Uppdelning. "Var nagot pa kvittot privat?" faller ut rader i samma formular.
-// Inga procenttal: en rad ar antingen privat (rad_privat) eller sparas mot
-// malet. Utan uppdelning skapas EN rad pa hela totalbeloppet, med artikelnamnet
-// satt till leverantoren (produktspec 5: "En rad skapas alltid"). Med uppdelning
-// gar samma vag som steg 10:s dela-sida via tolkaUppdelning – summan av radernas
-// belopp maste vara lika med totalbeloppet.
+// Ingen projektkoppling och ingen uppdelning sker har (docs/produktspec.md 6.1).
+// Klassificeringen hor till genomgangen och raduppdelningen till kvittots
+// detaljvy – bada gors i efterhand nar anvandaren sjalv vill. Sparningen skapar
+// alltid EN rad pa hela totalbeloppet, med leverantoren som artikelnamn
+// (produktspec 5: "En rad skapas alltid").
 //
 // Aret bestams av betaldatum, aldrig av dokumentdatum. En kostnad utan
 // betaldatum sparas anda (obetald, raknas inte in) – inga floden far blockera.
 
 import { revalidatePath } from "next/cache";
 import { oreFranKronor } from "@/lib/format";
-import {
-  inlineUppdelningTillIndata,
-  tolkaUppdelning,
-  type InlineUppdelningsrad,
-} from "@/lib/kostnadsuppdelning";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
@@ -82,12 +73,6 @@ export async function skapaUtkast(): Promise<{ kostnadId: string }> {
   return { kostnadId: skapad.id };
 }
 
-interface RadUtkast {
-  artikel: string;
-  belopp: number;
-  fordelningar: { projekt_id: string | null; privat: boolean; andel: number }[];
-}
-
 type Tolkad =
   | { fel: string }
   | {
@@ -96,9 +81,7 @@ type Tolkad =
       dok: Date;
       bet: Date | null;
       anteckning: string | null;
-      anlitadEntreprenor: boolean;
       rotUtnyttjat: number | null;
-      rader: RadUtkast[];
     };
 
 /** Ett belopp som anvandaren kan ha lamnat tomt eller pa noll blir null. */
@@ -106,25 +89,20 @@ function positivtEllerNull(varde: number | null): number | null {
   return varde !== null && varde > 0 ? varde : null;
 }
 
-/** Delad falt- och radtolkning for bade "skapa ny" och "slutfor utkast". */
-async function tolkaKostnadsformular(
-  formData: FormData,
-  bostadId: string,
-): Promise<Tolkad> {
+/** Delad falttolkning for bade "skapa ny" och "slutfor utkast". */
+function tolkaKostnadsformular(formData: FormData): Tolkad {
   const leverantor = String(formData.get("leverantor") ?? "").trim();
   const beloppText = String(formData.get("totalbelopp") ?? "");
   const dokumentdatum = String(formData.get("dokumentdatum") ?? "");
   const betaldatum = String(formData.get("betaldatum") ?? "").trim();
   const anteckning = String(formData.get("anteckning") ?? "").trim();
-  const projektId = String(formData.get("projekt_id") ?? "").trim();
 
-  // ROT-avdraget (docs/design.md, "ROT-avdrag"). Ett enda falt, far lamnas
-  // tomt. anlitad_entreprenor harleds ur att ett ROT-belopp finns – ROT
-  // forutsatter anlitat arbete.
+  // ROT-avdraget (docs/design.md, "ROT-avdrag"). Ett enda falt, far lamnas tomt,
+  // anges i kronor. Det ar det enda som paverkar underlaget av det en
+  // entreprenorsfaktura bar – arbets- och materialuppdelning efterfragas inte.
   const rotUtnyttjat = positivtEllerNull(
     oreFranKronor(String(formData.get("rot_utnyttjat") ?? "")),
   );
-  const anlitadEntreprenor = rotUtnyttjat !== null;
 
   if (!leverantor) return { fel: "Fyll i leverantör." };
 
@@ -150,93 +128,22 @@ async function tolkaKostnadsformular(
     }
   }
 
-  // Kopplingen ar valfri och bara till en BEFINTLIG gruppering (genvag langst ned
-  // i formularet). Ingen koppling = okopplad kostnad, vilket far vara.
-  let befintligtProjektId: string | null = null;
-  if (projektId !== "") {
-    const projekt = await prisma.projekt.findFirst({
-      where: { id: projektId, bostad_id: bostadId },
-      select: { id: true },
-    });
-    if (!projekt) {
-      return {
-        fel: "Det du valde att koppla kostnaden till finns inte längre.",
-      };
-    }
-    befintligtProjektId = projekt.id;
-  }
-
-  const malForRader = befintligtProjektId ?? "";
-  const harKoppling = befintligtProjektId !== null;
-
-  const radArtiklar = formData.getAll("rad_artikel").map(String);
-  const radBelopp = formData.getAll("rad_belopp").map(String);
-  const radPrivat = formData.getAll("rad_privat").map(String);
-  const harUppdelning = radArtiklar.length > 0;
-
-  let rader: RadUtkast[];
-  if (harUppdelning) {
-    const inlineRader: InlineUppdelningsrad[] = radArtiklar.map(
-      (artikel, i) => ({
-        artikel,
-        belopp: radBelopp[i] ?? "",
-        privat: (radPrivat[i] ?? "") !== "",
-      }),
-    );
-    const tolkad = tolkaUppdelning(
-      inlineUppdelningTillIndata(inlineRader, malForRader),
-      totalbelopp,
-      // En kostnad med ROT far bara kopplas till ett projekt (produktspec 5).
-      // Inline-grenen fordelar redan bara till ett mal, men grinden hor hemma
-      // dar regeln finns.
-      { endastEttProjekt: rotUtnyttjat !== null },
-    );
-    if ("fel" in tolkad) return { fel: tolkad.fel };
-    rader = tolkad.rader.map((r) => ({
-      artikel: r.artikel,
-      belopp: r.belopp,
-      fordelningar: r.fordelningar,
-    }));
-  } else {
-    rader = [
-      {
-        artikel: leverantor,
-        belopp: totalbelopp,
-        fordelningar: harKoppling
-          ? [{ projekt_id: malForRader, privat: false, andel: 1 }]
-          : [],
-      },
-    ];
-  }
-
   return {
     leverantor,
     totalbelopp,
     dok: new Date(`${dokumentdatum}T00:00:00.000Z`),
     bet: betaldatum ? new Date(`${betaldatum}T00:00:00.000Z`) : null,
     anteckning: anteckning || null,
-    anlitadEntreprenor,
     rotUtnyttjat,
-    rader,
   };
 }
 
-function raderSkapa(rader: RadUtkast[]) {
-  return {
-    create: rader.map((rad) => ({
-      artikel: rad.artikel,
-      belopp: rad.belopp,
-      fordelningar: rad.fordelningar.length
-        ? {
-            create: rad.fordelningar.map((f) => ({
-              projekt_id: f.projekt_id,
-              privat: f.privat,
-              andel: f.andel,
-            })),
-          }
-        : undefined,
-    })),
-  };
+// En kostnad fran inmatningen far alltid EXAKT en rad pa hela totalbeloppet, med
+// leverantoren som artikelnamn (produktspec 5: "En rad skapas alltid"). Ingen
+// fordelning – kopplingen till en gruppering gors i genomgangen och
+// raduppdelningen pa kvittots detaljvy, bada i efterhand.
+function enRadSkapa(leverantor: string, totalbelopp: number) {
+  return { create: [{ artikel: leverantor, belopp: totalbelopp }] };
 }
 
 /**
@@ -249,18 +156,9 @@ export async function sparaKostnad(
   const { bostadId } = await kravBostad();
   const utkastId = String(formData.get("utkast_id") ?? "").trim();
 
-  const tolkad = await tolkaKostnadsformular(formData, bostadId);
+  const tolkad = tolkaKostnadsformular(formData);
   if ("fel" in tolkad) return { fel: tolkad.fel };
-  const {
-    leverantor,
-    totalbelopp,
-    dok,
-    bet,
-    anteckning,
-    anlitadEntreprenor,
-    rotUtnyttjat,
-    rader,
-  } = tolkad;
+  const { leverantor, totalbelopp, dok, bet, anteckning, rotUtnyttjat } = tolkad;
 
   if (utkastId !== "") {
     const utkast = await prisma.kostnad.findFirst({
@@ -283,9 +181,8 @@ export async function sparaKostnad(
           dokumentdatum: dok,
           betaldatum: bet,
           anteckning,
-          anlitad_entreprenor: anlitadEntreprenor,
           rot_utnyttjat: rotUtnyttjat,
-          rader: raderSkapa(rader),
+          rader: enRadSkapa(leverantor, totalbelopp),
         },
       }),
     ]);
@@ -301,9 +198,8 @@ export async function sparaKostnad(
       dokumentdatum: dok,
       betaldatum: bet,
       anteckning,
-      anlitad_entreprenor: anlitadEntreprenor,
       rot_utnyttjat: rotUtnyttjat,
-      rader: raderSkapa(rader),
+      rader: enRadSkapa(leverantor, totalbelopp),
     },
     select: { id: true },
   });

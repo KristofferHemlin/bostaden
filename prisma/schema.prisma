@@ -121,10 +121,7 @@ model kostnad {
   totalbelopp           Int? // oren. null = UTKAST: kvittot valt och uppladdat men uppgifterna inte ifyllda an. Raknas inte in nagonstans, rensas aldrig automatiskt.
   dokumentdatum         DateTime? @db.Date // null bara for utkast
   betaldatum            DateTime? @db.Date // null = obetald, raknas inte in
-  anlitad_entreprenor   Boolean   @default(false)
-  arbetskostnad         Int? // oren, endast entreprenor; del av totalbelopp
-  materialkostnad       Int? // oren, endast entreprenor; del av totalbelopp
-  rot_utnyttjat         Int? // oren, dras bort fran underlaget
+  rot_utnyttjat         Int? // oren, dras bort fran underlaget; anges i kronor, aldrig i procent
   forsakringsersattning Int? // oren, dras bort fran underlaget
   arkiverad             Boolean   @default(false)
   anteckning            String? // "Vad gallde det?" – valfri fritext, bar minnet till klassificeringen (produktspec 2b)
