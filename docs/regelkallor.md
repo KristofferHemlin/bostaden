@@ -107,3 +107,4 @@ Historiska poster ska räknas enligt reglerna som gällde vid utgiftstillfället
 | Datum | Vad | Källa |
 |---|---|---|
 | 2026-08-28 | Första kontrollen av samtliga regler ovan | Skatteverkets webbplats och blanketter |
+| 2026-09-09 | Fastigheter kontrollerade. Beräkningsreglerna identiska med bostadsrätt; skillnaderna är blankettnamn, kapitaltillskott och köpkostnader | Skatteverkets sidor och SKV 379 |

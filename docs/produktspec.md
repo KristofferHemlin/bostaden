@@ -236,10 +236,7 @@ Ett kvitto eller en faktura.
 | totalbelopp | int | |
 | dokumentdatum | date | |
 | betaldatum | date? | null = obetald, räknas inte in |
-| anlitad_entreprenor | bool | styr om fälten nedan visas |
-| arbetskostnad | int? | endast entreprenör; del av totalbelopp |
-| materialkostnad | int? | endast entreprenör; del av totalbelopp |
-| rot_utnyttjat | int? | dras bort från underlaget |
+| rot_utnyttjat | int? | dras bort från underlaget; anges i kronor, aldrig i procent |
 | forsakringsersattning | int? | dras bort från underlaget |
 | arkiverad | bool | användarens val, default false |
 | anteckning | text? | "Vad gällde det?" – bär minnet till klassificeringen
@@ -279,18 +276,21 @@ Radnivå är obligatoriskt, inte en finess. Ett typiskt byggvarukvitto innehåll
 ### 6.1 Lägg till kostnad
 
 ```
-Lägg till kostnad (foto / PDF / manuellt)
-  → Bekräfta belopp, dokumentdatum, betaldatum
-  → "Anlitade du någon?"  ja → arbetskostnad, materialkostnad, ROT
-                          nej → vidare
-  → Välj projekt          befintligt → klart
-                          nytt      → fyra frågor
-                          hoppa över → inkorg
+Lägg till kvitto (foto / PDF / manuellt)
+  → Bilaga väljs först; utkast skapas, filen laddas upp, avläsningen körs
+  → Granska belopp, datum, leverantör
+  → "Vad gällde det?"     fritext, valfritt
+  → ROT-raden             utfälld om ett belopp lästs av, annars hopfälld
+  → Spara                 → tillbaka till startskärmen
 ```
 
-Ingången är alltid en och samma knapp. Fråga aldrig användaren om dokumenttypen – "anlitade du någon?" beskriver vad som hände och träffar rätt även vid handskrivna kvitton från hantverkare. Förifyll ja när filen är en text-PDF vars innehåll rymmer ett organisationsnummer eller ordet ROT. Det är textutläsning ur PDF, inte OCR – bildkvitton och fotograferade fakturor får ingen förifyllning alls, och förvalet blir då nej.
+Ingången är alltid en och samma knapp. Fråga aldrig användaren om dokumenttypen.
 
-Både entreprenörsgrenen och projektvalet ska gå att lämna ofullständiga. Ett flöde som blockerar är ett flöde användaren avbryter.
+**Flödet har fem fält och ingenting mer:** bilaga, belopp, datum, leverantör, anteckning. ROT-raden är det enda undantaget och innehåller ett enda fält, beloppet i kronor – se `docs/design.md`. Arbetskostnad och materialkostnad efterfrågas inte; det enda som påverkar underlaget är hur stor skattereduktion som faktiskt utnyttjats, och detaljerna finns på fakturan som ligger sparad som bilaga.
+
+**Ingen projektkoppling sker här.** Klassificeringen hör till genomgången, som användaren startar när hen själv vill. Ett kvitto som just sparats är oklassificerat, och det är det normala tillståndet.
+
+Betaldatum som avviker från kvittots datum, uppdelning och koppling till en gruppering görs i efterhand från kvittots detaljvy. Inget av det är brådskande – till skillnad från att fånga kvittot medan det finns.
 
 ### 6.2 De fyra projektfrågorna
 
@@ -378,7 +378,7 @@ Levereras till egen mejl eller nedladdning. Ingen integration behövs.
 - Ingen integration mot Skatteverket – e-tjänsten har ingen import
 - Ingen OCR i klassisk mening. Dokumentavläsning sker via språkmodell på hela dokumentet – se avsnittet Dokumentavläsning nedan
 - Ingen automatisk produktkategorisering av kvittorader. Volymen är fel för det (~20 relevanta inköp per år) och felaktiga förval blir tyst godkända, vilket producerar fel underlag med självförtroende
-- Ingen automatisk uppdelning av entreprenörsfakturor i arbets- och materialkostnad. Avläsningen fyller belopp, datum och leverantör; ROT och arbetsuppdelning anger användaren själv
+- Ingen automatisk uppdelning av entreprenörsfakturor i arbets- och materialkostnad – appen efterfrågar inte den uppdelningen alls. Avläsningen fyller belopp, datum och leverantör; ROT-beloppet anger användaren själv
 
 ### Dokumentavläsning
 
@@ -429,7 +429,8 @@ Efter steg 7 finns en app du kan använda på riktigt med ditt eget kvitto, hela
 10. Uppdelning av kvitton på radnivå
 11. Inkorg för okopplade kostnader
 12. Entreprenörsgrenen med ROT och betaldatum
-14. PDF-export med bilagepaket
+13. PDF-export med bilagepaket
+14. Arkivexport som zip
 15. Notiser
 
 Ordningen inom etapp B styrs av vad som skaver när du använt etapp A, inte av listan ovan.

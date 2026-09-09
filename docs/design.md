@@ -172,7 +172,9 @@ Det finns inga designfiler, mockuper eller skärmbilder. Detta dokument är den 
 
 ### Genomgående struktur
 
-Varje skärm byggs uppifrån och ned i samma ordning: en smal header med bostadens namn och en dämpad andra rad med upplåtelseform och tillträdesår, sedan sidans innehåll, inget bottenfält. Appen har för få skärmar för navigation – man tar sig tillbaka, inte runt.
+Varje skärm byggs uppifrån och ned i samma ordning: toppraden enligt avsnittet Navigation, sedan sidrubriken, sedan sidans innehåll. På mobil ligger flikraden fast i nederkanten; på skrivbord ligger flikarna i toppraden och skärmen har inget bottenfält.
+
+Toppraden visar bostadens namn och kugghjulet, aldrig en andra rad med upplåtelseform och tillträdesår – de hör hemma i inställningarna.
 
 Innehållet ligger i kort på `--yta-upphojd` mot sidbakgrunden, med 1px `--linje` som avdelare mellan sektioner inuti. Inga kort inuti kort.
 
