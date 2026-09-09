@@ -135,8 +135,11 @@ export default async function ProjektSida({
               Klassificera högen
             </Link>
           ) : null}
+          {/* Inmatningen kopplar inte till en gruppering (docs/design.md,
+              "Inmatningen har fem falt, inget mer"); kvittot hamnar i
+              genomgangen dar det kopplas. */}
           <Link
-            href={`/kostnad/nytt?projekt=${id}`}
+            href="/kostnad/nytt"
             className={oklassificerad ? SEKUNDARKNAPP_KLASS : PRIMARKNAPP_KLASS}
           >
             Lägg till kvitto

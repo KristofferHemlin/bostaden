@@ -192,6 +192,10 @@ Progressfältet är 8px högt med helt rundade ändar, spår i `--yta-nedsankt` 
 
 Raderna visar **anteckningen som huvudtext**, med leverantör och datum dämpat under – samma presentation som på startskärmen. Saknas anteckning används leverantören. Att samma data presenteras olika på två skärmar får listan att se ut som en annan sorts innehåll än den är.
 
+**Utkast går att ta bort direkt.** En soptunna längst till höger i listraden, med egen tryckyta på minst 44px och luft från radens klickyta så den inte träffas av misstag. Ingen bekräftelse – ett utkast har inget belopp och inget värde, och en dialog är bara i vägen. Bekräftelse gäller fortsatt för sparade kvitton.
+
+Raderingen tar med bilagorna. Ett utkast utan sin bild är ingenting.
+
 **Kvitton grupperas per år med tydlig avdelare.** Tröskeln gäller per kalenderår och åren är helt skilda åt i underlaget – en lista där 2025 och 2026 glöser samman döljer produktens viktigaste struktur. Årsrubriken är en egen rad på `--yta-nedsankt` med årtalet och årets summa högerställd.
 
 ### Listrader
@@ -292,35 +296,64 @@ Förhandsvisningen ligger kvar medan man fyller i fälten, så att man kan kontr
 
 En kostnad utan bilaga är inget fel och ska inte markeras som ett. Underlagsstyrkan hör till projektet, inte till den enskilda kostnaden.
 
-### Datum i kostnadsformuläret
+### Inmatningen har fem fält, inget mer
 
-**Ett datumfält som utgångsläge.** Handlar man i butik är kvittots datum och betaldatumet samma dag, och två fält att fylla i är två för många. Fältet heter "Datum" och sätter båda värdena.
+Att lägga in ett kvitto ska ta tio sekunder och aldrig kräva ett beslut användaren inte är redo att fatta. Formuläret innehåller **bilaga, belopp, datum, leverantör och anteckning**. Ingenting annat.
 
-Under fältet ligger en länk: "Betalades ett annat datum?". Klick fäller ut betaldatumet som eget fält, förifyllt med samma datum, redigerbart. Det är fakturafallet, och det är minoriteten.
+Varje extra rad – också en hopfälld – säger att det finns mer att göra här. Fyra fält följda av fem valfria rader läses som nio saker att ta ställning till, och den som just handlat orkar inte det.
 
-Att tömma betaldatumet gör kostnaden obetald, vilket innebär att den inte räknas in i årssumman. Den möjligheten ligger kvar i det utfällda läget med en förklarande rad.
+**Ett enda datumfält.** Handlar man i butik är kvittots datum och betaldatumet samma dag. Fältet heter "Datum" och sätter båda värdena.
 
-### Inmatningen ställer inga skattefrågor
+**Fritextfältet heter "Vad gällde det?"** och är det enda som bär betydelse framåt. Hjälptexten uppmuntrar en beskrivande mening, inte ett ord: "målade om sovrummet, väggarna var slitna sedan vi flyttade in" är vad som gör klassificeringen möjlig åtta år senare. "Färg" är det inte. Fältet är inte obligatoriskt – ett kvitto utan anteckning är bättre än inget kvitto.
 
-Att lägga in ett kvitto ska ta tio sekunder och aldrig kräva ett beslut användaren inte är redo att fatta. Formuläret innehåller bilaga, belopp, datum, leverantör och ett fritextfält – ingenting annat.
+**Inga skattefrågor, ingen gruppering, inga kategorier.** De fyra frågorna hör hemma i klassificeringsgenomgången, som användaren startar när hen själv vill. Ordet *projekt* förekommer inte i inmatningsflödet.
 
-Fritextfältet heter **"Vad gällde det?"** och är det enda som bär betydelse framåt. Hjälptexten uppmuntrar en beskrivande mening, inte ett ord: "målade om sovrummet, väggarna var slitna sedan vi flyttade in" är vad som gör klassificeringen möjlig åtta år senare. "Färg" är det inte.
+**Detta hör hemma på kvittots detaljvy, inte här:**
 
-Fältet är inte obligatoriskt. Ett kvitto utan anteckning är bättre än inget kvitto.
+- Betaldatum som skiljer sig från kvittots datum. Gäller nästan bara obetalda fakturor, och att tömma det gör kostnaden obetald så att den inte räknas in i årssumman.
+- Uppdelning när något var privat.
+- Koppling till en befintlig gruppering. Klassificeringen sker i genomgången; en genväg här motsäger den modellen.
 
-**Ingen gruppering, inga kategorier, inga frågor vid inmatningen.** De fyra frågorna hör hemma i klassificeringsgenomgången, som användaren startar när hen själv vill. Ordet *projekt* förekommer inte i inmatningsflödet.
+Allt det görs i efterhand när man har tid, och inget av det är brådskande – till skillnad från att fånga kvittot medan det finns.
 
-Den som ändå vill koppla direkt kan göra det – ett valfritt fält för befintlig gruppering finns längst ned, hopfällt. Men det är en genväg för den vane, inte vägen in.
+**Undantag: ROT-raden.** Den visas alltid, men är utfälld när avläsningen hittat ett belopp och hopfälld annars. Att dölja den helt när ingenting lästs av gör fältet onåbart när avläsningen misslyckas, när nyckeln saknas eller när kvittot är handskrivet – och användaren vet då inte ens att det finns.
 
-### Uppdelning av kvitto vid inmatning
+### Utfällbara sektioner
 
-**Uppdelning är utfällbar, aldrig ett krav.** Under totalbeloppet ligger en länk: "Var något på kvittot privat?". Klick fäller ut raderna i samma formulär, precis som betaldatumet. Ett kvitto som inte delas upp hör i sin helhet till det valda projektet.
+Mönstret gäller de valfria delarna där de förekommer: ROT-raden i inmatningen, och betaldatum, uppdelning och hantverkarfält på kvittots detaljvy och i Ändra uppgifter.
 
-Förvalet när man fäller ut är **två rader** – en till projektet och en privat. En "lägg till rad"-knapp finns för de sällsynta fall där ett kvitto rör två olika åtgärder, men den syns inte förrän man behöver den.
+**De ser ut som knappar, inte som länkar.** En understruken textrad läses som navigation – tre sådana staplade ser ut som en meny. I stället: ingen understrykning, `--text-primar` i normal vikt, och en tunn chevron till höger om texten som pekar nedåt och roterar 180 grader när sektionen är öppen. Då syns både att raden gör något och vilket läge den är i.
+
+**Ingen toggle och ingen kryssruta.** Ett reglage antyder att man ska ta ställning, och de här frågorna ska gå att ignorera helt.
+
+**Luft mellan raderna.** Två sådana direkt under varandra utan mellanrum läses som en lista. De behöver samma avstånd som mellan två fält.
+
+**Samlade, inte utspridda** under det fält de råkar höra till. Samlade blir de ett litet block med valfria fördjupningar; utspridda ser varje rad ut som ett problem med fältet ovanför.
+
+Hopfällt är alltid förvalet, utom när sektionen redan har ett värde – då öppnas den.
+
+### ROT-avdrag
+
+**Ett enda fält bakom raden "Fick du ROT-avdrag?"** Beloppet i kronor, ingenting annat.
+
+Arbetskostnad och materialkostnad behövs inte. Det enda som påverkar underlaget är hur mycket skattereduktion man faktiskt fick – den delen får inte dras av en gång till vid försäljningen. Detaljerna finns ändå på fakturan, som ligger sparad som bilaga.
+
+**ROT anges i kronor, aldrig i procent.** Procentsatsen har ändrats flera gånger, men det spelar ingen roll: beloppet man fick när arbetet utfördes är historiskt och ändras inte av att reglerna gör det senare. Hjälptexten säger att beloppet står på fakturan som det avdrag som redan dragits av.
+
+**Det gäller alla, inte bara villaägare.** En bostadsrättshavare som anlitar hantverkare för köket har exakt samma situation. Utan fältet blir underlaget för högt utan att något syns.
+
+Raden går att lämna tom. Vet man inte beloppet just nu sparas kvittot ändå, och det kan fyllas i senare via Ändra uppgifter.
+
+### Uppdelning av kvitto på detaljvyn
+
+Uppdelning görs i efterhand, från kvittots detaljvy under raden "Var något på kvittot privat?". Den finns inte i inmatningen.
+
+Förvalet är **två rader** – en till grupperingen och en privat. En "lägg till rad"-knapp finns för de sällsynta fall där ett kvitto rör två olika åtgärder, men den syns inte förrän man behöver den.
 
 **Inga procenttal, ingen "fördelning", ingen "andel" i gränssnittet.** Användaren anger artikel och belopp, och markerar vad som är privat. Systemet räknar ut resten. Den som ska använda appen är en person som målat sitt sovrum, inte en bokförare.
 
 **Avläsningen får fylla i artiklar och belopp, men aldrig fördelningen.** Modellen kan läsa kvittoraderna, men den kan inte veta att ett torkställ är privat och en pensel inte – det beror på åtgärden, inte på kvittot. Ett felaktigt förval här blir tyst godkänt och ger ett för högt underlag.
+
 
 ### Kostnadsformulärets ordning
 

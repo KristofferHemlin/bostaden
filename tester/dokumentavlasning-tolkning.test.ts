@@ -5,8 +5,8 @@ import {
 } from "@/lib/dokumentavlasning/tolkning";
 
 // Dokumentavlasningen (produktspec avsnitt 9) skickar kvittot till en sprakmodell
-// och far tillbaka falten datum, totalbelopp inklusive moms, valuta och
-// leverantor. Modellsvaret ar text och ska tolkas DEFENSIVT: saknade eller
+// och far tillbaka falten datum, totalbelopp inklusive moms, valuta, leverantor
+// och utnyttjat ROT-avdrag. Modellsvaret ar text och ska tolkas DEFENSIVT: saknade eller
 // olasbara falt blir null, aldrig en gissning. Ett gissat belopp – eller ett
 // eurobelopp i ett kronfalt – som hamnar i ett deklarationsunderlag ar det
 // varsta felet appen kan gora. Darfor testas parsningen fore implementationen
@@ -14,20 +14,24 @@ import {
 
 describe("tolkaDokumentsvar: rent modellsvar", () => {
   it("tolkar ett rent JSON-objekt med alla tre falt", () => {
-    const svar = '{"datum":"2026-08-22","totalbelopp":1020.95,"leverantor":"Bauhaus Bromma"}';
+    const svar =
+      '{"datum":"2026-08-22","totalbelopp":1020.95,"leverantor":"Bauhaus Bromma"}';
     expect(tolkaDokumentsvar(svar)).toEqual({
       datum: "2026-08-22",
       totalbelopp: 102095,
       leverantor: "Bauhaus Bromma",
+      rot_utnyttjat: null,
     });
   });
 
   it("tolkar JSON inne i ett ```json-kodstaket", () => {
-    const svar = "```json\n{\n  \"datum\": \"2026-08-22\",\n  \"totalbelopp\": 1020.95,\n  \"leverantor\": \"Bauhaus\"\n}\n```";
+    const svar =
+      '```json\n{\n  "datum": "2026-08-22",\n  "totalbelopp": 1020.95,\n  "leverantor": "Bauhaus"\n}\n```';
     expect(tolkaDokumentsvar(svar)).toEqual({
       datum: "2026-08-22",
       totalbelopp: 102095,
       leverantor: "Bauhaus",
+      rot_utnyttjat: null,
     });
   });
 
@@ -38,6 +42,18 @@ describe("tolkaDokumentsvar: rent modellsvar", () => {
       datum: "2026-08-22",
       totalbelopp: 49900,
       leverantor: "Clas Ohlson",
+      rot_utnyttjat: null,
+    });
+  });
+
+  it("tolkar en faktura med utnyttjat ROT-avdrag", () => {
+    const svar =
+      '{"datum":"2026-09-01","totalbelopp":50000,"valuta":"SEK","leverantor":"K-Bygg Sverige AB","rot_utnyttjat":9000}';
+    expect(tolkaDokumentsvar(svar)).toEqual({
+      datum: "2026-09-01",
+      totalbelopp: 5000000,
+      leverantor: "K-Bygg Sverige AB",
+      rot_utnyttjat: 900000,
     });
   });
 });
@@ -82,21 +98,22 @@ describe("tolkaDokumentsvar: falt som saknas eller ar null tolkas inte till nago
       datum: null,
       totalbelopp: null,
       leverantor: "Bauhaus Bromma",
+      rot_utnyttjat: null,
     });
   });
 
   it("falt satt till null i JSON forblir null", () => {
     expect(
-      tolkaDokumentsvar(
-        '{"datum":null,"totalbelopp":null,"leverantor":null}',
-      ),
+      tolkaDokumentsvar('{"datum":null,"totalbelopp":null,"leverantor":null}'),
     ).toEqual(TOMT_DOKUMENTFALT);
   });
 });
 
 describe("tolkaDokumentsvar: datum", () => {
   it("giltigt YYYY-MM-DD behalls oforandrat", () => {
-    expect(tolkaDokumentsvar('{"datum":"2015-03-07"}').datum).toBe("2015-03-07");
+    expect(tolkaDokumentsvar('{"datum":"2015-03-07"}').datum).toBe(
+      "2015-03-07",
+    );
   });
 
   it("orimligt datum (2026-13-40) ger null", () => {
@@ -193,7 +210,7 @@ describe("tolkaDokumentsvar: valuta – bara kronbelopp slapps igenom", () => {
     ).toBe(null);
   });
 
-  it("euro-kvitto: datum och leverantor tolkas anda, bara beloppet nollas", () => {
+  it("euro-kvitto: datum och leverantor tolkas anda, bara beloppen nollas", () => {
     expect(
       tolkaDokumentsvar(
         '{"datum":"2026-08-22","totalbelopp":19.90,"valuta":"EUR","leverantor":"Lidl"}',
@@ -202,6 +219,7 @@ describe("tolkaDokumentsvar: valuta – bara kronbelopp slapps igenom", () => {
       datum: "2026-08-22",
       totalbelopp: null,
       leverantor: "Lidl",
+      rot_utnyttjat: null,
     });
   });
 
@@ -241,5 +259,86 @@ describe("tolkaDokumentsvar: leverantor", () => {
 
   it("leverantor som tal ger null", () => {
     expect(tolkaDokumentsvar('{"leverantor":12345}').leverantor).toBe(null);
+  });
+});
+
+// ROT-avdraget (docs/design.md, "ROT-avdrag"): avlasningen far fylla i
+// rot_utnyttjat NAR det gar att lasa ur dokumentet. Samma defensiva regler som
+// for totalbeloppet: bara kronbelopp, saknade eller olasbara varden blir null,
+// aldrig en gissning. ROT lagras alltid i kronor, aldrig som procentsats – en
+// procentsats slinker inte igenom beloppstolkningen, men testas anda. Modellen
+// ombeds inte langre om arbetskostnad – bara ROT-beloppet paverkar underlaget.
+
+describe("tolkaDokumentsvar: rot_utnyttjat (kronor, aldrig procent)", () => {
+  it("beloppet i kronor tolkas till oren", () => {
+    expect(tolkaDokumentsvar('{"rot_utnyttjat":9000}').rot_utnyttjat).toBe(
+      900000,
+    );
+  });
+
+  it("tal med decimaler tolkas till oren", () => {
+    expect(tolkaDokumentsvar('{"rot_utnyttjat":8999.50}').rot_utnyttjat).toBe(
+      899950,
+    );
+  });
+
+  it("strang med kr-suffix tolkas anda", () => {
+    expect(
+      tolkaDokumentsvar('{"rot_utnyttjat":"9 000 kr"}').rot_utnyttjat,
+    ).toBe(900000);
+  });
+
+  it("falt som saknas ger null", () => {
+    expect(tolkaDokumentsvar('{"totalbelopp":50000}').rot_utnyttjat).toBe(null);
+  });
+
+  it("falt satt till null forblir null", () => {
+    expect(tolkaDokumentsvar('{"rot_utnyttjat":null}').rot_utnyttjat).toBe(
+      null,
+    );
+  });
+
+  it("noll ger null", () => {
+    expect(tolkaDokumentsvar('{"rot_utnyttjat":0}').rot_utnyttjat).toBe(null);
+  });
+
+  it("negativt belopp ger null", () => {
+    expect(tolkaDokumentsvar('{"rot_utnyttjat":-1500}').rot_utnyttjat).toBe(
+      null,
+    );
+  });
+
+  it("en procentsats ('30%') slinker inte igenom som ett belopp", () => {
+    // "30%" -> siffrorna "30" blir 30 kr, men det ar inte det testet bevakar:
+    // modellen instrueras att aldrig skicka en procentsats. Kommer den anda in
+    // som ren text utan siffror blir det null.
+    expect(
+      tolkaDokumentsvar('{"rot_utnyttjat":"trettio procent"}').rot_utnyttjat,
+    ).toBe(null);
+  });
+
+  it("nollas nar valutan inte ar kronor", () => {
+    expect(
+      tolkaDokumentsvar('{"rot_utnyttjat":900,"valuta":"USD"}').rot_utnyttjat,
+    ).toBe(null);
+  });
+
+  it("slapps igenom nar valuta saknas", () => {
+    expect(tolkaDokumentsvar('{"rot_utnyttjat":9000}').rot_utnyttjat).toBe(
+      900000,
+    );
+  });
+
+  it("datum och leverantor tolkas anda nar valutan blockerar beloppen", () => {
+    expect(
+      tolkaDokumentsvar(
+        '{"datum":"2026-09-01","totalbelopp":5000,"valuta":"EUR","leverantor":"Baumeister GmbH","rot_utnyttjat":900}',
+      ),
+    ).toEqual({
+      datum: "2026-09-01",
+      totalbelopp: null,
+      leverantor: "Baumeister GmbH",
+      rot_utnyttjat: null,
+    });
   });
 });

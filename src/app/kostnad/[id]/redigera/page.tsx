@@ -73,6 +73,10 @@ export default async function RedigeraKostnadSida({
             : "",
           betaldatum: kostnad.betaldatum ? isoDatum(kostnad.betaldatum) : "",
           projektId: kopplatProjektId,
+          rotUtnyttjat:
+            kostnad.rot_utnyttjat !== null
+              ? orenTillFalt(kostnad.rot_utnyttjat)
+              : "",
         }}
       />
     </Skarm>

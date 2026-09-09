@@ -36,6 +36,7 @@ export function Listrad({
   href,
   atgard,
   bild,
+  slutknapp,
 }: {
   namn: string;
   status?: string;
@@ -44,6 +45,12 @@ export function Listrad({
   atgard?: boolean;
   /** Liten miniatyr till vanster – anvands for utkast som annu bara ar en bild. */
   bild?: { src: string; alt: string };
+  /**
+   * Valfri kontroll langst till hoger, UTANFOR radens klickyta – anvands for
+   * soptunnan pa utkast (docs/design.md, "Kvittolistan"). Kraver `href`; ligger
+   * bredvid lanken med egen luft sa den inte traffas av misstag.
+   */
+  slutknapp?: ReactNode;
 }) {
   const innehall = (
     <div className="flex items-baseline justify-between gap-3 p-4">
@@ -79,11 +86,24 @@ export function Listrad({
   );
 
   if (href) {
-    return (
-      <Link href={href} className="block transition-colors hover:bg-yta-nedsankt">
+    const lank = (
+      <Link
+        href={href}
+        className="block min-w-0 flex-1 transition-colors hover:bg-yta-nedsankt"
+      >
         {innehall}
       </Link>
     );
+    // Utan slutknapp ar lanken hela raden; flex-klasserna ovan ar da inerta.
+    if (slutknapp) {
+      return (
+        <div className="flex items-stretch">
+          {lank}
+          {slutknapp}
+        </div>
+      );
+    }
+    return lank;
   }
   return innehall;
 }
@@ -109,6 +129,68 @@ export function Falt({
         </span>
       ) : null}
     </label>
+  );
+}
+
+/**
+ * En valfri, hopfalld del av ett formular (docs/design.md, "Utfallbara
+ * sektioner"): "Betalades ett annat datum?", "Anlitade du nagon?", "Var nagot pa
+ * kvittot privat?". Alla foljer samma monster.
+ *
+ * Raden ar en KNAPP, inte en lank: ingen understrykning, --text-primar i normal
+ * vikt, och en tunn chevron till hoger som pekar nedat och roterar 180 grader
+ * nar sektionen ar oppen. Ingen toggle och ingen kryssruta – fragan ska ga att
+ * ignorera helt.
+ *
+ * Hopfallt ar alltid forvalet, utom nar sektionen redan har ett varde – det
+ * avgor anroparen via `oppen`. Samlas flera pa samma stalle ska de ha samma
+ * luft mellan sig som mellan tva falt.
+ */
+export function UtfallbarSektion({
+  etikett,
+  oppen,
+  onToggle,
+  children,
+}: {
+  etikett: string;
+  oppen: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={oppen}
+        className="flex w-full items-center justify-between gap-3 rounded-sm text-left font-granssnitt text-sm text-text-primar outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        {etikett}
+        <ChevronNed
+          className={`h-4 w-4 shrink-0 text-text-sekundar transition-transform ${
+            oppen ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+      {oppen ? <div className="mt-3">{children}</div> : null}
+    </div>
+  );
+}
+
+function ChevronNed({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={className}
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
   );
 }
 

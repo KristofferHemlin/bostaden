@@ -22,24 +22,23 @@ export const dynamic = "force-dynamic";
 export default async function NyKostnadSida({
   searchParams,
 }: {
-  searchParams: Promise<{ projekt?: string; utkast?: string }>;
+  searchParams: Promise<{ utkast?: string }>;
 }) {
-  const { projekt: forvaltProjekt, utkast: utkastId } = await searchParams;
+  const { utkast: utkastId } = await searchParams;
   const { bostadId } = await kravBostad();
 
-  const [bostad, projekt] = await Promise.all([
-    prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } }),
-    prisma.projekt.findMany({
-      where: { bostad_id: bostadId },
-      orderBy: [{ ar: "desc" }, { skapad_at: "asc" }],
-      select: { id: true, namn: true, ar: true },
-    }),
-  ]);
+  const bostad = await prisma.bostad.findUniqueOrThrow({
+    where: { id: bostadId },
+  });
   const { bostadsnamn } = bostadHeader(bostad);
 
-  let utkast: { id: string; anteckning: string | null; bilagor: Awaited<
-    ReturnType<typeof listaKostnadsbilagor>
-  > } | undefined;
+  let utkast:
+    | {
+        id: string;
+        anteckning: string | null;
+        bilagor: Awaited<ReturnType<typeof listaKostnadsbilagor>>;
+      }
+    | undefined;
 
   if (utkastId) {
     const rad = await prisma.kostnad.findFirst({
@@ -62,11 +61,7 @@ export default async function NyKostnadSida({
       rubrik={utkast ? "Komplettera kvittot" : "Nytt kvitto"}
       bakLank={{ href: "/", text: "Översikt" }}
     >
-      <NyKostnadForm
-        projekt={projekt}
-        forvaltProjekt={forvaltProjekt}
-        utkast={utkast}
-      />
+      <NyKostnadForm utkast={utkast} />
     </Skarm>
   );
 }

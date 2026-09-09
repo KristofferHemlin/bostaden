@@ -9,6 +9,14 @@
 // Ar kostnaden uppdelad pa flera rader visas belopp och projektkoppling som
 // lasta, med en lank till "Dela upp kvittot" dar raderna andras (steg 10).
 //
+// ROT-raden "Fick du ROT-avdrag?" (docs/design.md, "ROT-avdrag") gar att andra
+// har ocksa – ett enda falt, ROT-beloppet i kronor. Den foljer samma monster
+// som i inmatningsformularet (docs/design.md, "Utfallbara sektioner"): en knapp
+// med en tunn chevron till hoger, ingen understruken lank. Hopfalld tills den
+// redan har ett varde, far lamnas tom. `anlitad_entreprenor` harleds pa servern
+// ur att ett ROT-belopp finns. En kostnad med ROT far bara vara kopplad till ett
+// projekt (produktspec 5) – valideras i actionen.
+//
 // Borttagningen ligger sist, tydligt skild fran spara-knappen, och kraver ett
 // extra bekraftelsesteg. Den tar med bilagorna.
 
@@ -25,6 +33,7 @@ import {
   INPUT_KLASS,
   Meddelanderuta,
   PRIMARKNAPP_KLASS,
+  UtfallbarSektion,
 } from "@/components/skarm";
 import { formateraBeloppInmatning, formateraKronor } from "@/lib/format";
 
@@ -52,6 +61,7 @@ export function RedigeraKostnadForm({
     dokumentdatum: string;
     betaldatum: string;
     projektId: string;
+    rotUtnyttjat: string;
   };
 }) {
   const [resultat, spara, sparar] = useActionState(redigeraKostnad, START);
@@ -59,6 +69,14 @@ export function RedigeraKostnadForm({
   const [bekraftaRadera, setBekraftaRadera] = useState(false);
   const [totalbelopp, setTotalbelopp] = useState(() =>
     formateraBeloppInmatning(varden.totalbelopp),
+  );
+
+  // ROT-raden "Fick du ROT-avdrag?" (docs/design.md, "ROT-avdrag"). Ett enda
+  // falt, ROT-beloppet i kronor. Oppen fran start nar den redan har ett varde,
+  // annars hopfalld. Far lamnas tom.
+  const [rotOppen, setRotOppen] = useState(varden.rotUtnyttjat !== "");
+  const [rotUtnyttjat, setRotUtnyttjat] = useState(() =>
+    formateraBeloppInmatning(varden.rotUtnyttjat),
   );
 
   return (
@@ -78,7 +96,10 @@ export function RedigeraKostnadForm({
         </Falt>
 
         {enkel ? (
-          <Falt etikett="Totalbelopp" hjalp="Hela kvittosumman, t.ex. 1 020,95.">
+          <Falt
+            etikett="Totalbelopp"
+            hjalp="Hela kvittosumman, t.ex. 1 020,95."
+          >
             <BeloppFalt
               name="totalbelopp"
               required
@@ -119,10 +140,33 @@ export function RedigeraKostnadForm({
             />
           </Falt>
           <p className="mt-1 font-granssnitt text-xs text-text-dampad">
-            Styr vilket år kvittot räknas till. Lämna tomt om det inte är
-            betalt än – då räknas det inte in i årssumman.
+            Styr vilket år kvittot räknas till. Lämna tomt om det inte är betalt
+            än – då räknas det inte in i årssumman.
           </p>
         </div>
+
+        {/* "Fick du ROT-avdrag?" – ett enda fält, ROT-beloppet i kronor
+            (docs/design.md, "ROT-avdrag"). Knapp med chevron, öppen från start
+            när fältet redan har ett värde. anlitad_entreprenor härleds på
+            servern ur att ett belopp finns. */}
+        <UtfallbarSektion
+          etikett="Fick du ROT-avdrag?"
+          oppen={rotOppen}
+          onToggle={() => setRotOppen((v) => !v)}
+        >
+          <Falt
+            etikett="ROT-avdrag"
+            hjalp="Beloppet står på fakturan som det avdrag som redan dragits av. Anges i kronor, inte procent."
+          >
+            <BeloppFalt
+              name="rot_utnyttjat"
+              value={rotUtnyttjat}
+              onValueChange={setRotUtnyttjat}
+              className={INPUT_KLASS}
+              placeholder="0,00"
+            />
+          </Falt>
+        </UtfallbarSektion>
 
         {enkel ? (
           <Falt

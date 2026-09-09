@@ -38,6 +38,15 @@ const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 // med betaldatum fore dess avvisas har i stallet for att berakningen kastar fel.
 const TIDIGASTE_BETALDATUM = "1970-01-01";
 
+const SEK5_FEL =
+  "Kvittot har ROT-avdrag eller försäkringsersättning och kan då bara vara " +
+  "kopplat till ett projekt. Dela upp fakturan på två kostnader i stället.";
+
+/** Ett belopp som anvandaren kan ha lamnat tomt eller pa noll blir null. */
+function positivtEllerNull(varde: number | null): number | null {
+  return varde !== null && varde > 0 ? varde : null;
+}
+
 function revalideraKostnadsvyer(kostnadId: string): void {
   revalidatePath("/");
   revalidatePath("/kostnad");
@@ -69,6 +78,13 @@ export async function redigeraKostnad(
   const betaldatum = String(formData.get("betaldatum") ?? "").trim();
   const projektId = String(formData.get("projekt_id") ?? "").trim();
 
+  // ROT-avdraget (docs/design.md, "ROT-avdrag"). Ett enda falt, far lamnas
+  // tomt. anlitad_entreprenor harleds ur att ett ROT-belopp finns.
+  const rotUtnyttjat = positivtEllerNull(
+    oreFranKronor(String(formData.get("rot_utnyttjat") ?? "")),
+  );
+  const anlitadEntreprenor = rotUtnyttjat !== null;
+
   if (!leverantor) return { fel: "Fyll i leverantör." };
   if (!DATUM.test(dokumentdatum)) return { fel: "Fyll i kvittots datum." };
   if (betaldatum !== "") {
@@ -78,17 +94,43 @@ export async function redigeraKostnad(
     }
   }
 
+  // ROT-beloppet ar en del av totalbeloppet – ett varde over det ar en
+  // felskrivning.
+  if (rotUtnyttjat !== null && rotUtnyttjat > kostnad.totalbelopp) {
+    return { fel: "ROT-avdraget kan inte vara större än totalbeloppet." };
+  }
+
+  // Ar ROT eller forsakringsersattning satt far kostnaden bara vara kopplad
+  // till ett projekt (produktspec 5). En enkel kostnad har alltid hogst ett
+  // projekt; en uppdelad kan spanna flera och maste da kontrolleras.
+  const antalProjekt = new Set(
+    kostnad.rader
+      .flatMap((r) => r.fordelningar)
+      .filter((f) => !f.privat && f.projekt_id)
+      .map((f) => f.projekt_id as string),
+  ).size;
+  const harAvdragspost =
+    rotUtnyttjat !== null || (kostnad.forsakringsersattning ?? 0) > 0;
+  if (harAvdragspost && antalProjekt > 1) {
+    return { fel: SEK5_FEL };
+  }
+
   const dok = new Date(`${dokumentdatum}T00:00:00.000Z`);
   const bet = betaldatum ? new Date(`${betaldatum}T00:00:00.000Z`) : null;
+
+  const rotFalt = {
+    anlitad_entreprenor: anlitadEntreprenor,
+    rot_utnyttjat: rotUtnyttjat,
+  };
 
   const enkel = arEnkelKostnad(tillDomanKostnad(kostnad));
 
   if (!enkel) {
-    // Uppdelad kostnad: bara leverantor och datum andras har. Belopp och
-    // koppling hor till raduppdelningen (senare steg).
+    // Uppdelad kostnad: bara leverantor, datum och ROT-faltet andras har.
+    // Belopp och koppling hor till raduppdelningen (senare steg).
     await prisma.kostnad.update({
       where: { id },
-      data: { leverantor, dokumentdatum: dok, betaldatum: bet },
+      data: { leverantor, dokumentdatum: dok, betaldatum: bet, ...rotFalt },
     });
     revalideraKostnadsvyer(id);
     redirect(`/kostnad/${id}`);
@@ -97,6 +139,9 @@ export async function redigeraKostnad(
   const totalbelopp = oreFranKronor(String(formData.get("totalbelopp") ?? ""));
   if (totalbelopp === null || totalbelopp <= 0) {
     return { fel: "Fyll i ett belopp större än noll, t.ex. 1 020,95." };
+  }
+  if (rotUtnyttjat !== null && rotUtnyttjat > totalbelopp) {
+    return { fel: "ROT-avdraget kan inte vara större än totalbeloppet." };
   }
 
   let kopplatProjekt: string | null = null;
@@ -110,12 +155,19 @@ export async function redigeraKostnad(
   }
 
   const rad = kostnad.rader[0];
-  const nyArtikel = rad.artikel === kostnad.leverantor ? leverantor : rad.artikel;
+  const nyArtikel =
+    rad.artikel === kostnad.leverantor ? leverantor : rad.artikel;
 
   await prisma.$transaction([
     prisma.kostnad.update({
       where: { id },
-      data: { leverantor, totalbelopp, dokumentdatum: dok, betaldatum: bet },
+      data: {
+        leverantor,
+        totalbelopp,
+        dokumentdatum: dok,
+        betaldatum: bet,
+        ...rotFalt,
+      },
     }),
     prisma.kostnadsrad.update({
       where: { id: rad.id },

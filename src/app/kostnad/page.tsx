@@ -12,6 +12,7 @@
 // "Ordval i granssnittet") – bara det anvandaren moter byter till "kvitto".
 
 import Link from "next/link";
+import { UtkastRaderaKnapp } from "./utkast-radera";
 import { Listrad, PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import { arUtkast } from "@/doman/berakningar";
 import { bostadHeader } from "@/lib/bostad-header";
@@ -26,6 +27,7 @@ interface KvittoRad {
   namn: string;
   status: string;
   atgard: boolean;
+  utkast: boolean;
   belopp: string | undefined;
   href: string;
   bild: { src: string; alt: string } | undefined;
@@ -90,6 +92,7 @@ export default async function KvittolistaSida() {
       namn: notering || leverantor || "Kvitto",
       status,
       atgard,
+      utkast,
       belopp: utkast ? undefined : formateraKronor(k.totalbelopp ?? 0),
       href: utkast ? `/kostnad/nytt?utkast=${k.id}` : `/kostnad/${k.id}`,
       bild:
@@ -165,6 +168,11 @@ export default async function KvittolistaSida() {
                     belopp={r.belopp}
                     href={r.href}
                     bild={r.bild}
+                    slutknapp={
+                      r.utkast ? (
+                        <UtkastRaderaKnapp kostnadId={r.id} lage="ikon" />
+                      ) : undefined
+                    }
                   />
                 ))}
               </div>

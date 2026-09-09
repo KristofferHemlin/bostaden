@@ -96,8 +96,15 @@ type Tolkad =
       dok: Date;
       bet: Date | null;
       anteckning: string | null;
+      anlitadEntreprenor: boolean;
+      rotUtnyttjat: number | null;
       rader: RadUtkast[];
     };
+
+/** Ett belopp som anvandaren kan ha lamnat tomt eller pa noll blir null. */
+function positivtEllerNull(varde: number | null): number | null {
+  return varde !== null && varde > 0 ? varde : null;
+}
 
 /** Delad falt- och radtolkning for bade "skapa ny" och "slutfor utkast". */
 async function tolkaKostnadsformular(
@@ -111,11 +118,27 @@ async function tolkaKostnadsformular(
   const anteckning = String(formData.get("anteckning") ?? "").trim();
   const projektId = String(formData.get("projekt_id") ?? "").trim();
 
+  // ROT-avdraget (docs/design.md, "ROT-avdrag"). Ett enda falt, far lamnas
+  // tomt. anlitad_entreprenor harleds ur att ett ROT-belopp finns – ROT
+  // forutsatter anlitat arbete.
+  const rotUtnyttjat = positivtEllerNull(
+    oreFranKronor(String(formData.get("rot_utnyttjat") ?? "")),
+  );
+  const anlitadEntreprenor = rotUtnyttjat !== null;
+
   if (!leverantor) return { fel: "Fyll i leverantör." };
 
   const totalbelopp = oreFranKronor(beloppText);
   if (totalbelopp === null || totalbelopp <= 0) {
     return { fel: "Fyll i ett belopp större än noll, t.ex. 1 020,95." };
+  }
+
+  // ROT-beloppet ar en del av totalbeloppet – ett varde over det ar en
+  // felskrivning. Blockerar inte flodet, anvandaren rattar bara talet.
+  if (rotUtnyttjat !== null && rotUtnyttjat > totalbelopp) {
+    return {
+      fel: "ROT-avdraget kan inte vara större än totalbeloppet.",
+    };
   }
   if (!DATUM.test(dokumentdatum)) {
     return { fel: "Fyll i kvittots datum." };
@@ -136,7 +159,9 @@ async function tolkaKostnadsformular(
       select: { id: true },
     });
     if (!projekt) {
-      return { fel: "Det du valde att koppla kostnaden till finns inte längre." };
+      return {
+        fel: "Det du valde att koppla kostnaden till finns inte längre.",
+      };
     }
     befintligtProjektId = projekt.id;
   }
@@ -151,14 +176,20 @@ async function tolkaKostnadsformular(
 
   let rader: RadUtkast[];
   if (harUppdelning) {
-    const inlineRader: InlineUppdelningsrad[] = radArtiklar.map((artikel, i) => ({
-      artikel,
-      belopp: radBelopp[i] ?? "",
-      privat: (radPrivat[i] ?? "") !== "",
-    }));
+    const inlineRader: InlineUppdelningsrad[] = radArtiklar.map(
+      (artikel, i) => ({
+        artikel,
+        belopp: radBelopp[i] ?? "",
+        privat: (radPrivat[i] ?? "") !== "",
+      }),
+    );
     const tolkad = tolkaUppdelning(
       inlineUppdelningTillIndata(inlineRader, malForRader),
       totalbelopp,
+      // En kostnad med ROT far bara kopplas till ett projekt (produktspec 5).
+      // Inline-grenen fordelar redan bara till ett mal, men grinden hor hemma
+      // dar regeln finns.
+      { endastEttProjekt: rotUtnyttjat !== null },
     );
     if ("fel" in tolkad) return { fel: tolkad.fel };
     rader = tolkad.rader.map((r) => ({
@@ -184,6 +215,8 @@ async function tolkaKostnadsformular(
     dok: new Date(`${dokumentdatum}T00:00:00.000Z`),
     bet: betaldatum ? new Date(`${betaldatum}T00:00:00.000Z`) : null,
     anteckning: anteckning || null,
+    anlitadEntreprenor,
+    rotUtnyttjat,
     rader,
   };
 }
@@ -218,7 +251,16 @@ export async function sparaKostnad(
 
   const tolkad = await tolkaKostnadsformular(formData, bostadId);
   if ("fel" in tolkad) return { fel: tolkad.fel };
-  const { leverantor, totalbelopp, dok, bet, anteckning, rader } = tolkad;
+  const {
+    leverantor,
+    totalbelopp,
+    dok,
+    bet,
+    anteckning,
+    anlitadEntreprenor,
+    rotUtnyttjat,
+    rader,
+  } = tolkad;
 
   if (utkastId !== "") {
     const utkast = await prisma.kostnad.findFirst({
@@ -241,6 +283,8 @@ export async function sparaKostnad(
           dokumentdatum: dok,
           betaldatum: bet,
           anteckning,
+          anlitad_entreprenor: anlitadEntreprenor,
+          rot_utnyttjat: rotUtnyttjat,
           rader: raderSkapa(rader),
         },
       }),
@@ -257,6 +301,8 @@ export async function sparaKostnad(
       dokumentdatum: dok,
       betaldatum: bet,
       anteckning,
+      anlitad_entreprenor: anlitadEntreprenor,
+      rot_utnyttjat: rotUtnyttjat,
       rader: raderSkapa(rader),
     },
     select: { id: true },

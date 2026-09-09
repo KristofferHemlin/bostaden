@@ -1,13 +1,27 @@
 "use client";
 
 // Steg 5 + 9 + dokumentavlasning (produktspec avsnitt 2b och 9, docs/design.md
-// "Kostnadsformularets ordning", "Bilagor", "Datum i kostnadsformularet",
-// "Inmatningen staller inga skattefragor", "Uppdelning av kvitto vid inmatning").
+// "Inmatningen har fem falt, inget mer", "Kostnadsformularets ordning",
+// "Bilagor", "Datum i kostnadsformularet", "Inmatningen staller inga
+// skattefragor").
 //
-// INGA SKATTEFRAGOR VID INMATNINGEN. Klassificeringen (de fyra fragorna,
-// kategori, femarsfonstret) gors i en egen genomgang nar anvandaren sjalv vill.
-// Formularet innehaller bilaga, belopp, datum, leverantor och fritextfaltet
-// "Vad gallde det?" – ingenting annat. Ordet "projekt" syns inte har.
+// FEM FALT, INGET MER (docs/design.md, "Inmatningen har fem falt, inget mer").
+// Formularet innehaller bilaga, belopp, datum, leverantor och anteckningen "Vad
+// gallde det?" – ingenting annat. Ordet "projekt" syns inte har.
+//
+// Det som INTE ryms i inmatningen gors i efterhand fran kvittots detaljvy:
+//   * Betaldatum som skiljer sig fran kvittots datum -> "Andra uppgifter".
+//   * Uppdelning nar nagot var privat -> "Var nagot pa kvittot privat?".
+//   * Koppling till en befintlig gruppering -> klassificeringsgenomgangen.
+// Datumfaltet satter bade dokumentdatum och betaldatum till samma dag; en
+// avvikande betaldag ar nastan bara obetalda fakturor och hor till rattningen.
+//
+// UNDANTAG: ROT-raden "Fick du ROT-avdrag?" (docs/design.md, "ROT-avdrag").
+// Raden visas ALLTID – utfalld nar dokumentavlasningen last ett ROT-belopp,
+// hopfalld annars. Att dolja den helt nar ingenting lastes av gor faltet
+// onaabart nar avlasningen misslyckas eller kvittot ar handskrivet. Ett enda
+// falt: ROT-beloppet i kronor. Raden far lamnas tom och fyllas i senare via
+// "Andra uppgifter".
 //
 // Ordning: BILAGAN FORST, sedan belopp, datum, leverantor och "Vad gallde det?".
 // Den som just handlat vill fota kvittot och fa resten ifyllt, inte skriva fem
@@ -40,40 +54,32 @@
 // sin forsta sida med pdf.js, aldrig webblasarens inbyggda visare. En ikon ar
 // sista utvag nar renderingen misslyckas, inte utgangslaget.
 //
-// Datum: ett falt "Datum" satter bade kvittots datum och betaldatum. Under det en
-// lank "Betalades ett annat datum?" som faller ut betaldatumet som eget falt,
-// forifyllt med samma datum. Tomt betaldatum = obetald = raknas inte in i
-// arssumman.
-//
 // "Vad gallde det?": valfritt fritextfalt som sparas i kostnadens anteckning.
 // Atta ar senare ar den raden plus bilagan det som gor klassificeringen mojlig,
 // sa hjalptexten uppmuntrar en beskrivande mening, inte ett ord.
 //
-// Langst ned en hopfalld genvag for den vane: koppla kostnaden direkt till nagot
-// som redan lagts in. Bara befintliga grupperingar – inga nya, inga fragor. Det
-// ar en genvag, inte vagen in, och doljs helt nar inget finns att koppla till.
-//
-// "Var nagot pa kvittot privat?": utfallbar uppdelning under totalbeloppet, precis
-// som betaldatumet. Tva rader som forval – en privat, resten sparas som vanligt.
-// Inga procenttal: anvandaren anger artikel och belopp och markerar vad som ar
-// privat. En "Lagg till rad"-knapp visas forst nar raderna ar ifyllda. Ett
-// kvitto som inte delas upp sparas i sin helhet.
+// ROT-raden ar en UtfallbarSektion (docs/design.md, "Utfallbara sektioner"): en
+// knapp "Fick du ROT-avdrag?" med en tunn chevron till hoger, ingen understruken
+// lank. Den renderas alltid; `rotOppen` styr chevronens lage och sätts nar
+// avlasningen last ett ROT-belopp. Ett enda falt, ROT-beloppet i kronor, aldrig
+// i procent. `anlitad_entreprenor` harleds pa servern ur att ett ROT-belopp
+// finns. En kostnad med ROT far bara kopplas till ett projekt (produktspec 5);
+// relevant forst vid uppdelning, som gors i efterhand.
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { skapaUtkast, sparaKostnad, type KostnadResultat } from "./actions";
-import {
-  analyseraBilaga,
-  taBortBilaga,
-} from "@/app/kostnad/bilaga-actions";
+import { analyseraBilaga, taBortBilaga } from "@/app/kostnad/bilaga-actions";
+import { UtkastRaderaKnapp } from "@/app/kostnad/utkast-radera";
 import { BeloppFalt } from "@/components/belopp-falt";
-import { Falt, INPUT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
 import {
-  formateraBeloppInmatning,
-  formateraKronor,
-  oreFranKronor,
-} from "@/lib/format";
+  Falt,
+  INPUT_KLASS,
+  PRIMARKNAPP_KLASS,
+  UtfallbarSektion,
+} from "@/components/skarm";
+import { formateraBeloppInmatning } from "@/lib/format";
 import { laddaUppKostnadsbilaga } from "@/lib/lagring/bilaga-klient";
 import { kannIgenFormat } from "@/lib/lagring/bilaga-regler";
 import type { Bilagevy } from "@/lib/lagring/bilagor";
@@ -89,12 +95,6 @@ const RUTA =
 const LAGG_TILL_RUTA =
   "flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-linje font-granssnitt text-[10px] leading-tight text-text-sekundar transition-colors hover:bg-yta-nedsankt";
 
-export interface Projektval {
-  id: string;
-  namn: string;
-  ar: number;
-}
-
 interface Miniatyr {
   namn: string;
   /** Object-URL for bilder i miniatyrraden, null for PDF/HEIC (ikon i stallet). */
@@ -108,14 +108,6 @@ interface Forhandsvisning {
   /** Renderad bild att visa i full bredd, null medan en PDF fortfarande renderas. */
   bildUrl: string | null;
   arPdf: boolean;
-}
-
-/** En rad i den utfallbara uppdelningen. Inga procenttal – bara "privat" eller ej. */
-interface Uppdelningsrad {
-  artikel: string;
-  belopp: string;
-  privat: boolean;
-  nyckel: number;
 }
 
 // pdf.js laddas forst nar en PDF ska visas (haller det borta fran
@@ -186,15 +178,7 @@ interface Filstatus {
   fel?: string;
 }
 
-export function NyKostnadForm({
-  projekt,
-  forvaltProjekt,
-  utkast,
-}: {
-  projekt: Projektval[];
-  forvaltProjekt?: string;
-  utkast?: Utkast;
-}) {
+export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
   const router = useRouter();
 
   // Kostnaden sparas via server action, sedan laddar webblasaren upp ev.
@@ -223,9 +207,8 @@ export function NyKostnadForm({
   // Forhandsvisning direkt vid val, innan sparning – ett filnamn i gra text ar
   // inte en bekraftelse pa att ratt fil valts (docs/design.md, "Bilagor").
   const [miniatyrer, setMiniatyrer] = useState<Miniatyr[]>([]);
-  const [forhandsvisning, setForhandsvisning] = useState<Forhandsvisning | null>(
-    null,
-  );
+  const [forhandsvisning, setForhandsvisning] =
+    useState<Forhandsvisning | null>(null);
   const [renderFel, setRenderFel] = useState(false);
 
   // Falten analysen kan fylla i. Kontrollerade sa att avlasningen kan lasa av om
@@ -240,40 +223,27 @@ export function NyKostnadForm({
     faltRef.current = falt;
   }, [falt]);
 
-  // Betaldatum foljer "Datum" tills anvandaren fallt ut det som eget falt.
-  const [egetBetaldatum, setEgetBetaldatum] = useState(false);
-  const [betaldatum, setBetaldatum] = useState("");
-  const effektivtBetaldatum = egetBetaldatum ? betaldatum : falt.datum;
-
   const [avlasningPagar, setAvlasningPagar] = useState(false);
   const [avlasningFyllde, setAvlasningFyllde] = useState(false);
 
   // "Vad gallde det?" – valfri fritext, sparas i kostnadens anteckning.
   const [anteckning, setAnteckning] = useState(utkast?.anteckning ?? "");
 
-  // Hopfalld genvag langst ned: koppla kostnaden direkt till nagot som redan
-  // lagts in. Bara befintliga grupperingar – inga nya, inga fragor. Forifylls
-  // fran ?projekt= pa lanken fran en grupperings sida.
-  const forvaltMal = projekt.find((p) => p.id === forvaltProjekt) ?? null;
-  const [kopplaOppen, setKopplaOppen] = useState(forvaltMal !== null);
-  const [valtProjektId, setValtProjektId] = useState(forvaltMal?.id ?? "");
-  const valtProjekt = projekt.find((p) => p.id === valtProjektId) ?? null;
-  const kopplatMal = kopplaOppen ? valtProjekt : null;
-
-  // Utfallbar uppdelning – tva rader som forval, en privat och resten.
-  const [delaUpp, setDelaUpp] = useState(false);
-  const [rader, setRader] = useState<Uppdelningsrad[]>([
-    { artikel: "", belopp: "", privat: false, nyckel: 0 },
-    { artikel: "", belopp: "", privat: true, nyckel: 1 },
-  ]);
-  const [nastaNyckel, setNastaNyckel] = useState(2);
+  // ROT-raden "Fick du ROT-avdrag?" (docs/design.md, "ROT-avdrag"). Raden visas
+  // alltid; `rotOppen` ar chevronens lage och sätts nar avlasningen last ett
+  // ROT-belopp. Ett enda falt – ROT-beloppet i kronor.
+  const [rotOppen, setRotOppen] = useState(false);
+  const [rotUtnyttjat, setRotUtnyttjat] = useState("");
+  const rotUtnyttjatRef = useRef(rotUtnyttjat);
+  useEffect(() => {
+    rotUtnyttjatRef.current = rotUtnyttjat;
+  }, [rotUtnyttjat]);
 
   // Miniatyrraden ar befintliga bilagor (fran ett aterupptaget utkast) foljda av
   // filerna som valts nu. Vilken som visas i forhandsvisningen – klick pa en
   // miniatyr byter. Klamps mot listans langd.
   const poster: (
-    | { typ: "befintlig"; b: Bilagevy }
-    | { typ: "fil"; fil: File }
+    { typ: "befintlig"; b: Bilagevy } | { typ: "fil"; fil: File }
   )[] = [
     ...befintliga.map((b) => ({ typ: "befintlig" as const, b })),
     ...filer.map((fil) => ({ typ: "fil" as const, fil })),
@@ -297,9 +267,7 @@ export function NyKostnadForm({
       return {
         namn: fil.name,
         url: visasSomBild ? URL.createObjectURL(fil) : null,
-        etikett: visasSomBild
-          ? null
-          : (format?.andelse.toUpperCase() ?? "FIL"),
+        etikett: visasSomBild ? null : (format?.andelse.toUpperCase() ?? "FIL"),
       };
     });
     setMiniatyrer(nya);
@@ -325,7 +293,11 @@ export function NyKostnadForm({
     setRenderFel(false);
 
     if (arPdf) {
-      setForhandsvisning({ namn: forhandsFil.name, bildUrl: null, arPdf: true });
+      setForhandsvisning({
+        namn: forhandsFil.name,
+        bildUrl: null,
+        arPdf: true,
+      });
       renderaPdfForstaSida(forhandsFil)
         .then((url) => {
           if (avbruten) {
@@ -409,6 +381,16 @@ export function NyKostnadForm({
         setFalt(nasta);
         setAvlasningFyllde(true);
       }
+
+      // ROT-avdraget (docs/design.md, "ROT-avdrag"). Bara ett tomt falt fylls;
+      // last avlasningen ett belopp fälls raden ut sa att anvandaren ser det.
+      if (data.rot_utnyttjat != null && rotUtnyttjatRef.current.trim() === "") {
+        setRotUtnyttjat(
+          formateraBeloppInmatning(orenTillFalt(data.rot_utnyttjat)),
+        );
+        setRotOppen(true);
+        setAvlasningFyllde(true);
+      }
     } catch {
       // Alla fel svaljs.
     } finally {
@@ -479,58 +461,14 @@ export function NyKostnadForm({
     setValdIndex((v) => (index >= 0 && index < v ? v - 1 : v));
   }
 
-  function andraRad(nyckel: number, delvis: Partial<Uppdelningsrad>) {
-    setRader((prev) =>
-      prev.map((r) => (r.nyckel === nyckel ? { ...r, ...delvis } : r)),
-    );
-  }
-
-  function laggTillRad() {
-    setRader((prev) => [
-      ...prev,
-      { artikel: "", belopp: "", privat: false, nyckel: nastaNyckel },
-    ]);
-    setNastaNyckel((n) => n + 1);
-  }
-
-  function taBortRad(nyckel: number) {
-    setRader((prev) => prev.filter((r) => r.nyckel !== nyckel));
-  }
-
-  // Loppande summa mot totalbeloppet – ingen sparr i sig (servern ar sanningen),
-  // men utan den gar raderna nastan aldrig ihop pa ett langt kvitto. Aldrig
-  // orange: "gar ihop" ar en bekraftelseruta i --bg-klart.
-  const totalOren = oreFranKronor(falt.belopp) ?? 0;
-  const summaOren = rader.reduce(
-    (s, r) => s + (oreFranKronor(r.belopp) ?? 0),
-    0,
-  );
-  const differens = totalOren - summaOren;
-  const garIhop = totalOren > 0 && differens === 0;
-  const raderIfyllda = rader.every(
-    (r) => r.artikel.trim() !== "" && r.belopp.trim() !== "",
-  );
-  const uppdelningAktiv =
-    delaUpp && rader.some((r) => r.artikel.trim() !== "" || r.belopp.trim() !== "");
-
   // Sparningen: uppdatera utkastet (eller skapa en ny kostnad om ingen fil
   // valdes) via server action, ladda upp ev. bilagor som annu inte kommit fram,
-  // ga sedan till startskarmen. Uppdelningsraderna laggs in i formdatan for hand.
+  // ga sedan till startskarmen.
   async function skicka(formData: FormData) {
     setPagar(true);
     setResultat(START);
 
-    for (const namn of ["bilagor", "rad_artikel", "rad_belopp", "rad_privat"]) {
-      formData.delete(namn);
-    }
     formData.set("utkast_id", utkastId ?? "");
-    if (uppdelningAktiv) {
-      for (const r of rader) {
-        formData.append("rad_artikel", r.artikel);
-        formData.append("rad_belopp", r.belopp);
-        formData.append("rad_privat", r.privat ? "1" : "");
-      }
-    }
 
     const sparad = await sparaKostnad(formData);
     if (sparad.fel || !sparad.kostnadId) {
@@ -563,6 +501,7 @@ export function NyKostnadForm({
   }
 
   return (
+    <>
     <form action={skicka} className="flex flex-col gap-5 p-5">
       {/* Bilagan forst. Ingen filknapp – sista rutan i raden ar hela kontrollen. */}
       <div>
@@ -620,15 +559,20 @@ export function NyKostnadForm({
             );
           })}
 
-          {/* Filer valda nu – med uppladdningsstatus i hornet. */}
-          {miniatyrer.map((m, j) => {
+          {/* Filer valda nu – med uppladdningsstatus i hornet. Iterera over
+              `filer` (sanningen), inte `miniatyrer` (effekt-harledd och slapar
+              ett rendersteg efter): nar en fil tas bort krymper `filer` direkt
+              medan `miniatyrer` fortfarande har den gamla langden, och en
+              `filer[j]` skulle da vara undefined och krascha raden. */}
+          {filer.map((fil, j) => {
+            const m = miniatyrer[j];
             const i = befintliga.length + j;
             const flera = poster.length > 1;
             const vald = i === sakerValdIndex;
-            const st = filstatus[filnyckel(filer[j])];
+            const st = filstatus[filnyckel(fil)];
             return (
               <div
-                key={`${m.namn}-${j}`}
+                key={filnyckel(fil)}
                 className={`${RUTA} ${
                   st?.fel ? "ring-2 ring-inset ring-accent-mork" : ""
                 } ${
@@ -643,20 +587,20 @@ export function NyKostnadForm({
                   type="button"
                   onClick={() => setValdIndex(i)}
                   aria-pressed={vald}
-                  aria-label={`Visa ${m.namn} i förhandsvisningen`}
+                  aria-label={`Visa ${fil.name} i förhandsvisningen`}
                   className="absolute inset-0 flex items-center justify-center"
                 >
-                  {m.url ? (
+                  {m?.url ? (
                     <img
                       src={m.url}
-                      alt={m.namn}
+                      alt={fil.name}
                       className="h-full w-full object-cover"
                     />
                   ) : (
                     <span className="flex flex-col items-center gap-0.5">
                       <DokumentGlyf />
                       <span className="font-granssnitt text-[10px] font-medium leading-none text-text-sekundar">
-                        {m.etikett}
+                        {m?.etikett ?? "FIL"}
                       </span>
                     </span>
                   )}
@@ -669,7 +613,7 @@ export function NyKostnadForm({
                 <button
                   type="button"
                   onClick={() => taBortFil(j)}
-                  aria-label={`Ta bort ${m.namn}`}
+                  aria-label={`Ta bort ${fil.name}`}
                   className="absolute right-0.5 top-0.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-yta-upphojd text-text-primar"
                 >
                   <KryssGlyf />
@@ -690,7 +634,8 @@ export function NyKostnadForm({
         </div>
 
         <p className="mt-2 font-granssnitt text-xs text-text-dampad">
-          JPG, PNG, HEIC eller PDF. Max 10 MB per fil. Går att lägga till senare.
+          JPG, PNG, HEIC eller PDF. Max 10 MB per fil. Går att lägga till
+          senare.
         </p>
 
         <input
@@ -779,190 +724,51 @@ export function NyKostnadForm({
         {avlasningFyllde ? "Granska uppgifterna" : "Fyll i uppgifter"}
       </h2>
 
-      <div>
-        <Falt etikett="Totalbelopp" hjalp="Hela kvittosumman, t.ex. 1 020,95.">
+      <Falt etikett="Totalbelopp" hjalp="Hela kvittosumman, t.ex. 1 020,95.">
+        <BeloppFalt
+          name="totalbelopp"
+          required
+          value={falt.belopp}
+          onValueChange={(v) => setFalt((f) => ({ ...f, belopp: v }))}
+          className={INPUT_KLASS}
+          placeholder="0,00"
+        />
+      </Falt>
+
+      {/* ROT-raden visas ALLTID (docs/design.md, "ROT-avdrag"): utfalld nar
+          avlasningen last ett belopp, hopfalld annars. Ett enda falt –
+          ROT-beloppet i kronor. */}
+      <UtfallbarSektion
+        etikett="Fick du ROT-avdrag?"
+        oppen={rotOppen}
+        onToggle={() => setRotOppen((v) => !v)}
+      >
+        <Falt
+          etikett="ROT-avdrag"
+          hjalp="Beloppet står på fakturan som det avdrag som redan dragits av. Anges i kronor, inte procent."
+        >
           <BeloppFalt
-            name="totalbelopp"
-            required
-            value={falt.belopp}
-            onValueChange={(v) => setFalt((f) => ({ ...f, belopp: v }))}
+            name="rot_utnyttjat"
+            value={rotUtnyttjat}
+            onValueChange={setRotUtnyttjat}
             className={INPUT_KLASS}
             placeholder="0,00"
           />
         </Falt>
+      </UtfallbarSektion>
 
-        {/* Utfallbar uppdelning – samma monster som betaldatumet nedan. */}
-        {delaUpp ? (
-          <div className="mt-3 flex flex-col gap-4 rounded-lg bg-yta-nedsankt p-4">
-            <p className="font-granssnitt text-sm text-text-sekundar">
-              Skriv vad som var privat och hur mycket det kostade.{" "}
-              {kopplatMal ? (
-                <>
-                  Resten hör till{" "}
-                  <span className="text-text-primar">{kopplatMal.namn}</span>.
-                </>
-              ) : (
-                "Resten sparas som vanligt på kvittot."
-              )}
-            </p>
-
-            <div className="flex flex-col gap-4">
-              {rader.map((r, index) => (
-                <div
-                  key={r.nyckel}
-                  className="flex flex-col gap-3 border-t border-linje pt-4 first:border-0 first:pt-0"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
-                      Rad {index + 1}
-                    </span>
-                    {rader.length > 2 ? (
-                      <button
-                        type="button"
-                        onClick={() => taBortRad(r.nyckel)}
-                        className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
-                      >
-                        Ta bort
-                      </button>
-                    ) : null}
-                  </div>
-
-                  <Falt etikett="Vad avser raden?">
-                    <input
-                      type="text"
-                      value={r.artikel}
-                      onChange={(e) =>
-                        andraRad(r.nyckel, { artikel: e.target.value })
-                      }
-                      className={INPUT_KLASS}
-                      placeholder="t.ex. Väggfärg"
-                    />
-                  </Falt>
-
-                  <Falt etikett="Belopp">
-                    <BeloppFalt
-                      value={r.belopp}
-                      onValueChange={(v) => andraRad(r.nyckel, { belopp: v })}
-                      className={INPUT_KLASS}
-                      placeholder="0,00"
-                    />
-                  </Falt>
-
-                  <label className="flex items-center gap-2.5 font-granssnitt text-sm text-text-primar">
-                    <input
-                      type="checkbox"
-                      checked={r.privat}
-                      onChange={(e) =>
-                        andraRad(r.nyckel, { privat: e.target.checked })
-                      }
-                      className="h-4 w-4 accent-accent"
-                    />
-                    Privat – räknas inte med
-                  </label>
-                </div>
-              ))}
-            </div>
-
-            {raderIfyllda ? (
-              <button
-                type="button"
-                onClick={laggTillRad}
-                className="self-start font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
-              >
-                Lägg till rad
-              </button>
-            ) : null}
-
-            {garIhop ? (
-              <p className="rounded-lg bg-bg-klart px-3 py-2 font-granssnitt text-sm text-text-klart">
-                Raderna går ihop med totalbeloppet.
-              </p>
-            ) : totalOren > 0 ? (
-              <p className="font-granssnitt text-sm text-text-sekundar">
-                Raderna täcker{" "}
-                <span className="tabular-nums text-text-primar">
-                  {formateraKronor(summaOren)}
-                </span>{" "}
-                av {formateraKronor(totalOren)} –{" "}
-                <span className="tabular-nums text-text-primar">
-                  {formateraKronor(Math.abs(differens))}
-                </span>{" "}
-                {differens >= 0 ? "kvar" : "för mycket"}.
-              </p>
-            ) : null}
-
-            <button
-              type="button"
-              onClick={() => setDelaUpp(false)}
-              className="self-start font-granssnitt text-xs text-text-sekundar underline"
-            >
-              Hela kvittot hörde till samma sak
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setDelaUpp(true)}
-            className="mt-1.5 font-granssnitt text-sm text-text-sekundar underline"
-          >
-            Var något på kvittot privat?
-          </button>
-        )}
-      </div>
-
-      {/* Ett datumfalt som utgangslage – satter bade kvittots datum och
-          betaldatum (docs/design.md, "Datum i kostnadsformularet"). */}
-      <div>
-        <Falt etikett="Datum">
-          <input
-            type="date"
-            required
-            value={falt.datum}
-            onChange={(e) => setFalt((f) => ({ ...f, datum: e.target.value }))}
-            className={INPUT_KLASS}
-          />
-        </Falt>
-
-        {egetBetaldatum ? (
-          <div className="mt-3">
-            <Falt etikett="Betaldatum">
-              <input
-                type="date"
-                value={betaldatum}
-                onChange={(e) => setBetaldatum(e.target.value)}
-                className={INPUT_KLASS}
-              />
-            </Falt>
-            <p className="mt-1 font-granssnitt text-xs text-text-dampad">
-              Styr vilket år kvittot räknas till. Lämna tomt om det inte är
-              betalt än – då räknas det inte in i årssumman förrän du fyllt i
-              datumet.
-            </p>
-            <button
-              type="button"
-              onClick={() => setEgetBetaldatum(false)}
-              className="mt-1 font-granssnitt text-xs text-text-sekundar underline"
-            >
-              Betalades samma dag
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              setBetaldatum(falt.datum);
-              setEgetBetaldatum(true);
-            }}
-            className="mt-1.5 font-granssnitt text-sm text-text-sekundar underline"
-          >
-            Betalades ett annat datum?
-          </button>
-        )}
-      </div>
-
-      {/* Datumfaltet ovan matar dessa – select-fri inmatning, ett falt att fylla. */}
-      <input type="hidden" name="dokumentdatum" value={falt.datum} />
-      <input type="hidden" name="betaldatum" value={effektivtBetaldatum} />
+      {/* Ett datumfalt satter bade dokumentdatum och betaldatum till samma dag
+          (docs/design.md, "Datum i kostnadsformularet"). En avvikande betaldag
+          hor till "Andra uppgifter". */}
+      <Falt etikett="Datum">
+        <input
+          type="date"
+          required
+          value={falt.datum}
+          onChange={(e) => setFalt((f) => ({ ...f, datum: e.target.value }))}
+          className={INPUT_KLASS}
+        />
+      </Falt>
 
       <Falt etikett="Leverantör">
         <input
@@ -970,11 +776,18 @@ export function NyKostnadForm({
           name="leverantor"
           required
           value={falt.leverantor}
-          onChange={(e) => setFalt((f) => ({ ...f, leverantor: e.target.value }))}
+          onChange={(e) =>
+            setFalt((f) => ({ ...f, leverantor: e.target.value }))
+          }
           className={INPUT_KLASS}
           placeholder="t.ex. Bauhaus Bromma"
         />
       </Falt>
+
+      {/* Datumfaltet matar bada de dolda datumfalten till samma dag.
+          anlitad_entreprenor harleds pa servern ur att ett ROT-belopp finns. */}
+      <input type="hidden" name="dokumentdatum" value={falt.datum} />
+      <input type="hidden" name="betaldatum" value={falt.datum} />
 
       {/* Det enda faltet som bar betydelse framat. Fritext, aldrig obligatoriskt.
           Ordet "projekt" finns inte i inmatningsflodet – klassificeringen gors i
@@ -993,50 +806,9 @@ export function NyKostnadForm({
         />
       </Falt>
 
-      {/* Hopfalld genvag for den vane: koppla direkt till nagot som redan lagts
-          in. Bara befintliga grupperingar, inga fragor. Doljs nar inget finns. */}
-      {projekt.length > 0 ? (
-        <div>
-          {kopplaOppen ? (
-            <>
-              <Falt etikett="Koppla till något du redan lagt in">
-                <select
-                  value={valtProjektId}
-                  onChange={(e) => setValtProjektId(e.target.value)}
-                  className={INPUT_KLASS}
-                >
-                  <option value="">Välj…</option>
-                  {projekt.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.namn}
-                    </option>
-                  ))}
-                </select>
-              </Falt>
-              <button
-                type="button"
-                onClick={() => {
-                  setKopplaOppen(false);
-                  setValtProjektId("");
-                }}
-                className="mt-1 font-granssnitt text-xs text-text-sekundar underline"
-              >
-                Koppla senare i stället
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setKopplaOppen(true)}
-              className="font-granssnitt text-sm text-text-sekundar underline"
-            >
-              Koppla till något du redan lagt in
-            </button>
-          )}
-        </div>
-      ) : null}
-
-      <input type="hidden" name="projekt_id" value={kopplatMal?.id ?? ""} />
+      {/* Ingen genvag for projektkoppling har (docs/design.md, "Inmatningen har
+          fem falt, inget mer"). Klassificeringen – och kopplingen till en
+          gruppering – gors i genomgangen nar anvandaren sjalv vill. */}
       <input type="hidden" name="utkast_id" value={utkastId ?? ""} />
 
       {/* En misslyckad uppladdning vid filvalet blockerar inte sparningen
@@ -1076,6 +848,17 @@ export function NyKostnadForm({
               : "Spara kvitto"}
       </button>
     </form>
+
+    {/* Ta bort utkastet – langst ned, skilt fran spara-knappen. Ingen
+        bekraftelse (docs/design.md, "Kvittolistan"); raderingen tar med
+        bilagorna och gar samma vag som taBortKostnad. Visas bara nar ett
+        utkast faktiskt aterupptas. */}
+    {utkast ? (
+      <div className="border-t border-linje p-5">
+        <UtkastRaderaKnapp kostnadId={utkast.id} lage="knapp" />
+      </div>
+    ) : null}
+    </>
   );
 }
 

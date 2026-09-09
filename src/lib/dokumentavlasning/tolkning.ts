@@ -12,7 +12,8 @@
 // kronfalt ger ett felaktigt underlag utan att nagot ser konstigt ut. Modellen
 // instrueras att returnera totalbelopp som null nar valutan inte ar SEK, och
 // detta backas upp har: sager modellens `valuta`-falt nagot annat an kronor
-// nollas beloppet oavsett vilket tal modellen rakat fylla i.
+// nollas beloppet oavsett vilket tal modellen rakat fylla i. Samma grind galler
+// rot_utnyttjat – ocksa ett kronbelopp, ocksa oanvandbart i en annan valuta.
 
 import { oreFranKronor } from "@/lib/format";
 
@@ -23,12 +24,16 @@ export interface Dokumentfalt {
   totalbelopp: number | null;
   /** Leverantorens namn, trimmat, eller null. */
   leverantor: string | null;
+  /** Utnyttjad ROT-skattereduktion som heltal oren – det avdrag som REDAN
+   *  dragits av pa fakturan – eller null. Aldrig procentsatsen. */
+  rot_utnyttjat: number | null;
 }
 
 export const TOMT_DOKUMENTFALT: Dokumentfalt = {
   datum: null,
   totalbelopp: null,
   leverantor: null,
+  rot_utnyttjat: null,
 };
 
 const DATUM_MONSTER = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -157,12 +162,11 @@ export function tolkaDokumentsvar(text: unknown): Dokumentfalt {
   }
 
   const o = rot as Record<string, unknown>;
-  const belopp = valutaBlockerarBelopp(o.valuta)
-    ? null
-    : tolkaBelopp(o.totalbelopp);
+  const blockerad = valutaBlockerarBelopp(o.valuta);
   return {
     datum: tolkaDatum(o.datum),
-    totalbelopp: belopp,
+    totalbelopp: blockerad ? null : tolkaBelopp(o.totalbelopp),
     leverantor: tolkaLeverantor(o.leverantor),
+    rot_utnyttjat: blockerad ? null : tolkaBelopp(o.rot_utnyttjat),
   };
 }
