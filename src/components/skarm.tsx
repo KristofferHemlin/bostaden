@@ -3,7 +3,9 @@
 // allt pa EN rad. Pa mobil ligger menyn i stallet fast i skarmens nederkant (se
 // Toppnavigering). Sedan innehallet centrerat i en kolumn pa hogst 620px i ETT
 // kort pa --yta-upphojd. Inga kort i kort. Sidrubriken upprepar aldrig
-// bostadsnamnet – den sager vad sidan visar ("Oversikt", "Projekt", ...).
+// bostadsnamnet – den sager vad sidan visar ("Kvitton", "Projekt", ...).
+// Undantaget ar startskarmen: dar ar adressen sidrubriken och toppraden doljer
+// den i stallet (doljBostadsnamn).
 
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -19,6 +21,12 @@ export const PRIMARKNAPP_KLASS =
 
 export const SEKUNDARKNAPP_KLASS =
   "flex min-h-[44px] w-full items-center justify-center rounded-full border border-linje px-5 py-3 font-granssnitt text-base text-text-primar transition-colors hover:bg-yta-nedsankt";
+
+// Sandknapp: samma form och hojd som primarknappen men i --sand med
+// --text-primar (docs/design.md, Inloggningssidan). Bar aldrig orange – den ar
+// en vag in i produkten men inte den handling skarmen finns for.
+export const SANDKNAPP_KLASS =
+  "flex min-h-[44px] w-full items-center justify-center rounded-full bg-sand px-5 py-3 font-granssnitt text-base font-medium text-text-primar transition-colors hover:bg-sand-mork disabled:opacity-60";
 
 export function Meddelanderuta({ children }: { children: ReactNode }) {
   // --sand bakgrund, ingen ram, ingen ikon. Hogst en per skarm.
@@ -247,6 +255,13 @@ export interface SkarmProps {
    * <Skarm> sveper in alla children i ETT kort. Anvands pa oversikten.
    */
   egnaKort?: boolean;
+  /**
+   * Doljer bostadsnamnet i toppraden sa att bara logotypen och kugghjulet star
+   * kvar (docs/design.md, "Startskarmen med innehall"). Pa startskarmen ar
+   * adressen sidrubriken och ska inte sta tva ganger. Logotypen ar fortfarande
+   * lanken till oversikten.
+   */
+  doljBostadsnamn?: boolean;
   children: ReactNode;
 }
 
@@ -256,6 +271,7 @@ export function Skarm({
   rubrikExtra,
   bakLank,
   egnaKort,
+  doljBostadsnamn,
   children,
 }: SkarmProps) {
   return (
@@ -284,10 +300,13 @@ export function Skarm({
             />
             {/* Toppraden visar BARA adressen: ingen andrarad med upplatelseform
                 och tilltradesar. Raden ar ALLTID en rad – namnet far aldrig
-                radbryta, och kapas med ellips nar det inte ryms. */}
-            <p className="truncate font-rubrik text-base text-text-primar sm:text-lg">
-              {bostadsnamn}
-            </p>
+                radbryta, och kapas med ellips nar det inte ryms. Pa startskarmen
+                doljs den helt: adressen ar dar sidrubriken. */}
+            {doljBostadsnamn ? null : (
+              <p className="truncate font-rubrik text-base text-text-primar sm:text-lg">
+                {bostadsnamn}
+              </p>
+            )}
           </Link>
           <Toppnavigering />
           {/* Kugghjulet ligger i toppraden pa bade mobil och skrivbord, langst

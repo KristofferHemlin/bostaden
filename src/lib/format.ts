@@ -9,10 +9,24 @@ const kronformat = new Intl.NumberFormat("sv-SE", {
   maximumFractionDigits: 2,
 });
 
-/** Formaterar ett belopp i oren till en svensk kronstrang, t.ex. `102095` -> `"1 020,95 kr"`. */
+const kronformatUtanOren = new Intl.NumberFormat("sv-SE", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+/**
+ * Formaterar ett belopp i oren till en svensk kronstrang, t.ex. `102095` ->
+ * `"1 020,95 kr"`.
+ *
+ * Oren visas bara nar de ar skilda fran noll (docs/design.md, Typografi):
+ * `792590` -> `"7 925,90 kr"`, men `500000` -> `"5 000 kr"` och inte
+ * `"5 000,00 kr"`. Tva nollor efter ett jamnt belopp ar brus och far blicken
+ * att leta efter en decimal som inte finns. Galler all utskrift av belopp.
+ */
 export function formateraKronor(oren: number): string {
+  const format = oren % 100 === 0 ? kronformatUtanOren : kronformat;
   // Hart mellanslag mellan belopp och "kr" sa att enheten aldrig bryts loss.
-  return `${kronformat.format(oren / 100)}${HART_MELLANSLAG}kr`;
+  return `${format.format(oren / 100)}${HART_MELLANSLAG}kr`;
 }
 
 /**

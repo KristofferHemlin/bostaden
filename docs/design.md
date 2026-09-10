@@ -42,13 +42,15 @@ Härledda ur logotypen. Använd tokens, aldrig hex direkt i komponenter.
 
 **Svart förekommer inte.** Petrolblå är textfärgen.
 
-**Orange betyder handling.** Det är den enda mättade färgen och den ska bära en enda betydelse. Högst ett orange element per skärm – primärknappen eller den aktiva statusen, inte båda.
+**Orange betyder handling, ingenting annat.** Det är den enda mättade färgen och den bärs av primärknappen. Högst ett orange element per skärm.
+
+Orange är därför aldrig en statusfärg. Ett tillstånd som är avklarat sägs med ord, inte med färg – ett fullt orange progressfält bredvid en orange knapp ger två saker som skriker och ingen hierarki mellan dem, och knappen som ändrar utseende beroende på hur mycket man lagt in är det sämre av de två alternativen.
 
 **Orange får aldrig bära brödtext.** Kontrasten räcker för knappar, ikoner och stora tal, inte för löpande text.
 
 **Två dämpade statusfärger finns, och bara till meddelanderutor.** Blå för förklaringar som inte kräver något av användaren, grön för bekräftelser. Båda är avmättade och varma nog att sitta bredvid sand och orange utan att bryta uttrycket – hämta aldrig in klarblått eller signalgrönt från ett standardbibliotek.
 
-De används **aldrig** i tröskelfältet, i listor, på knappar eller som textfärg utanför sina rutor. Tröskelfältet är sand när det är ofullständigt och orange när det är fullt; betydelsen "orange = klart" ska hålla ihop genom hela appen.
+De används **aldrig** i tröskelfältet, i listor, på knappar eller som textfärg utanför sina rutor. Tröskelfältet är alltid `--sand-mork` mot `--yta-nedsankt`, oavsett hur fullt det är.
 
 Rött förekommer inte alls. Formulärfel visas med `--accent` och en tydlig text – appen har inga tillstånd som är farliga nog att kräva en varningsfärg.
 
@@ -68,6 +70,8 @@ Båda finns på Google Fonts. Fraunces mjuka serif matchar logotypens geometri; 
 **Belopp sätts alltid med tabulära siffror** (`font-variant-numeric: tabular-nums`). Utan det hoppar kolumner när summan ändras, och den här appen visar belopp överallt.
 
 Svensk formatering genomgående: `1 020,95 kr` med hårt mellanslag som tusentalsavgränsare och komma som decimaltecken.
+
+**Öre visas bara när de är skilda från noll.** `7 925,90 kr` behåller sina, men tröskeln skrivs `5 000 kr` och inte `5 000,00 kr`. Två nollor efter ett jämnt belopp är brus, och de gör dessutom att blicken letar efter en decimal som inte finns. Gäller all utskrift av belopp, inte bara tröskeln.
 
 **Det gäller även medan man skriver.** Ett beloppsfält formaterar löpande: `4000000` blir `4 000 000` under inmatningen. Långa siffersträngar utan avgränsare går inte att läsa av, och just i den här appen är det belopp man ska kontrollera mot ett kvitto – en nolla för mycket ska synas direkt, inte upptäckas i deklarationen.
 
@@ -97,7 +101,9 @@ Ovanför innehållet står då bara en enkel rad med logotypen och bostadens nam
 
 **På skrivbord ligger logotyp, bostadsnamn och flikar på en och samma rad.** Inte logotyp på en våning och menyn på nästa – det ger tre horisontella band innan innehållet börjar och gör sidan tung i överkant.
 
-**Sidrubriken upprepar aldrig bostadens namn.** Det står redan i toppraden. Sidrubriken säger vad sidan visar: "Översikt", "Projekt", "Deklarationsunderlag".
+**Sidrubriken upprepar aldrig bostadens namn.** Det står redan i toppraden. Sidrubriken säger vad sidan visar: "Kvitton", "Grupperingar", "Deklarationsunderlag".
+
+Startskärmen är undantaget: där *är* adressen sidrubriken, och toppraden visar då bara logotypen och kugghjulet. Se avsnittet Startskärmen med innehåll. Ordet "Översikt" står kvar som fliketikett men förekommer aldrig som rubrik.
 
 Aktiv flik markeras med ytskillnad, aldrig med orange.
 
@@ -133,7 +139,7 @@ Logotypen syns i toppraden på skrivbord och som en liten markering till vänste
 
 **Logotypen och adressen är en länk till översikten.** Standardkonvention och gratis.
 
-**Sidrubriken upprepar aldrig adressen.** Står "Ulriksborgsgatan 7" i toppraden ska sidan under heta "Översikt", inte samma adress en gång till.
+**Sidrubriken upprepar aldrig adressen.** Står "Ulriksborgsgatan 7" i toppraden ska sidan under heta "Kvitton", inte samma adress en gång till. Undantaget är startskärmen, där adressen är rubriken och toppraden i stället utelämnar den.
 
 **Bostadsnamnet får den plats det behöver på bred skärm.** Att kapa "Ulriksborgsgatan 7" till "Ulriksborgsga…" på en skrivbordsskärm är bakvänt – utrymmet finns. Avkortning hör hemma på smala skärmar, inte breda.
 
@@ -188,9 +194,9 @@ Etiketten säger "Inlagt", aldrig "Underlag" eller "Avdrag". Siffran är summan 
 
 Finns oklassificerade kostnader står **en enda kort rad** under fältet: "Preliminärt tills kvittona klassificerats." Förklaringen av vad tröskeln innebär – att hela årets belopp faller bort, inte bara mellanskillnaden – ligger bakom en informationsknapp, samma mönster som projektfrågorna. Tre rader brödtext ovanför kvittolistan gör förklaringen till huvudsaken i stället för siffran.
 
-Progressfältet är 8px högt med helt rundade ändar, spår i `--yta-nedsankt` och fyllning i `--sand-mork` under tröskeln, `--accent` när tröskeln passerats.
+Progressfältet är 8px högt med helt rundade ändar, spår i `--yta-nedsankt` och fyllning i `--sand-mork`. Fyllningen byter aldrig färg – orange hör till primärknappen, som ligger på samma skärm.
 
-**Orange kräver att allt är klassificerat.** Finns oklassificerade kvitton är fyllningen `--sand-mork` oavsett belopp, eftersom siffran då är en preliminär summa och inte ett avdrag. Ett fullt orange fält signalerar att något är avklarat, och det är det inte förrän frågorna är besvarade. Fyllningen måste ha tydlig kontrast mot spåret – `--sand` mot `--yta-nedsankt` är för svagt och ska aldrig användas här.
+Fyllningen måste ha tydlig kontrast mot spåret. `--sand` mot `--yta-nedsankt` är för svagt och ska aldrig användas här.
 
 ### Kvittolistan
 
@@ -246,7 +252,11 @@ Två åtgärder ligger under: **"Ändra uppgifter"** och **"Var något på kvitt
 
 ### Startskärmen med innehåll
 
-**En hälsning med namn överst.** "Hej Kristoffer" och under den bostadens adress. Det gör skärmen till användarens egen i stället för till en rapport, och det kostar ingenting.
+**Adressen är sidans rubrik.** Startskärmen inleds med bostadens adress satt som rubrik – "Ulriksborgsgatan 7" – inte med ordet "Översikt". Det gör skärmen till användarens egen i stället för till en rapport.
+
+En hälsning med namn vore varmare, men appen samlar inte in något namn: registreringen har e-post, lösenord och bostaden, ingenting mer. Ett namnfält skulle vara ett fält till i ett flöde som medvetet är kort, och adressen är det mest personliga appen faktiskt har.
+
+**På startskärmen visar toppraden bara logotypen och kugghjulet.** Adressen står som rubrik direkt under och ska inte stå två gånger. På alla andra sidor ligger adressen kvar i toppraden som vanligt, och sidrubriken säger vad sidan visar.
 
 **Tre små nyckeltal på rad**, inte en stor siffra med en lång förklaring under. Ett block som ska bära både beloppet, tröskeln och en brasklapp blir tungt att läsa; tre korta kort går att uppfatta på en blick.
 
@@ -397,7 +407,11 @@ Indikatorn försvinner när svaret kommit, oavsett om något fylldes i eller int
 
 ### Progressfältet mot tröskeln
 
-Fältet visar årets belopp i förhållande till tröskeln, men fylls aldrig mer än helt. När tröskeln passerats står fyllningen kvar på full bredd i `--accent` och texten till höger säger att tröskeln är nådd – det överskjutande beloppet har ingen egen betydelse, eftersom allt över gränsen räknas ändå.
+Fältet visar årets belopp i förhållande till tröskeln, men fylls aldrig mer än helt. När tröskeln passerats står fyllningen kvar på full bredd och det överskjutande beloppet visas inte – det har ingen egen betydelse, eftersom allt över gränsen räknas ändå.
+
+**Texten bär beskedet, inte färgen.** Under fältet står tröskelbeloppet till vänster och läget till höger. Är tröskeln passerad säger raden det som en hel mening: "Tröskeln för 2026 är passerad – allt du lägger in i år räknas." Det är den enda gången på året appen har goda nyheter, och två ord i småtext gör inte det jobbet.
+
+Är tröskeln inte nådd står återstående belopp där i stället, utan att läget beskrivs som ett problem – under tröskeln är året oavslutat, inte misslyckat.
 
 ### Projektfrågorna
 
@@ -445,7 +459,21 @@ Tjänsten får inte heller blockera. Svarar den inte, eller saknas nyckel, funge
 
 Upplåtelseform väljs med klickbara kort i rad, inte radioknappar. Korten är lättare att träffa på mobil och tydligare att avläsa. **Två kort: Bostadsrätt och Villa eller radhus.** Fritidshus är skattemässigt en fastighet och behöver inget eget val – ett tredje kort måste ändå mappa till samma värde och skapar en distinktion som modellen inte har.
 
-Inloggningssidan har ett formulär med en enda primärknapp, och en länk till registreringsflödet under.
+### Inloggningssidan
+
+Kortet ligger vertikalt centrerat i sidan. Klistrat mot överkanten med en halv skärm tomhet under ser sidan ut som en tom vy som inte hunnit ladda klart.
+
+**Raden under logotypen säger vad appen är**, inte "Logga in för att fortsätta". Den som landar här utan konto ska förstå vad Bostadsunderlag gör innan hen bestämmer sig – en mening räcker: spara kvittona på det du gör med bostaden, dra av dem den dag du säljer.
+
+**De tre vägarna har tre olika tyngder.** Att ge dem samma utseende gör att den som ska skapa konto inte hittar dit, och två understrukna rader staplade läses dessutom som en meny.
+
+| Väg | Utseende |
+|---|---|
+| Logga in | Primärknapp, orange, full bredd |
+| Skapa konto | Sekundärknapp i `--sand` med `--text-primar`, full bredd, under avdelaren |
+| Logga in med e-postlänk i stället | Dämpad textlänk i `--text-dampad`, centrerad under sekundärknappen |
+
+Sekundärknappen har samma form och höjd som primärknappen. Att skapa konto är en väg in i produkten, inte en fotnot – men den är inte handlingen den här sidan finns för, och därför bär den inte orange.
 
 ### Emoji
 

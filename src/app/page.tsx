@@ -87,13 +87,6 @@ export default async function Oversikt() {
       harledKostnadstillstand(k).okopplad,
   );
 
-  // Orange kraver att ALLT ar klassificerat (docs/design.md, Metrikblock).
-  // Finns oklassificerade kvitton ar fyllningen --sand-mork oavsett belopp,
-  // eftersom siffran da ar en preliminar summa och inte ett avdrag. Ett fullt
-  // orange falt signalerar att nagot ar avklarat, och det ar det inte forran
-  // fragorna ar besvarade.
-  const orangeFyllning = naddTroskel && !oklassificeratFinns;
-
   // Ingen klassificeringssektion pa startskarmen (docs/design.md, Kvittolistan):
   // en paminnelse vid varje oppning gor klassificeringen till en skuld man adrar
   // sig nar man sparar ett kvitto. Ingangen ligger i stallet i kvittolistan. Att
@@ -122,9 +115,15 @@ export default async function Oversikt() {
     // egnaKort: pa oversikten hor nyckeltal, troskelrad och kvittolista hemma i
     // OLIKA kort med luft emellan (docs/design.md, "Genomgaende struktur" och
     // "Startskarmen med innehall").
-    // Sidrubriken upprepar aldrig adressen (docs/design.md, Skrivbordsvyn): den
-    // star redan i toppraden, sa sidan under heter "Oversikt".
-    <Skarm bostadsnamn={bostadsnamn} rubrik="Översikt" egnaKort>
+    // Adressen ar sidans rubrik (docs/design.md, "Startskarmen med innehall"),
+    // inte ordet "Oversikt". Toppraden visar da bara logotypen och kugghjulet –
+    // adressen ska inte sta tva ganger.
+    <Skarm
+      bostadsnamn={bostadsnamn}
+      rubrik={bostadsnamn}
+      doljBostadsnamn
+      egnaKort
+    >
       {tomt ? (
         // Forstaskarmen: den som just skapat kontot vet inte varfor kvitton ska
         // sparas. Skarmen ska saga det, inte forutsatta det.
@@ -171,22 +170,29 @@ export default async function Oversikt() {
               nyckeltalet ovan, inte har. */}
           <Kort>
             <section className="p-4">
+              {/* Fyllningen ar ALLTID --sand-mork, oavsett hur fullt faltet ar
+                  (docs/design.md, "Progressfaltet mot troskeln"). Orange hor
+                  till primarknappen, som ligger pa samma skarm – texten under
+                  bar beskedet, inte fargen. */}
               <div className="h-2 w-full overflow-hidden rounded-full bg-yta-nedsankt">
                 <div
-                  className={`h-full rounded-full ${
-                    orangeFyllning ? "bg-accent" : "bg-sand-mork"
-                  }`}
+                  className="h-full rounded-full bg-sand-mork"
                   style={{ width: `${fyllnadsgrad.toFixed(2)}%` }}
                 />
               </div>
-              <div className="mt-2 flex items-baseline justify-between gap-3 font-granssnitt text-xs tabular-nums text-text-dampad">
-                <span>Tröskel {formateraKronor(troskelbelopp)}</span>
-                <span>
-                  {naddTroskel
-                    ? "tröskeln nådd"
-                    : `${formateraKronor(aterstaende)} kvar`}
-                </span>
-              </div>
+              {naddTroskel ? (
+                // Den enda gangen pa aret appen har goda nyheter – en hel mening,
+                // inte tva ord i smatext.
+                <p className="mt-2 font-granssnitt text-xs text-text-dampad">
+                  Tröskeln för {VISAT_AR} är passerad – allt du lägger in i år
+                  räknas
+                </p>
+              ) : (
+                <div className="mt-2 flex items-baseline justify-between gap-3 font-granssnitt text-xs tabular-nums text-text-dampad">
+                  <span>Tröskel {formateraKronor(troskelbelopp)}</span>
+                  <span>{formateraKronor(aterstaende)} kvar</span>
+                </div>
+              )}
               {oklassificeratFinns ? <TroskelInfo /> : null}
             </section>
           </Kort>
