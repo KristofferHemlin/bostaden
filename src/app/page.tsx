@@ -4,9 +4,14 @@
 //   * Tom databas: rubrik som uppmaning, ett par meningar om varfor kvitton ska
 //     sparas, och en primarknapp "Lagg till kvitto". Ingen rundtur, inga
 //     pahittade siffror.
-//   * Med innehall: bostadens adress som rubrik, tre sma nyckeltal pa rad
-//     (arets summa, antal kvitton, senast tillagt), troskelraden i full bredd,
-//     primarknappen, och till sist kvittolistan som eget kort.
+//   * Med innehall: tre sma nyckeltal pa rad (arets summa, antal kvitton,
+//     senast tillagt), troskelraden i full bredd, primarknappen, och till sist
+//     kvittolistan som eget kort.
+//
+// Startskarmen har ingen sidrubrik alls (docs/design.md, "Startskarmen med
+// innehall"): den aktiva fliken heter redan "Oversikt", och en rubrik som
+// upprepar den sager inget. Innehallet borjar direkt under toppraden, dar
+// adressen star precis som pa alla andra sidor.
 //
 // Ingen inmatning har – bara lasning. All berakning bor i src/doman.
 
@@ -115,15 +120,9 @@ export default async function Oversikt() {
     // egnaKort: pa oversikten hor nyckeltal, troskelrad och kvittolista hemma i
     // OLIKA kort med luft emellan (docs/design.md, "Genomgaende struktur" och
     // "Startskarmen med innehall").
-    // Adressen ar sidans rubrik (docs/design.md, "Startskarmen med innehall"),
-    // inte ordet "Oversikt". Toppraden visar da bara logotypen och kugghjulet –
-    // adressen ska inte sta tva ganger.
-    <Skarm
-      bostadsnamn={bostadsnamn}
-      rubrik={bostadsnamn}
-      doljBostadsnamn
-      egnaKort
-    >
+    // Ingen sidrubrik: den aktiva fliken heter redan "Oversikt". Innehallet
+    // borjar direkt under toppraden, dar adressen star som pa alla andra sidor.
+    <Skarm bostadsnamn={bostadsnamn} egnaKort>
       {tomt ? (
         // Forstaskarmen: den som just skapat kontot vet inte varfor kvitton ska
         // sparas. Skarmen ska saga det, inte forutsatta det.

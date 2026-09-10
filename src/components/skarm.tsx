@@ -2,10 +2,10 @@
 // --yta-upphojd med logotyp och bostadsnamn – och pa skrivbord aven huvudmenyn –
 // allt pa EN rad. Pa mobil ligger menyn i stallet fast i skarmens nederkant (se
 // Toppnavigering). Sedan innehallet centrerat i en kolumn pa hogst 620px i ETT
-// kort pa --yta-upphojd. Inga kort i kort. Sidrubriken upprepar aldrig
-// bostadsnamnet – den sager vad sidan visar ("Kvitton", "Projekt", ...).
-// Undantaget ar startskarmen: dar ar adressen sidrubriken och toppraden doljer
-// den i stallet (doljBostadsnamn).
+// kort pa --yta-upphojd. Inga kort i kort. Adressen ligger ALLTID i toppraden,
+// pa varenda skarm. Sidrubriken upprepar aldrig bostadsnamnet – den sager vad
+// sidan visar ("Kvitton", "Projekt", ...). Startskarmen har ingen sidrubrik
+// alls: den aktiva fliken heter redan "Oversikt".
 
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -255,13 +255,6 @@ export interface SkarmProps {
    * <Skarm> sveper in alla children i ETT kort. Anvands pa oversikten.
    */
   egnaKort?: boolean;
-  /**
-   * Doljer bostadsnamnet i toppraden sa att bara logotypen och kugghjulet star
-   * kvar (docs/design.md, "Startskarmen med innehall"). Pa startskarmen ar
-   * adressen sidrubriken och ska inte sta tva ganger. Logotypen ar fortfarande
-   * lanken till oversikten.
-   */
-  doljBostadsnamn?: boolean;
   children: ReactNode;
 }
 
@@ -271,7 +264,6 @@ export function Skarm({
   rubrikExtra,
   bakLank,
   egnaKort,
-  doljBostadsnamn,
   children,
 }: SkarmProps) {
   return (
@@ -300,13 +292,11 @@ export function Skarm({
             />
             {/* Toppraden visar BARA adressen: ingen andrarad med upplatelseform
                 och tilltradesar. Raden ar ALLTID en rad – namnet far aldrig
-                radbryta, och kapas med ellips nar det inte ryms. Pa startskarmen
-                doljs den helt: adressen ar dar sidrubriken. */}
-            {doljBostadsnamn ? null : (
-              <p className="truncate font-rubrik text-base text-text-primar sm:text-lg">
-                {bostadsnamn}
-              </p>
-            )}
+                radbryta, och kapas med ellips nar det inte ryms. Adressen star
+                har pa varenda skarm, startskarmen inrakn. */}
+            <p className="truncate font-rubrik text-base text-text-primar sm:text-lg">
+              {bostadsnamn}
+            </p>
           </Link>
           <Toppnavigering />
           {/* Kugghjulet ligger i toppraden pa bade mobil och skrivbord, langst

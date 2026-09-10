@@ -103,7 +103,7 @@ Ovanför innehållet står då bara en enkel rad med logotypen och bostadens nam
 
 **Sidrubriken upprepar aldrig bostadens namn.** Det står redan i toppraden. Sidrubriken säger vad sidan visar: "Kvitton", "Grupperingar", "Deklarationsunderlag".
 
-Startskärmen är undantaget: där *är* adressen sidrubriken, och toppraden visar då bara logotypen och kugghjulet. Se avsnittet Startskärmen med innehåll. Ordet "Översikt" står kvar som fliketikett men förekommer aldrig som rubrik.
+Startskärmen är undantaget: den har ingen sidrubrik alls, eftersom den aktiva fliken redan heter "Översikt". Se avsnittet Startskärmen med innehåll.
 
 Aktiv flik markeras med ytskillnad, aldrig med orange.
 
@@ -139,7 +139,7 @@ Logotypen syns i toppraden på skrivbord och som en liten markering till vänste
 
 **Logotypen och adressen är en länk till översikten.** Standardkonvention och gratis.
 
-**Sidrubriken upprepar aldrig adressen.** Står "Ulriksborgsgatan 7" i toppraden ska sidan under heta "Kvitton", inte samma adress en gång till. Undantaget är startskärmen, där adressen är rubriken och toppraden i stället utelämnar den.
+**Sidrubriken upprepar aldrig adressen.** Står "Ulriksborgsgatan 7" i toppraden ska sidan under heta "Kvitton", inte samma adress en gång till. Adressen ligger alltid i toppraden och aldrig i sidan, på varenda skärm.
 
 **Bostadsnamnet får den plats det behöver på bred skärm.** Att kapa "Ulriksborgsgatan 7" till "Ulriksborgsga…" på en skrivbordsskärm är bakvänt – utrymmet finns. Avkortning hör hemma på smala skärmar, inte breda.
 
@@ -252,11 +252,13 @@ Två åtgärder ligger under: **"Ändra uppgifter"** och **"Var något på kvitt
 
 ### Startskärmen med innehåll
 
-**Adressen är sidans rubrik.** Startskärmen inleds med bostadens adress satt som rubrik – "Ulriksborgsgatan 7" – inte med ordet "Översikt". Det gör skärmen till användarens egen i stället för till en rapport.
+**Startskärmen har ingen sidrubrik.** Adressen står i toppraden precis som på alla andra sidor, och innehållet börjar direkt under den.
 
-En hälsning med namn vore varmare, men appen samlar inte in något namn: registreringen har e-post, lösenord och bostaden, ingenting mer. Ett namnfält skulle vara ett fält till i ett flöde som medvetet är kort, och adressen är det mest personliga appen faktiskt har.
+Skälet är att fliken "Översikt" redan står markerad i navigationen. En rubrik som upprepar den aktiva flikens namn tillför ingenting, och gör dessutom skärmen till en rapport i stället för till användarens egen. Adressen som stor rubrik löser det problemet men skapar ett nytt: den svävar, och toppraden blir tom när adressen lyfts ur den.
 
-**På startskärmen visar toppraden bara logotypen och kugghjulet.** Adressen står som rubrik direkt under och ska inte stå två gånger. På alla andra sidor ligger adressen kvar i toppraden som vanligt, och sidrubriken säger vad sidan visar.
+På en tom startskärm bär kortets egen rubrik sidan. På en fylld gör metrikblocken det. Ingen av dem behöver en etikett ovanför sig.
+
+En hälsning med namn vore varmare än båda, men appen samlar inte in något namn – registreringen har e-post, lösenord och bostaden, ingenting mer. Ett namnfält skulle vara ett fält till i ett flöde som medvetet är kort.
 
 **Tre små nyckeltal på rad**, inte en stor siffra med en lång förklaring under. Ett block som ska bära både beloppet, tröskeln och en brasklapp blir tungt att läsa; tre korta kort går att uppfatta på en blick.
 
