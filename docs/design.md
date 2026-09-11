@@ -99,6 +99,8 @@ Ikoner sparsamt och tunna. Appen har få skärmar och behöver ingen ikonografis
 
 Ovanför innehållet står då bara en enkel rad med logotypen och bostadens namn.
 
+**En tillbakalänk visas bara när den leder någon annanstans än en flik gör.** "← Kvitton" på ett kvittos detaljvy är rätt – detaljvyn har ingen egen flik. "← Översikt" överst på en fliksida är det inte: fliken står redan markerad i navigationen och länken upprepar den. Regeln är densamma på mobil, där flikraden ligger i nederkanten.
+
 **På skrivbord ligger logotyp, bostadsnamn och flikar på en och samma rad.** Inte logotyp på en våning och menyn på nästa – det ger tre horisontella band innan innehållet börjar och gör sidan tung i överkant.
 
 **Sidrubriken upprepar aldrig bostadens namn.** Det står redan i toppraden. Sidrubriken säger vad sidan visar: "Kvitton", "Projekt", "Deklarationsunderlag".
@@ -168,6 +170,8 @@ Kamerainmatning använder `<input type="file" accept="image/*" capture="environm
 
 Entiteten heter fortfarande `kostnad` i kod, tabeller och rutter. Användarens språk och kodens språk behöver inte vara samma.
 
+**Appen beskriver aldrig sin egen byggordning.** Formuleringar som "kommer i ett senare steg", "är inte byggt än" eller "steg 14" är utvecklarens språk och hör hemma i specen, inte på skärmen. En användare som läser att något kommer senare lär sig att produkten är ofärdig, vilket är sant för er och irrelevant för honom eller henne. Finns funktionen inte nämns den inte; behöver tillståndet förklaras beskrivs det i nutid och ur användarens perspektiv.
+
 ## Undvik
 
 Vit bakgrund. Svart text. Skuggor och gradienter. Flera orange element på samma skärm. Rött och grönt för status. Ikonrader i navigationen. Animationer utöver enkla övergångar. Tomma tillstånd som bara säger att det är tomt.
@@ -216,9 +220,15 @@ På startskärmen finns ingen sådan sektion. Att möta en påminnelse varje gå
 
 **Kvitton grupperas per år med tydlig avdelare.** Tröskeln gäller per kalenderår och åren är helt skilda åt i underlaget – en lista där 2025 och 2026 glöser samman döljer produktens viktigaste struktur. Årsrubriken är en egen rad på `--yta-nedsankt` med årtalet och årets summa högerställd.
 
+**Inom varje år sorteras raderna på datum, nyast först** – aldrig på när posten lades in. En årsrubrik lovar tidsordning, och en lista som under rubriken 2026 visar april, april, mars, augusti ser ut som en bugg även när den inte är det. Samma sak gäller de senaste kvittona på startskärmen: de är sorterade på kvittots datum, inte på när de skapades.
+
+Skälet är att ett kvitto ofta läggs in långt efter att det betalades – ett kvitto från 2016 som fotograferas i dag hamnar annars överst i en lista som i övrigt visar innevarande år.
+
 ### Listrader
 
 Projekt och kostnader visas som rader avdelade med 1px linjer, inte som separata kort. Varje rad har namnet på första raden och en dämpad andra rad med kategori eller status, med beloppet högerställt på samma höjd som namnet. Rader vars status kräver åtgärd markeras med en liten fylld prick i `--accent` före den dämpade texten, inte genom att färga hela raden. Med flera rader i samma läge blir orange text en vägg av varningar, och färgen tappar sin betydelse.
+
+**Hovringen får aldrig se ut som en årsrubrik.** Fylls en hovrad med samma `--yta-nedsankt` som årsrubrikens band ser den rad muspekaren råkar vila på ut som en ny rubrik, och listans struktur verkar ändra sig när man rör musen. Hovringen ska vara märkbart svagare än rubrikbandet. Det gäller bara skrivbord – hover finns inte på telefon.
 
 ### Tomma tillstånd
 
@@ -302,6 +312,10 @@ Raden om oklassificerade kvitton ligger kvar som en klickbar ingång till genomg
 ### Bilagor
 
 Bilagor visas som en rad små miniatyrer under kostnadens uppgifter, med en `+`-ruta sist för att lägga till fler. Tryck på en miniatyr öppnar filen i helskärm.
+
+**En miniatyr som laddar får aldrig se ut som en tom ruta.** Fram tills bilden är hämtad visas ett tydligt laddningsläge i rutan. En blank sandfärgad fyrkant där kvittot ska vara är exakt den signal som förstör förtroendet för ett arkiv – användaren drar slutsatsen att bilden är borta, inte att den är på väg. Samma sak gäller när en bild verkligen inte går att läsa: då står det att den inte kunde visas, aldrig ingenting.
+
+**Den synliga åtgärden på en bilaga är att öppna den, inte att radera den.** Står "Ta bort" som enda etikett under miniatyren är det enda namngivna man kan göra med originalhandlingen att förstöra den. Raderingen ligger bakom att bilagan är öppnad eller bakom ett mindre, dämpat reglage – aldrig som miniatyrens enda underrad.
 
 **Miniatyren för en PDF är en dokumentikon med etiketten "PDF" under**, centrerat i rutan. Aldrig filnamnet – ett kassasystemsgenererat namn som `Invoice_IMRInstitu_539370_Aug-2026.pdf` bryts mitt i ett ord, fyller rutan med brus och ser ut som ett fel. Vilken fil det är framgår av förhandsvisningen, som ändå visar den markerade bilagan.
 
@@ -490,6 +504,8 @@ Kortet ligger vertikalt centrerat i sidan. Klistrat mot överkanten med en halv 
 
 Sekundärknappen har samma form och höjd som primärknappen. Att skapa konto är en väg in i produkten, inte en fotnot – men den är inte handlingen den här sidan finns för, och därför bär den inte orange.
 
+**Den som glömt sitt lösenord måste se en väg som säger det.** E-postlänken löser problemet tekniskt, men ingen som står och inte kommer ihåg sitt lösenord läser "Logga in med e-postlänk i stället" som lösningen på just det. Antingen heter raden något som nämner glömt lösenord, eller så finns en egen länk för det. En app man loggar in i två gånger om året är den app där lösenordet oftast är borta.
+
 ### Emoji
 
 Emoji används på exakt ett ställe: som symbol på korten för upplåtelseform i registreringen. De gör valet snabbare att avläsa och tillför värme i ett annars torrt formulär.
@@ -528,7 +544,9 @@ Det är ett undantag från regeln att tomma tillstånd har en primärknapp. Rege
 
 Här ligger allt som beskriver bostaden men inte behövs för att komma igång. Fälten är valfria, och sidan ska aldrig kännas som ett formulär man måste fylla i.
 
-**Uppgifter om bostaden:** adress, ort, storlek, köpeskilling, köpkostnader, ägarandel. För bostadsrätt även kapitaltillskott; för fastighet inte, eftersom det inte finns.
+**Uppgifter om bostaden:** adress, ort, upplåtelseform, tillträdesdatum, storlek, köpeskilling, köpkostnader, ägarandel. För bostadsrätt även kapitaltillskott; för fastighet inte, eftersom det inte finns.
+
+**Upplåtelseform och tillträdesdatum måste gå att se och ändra här.** De sätts vid registreringen och visas medvetet inte i toppraden, men de får inte bli oåtkomliga. Tillträdesdatumet är baslinjen för hela skickbedömningen och gränsen för vilka utgifter som är dina – skrivs det fel vid registreringen och inte går att rätta blir underlaget fel utan att något ser trasigt ut.
 
 Hjälptexten för köpkostnader skiljer sig: lagfart, pantbrev och inköpsprovision för fastighet, överlåtelseavgift för bostadsrätt.
 
@@ -542,7 +560,7 @@ Sidan ska gå att lämna halvfylld. Ingen validering utöver att angivna belopp 
 
 ### Exportvyn
 
-**Sidan går alltid att öppna, också innan bostaden är såld.** Att kräva ett försäljningsdatum för att ens få titta lär användaren att sidan inte är för hönom, och nyfikenheten på vad man samlat ihop är både legitim och nyttig – den är hela skälet att fortsätta lägga in kvitton.
+**Sidan går alltid att öppna, också innan bostaden är såld.** Att kräva ett försäljningsdatum för att ens få titta lär användaren att sidan inte är för honom eller henne, och nyfikenheten på vad man samlat ihop är både legitim och nyttig – den är hela skälet att fortsätta lägga in kvitton.
 
 Utan försäljningsdatum visas:
 
@@ -559,6 +577,8 @@ Poängen är att sidan ska vara meningsfull under hela ägandet i stället för 
 En varning per hög som fyller fyra rader var gör skärmen till en vägg av text, och läsaren slutar läsa vid den andra punkten.
 
 **Summorna dämpas när de är ofullständiga.** Två stora nollor på en skärm som heter Deklarationsunderlag ser trasigt ut. Finns oklassificerade högar sätts talen i `--text-sekundar` i stället för `--text-primar`, så att blicken går till listan över det som återstår. När allt är klassificerat får de full tyngd.
+
+**Friskrivningen står på den här sidan.** En dämpad rad om att appen inte ger skatterådgivning och att Skatteverkets upplysningstjänst svarar på gränsfall. Exportvyn är den enda skärm där användaren tar med sig siffror ut ur appen, och därmed den enda där påståendet behöver stå. Samma rad hör hemma i klassificeringsgenomgången, där bedömningarna faktiskt görs.
 
 ### Meddelanderutor
 

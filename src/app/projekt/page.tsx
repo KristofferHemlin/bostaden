@@ -59,7 +59,6 @@ export default async function ProjektlistaSida() {
       bostadsnamn={bostadsnamn}
       rubrik="Projekt"
       rubrikExtra={rader.length > 0 ? <KategoriInfo /> : undefined}
-      bakLank={{ href: "/", text: "Översikt" }}
     >
       {rader.length === 0 ? (
         <div className="p-5">

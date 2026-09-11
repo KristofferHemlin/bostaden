@@ -1,9 +1,18 @@
 "use client";
 
 // Bilageraden pa en kostnad (docs/design.md, "Bilagor"): en rad sma miniatyrer
-// med en +-ruta sist. Tryck pa en miniatyr oppnar filen i helskarm. PDF – och
-// HEIC vars miniatyr inte gick att generera – visas som en ikon med filnamnet
-// under, inte som en tom ruta.
+// med en +-ruta sist. Tryck pa en miniatyr oppnar filen i helskarm. PDF visas
+// som en ikon med filnamnet under, inte som en tom ruta.
+//
+// En bild som annu inte hamtats far ALDRIG se ut som en tom ruta – det ar
+// exakt den signal som far anvandaren att tro att kvittot ar borta.
+// <Miniatyrbild> visar darfor ett laddningslage tills webblasaren bekraftat
+// bilden, och ett eget "kunde inte visas"-lage om den faktiskt misslyckas
+// (t.ex. en HEIC-miniatyr som inte gick att generera).
+//
+// Den synliga atgarden pa en bilaga ar att OPPNA den – miniatyren ar en lank.
+// Raderingen ligger bakom ett dampat reglage (papperskorgsikonen i hornet),
+// aldrig som en egen namngiven rad under miniatyren.
 //
 // Uppladdningen gar DIREKT fran webblasaren till Supabase Storage via en
 // signerad URL (filen passerar aldrig en serverless-funktion). Under
@@ -25,7 +34,7 @@ const ACCEPT =
   "image/jpeg,image/png,image/heic,image/heif,application/pdf,.jpg,.jpeg,.png,.heic,.heif,.pdf";
 
 const RUTA =
-  "flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-lg bg-yta-nedsankt text-center";
+  "relative flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-lg bg-yta-nedsankt text-center";
 
 export function Bilagor({
   kostnadId,
@@ -107,7 +116,7 @@ export function Bilagor({
 
       <div className="flex flex-wrap gap-2">
         {bilagor.map((b) => (
-          <div key={b.id} className="flex w-16 flex-col items-center gap-1">
+          <div key={b.id} className="relative w-16">
             <a
               href={`/bilaga/${b.id}?variant=${b.arBild ? "visning" : "original"}`}
               target="_blank"
@@ -116,25 +125,31 @@ export function Bilagor({
               title={b.filnamn}
             >
               {b.arBild ? (
-                <img
-                  src={`/bilaga/${b.id}?variant=visning`}
-                  alt={b.filnamn}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
+                <Miniatyrbild src={`/bilaga/${b.id}?variant=visning`} alt={b.filnamn} />
+              ) : b.arPdf ? (
                 <>
                   <DokumentIkon />
                   <span className="mt-1 line-clamp-2 px-1 font-granssnitt text-[10px] leading-tight text-text-sekundar">
                     {b.filnamn}
                   </span>
                 </>
+              ) : (
+                <>
+                  <FelIkon />
+                  <span className="mt-1 px-1 font-granssnitt text-[10px] leading-tight text-text-dampad">
+                    Kunde inte visas
+                  </span>
+                </>
               )}
             </a>
 
+            {/* Raderingen ligger bakom ett dampat reglage i hornet – den
+                synliga atgarden pa miniatyren ar att oppna den, inte att
+                radera (docs/design.md, "Bilagor"). */}
             {bekraftaId === b.id ? (
               <form
                 action={raderaAction}
-                className="flex flex-col items-center gap-0.5"
+                className="mt-1 flex flex-col items-center gap-0.5"
               >
                 <input type="hidden" name="bilaga_id" value={b.id} />
                 <input type="hidden" name="kostnad_id" value={kostnadId} />
@@ -157,9 +172,10 @@ export function Bilagor({
               <button
                 type="button"
                 onClick={() => setBekraftaId(b.id)}
-                className="font-granssnitt text-[11px] text-text-sekundar hover:text-text-primar"
+                aria-label={`Ta bort ${b.filnamn}`}
+                className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-yta-upphojd text-text-dampad transition-colors hover:text-accent-mork"
               >
-                Ta bort
+                <PapperskorgIkon />
               </button>
             )}
           </div>
@@ -221,6 +237,89 @@ export function Bilagor({
         </p>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * En bildminiatyr med ett eget laddningslage (docs/design.md, "Bilagor"): fram
+ * tills bilden hamtats visas en roterande indikator i rutan i stallet for en
+ * tom yta, och gar hamtningen inte att lasa visas ett tydligt felmeddelande –
+ * aldrig ingenting.
+ */
+function Miniatyrbild({ src, alt }: { src: string; alt: string }) {
+  const [lage, setLage] = useState<"laddar" | "klar" | "fel">("laddar");
+
+  if (lage === "fel") {
+    return (
+      <span className="flex flex-col items-center px-1">
+        <FelIkon />
+        <span className="mt-1 font-granssnitt text-[10px] leading-tight text-text-dampad">
+          Kunde inte visas
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <>
+      {lage === "laddar" ? (
+        <span
+          aria-hidden
+          className="absolute inset-0 flex items-center justify-center"
+        >
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-text-dampad border-t-transparent" />
+        </span>
+      ) : null}
+      <img
+        src={src}
+        alt={alt}
+        onLoad={() => setLage("klar")}
+        onError={() => setLage("fel")}
+        className={`absolute inset-0 h-full w-full object-cover ${
+          lage === "laddar" ? "invisible" : ""
+        }`}
+      />
+    </>
+  );
+}
+
+function FelIkon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className="h-6 w-6 text-text-dampad"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v5" />
+      <path d="M12 16h.01" />
+    </svg>
+  );
+}
+
+function PapperskorgIkon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className="h-3 w-3"
+    >
+      <path d="M4 7h16" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+      <path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12" />
+      <path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" />
+    </svg>
   );
 }
 

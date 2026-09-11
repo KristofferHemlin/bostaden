@@ -18,7 +18,12 @@ import {
   type ProjektfragorSvar,
 } from "@/app/projekt/projektfragor-falt";
 import { fraga3Relevant } from "@/doman/projektfragor";
-import { Falt, INPUT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
+import {
+  Falt,
+  Friskrivning,
+  INPUT_KLASS,
+  PRIMARKNAPP_KLASS,
+} from "@/components/skarm";
 import { formateraKronor } from "@/lib/format";
 
 const START: FragorResultat = {};
@@ -151,6 +156,8 @@ function HogFormular({
             {resultat.fel}
           </p>
         ) : null}
+
+        <Friskrivning />
 
         <button type="submit" disabled={pagar} className={PRIMARKNAPP_KLASS}>
           {pagar ? "Sparar…" : "Spara och nästa"}

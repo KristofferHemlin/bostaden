@@ -9,6 +9,7 @@ export default {
         "yta-bas": "var(--yta-bas)",
         "yta-upphojd": "var(--yta-upphojd)",
         "yta-nedsankt": "var(--yta-nedsankt)",
+        "yta-hover": "var(--yta-hover)",
         "text-primar": "var(--text-primar)",
         "text-sekundar": "var(--text-sekundar)",
         "text-dampad": "var(--text-dampad)",

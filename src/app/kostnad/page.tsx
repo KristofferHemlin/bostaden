@@ -25,6 +25,7 @@ import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { sorteraPaDatumFallande } from "@/lib/sortering";
 import { kravBostad } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +39,9 @@ interface KvittoRad {
   belopp: string | undefined;
   href: string;
   bild: { src: string; alt: string } | undefined;
+  /** Kvittots eget datum (betaldatum, dokumentdatum som reserv) – ANVANDS
+   * BARA for sorteringen inom arsgruppen, aldrig for visning direkt. */
+  datum: string | null;
 }
 
 interface Arsgrupp {
@@ -113,6 +117,7 @@ export default async function KvittolistaSida() {
         utkast && forstaBilaga
           ? { src: `/bilaga/${forstaBilaga.id}?variant=visning`, alt: "Kvittobild" }
           : undefined,
+      datum,
     };
 
     const nyckel = datum ? datum.slice(0, 4) : "";
@@ -132,19 +137,22 @@ export default async function KvittolistaSida() {
     if (!utkast && !k.arkiverad) grupp.summaOre += k.totalbelopp ?? 0;
   }
 
-  const sorterade = [...grupper.values()].sort((a, b) => {
-    if (a.nyckel === b.nyckel) return 0;
-    if (a.nyckel === "") return -1;
-    if (b.nyckel === "") return 1;
-    return Number(b.nyckel) - Number(a.nyckel);
-  });
+  const sorterade = [...grupper.values()]
+    .sort((a, b) => {
+      if (a.nyckel === b.nyckel) return 0;
+      if (a.nyckel === "") return -1;
+      if (b.nyckel === "") return 1;
+      return Number(b.nyckel) - Number(a.nyckel);
+    })
+    .map((grupp) => ({
+      ...grupp,
+      // Inom aret: kvittots eget datum, nyast forst – ALDRIG insattningsordning
+      // (docs/design.md, Kvittolistan).
+      rader: sorteraPaDatumFallande(grupp.rader, (r) => r.datum),
+    }));
 
   return (
-    <Skarm
-      bostadsnamn={bostadsnamn}
-      rubrik="Kvitton"
-      bakLank={{ href: "/", text: "Översikt" }}
-    >
+    <Skarm bostadsnamn={bostadsnamn} rubrik="Kvitton">
       {kostnadRader.length === 0 ? (
         <div className="p-5">
           <p className="font-rubrik text-lg text-text-primar">
@@ -166,7 +174,7 @@ export default async function KvittolistaSida() {
           {antalOklassificerade > 0 ? (
             <Link
               href="/genomgang"
-              className="flex items-center gap-1.5 border-b border-linje p-4 font-granssnitt text-sm text-text-primar transition-colors hover:bg-yta-nedsankt"
+              className="flex items-center gap-1.5 border-b border-linje p-4 font-granssnitt text-sm text-text-primar transition-colors hover:bg-yta-hover"
             >
               <span
                 aria-hidden

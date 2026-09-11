@@ -15,22 +15,33 @@ const KOPKOSTNADER_HJALP_BOSTADSRATT =
 const KOPKOSTNADER_HJALP_FASTIGHET =
   "Lagfart, pantbrev och inköpsprovision vid köpet.";
 
+// Samma tva val som registreringen (docs/design.md, Registreringsflodet) –
+// men UTAN emoji. Emoji anvands pa exakt ett stalle: korten i registreringen
+// (docs/design.md, "Emoji").
+const UPPLATELSEFORMER = [
+  { varde: "bostadsratt" as const, etikett: "Bostadsrätt" },
+  { varde: "fastighet" as const, etikett: "Villa eller radhus" },
+];
+
 export function InstallningarForm({
+  upplatelseform,
+  tilltradesdatum,
   storlek,
   kopeskilling,
   kopkostnader,
   agarandel,
   kapitaltillskott,
-  arBostadsratt,
 }: {
+  upplatelseform: "bostadsratt" | "fastighet";
+  tilltradesdatum: string;
   storlek: string;
   kopeskilling: string;
   kopkostnader: string;
   agarandel: string;
   kapitaltillskott: string;
-  arBostadsratt: boolean;
 }) {
   const [resultat, action, pagar] = useActionState(sparaInstallningar, START);
+  const [upplatelseformVal, setUpplatelseformVal] = useState(upplatelseform);
   const [kopeskillingFalt, setKopeskillingFalt] = useState(() =>
     formateraBeloppInmatning(kopeskilling),
   );
@@ -40,9 +51,57 @@ export function InstallningarForm({
   const [kapitaltillskottFalt, setKapitaltillskottFalt] = useState(() =>
     formateraBeloppInmatning(kapitaltillskott),
   );
+  // Kapitaltillskottsfaltet foljer VALET, inte bara den sparade upplatelse-
+  // formen, sa att det dyker upp eller forsvinner sa fort man byter kort.
+  const visaKapitaltillskott = upplatelseformVal === "bostadsratt";
 
   return (
     <form action={action} className="flex flex-col gap-5 p-5">
+      <div>
+        <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
+          Vad äger du?
+          <span aria-hidden className="ml-0.5 text-text-dampad">
+            *
+          </span>
+        </span>
+        <div className="grid grid-cols-2 gap-2">
+          {UPPLATELSEFORMER.map((o) => {
+            const vald = upplatelseformVal === o.varde;
+            return (
+              <button
+                key={o.varde}
+                type="button"
+                aria-pressed={vald}
+                onClick={() => setUpplatelseformVal(o.varde)}
+                className={[
+                  "rounded-lg border-2 px-3 py-3 text-center font-granssnitt text-sm text-text-primar transition-colors",
+                  vald
+                    ? "border-text-primar bg-yta-nedsankt"
+                    : "border-linje hover:border-text-dampad",
+                ].join(" ")}
+              >
+                {o.etikett}
+              </button>
+            );
+          })}
+        </div>
+        <input type="hidden" name="upplatelseform" value={upplatelseformVal} />
+      </div>
+
+      <Falt
+        etikett="Tillträdesdatum"
+        obligatoriskt
+        hjalp="Baslinjen för skickbedömningen – gränsen för vilka utgifter som är dina."
+      >
+        <input
+          type="date"
+          name="tilltradesdatum"
+          defaultValue={tilltradesdatum}
+          required
+          className={INPUT_KLASS}
+        />
+      </Falt>
+
       <Falt etikett="Storlek" hjalp="Boarea i kvadratmeter.">
         <input
           type="text"
@@ -70,7 +129,7 @@ export function InstallningarForm({
       <Falt
         etikett="Köpkostnader"
         hjalp={
-          arBostadsratt
+          visaKapitaltillskott
             ? KOPKOSTNADER_HJALP_BOSTADSRATT
             : KOPKOSTNADER_HJALP_FASTIGHET
         }
@@ -98,7 +157,7 @@ export function InstallningarForm({
         />
       </Falt>
 
-      {arBostadsratt ? (
+      {visaKapitaltillskott ? (
         <Falt
           etikett="Kapitaltillskott"
           hjalp="Föreningens amorteringar under din innehavstid – står i uppgiften från föreningen."

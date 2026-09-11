@@ -4,8 +4,13 @@
 // bostaden men inte behovs for att komma igang: storlek, kopeskilling,
 // kopkostnader, agarandel och – bara for bostadsratt – kapitaltillskott.
 // Kopeskillingen gar att ange redan i registreringens bostadssteg; den som
-// hoppade over den dar fyller i den har. Alla falt ar valfria. Tomt falt
-// nollstaller vardet (agarandel tolkas dock som hela bostaden, 100 %).
+// hoppade over den dar fyller i den har. De flesta faltet ar valfria. Tomt
+// falt nollstaller vardet (agarandel tolkas dock som hela bostaden, 100 %).
+//
+// Upplatelseform och tilltradesdatum satts vid registreringen och visas
+// medvetet inte i toppraden, men maste ga att se och andra har (docs/design.md,
+// "Installningssidan") – tilltradesdatumet ar baslinjen for hela skickbedom-
+// ningen. Bada ar OBLIGATORISKA, till skillnad fran resten av formularet.
 
 import { revalidatePath } from "next/cache";
 import { oreFranKronor } from "@/lib/format";
@@ -16,6 +21,8 @@ export interface InstallningarResultat {
   fel?: string;
   meddelande?: string;
 }
+
+const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 
 // Positivt heltal antal kvadratmeter, eller null vid tomt falt. Returnerar
 // undefined nar texten inte gar att tolka.
@@ -51,13 +58,27 @@ export async function sparaInstallningar(
   formData: FormData,
 ): Promise<InstallningarResultat> {
   const { anvandareId, bostadId } = await kravBostad();
-  const bostad = await prisma.bostad.findUniqueOrThrow({
-    where: { id: bostadId },
-    select: { upplatelseform: true },
-  });
-  const arBostadsratt = bostad.upplatelseform === "bostadsratt";
 
   const las = (nyckel: string) => String(formData.get(nyckel) ?? "").trim();
+
+  // Upplatelseform och tilltradesdatum – till skillnad fran resten av
+  // formularet OBLIGATORISKA, precis som i registreringen (docs/design.md,
+  // "Installningssidan"). Formen styr valet av upplatelseform har (inte det
+  // som redan lag i databasen) sa att kapitaltillskottsfaltet lases in eller
+  // nollstalls i takt med det korten faktiskt visar.
+  const upplatelseform = las("upplatelseform");
+  if (upplatelseform !== "bostadsratt" && upplatelseform !== "fastighet") {
+    return { fel: "Välj bostadsrätt eller villa/radhus." };
+  }
+  const arBostadsratt = upplatelseform === "bostadsratt";
+
+  const tilltradesdatum = las("tilltradesdatum");
+  if (!DATUM.test(tilltradesdatum)) {
+    return { fel: "Fyll i tillträdesdatum." };
+  }
+  if (tilltradesdatum < "1970-01-01") {
+    return { fel: "Tillträdesdatum före 1970 stöds inte." };
+  }
 
   const storlek = storlekFranText(las("storlek"));
   if (storlek === undefined) {
@@ -75,8 +96,9 @@ export async function sparaInstallningar(
   }
 
   // Kapitaltillskott finns bara for bostadsratt (docs/produktspec.md 4.8) –
-  // falt visas inte for fastighet och lases da inte in.
-  let kapitaltillskott: bigint | null | undefined = undefined;
+  // falt visas inte for fastighet, lases da inte in och nollstalls i databasen
+  // om anvandaren just bytte bort fran bostadsratt.
+  let kapitaltillskott: bigint | null | undefined = null;
   if (arBostadsratt) {
     kapitaltillskott = beloppFranText(las("kapitaltillskott"));
     if (kapitaltillskott === undefined) {
@@ -92,10 +114,12 @@ export async function sparaInstallningar(
   await prisma.bostad.update({
     where: { id: bostadId },
     data: {
+      upplatelseform: upplatelseform as "bostadsratt" | "fastighet",
+      tilltradesdatum: new Date(`${tilltradesdatum}T00:00:00.000Z`),
       storlek,
       kopeskilling,
       kopkostnader,
-      ...(arBostadsratt ? { kapitaltillskott } : {}),
+      kapitaltillskott,
     },
   });
 
@@ -107,5 +131,10 @@ export async function sparaInstallningar(
 
   revalidatePath("/installningar");
   revalidatePath("/");
+  // Tilltradesdatum ar baslinjen for fraga 3 och femarsfonstret, och
+  // upplatelseform styr blankettnamnet – bada paverkar dessa sidor.
+  revalidatePath("/genomgang");
+  revalidatePath("/genomgang/fragor");
+  revalidatePath("/export");
   return { meddelande: "Sparat." };
 }

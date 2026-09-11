@@ -15,6 +15,7 @@
 
 import Link from "next/link";
 import {
+  Friskrivning,
   Meddelanderuta,
   PRIMARKNAPP_KLASS,
   SEKUNDARKNAPP_KLASS,
@@ -45,11 +46,7 @@ export default async function ExportSida() {
   const blankett = bostad.upplatelseform === "fastighet" ? "K5" : "K6";
 
   return (
-    <Skarm
-      bostadsnamn={bostadsnamn}
-      rubrik="Deklarationsunderlag"
-      bakLank={{ href: "/", text: "Översikt" }}
-    >
+    <Skarm bostadsnamn={bostadsnamn} rubrik="Deklarationsunderlag">
       {renderaInnehall()}
     </Skarm>
   );
@@ -113,7 +110,7 @@ export default async function ExportSida() {
           <Meddelanderuta>
             {gemensam
               ? "Din ägarandel är under 100 %. Sammanställningen visar både hela bostadens belopp och din andel, så att den andra delägaren kan använda samma underlag."
-              : `Sammanställningen följer Skatteverkets hjälpblankett SKV 2197 och pekar ut vad som förs till ${blankett}. Den lämnas inte in – spara den. Bilagepaketet som PDF kommer i ett senare steg.`}
+              : `Sammanställningen följer Skatteverkets hjälpblankett SKV 2197 och pekar ut vad som förs till ${blankett}. Den lämnas inte in – spara den.`}
           </Meddelanderuta>
         </div>
 
@@ -202,7 +199,7 @@ export default async function ExportSida() {
           </section>
         ) : null}
 
-        <div className="p-4">
+        <div className="space-y-4 p-4">
           {ex.sald ? (
             <Link href="/forsaljning" className={SEKUNDARKNAPP_KLASS}>
               Ändra försäljningsuppgifter
@@ -212,6 +209,7 @@ export default async function ExportSida() {
               Markera som såld
             </Link>
           )}
+          <Friskrivning />
         </div>
       </>
     );

@@ -28,6 +28,21 @@ export const SEKUNDARKNAPP_KLASS =
 export const SANDKNAPP_KLASS =
   "flex min-h-[44px] w-full items-center justify-center rounded-full bg-sand px-5 py-3 font-granssnitt text-base font-medium text-text-primar transition-colors hover:bg-sand-mork disabled:opacity-60";
 
+/**
+ * Friskrivningen (docs/design.md, Exportvyn): en dampad rad, inte en
+ * Meddelanderuta – bara tva skarmar star for pastaendet, exportvyn dar
+ * anvandaren tar med sig siffror ut ur appen och klassificeringsgenomgangen
+ * dar bedomningarna faktiskt gors.
+ */
+export function Friskrivning() {
+  return (
+    <p className="font-granssnitt text-xs text-text-dampad">
+      Appen ger ingen skatterådgivning. Vid gränsfall svarar Skatteverkets
+      upplysningstjänst.
+    </p>
+  );
+}
+
 export function Meddelanderuta({ children }: { children: ReactNode }) {
   // --sand bakgrund, ingen ram, ingen ikon. Hogst en per skarm.
   return (
@@ -97,7 +112,7 @@ export function Listrad({
     const lank = (
       <Link
         href={href}
-        className="block min-w-0 flex-1 transition-colors hover:bg-yta-nedsankt"
+        className="block min-w-0 flex-1 transition-colors hover:bg-yta-hover"
       >
         {innehall}
       </Link>

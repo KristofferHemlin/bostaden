@@ -20,6 +20,12 @@
 
   --linje: #dccfc0;
 
+  /* Hovring i listor (docs/design.md, "Listrader"): markbart svagare an
+     arsrubrikens band. Fylls en hovrad med samma --yta-nedsankt som
+     rubrikbandet ser raden muspekaren rakar vila pa ut som en ny rubrik.
+     Anvands ENDAST for radhovring, aldrig for rubrikband eller inputfalt. */
+  --yta-hover: color-mix(in srgb, var(--yta-nedsankt) 40%, var(--yta-upphojd));
+
   /* Tva dampade statusfarger – ENDAST till meddelanderutor (docs/design.md).
      Bla for forklaringar som inte kraver nagot, gron for bekraftelser. Aldrig i
      troskelfaltet, i listor, pa knappar eller som textfarg utanfor sina rutor. */

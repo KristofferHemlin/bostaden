@@ -8,6 +8,7 @@
 import { loggaUt } from "@/app/login/actions";
 import { SEKUNDARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
+import { isoDatum } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 import { ArkivexportKnapp } from "./arkivexport-knapp";
@@ -28,8 +29,6 @@ export default async function InstallningarSida() {
   const bostad = await prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } });
   const { bostadsnamn } = bostadHeader(bostad);
 
-  const arBostadsratt = bostad.upplatelseform === "bostadsratt";
-
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
@@ -37,12 +36,13 @@ export default async function InstallningarSida() {
       bakLank={{ href: "/", text: "Översikt" }}
     >
       <InstallningarForm
+        upplatelseform={bostad.upplatelseform}
+        tilltradesdatum={isoDatum(bostad.tilltradesdatum)}
         storlek={bostad.storlek != null ? String(bostad.storlek) : ""}
         kopeskilling={kronor(bostad.kopeskilling)}
         kopkostnader={kronor(bostad.kopkostnader)}
         agarandel={agarandel === 100 ? "" : String(agarandel)}
         kapitaltillskott={kronor(bostad.kapitaltillskott)}
-        arBostadsratt={arBostadsratt}
       />
 
       {/* Arkivexport: laddar ner samtliga bilagor som ett zip-arkiv
