@@ -138,6 +138,36 @@ export default async function Oversikt() {
           <Link href="/kostnad/nytt" className={`${PRIMARKNAPP_KLASS} mt-5`}>
             Lägg till kvitto
           </Link>
+
+          {/* Tre rader om hur det gar till, i samma kort under knappen
+              (docs/design.md, "Forstaskarmen for en ny anvandare"). Ett kort
+              och en knapp lamnar tva tredjedelar av skarmen tom och sager
+              inget om vad appen gor at en. Dampad brodtext – ingen egen
+              rubrikniva som konkurrerar med kortets, och ingen andra knapp.
+
+              Avstanden (docs/design.md, "Avstanden avgor om det lases ratt"):
+              stort mellanrum upp till rubriken sa den inte lases som knappens
+              underrubrik, tatt mellan de tre raderna sa de lases som steg i en
+              ordning i stallet for fristaende paastaenden. */}
+          <div className="mt-8">
+            <p className="font-granssnitt text-sm font-medium text-text-sekundar">
+              Så fungerar det
+            </p>
+            <div className="mt-2 space-y-1.5">
+              <p className="font-granssnitt text-sm text-text-dampad">
+                Fota kvittot eller ladda upp fakturan. Appen läser av belopp,
+                datum och leverantör.
+              </p>
+              <p className="font-granssnitt text-sm text-text-dampad">
+                Skattefrågorna kommer senare, inte nu. Du svarar på dem när du
+                vill, och senast när du säljer.
+              </p>
+              <p className="font-granssnitt text-sm text-text-dampad">
+                Allt ligger kvar tills du behöver det. Även om det dröjer
+                tjugo år.
+              </p>
+            </div>
+          </div>
         </Kort>
       ) : (
         <>

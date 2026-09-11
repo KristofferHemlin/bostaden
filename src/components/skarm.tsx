@@ -272,7 +272,11 @@ export function Skarm({
           huvudmenyn – allt pa en rad (docs/design.md, Navigation). Pa mobil
           hamnar <Toppnavigering> i stallet fast i nederkanten. */}
       <div className="w-full border-b border-linje bg-yta-upphojd">
-        <div className="mx-auto flex w-full max-w-[620px] items-center gap-3 px-4 py-3">
+        {/* Toppraden spanner HELA skarmbredden – 620px-kolumnen galler bara
+            innehallet under (docs/design.md, Skrivbordsvyn). Anvands samma
+            max-w har klumpar logotyp, adress, flikar och kugghjul ihop sig
+            mitt pa en bred skarm och adressen kapas i onodan. */}
+        <div className="flex w-full items-center gap-3 px-4 py-3">
           {/* Tre zoner pa en rad (docs/design.md, Skrivbordsvyn): adressen till
               vanster med sin egen plats, kugghjulet till hoger, flikarna i
               utrymmet daremellan. Adressen (flex-1, min-w-0) tar den plats som

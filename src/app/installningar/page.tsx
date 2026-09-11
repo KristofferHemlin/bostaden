@@ -10,6 +10,7 @@ import { SEKUNDARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
+import { ArkivexportKnapp } from "./arkivexport-knapp";
 import { InstallningarForm } from "./form";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +44,18 @@ export default async function InstallningarSida() {
         kapitaltillskott={kronor(bostad.kapitaltillskott)}
         arBostadsratt={arBostadsratt}
       />
+
+      {/* Arkivexport: laddar ner samtliga bilagor som ett zip-arkiv
+          (docs/produktspec.md 12, "Arkivexport tidigt"). Avskild med en linje
+          precis som utloggningen, men ligger ovanfor den – det ar en
+          handling, inte en avslutning. */}
+      <div className="flex flex-col gap-2 border-t border-linje p-5">
+        <p className="font-granssnitt text-sm text-text-sekundar">
+          Ladda ner alla dina kvitton och fakturor som ett zip-arkiv – till exempel
+          om du vill ta med dig dokumentationen om du slutar använda tjänsten.
+        </p>
+        <ArkivexportKnapp />
+      </div>
 
       {/* Utloggning: sekundarknapp langst ned, avskild med en linje
           (docs/design.md, "Installningssidan"). Egen server-action, darfor

@@ -101,7 +101,7 @@ Ovanför innehållet står då bara en enkel rad med logotypen och bostadens nam
 
 **På skrivbord ligger logotyp, bostadsnamn och flikar på en och samma rad.** Inte logotyp på en våning och menyn på nästa – det ger tre horisontella band innan innehållet börjar och gör sidan tung i överkant.
 
-**Sidrubriken upprepar aldrig bostadens namn.** Det står redan i toppraden. Sidrubriken säger vad sidan visar: "Kvitton", "Grupperingar", "Deklarationsunderlag".
+**Sidrubriken upprepar aldrig bostadens namn.** Det står redan i toppraden. Sidrubriken säger vad sidan visar: "Kvitton", "Projekt", "Deklarationsunderlag".
 
 Startskärmen är undantaget: den har ingen sidrubrik alls, eftersom den aktiva fliken redan heter "Översikt". Se avsnittet Startskärmen med innehåll.
 
@@ -128,6 +128,8 @@ På skrivbord ligger flikarna kvar som ren text i toppraden – där finns ingen
 ## Skrivbordsvyn
 
 Innehållet centreras i en kolumn på högst 620px under toppraden.
+
+**Kolumnen gäller innehållet, aldrig toppraden.** Toppraden spänner hela skärmbredden med adressen längst till vänster och flikarna plus kugghjulet till höger. Ges toppraden samma 620px klumpar logotyp, adress, flikar och kugghjul ihop sig mitt på en bred skärm, och adressen kapas trots att det finns hundratals pixlar tomma på båda sidor. Det är den vanligaste orsaken till att raden ser trång ut på en skärm som inte är det.
 
 Utan toppraden svävar kortet ensamt i en tom yta – det är vad som händer om skrivbordsvyn lämnas ospecificerad.
 
@@ -230,13 +232,24 @@ Ett tomt tillstånd säger aldrig bara att det är tomt. Det består av en rubri
 
 Den som just skapat kontot vet inte varför hen ska spara kvitton. Ingen gör det spontant – man gör det när man förstår att det är pengar den dagen bostaden säljs. Skärmen ska säga det, inte förutsätta det.
 
-Överst logotypen och bostaden med adress, upplåtelseform och tillträdesår: "Ulriksborgsgatan 7 – bostadsrätt sedan juni 2022". Det är personligt, och det bekräftar att registreringen blev rätt.
+Adressen står i toppraden som vanligt – ingen andrarad med upplåtelseform och tillträdesår, samma regel som överallt annars.
 
-Under den en rubrik i stil med "Spara kvittona nu, dra av dem när du säljer" och en till två meningar om att renoveringar minskar vinstskatten men måste kunna styrkas – och att kvitton bleknar och mejl försvinner. Sedan knappen.
+Kortet inleds med en rubrik i stil med "Spara kvittona nu, dra av dem när du säljer" och en till två meningar om att renoveringar minskar vinstskatten men måste kunna styrkas – och att kvitton bleknar och mejl försvinner. Sedan knappen.
 
-**Ingen introduktionsrundtur och inga påhittade siffror.** Rundturer läses inte och skjuter upp det man ska göra. Löften om hur mycket man sparar vet vi ingenting om.
+**Under knappen står tre rader om hur det går till.** Ett kort och en knapp lämnar två tredjedelar av skärmen tom, och den som just skapat kontot vet inte att appen läser av kvittot åt en eller att inga skattefrågor kommer att ställas vid inmatningen. Det är produktens starkaste argument och det står ingenstans annars.
 
-Förstaskärmen har exakt en sak att göra. Inget andra kort, ingen sidouppgift.
+> **Så fungerar det**
+> Fota kvittot eller ladda upp fakturan. Appen läser av belopp, datum och leverantör.
+> Skattefrågorna kommer senare, inte nu. Du svarar på dem när du vill, och senast när du säljer.
+> Allt ligger kvar tills du behöver det. Även om det dröjer tjugo år.
+
+Raderna är dämpad brödtext i samma kort, under knappen. Inget eget kort, ingen egen rubriknivå som konkurrerar med kortets, och framför allt ingen andra knapp.
+
+**Avstånden avgör om det läses rätt.** Mellanrummet upp till rubriken "Så fungerar det" ska vara ungefär dubbelt så stort som mellanrummet mellan de tre raderna. Ligger rubriken tätt under primärknappen läses den som knappens underrubrik, och har de tre raderna styckesavstånd läses de som tre fristående påståenden i stället för som tre steg i en ordning.
+
+**Ingen introduktionsrundtur och inga påhittade siffror.** Rundturer läses inte och skjuter upp det man ska göra. Löften om hur mycket man sparar vet vi ingenting om. De tre raderna beskriver vad appen gör, aldrig vad användaren tjänar.
+
+Förstaskärmen har fortfarande exakt en sak att göra. Text som förklarar är inte en andra uppgift; en andra knapp vore det.
 
 ### Kvittots detaljvy
 

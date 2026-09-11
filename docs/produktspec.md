@@ -490,3 +490,20 @@ Fillagringen är värd särskild omsorg. Bilagorna är produktens mest långliva
 **Bilagor raderas aldrig automatiskt.** Arkiveras eller avklassificeras en kostnad ligger filen kvar. Radering sker endast på uttrycklig begäran från användaren, och då tas både fil och databaspost bort.
 
 **Arkivexport tidigt.** En funktion som laddar ner samtliga bilagor som ett zip-arkiv med begripliga filnamn. Den ska finnas långt innan användaren behöver den, eftersom hela produktens löfte är att dokumentationen finns kvar.
+
+Exporten innehåller **bara bilagorna**, ingen databasfil. Den finns för den som vill lämna tjänsten och ta med sig sina kvitton, och för den användaren är en JSON-fil inte till någon hjälp. Det innebär att filnamnet och mappstrukturen måste bära hela betydelsen – en zip full av `a3f9-2.jpg` uppfyller inte löftet, den bara ser ut att göra det.
+
+Mapp per kalenderår enligt betaldatum, och `utan-datum` för kostnader som saknar det:
+
+```
+2026/2026-04-14 BAUHAUS 1997,05 kr.jpg
+2026/2026-04-18 JULA Bromma 248,90 kr.pdf
+2025/2025-03-05 K-Bygg Sverige AB 4659 kr.jpg
+utan-datum/Jans Maleri AB 34425 kr.jpg
+```
+
+Saknas leverantör används anteckningen, och saknas båda skrivs bara datum och belopp. Har en kostnad flera bilagor numreras de `-2`, `-3` efter beloppet. Tecken som är otillåtna i filnamn på Windows ersätts med bindestreck, och zip-filen märks som UTF-8 så att åäö överlever.
+
+**Bygg zip-filen i webbläsaren, inte i serverfunktionen.** Bilagorna går redan direkt mellan webbläsare och lagring via signerad URL, av samma skäl: en serverfunktion som drar hela arkivet genom sig slår i storleks- och tidsgränser så snart arkivet blir stort, och det blir det med tiden. Servern producerar listan med signerade URL:er och filnamn; webbläsaren hämtar och packar.
+
+**En ofullständig zip får aldrig levereras tyst.** Misslyckas en nedladdning ska användaren få veta vilka filer som saknas, av exakt samma skäl som en uppladdning alltid bekräftas. En arkivexport som tyst tappar tre kvitton är värre än ingen arkivexport alls, eftersom användaren tror sig ha allt.
