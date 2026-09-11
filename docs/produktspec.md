@@ -360,12 +360,35 @@ Målformatet är hjälpblankett SKV 2197 (K6A). Den lämnas inte in till Skattev
 
 Rader grupperas per åtgärd och år, aldrig per kvitto. Kvittona ligger under som underlag men syns inte i sammanställningen.
 
-Exportpaketet består av:
-1. Sammanställningen i K6A:s form
-2. En PDF med alla bilagor i samma ordning som raderna
-3. De två summorna utpekade: "detta skriver du i ruta 4 respektive ruta 5"
+### Bilagepaketet som PDF
 
-Levereras till egen mejl eller nedladdning. Ingen integration behövs.
+**Vad det är:** ett enda PDF-dokument som utgör den redogörelse Skatteverket kan begära in. Inte en zip, inte en skärmbild av exportvyn. Ett dokument man kan mejla eller skriva ut och som står på egna ben utan appen.
+
+**Vad det inte är:** ingen kopia av blanketternas grafiska form. Blanketternas numrering och layout ändras mellan år – paketet följer blankettens *innehåll*, och pekar ut vilka tal som förs till vilken ruta. Det är inte heller något som lämnas in, och det är inte skatterådgivning.
+
+**Ordningen i dokumentet:**
+
+1. **Försättssida.** Bostadens identifiering – adress och ort, upplåtelseform, föreningens namn för bostadsrätt eller fastighetsbeteckning för fastighet. Tillträdesdatum, försäljningsdatum, ägarandel. Vilken blankett beloppen förs till, K5 eller K6. Datum då paketet skapades. Friskrivningen, i sin helhet.
+2. **Sammanställningen, sida 1 – grundförbättringar.** Åtgärd, år, belopp. Summan utpekad: detta förs till punkt 4.
+3. **Sammanställningen, sida 2 – förbättrande reparationer.** Åtgärd, år, hel utgift, avdragsgill del efter förslitning. Summan utpekad: detta förs till punkt 5.
+4. **Bilageförteckning.** En numrerad lista som kopplar varje bilaga till sin rad. Den som får paketet ska kunna gå från ett belopp i sammanställningen till rätt kvitto utan att bläddra.
+5. **Bilagorna, en per sida**, i samma ordning som raderna. Varje sida har en sidhuvudsrad som säger vilken post bilagan hör till: `Bilaga 7 · Omstrukturera lägenhet · 2026 · BAUHAUS 1 997,05 kr`. Utan den raden är en lös kvittobild i ett fyrtiosidigt dokument obrukbar som bevis.
+
+**Vad som ingår.** Bara det som ingår i underlaget. Arkiverade och privatmarkerade kvitton följer inte med – det är skillnaden mot zip-exporten, som tar allt användaren laddat upp. Bilagorna följer de kostnader som bidrar med ett belopp större än noll. En rad som redovisas med 0 kr står kvar i sammanställningen med sin förklaring, men har ingen bevisbörda och därmed inga bilagor.
+
+**Paketet kräver ett försäljningsdatum.** Utan det går sida 2 inte att räkna, och exportvyn visar redan sida 1 utan det. Knappen ligger på exportvyn under summorna och är otillgänglig tills bostaden är markerad som såld.
+
+**Byggs i webbläsaren**, av samma skäl som zip-arkivet: en serverfunktion som drar alla bilagor genom sig slår i storleks- och tidsgränser. `pdfjs-dist` tål inte webpack och laddas som ren ES-modul från `public/`.
+
+**Bilagor som redan är PDF fogas in som sidor**, aldrig som inbäddade bilder – en faktura som rastrerats till en bild blir oläsbar vid utskrift. Bilder placeras skalade på A4 med marginal, med hänsyn till orientering, så att ett stående kvitto inte hamnar liggande.
+
+**En bilaga som saknas eller inte går att läsa ger en platshållarsida** som säger vilken post den hörde till och att filen inte kunde läsas. Ett paket med ett tyst hål är värre än ett paket som säger var hålet finns, eftersom det första upptäcks av Skatteverket och det andra av användaren.
+
+**Öppet: upplösningen på HEIC-bilagor.** Se avsnittet Visningsversion nedan – frågan är löst, men versionen måste finnas innan paketet kan byggas.
+
+**Filnamn:** `Bostadsunderlag Ulriksborgsgatan 7 2026.pdf` – adress och försäljningsår, så att dokumentet går att hitta i en nedladdningsmapp åtta år senare.
+
+Levereras som nedladdning. Ingen integration behövs.
 
 **Delägarvarianten.** Exporten avgör utifrån medlemskapets `agarandel` om beloppen ska anges som individuella eller som gemensamma för flera delägare, och sätter markeringen därefter. Vid andel under 100 % redovisas bruttobeloppen tillsammans med den egna andelen i procent, så att båda delägarna kan använda samma sammanställning. Inget separat fält behövs – andelen räcker.
 
@@ -393,6 +416,28 @@ Alternativet – en tillfällig plats som städas i efterhand – ger dubbel upp
 Utkast som blivit liggande utan att kompletteras hör hemma i samma genomgång som allt annat – de är oklassificerade kostnader som saknar uppgifter, inte skräp att rensa bort automatiskt.
 
 **HEIC måste konverteras före analys.** Språkmodellen kan inte läsa formatet, och det är standardformatet på iPhone – alltså exakt de bilder produkten finns till för. Samma konvertering som används för miniatyrer körs i minnet före anropet. Att hoppa över HEIC tyst innebär att funktionen inte fungerar för majoriteten av kvittofoton.
+
+### Visningsversion
+
+Varje bildbilaga lagras i tre former:
+
+| Form | Används till | Anmärkning |
+|---|---|---|
+| Original | Bevisning, zip-arkivet | Rörs aldrig. HEIC sparas som HEIC |
+| Visningsversion | Helskärm, PDF-paketet | JPG, längsta sidan omkring 2 000 px |
+| Miniatyr | Listor och miniatyrrad | JPG, liten |
+
+**Visningsversionen skapas vid uppladdningen**, inte när den behövs. Konverteringen sker ändå redan i det ögonblicket – HEIC måste konverteras före dokumentavläsningen, och den fullstora bilden finns alltså i minnet men kastas bort. Att spara den är nästan inget extra arbete.
+
+Alternativet, att konvertera originalet när PDF-paketet byggs, lägger den tyngsta och mest felbenägna operationen i produktens sämsta ögonblick: användaren ska deklarera, har fyrtio bilagor, och ett konverteringsbibliotek som inte laddar gör paketet obrukbart just då. Samma princip som gäller uppladdningar gäller här – det riskabla görs medan användaren är kvar och kan försöka igen.
+
+**Versionen gäller alla bildbilagor, inte bara HEIC.** Ett vanligt telefonfoto är flera megabyte, och fyrtio av dem ger ett PDF-paket på över hundra megabyte som inte går att mejla. Nedskalningen håller paketet hanterbart utan att göra texten på ett kvitto oläslig.
+
+PDF-bilagor har ingen visningsversion. De fogas in som sidor i original.
+
+**Befintliga bilagor saknar versionen** och behöver fyllas på i efterhand. Det ska ske som ett engångsjobb med logg, inte tyst vid första visning – en bilaga som inte gick att konvertera måste synas, inte försvinna.
+
+**Misslyckas konverteringen blockerar den aldrig uppladdningen.** Originalet är sparat, och det är det som är bevisningen. Saknas visningsversionen får bilagan en platshållarsida i PDF-paketet, precis som en bilaga som inte gick att läsa.
 
 **Alla fel sväljs.** Nätverksfel, oläsbart dokument, timeout, saknad nyckel – inget av det får synas eller blockera. Formuläret fungerar exakt som utan analys.
 

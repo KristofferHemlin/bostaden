@@ -2,7 +2,7 @@
 // skapar en kort signerad URL och skickar vidare till den. Klienten far aldrig
 // en permanent lank (produktspec avsnitt 12).
 //
-//   GET /bilaga/<id>              -> visningsvarianten (HEIC-miniatyren om sadan finns)
+//   GET /bilaga/<id>              -> visningsversionen (~2000px JPG) om sadan finns
 //   GET /bilaga/<id>?variant=original  -> originalfilen
 
 import { NextResponse, type NextRequest } from "next/server";

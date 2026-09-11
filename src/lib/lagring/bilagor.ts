@@ -12,12 +12,14 @@
 //   sokvagen. Nar klienten rapporterar in vilken nyckel den laddade upp mot
 //   kontrolleras den mot exakt det monstret (nyckelHorTillKostnad).
 // - Databasraden skapas forst nar Storage bekraftat originalet. HEIC-miniatyren
-//   genereras da server-sida genom att originalet hamtas fran Storage
-//   (server -> Storage, ingen 4,5 MB-grans). Misslyckas miniatyren skapas raden
-//   anda utan miniatyr – en bilaga utan miniatyr ar battre an ingen bilaga; da
-//   visas dokumentikonen och felet loggas.
+//   och visningsversionen (produktspec avsnitt 9, "Visningsversion") genereras
+//   da server-sida genom att originalet hamtas fran Storage (server -> Storage,
+//   ingen 4,5 MB-grans). Misslyckas nagon av delarna skapas raden anda utan den
+//   versionen – originalet ar bevisningen och far aldrig bero av att en
+//   konvertering lyckas.
 // - Visning sker via korta signerade URL:er, skapade efter behorighetskontroll
-//   mot medlemskapet.
+//   mot medlemskapet. "visning" ger visningsversionen nar en sadan finns,
+//   annars miniatyren, annars originalet.
 // - Radering sker ENDAST pa uttrycklig begaran och tar bade fil(er) och rad.
 //   Ingen automatisk radering nar en kostnad arkiveras eller avklassificeras.
 
@@ -31,9 +33,11 @@ import {
   nyckelHorTillKostnad,
   slumpatFilnamn,
   valideraBilaga,
+  visningsnyckel,
 } from "./bilaga-regler";
 import { bilagelager } from "./klient";
-import { heicTillJpegMiniatyr } from "./miniatyr";
+import { heicTillJpeg, skalaTillMiniatyr } from "./miniatyr";
+import { skalaTillVisningsversion } from "./visning";
 
 const SIGNERAD_LANK_SEKUNDER = 60;
 
@@ -117,8 +121,9 @@ async function lagringsinfo(nyckel: string): Promise<{ storlek: number } | null>
 
 /**
  * Steg 2 av uppladdningen: bekrafta mot Storage att filen kom fram, generera en
- * ev. HEIC-miniatyr och skapa databasraden. Kors forst NAR webblasaren
- * rapporterat att direktuppladdningen lyckats. Ingen rad utan bekraftat objekt.
+ * ev. HEIC-miniatyr och en visningsversion, och skapa databasraden. Kors forst
+ * NAR webblasaren rapporterat att direktuppladdningen lyckats. Ingen rad utan
+ * bekraftat objekt.
  */
 export async function bekraftaKostnadsbilaga(params: {
   bostadId: string;
@@ -168,27 +173,66 @@ export async function bekraftaKostnadsbilaga(params: {
 
   const upplagt: string[] = [nyckel];
   let miniatyr: string | null = null;
+  let visning: string | null = null;
 
-  // HEIC kan ingen webblasare visa – en JPG-miniatyr genereras server-sida genom
-  // att originalet hamtas fran Storage. Server -> Storage har ingen 4,5 MB-grans.
-  // Misslyckas det skapas raden anda utan miniatyr (dokumentikon vid visning).
-  if (format.kraverMiniatyr) {
+  // HEIC kan ingen webblasare visa – en JPG-miniatyr genereras server-sida, och
+  // alla bildformat far dessutom en visningsversion (~2000px) for helskarm och
+  // PDF-paketet, se produktspec avsnitt 9 "Visningsversion". Bada genereras
+  // genom att originalet hamtas fran Storage (server -> Storage har ingen
+  // 4,5 MB-grans). Misslyckas nagon av delarna skapas raden anda utan den
+  // versionen – originalet ar sparat, och det ar det som ar bevisningen.
+  if (format.andelse !== "pdf") {
     try {
       const { data: blob, error } = await lager.download(nyckel);
       if (error || !blob) throw error ?? new Error("kunde inte hämta originalet");
       const original = Buffer.from(await blob.arrayBuffer());
-      const jpeg = await heicTillJpegMiniatyr(original);
-      const mNyckel = miniatyrnyckel(nyckel);
-      const mini = await lager.upload(mNyckel, jpeg, {
-        contentType: "image/jpeg",
-        upsert: true,
-      });
-      if (mini.error) throw mini.error;
-      upplagt.push(mNyckel);
-      miniatyr = mNyckel;
+
+      // HEIC avkodas EN GANG – bade miniatyren och visningsversionen skalas
+      // fram ur samma fullstora buffert i stallet for att avkoda originalet
+      // pa nytt (produktspec avsnitt 9).
+      let visningsunderlag: Buffer = original;
+      if (format.kraverMiniatyr) {
+        visningsunderlag = await heicTillJpeg(original);
+
+        try {
+          const jpeg = await skalaTillMiniatyr(visningsunderlag);
+          const mNyckel = miniatyrnyckel(nyckel);
+          const mini = await lager.upload(mNyckel, jpeg, {
+            contentType: "image/jpeg",
+            upsert: true,
+          });
+          if (mini.error) throw mini.error;
+          upplagt.push(mNyckel);
+          miniatyr = mNyckel;
+        } catch (fel) {
+          console.error(
+            `Miniatyr kunde inte genereras för bilaga ${nyckel} (kostnad ${kostnadId}):`,
+            fel,
+          );
+        }
+      }
+
+      try {
+        const jpeg = await skalaTillVisningsversion(visningsunderlag);
+        const vNyckel = visningsnyckel(nyckel);
+        const vis = await lager.upload(vNyckel, jpeg, {
+          contentType: "image/jpeg",
+          upsert: true,
+        });
+        if (vis.error) throw vis.error;
+        upplagt.push(vNyckel);
+        visning = vNyckel;
+      } catch (fel) {
+        console.error(
+          `Visningsversion kunde inte genereras för bilaga ${nyckel} (kostnad ${kostnadId}):`,
+          fel,
+        );
+      }
     } catch (fel) {
+      // Originalet gick inte att hämta från Storage, eller HEIC gick inte att
+      // avkoda alls – varken miniatyr eller visningsversion gick att skapa.
       console.error(
-        `Miniatyr kunde inte genereras för bilaga ${nyckel} (kostnad ${kostnadId}):`,
+        `Bildbehandling misslyckades för bilaga ${nyckel} (kostnad ${kostnadId}):`,
         fel,
       );
     }
@@ -200,6 +244,7 @@ export async function bekraftaKostnadsbilaga(params: {
         kostnad_id: kostnadId,
         lagringsnyckel: nyckel,
         miniatyrnyckel: miniatyr,
+        visningsnyckel: visning,
         filnamn: filnamn || "kvitto",
         mimetyp: format.mimetyp,
         storlek: faktiskStorlek,
@@ -221,6 +266,7 @@ type BilagaMedBostad = {
   id: string;
   lagringsnyckel: string;
   miniatyrnyckel: string | null;
+  visningsnyckel: string | null;
   filnamn: string;
   mimetyp: string;
   kostnad: { bostad_id: string } | null;
@@ -237,6 +283,7 @@ async function kravAtkomst(
       id: true,
       lagringsnyckel: true,
       miniatyrnyckel: true,
+      visningsnyckel: true,
       filnamn: true,
       mimetyp: true,
       kostnad: { select: { bostad_id: true } },
@@ -257,7 +304,8 @@ export type Lankvariant = "original" | "visning";
 
 /**
  * Kort signerad URL, skapad pa servern efter behorighetskontroll. "visning" ger
- * HEIC-miniatyren nar en sadan finns; "original" ger alltid originalfilen.
+ * visningsversionen nar en sadan finns, annars miniatyren (HEIC utan
+ * visningsversion), annars originalet; "original" ger alltid originalfilen.
  */
 export async function signeradBilagelank(
   bilagaId: string,
@@ -268,8 +316,8 @@ export async function signeradBilagelank(
   if (!bilaga) return null;
 
   const nyckel =
-    variant === "visning" && bilaga.miniatyrnyckel
-      ? bilaga.miniatyrnyckel
+    variant === "visning"
+      ? bilaga.visningsnyckel ?? bilaga.miniatyrnyckel ?? bilaga.lagringsnyckel
       : bilaga.lagringsnyckel;
 
   const { data, error } = await bilagelager().createSignedUrl(
@@ -293,6 +341,7 @@ export async function taBortBilaga(
 
   const nycklar = [bilaga.lagringsnyckel];
   if (bilaga.miniatyrnyckel) nycklar.push(bilaga.miniatyrnyckel);
+  if (bilaga.visningsnyckel) nycklar.push(bilaga.visningsnyckel);
 
   const { error } = await bilagelager().remove(nycklar);
   if (error) {
@@ -304,14 +353,14 @@ export async function taBortBilaga(
 }
 
 /**
- * Tar bort SAMTLIGA bilagor (fil + ev. miniatyr + databasrad) for en kostnad.
- * Anvands nar kostnaden raderas helt – det ar en uttrycklig begaran fran
- * anvandaren (produktspec 12: bilagor raderas aldrig automatiskt, bara pa
- * uttrycklig begaran, och da tas bade fil och rad bort). Sokvagen kommer aldrig
- * fran klienten: bilagorna slas upp ur kostnadens id efter behorighetskontroll
- * mot medlemskapet. Kostnadsraden i sig tas bort av anroparen (cascaden stadar
- * kvarvarande bilaga-rader), men vi rensar Storage forst sa att inga
- * foraldralosa filer blir kvar.
+ * Tar bort SAMTLIGA bilagor (fil + ev. miniatyr/visningsversion + databasrad)
+ * for en kostnad. Anvands nar kostnaden raderas helt – det ar en uttrycklig
+ * begaran fran anvandaren (produktspec 12: bilagor raderas aldrig automatiskt,
+ * bara pa uttrycklig begaran, och da tas bade fil och rad bort). Sokvagen
+ * kommer aldrig fran klienten: bilagorna slas upp ur kostnadens id efter
+ * behorighetskontroll mot medlemskapet. Kostnadsraden i sig tas bort av
+ * anroparen (cascaden stadar kvarvarande bilaga-rader), men vi rensar Storage
+ * forst sa att inga foraldralosa filer blir kvar.
  */
 export async function taBortAllaBilagorForKostnad(
   kostnadId: string,
@@ -322,7 +371,12 @@ export async function taBortAllaBilagorForKostnad(
     select: {
       bostad_id: true,
       bilagor: {
-        select: { id: true, lagringsnyckel: true, miniatyrnyckel: true },
+        select: {
+          id: true,
+          lagringsnyckel: true,
+          miniatyrnyckel: true,
+          visningsnyckel: true,
+        },
       },
     },
   });
@@ -337,7 +391,9 @@ export async function taBortAllaBilagorForKostnad(
   if (kostnad.bilagor.length === 0) return { ok: true };
 
   const nycklar = kostnad.bilagor.flatMap((b) =>
-    b.miniatyrnyckel ? [b.lagringsnyckel, b.miniatyrnyckel] : [b.lagringsnyckel],
+    [b.lagringsnyckel, b.miniatyrnyckel, b.visningsnyckel].filter(
+      (n): n is string => n !== null,
+    ),
   );
   const { error } = await bilagelager().remove(nycklar);
   if (error) {

@@ -4,6 +4,9 @@
 // - Tillatna format: JPG, PNG, HEIC och PDF. Max 10 MB per fil.
 // - HEIC kan ingen webblasare visa – en JPG-miniatyr maste genereras vid
 //   uppladdningen. `kraverMiniatyr` markerar de formaten.
+// - Alla bildformat far dessutom en visningsversion (JPG, ~2000px langsta
+//   sidan) genererad vid uppladdningen – se src/lib/lagring/visning.ts och
+//   produktspec avsnitt 9, "Visningsversion".
 // - Sokvagsmonster: {bostad_id}/{kostnad_id}/{slumpat_filnamn}. Anvandarens
 //   ursprungliga filnamn lagras i databasen, ALDRIG i sokvagen – telefonfilnamn
 //   kan bryta sokvagar och ett gissningsbart monster gor atkomstkontrollen till
@@ -151,6 +154,11 @@ export function lagringsnyckel(
 /** Miniatyren ligger bredvid originalet under samma kostnad, alltid som .jpg. */
 export function miniatyrnyckel(originalnyckel: string): string {
   return `${originalnyckel.replace(/\.[^./]+$/, "")}.miniatyr.jpg`;
+}
+
+/** Visningsversionen ligger bredvid originalet under samma kostnad, alltid som .jpg. */
+export function visningsnyckel(originalnyckel: string): string {
+  return `${originalnyckel.replace(/\.[^./]+$/, "")}.visning.jpg`;
 }
 
 // Ett slumpat filnamn: en UUID plus andelse. Nar webblasaren laddat upp en fil

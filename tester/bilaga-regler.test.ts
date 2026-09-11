@@ -7,6 +7,7 @@ import {
   miniatyrnyckel,
   slumpatFilnamn,
   valideraBilaga,
+  visningsnyckel,
 } from "@/lib/lagring/bilaga-regler";
 
 // Reglerna i produktspec avsnitt 12, "Bilagor och lagring":
@@ -135,6 +136,24 @@ describe("miniatyrnyckel", () => {
   it("delar prefix – samma bostad och kostnad – med originalet", () => {
     const original = lagringsnyckel("b", "k", slumpatFilnamn("heic"));
     expect(miniatyrnyckel(original).startsWith("b/k/")).toBe(true);
+  });
+});
+
+describe("visningsnyckel", () => {
+  it("ligger bredvid originalet och slutar pa .jpg", () => {
+    expect(visningsnyckel("bostad-1/kostnad-9/abc.heic")).toBe(
+      "bostad-1/kostnad-9/abc.visning.jpg",
+    );
+  });
+
+  it("delar prefix – samma bostad och kostnad – med originalet", () => {
+    const original = lagringsnyckel("b", "k", slumpatFilnamn("jpg"));
+    expect(visningsnyckel(original).startsWith("b/k/")).toBe(true);
+  });
+
+  it("skiljer sig fran miniatyrnyckel for samma original", () => {
+    const original = lagringsnyckel("b", "k", slumpatFilnamn("heic"));
+    expect(visningsnyckel(original)).not.toBe(miniatyrnyckel(original));
   });
 });
 

@@ -43,26 +43,26 @@ model anvandare {
 
 // Bostaden. Obligatoriskt vid registrering: endast upplatelseform och tilltradesdatum.
 model bostad {
-  id                String    @id @default(uuid()) @db.Uuid
+  id                String         @id @default(uuid()) @db.Uuid
   namn              String?
   adress            String? // fritext eller vald fran adresstjanst; namn faller tillbaka pa adress i headern
   place_id          String? // Google Places-id, null vid fritext
-  latitud           Decimal?  @db.Decimal(9, 6) // null vid fritext
-  longitud          Decimal?  @db.Decimal(9, 6) // null vid fritext
+  latitud           Decimal?       @db.Decimal(9, 6) // null vid fritext
+  longitud          Decimal?       @db.Decimal(9, 6) // null vid fritext
   ort               String? // valfritt; fylls fran valt Places-forslag
   storlek           Int? // valfritt, boarea i kvadratmeter
   upplatelseform    upplatelseform
   husform           husform? // rent informativt, styr ingenting
-  tilltradesdatum   DateTime  @db.Date
+  tilltradesdatum   DateTime       @db.Date
   // Vinstberakningens belopp. BigInt, inte Int: Postgres int4 tar slut vid
   // 2147483647 oren (~21,5 miljoner kr) och en villaforsaljning kan ligga hogre.
   kopeskilling      BigInt? // oren
   kopkostnader      BigInt? // oren, stampelskatt/lagfart eller overlatelseavgift
   kapitaltillskott  BigInt? // oren, endast bostadsratt
   uppskov_tidigare  BigInt? // oren, paverkar vinstberakning, inte avdrag
-  forsaljningsdatum DateTime? @db.Date
+  forsaljningsdatum DateTime?      @db.Date
   forsaljningspris  BigInt? // oren
-  skapad_at         DateTime  @default(now())
+  skapad_at         DateTime       @default(now())
 
   medlemskap medlemskap[]
   projekt    projekt[]
@@ -98,16 +98,16 @@ model regelparameter {
 
 // Klassificeringen sitter har, inte pa kostnaden. De fyra projektfragorna.
 model projekt {
-  id                           String          @id @default(uuid()) @db.Uuid
-  bostad_id                    String          @db.Uuid
+  id                           String           @id @default(uuid()) @db.Uuid
+  bostad_id                    String           @db.Uuid
   namn                         String // fraga 1, fritext
   ar                           Int // etikett for gruppering; auktoritativt ar kommer fran betaldatum
   kategori                     projektkategori? // fraga 2; null tills klassificeringsgenomgangens fas 2 svarat
   motivering                   String? // fraga 4, "hur vet du det?" – fritext, bar hela bevisningen
   slitet_vid_tilltrade         Boolean? // fraga 3, null tills stalld
   battre_skick_vid_forsaljning Boolean? // bekraftas vid forsaljning, null fram till dess
-  kvarvarande_andel            Decimal?        @db.Decimal(5, 4) // forslitning, 0..1, satts vid forsaljning
-  skapad_at                    DateTime        @default(now())
+  kvarvarande_andel            Decimal?         @db.Decimal(5, 4) // forslitning, 0..1, satts vid forsaljning
+  skapad_at                    DateTime         @default(now())
 
   bostad       bostad          @relation(fields: [bostad_id], references: [id], onDelete: Cascade)
   fordelningar radfordelning[]
@@ -166,6 +166,7 @@ model bilaga {
   kostnad_id            String?  @db.Uuid
   lagringsnyckel        String   @unique // sokvag till originalet i Supabase Storage
   miniatyrnyckel        String?  @unique // JPG-miniatyr for HEIC; null for format som redan gar att visa
+  visningsnyckel        String?  @unique // JPG, langsta sidan ~2000px, for helskarm/PDF-paket; null for PDF och nar konverteringen inte kunnat goras
   filnamn               String
   mimetyp               String
   storlek               Int // bytes

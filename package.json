@@ -17,7 +17,8 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
-    "lagring:setup": "node --env-file-if-exists=.env --import tsx scripts/lagring-setup.ts"
+    "lagring:setup": "node --env-file-if-exists=.env --import tsx scripts/lagring-setup.ts",
+    "visningsversion:fyll-pa": "node --conditions=react-server --env-file-if-exists=.env --import tsx scripts/fyll-pa-visningsversioner.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
