@@ -315,11 +315,29 @@ Bilagor visas som en rad små miniatyrer under kostnadens uppgifter, med en `+`-
 
 **En miniatyr som laddar får aldrig se ut som en tom ruta.** Fram tills bilden är hämtad visas ett tydligt laddningsläge i rutan. En blank sandfärgad fyrkant där kvittot ska vara är exakt den signal som förstör förtroendet för ett arkiv – användaren drar slutsatsen att bilden är borta, inte att den är på väg. Samma sak gäller när en bild verkligen inte går att läsa: då står det att den inte kunde visas, aldrig ingenting.
 
-**Den synliga åtgärden på en bilaga är att öppna den, inte att radera den.** Står "Ta bort" som enda etikett under miniatyren är det enda namngivna man kan göra med originalhandlingen att förstöra den. Raderingen ligger bakom att bilagan är öppnad eller bakom ett mindre, dämpat reglage – aldrig som miniatyrens enda underrad.
+**Miniatyren öppnar filen i helskärm.** Raderingen ligger som en tunn papperskorgsikon i rutans övre högra hörn – inte en emoji, se avsnittet Emoji.
+
+Ikonen behöver en egen tryckyta på minst 44px och en **helt täckande** ljus platta bakom sig. En genomskinlig platta låter kvittot lysa igenom, och mot ett vitt kassakvitto med tryck blir ikonen oläslig. Ikonen sätts i `--text-primar` mot plattan, inte i `--text-sekundar` – den ligger ovanpå ett fotografi och behöver mer kontrast än en ikon på en lugn yta.
+
+**Rutorna har fast storlek och sträcks aldrig ut för att fylla raden.** Ett kvitto med en bilaga ska visa den lika stort som ett kvitto med tre. Växer rutorna med antalet blir den ensamma bilagan minst, vilket är tvärtemot vad man vill, och papperskorgens andel av rutan ändrar sig från skärm till skärm.
+
+Bekräftelsen säger vad som går förlorat, inte bara om man är säker: *"Ta bort bilagan? Bilden raderas och går inte att återskapa. Kvittots uppgifter ligger kvar."* Sista meningen är inte artighet – utan den tror användaren att hela kvittot försvinner och vågar inte röra knappen alls.
+
+Knappen som bekräftar är aldrig orange. Orange betyder handling i den här appen, och radering av bevisning är inte den handling produkten vill uppmuntra.
+
+**Helskärmsvyn finns för att titta, ingenting annat.** Ingen raderingsåtgärd där. Den stängs genom klick utanför bilden eller Escape – en egen stängknapp behövs inte när ytan runt bilden gör samma sak.
 
 **Miniatyren för en PDF är en dokumentikon med etiketten "PDF" under**, centrerat i rutan. Aldrig filnamnet – ett kassasystemsgenererat namn som `Invoice_IMRInstitu_539370_Aug-2026.pdf` bryts mitt i ett ord, fyller rutan med brus och ser ut som ett fel. Vilken fil det är framgår av förhandsvisningen, som ändå visar den markerade bilagan.
 
 Miniatyrerna har samma storlek och hörnradie oavsett filtyp, så raden ser jämn ut när bilder och PDF blandas.
+
+**Miniatyren ska gå att känna igen, inte bara markera att något finns.** Rutan är minst 96px bred. Den styrande regeln är att tre rutor ska rymmas på en rad vid 390px skärmbredd, inklusive `+`-rutan – med kortets paddning landar det omkring 100px. Är rutan mindre än så ser alla kvitton likadana ut och man måste öppna varje för att veta vilket det är.
+
+Det är samtidigt den enda visuella bekräftelsen på att kvittot faktiskt sparades, vilket är hela produktlöftet. Den rutan förtjänar sin yta.
+
+**Hela bilden visas, aldrig en beskärning.** En beskuren ruta döljer fotots brister – att kvittot är avklippt i nederkanten, att ena hörnet är suddigt – och visar en prydlig bild av mitten. I en app vars enda uppgift är att bevisningen finns kvar ska förhandsvisningen avslöja sådant, inte dölja det.
+
+Rutan är därför stående, ungefär 3:4, med bilden centrerad och inpassad mot `--yta-nedsankt`. Ett kvitto är avlångt och fyller då rutan nästan helt, medan ett liggande foto fortfarande får gott om bredd. Tryckytan är hela rutan oavsett hur bilden ligger i den.
 
 **Webbläsarens filknapp visas aldrig.** Ingen "Välj filer"-knapp med filnamnet i grå text bredvid – den är ostylad, bryter mot resten av formuläret och säger inget om vad som händer.
 
@@ -544,7 +562,9 @@ Det är ett undantag från regeln att tomma tillstånd har en primärknapp. Rege
 
 Här ligger allt som beskriver bostaden men inte behövs för att komma igång. Fälten är valfria, och sidan ska aldrig kännas som ett formulär man måste fylla i.
 
-**Uppgifter om bostaden:** adress, ort, upplåtelseform, tillträdesdatum, storlek, köpeskilling, köpkostnader, ägarandel. För bostadsrätt även kapitaltillskott; för fastighet inte, eftersom det inte finns.
+**Uppgifter om bostaden:** adress, ort, upplåtelseform, identifiering, tillträdesdatum, storlek, köpeskilling, köpkostnader, ägarandel. För bostadsrätt även kapitaltillskott; för fastighet inte, eftersom det inte finns.
+
+**Identifieringens etikett och hjälptext följer det valda kortet, precis som köpkostnadernas.** "Föreningens namn" för bostadsrätt, "Fastighetsbeteckning" för fastighet – med ett exempel i hjälptexten (`Söderhamn Kvarnen 3:1`) så att fältet inte fylls i med gatuadressen igen. Fältet är helt valfritt: tomt betyder att raden utelämnas på PDF-paketets försättssida, inte att något saknas.
 
 **Upplåtelseform och tillträdesdatum måste gå att se och ändra här.** De sätts vid registreringen och visas medvetet inte i toppraden, men de får inte bli oåtkomliga. Tillträdesdatumet är baslinjen för hela skickbedömningen och gränsen för vilka utgifter som är dina – skrivs det fel vid registreringen och inte går att rätta blir underlaget fel utan att något ser trasigt ut.
 

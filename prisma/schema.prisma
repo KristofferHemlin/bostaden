@@ -51,6 +51,7 @@ model bostad {
   longitud          Decimal?       @db.Decimal(9, 6) // null vid fritext
   ort               String? // valfritt; fylls fran valt Places-forslag
   storlek           Int? // valfritt, boarea i kvadratmeter
+  identifiering     String? // foreningens namn (bostadsratt) eller fastighetsbeteckning (fastighet); forsattssidans rad, utelamnas nar tom
   upplatelseform    upplatelseform
   husform           husform? // rent informativt, styr ingenting
   tilltradesdatum   DateTime       @db.Date

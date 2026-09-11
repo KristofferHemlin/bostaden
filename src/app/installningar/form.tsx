@@ -15,6 +15,17 @@ const KOPKOSTNADER_HJALP_BOSTADSRATT =
 const KOPKOSTNADER_HJALP_FASTIGHET =
   "Lagfart, pantbrev och inköpsprovision vid köpet.";
 
+// Identifieringens etikett och hjalptext foljer samma monster – vad man ska
+// skriva skiljer sig helt mellan upplatelseformerna (produktspec 8,
+// "Forsattssida"; docs/design.md "Installningssidan"). Fastighetsexemplet
+// visar formatet sa att inte gatuadressen skrivs in igen.
+const IDENTIFIERING_ETIKETT_BOSTADSRATT = "Föreningens namn";
+const IDENTIFIERING_ETIKETT_FASTIGHET = "Fastighetsbeteckning";
+const IDENTIFIERING_HJALP_BOSTADSRATT =
+  "Står i årsredovisningen eller på överlåtelseavtalet.";
+const IDENTIFIERING_HJALP_FASTIGHET =
+  "Står på lagfarten eller köpekontraktet, t.ex. \"Söderhamn Kvarnen 3:1\".";
+
 // Samma tva val som registreringen (docs/design.md, Registreringsflodet) –
 // men UTAN emoji. Emoji anvands pa exakt ett stalle: korten i registreringen
 // (docs/design.md, "Emoji").
@@ -31,6 +42,7 @@ export function InstallningarForm({
   kopkostnader,
   agarandel,
   kapitaltillskott,
+  identifiering,
 }: {
   upplatelseform: "bostadsratt" | "fastighet";
   tilltradesdatum: string;
@@ -39,6 +51,7 @@ export function InstallningarForm({
   kopkostnader: string;
   agarandel: string;
   kapitaltillskott: string;
+  identifiering: string;
 }) {
   const [resultat, action, pagar] = useActionState(sparaInstallningar, START);
   const [upplatelseformVal, setUpplatelseformVal] = useState(upplatelseform);
@@ -51,9 +64,10 @@ export function InstallningarForm({
   const [kapitaltillskottFalt, setKapitaltillskottFalt] = useState(() =>
     formateraBeloppInmatning(kapitaltillskott),
   );
-  // Kapitaltillskottsfaltet foljer VALET, inte bara den sparade upplatelse-
-  // formen, sa att det dyker upp eller forsvinner sa fort man byter kort.
-  const visaKapitaltillskott = upplatelseformVal === "bostadsratt";
+  // Foljer VALET, inte bara den sparade upplatelseformen, sa att kapital-
+  // tillskottsfaltet och identifieringens etikett/hjalptext byter direkt nar
+  // man byter kort – utan att sidan laddas om.
+  const arBostadsratt = upplatelseformVal === "bostadsratt";
 
   return (
     <form action={action} className="flex flex-col gap-5 p-5">
@@ -87,6 +101,29 @@ export function InstallningarForm({
         </div>
         <input type="hidden" name="upplatelseform" value={upplatelseformVal} />
       </div>
+
+      <Falt
+        etikett={
+          arBostadsratt
+            ? IDENTIFIERING_ETIKETT_BOSTADSRATT
+            : IDENTIFIERING_ETIKETT_FASTIGHET
+        }
+        hjalp={
+          arBostadsratt
+            ? IDENTIFIERING_HJALP_BOSTADSRATT
+            : IDENTIFIERING_HJALP_FASTIGHET
+        }
+      >
+        <input
+          type="text"
+          name="identifiering"
+          defaultValue={identifiering}
+          className={INPUT_KLASS}
+          placeholder={
+            arBostadsratt ? "t.ex. Brf Ulriksborg" : "t.ex. Söderhamn Kvarnen 3:1"
+          }
+        />
+      </Falt>
 
       <Falt
         etikett="Tillträdesdatum"
@@ -129,7 +166,7 @@ export function InstallningarForm({
       <Falt
         etikett="Köpkostnader"
         hjalp={
-          visaKapitaltillskott
+          arBostadsratt
             ? KOPKOSTNADER_HJALP_BOSTADSRATT
             : KOPKOSTNADER_HJALP_FASTIGHET
         }
@@ -157,7 +194,7 @@ export function InstallningarForm({
         />
       </Falt>
 
-      {visaKapitaltillskott ? (
+      {arBostadsratt ? (
         <Falt
           etikett="Kapitaltillskott"
           hjalp="Föreningens amorteringar under din innehavstid – står i uppgiften från föreningen."

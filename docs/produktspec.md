@@ -165,6 +165,7 @@ Ingen skillnad i domänlogiken. `husform` är fortfarande rent informativt.
 | place_id | string? | Google Places-id, null vid fritext |
 | latitud | decimal? | |
 | longitud | decimal? | |
+| identifiering | string? | föreningens namn (bostadsrätt) eller fastighetsbeteckning (fastighet) – försättssidans identifieringsrad, utelämnas när tom |
 | upplatelseform | enum | `bostadsratt` \| `fastighet` – styr regelmotorn |
 | husform | enum? | villa/radhus/kedjehus, endast informativt |
 | tilltradesdatum | date | obligatoriskt, alla tidsberäkningar utgår härifrån |
@@ -377,6 +378,25 @@ Rader grupperas per åtgärd och år, aldrig per kvitto. Kvittona ligger under s
 **Vad som ingår.** Bara det som ingår i underlaget. Arkiverade och privatmarkerade kvitton följer inte med – det är skillnaden mot zip-exporten, som tar allt användaren laddat upp. Bilagorna följer de kostnader som bidrar med ett belopp större än noll. En rad som redovisas med 0 kr står kvar i sammanställningen med sin förklaring, men har ingen bevisbörda och därmed inga bilagor.
 
 **Paketet kräver ett försäljningsdatum.** Utan det går sida 2 inte att räkna, och exportvyn visar redan sida 1 utan det. Knappen ligger på exportvyn under summorna och är otillgänglig tills bostaden är markerad som såld.
+
+**Ett kompletteringssteg ligger före genereringen.** Saknas någon av de uppgifter som står på försättssidan visas de som ett kort formulär innan paketet byggs: ifyllda där svar redan finns, tomma där de saknas. Ingen uppgift efterfrågas två gånger.
+
+Det är den enda punkten i appen där det är rätt att kräva något. Regeln om att inget får blockera gäller inmatningen – kvittot ska sparas även när allt inte är känt, annars läggs det aldrig in. Här är läget det motsatta: användaren sitter med deklarationen framför sig och vill ha ett riktigt underlag.
+
+**Gränsen går mellan uppgifter som ändrar talen och uppgifter som beskriver objektet.**
+
+*Hårda krav – går inte att hoppa över:*
+
+- **Ägarandel.** Fel andel ger fel belopp. Fältet har förval 100 %, så det räknas aldrig som saknat – därför visas det **varje gång** som en bekräftelse, inte bara när det är tomt. En delägare som aldrig rört inställningarna får annars ett paket som påstår att hen äger hela bostaden utan att någonsin ha blivit tillfrågad.
+- **Tillträdesdatum.** Utan det saknar skickbedömningen baslinje och gränsen för vilka utgifter som är dina blir godtycklig.
+
+*Mjukt – går att hoppa över med en dämpad länk:*
+
+- **Identifiering**, alltså föreningens namn eller fastighetsbeteckningen. Den ändrar inget tal. Saknas den blir dokumentet sämre att visa upp, men underlaget är lika riktigt. Att hindra någon från att få ut sina två siffror för att hen inte minns vad föreningen heter löser fel problem. Är fältet tomt utelämnas raden på försättssidan helt – ingen platshållare.
+
+**Listan är kort.** Köpeskilling, köpkostnader och kapitaltillskott hör till vinstberäkningen och inte till underlaget för förbättringsutgifter – de ska inte in i kontrollen. Annars blir steget en tiofältsguide framför en knapp.
+
+**Den egentliga spärren finns redan och sitter rätt.** Klassificeringsgenomgången är obligatorisk innan underlaget kan tas fram. Det som gör en deklaration fel är en obesvarad skickfråga, inte ett tomt fält på en försättssida.
 
 **Byggs i webbläsaren**, av samma skäl som zip-arkivet: en serverfunktion som drar alla bilagor genom sig slår i storleks- och tidsgränser. `pdfjs-dist` tål inte webpack och laddas som ren ES-modul från `public/`.
 

@@ -2,10 +2,11 @@
 
 // Installningssidan (docs/design.md, "Installningssidan"). Allt som beskriver
 // bostaden men inte behovs for att komma igang: storlek, kopeskilling,
-// kopkostnader, agarandel och – bara for bostadsratt – kapitaltillskott.
-// Kopeskillingen gar att ange redan i registreringens bostadssteg; den som
-// hoppade over den dar fyller i den har. De flesta faltet ar valfria. Tomt
-// falt nollstaller vardet (agarandel tolkas dock som hela bostaden, 100 %).
+// kopkostnader, agarandel, identifiering (foreningens namn eller fastighets-
+// beteckning) och – bara for bostadsratt – kapitaltillskott. Kopeskillingen
+// gar att ange redan i registreringens bostadssteg; den som hoppade over den
+// dar fyller i den har. De flesta faltet ar valfria. Tomt falt nollstaller
+// vardet (agarandel tolkas dock som hela bostaden, 100 %).
 //
 // Upplatelseform och tilltradesdatum satts vid registreringen och visas
 // medvetet inte i toppraden, men maste ga att se och andra har (docs/design.md,
@@ -111,6 +112,11 @@ export async function sparaInstallningar(
     return { fel: "Ägarandel anges som ett tal mellan 1 och 100 procent, t.ex. 50." };
   }
 
+  // Foreningens namn eller fastighetsbeteckning (produktspec 8, "Forsattssida").
+  // Rent valfritt – andrar inget belopp – sa ingen tolkningsgrind: tomt blir null.
+  const identifieringText = las("identifiering");
+  const identifiering = identifieringText === "" ? null : identifieringText;
+
   await prisma.bostad.update({
     where: { id: bostadId },
     data: {
@@ -120,6 +126,7 @@ export async function sparaInstallningar(
       kopeskilling,
       kopkostnader,
       kapitaltillskott,
+      identifiering,
     },
   });
 

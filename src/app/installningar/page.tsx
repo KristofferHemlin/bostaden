@@ -1,7 +1,8 @@
 // Installningssidan (docs/design.md, "Installningssidan"). Allt som beskriver
 // bostaden men inte behovs for att komma igang: storlek, kopeskilling,
-// kopkostnader, agarandel och – bara for bostadsratt – kapitaltillskott.
-// Kopeskillingen gar aven att ange i registreringens bostadssteg. Nas via
+// kopkostnader, agarandel, identifiering och – bara for bostadsratt –
+// kapitaltillskott. Kopeskillingen gar aven att ange i registreringens
+// bostadssteg. Nas via
 // kugghjulet i navigationen. Langst ned ligger utloggningen, avskild med en
 // linje – inte pa startskarmen.
 
@@ -43,6 +44,7 @@ export default async function InstallningarSida() {
         kopkostnader={kronor(bostad.kopkostnader)}
         agarandel={agarandel === 100 ? "" : String(agarandel)}
         kapitaltillskott={kronor(bostad.kapitaltillskott)}
+        identifiering={bostad.identifiering ?? ""}
       />
 
       {/* Arkivexport: laddar ner samtliga bilagor som ett zip-arkiv
