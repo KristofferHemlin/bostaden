@@ -13,9 +13,13 @@
 //     kopeskilling, identifiering), aven om nagon rakar bifoga sadant i
 //     framtiden – vardet ersatts med "[borttaget]", nyckeln finns kvar sa att
 //     det syns ATT nagot filtrerades.
-//   - xhr/fetch-brodsmular begransas till url, metod och statuskod. Sentry
-//     samlar redan inte in request-/svarskroppar i den har typen av brodsmulor,
-//     men listan star har explicit i stallet for att lita pa standardbeteendet.
+//   - xhr/fetch-brodsmular begransas till url, metod och statuskod, och url:en
+//     saneras dessutom (se saneraBreadcrumbUrl): query-strangen strippas
+//     alltid, oavsett doman – den kan bara en atkomsttoken pa samma satt som
+//     en Authorization-header. Sokvagen mot lagringen (signerade lankar till
+//     bilagor) strips ocksa, eftersom den bar bostad_id och kostnad_id –
+//     tillsammans med anvandar-id:t (se nedan) blir det annars en logg over
+//     vilka kvitton en person oppnat.
 //
 // Session Replay (som spelar in skarmen, inklusive kvittobilder) aktiveras
 // ALDRIG – integrationen laggs helt enkelt aldrig till nagonstans.
@@ -67,14 +71,40 @@ export function beforeSend(handelse: ErrorEvent, _hint: EventHint): ErrorEvent |
   return handelse;
 }
 
-/** Begransar xhr/fetch-brodsmular till url, metod och statuskod. */
+/** Sokvagsprefixet for Supabase Storages REST-API – signerade bilagelankar gar hit. */
+const LAGRINGS_SOKVAG = "/storage/v1/object/";
+
+/**
+ * Strippar query-strangen (kan bara en atkomsttoken) ur en breadcrumb-url,
+ * oavsett doman. Ar sokvagen dessutom en lagringslank stryks aven den, sa att
+ * bostad_id och kostnad_id inte foljer med – bara domanen blir kvar.
+ */
+export function saneraBreadcrumbUrl(url: unknown): unknown {
+  if (typeof url !== "string") return url;
+
+  let uppdelad: URL;
+  try {
+    uppdelad = new URL(url);
+  } catch {
+    // Ingen fullstandig URL (t.ex. en relativ sokvag) – ta bort en eventuell
+    // query-strang for hand i stallet for att lata token slinka igenom.
+    return url.split("?")[0];
+  }
+
+  if (uppdelad.pathname.startsWith(LAGRINGS_SOKVAG)) {
+    return uppdelad.origin;
+  }
+  return uppdelad.origin + uppdelad.pathname;
+}
+
+/** Begransar xhr/fetch-brodsmular till url, metod och statuskod – och saneras url:en. */
 export function beforeBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb | null {
   if (
     (breadcrumb.category === "xhr" || breadcrumb.category === "fetch") &&
     breadcrumb.data
   ) {
     const { url, method, status_code } = breadcrumb.data as Record<string, unknown>;
-    breadcrumb.data = { url, method, status_code };
+    breadcrumb.data = { url: saneraBreadcrumbUrl(url), method, status_code };
   }
   return breadcrumb;
 }

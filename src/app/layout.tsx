@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { SentryAnvandare } from "@/components/sentry-anvandare";
+import { hamtaAnvandare } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Bostadsunderlag",
@@ -7,11 +9,13 @@ export const metadata: Metadata = {
     "Samlar och klassificerar kostnader nedlagda på den egna bostaden inför försäljning.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const anvandare = await hamtaAnvandare();
+
   return (
     <html lang="sv">
       <head>
@@ -28,7 +32,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-granssnitt">{children}</body>
+      <body className="font-granssnitt">
+        <SentryAnvandare id={anvandare?.id ?? null} />
+        {children}
+      </body>
     </html>
   );
 }

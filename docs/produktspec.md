@@ -177,6 +177,7 @@ Formen låses inte tidigare än så. Den väljs i registreringens andra steg, in
 | longitud | decimal? | |
 | upplatelseform | enum | `bostadsratt` \| `fastighet` – styr regelmotorn |
 | husform | enum? | villa/radhus/kedjehus, endast informativt |
+| identifiering | string? | föreningens namn för bostadsrätt, fastighetsbeteckning för fastighet – etikett och hjälptext följer `upplatelseform` |
 | tilltradesdatum | date | obligatoriskt, alla tidsberäkningar utgår härifrån |
 | kopeskilling | int? | kompletteras senare |
 | kopkostnader | int? | stämpelskatt/lagfart eller överlåtelseavgift |
@@ -602,6 +603,18 @@ Tre saker ska uppnås, i fallande ordning av betydelse.
 
 **Ingen personlig information i felrapporterna.** Kvittobilder, belopp, leverantörer och adresser ska aldrig följa med. Ett användar-id räcker för att kunna koppla ett fel till en person. Rapporteringen är ett driftverktyg, inte en andra kopia av databasen.
 
-Att felsammanhanget bara innehåller sida, anrop och användar-id är ett medvetet vägval, inte en tillfällig begränsning – det ska inte utökas senare. Varje fält utöver dessa tre är en väg tillbaka till kvittobilder, belopp eller andra personliga uppgifter, vilket bryter regeln ovan.
+Att felsammanhanget bara innehåller sida, anrop och användar-id är ett medvetet vägval, inte en tillfällig begränsning – det ska inte utökas. Varje fält utöver dessa tre är en väg tillbaka till kvittobilder, belopp eller andra personliga uppgifter.
 
-Regeln om bekräftad uppladdning (aldrig optimistisk, se avsnitt 12) är formulerad men saknar testtäckning. De tysta fel som hittats i uppladdningsflödet visar att formuleringen inte räcker – det behövs ett test som fångar en misslyckad uppladdning som ändå tolkas som lyckad.
+**Användaren sätts på scopet, aldrig per fångstplats.** `Sentry.setUser({ id })` anropas tidigt i begäran, i `hamtaAnvandare()`, och en gång på klienten nära rot-layouten. Skälet är att de flesta fel fångas automatiskt – av Next-integrationens egen krok eller av `error.tsx` – och de vägarna vet ingenting om sessionen. Sätts användaren bara där koden själv rapporterar blir de allvarligaste felen, de oväntade, just de som saknar avsändare.
+
+Bara id:t. Aldrig e-post, aldrig namn.
+
+**Ingen URL som bär en nyckel får lagras.** Query-strängen strippas ur alla fetch- och xhr-breadcrumbs, oavsett domän. En signerad länk mot lagringen bär en token som ger åtkomst till en privat kvittobild utan inloggning – det är samma sorts hemlighet som en `Authorization`-header, bara i annan form, och filtreringen missar den om den letar efter förbjudna fältnamn i stället för efter mönster i strängvärden.
+
+**Sökvägen mot lagringen stryks också.** En länk till en bilaga innehåller `bostad_id` och `kostnad_id`. Var för sig är de bara främmande nycklar, men tillsammans med användar-id:t blir breadcrumb-spåret en logg över vilka kvitton en viss person öppnat. Det är precis vad regeln ovan menar med en andra kopia av databasen. Felsökningsvärdet går inte förlorat: att ett bilageanrop misslyckades och med vilken status syns fortfarande, bara inte vilket kvitto det gällde.
+
+**Filtreringen i koden är inte heltäckande, och det går inte att göra den heltäckande.** Sentry härleder geografisk plats – ort, region, land – ur IP-adressen på den anslutning som levererar händelsen. Det sker hos Sentry, efter att eventet lämnat servern, och kan därför inte stoppas av `beforeSend` eller någon annan inställning i koden. Varken `sendDefaultPii: false` eller "Prevent Storing of IP Addresses" räcker; den senare tar bort adressen men lämnar den härledda platsen kvar.
+
+Inställningen "Prevent Storing of IP Addresses" har dessutom en bekräftad bugg: adressen scrubbas, men geo-datat räknas ut dessförinnan och blir kvar. Det som fungerar är en regel under Advanced Data Scrubbing i organisationens inställningar: `[Remove] [Anything] from [$user.geo.**]`. Den är satt på organisationsnivå, så den gäller även framtida projekt. Den som en dag läser filtreringskoden och drar slutsatsen att allt skydd ligger där har fel – en del av det ligger i ett kontogränssnitt hos en leverantör, och följer inte med repot.
+
+**Regeln om bekräftad uppladdning saknar testtäckning.** De tysta fel som hittades i uppladdningsflödet visar att en formulering i en fil inte räcker. Det behövs ett test som fångar en misslyckad uppladdning som ändå tolkas som lyckad.

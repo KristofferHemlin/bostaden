@@ -2,7 +2,9 @@
 // anvandare–bostad gar via medlemskap (aldrig direkt), agarandelen ligger dar.
 
 import "server-only";
+import { cache } from "react";
 import { Prisma } from "@prisma/client";
+import * as Sentry from "@sentry/nextjs";
 import { redirect } from "next/navigation";
 import { kastaVanligtDatabasfel } from "@/lib/databas-fel";
 import { prisma } from "@/lib/prisma";
@@ -16,8 +18,13 @@ export interface InloggadAnvandare {
 /**
  * Hamtar inloggad Supabase-anvandare och sakerstaller en spegelrad i tabellen
  * `anvandare` (id = auth-uid). Returnerar null om ingen session finns.
+ *
+ * Cachad per begaran (React cache()) – funktionen kors fran nastan varje
+ * sida, och utan detta skulle bade Supabase-anropet och skrivningen i
+ * sakerstallAnvandarrad ske en gang per anrop i stallet for en gang per
+ * begaran, nu nar aven rot-layouten kallar den (for Sentry.setUser nedan).
  */
-export async function hamtaAnvandare(): Promise<InloggadAnvandare | null> {
+export const hamtaAnvandare = cache(async (): Promise<InloggadAnvandare | null> => {
   // Utan riktiga NEXT_PUBLIC_SUPABASE_*-varden finns ingen inloggning att fraga.
   // Behandla som "ingen session" – da bouncar allt till /login (som renderar och
   // forklarar vid forsok att logga in).
@@ -30,6 +37,13 @@ export async function hamtaAnvandare(): Promise<InloggadAnvandare | null> {
 
   if (!user) return null;
 
+  // Sattas har, tidigt i begaran, sa att den automatiska felfangsten (Next
+  // egen krok i instrumentation.ts, error.tsx) far ett anvandar-id aven pa fel
+  // ingen kod uttryckligen rapporterar. Bara id:t – aldrig e-post eller namn
+  // (produktspec avsnitt 13). beforeSend i sentry-filter.ts reducerar dessutom
+  // anvandarobjektet till { id } aven om nagon skulle satta mer har.
+  Sentry.setUser({ id: user.id });
+
   const epost = user.email ?? `${user.id}@utan-epost.local`;
   try {
     await sakerstallAnvandarrad(user.id, epost);
@@ -39,7 +53,7 @@ export async function hamtaAnvandare(): Promise<InloggadAnvandare | null> {
     kastaVanligtDatabasfel(fel, { sida: "session", anrop: "hamtaAnvandare", anvandareId: user.id });
   }
   return { id: user.id, epost };
-}
+});
 
 /**
  * Speglar auth-anvandaren till tabellen `anvandare` utan att krocka pa den unika
