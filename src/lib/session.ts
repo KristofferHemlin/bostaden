@@ -4,6 +4,7 @@
 import "server-only";
 import { Prisma } from "@prisma/client";
 import { redirect } from "next/navigation";
+import { kastaVanligtDatabasfel } from "@/lib/databas-fel";
 import { prisma } from "@/lib/prisma";
 import { skapaServerklient, supabaseKonfigurerad } from "@/lib/supabase/server";
 
@@ -30,7 +31,13 @@ export async function hamtaAnvandare(): Promise<InloggadAnvandare | null> {
   if (!user) return null;
 
   const epost = user.email ?? `${user.id}@utan-epost.local`;
-  await sakerstallAnvandarrad(user.id, epost);
+  try {
+    await sakerstallAnvandarrad(user.id, epost);
+  } catch (fel) {
+    // Forsta DB-anropet pa nastan varenda sida (produktspec avsnitt 13, punkt
+    // 3) – hit hor det om databasen ligger och sover.
+    kastaVanligtDatabasfel(fel, { sida: "session", anrop: "hamtaAnvandare", anvandareId: user.id });
+  }
   return { id: user.id, epost };
 }
 
@@ -95,10 +102,19 @@ export async function hamtaAktivBostad(): Promise<AktivBostad | null> {
   const anvandare = await hamtaAnvandare();
   if (!anvandare) return null;
 
-  const medlemskap = await prisma.medlemskap.findFirst({
-    where: { anvandare_id: anvandare.id },
-    orderBy: { skapad_at: "asc" },
-  });
+  let medlemskap;
+  try {
+    medlemskap = await prisma.medlemskap.findFirst({
+      where: { anvandare_id: anvandare.id },
+      orderBy: { skapad_at: "asc" },
+    });
+  } catch (fel) {
+    kastaVanligtDatabasfel(fel, {
+      sida: "session",
+      anrop: "hamtaAktivBostad",
+      anvandareId: anvandare.id,
+    });
+  }
   if (!medlemskap) return null;
 
   return {

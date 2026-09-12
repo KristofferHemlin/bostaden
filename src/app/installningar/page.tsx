@@ -38,6 +38,7 @@ export default async function InstallningarSida() {
     >
       <InstallningarForm
         upplatelseform={bostad.upplatelseform}
+        sald={bostad.forsaljningsdatum != null}
         tilltradesdatum={isoDatum(bostad.tilltradesdatum)}
         storlek={bostad.storlek != null ? String(bostad.storlek) : ""}
         kopeskilling={kronor(bostad.kopeskilling)}

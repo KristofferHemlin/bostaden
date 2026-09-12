@@ -23,6 +23,7 @@
 // betaldatum sparas anda (obetald, raknas inte in) – inga floden far blockera.
 
 import { revalidatePath } from "next/cache";
+import { serverfelMeddelande } from "@/lib/databas-fel";
 import { oreFranKronor } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -56,21 +57,30 @@ function revalideraKostnadsvyer(): void {
  * inget belopp, ingen leverantor och inget datum; det syns i listan och i
  * genomgangen men raknas inte in nagonstans och rensas aldrig automatiskt.
  */
-export async function skapaUtkast(): Promise<{ kostnadId: string }> {
-  const { bostadId } = await kravBostad();
-  const skapad = await prisma.kostnad.create({
-    data: {
-      bostad_id: bostadId,
-      leverantor: null,
-      totalbelopp: null,
-      dokumentdatum: null,
-    },
-    select: { id: true },
-  });
-  revalidatePath("/");
-  revalidatePath("/kostnad");
-  revalidatePath("/genomgang");
-  return { kostnadId: skapad.id };
+export async function skapaUtkast(): Promise<{ kostnadId?: string; fel?: string }> {
+  const { bostadId, anvandareId } = await kravBostad();
+  try {
+    const skapad = await prisma.kostnad.create({
+      data: {
+        bostad_id: bostadId,
+        leverantor: null,
+        totalbelopp: null,
+        dokumentdatum: null,
+      },
+      select: { id: true },
+    });
+    revalidatePath("/");
+    revalidatePath("/kostnad");
+    revalidatePath("/genomgang");
+    return { kostnadId: skapad.id };
+  } catch (fel) {
+    // Utan ett utkast finns ingen plats att ladda upp bilagan till – filvalet
+    // fungerar da inte alls. Formularet maste fa veta det (src/app/kostnad/
+    // nytt/form.tsx, sakerstallUtkast) i stallet for att tyst hanga sig.
+    return {
+      fel: serverfelMeddelande(fel, { sida: "kostnad/nytt", anrop: "skapaUtkast", anvandareId }),
+    };
+  }
 }
 
 type Tolkad =
@@ -153,56 +163,69 @@ function enRadSkapa(leverantor: string, totalbelopp: number) {
 export async function sparaKostnad(
   formData: FormData,
 ): Promise<KostnadResultat> {
-  const { bostadId } = await kravBostad();
+  const { bostadId, anvandareId } = await kravBostad();
   const utkastId = String(formData.get("utkast_id") ?? "").trim();
 
   const tolkad = tolkaKostnadsformular(formData);
   if ("fel" in tolkad) return { fel: tolkad.fel };
   const { leverantor, totalbelopp, dok, bet, anteckning, rotUtnyttjat } = tolkad;
 
-  if (utkastId !== "") {
-    const utkast = await prisma.kostnad.findFirst({
-      where: { id: utkastId, bostad_id: bostadId },
-      select: { id: true, totalbelopp: true },
-    });
-    if (!utkast) return { fel: "Utkastet hittades inte." };
-    if (utkast.totalbelopp !== null) {
-      // Redan slutfort (t.ex. dubbelt inskick) – inget nytt skapas.
-      return { kostnadId: utkast.id };
+  // Sparningen far ALDRIG kasta okontrollerat har: kvittots bilaga ligger redan
+  // uppladdad och kopplad till utkastet – ett kastat fel skulle bara lamna
+  // formularet hangande utan besked (produktspec avsnitt 13, punkt 2).
+  try {
+    if (utkastId !== "") {
+      const utkast = await prisma.kostnad.findFirst({
+        where: { id: utkastId, bostad_id: bostadId },
+        select: { id: true, totalbelopp: true },
+      });
+      if (!utkast) return { fel: "Utkastet hittades inte." };
+      if (utkast.totalbelopp !== null) {
+        // Redan slutfort (t.ex. dubbelt inskick) – inget nytt skapas.
+        return { kostnadId: utkast.id };
+      }
+
+      await prisma.$transaction([
+        prisma.kostnadsrad.deleteMany({ where: { kostnad_id: utkastId } }),
+        prisma.kostnad.update({
+          where: { id: utkastId },
+          data: {
+            leverantor,
+            totalbelopp,
+            dokumentdatum: dok,
+            betaldatum: bet,
+            anteckning,
+            rot_utnyttjat: rotUtnyttjat,
+            rader: enRadSkapa(leverantor, totalbelopp),
+          },
+        }),
+      ]);
+      revalideraKostnadsvyer();
+      return { kostnadId: utkastId };
     }
 
-    await prisma.$transaction([
-      prisma.kostnadsrad.deleteMany({ where: { kostnad_id: utkastId } }),
-      prisma.kostnad.update({
-        where: { id: utkastId },
-        data: {
-          leverantor,
-          totalbelopp,
-          dokumentdatum: dok,
-          betaldatum: bet,
-          anteckning,
-          rot_utnyttjat: rotUtnyttjat,
-          rader: enRadSkapa(leverantor, totalbelopp),
-        },
-      }),
-    ]);
+    const skapad = await prisma.kostnad.create({
+      data: {
+        bostad_id: bostadId,
+        leverantor,
+        totalbelopp,
+        dokumentdatum: dok,
+        betaldatum: bet,
+        anteckning,
+        rot_utnyttjat: rotUtnyttjat,
+        rader: enRadSkapa(leverantor, totalbelopp),
+      },
+      select: { id: true },
+    });
     revalideraKostnadsvyer();
-    return { kostnadId: utkastId };
+    return { kostnadId: skapad.id };
+  } catch (fel) {
+    return {
+      fel: serverfelMeddelande(fel, { sida: "kostnad/nytt", anrop: "sparaKostnad", anvandareId }),
+      // Bilagan ligger redan uppladdad pa utkastet – lamna kvar vagen dit sa
+      // att anvandaren kan oppna kvittot och forsoka spara pa nytt, i stallet
+      // for att behova fotografera om det.
+      kostnadId: utkastId || undefined,
+    };
   }
-
-  const skapad = await prisma.kostnad.create({
-    data: {
-      bostad_id: bostadId,
-      leverantor,
-      totalbelopp,
-      dokumentdatum: dok,
-      betaldatum: bet,
-      anteckning,
-      rot_utnyttjat: rotUtnyttjat,
-      rader: enRadSkapa(leverantor, totalbelopp),
-    },
-    select: { id: true },
-  });
-  revalideraKostnadsvyer();
-  return { kostnadId: skapad.id };
 }

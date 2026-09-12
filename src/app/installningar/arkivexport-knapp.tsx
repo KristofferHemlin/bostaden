@@ -76,7 +76,17 @@ export function ArkivexportKnapp() {
   async function korExport() {
     setSteg({ fas: "forbereder" });
 
-    const lista = await hamtaArkivexportlista();
+    // hamtaArkivexportlista svarar alltid med {ok:false, fel} nu (se
+    // arkivexport-actions.ts) – men natverket sjalvt kan fela pa vagen dit, och
+    // da far knappen inte bara hanga kvar pa "Förbereder…" utan besked
+    // (produktspec avsnitt 13, punkt 2: aldrig en tyst ofullstandig export).
+    let lista: Awaited<ReturnType<typeof hamtaArkivexportlista>>;
+    try {
+      lista = await hamtaArkivexportlista();
+    } catch {
+      setSteg({ fas: "fel", melding: "Kunde inte nå servern. Försök igen.", saknade: [] });
+      return;
+    }
     if (!lista.ok) {
       setSteg({ fas: "fel", melding: lista.fel, saknade: [] });
       return;

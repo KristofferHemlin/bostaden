@@ -15,6 +15,7 @@
 
 import { revalidatePath } from "next/cache";
 import { arOklassificerad } from "@/doman/genomgang";
+import { serverfelMeddelande } from "@/lib/databas-fel";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -99,7 +100,7 @@ export async function skapaHog(
   _foreg: GenomgangResultat,
   formData: FormData,
 ): Promise<GenomgangResultat> {
-  const { bostadId } = await kravBostad();
+  const { bostadId, anvandareId } = await kravBostad();
 
   const namn = String(formData.get("namn") ?? "").trim();
   const kostnadIder = formData.getAll("kostnad_ider").map(String).filter(Boolean);
@@ -109,33 +110,37 @@ export async function skapaHog(
     return { fel: "Välj minst ett kvitto till högen." };
   }
 
-  const kostnader = await prisma.kostnad.findMany({
-    where: { id: { in: kostnadIder }, bostad_id: bostadId },
-    select: { betaldatum: true },
-  });
-  const arKandidater = kostnader
-    .map((k) => ar(k.betaldatum))
-    .filter((v): v is number => v !== null);
-  const hogAr =
-    arKandidater.length > 0
-      ? Math.min(...arKandidater)
-      : new Date().getUTCFullYear();
+  try {
+    const kostnader = await prisma.kostnad.findMany({
+      where: { id: { in: kostnadIder }, bostad_id: bostadId },
+      select: { betaldatum: true },
+    });
+    const arKandidater = kostnader
+      .map((k) => ar(k.betaldatum))
+      .filter((v): v is number => v !== null);
+    const hogAr =
+      arKandidater.length > 0
+        ? Math.min(...arKandidater)
+        : new Date().getUTCFullYear();
 
-  const projekt = await prisma.projekt.create({
-    data: { bostad_id: bostadId, namn, ar: hogAr, kategori: null },
-    select: { id: true },
-  });
+    const projekt = await prisma.projekt.create({
+      data: { bostad_id: bostadId, namn, ar: hogAr, kategori: null },
+      select: { id: true },
+    });
 
-  const kopplade = await kopplaKvittonTillHog(
-    bostadId,
-    projekt.id,
-    kostnadIder,
-  );
-  if (kopplade.length === 0) {
-    // Inget kvitto gick att koppla (alla redan grupperade/borttagna) – lamna
-    // ingen tom hog kvar.
-    await prisma.projekt.delete({ where: { id: projekt.id } });
-    return { fel: "Kvittona hann grupperas någon annanstans. Ladda om sidan." };
+    const kopplade = await kopplaKvittonTillHog(
+      bostadId,
+      projekt.id,
+      kostnadIder,
+    );
+    if (kopplade.length === 0) {
+      // Inget kvitto gick att koppla (alla redan grupperade/borttagna) – lamna
+      // ingen tom hog kvar.
+      await prisma.projekt.delete({ where: { id: projekt.id } });
+      return { fel: "Kvittona hann grupperas någon annanstans. Ladda om sidan." };
+    }
+  } catch (fel) {
+    return { fel: serverfelMeddelande(fel, { sida: "genomgang", anrop: "skapaHog", anvandareId }) };
   }
 
   revalidera();
@@ -153,23 +158,27 @@ export async function dopOmHog(
   _foreg: GenomgangResultat,
   formData: FormData,
 ): Promise<GenomgangResultat> {
-  const { bostadId } = await kravBostad();
+  const { bostadId, anvandareId } = await kravBostad();
 
   const projektId = String(formData.get("projekt_id") ?? "");
   const namn = String(formData.get("namn") ?? "").trim();
 
   if (!namn) return { fel: "Ge högen ett namn." };
 
-  const projekt = await prisma.projekt.findFirst({
-    where: { id: projektId, bostad_id: bostadId },
-    select: { id: true, kategori: true },
-  });
-  if (!projekt) return { fel: "Högen hittades inte." };
-  if (projekt.kategori !== null) {
-    return { fel: "Den högen är redan klassificerad och byter namn via projektet." };
-  }
+  try {
+    const projekt = await prisma.projekt.findFirst({
+      where: { id: projektId, bostad_id: bostadId },
+      select: { id: true, kategori: true },
+    });
+    if (!projekt) return { fel: "Högen hittades inte." };
+    if (projekt.kategori !== null) {
+      return { fel: "Den högen är redan klassificerad och byter namn via projektet." };
+    }
 
-  await prisma.projekt.update({ where: { id: projekt.id }, data: { namn } });
+    await prisma.projekt.update({ where: { id: projekt.id }, data: { namn } });
+  } catch (fel) {
+    return { fel: serverfelMeddelande(fel, { sida: "genomgang", anrop: "dopOmHog", anvandareId }) };
+  }
   revalidera();
   return {};
 }
@@ -178,24 +187,28 @@ export async function laggIHog(
   _foreg: GenomgangResultat,
   formData: FormData,
 ): Promise<GenomgangResultat> {
-  const { bostadId } = await kravBostad();
+  const { bostadId, anvandareId } = await kravBostad();
 
   const projektId = String(formData.get("projekt_id") ?? "");
   const kostnadIder = formData.getAll("kostnad_ider").map(String).filter(Boolean);
 
-  const projekt = await prisma.projekt.findFirst({
-    where: { id: projektId, bostad_id: bostadId },
-    select: { id: true, kategori: true },
-  });
-  if (!projekt) return { fel: "Högen hittades inte." };
-  if (projekt.kategori !== null) {
-    return {
-      fel: "Den högen är redan klassificerad. Lägg kvittot i en hög som inte gått igenom frågorna än.",
-    };
-  }
-  if (kostnadIder.length === 0) return { fel: "Välj minst ett kvitto." };
+  try {
+    const projekt = await prisma.projekt.findFirst({
+      where: { id: projektId, bostad_id: bostadId },
+      select: { id: true, kategori: true },
+    });
+    if (!projekt) return { fel: "Högen hittades inte." };
+    if (projekt.kategori !== null) {
+      return {
+        fel: "Den högen är redan klassificerad. Lägg kvittot i en hög som inte gått igenom frågorna än.",
+      };
+    }
+    if (kostnadIder.length === 0) return { fel: "Välj minst ett kvitto." };
 
-  await kopplaKvittonTillHog(bostadId, projekt.id, kostnadIder);
+    await kopplaKvittonTillHog(bostadId, projekt.id, kostnadIder);
+  } catch (fel) {
+    return { fel: serverfelMeddelande(fel, { sida: "genomgang", anrop: "laggIHog", anvandareId }) };
+  }
   revalidera();
   return {};
 }
@@ -204,27 +217,31 @@ export async function flyttaUturHog(
   _foreg: GenomgangResultat,
   formData: FormData,
 ): Promise<GenomgangResultat> {
-  const { bostadId } = await kravBostad();
+  const { bostadId, anvandareId } = await kravBostad();
 
   const projektId = String(formData.get("projekt_id") ?? "");
   const kostnadId = String(formData.get("kostnad_id") ?? "");
 
-  const projekt = await prisma.projekt.findFirst({
-    where: { id: projektId, bostad_id: bostadId },
-    select: { id: true, kategori: true },
-  });
-  if (!projekt) return { fel: "Högen hittades inte." };
-  if (projekt.kategori !== null) {
-    return { fel: "Den högen är redan klassificerad och ändras via projektet." };
-  }
+  try {
+    const projekt = await prisma.projekt.findFirst({
+      where: { id: projektId, bostad_id: bostadId },
+      select: { id: true, kategori: true },
+    });
+    if (!projekt) return { fel: "Högen hittades inte." };
+    if (projekt.kategori !== null) {
+      return { fel: "Den högen är redan klassificerad och ändras via projektet." };
+    }
 
-  await prisma.radfordelning.deleteMany({
-    where: {
-      projekt_id: projektId,
-      kostnadsrad: { kostnad_id: kostnadId, kostnad: { bostad_id: bostadId } },
-    },
-  });
-  await stadaTomHog(projektId);
+    await prisma.radfordelning.deleteMany({
+      where: {
+        projekt_id: projektId,
+        kostnadsrad: { kostnad_id: kostnadId, kostnad: { bostad_id: bostadId } },
+      },
+    });
+    await stadaTomHog(projektId);
+  } catch (fel) {
+    return { fel: serverfelMeddelande(fel, { sida: "genomgang", anrop: "flyttaUturHog", anvandareId }) };
+  }
 
   revalidera();
   return {};
@@ -234,43 +251,47 @@ export async function raknasInte(
   _foreg: GenomgangResultat,
   formData: FormData,
 ): Promise<GenomgangResultat> {
-  const { bostadId } = await kravBostad();
+  const { bostadId, anvandareId } = await kravBostad();
 
   const kostnadIder = formData.getAll("kostnad_ider").map(String).filter(Boolean);
   if (kostnadIder.length === 0) return { fel: "Välj minst ett kvitto." };
 
-  const kostnader = await prisma.kostnad.findMany({
-    where: { id: { in: kostnadIder }, bostad_id: bostadId },
-    select: {
-      id: true,
-      rader: { select: { fordelningar: { select: { projekt_id: true } } } },
-    },
-  });
+  try {
+    const kostnader = await prisma.kostnad.findMany({
+      where: { id: { in: kostnadIder }, bostad_id: bostadId },
+      select: {
+        id: true,
+        rader: { select: { fordelningar: { select: { projekt_id: true } } } },
+      },
+    });
 
-  const berordaHogar = new Set<string>();
-  for (const kostnad of kostnader) {
-    for (const rad of kostnad.rader) {
-      for (const f of rad.fordelningar) {
-        if (f.projekt_id) berordaHogar.add(f.projekt_id);
+    const berordaHogar = new Set<string>();
+    for (const kostnad of kostnader) {
+      for (const rad of kostnad.rader) {
+        for (const f of rad.fordelningar) {
+          if (f.projekt_id) berordaHogar.add(f.projekt_id);
+        }
       }
     }
+
+    await prisma.$transaction([
+      // Ligger kvittot i en hog: koppla loss det forst, sa summorna stammer.
+      prisma.radfordelning.deleteMany({
+        where: {
+          projekt_id: { not: null },
+          kostnadsrad: { kostnad_id: { in: kostnader.map((k) => k.id) } },
+        },
+      }),
+      prisma.kostnad.updateMany({
+        where: { id: { in: kostnader.map((k) => k.id) }, bostad_id: bostadId },
+        data: { arkiverad: true },
+      }),
+    ]);
+
+    for (const projektId of berordaHogar) await stadaTomHog(projektId);
+  } catch (fel) {
+    return { fel: serverfelMeddelande(fel, { sida: "genomgang", anrop: "raknasInte", anvandareId }) };
   }
-
-  await prisma.$transaction([
-    // Ligger kvittot i en hog: koppla loss det forst, sa summorna stammer.
-    prisma.radfordelning.deleteMany({
-      where: {
-        projekt_id: { not: null },
-        kostnadsrad: { kostnad_id: { in: kostnader.map((k) => k.id) } },
-      },
-    }),
-    prisma.kostnad.updateMany({
-      where: { id: { in: kostnader.map((k) => k.id) }, bostad_id: bostadId },
-      data: { arkiverad: true },
-    }),
-  ]);
-
-  for (const projektId of berordaHogar) await stadaTomHog(projektId);
 
   revalidera();
   return {};
@@ -280,13 +301,19 @@ export async function aterforFranRaknasInte(
   _foreg: GenomgangResultat,
   formData: FormData,
 ): Promise<GenomgangResultat> {
-  const { bostadId } = await kravBostad();
+  const { bostadId, anvandareId } = await kravBostad();
   const kostnadId = String(formData.get("kostnad_id") ?? "");
 
-  await prisma.kostnad.updateMany({
-    where: { id: kostnadId, bostad_id: bostadId },
-    data: { arkiverad: false },
-  });
+  try {
+    await prisma.kostnad.updateMany({
+      where: { id: kostnadId, bostad_id: bostadId },
+      data: { arkiverad: false },
+    });
+  } catch (fel) {
+    return {
+      fel: serverfelMeddelande(fel, { sida: "genomgang", anrop: "aterforFranRaknasInte", anvandareId }),
+    };
+  }
 
   revalidera();
   return {};

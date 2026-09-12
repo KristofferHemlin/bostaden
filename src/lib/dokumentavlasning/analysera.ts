@@ -14,6 +14,7 @@
 
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
+import { rapporteraFel } from "@/lib/feltrapportering";
 import type { Bilageformat } from "@/lib/lagring/bilaga-regler";
 import { heicTillJpegMiniatyr } from "@/lib/lagring/miniatyr";
 import {
@@ -112,7 +113,12 @@ export async function analyseraDokumentbuffert(
       .join("\n");
 
     return tolkaDokumentsvar(text);
-  } catch {
+  } catch (fel) {
+    // Fortfarande null-falt, aldrig ett kastat fel – men en modell som slutat
+    // svara (fel nyckel, kvot, API-driftstorning) ska synas nagonstans i
+    // stallet for att bara sluta fylla i falt utan forklaring (produktspec
+    // avsnitt 13, punkt 1). Ingen dokumentdata skickas med, bara att det hande.
+    rapporteraFel(fel, { sida: "dokumentavlasning", anrop: "analyseraDokumentbuffert" });
     return { ...TOMT_DOKUMENTFALT };
   }
 }

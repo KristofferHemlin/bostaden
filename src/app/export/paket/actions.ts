@@ -11,6 +11,7 @@
 // hamta.ts) i samma anrop, sa att klienten kan borja bygga PDF:en utan ett
 // extra race mellan "sparat" och "hamtat".
 
+import { serverfelMeddelande } from "@/lib/databas-fel";
 import { hamtaBilagepaketdata, type BilagepaketResultat } from "@/lib/bilagepaket/hamta";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -48,19 +49,26 @@ export async function skapaBilagepaket(
   const identifieringText = las("identifiering");
   const identifiering = identifieringText === "" ? null : identifieringText;
 
-  await prisma.$transaction([
-    prisma.bostad.update({
-      where: { id: bostadId },
-      data: {
-        tilltradesdatum: new Date(`${tilltradesdatum}T00:00:00.000Z`),
-        identifiering,
-      },
-    }),
-    prisma.medlemskap.updateMany({
-      where: { anvandare_id: anvandareId, bostad_id: bostadId },
-      data: { agarandel },
-    }),
-  ]);
+  try {
+    await prisma.$transaction([
+      prisma.bostad.update({
+        where: { id: bostadId },
+        data: {
+          tilltradesdatum: new Date(`${tilltradesdatum}T00:00:00.000Z`),
+          identifiering,
+        },
+      }),
+      prisma.medlemskap.updateMany({
+        where: { anvandare_id: anvandareId, bostad_id: bostadId },
+        data: { agarandel },
+      }),
+    ]);
 
-  return hamtaBilagepaketdata(bostadId, agarandel);
+    return await hamtaBilagepaketdata(bostadId, agarandel);
+  } catch (fel) {
+    return {
+      ok: false,
+      fel: serverfelMeddelande(fel, { sida: "export/paket", anrop: "skapaBilagepaket", anvandareId }),
+    };
+  }
 }

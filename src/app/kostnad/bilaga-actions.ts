@@ -13,6 +13,7 @@
 //
 // bostad_id kommer ALLTID fran kravBostad() har, aldrig fran klienten.
 
+import { serverfelMeddelande } from "@/lib/databas-fel";
 import {
   bekraftaKostnadsbilaga,
   skapaSigneradUppladdning,
@@ -24,6 +25,13 @@ import { analyseraKostnadsbilaga } from "@/lib/dokumentavlasning/lagring";
 import type { Dokumentfalt } from "@/lib/dokumentavlasning/tolkning";
 import { kravBostad } from "@/lib/session";
 
+// Bilageuppladdningen ar det viktigaste stallet i hela appen att aldrig tystna
+// pa (produktspec avsnitt 13, punkt 2: "en tyst misslyckad uppladdning ar det
+// varsta som kan handa"). skapaSigneradUppladdning/bekraftaKostnadsbilaga
+// kastar redan aldrig for de fel de sjalva kanner (se lib/lagring/bilagor.ts)
+// – den har fangar bara det oforutsedda (t.ex. databasen sover) sa att
+// klienten alltid far ett svar att visa, aldrig ett hangande lofte.
+
 interface Filuppgifter {
   filnamn: string;
   mimetyp: string;
@@ -33,28 +41,50 @@ interface Filuppgifter {
 export async function begarBilagauppladdning(
   indata: Filuppgifter & { kostnadId: string },
 ): Promise<SigneradUppladdning> {
-  const { bostadId } = await kravBostad();
-  return skapaSigneradUppladdning({
-    bostadId,
-    kostnadId: indata.kostnadId,
-    filnamn: indata.filnamn,
-    mimetyp: indata.mimetyp,
-    storlek: indata.storlek,
-  });
+  const { bostadId, anvandareId } = await kravBostad();
+  try {
+    return await skapaSigneradUppladdning({
+      bostadId,
+      kostnadId: indata.kostnadId,
+      filnamn: indata.filnamn,
+      mimetyp: indata.mimetyp,
+      storlek: indata.storlek,
+    });
+  } catch (fel) {
+    return {
+      ok: false,
+      fel: serverfelMeddelande(fel, {
+        sida: "kostnad/bilaga",
+        anrop: "begarBilagauppladdning",
+        anvandareId,
+      }),
+    };
+  }
 }
 
 export async function bekraftaBilagauppladdning(
   indata: Filuppgifter & { kostnadId: string; nyckel: string },
 ): Promise<Uppladdningsresultat> {
-  const { bostadId } = await kravBostad();
-  return bekraftaKostnadsbilaga({
-    bostadId,
-    kostnadId: indata.kostnadId,
-    nyckel: indata.nyckel,
-    filnamn: indata.filnamn,
-    mimetyp: indata.mimetyp,
-    storlek: indata.storlek,
-  });
+  const { bostadId, anvandareId } = await kravBostad();
+  try {
+    return await bekraftaKostnadsbilaga({
+      bostadId,
+      kostnadId: indata.kostnadId,
+      nyckel: indata.nyckel,
+      filnamn: indata.filnamn,
+      mimetyp: indata.mimetyp,
+      storlek: indata.storlek,
+    });
+  } catch (fel) {
+    return {
+      ok: false,
+      fel: serverfelMeddelande(fel, {
+        sida: "kostnad/bilaga",
+        anrop: "bekraftaBilagauppladdning",
+        anvandareId,
+      }),
+    };
+  }
 }
 
 export async function analyseraBilaga(indata: {
@@ -68,5 +98,12 @@ export async function taBortBilaga(indata: {
   bilagaId: string;
 }): Promise<{ ok: boolean; fel?: string }> {
   const { anvandareId } = await kravBostad();
-  return taBortBilagaLib(indata.bilagaId, anvandareId);
+  try {
+    return await taBortBilagaLib(indata.bilagaId, anvandareId);
+  } catch (fel) {
+    return {
+      ok: false,
+      fel: serverfelMeddelande(fel, { sida: "kostnad/bilaga", anrop: "taBortBilaga", anvandareId }),
+    };
+  }
 }

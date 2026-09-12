@@ -106,6 +106,10 @@ Projekt och kostnader hänger på `bostad_id`, aldrig direkt på användaren. Ko
 
 Inga flöden får blockera. Ofullständiga uppgifter sparas som öppna poster i stället för att stoppa användaren.
 
+**Regeln gäller inmatningen.** Den skrevs för den som står i en byggvaruhandel: stoppas hen läggs kvittot aldrig in, och ett kvitto som inte finns är dyrare än ett kvitto med luckor. Inställningssidan är inte det läget – där sitter användaren lugnt med köpekontraktet framme.
+
+`tilltradesdatum` är därför obligatoriskt i inställningarna. Det är baslinjen för skickbedömningen och gränsen för vilka utgifter som är dina; utan det blir underlaget fel i stället för ofullständigt. Datumet sätts redan vid registreringen, så kravet skapar aldrig ett dödläge – det hindrar bara att fältet töms.
+
 **Filuppladdning bekräftas alltid innan flödet går vidare.** Aldrig optimistisk uppladdning. En tyst misslyckad uppladdning är det värsta som kan hända i en app vars hela värde är att kvittot faktiskt sparades. Visa fel, låt användaren försöka igen, och släpp aldrig bilden ur minnet förrän servern bekräftat.
 
 Övrig felhantering ska finnas från början, inte läggas till sist: avbrutna uppladdningar, för stora filer, nätverksfel mot Supabase, användare som lämnar sidan mitt i inmatningen.

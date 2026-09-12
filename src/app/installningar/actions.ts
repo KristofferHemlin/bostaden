@@ -12,6 +12,12 @@
 // medvetet inte i toppraden, men maste ga att se och andra har (docs/design.md,
 // "Installningssidan") – tilltradesdatumet ar baslinjen for hela skickbedom-
 // ningen. Bada ar OBLIGATORISKA, till skillnad fran resten av formularet.
+//
+// Upplatelseformen gar att byta fram till forsaljningen, aldrig efter
+// (produktspec 4.8). Klienten (form.tsx) later ett byte kraeva en bekraftelse
+// och lasar korten nar bostaden ar sald, men den kontrollen ar bara UX –
+// servern nekar har ocksa ett byte nar forsaljningsdatum finns, oavsett vad
+// formularet faktiskt skickar.
 
 import { revalidatePath } from "next/cache";
 import { oreFranKronor } from "@/lib/format";
@@ -75,10 +81,28 @@ export async function sparaInstallningar(
 
   const tilltradesdatum = las("tilltradesdatum");
   if (!DATUM.test(tilltradesdatum)) {
-    return { fel: "Fyll i tillträdesdatum." };
+    return {
+      fel: "Tillträdesdatum behövs som baslinje för skickbedömningen och gränsen för vilka utgifter som är dina.",
+    };
   }
   if (tilltradesdatum < "1970-01-01") {
     return { fel: "Tillträdesdatum före 1970 stöds inte." };
+  }
+
+  // Upplatelseformen ar last efter forsaljning (produktspec 4.8, CLAUDE.md
+  // "Inga floden far blockera" – undantaget): ett byte da skulle gora ett
+  // redan framtaget underlag och en redan vald blankett osann i efterhand.
+  // Kontrolleras HAR, inte bara i granssnittet, eftersom formularet alltid
+  // skickar med hela sitt varde – aven nar korten ar lasta och anvandaren
+  // inte kunnat andra dem.
+  const bostadNu = await prisma.bostad.findUniqueOrThrow({
+    where: { id: bostadId },
+    select: { upplatelseform: true, forsaljningsdatum: true },
+  });
+  if (bostadNu.forsaljningsdatum && upplatelseform !== bostadNu.upplatelseform) {
+    return {
+      fel: "Upplåtelseformen går inte att ändra efter försäljningen – underlaget är framtaget och blanketten vald.",
+    };
   }
 
   const storlek = storlekFranText(las("storlek"));

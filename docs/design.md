@@ -582,6 +582,8 @@ Här ligger allt som beskriver bostaden men inte behövs för att komma igång. 
 
 **Uppgifter om bostaden:** adress, ort, upplåtelseform, tillträdesdatum, storlek, köpeskilling, köpkostnader, ägarandel. För bostadsrätt även kapitaltillskott; för fastighet inte, eftersom det inte finns.
 
+**Tillträdesdatum är obligatoriskt här**, till skillnad från sidans övriga fält, och upplåtelseformen kräver en bekräftelse för att bytas. Se CLAUDE.md respektive `docs/produktspec.md` avsnitt 4.8 för skälen.
+
 **Upplåtelseform och tillträdesdatum måste gå att se och ändra här.** De sätts vid registreringen och visas medvetet inte i toppraden, men de får inte bli oåtkomliga. Tillträdesdatumet är baslinjen för hela skickbedömningen och gränsen för vilka utgifter som är dina – skrivs det fel vid registreringen och inte går att rätta blir underlaget fel utan att något ser trasigt ut.
 
 Hjälptexten för köpkostnader skiljer sig: lagfart, pantbrev och inköpsprovision för fastighet, överlåtelseavgift för bostadsrätt.

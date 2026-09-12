@@ -153,6 +153,16 @@ Exporten ska hantera båda varianterna: antingen anges beloppen för hela bostad
 
 Ingen skillnad i domänlogiken. `husform` är fortfarande rent informativt.
 
+**Upplåtelseformen går att byta fram till försäljningen, men aldrig efter.**
+
+Kvittona påverkas inte av formen. Belopp, datum, rader och ROT är desamma, och beräkningen är identisk – det är vad paritetstestet låser fast. Det som påverkas är uppgifterna runt omkring: kapitaltillskott finns bara för bostadsrätt, identifieringen byter innebörd från föreningens namn till fastighetsbeteckning, och köpkostnaderna betyder olika saker. Står "Brf Lindhagensterassen 1" kvar i ett fält som plötsligt heter Fastighetsbeteckning är det tyst fel.
+
+Ett byte kräver därför en bekräftelse som säger vad som händer: vilka fält som töms och vad som behöver skrivas om. Fälten som inte längre hör hemma töms vid bytet i stället för att ligga kvar osynliga i databasen. Har klassificeringen besvarats med att föreningen ansvarar för något ska den frågan tas om, eftersom den inte finns för en fastighet.
+
+**Efter att bostaden markerats som såld är formen låst.** Då är blanketten vald, underlaget framtaget och kanske ett PDF-paket skapat – ett byte gör dokumentationen osann i efterhand. Det är först vid försäljningen formen verkligen spelar roll, och därför går gränsen där.
+
+Formen låses inte tidigare än så. Den väljs i registreringens andra steg, innan användaren hunnit förstå vad valet betyder, och den som valt fel måste kunna rätta det utan att börja om. Skyddet ligger i att bytet kostar något synligt, inte i att det är omöjligt.
+
 ---
 
 ## 5. Datamodell
@@ -575,3 +585,19 @@ Saknas leverantör används anteckningen, och saknas båda skrivs bara datum och
 **Bygg zip-filen i webbläsaren, inte i serverfunktionen.** Bilagorna går redan direkt mellan webbläsare och lagring via signerad URL, av samma skäl: en serverfunktion som drar hela arkivet genom sig slår i storleks- och tidsgränser så snart arkivet blir stort, och det blir det med tiden. Servern producerar listan med signerade URL:er och filnamn; webbläsaren hämtar och packar.
 
 **En ofullständig zip får aldrig levereras tyst.** Misslyckas en nedladdning ska användaren få veta vilka filer som saknas, av exakt samma skäl som en uppladdning alltid bekräftas. En arkivexport som tyst tappar tre kvitton är värre än ingen arkivexport alls, eftersom användaren tror sig ha allt.
+
+---
+
+## 13. Drift och felrapportering
+
+**Målet är inte att undvika fel, utan att veta om dem.** Hittills har varje fel i appen upptäckts genom att en person klickat runt och tagit skärmbilder. Det fungerar så länge den personen är den enda användaren. I samma sekund som någon annan loggar in slutar det fungera: de allra flesta som stöter på något trasigt berättar det inte, de slutar använda appen och drar slutsatsen att den inte höll vad den lovade.
+
+Tre saker ska uppnås, i fallande ordning av betydelse.
+
+**1. Du får veta att något gick sönder, och för vem.** Ett fel i webbläsaren eller på servern ska landa någonstans där det går att läsa i efterhand, med tillräckligt sammanhang för att gå att återskapa: vilken sida, vilket anrop, vilken användare. Tystnad ska aldrig vara den normala responsen på ett fel.
+
+**2. Användaren ser något begripligt i stället för ingenting.** Ett fel som bara försvinner är värre än ett felmeddelande. Särskilt gäller det uppladdningen, där hela produktlöftet är att kvittot faktiskt sparades – ett tyst misslyckande där är det värsta som kan hända i den här appen.
+
+**3. Den sovande databasen ser inte ut som en trasig app.** Gratisnivån i Supabase pausar databasen efter en veckas inaktivitet, vilket är exakt den här appens rytm: man lägger in ett kvitto och återkommer om tre månader. Den som loggar in efter uppehållet får i dag ett anslutningsfel. Antingen hålls databasen vaken, eller så känns läget igen och förklaras i klartext.
+
+**Ingen personlig information i felrapporterna.** Kvittobilder, belopp, leverantörer och adresser ska aldrig följa med. Ett användar-id räcker för att kunna koppla ett fel till en person. Rapporteringen är ett driftverktyg, inte en andra kopia av databasen.

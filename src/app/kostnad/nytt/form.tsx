@@ -344,11 +344,20 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
   }, []);
 
   // Skapar utkastet en gang och lamnar tillbaka dess id. Sammanfallande anrop
-  // (flera filer valda samtidigt) delar samma lofte.
+  // (flera filer valda samtidigt) delar samma lofte. Misslyckas skapandet (t.ex.
+  // databasen sover) finns ingen plats att ladda upp filen till – kastar
+  // vidare sa att laggTillFiler kan visa felet i stallet for att filvalet bara
+  // tyst inte gor nagot (produktspec avsnitt 13, punkt 2). Loftet nollas sa att
+  // ett nytt filval forsoker skapa utkastet pa nytt i stallet for att fastna
+  // pa samma avvisade lofte.
   function sakerstallUtkast(): Promise<string> {
     if (utkastId) return Promise.resolve(utkastId);
     if (!utkastPromiseRef.current) {
       utkastPromiseRef.current = skapaUtkast().then((r) => {
+        if (r.fel || !r.kostnadId) {
+          utkastPromiseRef.current = null;
+          throw new Error(r.fel ?? "Kvittot kunde inte förberedas.");
+        }
         setUtkastId(r.kostnadId);
         return r.kostnadId;
       });
@@ -431,7 +440,23 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
     if (tillagda.length === 0) return;
     setFiler((prev) => [...prev, ...tillagda]);
 
-    const kostnadId = await sakerstallUtkast();
+    let kostnadId: string;
+    try {
+      kostnadId = await sakerstallUtkast();
+    } catch (fel) {
+      // Ingen plats att ladda upp mot – bilderna ligger redan synliga i
+      // miniatyrraden med sitt filnamn, sa markera dem som misslyckade i
+      // stallet for att bara sta och verka pagaende for evigt (produktspec
+      // avsnitt 13, punkt 2). Krysset gor det mojligt att forsoka igen.
+      const meddelande =
+        fel instanceof Error ? fel.message : "Kunde inte förbereda uppladdningen.";
+      setFilstatus((s) => {
+        const nasta = { ...s };
+        for (const fil of tillagda) nasta[filnyckel(fil)] = { pagar: false, fel: meddelande };
+        return nasta;
+      });
+      return;
+    }
     for (const fil of tillagda) {
       await laddaEn(kostnadId, fil);
     }
@@ -471,7 +496,23 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
 
     formData.set("utkast_id", utkastId ?? "");
 
-    const sparad = await sparaKostnad(formData);
+    // sparaKostnad returnerar alltid ett resultat, aldrig ett kastat fel (se
+    // actions.ts) – men natverket sjalvt kan strula pa vagen dit, och da far
+    // knappen inte bara sta kvar pa "Sparar…" utan besked (produktspec
+    // avsnitt 13, punkt 2).
+    let sparad: KostnadResultat;
+    try {
+      sparad = await sparaKostnad(formData);
+    } catch {
+      setResultat({
+        fel: utkastId
+          ? "Kunde inte nå servern. Kvittot ligger kvar som utkast – försök spara igen."
+          : "Kunde inte nå servern. Försök igen om en liten stund.",
+        kostnadId: utkastId ?? undefined,
+      });
+      setPagar(false);
+      return;
+    }
     if (sparad.fel || !sparad.kostnadId) {
       setResultat(sparad.fel ? sparad : { fel: "Kvittot kunde inte sparas." });
       setPagar(false);
@@ -483,7 +524,12 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
     // misslyckad uppladdning ar det varsta som kan handa i den har appen.
     const kvar = filer.filter((f) => !filstatus[filnyckel(f)]?.bilagaId);
     for (const fil of kvar) {
-      const r = await laddaUppKostnadsbilaga(sparad.kostnadId, fil);
+      let r: Awaited<ReturnType<typeof laddaUppKostnadsbilaga>>;
+      try {
+        r = await laddaUppKostnadsbilaga(sparad.kostnadId, fil);
+      } catch {
+        r = { ok: false, fel: "kunde inte nå servern" };
+      }
       if (!r.ok) {
         setResultat({
           fel: `Kvittot sparades, men ${fil.name || "en bilaga"} kunde inte laddas upp: ${r.fel ?? "okänt fel."}`,

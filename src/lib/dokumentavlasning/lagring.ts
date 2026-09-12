@@ -8,6 +8,7 @@
 // uppladdning, ingen stadning: filen ar redan kvittots skarpa bilaga.
 
 import "server-only";
+import { rapporteraFel } from "@/lib/feltrapportering";
 import { kannIgenFormat } from "@/lib/lagring/bilaga-regler";
 import { bilagelager } from "@/lib/lagring/klient";
 import { prisma } from "@/lib/prisma";
@@ -71,7 +72,16 @@ export async function analyseraKostnadsbilaga(params: {
     }
 
     return falt;
-  } catch {
+  } catch (fel) {
+    // Formularet fungerar exakt som utan analys aven har (produktspec,
+    // "Dokumentavlasning": "Alla fel sväljs") – men nagon ska anda fa veta att
+    // avlasningen slutat fungera, sa den rapporteras i stallet for att tystna
+    // helt (produktspec avsnitt 13, punkt 1). bilagaId ar bara ett id, ingen
+    // kvittodata.
+    rapporteraFel(fel, {
+      sida: "dokumentavlasning",
+      anrop: "analyseraKostnadsbilaga",
+    });
     return { ...TOMT_DOKUMENTFALT };
   }
 }

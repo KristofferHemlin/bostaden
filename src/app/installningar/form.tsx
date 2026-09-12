@@ -34,8 +34,24 @@ const UPPLATELSEFORMER = [
   { varde: "fastighet" as const, etikett: "Villa eller radhus" },
 ];
 
+// Bekraftelsetexten till bytet (produktspec 4.8, CLAUDE.md). Namnger vilka
+// falt som toms – kapitaltillskott finns bara for bostadsratt, sa det galler
+// bara nar malet ar fastighet – och att identifieringen behover skrivas om,
+// eftersom foreningens namn och en fastighetsbeteckning inte ar utbytbara.
+function bytestext(mal: "bostadsratt" | "fastighet"): string {
+  const nyEtikett = mal === "fastighet" ? "Fastighetsbeteckning" : "Föreningens namn";
+  const gammalEtikett = mal === "fastighet" ? "föreningens namn" : "fastighetsbeteckningen";
+  const identifieringsrad = `Identifieringen behöver skrivas om – fältet blir "${nyEtikett}", och ${gammalEtikett} hör inte hemma där längre.`;
+  const kapitaltillskottsrad =
+    mal === "fastighet"
+      ? " Kapitaltillskott töms samtidigt – det finns inte för fastighet."
+      : "";
+  return `${identifieringsrad}${kapitaltillskottsrad}`;
+}
+
 export function InstallningarForm({
   upplatelseform,
+  sald,
   tilltradesdatum,
   storlek,
   kopeskilling,
@@ -45,6 +61,7 @@ export function InstallningarForm({
   identifiering,
 }: {
   upplatelseform: "bostadsratt" | "fastighet";
+  sald: boolean;
   tilltradesdatum: string;
   storlek: string;
   kopeskilling: string;
@@ -55,6 +72,12 @@ export function InstallningarForm({
 }) {
   const [resultat, action, pagar] = useActionState(sparaInstallningar, START);
   const [upplatelseformVal, setUpplatelseformVal] = useState(upplatelseform);
+  // Ett foreslaget byte som vantar pa bekraftelse (produktspec 4.8) – null nar
+  // inget kort just klickats. Sjalva bytet av upplatelseformVal sker forst nar
+  // bekraftelsen godkanns, aldrig direkt vid klicket.
+  const [bytesforslag, setBytesforslag] = useState<
+    "bostadsratt" | "fastighet" | null
+  >(null);
   const [kopeskillingFalt, setKopeskillingFalt] = useState(() =>
     formateraBeloppInmatning(kopeskilling),
   );
@@ -68,6 +91,17 @@ export function InstallningarForm({
   // tillskottsfaltet och identifieringens etikett/hjalptext byter direkt nar
   // man byter kort – utan att sidan laddas om.
   const arBostadsratt = upplatelseformVal === "bostadsratt";
+
+  function bekraftaByte() {
+    if (!bytesforslag) return;
+    // Kapitaltillskottet toms REDAN har, inte bara vid sparning – falten som
+    // inte langre hor hemma ska inte ligga kvar osynliga (produktspec 4.8),
+    // och byter anvandaren tillbaka innan sparning ska faltet vara tomt, inte
+    // atersta med det gamla vardet.
+    if (bytesforslag === "fastighet") setKapitaltillskottFalt("");
+    setUpplatelseformVal(bytesforslag);
+    setBytesforslag(null);
+  }
 
   return (
     <form action={action} className="flex flex-col gap-5 p-5">
@@ -86,12 +120,21 @@ export function InstallningarForm({
                 key={o.varde}
                 type="button"
                 aria-pressed={vald}
-                onClick={() => setUpplatelseformVal(o.varde)}
+                aria-disabled={sald}
+                onClick={() => {
+                  // Last efter forsaljning – korten visas som valda men gar
+                  // inte att andra (produktspec 4.8). Fore forsaljningen
+                  // kraver ett byte en bekraftelse i stallet for att sla
+                  // igenom direkt.
+                  if (sald || vald) return;
+                  setBytesforslag(o.varde);
+                }}
                 className={[
                   "rounded-lg border-2 px-3 py-3 text-center font-granssnitt text-sm text-text-primar transition-colors",
                   vald
                     ? "border-text-primar bg-yta-nedsankt"
                     : "border-linje hover:border-text-dampad",
+                  sald ? "cursor-default opacity-70" : "",
                 ].join(" ")}
               >
                 {o.etikett}
@@ -100,6 +143,40 @@ export function InstallningarForm({
           })}
         </div>
         <input type="hidden" name="upplatelseform" value={upplatelseformVal} />
+
+        {sald ? (
+          <p className="mt-1.5 font-granssnitt text-xs text-text-dampad">
+            Låst efter försäljningen – underlaget är framtaget och blanketten
+            vald.
+          </p>
+        ) : null}
+
+        {/* Bekraftelsen ligger som ett eget block under korten, precis som
+            radering av en bilaga (docs/design.md, "Bilagor") – samma
+            icke-orange knappmonster, ingen orange bekraftelseknapp. */}
+        {bytesforslag ? (
+          <div className="mt-2 flex flex-col gap-2 rounded-lg bg-yta-nedsankt p-3">
+            <p className="font-granssnitt text-sm text-text-primar">
+              {bytestext(bytesforslag)}
+            </p>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={bekraftaByte}
+                className="font-granssnitt text-sm font-medium text-text-primar underline"
+              >
+                Byt
+              </button>
+              <button
+                type="button"
+                onClick={() => setBytesforslag(null)}
+                className="font-granssnitt text-sm text-text-sekundar"
+              >
+                Avbryt
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <Falt
