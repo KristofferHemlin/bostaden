@@ -38,6 +38,18 @@ Härledda ur logotypen. Använd tokens, aldrig hex direkt i komponenter.
 
 ### Regler
 
+**Opacitetsmodifieraren fungerar inte mot de här färgerna.** `bg-text-primar/90` och liknande genererar **ingen CSS alls** – tyst, utan varning. Tailwinds `/NN` kräver separata kanalvärden för att kunna bygga `rgb(var(--x) / 90%)`, och variablerna här innehåller hela hex-strängar. Klassen ser rätt ut i koden, men regeln existerar inte i den byggda stilmallen.
+
+Det här har redan orsakat två buggar som såg ut att vara något annat: ett helskärmsöverlägg som verkade vara instängt i sitt kort men i själva verket var helt genomskinligt, och en platta bakom en ikon som såg ut att vara för svagt tonad men aldrig ritades.
+
+Behövs en genomskinlig variant av en token skrivs den ut:
+
+```css
+bg-[color-mix(in_srgb,var(--text-primar)_90%,transparent)]
+```
+
+Misstänker du att något inte syns som borde: läs av `getComputedStyle(el).backgroundColor` i webbläsaren. Får du `rgba(0, 0, 0, 0)` är det här orsaken, inte layouten.
+
 **Bakgrunden är aldrig vit.** Det är det enskilt viktigaste beslutet och det som gör att appen inte ser ut som alla andra. Vit bakgrund under den här paletten får logotypen att sväva på fel underlag.
 
 **Svart förekommer inte.** Petrolblå är textfärgen.
@@ -325,7 +337,13 @@ Bekräftelsen säger vad som går förlorat, inte bara om man är säker: *"Ta b
 
 Knappen som bekräftar är aldrig orange. Orange betyder handling i den här appen, och radering av bevisning är inte den handling produkten vill uppmuntra.
 
-**Helskärmsvyn finns för att titta, ingenting annat.** Ingen raderingsåtgärd där. Den stängs genom klick utanför bilden eller Escape – en egen stängknapp behövs inte när ytan runt bilden gör samma sak.
+**Helskärmsvyn finns för att titta, ingenting annat.** Ingen raderingsåtgärd där, och inget filnamn – `IMG_9915.jpeg` säger ingenting om kvittot.
+
+Vyn ligger över en mörk halvgenomskinlig yta som täcker hela skärmen, inklusive topprad och flikrad. Utan den ser vyn ut som att sidan bytt innehåll i stället för att något öppnats ovanpå, och då finns ingenting som antyder att den går att stänga. Den mörka ytan gör samtidigt att "utanför bilden" blir en synlig och tillräckligt stor tryckyta.
+
+Ett kryss ligger i övre högra hörnet. Klick utanför och Escape stänger också, men på telefon finns ingen Escape och ytan runt en stor bild är liten – krysset är det enda som fungerar med tummen.
+
+**Vid radering markeras den valda bilagan.** Bekräftelsetexten ligger under raden och kan inte visa vilken ruta den gäller. Med två kvitton från samma butik bredvid varandra är det omöjligt att se vilket som ska bort. Den valda rutan markeras tydligt medan de andra dämpas – markeringen får inte bäras av att göra papperskorgen orange, både för att det är för svagt och för att orange betyder handling och radering av bevisning inte är den handling produkten vill uppmuntra.
 
 **Miniatyren för en PDF är en dokumentikon med etiketten "PDF" under**, centrerat i rutan. Aldrig filnamnet – ett kassasystemsgenererat namn som `Invoice_IMRInstitu_539370_Aug-2026.pdf` bryts mitt i ett ord, fyller rutan med brus och ser ut som ett fel. Vilken fil det är framgår av förhandsvisningen, som ändå visar den markerade bilagan.
 
@@ -562,9 +580,7 @@ Det är ett undantag från regeln att tomma tillstånd har en primärknapp. Rege
 
 Här ligger allt som beskriver bostaden men inte behövs för att komma igång. Fälten är valfria, och sidan ska aldrig kännas som ett formulär man måste fylla i.
 
-**Uppgifter om bostaden:** adress, ort, upplåtelseform, identifiering, tillträdesdatum, storlek, köpeskilling, köpkostnader, ägarandel. För bostadsrätt även kapitaltillskott; för fastighet inte, eftersom det inte finns.
-
-**Identifieringens etikett och hjälptext följer det valda kortet, precis som köpkostnadernas.** "Föreningens namn" för bostadsrätt, "Fastighetsbeteckning" för fastighet – med ett exempel i hjälptexten (`Söderhamn Kvarnen 3:1`) så att fältet inte fylls i med gatuadressen igen. Fältet är helt valfritt: tomt betyder att raden utelämnas på PDF-paketets försättssida, inte att något saknas.
+**Uppgifter om bostaden:** adress, ort, upplåtelseform, tillträdesdatum, storlek, köpeskilling, köpkostnader, ägarandel. För bostadsrätt även kapitaltillskott; för fastighet inte, eftersom det inte finns.
 
 **Upplåtelseform och tillträdesdatum måste gå att se och ändra här.** De sätts vid registreringen och visas medvetet inte i toppraden, men de får inte bli oåtkomliga. Tillträdesdatumet är baslinjen för hela skickbedömningen och gränsen för vilka utgifter som är dina – skrivs det fel vid registreringen och inte går att rätta blir underlaget fel utan att något ser trasigt ut.
 

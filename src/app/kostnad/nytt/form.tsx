@@ -607,7 +607,12 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
                   )}
                 </button>
                 {st?.pagar ? (
-                  <span className="absolute inset-0 z-10 flex items-center justify-center bg-yta-nedsankt/70">
+                  // Tonad platta bakom snurran sa den syns aven mot en ljus
+                  // bild. `/70` pa tokenet hade varit osynlig CSS – Tailwinds
+                  // opacitetsmodifierare genererar ingen regel mot dessa
+                  // var()-baserade farger (docs/design.md, "Farger") – darfor
+                  // color-mix() i stallet.
+                  <span className="absolute inset-0 z-10 flex items-center justify-center bg-[color-mix(in_srgb,var(--yta-nedsankt)_70%,transparent)]">
                     <SnurraGlyf />
                   </span>
                 ) : null}

@@ -370,7 +370,12 @@ export function Fas1({
         )}
 
         {valda.size > 0 ? (
-          <div className="flex flex-col gap-3 border-t border-linje bg-yta-nedsankt/40 p-4">
+          // Ytskillnad fore linje (docs/design.md, "Genomgaende struktur") for
+          // att skilja atgardspanelen fran listan ovanfor. `/40` pa tokenet
+          // hade varit osynlig CSS – Tailwinds opacitetsmodifierare genererar
+          // ingen regel mot dessa var()-baserade farger (docs/design.md,
+          // "Farger") – darfor color-mix() i stallet.
+          <div className="flex flex-col gap-3 border-t border-linje bg-[color-mix(in_srgb,var(--yta-nedsankt)_40%,transparent)] p-4">
             <p className="font-granssnitt text-sm text-text-sekundar">
               {valda.size === 1
                 ? "1 kvitto valt"

@@ -24,10 +24,21 @@
 // ovanpa – ett klick i hornet trafffar alltid papperskorgen, aldrig
 // oppningen. Bekraftelsen visas som ett eget block under hela raden (texten ar
 // for lang for att fa plats i en 100px-ruta), med samma icke-orange
-// knappmonster som anvands for att ta bort ett kvitto.
+// knappmonster som anvands for att ta bort ett kvitto. Eftersom bekraftelsen
+// ligger under HELA raden och inte kan visa vilken ruta den galler, markeras
+// den valda bilagan med en ram (samma monster som i nya-kvitto-formularet)
+// och de ovriga dampas – annars gar det inte att se vilket av tva kvitton
+// fran samma butik som ska bort. Markeringen bars aldrig av att fa
+// papperskorgen orange.
 //
-// Helskarmsvyn finns bara for att titta – ingen raderingsatgard dar. Den
-// stangs med klick utanfor bilden eller Escape; ingen egen stangknapp behovs.
+// Helskarmsvyn finns bara for att titta – ingen raderingsatgard dar, och inget
+// filnamn under bilden. Den ligger over en mork halvgenomskinlig yta som
+// tacker HELA skarmen inklusive topprad och flikrad – annars ser vyn ut som
+// att sidan bytt innehall i stallet for att nagot oppnats ovanpa, och
+// ingenting antyder da att den gar att stanga. Den stangs med klick utanfor
+// bilden, Escape, eller ett kryss i ovre hogra hornet – pa telefon finns ingen
+// Escape och ytan runt en stor bild ar liten, sa krysset ar det enda som
+// fungerar med tummen.
 //
 // Uppladdningen gar DIREKT fran webblasaren till Supabase Storage via en
 // signerad URL (filen passerar aldrig en serverless-funktion). Under
@@ -37,6 +48,7 @@
 
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { revalideraKostnadssida, taBortBilagaAction } from "./actions";
 import type { BilagaResultat } from "./actions";
 import { valideraBilaga } from "@/lib/lagring/bilaga-regler";
@@ -147,40 +159,69 @@ export function Bilagor({
       </p>
 
       <div className="flex flex-wrap gap-2">
-        {bilagor.map((b) => (
-          <div key={b.id} className="relative flex-none">
-            <button
-              type="button"
-              onClick={() => setOppen(b)}
-              className={`${RUTA} transition-colors hover:bg-sand`}
-              title={b.filnamn}
-              aria-label={`Öppna ${b.filnamn}`}
+        {bilagor.map((b) => {
+          // Vid radering ska raderingen ALDRIG behova las av bekraftelsetexten
+          // for att veta vilken ruta den galler – med tva kvitton fran samma
+          // butik bredvid varandra ar det annars omojligt att se. Den valda
+          // rutan far en tydlig ram; de andra dampas som ett andra, svagare
+          // stod – men ramen ar den som bar signalen (verifierat i
+          // webblasaren: dampningen ensam later inte se VILKEN ruta som
+          // avses). Markeringen bars ALDRIG av papperskorgens farg – orange
+          // betyder handling, inte radering av bevisning (docs/design.md,
+          // "Bilagor").
+          //
+          // INTE ring-inset (som anvands for markerad bilaga i
+          // nya-kvitto-formularet): dar ligger ramen ovanpa en <img
+          // aspect-ratio>-platshallare utan eget innehall an sjalva bilden,
+          // men har fyller <Miniatyrbild> hela rutan med en `absolute
+          // inset-0`-bild som malas som ett SENARE lager an knappens egen
+          // box-shadow – en inset-ring hamnar da exakt dar bilden ligger och
+          // syns aldrig (bekraftat med getComputedStyle: boxShadow fanns och
+          // hade ratt farg, men var helt dold bakom bilden). En vanlig
+          // (icke-inset) ring ligger UTANFOR knappens kant, dar ingen bild
+          // nagonsin malas, och forblir synlig oavsett vad rutan visar.
+          const vald = bekraftaBilaga?.id === b.id;
+          const dampad = bekraftaBilaga !== null && !vald;
+          return (
+            <div
+              key={b.id}
+              className={`relative flex-none transition-opacity ${dampad ? "opacity-40" : ""}`}
             >
-              <Miniatyrinnehall bilaga={b} />
-            </button>
+              <button
+                type="button"
+                onClick={() => setOppen(b)}
+                className={`${RUTA} transition-colors hover:bg-sand ${
+                  vald ? "ring-2 ring-text-primar" : ""
+                }`}
+                title={b.filnamn}
+                aria-label={`Öppna ${b.filnamn}`}
+              >
+                <Miniatyrinnehall bilaga={b} />
+              </button>
 
-            {/* Papperskorgen ar ett SYSKON till oppningsknappen (aldrig
-                nastlad – knappar far inte nastlas), lagd EFTER den i markupen
-                sa den malas ovanpa. Ett klick i hornet trafffar alltid den har
-                knappen, aldrig oppningsknappen under (docs/design.md,
-                "Bilagor"). */}
-            <button
-              type="button"
-              onClick={() => setBekraftaBilaga(b)}
-              aria-label={`Ta bort ${b.filnamn}`}
-              className="absolute right-0 top-0 z-10 flex h-11 w-11 items-center justify-center text-text-primar transition-colors hover:text-accent-mork"
-            >
-              {/* Helt tackande – en genomskinlig platta later kvittot lysa
-                  igenom och gor ikonen olaslig mot ett vitt kassakvitto
+              {/* Papperskorgen ar ett SYSKON till oppningsknappen (aldrig
+                  nastlad – knappar far inte nastlas), lagd EFTER den i
+                  markupen sa den malas ovanpa. Ett klick i hornet trafffar
+                  alltid den har knappen, aldrig oppningsknappen under
                   (docs/design.md, "Bilagor"). */}
-              <span
-                aria-hidden
-                className="absolute inset-1.5 rounded-full bg-yta-upphojd"
-              />
-              <PapperskorgIkon />
-            </button>
-          </div>
-        ))}
+              <button
+                type="button"
+                onClick={() => setBekraftaBilaga(b)}
+                aria-label={`Ta bort ${b.filnamn}`}
+                className="absolute right-0 top-0 z-10 flex h-11 w-11 items-center justify-center text-text-primar transition-colors hover:text-accent-mork"
+              >
+                {/* Helt tackande – en genomskinlig platta later kvittot lysa
+                    igenom och gor ikonen olaslig mot ett vitt kassakvitto
+                    (docs/design.md, "Bilagor"). */}
+                <span
+                  aria-hidden
+                  className="absolute inset-1.5 rounded-full bg-yta-upphojd"
+                />
+                <PapperskorgIkon />
+              </button>
+            </div>
+          );
+        })}
 
         <label
           className={`${RUTA} cursor-pointer text-text-sekundar transition-colors hover:bg-sand`}
@@ -359,8 +400,38 @@ function Miniatyrbild({ src, alt }: { src: string; alt: string }) {
 
 /**
  * Helskarmsvyn en miniatyr oppnar (docs/design.md, "Bilagor"). Finns bara for
- * att titta – ingen raderingsatgard har. Stangs med klick utanfor bilden eller
- * Escape; ingen egen stangknapp behovs nar ytan runt bilden gor samma sak.
+ * att titta – ingen raderingsatgard har, och inget filnamn under bilden.
+ *
+ * Renderas med createPortal direkt under document.body, INTE dar <Bilagor>
+ * rakar sitta i tradet. <Skarm> sveper sidans innehall i ETT kort
+ * (`overflow-hidden rounded-xl` i <Kort>, skarm.tsx), och en `position: fixed`
+ * -yta som legat kvar INUTI det kortet vore ett gift som bara vantar pa att
+ * utlosas – lagger nagon senare till en transform/filter/backdrop-filter/
+ * contain pa nagon forfader (eller byter overflow-hidden mot nagot som
+ * klipper fixed-barn) blir helskarmsvyn instangd i kortet i stallet for att
+ * tacka skarmen. Portalen tar bort det beroendet helt, oavsett vad som
+ * omgardar <Bilagor> nu eller i framtiden.
+ *
+ * VIKTIGT FYND (verifierat i webblasaren, inte bara last i koden): den
+ * ursprungliga bakgrunden `bg-text-primar/90` renderade som `rgba(0,0,0,0)`
+ * – helt osynlig. Tailwinds opacitetsmodifierare (`/NN`) fungerar bara nar
+ * fargen ar uppbyggd av separata kanalvarden (`r g b`); har mappar
+ * tailwind.config.ts tokens som `text-primar` direkt till en `var(--x)` som
+ * innehaller en hel hex-strang, sa Tailwind kan inte komponera `/90` och
+ * genererar tyst INGEN regel alls for den klassen. Samma sak hande med
+ * `text-yta-upphojd/90` pa PDF/fel-ikonen. Bakgrunden har ALDRIG synts – inte
+ * en stangingscontext, utan en osynlig yta som ratt "klick utanfor" pa. Los
+ * ALDRIG en liknande halvgenomskinlighet med `/NN` pa dessa tokens; anvand
+ * `color-mix(in srgb, var(--token) X%, transparent)` i en godtycklig
+ * Tailwind-varde-klass i stallet (som nedan) – den refererar fortfarande
+ * token-variabeln, aldrig en hex-strang i komponenten.
+ *
+ * Bilden (eller PDF/fel-laget) ligger pa en egen vit platta (`--yta-upphojd`)
+ * med jamn marginal runt om, mot den morka bakgrunden. Krysset sitter i
+ * PLATTANS ovre hogra horn – inte skarmens – som en mork rund bricka pa
+ * hornet, med bibehallen tryckyta pa 44px. Escape och klick utanfor stanger
+ * ocksa – pa telefon finns ingen Escape och ytan runt en stor bild ar liten,
+ * sa krysset ar det som faktiskt fungerar med tummen.
  */
 function Helskarmsvy({
   bilaga,
@@ -384,27 +455,39 @@ function Helskarmsvy({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-label={bilaga.filnamn}
       onClick={onStang}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-text-primar/95 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--text-primar)_90%,transparent)] p-4"
     >
-      {/* Klick pa sjalva bilden ska inte stanga vyn – bara klick UTANFOR den. */}
+      {/* Platta + kryss ar ETT block: klick pa plattan ska inte stanga vyn,
+          bara klick pa den morka ytan UTANFOR den. Krysset ligger pa plattans
+          horn (halvt utanpa, som en bricka) sa det aldrig tar av bildens egen
+          jamna marginal. */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-full max-w-full flex-col items-center gap-3"
+        className="relative flex max-h-full max-w-full flex-col items-center gap-3 rounded-lg bg-yta-upphojd p-4 sm:p-5"
       >
+        <button
+          type="button"
+          onClick={onStang}
+          aria-label="Stäng"
+          className="absolute -right-2 -top-2 flex h-11 w-11 items-center justify-center rounded-full bg-text-primar text-yta-upphojd shadow-md transition-opacity hover:opacity-90 sm:-right-3 sm:-top-3"
+        >
+          <StangIkon />
+        </button>
+
         {bilaga.arBild ? (
           <img
             src={`/bilaga/${bilaga.id}?variant=visning`}
             alt={bilaga.filnamn}
-            className="max-h-[85vh] max-w-full object-contain"
+            className="max-h-[75vh] max-w-full object-contain"
           />
         ) : (
-          <div className="flex flex-col items-center gap-3 text-yta-upphojd/90">
+          <div className="flex flex-col items-center gap-3 px-2 py-6 text-text-sekundar">
             {bilaga.arPdf ? <DokumentIkon stor /> : <FelIkon stor />}
             <p className="font-granssnitt text-sm">
               {bilaga.arPdf ? "PDF" : "Kunde inte visas"}
@@ -414,18 +497,35 @@ function Helskarmsvy({
                 href={`/bilaga/${bilaga.id}?variant=original`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-granssnitt text-sm text-yta-upphojd underline"
+                className="font-granssnitt text-sm text-text-primar underline"
               >
                 Öppna PDF:en
               </a>
             ) : null}
           </div>
         )}
-        <p className="max-w-full truncate font-granssnitt text-sm text-yta-upphojd/80">
-          {bilaga.filnamn}
-        </p>
       </div>
-    </div>
+    </div>,
+    document.body,
+  );
+}
+
+/** Krysset som stanger helskarmsvyn – ovre hogra hornet (docs/design.md, "Bilagor"). */
+function StangIkon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className="h-6 w-6"
+    >
+      <path d="M6 6l12 12" />
+      <path d="M18 6L6 18" />
+    </svg>
   );
 }
 
