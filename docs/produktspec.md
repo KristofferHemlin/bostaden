@@ -601,3 +601,7 @@ Tre saker ska uppnås, i fallande ordning av betydelse.
 **3. Den sovande databasen ser inte ut som en trasig app.** Gratisnivån i Supabase pausar databasen efter en veckas inaktivitet, vilket är exakt den här appens rytm: man lägger in ett kvitto och återkommer om tre månader. Den som loggar in efter uppehållet får i dag ett anslutningsfel. Antingen hålls databasen vaken, eller så känns läget igen och förklaras i klartext.
 
 **Ingen personlig information i felrapporterna.** Kvittobilder, belopp, leverantörer och adresser ska aldrig följa med. Ett användar-id räcker för att kunna koppla ett fel till en person. Rapporteringen är ett driftverktyg, inte en andra kopia av databasen.
+
+Att felsammanhanget bara innehåller sida, anrop och användar-id är ett medvetet vägval, inte en tillfällig begränsning – det ska inte utökas senare. Varje fält utöver dessa tre är en väg tillbaka till kvittobilder, belopp eller andra personliga uppgifter, vilket bryter regeln ovan.
+
+Regeln om bekräftad uppladdning (aldrig optimistisk, se avsnitt 12) är formulerad men saknar testtäckning. De tysta fel som hittats i uppladdningsflödet visar att formuleringen inte räcker – det behövs ett test som fångar en misslyckad uppladdning som ändå tolkas som lyckad.
