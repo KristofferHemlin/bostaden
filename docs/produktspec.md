@@ -165,7 +165,6 @@ Ingen skillnad i domänlogiken. `husform` är fortfarande rent informativt.
 | place_id | string? | Google Places-id, null vid fritext |
 | latitud | decimal? | |
 | longitud | decimal? | |
-| identifiering | string? | föreningens namn (bostadsrätt) eller fastighetsbeteckning (fastighet) – försättssidans identifieringsrad, utelämnas när tom |
 | upplatelseform | enum | `bostadsratt` \| `fastighet` – styr regelmotorn |
 | husform | enum? | villa/radhus/kedjehus, endast informativt |
 | tilltradesdatum | date | obligatoriskt, alla tidsberäkningar utgår härifrån |
@@ -373,9 +372,13 @@ Rader grupperas per åtgärd och år, aldrig per kvitto. Kvittona ligger under s
 2. **Sammanställningen, sida 1 – grundförbättringar.** Åtgärd, år, belopp. Summan utpekad: detta förs till punkt 4.
 3. **Sammanställningen, sida 2 – förbättrande reparationer.** Åtgärd, år, hel utgift, avdragsgill del efter förslitning. Summan utpekad: detta förs till punkt 5.
 4. **Bilageförteckning.** En numrerad lista som kopplar varje bilaga till sin rad. Den som får paketet ska kunna gå från ett belopp i sammanställningen till rätt kvitto utan att bläddra.
+
+   Namnet står en gång. Är åtgärdens namn och leverantören samma ord – "JANS MÅLERI AB · 2016 · JANS MÅLERI AB 34 425 kr" – skrivs det inte två gånger. Samma regel gäller bilagornas sidhuvudsrader.
 5. **Bilagorna, en per sida**, i samma ordning som raderna. Varje sida har en sidhuvudsrad som säger vilken post bilagan hör till: `Bilaga 7 · Omstrukturera lägenhet · 2026 · BAUHAUS 1 997,05 kr`. Utan den raden är en lös kvittobild i ett fyrtiosidigt dokument obrukbar som bevis.
 
 **Vad som ingår.** Bara det som ingår i underlaget. Arkiverade och privatmarkerade kvitton följer inte med – det är skillnaden mot zip-exporten, som tar allt användaren laddat upp. Bilagorna följer de kostnader som bidrar med ett belopp större än noll. En rad som redovisas med 0 kr står kvar i sammanställningen med sin förklaring, men har ingen bevisbörda och därmed inga bilagor.
+
+**Skillnaden mellan raden och bilagan måste förklaras i dokumentet.** Har ROT-avdrag eller försäkringsersättning dragits av står beloppet i sammanställningen lägre än summan på kvittot, och en granskare som jämför ser ett glapp utan förklaring. Under beloppet står därför en dämpad rad: *"varav ROT 7 500 kr, avgår"*. Att fakturan ofta skriver ut skattereduktionen själv räcker inte – det gör inte alla, och dokumentet ska vara självförklarande.
 
 **Paketet kräver ett försäljningsdatum.** Utan det går sida 2 inte att räkna, och exportvyn visar redan sida 1 utan det. Knappen ligger på exportvyn under summorna och är otillgänglig tills bostaden är markerad som såld.
 

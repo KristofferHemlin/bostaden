@@ -200,6 +200,28 @@ export default async function ExportSida() {
         ) : null}
 
         <div className="space-y-4 p-4">
+          {/* Bilagepaketet som PDF (docs/produktspec.md avsnitt 8): knappen
+              ligger under summorna och ar otillganglig fore forsaljning,
+              aldrig en sparr framfor sidan i ovrigt (docs/design.md,
+              Exportvyn). */}
+          {ex.sald ? (
+            <Link href="/export/paket" className={PRIMARKNAPP_KLASS}>
+              Skapa bilagepaket (PDF)
+            </Link>
+          ) : (
+            <div>
+              <span
+                aria-disabled
+                className={`${PRIMARKNAPP_KLASS} pointer-events-none opacity-60`}
+              >
+                Skapa bilagepaket (PDF)
+              </span>
+              <p className="mt-1.5 font-granssnitt text-xs text-text-dampad">
+                Kräver att bostaden är markerad som såld.
+              </p>
+            </div>
+          )}
+
           {ex.sald ? (
             <Link href="/forsaljning" className={SEKUNDARKNAPP_KLASS}>
               Ändra försäljningsuppgifter

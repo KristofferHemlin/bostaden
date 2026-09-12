@@ -1,8 +1,12 @@
 "use client";
 
-// Bilageraden pa en kostnad (docs/design.md, "Bilagor"): en rad sma miniatyrer
-// med en +-ruta sist. Tryck pa en miniatyr oppnar filen i helskarm. PDF visas
-// som en ikon med filnamnet under, inte som en tom ruta.
+// Bilageraden pa en kostnad (docs/design.md, "Bilagor"): en rad stora,
+// staende miniatyrer med en +-ruta sist. Miniatyren oppnar filen i en
+// helskarmsvy. Ingen beskarning – hela bilden visas inpassad mot
+// --yta-nedsankt, sa att ett avklippt eller suddigt kvitto syns i
+// forhandsvisningen i stallet for att doljas av en beskuren ruta. Rutan ar
+// darfor stor: minst 96px, styrande regel ar att tre rutor (inkl. +-rutan)
+// ska rymmas pa en rad pa 390px – med kortets padding landar det pa 100px.
 //
 // En bild som annu inte hamtats far ALDRIG se ut som en tom ruta – det ar
 // exakt den signal som far anvandaren att tro att kvittot ar borta.
@@ -10,9 +14,20 @@
 // bilden, och ett eget "kunde inte visas"-lage om den faktiskt misslyckas
 // (t.ex. en HEIC-miniatyr som inte gick att generera).
 //
-// Den synliga atgarden pa en bilaga ar att OPPNA den – miniatyren ar en lank.
-// Raderingen ligger bakom ett dampat reglage (papperskorgsikonen i hornet),
-// aldrig som en egen namngiven rad under miniatyren.
+// Raderingen ligger som en egen papperskorgsikon i miniatyrens ovre hogra
+// horn – en tunn SVG i --text-primar (aldrig emoji, och mer kontrast an
+// --text-sekundar eftersom den ligger ovanpa ett fotografi) med en egen
+// tryckyta pa minst 44px och en HELT TACKANDE ljus platta bakom sig. En
+// genomskinlig platta later kvittot lysa igenom och gor ikonen olaslig mot ett
+// vitt kassakvitto. Ikonen ar ett SYSKON till oppningsknappen, inte nastlad i
+// den (knappar far inte nastlas), och lagd SENARE i markupen sa den malas
+// ovanpa – ett klick i hornet trafffar alltid papperskorgen, aldrig
+// oppningen. Bekraftelsen visas som ett eget block under hela raden (texten ar
+// for lang for att fa plats i en 100px-ruta), med samma icke-orange
+// knappmonster som anvands for att ta bort ett kvitto.
+//
+// Helskarmsvyn finns bara for att titta – ingen raderingsatgard dar. Den
+// stangs med klick utanfor bilden eller Escape; ingen egen stangknapp behovs.
 //
 // Uppladdningen gar DIREKT fran webblasaren till Supabase Storage via en
 // signerad URL (filen passerar aldrig en serverless-funktion). Under
@@ -33,8 +48,19 @@ const START: BilagaResultat = {};
 const ACCEPT =
   "image/jpeg,image/png,image/heic,image/heif,application/pdf,.jpg,.jpeg,.png,.heic,.heif,.pdf";
 
+// Stor, staende ruta (docs/design.md, "Bilagor"): FAST storlek – 100px bred,
+// 133px hog (ungefar 3:4) – oavsett hur manga bilagor kostnaden har. flex-none
+// nollstaller bade flex-grow och flex-shrink explicit sa rutan aldrig stracks
+// ut for att fylla raden (ett kvitto med en bilaga ska visa den lika stort som
+// ett med tre). Bredd och hojd anges som fasta pixelvarden i stallet for
+// aspect-ratio-utiliteten, sa storleken aldrig beror pa flex-layouten.
+//
+// Tre rutor (tva bilagor + "Lagg till") ska rymmas pa en rad pa 390px. Med
+// kortets och sektionens padding (main px-4 + denna sektionens p-4 = 64px)
+// ater raden 326px pa en 390px-skarm; 100px per ruta + gap-2 ger 316px, dvs
+// plats kvar.
 const RUTA =
-  "relative flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-lg bg-yta-nedsankt text-center";
+  "relative flex h-[133px] w-[100px] flex-none flex-col items-center justify-center overflow-hidden rounded-lg bg-yta-nedsankt text-center";
 
 export function Bilagor({
   kostnadId,
@@ -52,14 +78,20 @@ export function Bilagor({
   const [uppladdningsfel, setUppladdningsfel] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Helskarmsvyn – bara for att titta, ingen radering dar.
+  const [oppen, setOppen] = useState<Bilagevy | null>(null);
+
+  // Raderingsbekraftelsen galler en bilaga i taget, oavsett vilken miniatyrs
+  // papperskorg som utlost den.
+  const [bekraftaBilaga, setBekraftaBilaga] = useState<Bilagevy | null>(null);
+
   const [radera, raderaAction, raderar] = useActionState(
     taBortBilagaAction,
     START,
   );
-  const [bekraftaId, setBekraftaId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (radera.ok) setBekraftaId(null);
+    if (radera.ok) setBekraftaBilaga(null);
   }, [radera]);
 
   async function laddaUpp(filer: File[]) {
@@ -116,68 +148,37 @@ export function Bilagor({
 
       <div className="flex flex-wrap gap-2">
         {bilagor.map((b) => (
-          <div key={b.id} className="relative w-16">
-            <a
-              href={`/bilaga/${b.id}?variant=${b.arBild ? "visning" : "original"}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${RUTA} overflow-hidden transition-colors hover:bg-sand`}
+          <div key={b.id} className="relative flex-none">
+            <button
+              type="button"
+              onClick={() => setOppen(b)}
+              className={`${RUTA} transition-colors hover:bg-sand`}
               title={b.filnamn}
+              aria-label={`Öppna ${b.filnamn}`}
             >
-              {b.arBild ? (
-                <Miniatyrbild src={`/bilaga/${b.id}?variant=visning`} alt={b.filnamn} />
-              ) : b.arPdf ? (
-                <>
-                  <DokumentIkon />
-                  <span className="mt-1 line-clamp-2 px-1 font-granssnitt text-[10px] leading-tight text-text-sekundar">
-                    {b.filnamn}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <FelIkon />
-                  <span className="mt-1 px-1 font-granssnitt text-[10px] leading-tight text-text-dampad">
-                    Kunde inte visas
-                  </span>
-                </>
-              )}
-            </a>
+              <Miniatyrinnehall bilaga={b} />
+            </button>
 
-            {/* Raderingen ligger bakom ett dampat reglage i hornet – den
-                synliga atgarden pa miniatyren ar att oppna den, inte att
-                radera (docs/design.md, "Bilagor"). */}
-            {bekraftaId === b.id ? (
-              <form
-                action={raderaAction}
-                className="mt-1 flex flex-col items-center gap-0.5"
-              >
-                <input type="hidden" name="bilaga_id" value={b.id} />
-                <input type="hidden" name="kostnad_id" value={kostnadId} />
-                <button
-                  type="submit"
-                  disabled={raderar}
-                  className="font-granssnitt text-[11px] text-accent-mork disabled:opacity-60"
-                >
-                  {raderar ? "Tar bort…" : "Bekräfta"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBekraftaId(null)}
-                  className="font-granssnitt text-[11px] text-text-dampad"
-                >
-                  Avbryt
-                </button>
-              </form>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setBekraftaId(b.id)}
-                aria-label={`Ta bort ${b.filnamn}`}
-                className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-yta-upphojd text-text-dampad transition-colors hover:text-accent-mork"
-              >
-                <PapperskorgIkon />
-              </button>
-            )}
+            {/* Papperskorgen ar ett SYSKON till oppningsknappen (aldrig
+                nastlad – knappar far inte nastlas), lagd EFTER den i markupen
+                sa den malas ovanpa. Ett klick i hornet trafffar alltid den har
+                knappen, aldrig oppningsknappen under (docs/design.md,
+                "Bilagor"). */}
+            <button
+              type="button"
+              onClick={() => setBekraftaBilaga(b)}
+              aria-label={`Ta bort ${b.filnamn}`}
+              className="absolute right-0 top-0 z-10 flex h-11 w-11 items-center justify-center text-text-primar transition-colors hover:text-accent-mork"
+            >
+              {/* Helt tackande – en genomskinlig platta later kvittot lysa
+                  igenom och gor ikonen olaslig mot ett vitt kassakvitto
+                  (docs/design.md, "Bilagor"). */}
+              <span
+                aria-hidden
+                className="absolute inset-1.5 rounded-full bg-yta-upphojd"
+              />
+              <PapperskorgIkon />
+            </button>
           </div>
         ))}
 
@@ -224,19 +225,88 @@ export function Bilagor({
         </div>
       ) : null}
 
-      {radera.fel ? (
-        <p className="mt-2 font-granssnitt text-sm text-accent-mork">
-          {radera.fel}
-        </p>
-      ) : null}
-
       {bilagor.length === 0 && !laddarUpp && !uppladdningsfel ? (
         <p className="mt-2 font-granssnitt text-sm text-text-dampad">
           Inga bilagor än. Ett kvitto utan bild är inget fel – underlaget blir
           bara svagare.
         </p>
       ) : null}
+
+      {/* Bekraftelsen som ett eget block under raden – texten ar for lang for
+          att fa plats i en 100px-ruta. Samma icke-orange knappmonster som "Ta
+          bort kvittot" i redigeringsvyn (docs/design.md, "Bilagor"). */}
+      {bekraftaBilaga ? (
+        <form
+          action={raderaAction}
+          className="mt-3 flex flex-col gap-2 rounded-lg bg-yta-nedsankt p-3"
+        >
+          <input type="hidden" name="bilaga_id" value={bekraftaBilaga.id} />
+          <input type="hidden" name="kostnad_id" value={kostnadId} />
+          <p className="font-granssnitt text-sm text-text-primar">
+            Ta bort bilagan? Bilden raderas och går inte att återskapa.
+            Kvittots uppgifter ligger kvar.
+          </p>
+          {radera.fel ? (
+            <p className="font-granssnitt text-sm text-accent-mork">
+              {radera.fel}
+            </p>
+          ) : null}
+          <div className="flex gap-4">
+            {/* Aldrig orange – radering av bevisning ar inte handlingen
+                produkten vill uppmuntra (docs/design.md, "Bilagor"). */}
+            <button
+              type="submit"
+              disabled={raderar}
+              className="font-granssnitt text-sm font-medium text-text-primar underline disabled:opacity-60"
+            >
+              {raderar ? "Tar bort…" : "Ta bort"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setBekraftaBilaga(null)}
+              className="font-granssnitt text-sm text-text-sekundar"
+            >
+              Avbryt
+            </button>
+          </div>
+        </form>
+      ) : null}
+
+      {oppen ? (
+        <Helskarmsvy bilaga={oppen} onStang={() => setOppen(null)} />
+      ) : null}
     </div>
+  );
+}
+
+/** Innehallet i en miniatyrruta – samma for miniatyren som for den stora ytan
+ * i helskarmsvyn (bild, PDF-ikon eller felikon). */
+function Miniatyrinnehall({ bilaga }: { bilaga: Bilagevy }) {
+  if (bilaga.arBild) {
+    return (
+      <Miniatyrbild
+        src={`/bilaga/${bilaga.id}?variant=visning`}
+        alt={bilaga.filnamn}
+      />
+    );
+  }
+  if (bilaga.arPdf) {
+    return (
+      <>
+        <DokumentIkon />
+        <span className="mt-1 line-clamp-2 px-1 font-granssnitt text-[10px] leading-tight text-text-sekundar">
+          PDF
+        </span>
+      </>
+    );
+  }
+  return (
+    <>
+      <FelIkon />
+      <span className="mt-1 px-1 font-granssnitt text-[10px] leading-tight text-text-dampad">
+        Kunde inte visas
+      </span>
+    </>
   );
 }
 
@@ -245,6 +315,10 @@ export function Bilagor({
  * tills bilden hamtats visas en roterande indikator i rutan i stallet for en
  * tom yta, och gar hamtningen inte att lasa visas ett tydligt felmeddelande –
  * aldrig ingenting.
+ *
+ * Bilden visas HEL, aldrig beskuren: object-contain mot rutans
+ * --yta-nedsankt-bakgrund, sa att ett avklippt eller suddigt kvitto syns i
+ * stallet for att doljas av en beskarning av mitten.
  */
 function Miniatyrbild({ src, alt }: { src: string; alt: string }) {
   const [lage, setLage] = useState<"laddar" | "klar" | "fel">("laddar");
@@ -275,7 +349,7 @@ function Miniatyrbild({ src, alt }: { src: string; alt: string }) {
         alt={alt}
         onLoad={() => setLage("klar")}
         onError={() => setLage("fel")}
-        className={`absolute inset-0 h-full w-full object-cover ${
+        className={`absolute inset-0 h-full w-full object-contain ${
           lage === "laddar" ? "invisible" : ""
         }`}
       />
@@ -283,7 +357,79 @@ function Miniatyrbild({ src, alt }: { src: string; alt: string }) {
   );
 }
 
-function FelIkon() {
+/**
+ * Helskarmsvyn en miniatyr oppnar (docs/design.md, "Bilagor"). Finns bara for
+ * att titta – ingen raderingsatgard har. Stangs med klick utanfor bilden eller
+ * Escape; ingen egen stangknapp behovs nar ytan runt bilden gor samma sak.
+ */
+function Helskarmsvy({
+  bilaga,
+  onStang,
+}: {
+  bilaga: Bilagevy;
+  onStang: () => void;
+}) {
+  // Escape stanger vyn; scroll bakom den lases medan den ar oppen.
+  useEffect(() => {
+    function pahandelse(e: KeyboardEvent) {
+      if (e.key === "Escape") onStang();
+    }
+    document.addEventListener("keydown", pahandelse);
+    const tidigareOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", pahandelse);
+      document.body.style.overflow = tidigareOverflow;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={bilaga.filnamn}
+      onClick={onStang}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-text-primar/95 p-4"
+    >
+      {/* Klick pa sjalva bilden ska inte stanga vyn – bara klick UTANFOR den. */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-full max-w-full flex-col items-center gap-3"
+      >
+        {bilaga.arBild ? (
+          <img
+            src={`/bilaga/${bilaga.id}?variant=visning`}
+            alt={bilaga.filnamn}
+            className="max-h-[85vh] max-w-full object-contain"
+          />
+        ) : (
+          <div className="flex flex-col items-center gap-3 text-yta-upphojd/90">
+            {bilaga.arPdf ? <DokumentIkon stor /> : <FelIkon stor />}
+            <p className="font-granssnitt text-sm">
+              {bilaga.arPdf ? "PDF" : "Kunde inte visas"}
+            </p>
+            {bilaga.arPdf ? (
+              <a
+                href={`/bilaga/${bilaga.id}?variant=original`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-granssnitt text-sm text-yta-upphojd underline"
+              >
+                Öppna PDF:en
+              </a>
+            ) : null}
+          </div>
+        )}
+        <p className="max-w-full truncate font-granssnitt text-sm text-yta-upphojd/80">
+          {bilaga.filnamn}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function FelIkon({ stor }: { stor?: boolean }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -293,11 +439,29 @@ function FelIkon() {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
-      className="h-6 w-6 text-text-dampad"
+      className={stor ? "h-10 w-10" : "h-6 w-6 text-text-dampad"}
     >
       <circle cx="12" cy="12" r="9" />
       <path d="M12 8v5" />
       <path d="M12 16h.01" />
+    </svg>
+  );
+}
+
+function DokumentIkon({ stor }: { stor?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={stor ? "h-10 w-10" : "h-6 w-6 text-text-sekundar"}
+    >
+      <path d="M14 3v5h5" />
+      <path d="M18 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8l6 6v10a2 2 0 0 1-2 2z" />
     </svg>
   );
 }
@@ -312,31 +476,13 @@ function PapperskorgIkon() {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
-      className="h-3 w-3"
+      className="relative h-4 w-4"
     >
       <path d="M4 7h16" />
       <path d="M10 11v6" />
       <path d="M14 11v6" />
       <path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12" />
       <path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" />
-    </svg>
-  );
-}
-
-function DokumentIkon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-      className="h-6 w-6 text-text-sekundar"
-    >
-      <path d="M14 3v5h5" />
-      <path d="M18 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8l6 6v10a2 2 0 0 1-2 2z" />
     </svg>
   );
 }
