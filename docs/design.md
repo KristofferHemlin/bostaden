@@ -240,6 +240,10 @@ Skälet är att ett kvitto ofta läggs in långt efter att det betalades – ett
 
 Projekt och kostnader visas som rader avdelade med 1px linjer, inte som separata kort. Varje rad har namnet på första raden och en dämpad andra rad med kategori eller status, med beloppet högerställt på samma höjd som namnet. Rader vars status kräver åtgärd markeras med en liten fylld prick i `--accent` före den dämpade texten, inte genom att färga hela raden. Med flera rader i samma läge blir orange text en vägg av varningar, och färgen tappar sin betydelse.
 
+**En åtgärd på en rad byter aldrig sida.** Raderas ett utkast, arkiveras en kostnad eller ändras något direkt i listan, uppdateras den sida man står på – man hamnar inte på en annan vy. Två saker sker då på ett klick och bara det ena var efterfrågat, och dessutom tappar man sin plats i listan.
+
+Fällan uppstår när en kontroll återanvänds mellan skärmar: en raderingsknapp som navigerar tillbaka till kvittolistan är rätt *på* kvittolistan, men blir en omdirigering när samma knapp används på startskärmen. Kontrollen ska uppdatera, inte navigera – vart användaren vill gå härnäst bestämmer hen själv.
+
 **Hovringen får aldrig se ut som en årsrubrik.** Fylls en hovrad med samma `--yta-nedsankt` som årsrubrikens band ser den rad muspekaren råkar vila på ut som en ny rubrik, och listans struktur verkar ändra sig när man rör musen. Hovringen ska vara märkbart svagare än rubrikbandet. Det gäller bara skrivbord – hover finns inte på telefon.
 
 ### Tomma tillstånd
@@ -361,6 +365,12 @@ Rutan är därför stående, ungefär 3:4, med bilden centrerad och inpassad mot
 
 I stället är sista rutan i miniatyrraden en streckad ruta i samma storlek som miniatyrerna, med ett plustecken och texten "Lägg till". Den är hela uppladdningskontrollen: filinputen ligger dold bakom den. Under raden står en dämpad rad med tillåtna format och storleksgräns.
 
+**Men när ingen bilaga valts än ser rutan inte ut som en knapp.** En tom streckad kvadrat bland formulärets fält lästes inte som appens viktigaste handling när någon annan än den som byggt appen provade – hen letade i flera sekunder efter var man lägger till bilden.
+
+Så länge raden är tom ersätts rutan därför av en knapp i full bredd med en tydlig etikett: **"Välj kvitto eller ta ett foto"**. Samma höjd och form som primärknappen, men utan orange – "Spara kvitto" längre ned är sidans primära handling, och två orange knappar på samma skärm bryter mot färgregeln.
+
+Så snart en bilaga lagts till försvinner knappen och miniatyrraden med `+`-rutan tar över. Då finns redan ett kvitto på skärmen, och den som vill lägga till fler förstår rutan eftersom den står bredvid något igenkännbart.
+
 Rubriken över raden är "Kvitto eller faktura". Uppladdning sker via klick, inte en dra-och-släpp-yta – appen används i första hand på telefon, där dra-och-släpp inte finns. Klicket öppnar systemets filväljare, som på mobil ger både kamera och bildbibliotek.
 
 **Ingen varning när bilaga saknas.** En kostnad utan kvitto är inget fel och ska inte markeras som ett – fri bevisning gäller. En gul varningsruta om att avdraget kan underkännas är både felaktig och skrämmande, och den drar in en varningsfärg appen inte har.
@@ -401,7 +411,19 @@ Varje extra rad – också en hopfälld – säger att det finns mer att göra h
 
 Allt det görs i efterhand när man har tid, och inget av det är brådskande – till skillnad från att fånga kvittot medan det finns.
 
-**Undantag: ROT-raden.** Den visas alltid, men är utfälld när avläsningen hittat ett belopp och hopfälld annars. Att dölja den helt när ingenting lästs av gör fältet onåbart när avläsningen misslyckas, när nyckeln saknas eller när kvittot är handskrivet – och användaren vet då inte ens att det finns.
+**Undantag: ROT-raden.** Den visas alltid, och är utfälld när avläsningen hittat ett belopp, hopfälld annars.
+
+Det är ingen gissning: har modellen läst ett ROT-avdrag på fakturan finns det där. Att hålla raden stängd då döljer en ifylld uppgift som kan påverka underlaget med tusentals kronor, och användaren sparar utan att ha sett den. Det är samma fel som ett tomt omärkt fält – allt avläsningen fyllt i ska synas och kontrolleras.
+
+Hittades inget belopp är raden hopfälld. Att fälla ut den ändå kräver att appen gissar vem som har ROT, och gissar den fel möter någon som köpt en burk färg ett skattebegrepp utan anledning.
+
+**Raden heter "Drogs ROT av på fakturan?"** – inte "Fick du ROT-avdrag?". ROT dras av direkt av hantverkaren när fakturan ställs ut, så "fick du" pekar på en ansökan som inte finns. Och en rad som heter "avdrag" är tvetydig i en app där allt handlar om avdrag: den kan läsas som att man ska fylla i vad man drar av, inte vad som ska räknas bort. Formuleringen pekar dessutom på dokumentet användaren har framför sig, där svaret faktiskt står.
+
+Fältetiketten inuti sektionen heter fortfarande "ROT-avdrag". Där är sammanhanget redan givet.
+
+**Men den måste se ut som något man kan öppna.** I dag läses "Fick du ROT-avdrag?" som en rubrik, och den som hade ROT på sin faktura hittade inte fältet – det är bekräftat i användning. En rubrik med en liten pil i kanten räcker inte; raden ska ha den utfällbara sektionens hela form, med tydlig träffyta och en chevron som syns.
+
+Att dölja raden helt när ingenting lästs av vore värre. Då blir fältet onåbart när avläsningen misslyckas, när nyckeln saknas eller när kvittot är handskrivet, och användaren vet inte ens att det finns.
 
 ### Hjälptexter under fält
 

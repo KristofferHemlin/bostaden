@@ -23,6 +23,7 @@ import {
   Skarm,
 } from "@/components/skarm";
 import { TroskelInfo } from "@/app/troskel-info";
+import { UtkastRaderaKnapp } from "@/app/kostnad/utkast-radera";
 import {
   harledKostnadstillstand,
   inlagtArsbelopp,
@@ -281,6 +282,11 @@ export default async function Oversikt() {
                     }
                     atgard={utkast || oklassificeradeIder.has(k.id)}
                     belopp={utkast ? undefined : formateraKronor(k.totalbelopp ?? 0)}
+                    slutknapp={
+                      utkast ? (
+                        <UtkastRaderaKnapp kostnadId={k.id} lage="ikon" />
+                      ) : undefined
+                    }
                   />
                 );
               })}

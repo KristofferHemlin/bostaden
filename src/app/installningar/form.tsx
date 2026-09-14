@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { BeloppFalt } from "@/components/belopp-falt";
 import { Falt, INPUT_KLASS, Meddelanderuta, PRIMARKNAPP_KLASS } from "@/components/skarm";
+import { TilltradesdatumFalt } from "@/components/tilltradesdatum-falt";
 import { formateraBeloppInmatning } from "@/lib/format";
 import { sparaInstallningar, type InstallningarResultat } from "./actions";
 
@@ -207,12 +208,9 @@ export function InstallningarForm({
         obligatoriskt
         hjalp="Baslinjen för skickbedömningen – gränsen för vilka utgifter som är dina."
       >
-        <input
-          type="date"
+        <TilltradesdatumFalt
           name="tilltradesdatum"
           defaultValue={tilltradesdatum}
-          required
-          className={INPUT_KLASS}
         />
       </Falt>
 

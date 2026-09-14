@@ -22,7 +22,7 @@
 // installningssidan (docs/design.md, Registreringsflodet), inte har.
 
 import { redirect } from "next/navigation";
-import { oreFranKronor } from "@/lib/format";
+import { isoDatum, oreFranKronor } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { hamtaAnvandare, sakerstallAnvandarrad } from "@/lib/session";
 import { skapaServerklient } from "@/lib/supabase/server";
@@ -86,6 +86,9 @@ export async function slutforRegistrering(
   }
   if (tilltradesdatum < TIDIGASTE_TILLTRADE) {
     return { fel: "Tillträdesdatum före 1970 stöds inte." };
+  }
+  if (tilltradesdatum > isoDatum(new Date())) {
+    return { fel: "Tillträdesdatum kan inte ligga i framtiden." };
   }
 
   // Kopeskilling ar valfri (docs/design.md, Registreringsflodet). Anges i kronor

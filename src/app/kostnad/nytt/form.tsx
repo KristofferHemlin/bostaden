@@ -16,12 +16,15 @@
 // Datumfaltet satter bade dokumentdatum och betaldatum till samma dag; en
 // avvikande betaldag ar nastan bara obetalda fakturor och hor till rattningen.
 //
-// UNDANTAG: ROT-raden "Fick du ROT-avdrag?" (docs/design.md, "ROT-avdrag").
-// Raden visas ALLTID – utfalld nar dokumentavlasningen last ett ROT-belopp,
-// hopfalld annars. Att dolja den helt nar ingenting lastes av gor faltet
-// onaabart nar avlasningen misslyckas eller kvittot ar handskrivet. Ett enda
-// falt: ROT-beloppet i kronor. Raden far lamnas tom och fyllas i senare via
-// "Andra uppgifter".
+// UNDANTAG: ROT-raden "Drogs ROT av på fakturan?" (docs/design.md,
+// "ROT-avdrag"). Raden visas ALLTID – utfalld nar dokumentavlasningen last ett
+// ROT-belopp (ingen gissning: har modellen last det ur fakturan finns det dar,
+// och ett dolt ifyllt falt ar samma fel som ett tomt omarkt falt), hopfalld
+// annars – da ar en automatisk utfallning en gissning om vem som har ROT.
+// Att dolja raden helt nar ingenting lastes av gor faltet onaabart nar
+// avlasningen misslyckas eller kvittot ar handskrivet. Ett enda falt:
+// ROT-beloppet i kronor. Raden far lamnas tom och fyllas i senare via "Andra
+// uppgifter".
 //
 // Ordning: BILAGAN FORST, sedan belopp, datum, leverantor och "Vad gallde det?".
 // Den som just handlat vill fota kvittot och fa resten ifyllt, inte skriva fem
@@ -37,9 +40,12 @@
 // valts skapas kostnaden direkt som ett utkast (skapaUtkast) och filen laddas
 // upp till sin RIKTIGA plats via en signerad URL – aldrig via en
 // serverless-funktion. Analysen laser filen darifran. Svaret fyller BARA tomma
-// falt och skriver aldrig over nagot anvandaren skrivit. Alla fel svaljs tyst:
-// formularet fungerar exakt som utan analys. Under avlasningen visas en diskret
-// statusrad, och nar falt fyllts i en bekraftelseruta med uppmaning att granska.
+// falt och skriver aldrig over nagot anvandaren skrivit. Analysen blockerar
+// aldrig sparandet, men ar aldrig tyst (produktspec, "Dokumentavlasning"):
+// nar bilagan laddats upp far faltgruppen ett av tre tillstand – AVLAST
+// (faltet ifyllt, markerat), FALTET KUNDE INTE LASAS (faltet tomt, markerat per
+// falt) eller AVLASNINGEN KORDES INTE (ett meddelande over hela gruppen, aldrig
+// tekniskt). Under sjalva avlasningen visas en diskret statusrad.
 //
 // Sparningen UPPDATERAR utkastet (sparaKostnad med utkast_id) – inget nytt
 // skapas. Avbryter anvandaren ligger kvittot kvar som ett utkast; det syns i
@@ -58,11 +64,17 @@
 // Atta ar senare ar den raden plus bilagan det som gor klassificeringen mojlig,
 // sa hjalptexten uppmuntrar en beskrivande mening, inte ett ord.
 //
-// ROT-raden ar en UtfallbarSektion (docs/design.md, "Utfallbara sektioner"): en
-// knapp "Fick du ROT-avdrag?" med en tunn chevron till hoger, ingen understruken
-// lank. Den renderas alltid; `rotOppen` styr chevronens lage och sätts nar
-// avlasningen last ett ROT-belopp. Ett enda falt, ROT-beloppet i kronor, aldrig
-// i procent – det ar det enda inmatningen fragar om av en entreprenorsfaktura.
+// ROT-raden ar en UtfallbarSektion (docs/design.md, "Utfallbara sektioner",
+// "ROT-avdrag"): en knapp "Drogs ROT av på fakturan?" med en tydlig chevron
+// till hoger, ingen understruken lank. Den renderas ALLTID. Har avlasningen
+// last ett ROT-belopp ur fakturan ar raden UTFALLD direkt – det ar ingen
+// gissning nar modellen faktiskt last det, och ett dolt ifyllt falt ar samma
+// fel som ett tomt omarkt falt. Hittades inget belopp ar raden HOPFALLD; att
+// falla ut den anda vore en gissning om vem som har ROT, och gissar appen fel
+// moter nagon som inte alls hade ROT med ett skattebegrepp utan anledning.
+// Raden ska SE UT som nagot man kan oppna aven hopfalld (se UtfallbarSektion).
+// Fältetiketten inuti sektionen heter fortfarande "ROT-avdrag" – ett enda
+// falt, beloppet i kronor, aldrig i procent.
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -74,7 +86,9 @@ import { BeloppFalt } from "@/components/belopp-falt";
 import {
   Falt,
   INPUT_KLASS,
+  Meddelanderuta,
   PRIMARKNAPP_KLASS,
+  SEKUNDARKNAPP_KLASS,
   UtfallbarSektion,
 } from "@/components/skarm";
 import { formateraBeloppInmatning } from "@/lib/format";
@@ -222,14 +236,27 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
   }, [falt]);
 
   const [avlasningPagar, setAvlasningPagar] = useState(false);
-  const [avlasningFyllde, setAvlasningFyllde] = useState(false);
+  // Tre tillstand efter att avlasningen forsokt en gang (produktspec,
+  // "Dokumentavlasning"): null = inte forsokt an, true = modellen svarade
+  // (enskilda falt kan anda vara null – "faltet kunde inte lasas"), false =
+  // sjalva anropet kom aldrig ivag eller aldrig tillbaka ("avlasningen kordes
+  // inte"). autoFalt hall reda pa VILKA av de tre falten avlasningen fyllde i
+  // just nu, sa varje falt kan visa sitt eget tillstand.
+  const [avlasningKord, setAvlasningKord] = useState<boolean | null>(null);
+  const [autoFalt, setAutoFalt] = useState({
+    belopp: false,
+    datum: false,
+    leverantor: false,
+  });
 
   // "Vad gallde det?" – valfri fritext, sparas i kostnadens anteckning.
   const [anteckning, setAnteckning] = useState(utkast?.anteckning ?? "");
 
-  // ROT-raden "Fick du ROT-avdrag?" (docs/design.md, "ROT-avdrag"). Raden visas
-  // alltid; `rotOppen` ar chevronens lage och sätts nar avlasningen last ett
-  // ROT-belopp. Ett enda falt – ROT-beloppet i kronor.
+  // ROT-raden "Drogs ROT av på fakturan?" (docs/design.md, "ROT-avdrag").
+  // Raden visas ALLTID; `rotOppen` fälls ut nar avlasningen faktiskt last ett
+  // ROT-belopp ur fakturan (ingen gissning – det star dar), hopfalld annars
+  // (dar VORE en automatisk utfallning en gissning om vem som hade ROT).
+  // Raden ser ut som nagot man kan oppna aven hopfalld (se UtfallbarSektion).
   const [rotOppen, setRotOppen] = useState(false);
   const [rotUtnyttjat, setRotUtnyttjat] = useState("");
   const rotUtnyttjatRef = useRef(rotUtnyttjat);
@@ -366,43 +393,50 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
   }
 
   // Kor dokumentavlasningen pa en (redan uppladdad) bilaga och fyller BARA tomma
-  // falt. Alla fel svaljs – formularet ska fungera exakt som utan analys.
+  // falt. Blockerar aldrig sparandet – men `kord` sags vidare till granssnittet
+  // sa att det syns NAR avlasningen inte kunde kora alls (produktspec,
+  // "Dokumentavlasning"), i stallet for att bara tysta ihop det med falt som
+  // modellen faktiskt forsokte men inte hittade nagot i.
   async function analysera(bilagaId: string) {
     setAvlasningPagar(true);
     try {
-      const data = await analyseraBilaga({ bilagaId });
+      const { kord, falt: data } = await analyseraBilaga({ bilagaId });
+      setAvlasningKord(kord);
 
       const nu = faltRef.current;
       const nasta = { ...nu };
-      let fyllde = false;
+      const nyttAuto = { belopp: false, datum: false, leverantor: false };
       if (data.leverantor && nu.leverantor.trim() === "") {
         nasta.leverantor = data.leverantor;
-        fyllde = true;
+        nyttAuto.leverantor = true;
       }
       if (data.totalbelopp != null && nu.belopp.trim() === "") {
         nasta.belopp = formateraBeloppInmatning(orenTillFalt(data.totalbelopp));
-        fyllde = true;
+        nyttAuto.belopp = true;
       }
       if (data.datum && nu.datum.trim() === "") {
         nasta.datum = data.datum;
-        fyllde = true;
+        nyttAuto.datum = true;
       }
-      if (fyllde) {
+      if (nyttAuto.belopp || nyttAuto.datum || nyttAuto.leverantor) {
         setFalt(nasta);
-        setAvlasningFyllde(true);
       }
+      setAutoFalt(nyttAuto);
 
       // ROT-avdraget (docs/design.md, "ROT-avdrag"). Bara ett tomt falt fylls;
-      // last avlasningen ett belopp fälls raden ut sa att anvandaren ser det.
+      // last avlasningen ett belopp ur fakturan ar det ingen gissning – raden
+      // fälls da ut sa att anvandaren faktiskt ser det ifyllda faltet. Hittas
+      // inget lamnas raden hopfalld i stallet for att appen ska gissa.
       if (data.rot_utnyttjat != null && rotUtnyttjatRef.current.trim() === "") {
         setRotUtnyttjat(
           formateraBeloppInmatning(orenTillFalt(data.rot_utnyttjat)),
         );
         setRotOppen(true);
-        setAvlasningFyllde(true);
       }
     } catch {
-      // Alla fel svaljs.
+      // Anropet till servern sjalvt gick inte – formularet ska anda fungera
+      // exakt som utan analys, men kord: false sa att meddelandet visas.
+      setAvlasningKord(false);
     } finally {
       setAvlasningPagar(false);
     }
@@ -547,6 +581,21 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
     router.push("/");
   }
 
+  const nagotAutoifyllt =
+    autoFalt.belopp || autoFalt.datum || autoFalt.leverantor;
+
+  // Statusraden for ett enskilt falt (produktspec, "Dokumentavlasning"): sag
+  // inte samma sak tva ganger. Gruppmeddelandet har redan sagt att de ifyllda
+  // falten ska kontrolleras, sa ETT falt far bara en egen rad nar just DET
+  // faltet inte gick att lasa – aldrig nar det lyckades (da racker
+  // gruppmeddelandet) och aldrig nar avlasningen inte kordes alls (da bar
+  // meddelandet over hela gruppen beskedet ensamt). Ett falt anvandaren redan
+  // skrivit i fore avlasningen far ingen rad – avlasningen rorde det aldrig.
+  function faltStatus(tomt: boolean): string | undefined {
+    if (avlasningKord !== true || !tomt) return undefined;
+    return "Kunde inte läsas av kvittot – fyll i för hand.";
+  }
+
   return (
     <>
     <form action={skicka} className="flex flex-col gap-5 p-5">
@@ -556,6 +605,21 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
           Kvitto eller faktura
         </span>
 
+        {/* Sa lange ingen bilaga alls ar vald ersatts raden av en knapp i full
+            bredd (docs/design.md, "Bilagor"): en tom streckad ruta las inte
+            som appens viktigaste handling nar nagon annan an den som byggt
+            appen provade. Samma hojd och form som primarknappen, men utan
+            orange – "Spara kvitto" langre ned ar sidans primara handling. Sa
+            snart en bilaga lagts till tar miniatyrraden med `+`-rutan over. */}
+        {poster.length === 0 ? (
+          <button
+            type="button"
+            onClick={() => filInputRef.current?.click()}
+            className={SEKUNDARKNAPP_KLASS}
+          >
+            Välj kvitto eller ta ett foto
+          </button>
+        ) : (
         <div className="flex flex-wrap items-start gap-2">
           {/* Redan uppladdade bilagor (aterupptaget utkast). */}
           {befintliga.map((b, i) => {
@@ -684,6 +748,7 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
             <span>Lägg till</span>
           </button>
         </div>
+        )}
 
         <p className="mt-2 font-granssnitt text-xs text-text-dampad">
           JPG, PNG, HEIC eller PDF. Max 10 MB per fil. Går att lägga till
@@ -764,22 +829,42 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
         </p>
       ) : null}
 
-      {/* Bekraftelse nar analysen fyllt i falt – granskas innan sparning. */}
-      {avlasningFyllde && !avlasningPagar ? (
+      {/* Forsta/andra laget: nagot fylldes i. ETT meddelande over hela
+          gruppen bar beskedet – sag inte samma sak igen under varje falt
+          (produktspec, "Dokumentavlasning"). Samma text oavsett om allt eller
+          bara nagot av de tre falten gick att lasa; de falt som INTE gick att
+          lasa far dessutom sin egen rad (se faltStatus). */}
+      {avlasningKord === true && nagotAutoifyllt ? (
         <p className="rounded-lg bg-bg-klart px-3 py-2 font-granssnitt text-sm text-text-klart">
-          Fälten nedan fylldes i från kvittot. Kontrollera att belopp och datum
+          Fälten som kunde läsas är ifyllda från kvittot – kontrollera att de
           stämmer innan du sparar.
         </p>
       ) : null}
 
+      {/* Tredje laget: avlasningen kordes aldrig alls – nyckel saknas,
+          natverksfel, timeout, slut kvot. ETT meddelande over hela
+          faltgruppen i stallet for tre tomma falt utan forklaring
+          (produktspec, "Dokumentavlasning"). Aldrig ett tekniskt felmeddelande. */}
+      {avlasningKord === false && !avlasningPagar ? (
+        <Meddelanderuta>
+          Kvittot är sparat. Vi kunde inte läsa av det automatiskt – fyll i
+          uppgifterna nedan själv.
+        </Meddelanderuta>
+      ) : null}
+
       <h2 className="font-rubrik text-base text-text-primar">
-        {avlasningFyllde ? "Granska uppgifterna" : "Fyll i uppgifter"}
+        {avlasningKord === true && nagotAutoifyllt
+          ? "Granska uppgifterna"
+          : "Fyll i uppgifter"}
       </h2>
 
       <Falt
         etikett="Totalbelopp"
         obligatoriskt
-        hjalp="Hela kvittosumman, t.ex. 1 020,95."
+        hjalp={
+          faltStatus(falt.belopp.trim() === "") ??
+          "Hela kvittosumman, t.ex. 1 020,95."
+        }
       >
         <BeloppFalt
           name="totalbelopp"
@@ -792,10 +877,10 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
       </Falt>
 
       {/* ROT-raden visas ALLTID (docs/design.md, "ROT-avdrag"): utfalld nar
-          avlasningen last ett belopp, hopfalld annars. Ett enda falt –
-          ROT-beloppet i kronor. */}
+          avlasningen last ett ROT-belopp ur fakturan (ingen gissning – det
+          star dar), hopfalld annars. Ett enda falt – ROT-beloppet i kronor. */}
       <UtfallbarSektion
-        etikett="Fick du ROT-avdrag?"
+        etikett="Drogs ROT av på fakturan?"
         oppen={rotOppen}
         onToggle={() => setRotOppen((v) => !v)}
       >
@@ -816,7 +901,11 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
       {/* Ett datumfalt satter bade dokumentdatum och betaldatum till samma dag
           (docs/design.md, "Datum i kostnadsformularet"). En avvikande betaldag
           hor till "Andra uppgifter". */}
-      <Falt etikett="Datum" obligatoriskt>
+      <Falt
+        etikett="Datum"
+        obligatoriskt
+        hjalp={faltStatus(falt.datum.trim() === "")}
+      >
         <input
           type="date"
           required
@@ -826,7 +915,13 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
         />
       </Falt>
 
-      <Falt etikett="Leverantör" obligatoriskt>
+      <Falt
+        etikett="Leverantör"
+        obligatoriskt
+        hjalp={
+          faltStatus(falt.leverantor.trim() === "")
+        }
+      >
         <input
           type="text"
           name="leverantor"

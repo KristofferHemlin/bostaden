@@ -20,7 +20,7 @@
 // formularet faktiskt skickar.
 
 import { revalidatePath } from "next/cache";
-import { oreFranKronor } from "@/lib/format";
+import { isoDatum, oreFranKronor } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
@@ -87,6 +87,9 @@ export async function sparaInstallningar(
   }
   if (tilltradesdatum < "1970-01-01") {
     return { fel: "Tillträdesdatum före 1970 stöds inte." };
+  }
+  if (tilltradesdatum > isoDatum(new Date())) {
+    return { fel: "Tillträdesdatum kan inte ligga i framtiden." };
   }
 
   // Upplatelseformen ar last efter forsaljning (produktspec 4.8, CLAUDE.md

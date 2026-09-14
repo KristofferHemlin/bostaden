@@ -12,14 +12,17 @@ import { rapporteraFel } from "@/lib/feltrapportering";
 import { kannIgenFormat } from "@/lib/lagring/bilaga-regler";
 import { bilagelager } from "@/lib/lagring/klient";
 import { prisma } from "@/lib/prisma";
-import { analyseraDokumentbuffert } from "./analysera";
-import { TOMT_DOKUMENTFALT, type Dokumentfalt } from "./tolkning";
+import { analyseraDokumentbuffert, type Dokumentavlasning } from "./analysera";
+import { TOMT_DOKUMENTFALT } from "./tolkning";
+
+const KORDES_INTE: Dokumentavlasning = { kord: false, falt: { ...TOMT_DOKUMENTFALT } };
 
 /**
  * Laser en (redan uppladdad) bilaga fran Storage och kor dokumentavlasningen pa
  * den. Kastar aldrig – vid varje fel (saknad nyckel, fel bostad, oläsbar fil,
- * timeout) returneras TOMT_DOKUMENTFALT sa att formularet fungerar exakt som
- * utan analys.
+ * timeout) returneras `kord: false` sa att formularet kan visa att avlasningen
+ * inte kordes alls, i stallet for att tysta ihop det med falt som modellen
+ * faktiskt forsokte men misslyckades med.
  *
  * Avlasningen kors EN GANG per bilaga. `dokument_analyserad` satts nar
  * sprakmodellanropet gjorts – oavsett utfall – och nasta gang utkastet oppnas
@@ -29,7 +32,7 @@ import { TOMT_DOKUMENTFALT, type Dokumentfalt } from "./tolkning";
 export async function analyseraKostnadsbilaga(params: {
   bostadId: string;
   bilagaId: string;
-}): Promise<Dokumentfalt> {
+}): Promise<Dokumentavlasning> {
   try {
     const bilaga = await prisma.bilaga.findUnique({
       where: { id: params.bilagaId },
@@ -43,22 +46,22 @@ export async function analyseraKostnadsbilaga(params: {
     });
     // Bilagan maste finnas och hora till en kostnad i anvandarens bostad.
     if (!bilaga || bilaga.kostnad?.bostad_id !== params.bostadId) {
-      return { ...TOMT_DOKUMENTFALT };
+      return KORDES_INTE;
     }
-    // Redan avlast en gang – returnera tomt sa att formularet visar sina
-    // sparade varden utan nytt anrop.
-    if (bilaga.dokument_analyserad) return { ...TOMT_DOKUMENTFALT };
+    // Redan avlast en gang – returnera "kordes inte" (den har gangen) sa att
+    // formularet inte visar tomma falt som ett nytt misslyckande.
+    if (bilaga.dokument_analyserad) return KORDES_INTE;
 
     const format = kannIgenFormat(bilaga.mimetyp, bilaga.filnamn);
-    if (!format) return { ...TOMT_DOKUMENTFALT };
+    if (!format) return KORDES_INTE;
 
     const { data: blob, error } = await bilagelager().download(
       bilaga.lagringsnyckel,
     );
-    if (error || !blob) return { ...TOMT_DOKUMENTFALT };
+    if (error || !blob) return KORDES_INTE;
 
     const original = Buffer.from(await blob.arrayBuffer());
-    const falt = await analyseraDokumentbuffert(original, format);
+    const resultat = await analyseraDokumentbuffert(original, format);
 
     // Anropet ar gjort. Markera bilagan oavsett utfall sa att avlasningen inte
     // gors om. En misslyckad markering far inte svalja resultatet.
@@ -71,17 +74,16 @@ export async function analyseraKostnadsbilaga(params: {
       // Nasta oppning kor avlasningen igen – inte varre an dagens beteende.
     }
 
-    return falt;
+    return resultat;
   } catch (fel) {
-    // Formularet fungerar exakt som utan analys aven har (produktspec,
-    // "Dokumentavlasning": "Alla fel sväljs") – men nagon ska anda fa veta att
-    // avlasningen slutat fungera, sa den rapporteras i stallet for att tystna
-    // helt (produktspec avsnitt 13, punkt 1). bilagaId ar bara ett id, ingen
-    // kvittodata.
+    // Avlasningen blockerar aldrig sparandet aven har (produktspec,
+    // "Dokumentavlasning") – men nagon ska anda fa veta att den slutat
+    // fungera, sa den rapporteras i stallet for att tystna helt (produktspec
+    // avsnitt 13, punkt 1). bilagaId ar bara ett id, ingen kvittodata.
     rapporteraFel(fel, {
       sida: "dokumentavlasning",
       anrop: "analyseraKostnadsbilaga",
     });
-    return { ...TOMT_DOKUMENTFALT };
+    return KORDES_INTE;
   }
 }

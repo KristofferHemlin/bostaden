@@ -473,7 +473,23 @@ PDF-bilagor har ingen visningsversion. De fogas in som sidor i original.
 
 **Misslyckas konverteringen blockerar den aldrig uppladdningen.** Originalet är sparat, och det är det som är bevisningen. Saknas visningsversionen får bilagan en platshållarsida i PDF-paketet, precis som en bilaga som inte gick att läsa.
 
-**Alla fel sväljs.** Nätverksfel, oläsbart dokument, timeout, saknad nyckel – inget av det får synas eller blockera. Formuläret fungerar exakt som utan analys.
+**Avläsningen blockerar aldrig, men den är aldrig tyst.** Nätverksfel, oläsbart dokument, timeout, saknad nyckel, slut kvot – inget av det får hindra användaren från att spara. Formuläret fungerar exakt som utan analys.
+
+Men "sväljs" får inte betyda att användaren inget får veta. Ett formulär som ser likadant ut vare sig avläsningen lyckades, misslyckades eller aldrig kördes gör att tomma fält sparas utan att någon märker det – det är det som hände när appen testades av någon annan än den som byggt den.
+
+Efter att bilagan laddats upp har fältgruppen därför tre tillstånd:
+
+| Läge | Vad användaren ser |
+|---|---|
+| Allt avläst | Ett meddelande över fältgruppen: fälten fylldes i från kvittot, kontrollera dem. Inga rader under fälten |
+| Något fält kunde inte läsas | Samma meddelande över gruppen, plus en rad **endast** under de fält som saknas |
+| Avläsningen kördes inte | Ett meddelande över hela fältgruppen: kvittot är sparat, uppgifterna får fyllas i själv |
+
+**Säg inte samma sak två gånger.** Ett meddelande över gruppen och sedan en identisk rad under varje fält gör ett kort formulär till en vägg av text, och då slutar raderna betyda något. Lyckades allt bär gruppmeddelandet beskedet ensamt. Lyckades två av tre är det den tredje som ska ha text – den raden betyder då något, just för att den är den enda.
+
+Gränsen går vid uppladdningen. Innan bilagan är uppe är ingenting sagt om fälten, eftersom det brådskande – att fånga kvittot – inte är klart. Efteråt handlar allt om vem som fyller i, och då ska det synas.
+
+Det tredje läget täcker felen som inte är modellens: API:et svarar inte, nyckeln saknas, kvoten är slut. Meddelandet ska aldrig vara tekniskt – användaren behöver veta att kvittot är sparat och att fälten står tomma, inte varför.
 
 **Endast belopp i svenska kronor fylls i.** Är dokumentet i annan valuta returneras beloppet som null. All beräkning i appen antar kronor, och ett eurobelopp som hamnar i ett kronfält ger ett felaktigt underlag utan att något ser konstigt ut. Modellen ska uttryckligen instrueras att returnera null när valutan inte är SEK.
 

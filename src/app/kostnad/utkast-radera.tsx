@@ -5,21 +5,34 @@
 // varde, och en dialog ar bara i vagen. Bekraftelsesteget galler fortsatt for
 // sparade kvitton och ligger kvar i redigeringsformularet.
 //
-// Gar exakt samma vag som taBortKostnad: Storage rensas forst, sedan sjalva
-// kostnaden (raderna, fordelningarna och bilaga-raderna tar cascaden). Actionen
-// redirectar till /kostnad efterat – bade listraden och kompletteringsformularet
-// landar dar. "Raderingen tar med bilagorna. Ett utkast utan sin bild ar
-// ingenting."
+// Bade actionerna gar samma vag i botten: Storage rensas forst, sedan sjalva
+// kostnaden (raderna, fordelningarna och bilaga-raderna tar cascaden).
+// "Raderingen tar med bilagorna. Ett utkast utan sin bild ar ingenting."
 //
-// Tva lagen:
-//   * "ikon"  – en soptunna langst till hoger i listraden. Egen tryckyta pa
+// Tva lagen – och tva olika actioner, INTE bara tva stilar av samma knapp
+// (docs/design.md, "Listrader": "En åtgärd på en rad byter aldrig sida"):
+//   * "ikon"  – en soptunna langst till hoger i en LISTRAD (kvittolistan,
+//               oversikten). Anvander taBortUtkastRad, som ALDRIG navigerar –
+//               bara uppdaterar listan man redan star i. Ett navigerande
+//               redirect har vore fel sida oavsett vilken lista knappen
+//               ligger i, och kontrollen far darfor inte veta det sjalv –
+//               den ar samma kontroll oavsett var den anvands, och det ar just
+//               darfor den maste vara den utan navigering. Egen tryckyta pa
 //               44px och luft fran radens klickyta sa den inte traffas av
 //               misstag.
-//   * "knapp" – en "Ta bort utkastet"-knapp langst ned i kompletteringsformularet,
-//               samma diskreta stil som "Ta bort kvittot" i redigeringsvyn.
+//   * "knapp" – en "Ta bort utkastet"-knapp langst ned i
+//               kompletteringsformularet, dar utkastet ar sidans EGET innehall
+//               och inte en rad i nagon lista – nar det ar borta finns inget
+//               kvar att visa. Anvander taBortKostnad, som redirectar till
+//               /kostnad, samma diskreta stil som "Ta bort kvittot" i
+//               redigeringsvyn.
 
 import { useActionState } from "react";
-import { taBortKostnad, type KostnadRedigeraResultat } from "./[id]/actions";
+import {
+  taBortKostnad,
+  taBortUtkastRad,
+  type KostnadRedigeraResultat,
+} from "./[id]/actions";
 
 const START: KostnadRedigeraResultat = {};
 
@@ -30,7 +43,8 @@ export function UtkastRaderaKnapp({
   kostnadId: string;
   lage: "ikon" | "knapp";
 }) {
-  const [resultat, raderaAction, raderar] = useActionState(taBortKostnad, START);
+  const action = lage === "ikon" ? taBortUtkastRad : taBortKostnad;
+  const [resultat, raderaAction, raderar] = useActionState(action, START);
 
   if (lage === "ikon") {
     return (

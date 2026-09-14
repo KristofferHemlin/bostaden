@@ -8,9 +8,13 @@
 // HEIC kan modellen inte lasa och det ar standardformatet pa iPhone – samma
 // konvertering som miniatyrgenereringen kor i minnet fore anropet.
 //
-// ALLA fel svaljs tyst. Natverksfel, oläsbart dokument, timeout, saknad nyckel –
-// inget far synas eller blockera. Vid minsta problem returneras enbart null-falt och
-// formularet fungerar exakt som utan analys.
+// Avlasningen BLOCKERAR aldrig sparandet, men den ar aldrig tyst (produktspec,
+// "Dokumentavlasning"). Darfor returneras inte bara falten utan ocksa `kord`:
+// sant nar modellen faktiskt svarade (enskilda falt kan fortfarande vara null –
+// det ar "faltet kunde inte lasas"), falskt bara nar sjalva anropet aldrig kom
+// ivag eller aldrig kom tillbaka: saknad nyckel, natverksfel, timeout eller ett
+// fel fran API:et ("avlasningen kordes inte"). Formularet ska aldrig blockeras
+// av nagotdera – det ar klientens jobb att visa skillnaden.
 
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
@@ -50,10 +54,24 @@ const INSTRUKTION = [
 type Bildmediatyp = "image/jpeg" | "image/png";
 
 /**
+ * Resultatet av en dokumentavlasning. `kord` skiljer "modellen svarade men
+ * hittade inget i det har faltet" (falt-for-falt null, kord: true) fran
+ * "anropet kom aldrig ivag eller aldrig tillbaka" (kord: false) – de tva
+ * kraver olika besked till anvandaren (produktspec, "Dokumentavlasning").
+ */
+export interface Dokumentavlasning {
+  kord: boolean;
+  falt: Dokumentfalt;
+}
+
+const KORDES_INTE: Dokumentavlasning = { kord: false, falt: { ...TOMT_DOKUMENTFALT } };
+
+/**
  * Skickar ett redan inlast dokument till modellen och returnerar datum,
  * totalbelopp (oren, inklusive moms), leverantor och – nar det gar att lasa ur
  * en faktura – utnyttjat ROT-avdrag. Kastar aldrig – vid varje fel returneras
- * TOMT_DOKUMENTFALT.
+ * `kord: false` sa att anroparen kan visa att avlasningen inte kordes alls, i
+ * stallet for att tysta ihop det med enskilda falt som inte gick att lasa.
  *
  * Bufferten kommer fran Storage: webblasaren laddar upp filen dit direkt (den
  * passerar aldrig en serverless-funktion) och servern laser ner den for analys.
@@ -61,10 +79,10 @@ type Bildmediatyp = "image/jpeg" | "image/png";
 export async function analyseraDokumentbuffert(
   original: Buffer,
   format: Bilageformat,
-): Promise<Dokumentfalt> {
+): Promise<Dokumentavlasning> {
   try {
     const nyckel = process.env.ANTHROPIC_API_KEY;
-    if (!nyckel) return { ...TOMT_DOKUMENTFALT };
+    if (!nyckel) return KORDES_INTE;
 
     const klient = new Anthropic({ apiKey: nyckel });
 
@@ -112,13 +130,16 @@ export async function analyseraDokumentbuffert(
       .map((block) => (block.type === "text" ? block.text : ""))
       .join("\n");
 
-    return tolkaDokumentsvar(text);
+    // Modellen svarade – kord: true aven om svaret inte gick att tolka till
+    // nagot anvandbart falt. Det ar fortfarande "faltet kunde inte lasas", inte
+    // "avlasningen kordes inte".
+    return { kord: true, falt: tolkaDokumentsvar(text) };
   } catch (fel) {
-    // Fortfarande null-falt, aldrig ett kastat fel – men en modell som slutat
-    // svara (fel nyckel, kvot, API-driftstorning) ska synas nagonstans i
-    // stallet for att bara sluta fylla i falt utan forklaring (produktspec
-    // avsnitt 13, punkt 1). Ingen dokumentdata skickas med, bara att det hande.
+    // Aldrig ett kastat fel – men en modell som slutat svara (fel nyckel, kvot,
+    // API-driftstorning) ska synas nagonstans i stallet for att bara sluta
+    // fylla i falt utan forklaring (produktspec avsnitt 13, punkt 1). Ingen
+    // dokumentdata skickas med, bara att det hande.
     rapporteraFel(fel, { sida: "dokumentavlasning", anrop: "analyseraDokumentbuffert" });
-    return { ...TOMT_DOKUMENTFALT };
+    return KORDES_INTE;
   }
 }

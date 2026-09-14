@@ -171,15 +171,23 @@ export function Falt({
 /**
  * En valfri, hopfalld del av ett formular (docs/design.md, "Utfallbara
  * sektioner"): "Betalades ett annat datum?", "Anlitade du nagon?", "Var nagot pa
- * kvittot privat?". Alla foljer samma monster.
+ * kvittot privat?", ROT-raden i inmatningen. Alla foljer samma monster.
  *
- * Raden ar en KNAPP, inte en lank: ingen understrykning, --text-primar i normal
- * vikt, och en tunn chevron till hoger som pekar nedat och roterar 180 grader
- * nar sektionen ar oppen. Ingen toggle och ingen kryssruta – fragan ska ga att
+ * Raden ska se ut som nagot man kan oppna, inte en rubrik med en liten pil i
+ * kanten (docs/design.md, "ROT-avdrag" – bekraftat i anvandning att en tunn
+ * textrad las som en rubrik och inte hittades). Darfor har knappen samma
+ * yta som ett inmatningsfalt – `bg-yta-nedsankt`, rundade horn, riktig
+ * innerpadding och minst 44px hojd for traffytan – i stallet for att bara vara
+ * text med en pil bredvid. Ingen understrykning, --text-primar i normal vikt,
+ * och en tydlig chevron till hoger som pekar nedat och roterar 180 grader nar
+ * sektionen ar oppen. Ingen toggle och ingen kryssruta – fragan ska ga att
  * ignorera helt.
  *
- * Hopfallt ar alltid forvalet, utom nar sektionen redan har ett varde – det
- * avgor anroparen via `oppen`. Samlas flera pa samma stalle ska de ha samma
+ * Hopfallt ar alltid forvalet, utom nar sektionen redan har ett sparat varde –
+ * det avgor anroparen via `oppen`. En gissning fran automatisk avlasning ar
+ * INTE ett skal att falla ut sektionen at anvandaren (docs/design.md,
+ * "ROT-avdrag": gissar appen fel motstas nagon som inte har ROT alls av ett
+ * skattebegrepp utan anledning). Samlas flera pa samma stalle ska de ha samma
  * luft mellan sig som mellan tva falt.
  */
 export function UtfallbarSektion({
@@ -199,11 +207,11 @@ export function UtfallbarSektion({
         type="button"
         onClick={onToggle}
         aria-expanded={oppen}
-        className="flex w-full items-center justify-between gap-3 rounded-sm text-left font-granssnitt text-sm text-text-primar outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="flex min-h-[44px] w-full items-center justify-between gap-3 rounded-lg bg-yta-nedsankt px-3 py-3 text-left font-granssnitt text-sm text-text-primar outline-none transition-colors hover:bg-yta-hover focus-visible:ring-2 focus-visible:ring-accent"
       >
         {etikett}
         <ChevronNed
-          className={`h-4 w-4 shrink-0 text-text-sekundar transition-transform ${
+          className={`h-5 w-5 shrink-0 text-text-sekundar transition-transform ${
             oppen ? "rotate-180" : ""
           }`}
         />

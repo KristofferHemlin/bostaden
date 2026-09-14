@@ -9,12 +9,13 @@
 // Ar kostnaden uppdelad pa flera rader visas belopp och projektkoppling som
 // lasta, med en lank till "Dela upp kvittot" dar raderna andras (steg 10).
 //
-// ROT-raden "Fick du ROT-avdrag?" (docs/design.md, "ROT-avdrag") gar att andra
-// har ocksa – ett enda falt, ROT-beloppet i kronor. Den foljer samma monster
-// som i inmatningsformularet (docs/design.md, "Utfallbara sektioner"): en knapp
-// med en tunn chevron till hoger, ingen understruken lank. Hopfalld tills den
-// redan har ett varde, far lamnas tom. En kostnad med ROT far bara vara kopplad
-// till ett projekt (produktspec 5) – valideras i actionen.
+// ROT-raden "Drogs ROT av på fakturan?" (docs/design.md, "ROT-avdrag") gar att
+// andra har ocksa – ett enda falt, etiketterat "ROT-avdrag", ROT-beloppet i
+// kronor. Den foljer samma monster som i inmatningsformularet (docs/design.md,
+// "Utfallbara sektioner"): en knapp med en tydlig chevron till hoger, ingen
+// understruken lank. Hopfalld tills den redan har ett varde, far lamnas tom.
+// En kostnad med ROT far bara vara kopplad till ett projekt (produktspec 5) –
+// valideras i actionen.
 //
 // Borttagningen ligger sist, tydligt skild fran spara-knappen, och kraver ett
 // extra bekraftelsesteg. Den tar med bilagorna.
@@ -70,9 +71,9 @@ export function RedigeraKostnadForm({
     formateraBeloppInmatning(varden.totalbelopp),
   );
 
-  // ROT-raden "Fick du ROT-avdrag?" (docs/design.md, "ROT-avdrag"). Ett enda
-  // falt, ROT-beloppet i kronor. Oppen fran start nar den redan har ett varde,
-  // annars hopfalld. Far lamnas tom.
+  // ROT-raden "Drogs ROT av på fakturan?" (docs/design.md, "ROT-avdrag"). Ett
+  // enda falt, ROT-beloppet i kronor. Oppen fran start nar den redan har ett
+  // varde, annars hopfalld. Far lamnas tom.
   const [rotOppen, setRotOppen] = useState(varden.rotUtnyttjat !== "");
   const [rotUtnyttjat, setRotUtnyttjat] = useState(() =>
     formateraBeloppInmatning(varden.rotUtnyttjat),
@@ -144,11 +145,12 @@ export function RedigeraKostnadForm({
           </p>
         </div>
 
-        {/* "Fick du ROT-avdrag?" – ett enda fält, ROT-beloppet i kronor
-            (docs/design.md, "ROT-avdrag"). Knapp med chevron, öppen från start
-            när fältet redan har ett värde. */}
+        {/* "Drogs ROT av på fakturan?" – ett enda fält, etiketterat
+            "ROT-avdrag", ROT-beloppet i kronor (docs/design.md, "ROT-avdrag").
+            Knapp med chevron, öppen från start när fältet redan har ett
+            värde. */}
         <UtfallbarSektion
-          etikett="Fick du ROT-avdrag?"
+          etikett="Drogs ROT av på fakturan?"
           oppen={rotOppen}
           onToggle={() => setRotOppen((v) => !v)}
         >

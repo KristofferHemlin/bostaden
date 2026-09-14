@@ -24,6 +24,7 @@ import {
   PRIMARKNAPP_KLASS,
   SEKUNDARKNAPP_KLASS,
 } from "@/components/skarm";
+import { TilltradesdatumFalt } from "@/components/tilltradesdatum-falt";
 import { slutforRegistrering, type RegistreringResultat } from "./actions";
 import { AdressFalt } from "./adress-falt";
 
@@ -202,12 +203,9 @@ export function RegistreraFlode({
         </div>
 
         <Falt etikett="Tillträdesdatum" obligatoriskt>
-          <input
-            type="date"
+          <TilltradesdatumFalt
             name="tilltradesdatum"
-            value={tilltradesdatum}
-            onChange={(e) => setTilltradesdatum(e.target.value)}
-            className={INPUT_KLASS}
+            onChange={setTilltradesdatum}
           />
         </Falt>
 

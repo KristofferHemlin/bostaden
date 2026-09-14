@@ -291,13 +291,14 @@ export async function aterforTillGenomgang(formData: FormData): Promise<void> {
   redirect(`/kostnad/${id}`);
 }
 
-export async function taBortKostnad(
-  _foreg: KostnadRedigeraResultat,
-  formData: FormData,
+// Delad raderingslogik för taBortKostnad och taBortUtkastRad nedan – bara
+// navigeringen skiljer dem åt (docs/design.md, "Listrader": "En åtgärd på en
+// rad byter aldrig sida").
+async function taBortKostnadIntern(
+  id: string,
+  bostadId: string,
+  anvandareId: string,
 ): Promise<KostnadRedigeraResultat> {
-  const { bostadId, anvandareId } = await kravBostad();
-  const id = String(formData.get("kostnad_id") ?? "");
-
   const kostnad = await prisma.kostnad.findFirst({
     where: { id, bostad_id: bostadId },
     select: { id: true },
@@ -319,7 +320,38 @@ export async function taBortKostnad(
   revalidatePath("/projekt");
   revalidatePath("/projekt/[id]", "page");
   revalidatePath("/export");
+  return {};
+}
+
+// Anvands nar borttagningen ar den ENDA sak sidan visade – "Ta bort kvittot" i
+// redigeringsvyn, och UtkastRaderaKnapp i "knapp"-lage langst ned i
+// kompletteringsformularet (produktspec 6.4). Dar finns inget kvar att visa
+// nar posten ar borta, sa ett redirect till listan ar ratt.
+export async function taBortKostnad(
+  _foreg: KostnadRedigeraResultat,
+  formData: FormData,
+): Promise<KostnadRedigeraResultat> {
+  const { bostadId, anvandareId } = await kravBostad();
+  const id = String(formData.get("kostnad_id") ?? "");
+
+  const resultat = await taBortKostnadIntern(id, bostadId, anvandareId);
+  if (resultat.fel) return resultat;
   redirect("/kostnad");
+}
+
+// Radering av ett utkast SOM EN RAD I EN LISTA – kvittolistan och oversikten
+// (docs/design.md, "Listrader": "En åtgärd på en rad byter aldrig sida").
+// UtkastRaderaKnapp i "ikon"-lage anvander den har i stallet for taBortKostnad
+// ovan: den navigerar ALDRIG, bara uppdaterar (revalidatePath racker – sidan
+// man redan star pa laddar om sig sjalv), sa att man blir kvar dar man var,
+// med sin plats i listan behallen, oavsett vilken lista knappen ligger i.
+export async function taBortUtkastRad(
+  _foreg: KostnadRedigeraResultat,
+  formData: FormData,
+): Promise<KostnadRedigeraResultat> {
+  const { bostadId, anvandareId } = await kravBostad();
+  const id = String(formData.get("kostnad_id") ?? "");
+  return taBortKostnadIntern(id, bostadId, anvandareId);
 }
 
 // Uppladdning av bilagor till en befintlig kostnad gors nu direkt fran

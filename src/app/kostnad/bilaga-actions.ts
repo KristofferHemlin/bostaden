@@ -22,7 +22,7 @@ import {
   type Uppladdningsresultat,
 } from "@/lib/lagring/bilagor";
 import { analyseraKostnadsbilaga } from "@/lib/dokumentavlasning/lagring";
-import type { Dokumentfalt } from "@/lib/dokumentavlasning/tolkning";
+import type { Dokumentavlasning } from "@/lib/dokumentavlasning/analysera";
 import { kravBostad } from "@/lib/session";
 
 // Bilageuppladdningen ar det viktigaste stallet i hela appen att aldrig tystna
@@ -89,7 +89,7 @@ export async function bekraftaBilagauppladdning(
 
 export async function analyseraBilaga(indata: {
   bilagaId: string;
-}): Promise<Dokumentfalt> {
+}): Promise<Dokumentavlasning> {
   const { bostadId } = await kravBostad();
   return analyseraKostnadsbilaga({ bostadId, bilagaId: indata.bilagaId });
 }
