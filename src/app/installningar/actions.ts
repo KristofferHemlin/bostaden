@@ -20,6 +20,7 @@
 // formularet faktiskt skickar.
 
 import { revalidatePath } from "next/cache";
+import { agarandelFranText } from "@/lib/agarandel";
 import { isoDatum, oreFranKronor } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -47,17 +48,6 @@ function beloppFranText(text: string): bigint | null | undefined {
   const oren = oreFranKronor(text);
   if (oren === null || oren <= 0) return undefined;
   return BigInt(oren);
-}
-
-// Agarandel i procent (Decimal(5,2) i schemat). Tomt falt betyder att
-// anvandaren ager hela bostaden, alltsa 100. Returnerar undefined nar texten
-// inte gar att tolka eller ligger utanfor 0–100.
-function andelFranText(text: string): number | undefined {
-  if (text === "") return 100;
-  const normaliserad = text.replace(/\s/g, "").replace(",", ".").replace(/%/g, "");
-  if (!/^\d+(\.\d{1,2})?$/.test(normaliserad)) return undefined;
-  const varde = Number.parseFloat(normaliserad);
-  return varde > 0 && varde <= 100 ? varde : undefined;
 }
 
 export async function sparaInstallningar(
@@ -134,9 +124,11 @@ export async function sparaInstallningar(
     }
   }
 
-  const agarandel = andelFranText(las("agarandel"));
+  // Delad med faltkomponenten (@/lib/agarandel) sa att servern provar exakt
+  // samma regel som granssnittet, av samma skal som for tilltradesdatumet.
+  const agarandel = agarandelFranText(las("agarandel"));
   if (agarandel === undefined) {
-    return { fel: "Ägarandel anges som ett tal mellan 1 och 100 procent, t.ex. 50." };
+    return { fel: "Ägarandel anges som ett tal mellan 0 och 100, t.ex. 50 eller 33,33." };
   }
 
   // Foreningens namn eller fastighetsbeteckning (produktspec 8, "Forsattssida").

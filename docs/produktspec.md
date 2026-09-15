@@ -137,6 +137,12 @@ Formellt råder fri bevisning; kvitton är det vanliga men inte enda beviset. Gr
 
 Förbättringsutgifterna fördelas mellan delägarna efter ägarandel. Äger användaren halva bostaden ska underlaget visa halva beloppet. Detta gäller även när bara den ena personen använder appen.
 
+**Andelen är ett tal mellan 0 och 100, och ska valideras som ett.** Fältet multiplicerar hela underlaget: skrivs 1000 i stället för 100 blir avdraget tio gånger för stort, och ingenting i appen ser konstigt ut – siffrorna är bara större. Det är ett fel som upptäcks av Skatteverket och inte av användaren.
+
+Intervallet är därför större än 0 till och med 100. Noll avvisas, eftersom det betyder att ingenting är ditt och nästan alltid är ett skrivfel. Decimaler tillåts – tre syskon som ärvt en bostad har 33,33 procent var.
+
+Kontrollen ligger både i gränssnittet och på servern, av samma skäl som för tillträdesdatumet: värdet påverkar beräkningen, och klientvalidering går att kringgå. Ett tomt fält betyder fortfarande hela bostaden.
+
 Ägarandelen tillhör relationen mellan person och bostad, inte bostaden i sig, och lagras därför på medlemskapstabellen. Det gör att en delägare som inte använder appen inte behöver modelleras – användarens egen andel räcker – samtidigt som två personer i samma hushåll kan ha var sin andel senare.
 
 Exporten ska hantera båda varianterna: antingen anges beloppen för hela bostaden med markering att de är gemensamma för flera delägare, eller så anges den egna andelen. Appen räknar fram individuella belopp och visar samtidigt bruttobeloppet, så att användaren kan välja variant och den andra delägaren kan använda samma sammanställning.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { AgarandelFalt } from "@/components/agarandel-falt";
 import { BeloppFalt } from "@/components/belopp-falt";
 import { Falt, INPUT_KLASS, Meddelanderuta, PRIMARKNAPP_KLASS } from "@/components/skarm";
 import { TilltradesdatumFalt } from "@/components/tilltradesdatum-falt";
@@ -259,14 +260,7 @@ export function InstallningarForm({
         etikett="Ägarandel"
         hjalp="Anges i procent. Lämna tomt om du äger hela bostaden själv."
       >
-        <input
-          type="text"
-          name="agarandel"
-          inputMode="decimal"
-          defaultValue={agarandel}
-          className={INPUT_KLASS}
-          placeholder="t.ex. 50"
-        />
+        <AgarandelFalt name="agarandel" defaultValue={agarandel} />
       </Falt>
 
       {arBostadsratt ? (
