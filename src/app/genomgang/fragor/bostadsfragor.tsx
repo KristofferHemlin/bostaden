@@ -2,9 +2,10 @@
 
 // De tva bostadsfragorna (produktspec 4.1, 4.6): stalls EN gang per bostad,
 // som ett steg fore den forsta hogen i genomgangen – inte i registreringen,
-// och aldrig per atgard. Blockerar genomgangen tills de ar besvarade
-// (<FragorSida> renderar bara den har komponenten sa lange
-// bostad.bostadsfragor_besvarade ar false), eftersom reparationsdelen annars
+// och aldrig per atgard. Blockerar genomgangen tills de ar besvarade (bade
+// <GenomgangSida> och <FragorSida> renderar bara den har komponenten sa
+// lange bostad.bostadsfragor_besvarade ar false, oavsett vilken av de tva
+// som utlöste grinden – se `nasta` nedan), eftersom reparationsdelen annars
 // inte gar att rakna. Gar att andra i installningarna efterat.
 //
 // Aterananvander <Fraga> och <Kortval> fran fragetradet.tsx – samma monster
@@ -13,11 +14,21 @@
 //
 // Inget forval (samma princip som skickskalan, docs/design.md): ett
 // obesvarat "Var du forsta agaren?" far aldrig visas som forifyllt "Nej".
+//
+// `nasta` (produktspec 4.1, "Efter frågorna hamnar man i grupperingen"):
+// vart sparaBostadsfragor skickar anvandaren efter svaret. Standard ar
+// grupperingen – den som just svarat forsta gangen har per definition inget
+// grupperat, och fas 2 skulle bara mota hen med "Inget mer att klassificera".
+// Undantaget ar ingangen fran ett enskilt projekts "Klassificera hogen", dar
+// nagot faktiskt finns att klassificera – den ingangen skickar hit
+// "/genomgang/fragor" i stallet, sa flodet fortsatter dit den redan var pa
+// vag.
 
 import { useActionState, useState } from "react";
 import { sparaBostadsfragor, type BostadsfragorResultat } from "./actions";
 import { Fraga, Kortval } from "@/app/projekt/fragetradet";
 import { PRIMARKNAPP_KLASS } from "@/components/skarm";
+import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 
 const START: BostadsfragorResultat = {};
 
@@ -30,13 +41,18 @@ const HJALP_OMBILDNING =
 
 type JaNej = "" | "ja" | "nej";
 
-export function Bostadsfragor() {
+export function Bostadsfragor({
+  nasta = "/genomgang",
+}: {
+  nasta?: "/genomgang" | "/genomgang/fragor";
+}) {
   const [resultat, action, pagar] = useActionState(sparaBostadsfragor, START);
   const [forstaAgare, setForstaAgare] = useState<JaNej>("");
   const [ombildning, setOmbildning] = useState<JaNej>("");
+  const hanteraSubmit = useForhindraDubbelinskick(pagar);
 
   return (
-    <form action={action} className="flex flex-col gap-6 p-5">
+    <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-6 p-5">
       <p className="font-granssnitt text-sm text-text-dampad">
         Två frågor om bostaden, en gång för alla. Svaren avgör om reparationer
         senare kan räknas som avdrag – du kan ändra dem i inställningarna om
@@ -83,6 +99,7 @@ export function Bostadsfragor() {
         name="ombildning"
         value={forstaAgare === "ja" ? ombildning : ""}
       />
+      <input type="hidden" name="nasta" value={nasta} />
 
       {resultat.fel ? (
         <p className="font-granssnitt text-sm text-accent-mork">

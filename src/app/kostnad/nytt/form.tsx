@@ -84,6 +84,7 @@ import { skapaUtkast, sparaKostnad, type KostnadResultat } from "./actions";
 import { analyseraBilaga, taBortBilaga } from "@/app/kostnad/bilaga-actions";
 import { UtkastRaderaKnapp } from "@/app/kostnad/utkast-radera";
 import { BeloppFalt } from "@/components/belopp-falt";
+import { forsokBorjaInskickning, useDubbelinskickRef } from "@/lib/dubbelinskick";
 import {
   Falt,
   INPUT_KLASS,
@@ -227,6 +228,12 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
   // andras efterat.
   const bilagaBekraftadRef = useRef(false);
   const [visaBilagaDialog, setVisaBilagaDialog] = useState(false);
+
+  // Skydd mot dubbel inskickning (CLAUDE.md, "Ingen knapp får skickas två
+  // gånger") – se src/lib/dubbelinskick.ts. En ref, inte bara `disabled` på
+  // knappen: den läses och skrivs synkront i hanteraSubmit, sa ett snabbt
+  // dubbelklick fangas aven om `pagar` inte hunnit rendera om annu.
+  const pagarRef = useDubbelinskickRef(pagar);
 
   // Forhandsvisning direkt vid val, innan sparning – ett filnamn i gra text ar
   // inte en bekraftelse pa att ratt fil valts (docs/design.md, "Bilagor").
@@ -533,16 +540,28 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
     setValdIndex((v) => (index >= 0 && index < v ? v - 1 : v));
   }
 
-  // Fangar formularsubmit INNAN server-actionen skicka() kors, sa att
-  // sparningen kan stoppas nar bilaga saknas helt (produktspec avsnitt 4.7).
-  // Ar poster.length redan 0 och anvandaren INTE redan valt "Spara ändå" i
-  // det har formularet visas dialogen i stallet, och sjalva sparningen vantar
-  // tills anvandaren svarat.
+  // Enda vagen in till skicka() – formularet har medvetet INGEN action-propp
+  // (se formulartaggen nedan). En `<form action={fn}>` skulle lata webblasaren
+  // trigga fn via sin egen, separata submit-hantering, och da beror det pa
+  // exakt hur React internt ordnar den mot onSubmit huruvida ett
+  // e.preventDefault() har hinner stoppa den – ordningen ar inte nagot att
+  // bygga en pengablockerande dialog eller ett dubbelklicksskydd pa.
+  // hanteraSubmit ager darfor HELA flodet sjalv, i tur och ordning:
+  //   1. Bilagan saknas och anvandaren har inte redan bekraftat "Spara ändå"
+  //      (produktspec avsnitt 4.7) – visa dialogen i stallet, vanta pa svar.
+  //      Ingen sparning har paborjats an, sa dubbelinskicksspärren far INTE
+  //      lasas har – annars skulle ett andra klick medan dialogen star oppen
+  //      bara tyst ignoreras i stallet for att oppna den pa nytt.
+  //   2. Dubbelinskick (pagarRef, synkron – se src/lib/dubbelinskick.ts).
+  //   3. Annars: bygg FormData fran formularet och kor skicka().
   function hanteraSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     if (poster.length === 0 && !bilagaBekraftadRef.current) {
-      e.preventDefault();
       setVisaBilagaDialog(true);
+      return;
     }
+    if (!forsokBorjaInskickning(pagarRef)) return;
+    void skicka(new FormData(e.currentTarget));
   }
 
   // "Bifoga något": stanger dialogen och oppnar filvaljaren direkt – anvandaren
@@ -648,7 +667,6 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
     <>
     <form
       ref={formRef}
-      action={skicka}
       onSubmit={hanteraSubmit}
       className="flex flex-col gap-5 p-5"
     >
@@ -958,7 +976,7 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
           (docs/design.md, "Datum i kostnadsformularet"). En avvikande betaldag
           hor till "Andra uppgifter". */}
       <Falt
-        etikett="Kvittots datum"
+        etikett="Datum"
         obligatoriskt
         hjalp={faltStatus(falt.datum.trim() === "")}
       >

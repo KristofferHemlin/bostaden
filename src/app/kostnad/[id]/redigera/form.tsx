@@ -35,6 +35,7 @@ import {
   PRIMARKNAPP_KLASS,
   UtfallbarSektion,
 } from "@/components/skarm";
+import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { formateraBeloppInmatning, formateraKronor } from "@/lib/format";
 
 const START: KostnadRedigeraResultat = {};
@@ -67,6 +68,8 @@ export function RedigeraKostnadForm({
   const [resultat, spara, sparar] = useActionState(redigeraKostnad, START);
   const [radera, raderaAction, raderar] = useActionState(taBortKostnad, START);
   const [bekraftaRadera, setBekraftaRadera] = useState(false);
+  const hanteraSparaSubmit = useForhindraDubbelinskick(sparar);
+  const hanteraRaderaSubmit = useForhindraDubbelinskick(raderar);
   const [totalbelopp, setTotalbelopp] = useState(() =>
     formateraBeloppInmatning(varden.totalbelopp),
   );
@@ -81,7 +84,7 @@ export function RedigeraKostnadForm({
 
   return (
     <>
-      <form action={spara} className="flex flex-col gap-5 p-5">
+      <form action={spara} onSubmit={hanteraSparaSubmit} className="flex flex-col gap-5 p-5">
         <input type="hidden" name="kostnad_id" value={kostnadId} />
 
         <Falt etikett="Leverantör" obligatoriskt>
@@ -121,7 +124,7 @@ export function RedigeraKostnadForm({
           </div>
         )}
 
-        <Falt etikett="Kvittots datum" obligatoriskt>
+        <Falt etikett="Datum" obligatoriskt>
           <input
             type="date"
             name="dokumentdatum"
@@ -219,7 +222,11 @@ export function RedigeraKostnadForm({
           spara-knappen och bakom ett bekraftelsesteg. */}
       <div className="border-t border-linje p-5">
         {bekraftaRadera ? (
-          <form action={raderaAction} className="flex flex-col gap-3">
+          <form
+            action={raderaAction}
+            onSubmit={hanteraRaderaSubmit}
+            className="flex flex-col gap-3"
+          >
             <input type="hidden" name="kostnad_id" value={kostnadId} />
             <p className="font-granssnitt text-sm text-text-primar">
               Ta bort kvittot och alla dess bilagor? Det går inte att ångra.

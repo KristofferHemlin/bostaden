@@ -20,6 +20,7 @@ import {
   PRIMARKNAPP_KLASS,
   SANDKNAPP_KLASS,
 } from "@/components/skarm";
+import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 
 const START: AuthResultat = {};
 
@@ -35,6 +36,7 @@ export default function LoginSida() {
 function LoginInnehall() {
   const [lage, setLage] = useState<"losenord" | "magisk">("losenord");
   const [resultat, action, pagar] = useActionState(hanteraAuth, START);
+  const hanteraSubmit = useForhindraDubbelinskick(pagar);
   // Registreringsflodet skickar hit med ?epost=... nar adressen redan har ett
   // konto (docs/design.md, Registreringsflodet) – forifyll den da.
   const forifyllEpost = useSearchParams().get("epost") ?? "";
@@ -59,7 +61,7 @@ function LoginInnehall() {
         </header>
 
         <div className="rounded-xl bg-yta-upphojd p-5">
-          <form action={action} className="flex flex-col gap-4">
+          <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-4">
             <Falt etikett="E-post">
               <input
                 type="email"

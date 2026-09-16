@@ -43,7 +43,13 @@ Genomgången är två faser: gruppera först, klassificera sedan. Skälet är at
 
 Förslag är alltid förslag. Ingen hög skapas utan att användaren godkänt den.
 
-Högens namn föreslås från första kvittots anteckning och går att ändra. Det namnet blir grupperingens namn och hamnar i K6A-underlagets åtgärdskolumn, så det ska vara begripligt för någon som inte var där.
+**Högen får inget namn i fas 1.** Namnet är svaret på frågeträdets första fråga, "Vad gjorde du?", och ställs en gång – i fas 2. Att be om det vid grupperingen är att ställa samma fråga två gånger, i ett ögonblick där användaren bara vill sortera.
+
+Fram till dess visas högen som antal och leverantörer: `2 kvitton · BAUHAUS, Jysk`. Det är ärligare än ett påhittat namn, och det gör att listan går att känna igen medan man sorterar.
+
+Förvalet i frågeträdet hämtas från första kvittots anteckning när det finns en. Finns bara en leverantör att falla tillbaka på lämnas fältet **tomt** – "JANS MÅLERI AB" i åtgärdskolumnen säger ingenting om vad som gjordes, och ett ifyllt fält ser färdigt ut och godkänns utan eftertanke.
+
+Namnet hamnar i underlagets åtgärdskolumn, så det ska vara begripligt för någon som inte var där. Etiketten säger det: *namnet hamnar i ditt deklarationsunderlag – skriv så att någon annan förstår.*
 
 **"Räknas inte" är en egen hög.** Dit dras kvitton som var privata eller av annat skäl inte hör till underlaget. Den högen ställer inga frågor, och de kvittona dyker aldrig upp i genomgången igen. Bilaga och belopp ligger kvar i arkivet – det är en klassificering, inte en radering.
 
@@ -111,6 +117,10 @@ Skälet är att genomgången redan är produktens tyngsta moment. Ett tomt textf
 De hör inte hemma i registreringen. Den är avsiktligt kort, frågorna är svåra att svara på innan man vet varför de ställs, och de påverkar ingenting förrän något klassificeras. I genomgången finns tid och sammanhanget är uppenbart – det är redan appens enda skärm där svåra frågor hör hemma.
 
 **De blockerar genomgången tills de besvarats.** Utan svaret går reparationsdelen inte att räkna. Det är rätt plats för ett krav; inmatningen är det inte.
+
+**Efter frågorna hamnar man i grupperingen**, oavsett vilken ingång som utlöste grinden. Den som just svarat för första gången har per definition inget grupperat, och att skicka hen till frågeträdet ger en skärm som säger att allt är klart medan kvittona ligger osorterade.
+
+Undantaget är ingången från ett enskilt projekt: där finns en hög att klassificera, och efter bostadsfrågorna fortsätter man till just den högens frågor.
 
 Frågorna ska gå att ändra i inställningarna efteråt, som allt annat om bostaden.
 
@@ -384,7 +394,9 @@ Ingången är alltid en och samma knapp. Fråga aldrig användaren om dokumentty
 
 **Ingen projektkoppling sker här.** Klassificeringen hör till genomgången, som användaren startar när hen själv vill. Ett kvitto som just sparats är oklassificerat, och det är det normala tillståndet.
 
-**Datumfältet heter samma sak överallt.** I inmatningen finns ett fält, i redigeringsvyn två – men det gemensamma fältet ska ha samma etikett på båda ställena, annars undrar användaren vilket av dem hen fyllde i. "Kvittots datum" i båda.
+**Datumfältet heter "Datum" överallt.** I inmatningen finns ett fält, i redigeringsvyn två – men det gemensamma fältet ska ha samma etikett på båda ställena, annars undrar användaren vilket av dem hen fyllde i.
+
+Inte "Kvittots datum": rutan ovanför heter "Kvitto eller faktura" just för att båda ska rymmas, och en fakturas datum är inte ett kvittos. I redigeringsvyn står "Datum" bredvid "Betaldatum", och de två läses naturligt som dokumentets datum och betalningens.
 
 Betaldatum som avviker från kvittots datum, uppdelning och koppling till en gruppering görs i efterhand från kvittots detaljvy. Inget av det är brådskande – till skillnad från att fånga kvittot medan det finns.
 

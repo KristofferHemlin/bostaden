@@ -6,6 +6,7 @@ import { AgarandelFalt } from "@/components/agarandel-falt";
 import { BeloppFalt } from "@/components/belopp-falt";
 import { Falt, INPUT_KLASS, Meddelanderuta, PRIMARKNAPP_KLASS } from "@/components/skarm";
 import { TilltradesdatumFalt } from "@/components/tilltradesdatum-falt";
+import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { formateraBeloppInmatning } from "@/lib/format";
 import { sparaInstallningar, type InstallningarResultat } from "./actions";
 
@@ -87,6 +88,7 @@ export function InstallningarForm({
   ombildningFranHyresratt: boolean;
 }) {
   const [resultat, action, pagar] = useActionState(sparaInstallningar, START);
+  const hanteraSubmit = useForhindraDubbelinskick(pagar);
   const [upplatelseformVal, setUpplatelseformVal] = useState(upplatelseform);
   const [forstaAgare, setForstaAgare] = useState<"ja" | "nej">(
     nybyggdVidForvarv ? "ja" : "nej",
@@ -126,7 +128,7 @@ export function InstallningarForm({
   }
 
   return (
-    <form action={action} className="flex flex-col gap-5 p-5">
+    <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-5 p-5">
       <div>
         <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
           Vad äger du?

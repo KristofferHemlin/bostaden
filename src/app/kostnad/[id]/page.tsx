@@ -9,7 +9,7 @@
 
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { aterforTillGenomgang } from "./actions";
+import { AterforKnapp } from "./aterfor-knapp";
 import { Bilagor } from "./bilagor";
 import { SEKUNDARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
@@ -88,15 +88,7 @@ export default async function KostnadSida({
             Det här kvittot räknas inte med i underlaget. Bild och belopp ligger
             kvar.
           </p>
-          <form action={aterforTillGenomgang} className="mt-2">
-            <input type="hidden" name="kostnad_id" value={kostnad.id} />
-            <button
-              type="submit"
-              className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
-            >
-              Ta tillbaka till genomgången
-            </button>
-          </form>
+          <AterforKnapp kostnadId={kostnad.id} />
         </section>
       ) : null}
 

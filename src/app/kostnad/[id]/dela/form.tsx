@@ -17,6 +17,7 @@ import { useActionState, useState } from "react";
 import { delaUppKostnad, type KostnadRedigeraResultat } from "../actions";
 import { BeloppFalt } from "@/components/belopp-falt";
 import { Falt, INPUT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
+import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import {
   formateraBeloppInmatning,
   formateraKronor,
@@ -54,6 +55,7 @@ export function DelaUppForm({
   startRader: Startrad[];
 }) {
   const [resultat, spara, sparar] = useActionState(delaUppKostnad, START);
+  const hanteraSubmit = useForhindraDubbelinskick(sparar);
 
   const [rader, setRader] = useState<Rad[]>(() =>
     startRader.map((r, i) => ({
@@ -106,7 +108,7 @@ export function DelaUppForm({
   const garIhop = differens === 0;
 
   return (
-    <form action={skicka} className="flex flex-col">
+    <form action={skicka} onSubmit={hanteraSubmit} className="flex flex-col">
       <input type="hidden" name="kostnad_id" value={kostnadId} />
 
       <div className="border-b border-linje px-5 py-4">

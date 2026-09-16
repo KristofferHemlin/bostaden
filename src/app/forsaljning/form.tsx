@@ -7,6 +7,7 @@ import { useActionState, useState } from "react";
 import { markeraSald, type ForsaljningResultat } from "./actions";
 import { BeloppFalt } from "@/components/belopp-falt";
 import { Falt, INPUT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
+import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { formateraBeloppInmatning } from "@/lib/format";
 
 const START: ForsaljningResultat = {};
@@ -22,9 +23,10 @@ export function ForsaljningForm({
 }) {
   const [resultat, action, pagar] = useActionState(markeraSald, START);
   const [pris, setPris] = useState(() => formateraBeloppInmatning(forvaltPris));
+  const hanteraSubmit = useForhindraDubbelinskick(pagar);
 
   return (
-    <form action={action} className="flex flex-col gap-6 p-5">
+    <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-6 p-5">
       <Falt etikett="Försäljningsdatum" obligatoriskt>
         <input
           type="date"

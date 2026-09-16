@@ -240,6 +240,24 @@ Skälet är att ett kvitto ofta läggs in långt efter att det betalades – ett
 
 Projekt och kostnader visas som rader avdelade med 1px linjer, inte som separata kort. Varje rad har namnet på första raden och en dämpad andra rad med kategori eller status, med beloppet högerställt på samma höjd som namnet. Rader vars status kräver åtgärd markeras med en liten fylld prick i `--accent` före den dämpade texten, inte genom att färga hela raden. Med flera rader i samma läge blir orange text en vägg av varningar, och färgen tappar sin betydelse.
 
+**Projektlistan visar sina kvitton.** Under varje projekts namn står de kvitton som hör dit, med leverantör och datum. Utan dem är raden ett belopp utan förklaring, och den som undrar var summan kommer ifrån måste öppna varje projekt.
+
+De visas direkt, inte bakom en utfällning. Utfällbara sektioner är till för valfria delar; kvittona är vad raden faktiskt består av. Är de fler än fem klipps listan med en dämpad rad som säger hur många som återstår.
+
+**Samma belopp ska se likadant ut överallt.** Kvittolistan visar en kostnad före ROT-avdrag, projektlistan efter. Samma kvitto står då som 34 425 kr på en skärm och 26 925 kr på en annan, utan att något säger vilket som är vilket.
+
+Visa beloppet före avräkning i listor över kvitton – det är summan på pappret, och det är den användaren känner igen. Där ett avräknat belopp visas ska skillnaden framgå, på samma sätt som PDF-paketets rad "varav ROT 7 500 kr, avgår".
+
+**Ett tillstånd är inte en kategori.** "Behöver klassificeras" står i dag under rubriken Kategori på projektets detaljvy. Kategorin är grundförbättring eller reparation; att svaret saknas är något annat. Utelämna fältet tills det har ett värde, och låt tillståndet stå för sig.
+
+**Vägen in i genomgången får aldrig försvinna.** Raden som räknar oklassificerat ska visas så länge något är oklassificerat – även när kvittona redan är grupperade. En hög som saknar svar på frågeträdet räknas som oklassificerad, precis som ett kvitto utan hög.
+
+I dag räknar villkoret bara kvitton utan gruppering, vilket gör att raden försvinner så fort man grupperat allt men inte svarat på något. Då finns ingen väg tillbaka in i genomgången från kvittolistan.
+
+**Orange markerar att man går framåt, inte att något händer.** I klassificeringsgenomgången finns tre handlingar som i dag ser likadana ut: skapa en hög, gå vidare till frågorna, klassificera en hög. Tre orange knappar på tre skärmar som gör helt olika saker gör flödet svårläst.
+
+Orange bärs av den knapp som tar användaren till nästa steg. Handlingar som ändrar något på samma skärm – skapa en hög, lägga till i en hög, flytta ut ett kvitto – är sekundära och bär inte orange. Regeln är densamma som på startskärmen: ett orange element per skärm.
+
 **En åtgärd på en rad byter aldrig sida.** Raderas ett utkast, arkiveras en kostnad eller ändras något direkt i listan, uppdateras den sida man står på – man hamnar inte på en annan vy. Två saker sker då på ett klick och bara det ena var efterfrågat, och dessutom tappar man sin plats i listan.
 
 Fällan uppstår när en kontroll återanvänds mellan skärmar: en raderingsknapp som navigerar tillbaka till kvittolistan är rätt *på* kvittolistan, men blir en omdirigering när samma knapp används på startskärmen. Kontrollen ska uppdatera, inte navigera – vart användaren vill gå härnäst bestämmer hen själv.
@@ -503,6 +521,8 @@ Fältet visar årets belopp i förhållande till tröskeln, men fylls aldrig mer
 ### Projektfrågorna
 
 Frågeträdet avgör om ett avdrag håller, så det får inte kortas bort – men frågorna ska ställas så att man förstår dem utan att kunna skattereglerna.
+
+**Ange aldrig hur många frågorna är.** Antalet varierar mellan tre och sju beroende på vilken gren användaren hamnar i – en ren grundförbättring får varken kvalitets- eller skickfrågor. En text som lovar "fyra frågor per hög" blir fel i de flesta fall, och siffran tillför ingenting.
 
 **Varje fråga får en hjälpruta med konkreta exempel**, på samma sätt som Skatteverkets egen tjänst: vad som räknas som ändrad planlösning, vad bättre kvalitet betyder, hur merkostnaden uppskattas. Rutan är utfälld som standard och går att stänga. Det gör skärmen lång, och det är rätt pris – genomgången är produktens tyngsta moment och den enda plats där skatteterminologi hör hemma.
 

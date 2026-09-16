@@ -90,7 +90,11 @@ export async function sparaInstallningar(
   // inte kunnat andra dem.
   const bostadNu = await prisma.bostad.findUniqueOrThrow({
     where: { id: bostadId },
-    select: { upplatelseform: true, forsaljningsdatum: true },
+    select: {
+      upplatelseform: true,
+      forsaljningsdatum: true,
+      bostadsfragor_besvarade: true,
+    },
   });
   if (bostadNu.forsaljningsdatum && upplatelseform !== bostadNu.upplatelseform) {
     return {
@@ -138,11 +142,19 @@ export async function sparaInstallningar(
 
   // Bostadsfragorna (produktspec 4.1, 4.6). Formularet har alltid ett
   // konkret val forvalt (aldrig ett obesvarat forval, till skillnad fran
-  // genomgangens forsta-gangen-skarm), sa nagon tolkningsgrind behovs inte
-  // har. Att spara har rakan bostadsfragor_besvarade = true – anvandaren har
-  // just sett och bekraftat ett varde, aven om det rakar vara det som redan
-  // lag i databasen – sa att genomgangens blockerande steg inte visas i onodan
-  // for nagon som redan svarat har.
+  // genomgangens forsta-gangen-skarm) – sa den har sparningen far ALDRIG
+  // sjalv satta bostadsfragor_besvarade till true. Ett forval ar inte ett
+  // svar: sparar anvandaren nagot helt annat (t.ex. bara storleken) innan
+  // genomgangen nagonsin korts, skulle "nej" annars tystas ned som ett
+  // bekraftat svar ingen faktiskt gett – exakt den gissning produktspec 4.1
+  // varnar for ("fragorna ar svara att svara pa innan man vet varfor de
+  // stalls"), och en felaktig nybyggd_vid_forvarv paverkar reparationsdelen
+  // direkt. Flaggan far bara ga fran false till true fran sjalva
+  // Bostadsfragor-skarmen (genomgang/fragor/actions.ts, sparaBostadsfragor).
+  // Ar den redan true (anvandaren har redan svarat, nagon gang) later denna
+  // sparning den forbli true som vanligt – "Fragorna ska ga att andra i
+  // installningarna efterat" (produktspec 4.1) galler bara nar de faktiskt
+  // ar besvarade sedan tidigare.
   const nybyggdVidForvarv = las("forsta_agare") === "ja";
   const ombildningFranHyresratt = nybyggdVidForvarv && las("ombildning") === "ja";
 
@@ -158,7 +170,7 @@ export async function sparaInstallningar(
       identifiering,
       nybyggd_vid_forvarv: nybyggdVidForvarv,
       ombildning_fran_hyresratt: ombildningFranHyresratt,
-      bostadsfragor_besvarade: true,
+      bostadsfragor_besvarade: bostadNu.bostadsfragor_besvarade,
     },
   });
 

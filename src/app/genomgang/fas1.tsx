@@ -22,6 +22,7 @@ import {
   type GenomgangResultat,
 } from "./actions";
 import { PRIMARKNAPP_KLASS, SEKUNDARKNAPP_KLASS } from "@/components/skarm";
+import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { hogNamnForslag } from "@/doman/genomgang";
 import { formateraKronorEllerStreck } from "@/lib/format";
 
@@ -72,15 +73,31 @@ export function Fas1({
   const [avfardade, setAvfardade] = useState<Set<string>>(new Set());
   const [visaRaknasInte, setVisaRaknasInte] = useState(false);
 
-  const [skapaRes, skapaAction] = useActionState(skapaHog, START);
-  const [laggRes, laggAction] = useActionState(laggIHog, START);
-  const [flyttaRes, flyttaAction] = useActionState(flyttaUturHog, START);
-  const [raknasRes, raknasAction] = useActionState(raknasInte, START);
-  const [dopOmRes, dopOmAction] = useActionState(dopOmHog, START);
-  const [aterforRes, aterforAction] = useActionState(
+  const [skapaRes, skapaAction, skapaPagar] = useActionState(skapaHog, START);
+  const [laggRes, laggAction, laggPagar] = useActionState(laggIHog, START);
+  const [flyttaRes, flyttaAction, flyttaPagar] = useActionState(
+    flyttaUturHog,
+    START,
+  );
+  const [raknasRes, raknasAction, raknasPagar] = useActionState(
+    raknasInte,
+    START,
+  );
+  const [dopOmRes, dopOmAction, dopOmPagar] = useActionState(dopOmHog, START);
+  const [aterforRes, aterforAction, aterforPagar] = useActionState(
     aterforFranRaknasInte,
     START,
   );
+
+  // Skydd mot dubbel inskickning (CLAUDE.md, "Ingen knapp får skickas två
+  // gånger") – se src/lib/dubbelinskick.ts. En egen spärr per action-typ,
+  // eftersom flera av dem har egna formulär flera stallen i sidan.
+  const hanteraSkapaSubmit = useForhindraDubbelinskick(skapaPagar);
+  const hanteraLaggSubmit = useForhindraDubbelinskick(laggPagar);
+  const hanteraFlyttaSubmit = useForhindraDubbelinskick(flyttaPagar);
+  const hanteraRaknasSubmit = useForhindraDubbelinskick(raknasPagar);
+  const hanteraDopOmSubmit = useForhindraDubbelinskick(dopOmPagar);
+  const hanteraAterforSubmit = useForhindraDubbelinskick(aterforPagar);
 
   const fel =
     skapaRes.fel ||
@@ -190,6 +207,7 @@ export function Fas1({
                       skapaAction(fd);
                       nollaUrval();
                     }}
+                    onSubmit={hanteraSkapaSubmit}
                     className="mt-3 flex flex-col gap-2"
                   >
                     {f.kvitto_ider.map((id) => (
@@ -208,8 +226,12 @@ export function Fas1({
                       aria-label="Högens namn"
                     />
                     <div className="flex gap-3">
-                      <button type="submit" className={PRIMARKNAPP_KLASS}>
-                        Skapa hög
+                      <button
+                        type="submit"
+                        disabled={skapaPagar}
+                        className={PRIMARKNAPP_KLASS}
+                      >
+                        {skapaPagar ? "Skapar…" : "Skapa hög"}
                       </button>
                       <button
                         type="button"
@@ -241,7 +263,11 @@ export function Fas1({
                 {/* Namnet redigeras dar hogen syns, inte forst i frågesteget –
                     forslaget ar ofta leverantoren, och namnet hamnar i
                     K6A-underlagets atgardskolumn. */}
-                <form action={dopOmAction} className="flex items-center gap-2">
+                <form
+                  action={dopOmAction}
+                  onSubmit={hanteraDopOmSubmit}
+                  className="flex items-center gap-2"
+                >
                   <input type="hidden" name="projekt_id" value={h.id} />
                   <input
                     type="text"
@@ -253,9 +279,10 @@ export function Fas1({
                   />
                   <button
                     type="submit"
-                    className="shrink-0 font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
+                    disabled={dopOmPagar}
+                    className="shrink-0 font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
                   >
-                    Byt namn
+                    {dopOmPagar ? "Byter…" : "Byt namn"}
                   </button>
                 </form>
                 <ul className="mt-2 space-y-1.5">
@@ -271,7 +298,10 @@ export function Fas1({
                         <span className="tabular-nums text-text-dampad">
                           {formateraKronorEllerStreck(k.belopp)}
                         </span>
-                        <form action={flyttaAction}>
+                        <form
+                          action={flyttaAction}
+                          onSubmit={hanteraFlyttaSubmit}
+                        >
                           <input
                             type="hidden"
                             name="projekt_id"
@@ -284,7 +314,8 @@ export function Fas1({
                           />
                           <button
                             type="submit"
-                            className="font-granssnitt text-xs text-text-sekundar underline hover:text-text-primar"
+                            disabled={flyttaPagar}
+                            className="font-granssnitt text-xs text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
                           >
                             Flytta ut
                           </button>
@@ -304,6 +335,7 @@ export function Fas1({
                       laggAction(fd);
                       nollaUrval();
                     }}
+                    onSubmit={hanteraLaggSubmit}
                     className="mt-3"
                   >
                     <input type="hidden" name="projekt_id" value={h.id} />
@@ -317,9 +349,10 @@ export function Fas1({
                     ))}
                     <button
                       type="submit"
-                      className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
+                      disabled={laggPagar}
+                      className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
                     >
-                      Lägg {valda.size} valda här
+                      {laggPagar ? "Lägger till…" : `Lägg ${valda.size} valda här`}
                     </button>
                   </form>
                 ) : null}
@@ -386,6 +419,7 @@ export function Fas1({
                 skapaAction(fd);
                 nollaUrval();
               }}
+              onSubmit={hanteraSkapaSubmit}
               className="flex flex-col gap-2"
             >
               {[...valda].map((id) => (
@@ -409,8 +443,16 @@ export function Fas1({
                 className="w-full rounded-lg border-0 bg-yta-upphojd px-3 py-2 font-granssnitt text-sm text-text-primar outline-none focus:ring-2 focus:ring-accent"
                 aria-label="Nya högens namn"
               />
-              <button type="submit" className={PRIMARKNAPP_KLASS}>
-                {valda.size === 1 ? "Skapa hög av kvittot" : "Skapa ny hög av valda"}
+              <button
+                type="submit"
+                disabled={skapaPagar}
+                className={PRIMARKNAPP_KLASS}
+              >
+                {skapaPagar
+                  ? "Skapar…"
+                  : valda.size === 1
+                    ? "Skapa hög av kvittot"
+                    : "Skapa ny hög av valda"}
               </button>
             </form>
             <form
@@ -418,6 +460,7 @@ export function Fas1({
                 raknasAction(fd);
                 nollaUrval();
               }}
+              onSubmit={hanteraRaknasSubmit}
             >
               {[...valda].map((id) => (
                 <input
@@ -429,9 +472,10 @@ export function Fas1({
               ))}
               <button
                 type="submit"
-                className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
+                disabled={raknasPagar}
+                className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
               >
-                Räknas inte med
+                {raknasPagar ? "Sparar…" : "Räknas inte med"}
               </button>
             </form>
           </div>
@@ -468,13 +512,14 @@ export function Fas1({
                     <span className="font-granssnitt text-sm tabular-nums text-text-dampad">
                       {formateraKronorEllerStreck(k.belopp)}
                     </span>
-                    <form action={aterforAction}>
+                    <form action={aterforAction} onSubmit={hanteraAterforSubmit}>
                       <input type="hidden" name="kostnad_id" value={k.id} />
                       <button
                         type="submit"
-                        className="font-granssnitt text-xs text-text-sekundar underline hover:text-text-primar"
+                        disabled={aterforPagar}
+                        className="font-granssnitt text-xs text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
                       >
-                        Ta tillbaka
+                        {aterforPagar ? "Tar tillbaka…" : "Ta tillbaka"}
                       </button>
                     </form>
                   </span>

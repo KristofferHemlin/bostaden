@@ -20,6 +20,7 @@ import {
   type FragetradetVarden,
 } from "../../fragetradet";
 import { PRIMARKNAPP_KLASS } from "@/components/skarm";
+import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 
 const START: ProjektResultat = {};
 
@@ -41,10 +42,16 @@ export function RedigeraProjektForm({
   const [resultat, spara, sparar] = useActionState(redigeraProjekt, START);
   const [radera, raderaAction, raderar] = useActionState(taBortProjekt, START);
   const [bekraftaRadera, setBekraftaRadera] = useState(false);
+  const hanteraSparaSubmit = useForhindraDubbelinskick(sparar);
+  const hanteraRaderaSubmit = useForhindraDubbelinskick(raderar);
 
   return (
     <>
-      <form action={spara} className="flex flex-col gap-6 p-5">
+      <form
+        action={spara}
+        onSubmit={hanteraSparaSubmit}
+        className="flex flex-col gap-6 p-5"
+      >
         <input type="hidden" name="projekt_id" value={projektId} />
 
         <FragetradetFalt initial={varden} />
@@ -89,7 +96,11 @@ export function RedigeraProjektForm({
             </ul>
           </div>
         ) : bekraftaRadera ? (
-          <form action={raderaAction} className="flex flex-col gap-3">
+          <form
+            action={raderaAction}
+            onSubmit={hanteraRaderaSubmit}
+            className="flex flex-col gap-3"
+          >
             <input type="hidden" name="projekt_id" value={projektId} />
             <p className="font-granssnitt text-sm text-text-primar">
               Ta bort projektet? Det går inte att ångra. Kostnader påverkas inte

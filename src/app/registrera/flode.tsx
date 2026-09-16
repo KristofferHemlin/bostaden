@@ -25,6 +25,7 @@ import {
   SEKUNDARKNAPP_KLASS,
 } from "@/components/skarm";
 import { TilltradesdatumFalt } from "@/components/tilltradesdatum-falt";
+import { forsokBorjaInskickning, useDubbelinskickRef } from "@/lib/dubbelinskick";
 import { slutforRegistrering, type RegistreringResultat } from "./actions";
 import { AdressFalt } from "./adress-falt";
 
@@ -43,6 +44,7 @@ export function RegistreraFlode({
   endastBostad?: boolean;
 }) {
   const [resultat, action, pagar] = useActionState(slutforRegistrering, START);
+  const pagarRef = useDubbelinskickRef(pagar);
 
   const forstaSteg = endastBostad ? 2 : 1;
   const sistaSteg = 2;
@@ -96,6 +98,14 @@ export function RegistreraFlode({
       e.preventDefault();
       setLokaltFel(null);
       setSteg(2);
+      return;
+    }
+    // Skydd mot dubbel inskickning (CLAUDE.md, "Ingen knapp får skickas två
+    // gånger") – se src/lib/dubbelinskick.ts. Gäller bara härifrån och ner:
+    // stegen ovan (validering, bläddring utan serveranrop) rör aldrig
+    // servern och ska inte spärras av ett tidigare pågående anrop.
+    if (!forsokBorjaInskickning(pagarRef)) {
+      e.preventDefault();
       return;
     }
     // Ovriga fall lamnas till formularets action:

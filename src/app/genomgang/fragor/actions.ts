@@ -144,8 +144,19 @@ export async function sparaBostadsfragor(
     };
   }
 
+  revalidatePath("/genomgang");
   revalidatePath("/genomgang/fragor");
   revalidatePath("/installningar");
   revalidatePath("/export");
-  redirect("/genomgang/fragor");
+
+  // Produktspec 4.1, "Efter frågorna hamnar man i grupperingen, oavsett
+  // vilken ingång som utlöste grinden": den som just svarat forsta gangen
+  // har per definition inget grupperat, sa standard ar grupperingen –
+  // fas 2 skulle bara mota hen med "Inget mer att klassificera". Undantaget
+  // ar ingangen fran ett enskilt projekts "Klassificera hogen"
+  // (bostadsfragor.tsx skickar da med nasta="/genomgang/fragor"), dar nagot
+  // faktiskt finns att klassificera. Whitelistad – `nasta` ar anvandarstyrd
+  // formdata, och ett ovaliderat varde hade varit en open redirect.
+  const nasta = formData.get("nasta");
+  redirect(nasta === "/genomgang/fragor" ? "/genomgang/fragor" : "/genomgang");
 }

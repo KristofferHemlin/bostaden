@@ -23,6 +23,10 @@ export default async function FragorSida() {
   // Bostadsfragorna (produktspec 4.1) blockerar hela fas 2 tills de ar
   // besvarade – reparationsdelen gar annars inte att rakna. Stalls forst,
   // fore forsta hogen, aven om det just nu inte finns nagon hog att visa.
+  // nasta="/genomgang/fragor": den har ingangen (t.ex. "Klassificera hogen"
+  // fran ett enskilt projekt) har faktiskt nagot att klassificera, sa
+  // sparaBostadsfragor ska fortsatta hit efterat i stallet for standardvalet
+  // grupperingen (se bostadsfragor.tsx).
   if (!bostad.bostadsfragor_besvarade) {
     return (
       <Skarm
@@ -30,7 +34,7 @@ export default async function FragorSida() {
         rubrik="Om bostaden"
         bakLank={{ href: "/genomgang", text: "Grupperingen" }}
       >
-        <Bostadsfragor />
+        <Bostadsfragor nasta="/genomgang/fragor" />
       </Skarm>
     );
   }

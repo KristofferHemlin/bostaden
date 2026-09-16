@@ -11,6 +11,7 @@
 // Genomgangen gar att avbryta nar som helst – varje atgard committas for sig.
 
 import { Fas1 } from "./fas1";
+import { Bostadsfragor } from "./fragor/bostadsfragor";
 import { Skarm } from "@/components/skarm";
 import { arOklassificerad, foreslaHogar } from "@/doman/genomgang";
 import type { GenomgangsKvitto } from "@/doman/genomgang";
@@ -25,8 +26,29 @@ export const dynamic = "force-dynamic";
 export default async function GenomgangSida() {
   const { bostadId } = await kravBostad();
 
-  const [bostad, kostnadRader, projektRader] = await Promise.all([
-    prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } }),
+  const bostad = await prisma.bostad.findUniqueOrThrow({
+    where: { id: bostadId },
+  });
+  const { bostadsnamn } = bostadHeader(bostad);
+
+  // Bostadsfragorna (produktspec 4.1) blockerar HELA genomgangen – inte bara
+  // fragetradet i fas 2, utan aven grupperingen har i fas 1 – tills de ar
+  // besvarade. Kontrollen upprepas i /genomgang/fragor/page.tsx eftersom den
+  // ocksa gar att na direkt (t.ex. "Klassificera hogen" fran en enskild
+  // projektsida), utan att passera den har sidan forst.
+  if (!bostad.bostadsfragor_besvarade) {
+    return (
+      <Skarm
+        bostadsnamn={bostadsnamn}
+        rubrik="Om bostaden"
+        bakLank={{ href: "/", text: "Översikt" }}
+      >
+        <Bostadsfragor nasta="/genomgang" />
+      </Skarm>
+    );
+  }
+
+  const [kostnadRader, projektRader] = await Promise.all([
     prisma.kostnad.findMany({
       where: { bostad_id: bostadId },
       include: { rader: { include: { fordelningar: true } } },
@@ -37,7 +59,6 @@ export default async function GenomgangSida() {
       orderBy: { skapad_at: "asc" },
     }),
   ]);
-  const { bostadsnamn } = bostadHeader(bostad);
 
   const kvittoDatum = (k: (typeof kostnadRader)[number]) => {
     // Ett utkast saknar bade betaldatum och dokumentdatum.

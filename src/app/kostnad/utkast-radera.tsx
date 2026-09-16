@@ -33,6 +33,7 @@ import {
   taBortUtkastRad,
   type KostnadRedigeraResultat,
 } from "./[id]/actions";
+import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 
 const START: KostnadRedigeraResultat = {};
 
@@ -45,11 +46,13 @@ export function UtkastRaderaKnapp({
 }) {
   const action = lage === "ikon" ? taBortUtkastRad : taBortKostnad;
   const [resultat, raderaAction, raderar] = useActionState(action, START);
+  const hanteraSubmit = useForhindraDubbelinskick(raderar);
 
   if (lage === "ikon") {
     return (
       <form
         action={raderaAction}
+        onSubmit={hanteraSubmit}
         className="flex shrink-0 flex-col items-center justify-center pl-2 pr-3"
       >
         <input type="hidden" name="kostnad_id" value={kostnadId} />
@@ -71,7 +74,7 @@ export function UtkastRaderaKnapp({
   }
 
   return (
-    <form action={raderaAction} className="flex flex-col gap-2">
+    <form action={raderaAction} onSubmit={hanteraSubmit} className="flex flex-col gap-2">
       <input type="hidden" name="kostnad_id" value={kostnadId} />
       {resultat.fel ? (
         <p className="font-granssnitt text-sm text-accent-mork">{resultat.fel}</p>

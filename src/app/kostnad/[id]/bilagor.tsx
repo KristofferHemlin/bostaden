@@ -51,6 +51,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { revalideraKostnadssida, taBortBilagaAction } from "./actions";
 import type { BilagaResultat } from "./actions";
+import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { valideraBilaga } from "@/lib/lagring/bilaga-regler";
 import { laddaUppKostnadsbilaga } from "@/lib/lagring/bilaga-klient";
 import type { Bilagevy } from "@/lib/lagring/bilagor";
@@ -101,6 +102,7 @@ export function Bilagor({
     taBortBilagaAction,
     START,
   );
+  const hanteraRaderaSubmit = useForhindraDubbelinskick(raderar);
 
   useEffect(() => {
     if (radera.ok) setBekraftaBilaga(null);
@@ -279,6 +281,7 @@ export function Bilagor({
       {bekraftaBilaga ? (
         <form
           action={raderaAction}
+          onSubmit={hanteraRaderaSubmit}
           className="mt-3 flex flex-col gap-2 rounded-lg bg-yta-nedsankt p-3"
         >
           <input type="hidden" name="bilaga_id" value={bekraftaBilaga.id} />

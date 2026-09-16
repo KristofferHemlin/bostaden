@@ -24,6 +24,7 @@ import {
   INPUT_KLASS,
   PRIMARKNAPP_KLASS,
 } from "@/components/skarm";
+import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { formateraKronor } from "@/lib/format";
 
 const START: FragorResultat = {};
@@ -87,6 +88,7 @@ function HogFormular({
   const [resultat, action, pagar] = useActionState(klassificeraHog, START);
   const [namn, setNamn] = useState(hog.namn);
   const [svar, setSvar] = useState<FragetradetUIState>(TOMMA_SVAR);
+  const hanteraSubmit = useForhindraDubbelinskick(pagar);
 
   return (
     <div className="flex flex-col">
@@ -123,7 +125,7 @@ function HogFormular({
         </ul>
       </section>
 
-      <form action={action} className="flex flex-col gap-6 p-5">
+      <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-6 p-5">
         <input type="hidden" name="projekt_id" value={hog.id} />
 
         <Falt etikett="Vad gjorde du?" obligatoriskt>
