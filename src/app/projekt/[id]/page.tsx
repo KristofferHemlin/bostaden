@@ -11,7 +11,7 @@ import {
   SEKUNDARKNAPP_KLASS,
   Skarm,
 } from "@/components/skarm";
-import { bidragForKostnad } from "@/doman/berakningar";
+import { beloppForKostnad } from "@/doman/berakningar";
 import { atgardKategoriText, SKICK_ORD } from "@/doman/fragetradet";
 import type { Atgardstyp } from "@/doman/typer";
 import { bostadHeader } from "@/lib/bostad-header";
@@ -145,7 +145,11 @@ export default async function ProjektSida({
                       : "Obetald – räknas inte in än"
                   }
                   atgard={!k.betaldatum}
-                  belopp={formateraKronor(bidragForKostnad(k, id))}
+                  // Beloppet pa pappret, inte det ROT-reducerade bidraget
+                  // (docs/design.md, "Samma belopp ska se likadant ut
+                  // overallt") – annars star samma kvitto med tva olika
+                  // summor pa olika skarmar.
+                  belopp={formateraKronor(beloppForKostnad(k, id))}
                 />
               );
             })}

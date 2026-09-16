@@ -5,8 +5,9 @@
 // innan dess (sida 1 och exportvyn i ovrigt fungerar anda, se
 // src/app/export/page.tsx).
 //
-// Fraga 7 (skick_forsaljning per reparation) satts inte har – den byggs i
-// steg 4, som ett eget delsteg i det har flodet.
+// Fraga 7 (skick_forsaljning per reparation) satts inte har utan i
+// src/app/forsaljning/skick – dit gar redirecten nedan direkt efter att
+// datumet sparats.
 //
 // Flodet far inte blockera. Datum kravs for att exporten alls ska ga att
 // skapa, men priset far lamnas tomt.
@@ -70,5 +71,7 @@ export async function markeraSald(
     },
   });
 
-  redirect("/export");
+  // Fraga 7 stalls direkt (produktspec 4.1, CLAUDE.md "Vid markering som
+  // sald"). Sidan sjalv hoppar vidare till /export om inget behover bedomas.
+  redirect("/forsaljning/skick");
 }

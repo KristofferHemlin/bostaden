@@ -90,6 +90,11 @@ export async function hamtaBostadsdata(bostadId: string) {
     projekt: projektRader.map(tillDomanProjekt),
     projektRader,
     kostnader: kostnadRader.map(tillDomanKostnad),
+    // Ravraderna, inte bara den skattelogik-tillplattade domantypen – bara
+    // dessa bar leverantor/anteckning/dokumentdatum, som listor over kvitton
+    // behover for visning (produktspec, "Klassificeringsgenomgangen";
+    // docs/design.md, "Listrader": "Projektlistan visar sina kvitton").
+    kostnadRader,
     regelparametrar: regelparameterRader.map(tillDomanRegelparameter),
   };
 }

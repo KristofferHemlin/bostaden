@@ -1,8 +1,10 @@
 // Steg 7: markera bostaden som sald med datum och pris. Exporten (/export)
 // kraver att detta ar gjort. Flodet ar identiskt for bostadsratt och fastighet.
 //
-// Skickfragan per reparation (fraga 7, skick_forsaljning) byggs i steg 4 –
-// har satts bara sjalva forsaljningsdatumet och priset.
+// Skickfragan per reparation (fraga 7, skick_forsaljning) satts inte har –
+// har satts bara sjalva forsaljningsdatumet och priset. Actionen redirectar
+// till /forsaljning/skick, som staller fragan for varje atgard som behover
+// den (produktspec 4.1, CLAUDE.md "Vid markering som sald").
 
 import { ForsaljningForm } from "./form";
 import { Meddelanderuta, Skarm } from "@/components/skarm";

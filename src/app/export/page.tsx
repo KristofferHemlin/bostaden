@@ -27,6 +27,7 @@ import {
   type K6aExportrad,
   type K6aIndata,
 } from "@/doman/export-k6a";
+import { behoverSkickForsaljning } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
@@ -90,6 +91,14 @@ export default async function ExportSida() {
     // trasigt ut nar de anda inte galler. Full tyngd forst nar allt ar
     // klassificerat, sa att blicken gar till listan over det som aterstar.
     const harOklassificerade = ex.oklassificerade_hogar.length > 0;
+    // Fraga 7 (steg 4): atgarder med reparationsdel vars skick vid
+    // forsaljningen annu inte ar bedomt. Samma urval som /forsaljning/skick
+    // sjalv anvander (behoverSkickForsaljning) – bara en lank hit, inte en
+    // egen lista, eftersom varje rad pa sida 2 redan visar sin varning
+    // (docs/design.md, "Samma information star aldrig tva ganger").
+    const atgarderUtanSkickForsaljning = ex.sald
+      ? projekt.filter(behoverSkickForsaljning).length
+      : 0;
 
     return (
       <>
@@ -197,6 +206,26 @@ export default async function ExportSida() {
             </ul>
             <Link href="/genomgang" className={`${SEKUNDARKNAPP_KLASS} mt-3`}>
               Till klassificeringen
+            </Link>
+          </section>
+        ) : null}
+
+        {atgarderUtanSkickForsaljning > 0 ? (
+          <section className="border-b border-linje p-4">
+            <p className="font-granssnitt text-sm font-medium text-text-primar">
+              Skick vid försäljningen
+            </p>
+            <p className="mt-1 font-granssnitt text-xs text-text-dampad">
+              {atgarderUtanSkickForsaljning}{" "}
+              {atgarderUtanSkickForsaljning === 1 ? "åtgärd" : "åtgärder"} på
+              sida 2 saknar bedömningen av skicket vid försäljningen, så den
+              avdragsgilla delen är inte klar.
+            </p>
+            <Link
+              href="/forsaljning/skick"
+              className={`${SEKUNDARKNAPP_KLASS} mt-3`}
+            >
+              Bedöm skicket
             </Link>
           </section>
         ) : null}

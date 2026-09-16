@@ -32,8 +32,8 @@ function revalideraProjektvyer(projektId: string): void {
 
 // Omklassificering andrar atgardstyp/battre_kvalitet/merkostnad/skick_forvarv,
 // vilket slaar igenom i arets troskelsumma sa fort vyerna revalideras – inget
-// lagras harlett. skick_forsaljning ror vi aldrig har; det satts forst i
-// forsaljningsflodet (steg 4).
+// lagras harlett. skick_forsaljning ror vi aldrig har; det satts bara i
+// src/app/forsaljning/skick.
 export async function redigeraProjekt(
   _foreg: ProjektResultat,
   formData: FormData,

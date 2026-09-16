@@ -1,14 +1,17 @@
 // Fragetradet (produktspec 4.1, CLAUDE.md "Fragetradet per atgard"). Ren
 // tolkning av UI-svaren pa fraga 2-5 till de falt som lagras pa projektet.
 // Fraga 1 (namnet) och fraga 8 (motivering) ar fritext och kraver ingen
-// tolkning. Fraga 6 (skick_forvarv) lagras rakt av – se skickForvarvGiltigt
-// nedan – och fraga 7 (skick_forsaljning) hor till forsaljningsfodet (steg 4).
+// tolkning. Fraga 6 (skick_forvarv) lagras rakt av – se tolkaSkickForvarv
+// nedan. Fraga 7 (skick_forsaljning) stalls i forsaljningsflodet
+// (src/app/forsaljning/skick) – behoverSkickForsaljning langst ned avgor
+// urvalet dit, men fragan har ingen egen tolkningsfunktion har eftersom den
+// atervander tolkaSkickForvarv rakt av (samma "0".."5"-format).
 //
 // Grenar som inte paverkar resultatet hoppas over: en ren grundforbattring
 // (fraga 2 eller 3 = ja, eller fraga 4 = nytt) far aldrig fraga 5 eller 6 – de
 // har ingen reparationsdel och skicket saknar da betydelse.
 
-import type { Atgardstyp } from "./typer";
+import type { Atgardstyp, Projekt } from "./typer";
 
 export type JaNejSvar = "" | "ja" | "nej";
 export type NyttEllerBigtSvar = "" | "nytt" | "bytt";
@@ -228,4 +231,18 @@ export function atgardKategoriText(
   if (atgardstyp === null) return "Behöver klassificeras";
   if (atgardstyp !== "utbytt") return "Grundförbättring";
   return battre_kvalitet ? "Grundförbättring och reparation" : "Reparation";
+}
+
+/**
+ * Behover atgarden fraga 7 – skicket vid forsaljningen (produktspec 4.1)?
+ * Bara atgarder med en reparationsdel har ett "fore" att jamfora mot; en ren
+ * grundforbattring (nybyggnad/planlosning/nytt_tillagg, eller en hog som
+ * annu inte klassificerats) hoppar over fragan helt, precis som den hoppar
+ * over fraga 6. Redan besvarade atgarder ska inte fragas igen – darav
+ * villkoret pa skick_forsaljning, inte bara pa atgardstyp.
+ */
+export function behoverSkickForsaljning(
+  projekt: Pick<Projekt, "atgardstyp" | "skick_forsaljning">,
+): boolean {
+  return projekt.atgardstyp === "utbytt" && projekt.skick_forsaljning === null;
 }

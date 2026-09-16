@@ -394,7 +394,11 @@ export function FragetradetFalt({
 
   return (
     <div className="flex flex-col gap-6">
-      <Falt etikett="Vad gjorde du?" obligatoriskt>
+      <Falt
+        etikett="Vad gjorde du?"
+        obligatoriskt
+        hjalp="Namnet hamnar i ditt deklarationsunderlag – skriv så att någon annan förstår."
+      >
         <input
           type="text"
           value={namn}

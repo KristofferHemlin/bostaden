@@ -1,7 +1,8 @@
 "use client";
 
 // Steg 7: forsaljningsdatum och forsaljningspris. Fraga 7 (skick vid
-// forsaljningen, per reparation) hor till steg 4 och byggs inte har.
+// forsaljningen, per reparation) stalls inte har utan i /forsaljning/skick,
+// dit actionen redirectar efter att datumet sparats.
 
 import { useActionState, useState } from "react";
 import { markeraSald, type ForsaljningResultat } from "./actions";

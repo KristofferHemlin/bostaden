@@ -97,7 +97,9 @@ export default async function GenomgangSida() {
         belopp: k.totalbelopp,
         datum: kvittoDatum(k),
       }));
-    return { id: p.id, namn: p.namn, kvitton };
+    // Namnet visas inte i fas 1 (produktspec, "Klassificeringsgenomgangen") –
+    // hogen far det forst som svar pa fragetradets forsta fraga, i fas 2.
+    return { id: p.id, kvitton };
   });
 
   // Raknas inte: arkiverade kvitton, bilaga och belopp kvar.

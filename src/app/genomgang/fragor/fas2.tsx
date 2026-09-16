@@ -2,8 +2,10 @@
 
 // Fas 2: klassificera en hog i taget. Fragorna kommer fran <Fragetradet> –
 // samma komponent som projektets redigering, sa de stalls ordagrant likadant
-// overallt. Fraga 1 (namnet) ar ett vanligt textfalt har, forifyllt med
-// hogens namn fran fas 1.
+// overallt. Fraga 1, "Vad gjorde du?", ar ett vanligt textfalt har – och satter
+// hogens namn for forsta gangen (produktspec, "Klassificeringsgenomgangen":
+// hogen far inget namn i fas 1). Forvalet ar `namnforslag`
+// (fragetradetNamnForslag, page.tsx): forsta kvittots anteckning, annars tomt.
 //
 // "Hoppa over" gar vidare till nasta hog utan att spara – hogen ligger kvar och
 // dyker upp nasta gang. "Spara och nasta" klassificerar hogen; server-actionen
@@ -38,7 +40,7 @@ interface HogKvitto {
 
 interface Hog {
   id: string;
-  namn: string;
+  namnforslag: string;
   kvitton: HogKvitto[];
 }
 
@@ -86,7 +88,7 @@ function HogFormular({
   onHoppaOver: () => void;
 }) {
   const [resultat, action, pagar] = useActionState(klassificeraHog, START);
-  const [namn, setNamn] = useState(hog.namn);
+  const [namn, setNamn] = useState(hog.namnforslag);
   const [svar, setSvar] = useState<FragetradetUIState>(TOMMA_SVAR);
   const hanteraSubmit = useForhindraDubbelinskick(pagar);
 
@@ -128,7 +130,11 @@ function HogFormular({
       <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-6 p-5">
         <input type="hidden" name="projekt_id" value={hog.id} />
 
-        <Falt etikett="Vad gjorde du?" obligatoriskt>
+        <Falt
+          etikett="Vad gjorde du?"
+          obligatoriskt
+          hjalp="Namnet hamnar i ditt deklarationsunderlag – skriv så att någon annan förstår."
+        >
           <input
             type="text"
             value={namn}

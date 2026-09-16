@@ -102,10 +102,8 @@ export async function skapaHog(
 ): Promise<GenomgangResultat> {
   const { bostadId, anvandareId } = await kravBostad();
 
-  const namn = String(formData.get("namn") ?? "").trim();
   const kostnadIder = formData.getAll("kostnad_ider").map(String).filter(Boolean);
 
-  if (!namn) return { fel: "Ge högen ett namn." };
   if (kostnadIder.length === 0) {
     return { fel: "Välj minst ett kvitto till högen." };
   }
@@ -124,7 +122,10 @@ export async function skapaHog(
         : new Date().getUTCFullYear();
 
     const projekt = await prisma.projekt.create({
-      data: { bostad_id: bostadId, namn, ar: hogAr, atgardstyp: null },
+      // Hogen far inget namn i fas 1 (produktspec, "Klassificeringsgenomgangen")
+      // – namnet ar svaret pa fragetradets forsta fraga och satts forst i fas 2
+      // (klassificeraHog).
+      data: { bostad_id: bostadId, namn: "", ar: hogAr, atgardstyp: null },
       select: { id: true },
     });
 
@@ -143,42 +144,6 @@ export async function skapaHog(
     return { fel: serverfelMeddelande(fel, { sida: "genomgang", anrop: "skapaHog", anvandareId }) };
   }
 
-  revalidera();
-  return {};
-}
-
-/**
- * Doper om en hog direkt i grupperingsvyn. Namnet foreslas fran forsta kvittots
- * anteckning, men forslaget ar ofta leverantoren – och hogens namn hamnar i
- * K6A-underlagets atgardskolumn, dar det ska sta vad utgiften avser. Bara hogar
- * som annu inte gatt igenom fragorna (atgardstyp = null) doper man om har;
- * klassificerade hogar andras via projektets redigering.
- */
-export async function dopOmHog(
-  _foreg: GenomgangResultat,
-  formData: FormData,
-): Promise<GenomgangResultat> {
-  const { bostadId, anvandareId } = await kravBostad();
-
-  const projektId = String(formData.get("projekt_id") ?? "");
-  const namn = String(formData.get("namn") ?? "").trim();
-
-  if (!namn) return { fel: "Ge högen ett namn." };
-
-  try {
-    const projekt = await prisma.projekt.findFirst({
-      where: { id: projektId, bostad_id: bostadId },
-      select: { id: true, atgardstyp: true },
-    });
-    if (!projekt) return { fel: "Högen hittades inte." };
-    if (projekt.atgardstyp !== null) {
-      return { fel: "Den högen är redan klassificerad och byter namn via projektet." };
-    }
-
-    await prisma.projekt.update({ where: { id: projekt.id }, data: { namn } });
-  } catch (fel) {
-    return { fel: serverfelMeddelande(fel, { sida: "genomgang", anrop: "dopOmHog", anvandareId }) };
-  }
   revalidera();
   return {};
 }

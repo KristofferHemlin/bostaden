@@ -11,10 +11,9 @@
 // Urvalet nollas nar en grupperande atgard skickas.
 
 import Link from "next/link";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useState } from "react";
 import {
   aterforFranRaknasInte,
-  dopOmHog,
   flyttaUturHog,
   laggIHog,
   raknasInte,
@@ -23,10 +22,18 @@ import {
 } from "./actions";
 import { PRIMARKNAPP_KLASS, SEKUNDARKNAPP_KLASS } from "@/components/skarm";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
-import { hogNamnForslag } from "@/doman/genomgang";
+import { hogVisningsnamn } from "@/doman/genomgang";
 import { formateraKronorEllerStreck } from "@/lib/format";
 
 const START: GenomgangResultat = {};
+
+// Skapa-hog ar en handling PA den har skarmen, inte vagen till nasta steg –
+// orange ar reserverat for "Ga vidare till fragorna" langst ned
+// (docs/design.md, "Orange markerar att man gar framat, inte att nagot
+// hander"). Samma visuella sprak som SEKUNDARKNAPP_KLASS, men utan w-full sa
+// den far plats bredvid textlanken "Inte en hog".
+const SKAPA_HOG_INLINE_KLASS =
+  "inline-flex min-h-[44px] items-center justify-center rounded-full border border-linje px-5 py-3 font-granssnitt text-base text-text-primar transition-colors hover:bg-yta-nedsankt disabled:opacity-60";
 
 interface Kvitto {
   id: string;
@@ -39,12 +46,10 @@ interface Kvitto {
 
 interface Hog {
   id: string;
-  namn: string;
   kvitton: Kvitto[];
 }
 
 interface Forslag {
-  namn: string;
   kvitto_ider: string[];
   motiv: string;
 }
@@ -83,7 +88,6 @@ export function Fas1({
     raknasInte,
     START,
   );
-  const [dopOmRes, dopOmAction, dopOmPagar] = useActionState(dopOmHog, START);
   const [aterforRes, aterforAction, aterforPagar] = useActionState(
     aterforFranRaknasInte,
     START,
@@ -96,7 +100,6 @@ export function Fas1({
   const hanteraLaggSubmit = useForhindraDubbelinskick(laggPagar);
   const hanteraFlyttaSubmit = useForhindraDubbelinskick(flyttaPagar);
   const hanteraRaknasSubmit = useForhindraDubbelinskick(raknasPagar);
-  const hanteraDopOmSubmit = useForhindraDubbelinskick(dopOmPagar);
   const hanteraAterforSubmit = useForhindraDubbelinskick(aterforPagar);
 
   const fel =
@@ -104,7 +107,6 @@ export function Fas1({
     laggRes.fel ||
     flyttaRes.fel ||
     raknasRes.fel ||
-    dopOmRes.fel ||
     aterforRes.fel;
 
   function vaxlaVald(id: string) {
@@ -119,19 +121,6 @@ export function Fas1({
   function nollaUrval() {
     setValda(new Set());
   }
-
-  const valdaKvitton = useMemo(
-    () => oklassificerade.filter((k) => valda.has(k.id)),
-    [oklassificerade, valda],
-  );
-
-  const namnForslagFraval = useMemo(
-    () =>
-      valdaKvitton.length > 0
-        ? hogNamnForslag(valdaKvitton)
-        : "",
-    [valdaKvitton],
-  );
 
   const kvarStarForslag = forslag.filter(
     (f) => !avfardade.has(f.kvitto_ider.join(",")),
@@ -158,7 +147,7 @@ export function Fas1({
       <div className="border-b border-linje p-4">
         <p className="rounded-lg bg-sand px-3 py-3 font-granssnitt text-sm text-text-primar">
           Först grupperar du kvittona i högar – en hög per sak du gjort. En hög
-          kan bestå av ett enda kvitto. Sedan svarar du på fyra frågor per hög.
+          kan bestå av ett enda kvitto. Sedan svarar du på frågorna per hög.
           Du kan avbryta när som helst; det du grupperat sparas.
         </p>
       </div>
@@ -218,18 +207,11 @@ export function Fas1({
                         value={id}
                       />
                     ))}
-                    <input
-                      type="text"
-                      name="namn"
-                      defaultValue={f.namn}
-                      className="w-full rounded-lg border-0 bg-yta-nedsankt px-3 py-2 font-granssnitt text-sm text-text-primar outline-none focus:ring-2 focus:ring-accent"
-                      aria-label="Högens namn"
-                    />
                     <div className="flex gap-3">
                       <button
                         type="submit"
                         disabled={skapaPagar}
-                        className={PRIMARKNAPP_KLASS}
+                        className={SKAPA_HOG_INLINE_KLASS}
                       >
                         {skapaPagar ? "Skapar…" : "Skapa hög"}
                       </button>
@@ -260,31 +242,13 @@ export function Fas1({
           <div className="divide-y divide-linje">
             {hogar.map((h) => (
               <div key={h.id} className="p-4">
-                {/* Namnet redigeras dar hogen syns, inte forst i frågesteget –
-                    forslaget ar ofta leverantoren, och namnet hamnar i
-                    K6A-underlagets atgardskolumn. */}
-                <form
-                  action={dopOmAction}
-                  onSubmit={hanteraDopOmSubmit}
-                  className="flex items-center gap-2"
-                >
-                  <input type="hidden" name="projekt_id" value={h.id} />
-                  <input
-                    type="text"
-                    name="namn"
-                    defaultValue={h.namn}
-                    key={h.namn}
-                    aria-label="Högens namn"
-                    className="min-w-0 flex-1 rounded-lg border-0 bg-yta-nedsankt px-3 py-2 font-granssnitt text-base text-text-primar outline-none focus:ring-2 focus:ring-accent"
-                  />
-                  <button
-                    type="submit"
-                    disabled={dopOmPagar}
-                    className="shrink-0 font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
-                  >
-                    {dopOmPagar ? "Byter…" : "Byt namn"}
-                  </button>
-                </form>
+                {/* Hogen far inget namn i fas 1 (produktspec,
+                    "Klassificeringsgenomgangen") – namnet ar svaret pa
+                    fragetradets forsta fraga, i fas 2. Fram till dess visas
+                    hogen som antal och leverantorer. */}
+                <p className="font-granssnitt text-base text-text-primar">
+                  {hogVisningsnamn(h.kvitton)}
+                </p>
                 <ul className="mt-2 space-y-1.5">
                   {h.kvitton.map((k) => (
                     <li
@@ -430,23 +394,10 @@ export function Fas1({
                   value={id}
                 />
               ))}
-              <input
-                type="text"
-                name="namn"
-                defaultValue={namnForslagFraval}
-                key={namnForslagFraval}
-                placeholder={
-                  valda.size === 1
-                    ? "Vad gällde kvittot?"
-                    : "Vad hörde de här till?"
-                }
-                className="w-full rounded-lg border-0 bg-yta-upphojd px-3 py-2 font-granssnitt text-sm text-text-primar outline-none focus:ring-2 focus:ring-accent"
-                aria-label="Nya högens namn"
-              />
               <button
                 type="submit"
                 disabled={skapaPagar}
-                className={PRIMARKNAPP_KLASS}
+                className={SEKUNDARKNAPP_KLASS}
               >
                 {skapaPagar
                   ? "Skapar…"

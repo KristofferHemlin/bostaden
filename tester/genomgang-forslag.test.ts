@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { foreslaHogar, hogNamnForslag } from "@/doman/genomgang";
+import {
+  foreslaHogar,
+  fragetradetNamnForslag,
+  hogVisningsnamn,
+} from "@/doman/genomgang";
 import type { GenomgangsKvitto } from "@/doman/genomgang";
 
 function kv(over: Partial<GenomgangsKvitto> & { id: string }): GenomgangsKvitto {
@@ -36,8 +40,6 @@ describe("foreslaHogar – fas 1 i klassificeringsgenomgangen", () => {
     expect(forslag).toHaveLength(1);
     // Kvitto-iderna kommer i datumordning.
     expect(forslag[0].kvitto_ider).toEqual(["a", "b", "c"]);
-    // Namnet foreslas fran forsta kvittots anteckning, kapat vid forsta skiljetecknet.
-    expect(forslag[0].namn).toBe("Målade om sovrummet");
   });
 
   it("kvitton med olika leverantor, manader isar och oslaktade anteckningar ger inget forslag", () => {
@@ -89,7 +91,7 @@ describe("foreslaHogar – fas 1 i klassificeringsgenomgangen", () => {
     expect(forslag[0].kvitto_ider).toEqual(["a", "b"]);
   });
 
-  it("namnforslaget faller tillbaka pa leverantoren nar anteckning saknas", () => {
+  it("ett forslag utan gemensam anteckning grupperas anda pa leverantoren", () => {
     const kvitton = [
       kv({ id: "a", leverantor: "Byggmax", anteckning: null, datum: "2026-05-01" }),
       kv({ id: "b", leverantor: "Byggmax", anteckning: "", datum: "2026-05-08" }),
@@ -97,21 +99,54 @@ describe("foreslaHogar – fas 1 i klassificeringsgenomgangen", () => {
 
     const forslag = foreslaHogar(kvitton);
     expect(forslag).toHaveLength(1);
-    expect(forslag[0].namn).toBe("Byggmax");
+    expect(forslag[0].kvitto_ider).toEqual(["a", "b"]);
   });
+});
 
-  it("hogNamnForslag tar forsta kvittots anteckning, annars dess leverantor", () => {
+// Hogen far inget namn i fas 1 (produktspec, "Klassificeringsgenomgangen") –
+// namnet ar svaret pa fragetradets forsta fraga, i fas 2.
+describe("fragetradetNamnForslag – forvalet for fragetradets forsta fraga", () => {
+  it("tar forsta (tidigaste) kvittots anteckning, kapad vid forsta skiljetecknet", () => {
     expect(
-      hogNamnForslag([
-        { anteckning: "Bytte köksblandaren som läckte", leverantor: "VVS-butiken" },
-        { anteckning: "Följdkvitto", leverantor: "VVS-butiken" },
+      fragetradetNamnForslag([
+        { anteckning: "Bytte köksblandaren som läckte, gammal otät" },
+        { anteckning: "Följdkvitto" },
       ]),
     ).toBe("Bytte köksblandaren som läckte");
+  });
 
+  it("lamnas TOMT nar anteckning saknas – faller aldrig tillbaka pa leverantoren", () => {
+    expect(fragetradetNamnForslag([{ anteckning: null }])).toBe("");
+    expect(fragetradetNamnForslag([{ anteckning: "  " }])).toBe("");
+  });
+
+  it("tom lista ger ett tomt forval", () => {
+    expect(fragetradetNamnForslag([])).toBe("");
+  });
+});
+
+// Fram till namnet finns visas hogen som antal och leverantorer
+// (docs/design.md, "Klassificeringsgenomgangen"): "2 kvitton · BAUHAUS, Jysk".
+describe("hogVisningsnamn – hogens visning i fas 1, innan den har ett namn", () => {
+  it("listar leverantorer i forsta-forekomst-ordning, utan dubbletter", () => {
     expect(
-      hogNamnForslag([{ anteckning: "  ", leverantor: "Hornbach" }]),
-    ).toBe("Hornbach");
+      hogVisningsnamn([
+        { leverantor: "BAUHAUS" },
+        { leverantor: "Jysk" },
+        { leverantor: "BAUHAUS" },
+      ]),
+    ).toBe("3 kvitton · BAUHAUS, Jysk");
+  });
 
-    expect(hogNamnForslag([])).toBe("Ny hög");
+  it("ental bojs ratt: '1 kvitto', inte '1 kvitton'", () => {
+    expect(hogVisningsnamn([{ leverantor: "Hornbach" }])).toBe(
+      "1 kvitto · Hornbach",
+    );
+  });
+
+  it("saknar alla kvitton leverantor blir det bara antalet", () => {
+    expect(hogVisningsnamn([{ leverantor: null }, { leverantor: null }])).toBe(
+      "2 kvitton",
+    );
   });
 });

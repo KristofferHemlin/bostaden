@@ -4,19 +4,26 @@
 import Link from "next/link";
 import { KategoriInfo } from "./kategori-info";
 import { Listrad, Skarm } from "@/components/skarm";
-import { bidragForKostnad } from "@/doman/berakningar";
+import { beloppForKostnad, bidragForKostnad } from "@/doman/berakningar";
 import { atgardKategoriText } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
-import { formateraKronor } from "@/lib/format";
+import { formateraKronor, isoDatum } from "@/lib/format";
 import { kravBostad } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
+// Fler an fem kvitton under ett projekt klipps, med en dampad rad om hur
+// manga som aterstar (docs/design.md, "Listrader").
+const MAX_KVITTON_VISADE = 5;
+
 export default async function ProjektlistaSida() {
   const { bostadId } = await kravBostad();
-  const { bostad, projektRader, kostnader } = await hamtaBostadsdata(bostadId);
+  const { bostad, projektRader, kostnader, kostnadRader } =
+    await hamtaBostadsdata(bostadId);
   const { bostadsnamn } = bostadHeader(bostad);
+
+  const domanKostnadPerId = new Map(kostnader.map((k) => [k.id, k]));
 
   const rader = projektRader.map((p) => {
     let belopp = 0;
@@ -24,6 +31,33 @@ export default async function ProjektlistaSida() {
       if (k.arkiverad || !k.betaldatum) continue;
       belopp += bidragForKostnad(k, p.id);
     }
+
+    // Projektlistan visar sina kvitton (docs/design.md, "Listrader"): direkt
+    // under namnet, med leverantor, datum och belopp – annars ar raden ett
+    // belopp utan forklaring. Beloppet ar det PA PAPPRET (beloppForKostnad),
+    // inte den ROT-reducerade bidraget ovan (docs/design.md, "Samma belopp
+    // ska se likadant ut overallt") – annars star samma kvitto med tva olika
+    // summor pa samma skarm, precis den bugg regeln finns for att undvika.
+    const kvitton = kostnadRader
+      .filter((k) =>
+        k.rader.some((r) => r.fordelningar.some((f) => f.projekt_id === p.id)),
+      )
+      .sort((a, b) => {
+        const da = a.betaldatum ?? a.dokumentdatum;
+        const db = b.betaldatum ?? b.dokumentdatum;
+        return (da?.getTime() ?? 0) - (db?.getTime() ?? 0);
+      })
+      .map((k) => {
+        const domanKostnad = domanKostnadPerId.get(k.id)!;
+        const datum = k.betaldatum ?? k.dokumentdatum;
+        return {
+          id: k.id,
+          leverantor: k.leverantor,
+          datum: datum ? isoDatum(datum) : null,
+          belopp: beloppForKostnad(domanKostnad, p.id),
+        };
+      });
+
     return {
       id: p.id,
       namn: p.namn,
@@ -33,6 +67,7 @@ export default async function ProjektlistaSida() {
       // annu inte gatt igenom fragetradet – prickas som en atgard.
       status: atgardKategoriText(p.atgardstyp, p.battre_kvalitet),
       atgard: p.atgardstyp === null,
+      kvitton,
     };
   });
 
@@ -81,14 +116,39 @@ export default async function ProjektlistaSida() {
               </p>
               <div className="divide-y divide-linje">
                 {perAr.get(ar)!.map((r) => (
-                  <Listrad
-                    key={r.id}
-                    href={`/projekt/${r.id}`}
-                    namn={r.namn}
-                    status={r.status}
-                    atgard={r.atgard}
-                    belopp={formateraKronor(r.belopp)}
-                  />
+                  <div key={r.id}>
+                    <Listrad
+                      href={`/projekt/${r.id}`}
+                      namn={r.namn}
+                      status={r.status}
+                      atgard={r.atgard}
+                      belopp={formateraKronor(r.belopp)}
+                    />
+                    {r.kvitton.length > 0 ? (
+                      <ul className="flex flex-col gap-1 px-4 pb-3">
+                        {r.kvitton.slice(0, MAX_KVITTON_VISADE).map((k) => (
+                          <li
+                            key={k.id}
+                            className="flex items-baseline justify-between gap-3 font-granssnitt text-sm text-text-dampad"
+                          >
+                            <span className="min-w-0 truncate">
+                              {[k.leverantor, k.datum]
+                                .filter((d): d is string => !!d)
+                                .join(" · ") || "Kvitto"}
+                            </span>
+                            <span className="shrink-0 tabular-nums">
+                              {formateraKronor(k.belopp)}
+                            </span>
+                          </li>
+                        ))}
+                        {r.kvitton.length > MAX_KVITTON_VISADE ? (
+                          <li className="font-granssnitt text-xs text-text-dampad">
+                            +{r.kvitton.length - MAX_KVITTON_VISADE} till
+                          </li>
+                        ) : null}
+                      </ul>
+                    ) : null}
+                  </div>
                 ))}
               </div>
             </div>

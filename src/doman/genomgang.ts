@@ -33,8 +33,6 @@ export interface GenomgangsKvitto {
 }
 
 export interface Hogforslag {
-  /** Foreslaget namn – forsta kvittots anteckning, annars dess leverantor. Gar att andra. */
-  namn: string;
   /** Kvitto-id i datumordning. Alltid minst tva. */
   kvitto_ider: string[];
   /** Kort forklaring till varfor kvittona foreslas ihop. */
@@ -58,6 +56,33 @@ export function hogBehoverKlassificeras(projekt: {
   return projekt.atgardstyp === null;
 }
 
+// ---- Visning i fas 1 --------------------------------------------------------
+
+/**
+ * Hogen far inget namn i fas 1 (produktspec, "Klassificeringsgenomgangen") –
+ * namnet ar svaret pa fragetradets forsta fraga och stalls forst i fas 2. Fram
+ * till dess visas hogen som antal och leverantorer: "2 kvitton · BAUHAUS,
+ * Jysk". Leverantorer listas i den ordning de forst forekommer, utan
+ * dubbletter; saknar alla kvitton leverantor (t.ex. utkast) blir det bara
+ * antalet.
+ */
+export function hogVisningsnamn(
+  kvitton: { leverantor: string | null }[],
+): string {
+  const antal = kvitton.length;
+  const antalstext = `${antal} kvitto${antal === 1 ? "" : "n"}`;
+  const leverantorer = [
+    ...new Set(
+      kvitton
+        .map((k) => k.leverantor?.trim())
+        .filter((l): l is string => !!l),
+    ),
+  ];
+  return leverantorer.length > 0
+    ? `${antalstext} · ${leverantorer.join(", ")}`
+    : antalstext;
+}
+
 // ---- Namnforslag -----------------------------------------------------------
 
 /** Forsta meningsfulla biten av en anteckning: fram till forsta skiljetecknet, kapat. */
@@ -67,18 +92,19 @@ function kortaNamn(text: string): string {
 }
 
 /**
- * Hogens namn foreslas fran forsta (tidigaste) kvittots anteckning och hamnar i
- * K6A-underlagets atgardskolumn, sa det ska vara begripligt for nagon som inte
- * var dar. Saknas anteckning anvands leverantoren. Tom lista -> "Ny hog".
+ * Forval for fragetradets forsta fraga, "Vad gjorde du?" – hamtas fran forsta
+ * (tidigaste) kvittots anteckning. Namnet hamnar i K6A-underlagets
+ * atgardskolumn, sa forslaget maste vara begripligt for nagon som inte var
+ * dar. Saknas anteckning lamnas faltet TOMT i stallet for att falla tillbaka
+ * pa leverantoren (produktspec, "Klassificeringsgenomgangen"): ett
+ * foretagsnamn dar sager ingenting om vad som gjordes, och ett ifyllt falt
+ * ser fardigt ut och godkanns utan eftertanke.
  */
-export function hogNamnForslag(
-  kvitton: { anteckning: string | null; leverantor: string | null }[],
+export function fragetradetNamnForslag(
+  kvitton: { anteckning: string | null }[],
 ): string {
-  const forsta = kvitton[0];
-  if (!forsta) return "Ny hög";
-  const anteckning = forsta.anteckning?.trim();
-  if (anteckning) return kortaNamn(anteckning);
-  return forsta.leverantor?.trim() || "Ny hög";
+  const anteckning = kvitton[0]?.anteckning?.trim();
+  return anteckning ? kortaNamn(anteckning) : "";
 }
 
 // ---- Forslagsmotorn ------------------------------------------------------------
@@ -224,7 +250,6 @@ export function foreslaHogar(kvitton: GenomgangsKvitto[]): Hogforslag[] {
       : "Liknande anteckningar, inom kort tid";
 
     forslag.push({
-      namn: hogNamnForslag(medlemmar.map((m) => m.kvitto)),
       kvitto_ider: medlemmar.map((m) => m.kvitto.id),
       motiv,
     });

@@ -602,9 +602,9 @@ Behövs symboler någon annanstans används tunna ikoner i `--text-sekundar`.
 
 ### Klassificeringsgenomgången
 
-**Högar ska gå att döpa om i grupperingsvyn.** Namnet föreslås från första kvittots anteckning, men förslaget är ofta leverantören – och högens namn hamnar i deklarationsunderlagets åtgärdskolumn, där det ska stå vad utgiften avser. En rad som säger "K-Bygg Sverige AB" i stället för "Ny köksfläkt" är inte begriplig för någon som inte var där.
+**Högen namnges inte i grupperingsvyn.** Namnet är svaret på frågeträdets första fråga och ställs en gång, i fas 2 – se `docs/produktspec.md` avsnitt 2b. Fram till dess visas högen som antal och leverantörer.
 
-Namnet redigeras där högen syns, inte först i frågesteget.
+Skälet att namnet betyder något är att det hamnar i deklarationsunderlagets åtgärdskolumn. En rad som säger "K-Bygg Sverige AB" i stället för "Ny köksfläkt" är inte begriplig för någon som inte var där – och det är just därför frågan ska ställas där användaren tänker på vad hen gjorde, inte där hen sorterar papper.
 
 **Visa hur mycket som återstår.** Överst i grupperingsvyn en rad med antal kvitton kvar att gå igenom och antal högar hittills. I frågesteget räcker "Hög 1 av 4", men i fas 1 finns ingen känsla för hur långt man kommit – och med hundra kvitton är det skillnaden mellan att fortsätta och att sluta.
 

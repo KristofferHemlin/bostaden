@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Bostadsfragor } from "./bostadsfragor";
 import { Fas2 } from "./fas2";
 import { PRIMARKNAPP_KLASS, SEKUNDARKNAPP_KLASS, Skarm } from "@/components/skarm";
+import { fragetradetNamnForslag } from "@/doman/genomgang";
 import { bostadHeader } from "@/lib/bostad-header";
 import { isoDatum } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -57,14 +58,18 @@ export default async function FragorSida() {
     orderBy: [{ betaldatum: "asc" }, { dokumentdatum: "asc" }],
   });
 
-  const hogarMedKvitton = hogar.map((h) => ({
-    id: h.id,
-    namn: h.namn,
-    kvitton: kostnadRader
-      .filter((k) =>
-        k.rader.some((r) => r.fordelningar.some((f) => f.projekt_id === h.id)),
-      )
-      .map((k) => {
+  const hogarMedKvitton = hogar.map((h) => {
+    // Betaldatum/dokumentdatum-sorteringen pa kostnadRader-frageningen ovan
+    // haller sig genom filtreringen, sa forsta traffen ar hogens tidigaste
+    // kvitto – det fragetradetNamnForslag utgar fran (produktspec,
+    // "Klassificeringsgenomgangen").
+    const hogensKvitton = kostnadRader.filter((k) =>
+      k.rader.some((r) => r.fordelningar.some((f) => f.projekt_id === h.id)),
+    );
+    return {
+      id: h.id,
+      namnforslag: fragetradetNamnForslag(hogensKvitton),
+      kvitton: hogensKvitton.map((k) => {
         // Bara kopplade kostnader kommer hit – aldrig ett utkast (det har inga
         // rader). Falten ar alltsa satta; coalesce for typernas skull.
         const datum = k.betaldatum ?? k.dokumentdatum;
@@ -75,7 +80,8 @@ export default async function FragorSida() {
           belopp: k.totalbelopp ?? 0,
         };
       }),
-  }));
+    };
+  });
 
   return (
     <Skarm
