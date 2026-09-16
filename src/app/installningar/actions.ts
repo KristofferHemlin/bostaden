@@ -136,6 +136,16 @@ export async function sparaInstallningar(
   const identifieringText = las("identifiering");
   const identifiering = identifieringText === "" ? null : identifieringText;
 
+  // Bostadsfragorna (produktspec 4.1, 4.6). Formularet har alltid ett
+  // konkret val forvalt (aldrig ett obesvarat forval, till skillnad fran
+  // genomgangens forsta-gangen-skarm), sa nagon tolkningsgrind behovs inte
+  // har. Att spara har rakan bostadsfragor_besvarade = true – anvandaren har
+  // just sett och bekraftat ett varde, aven om det rakar vara det som redan
+  // lag i databasen – sa att genomgangens blockerande steg inte visas i onodan
+  // for nagon som redan svarat har.
+  const nybyggdVidForvarv = las("forsta_agare") === "ja";
+  const ombildningFranHyresratt = nybyggdVidForvarv && las("ombildning") === "ja";
+
   await prisma.bostad.update({
     where: { id: bostadId },
     data: {
@@ -146,6 +156,9 @@ export async function sparaInstallningar(
       kopkostnader,
       kapitaltillskott,
       identifiering,
+      nybyggd_vid_forvarv: nybyggdVidForvarv,
+      ombildning_fran_hyresratt: ombildningFranHyresratt,
+      bostadsfragor_besvarade: true,
     },
   });
 

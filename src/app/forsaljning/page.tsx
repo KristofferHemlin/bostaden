@@ -1,8 +1,10 @@
-// Steg 7: markera bostaden som sald med datum och pris, och satt skick +
-// kvarvarande andel per reparationsprojekt. Exporten (/export) kraver att detta
-// ar gjort. Flodet ar identiskt for bostadsratt och fastighet.
+// Steg 7: markera bostaden som sald med datum och pris. Exporten (/export)
+// kraver att detta ar gjort. Flodet ar identiskt for bostadsratt och fastighet.
+//
+// Skickfragan per reparation (fraga 7, skick_forsaljning) byggs i steg 4 –
+// har satts bara sjalva forsaljningsdatumet och priset.
 
-import { ForsaljningForm, type Reparationsprojekt } from "./form";
+import { ForsaljningForm } from "./form";
 import { Meddelanderuta, Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
 import { isoDatum, orenTillFalt } from "@/lib/format";
@@ -11,13 +13,6 @@ import { kravBostad } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-function procentStrang(andel: unknown): string {
-  if (andel === null || andel === undefined) return "";
-  const tal = Number(andel) * 100;
-  if (!Number.isFinite(tal)) return "";
-  return String(Number(tal.toFixed(2)));
-}
-
 export default async function ForsaljningSida() {
   const { bostadId } = await kravBostad();
 
@@ -25,18 +20,6 @@ export default async function ForsaljningSida() {
     where: { id: bostadId },
   });
   const { bostadsnamn } = bostadHeader(bostad);
-
-  const projekt = await prisma.projekt.findMany({
-    where: { bostad_id: bostadId, kategori: "reparation" },
-    orderBy: [{ ar: "desc" }, { skapad_at: "asc" }],
-  });
-
-  const reparationer: Reparationsprojekt[] = projekt.map((p) => ({
-    id: p.id,
-    namn: p.namn,
-    battre: p.battre_skick_vid_forsaljning,
-    kvarProcent: procentStrang(p.kvarvarande_andel),
-  }));
 
   const redanSald = bostad.forsaljningsdatum !== null;
 
@@ -50,11 +33,10 @@ export default async function ForsaljningSida() {
         <Meddelanderuta>
           {redanSald
             ? "Bostaden är markerad som såld. Här ändrar du datum, pris och bedömningen per reparation."
-            : "När bostaden är såld kan deklarationsunderlaget genereras. Datumet krävs; skick och förslitning per reparation kan fyllas i nu eller senare."}
+            : "När bostaden är såld kan deklarationsunderlaget genereras. Datumet krävs."}
         </Meddelanderuta>
       </div>
       <ForsaljningForm
-        reparationer={reparationer}
         forvaltDatum={
           bostad.forsaljningsdatum ? isoDatum(bostad.forsaljningsdatum) : ""
         }

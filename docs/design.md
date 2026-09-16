@@ -401,7 +401,7 @@ Varje extra rad – också en hopfälld – säger att det finns mer att göra h
 
 **Fritextfältet heter "Vad gällde det?"** och är det enda som bär betydelse framåt. Hjälptexten uppmuntrar en beskrivande mening, inte ett ord: "målade om sovrummet, väggarna var slitna sedan vi flyttade in" är vad som gör klassificeringen möjlig åtta år senare. "Färg" är det inte. Fältet är inte obligatoriskt – ett kvitto utan anteckning är bättre än inget kvitto.
 
-**Inga skattefrågor, ingen gruppering, inga kategorier.** De fyra frågorna hör hemma i klassificeringsgenomgången, som användaren startar när hen själv vill. Ordet *projekt* förekommer inte i inmatningsflödet.
+**Inga skattefrågor, ingen gruppering, inga kategorier.** Frågeträdet hör hemma i klassificeringsgenomgången, som användaren startar när hen själv vill. Ordet *projekt* förekommer inte i inmatningsflödet.
 
 **Detta hör hemma på kvittots detaljvy, inte här:**
 
@@ -502,7 +502,15 @@ Fältet visar årets belopp i förhållande till tröskeln, men fylls aldrig mer
 
 ### Projektfrågorna
 
-De fyra frågorna avgör om ett avdrag håller, så de får inte kortas bort – men de ska ställas så att man förstår dem utan att kunna skattereglerna.
+Frågeträdet avgör om ett avdrag håller, så det får inte kortas bort – men frågorna ska ställas så att man förstår dem utan att kunna skattereglerna.
+
+**Varje fråga får en hjälpruta med konkreta exempel**, på samma sätt som Skatteverkets egen tjänst: vad som räknas som ändrad planlösning, vad bättre kvalitet betyder, hur merkostnaden uppskattas. Rutan är utfälld som standard och går att stänga. Det gör skärmen lång, och det är rätt pris – genomgången är produktens tyngsta moment och den enda plats där skatteterminologi hör hemma.
+
+**Skickfrågorna är en skala 0–5** med ord vid varje steg, inte bara siffror: 0 – mycket dåligt skick, 5 – nytt skick. De två frågorna ställs på olika skärmar vid olika tillfällen; skicket vid förvärvet i genomgången, skicket vid försäljningen när bostaden markeras som såld.
+
+**Skalan har inget förval.** Värdet har större hävstång på slutsiffran än något annat i appen, och ett förval mitt på skalan blir det svar de flesta lämnar orört.
+
+**Friskrivningen hör till skärmen, inte till fältet.** Raden om att appen inte ger skatterådgivning ska stå avskild nederst, inte direkt under fritextfältets hjälptext – två dämpade rader under varandra läses som om båda gällde fältet.
 
 **Svarsalternativ är klickbara kort med kort text, inte radioknappar.** "Det fanns redan" och "Det är nytt". "Ja", "Nej", "Vet inte". Inga underrubriker i korten.
 

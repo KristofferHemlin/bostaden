@@ -2,7 +2,8 @@
 // utan databas. Datum ar alltid strangen "YYYY-MM-DD" – ingen tidszon, per
 // konventionerna i CLAUDE.md (tidszon skapar bara arsskiftesbuggar).
 
-export type Projektkategori = "grundforbattring" | "reparation";
+// Fragetradets atgardstyp (produktspec 4.1, fraga 2-4).
+export type Atgardstyp = "nybyggnad" | "planlosning" | "nytt_tillagg" | "utbytt";
 
 export type Regelparameterenhet = "oren" | "ar";
 
@@ -46,17 +47,33 @@ export interface Kostnad {
 export interface Projekt {
   id: string;
   namn: string;
-  /** null = hogen ar grupperad men annu inte klassificerad (fas 2 i genomgangen). */
-  kategori: Projektkategori | null;
-  slitet_vid_tilltrade: boolean | null;
-  battre_skick_vid_forsaljning: boolean | null;
-  kvarvarande_andel: number | null; // 0..1, null fram till forsaljningen
+  /** Fraga 2-4. null = hogen ar grupperad men annu inte klassificerad (fas 2 i
+   *  genomgangen) – motsvarar den gamla modellens kategori = null. */
+  atgardstyp: Atgardstyp | null;
+  /** Fraga 5. Endast relevant nar atgardstyp ar "utbytt". */
+  battre_kvalitet: boolean | null;
+  /** Oren. Obligatorisk och > 0 nar battre_kvalitet ar true, annars null. */
+  merkostnad: number | null;
+  /** Fraga 6, heltal 0-5. Stalls bara nar atgarden har en reparationsdel. */
+  skick_forvarv: number | null;
+  /** Fraga 7, heltal 0-5. null fram till forsaljningen. */
+  skick_forsaljning: number | null;
 }
 
 export interface Bostad {
   upplatelseform: Upplatelseform;
   tilltradesdatum: string; // YYYY-MM-DD
   forsaljningsdatum: string | null; // YYYY-MM-DD, null tills markerad som sald
+  /** Reparation och underhall raknas aldrig med om bostaden var nybyggd vid
+   *  forvarvet (produktspec 4.6) – utom vid ombildning fran hyresratt, se
+   *  ombildning_fran_hyresratt nedan. */
+  nybyggd_vid_forvarv: boolean;
+  /** Upphaver nybyggd_vid_forvarv-undantaget (produktspec 4.6): kopte man sin
+   *  hyresratt vid en ombildning fanns lagenheten redan och var anvand, aven
+   *  om man formellt ar forsta agare av bostadsratten. Optional/default false
+   *  sa att befintliga anrop som bara satter nybyggd_vid_forvarv inte behover
+   *  andras. */
+  ombildning_fran_hyresratt?: boolean;
 }
 
 export interface Medlemskap {

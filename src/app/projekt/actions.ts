@@ -4,18 +4,16 @@
 // sker inte via nagon egen sida langre (rutten /projekt/nytt ar borttagen) utan
 // i klassificeringsgenomgangen och i kostnadsformularet.
 //
-// De fyra fragorna (produktspec 6.2), pa vanlig svenska:
-//
-//   1. Vad gjorde du?                      -> namn (fritext)
-//   2. Fanns det forut, eller ar det nytt? -> nytt => grundforbattring
-//   3. Var det slitet nar du FLYTTADE IN?  -> slitet_vid_tilltrade
-//   4. Hur vet du det?                     -> motivering (fritext, blockerar aldrig)
+// Fragetradet (produktspec 4.1) fraga 1-6 och fraga 8 tolkas av den delade
+// hjalparen tolkaFragetradetFormData – samma tolkning som genomgangens fas 2
+// anvander, sa en omklassificering aldrig kan glida isar fran hur hogen
+// klassificerades forsta gangen.
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { kostnaderKoppladeTillProjekt } from "@/doman/berakningar";
-import { tolkaProjektfragor, type SlitetSvar } from "@/doman/projektfragor";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
+import { tolkaFragetradetFormData } from "@/lib/fragetradet-formdata";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
@@ -32,10 +30,10 @@ function revalideraProjektvyer(projektId: string): void {
   revalidatePath("/export");
 }
 
-// Omklassificering (fraga 2/3) andrar `kategori` och `slitet_vid_tilltrade`,
+// Omklassificering andrar atgardstyp/battre_kvalitet/merkostnad/skick_forvarv,
 // vilket slaar igenom i arets troskelsumma sa fort vyerna revalideras – inget
-// lagras harlett. Fraga 4:s fritext (`motivering`) ar det enda som bar
-// bevisningen.
+// lagras harlett. skick_forsaljning ror vi aldrig har; det satts forst i
+// forsaljningsflodet (steg 4).
 export async function redigeraProjekt(
   _foreg: ProjektResultat,
   formData: FormData,
@@ -49,28 +47,18 @@ export async function redigeraProjekt(
   });
   if (!projekt) return { fel: "Projektet hittades inte." };
 
-  const namn = String(formData.get("namn") ?? "").trim();
-  const fanns = String(formData.get("fanns") ?? "");
-  const slitet = String(formData.get("slitet") ?? "");
-  const motivering = String(formData.get("motivering") ?? "").trim();
-
-  if (!namn) return { fel: "Skriv vad du gjorde." };
-  if (fanns !== "nytt" && fanns !== "fanns") {
-    return { fel: "Svara på om det var nytt eller fanns förut." };
-  }
-
-  const { kategori, slitet_vid_tilltrade } = tolkaProjektfragor(
-    fanns,
-    slitet as SlitetSvar,
-  );
+  const tolkat = tolkaFragetradetFormData(formData);
+  if ("fel" in tolkat) return tolkat;
 
   await prisma.projekt.update({
     where: { id },
     data: {
-      namn,
-      kategori,
-      slitet_vid_tilltrade,
-      motivering: motivering || null,
+      namn: tolkat.namn,
+      atgardstyp: tolkat.atgardstyp,
+      battre_kvalitet: tolkat.battre_kvalitet,
+      merkostnad: tolkat.merkostnad,
+      skick_forvarv: tolkat.skick_forvarv,
+      motivering: tolkat.motivering,
     },
   });
 

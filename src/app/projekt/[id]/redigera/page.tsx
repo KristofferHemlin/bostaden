@@ -1,15 +1,20 @@
-// Redigera ett projekt (produktspec 6.4): namn och de fyra fragornas svar, dar
-// fraga 4 ar ren fritext (`motivering`). Omklassificering rakas om i arssumman
-// sa fort vyerna revalideras. Ett projekt med kopplade kostnader gar inte att ta
-// bort – sidan visar vilka kostnader som blockerar i stallet for att bara neka.
+// Redigera ett projekt (produktspec 6.4): namn och fragetradets svar (fraga
+// 1-6, fraga 8). Omklassificering rakas om i arssumman sa fort vyerna
+// revalideras. Ett projekt med kopplade kostnader gar inte att ta bort –
+// sidan visar vilka kostnader som blockerar i stallet for att bara neka.
 
 import { notFound } from "next/navigation";
 import { RedigeraProjektForm } from "./form";
 import { Skarm } from "@/components/skarm";
 import { kostnaderKoppladeTillProjekt } from "@/doman/berakningar";
+import { harledFragetradetSvar } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
-import { formateraKronor } from "@/lib/format";
+import {
+  formateraBeloppInmatning,
+  formateraKronor,
+  orenTillFalt,
+} from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
@@ -59,18 +64,14 @@ export default async function RedigeraProjektSida({
         blockerande={blockerande}
         varden={{
           namn: projekt.namn,
-          fanns:
-            projekt.kategori === "grundforbattring"
-              ? "nytt"
-              : projekt.kategori === "reparation"
-                ? "fanns"
-                : "",
-          slitet:
-            projekt.slitet_vid_tilltrade === true
-              ? "ja"
-              : projekt.slitet_vid_tilltrade === false
-                ? "nej"
-                : "",
+          ...harledFragetradetSvar(projekt.atgardstyp, projekt.battre_kvalitet),
+          merkostnad: projekt.merkostnad,
+          merkostnadText:
+            projekt.merkostnad !== null
+              ? formateraBeloppInmatning(orenTillFalt(projekt.merkostnad))
+              : "",
+          skickForvarv:
+            projekt.skick_forvarv !== null ? String(projekt.skick_forvarv) : "",
           motivering: projekt.motivering ?? "",
         }}
       />

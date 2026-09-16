@@ -7,9 +7,10 @@
 // fristaende. Sjalva grupperingen och klassificeringen sker via server-actions i
 // src/app/genomgang/.
 //
-// Modellen (ooforandrad):
-//   * En hog ar ett projekt. Fas 1 skapar projektet med kategori = null; fas 2
-//     satter kategorin och ovriga svar. `hogBehoverKlassificeras` = kategori null.
+// Modellen:
+//   * En hog ar ett projekt. Fas 1 skapar projektet med atgardstyp = null; fas 2
+//     kor fragetradet och satter atgardstyp (m.fl. svar).
+//     `hogBehoverKlassificeras` = atgardstyp null.
 //   * "Raknas inte" ar INGEN hog – det ar kostnad.arkiverad = true. De kvittona
 //     faller ur `arOklassificerad` och dyker aldrig upp i genomgangen igen.
 //     Ordet "arkiverad" visas aldrig for anvandaren; hogen heter "Raknas inte".
@@ -18,7 +19,7 @@
 // skapas utan att anvandaren bekraftat.
 
 import { harledKostnadstillstand } from "./berakningar";
-import type { Kostnad, Projektkategori } from "./typer";
+import type { Atgardstyp, Kostnad } from "./typer";
 
 /** Ett kvitto som visas i fas 1, tillplattat till det forslagen behover. */
 export interface GenomgangsKvitto {
@@ -50,11 +51,11 @@ export function arOklassificerad(kostnad: Kostnad): boolean {
   return harledKostnadstillstand(kostnad).okopplad;
 }
 
-/** En hog behover klassificeras (fas 2) sa lange dess kategori inte ar satt. */
+/** En hog behover klassificeras (fas 2) sa lange dess atgardstyp inte ar satt. */
 export function hogBehoverKlassificeras(projekt: {
-  kategori: Projektkategori | null;
+  atgardstyp: Atgardstyp | null;
 }): boolean {
-  return projekt.kategori === null;
+  return projekt.atgardstyp === null;
 }
 
 // ---- Namnforslag -----------------------------------------------------------

@@ -37,6 +37,20 @@ export const SEED_REGELPARAMETRAR: Regelparameter[] = [
     giltig_fran: "1970-01-01",
     giltig_till: null,
   },
+  {
+    nyckel: "bakre_grans_fastighet",
+    varde: 1952,
+    enhet: "ar",
+    giltig_fran: "1900-01-01",
+    giltig_till: null,
+  },
+  {
+    nyckel: "bakre_grans_bostadsratt",
+    varde: 1974,
+    enhet: "ar",
+    giltig_fran: "1900-01-01",
+    giltig_till: null,
+  },
 ];
 
 export const SEED_BOSTAD = {
@@ -45,6 +59,11 @@ export const SEED_BOSTAD = {
   upplatelseform: "bostadsratt" as const,
   husform: null,
   tilltradesdatum: "2021-03-01",
+  nybyggd_vid_forvarv: false,
+  ombildning_fran_hyresratt: false,
+  // Redan besvarade i seeden – annars skulle varje lokal test av genomgangen
+  // mota bostadsfragorna i stallet for det den faktiskt testar.
+  bostadsfragor_besvarade: true,
   forsaljningsdatum: null as string | null,
 };
 
@@ -58,37 +77,48 @@ interface SeedProjekt extends Projekt {
 
 export const SEED_PROJEKT: SeedProjekt[] = [
   {
+    // Grupperad (kopplad till Bauhaus-kvittots malningsrader) men annu inte
+    // klassificerad – fragetradet ar inte kort an. Det tillstand flest
+    // kvitton befinner sig i (produktspec 2b), och darfor det viktigaste att
+    // fa ratt i granssnittet.
     id: PROJEKT_MALA_SOVRUM,
     bostad_id: BOSTAD_ID,
     namn: "Måla sovrum",
     ar: 2026,
-    kategori: "reparation",
+    atgardstyp: null,
+    battre_kvalitet: null,
+    merkostnad: null,
+    skick_forvarv: null,
+    skick_forsaljning: null,
     motivering: null,
-    slitet_vid_tilltrade: null, // de fyra fragorna stalls pa riktigt i steg 3
-    battre_skick_vid_forsaljning: null,
-    kvarvarande_andel: null,
   },
   {
+    // Klassificerad: utbytt mot en dyrare blandare. Merkostnaden ar
+    // grundforbattring, resten reparation – visar att en och samma atgard kan
+    // ge bidrag pa bada sidorna av exporten (produktspec 5).
     id: PROJEKT_KOKSBLANDARE,
     bostad_id: BOSTAD_ID,
     namn: "Byta köksblandare",
     ar: 2026,
-    kategori: "grundforbattring",
-    motivering: null,
-    slitet_vid_tilltrade: null,
-    battre_skick_vid_forsaljning: null,
-    kvarvarande_andel: null,
+    atgardstyp: "utbytt",
+    battre_kvalitet: true,
+    merkostnad: 50_000, // 500,00 kr av totalbeloppet 1 495,00 kr
+    skick_forvarv: 2,
+    skick_forsaljning: null, // sätts vid försäljningen
+    motivering: "Bytte till en dyrare blandare med högre kvalitet.",
   },
   {
+    // Klassificerad: utbytt mot likvardigt – hela beloppet ar reparation.
     id: PROJEKT_TAKLAMPOR,
     bostad_id: BOSTAD_ID,
     namn: "Nya taklampor i hallen",
     ar: 2026,
-    kategori: "reparation",
+    atgardstyp: "utbytt",
+    battre_kvalitet: false,
+    merkostnad: null,
+    skick_forvarv: 2,
+    skick_forsaljning: null,
     motivering: null,
-    slitet_vid_tilltrade: null,
-    battre_skick_vid_forsaljning: null,
-    kvarvarande_andel: null,
   },
 ];
 

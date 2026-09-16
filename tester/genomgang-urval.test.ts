@@ -32,12 +32,12 @@ describe("urvalet till klassificeringsgenomgangen", () => {
     expect(arOklassificerad(k)).toBe(true);
   });
 
-  it("en hog utan kategori behover klassificeras (fas 2), en med kategori gor det inte", () => {
-    expect(hogBehoverKlassificeras(projekt({ kategori: null }))).toBe(true);
+  it("en hog utan atgardstyp behover klassificeras (fas 2), en med atgardstyp gor det inte", () => {
+    expect(hogBehoverKlassificeras(projekt({ atgardstyp: null }))).toBe(true);
     expect(
-      hogBehoverKlassificeras(projekt({ kategori: "grundforbattring" })),
+      hogBehoverKlassificeras(projekt({ atgardstyp: "nybyggnad" })),
     ).toBe(false);
-    expect(hogBehoverKlassificeras(projekt({ kategori: "reparation" }))).toBe(
+    expect(hogBehoverKlassificeras(projekt({ atgardstyp: "utbytt" }))).toBe(
       false,
     );
   });

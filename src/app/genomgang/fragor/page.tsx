@@ -4,6 +4,7 @@
 // listan blir kortare varje gang.
 
 import Link from "next/link";
+import { Bostadsfragor } from "./bostadsfragor";
 import { Fas2 } from "./fas2";
 import { PRIMARKNAPP_KLASS, SEKUNDARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
@@ -16,14 +17,28 @@ export const dynamic = "force-dynamic";
 export default async function FragorSida() {
   const { bostadId } = await kravBostad();
 
-  const [bostad, hogar] = await Promise.all([
-    prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } }),
-    prisma.projekt.findMany({
-      where: { bostad_id: bostadId, kategori: null },
-      orderBy: { skapad_at: "asc" },
-    }),
-  ]);
+  const bostad = await prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } });
   const { bostadsnamn } = bostadHeader(bostad);
+
+  // Bostadsfragorna (produktspec 4.1) blockerar hela fas 2 tills de ar
+  // besvarade – reparationsdelen gar annars inte att rakna. Stalls forst,
+  // fore forsta hogen, aven om det just nu inte finns nagon hog att visa.
+  if (!bostad.bostadsfragor_besvarade) {
+    return (
+      <Skarm
+        bostadsnamn={bostadsnamn}
+        rubrik="Om bostaden"
+        bakLank={{ href: "/genomgang", text: "Grupperingen" }}
+      >
+        <Bostadsfragor />
+      </Skarm>
+    );
+  }
+
+  const hogar = await prisma.projekt.findMany({
+    where: { bostad_id: bostadId, atgardstyp: null },
+    orderBy: { skapad_at: "asc" },
+  });
 
   // Varje hogs kvitton – leverantor, anteckning, belopp, datum – for panelen
   // bredvid fragorna.

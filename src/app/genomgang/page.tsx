@@ -33,7 +33,7 @@ export default async function GenomgangSida() {
       orderBy: [{ betaldatum: "asc" }, { dokumentdatum: "asc" }],
     }),
     prisma.projekt.findMany({
-      where: { bostad_id: bostadId, kategori: null },
+      where: { bostad_id: bostadId, atgardstyp: null },
       orderBy: { skapad_at: "asc" },
     }),
   ]);
@@ -63,7 +63,7 @@ export default async function GenomgangSida() {
     datum: k.datum,
   }));
 
-  // Dina hogar: null-kategori-projekt med sina kopplade kvitton.
+  // Dina hogar: projekt utan atgardstyp med sina kopplade kvitton.
   const hogar = projektRader.map((p) => {
     const kvitton = kostnadRader
       .filter((k) =>

@@ -14,6 +14,7 @@ function bygg(over: Partial<K6aIndata>): K6aIndata {
       upplatelseform: "bostadsratt",
       tilltradesdatum: "2010-01-01",
       forsaljningsdatum: "2032-06-01",
+      nybyggd_vid_forvarv: false,
     },
     medlemskap: { agarandel: 100 },
     projekt: [],
@@ -33,7 +34,7 @@ function bk(over: Partial<BilagepaketKostnad> = {}): BilagepaketKostnad {
 
 describe("byggBilageforteckning – radurvalet", () => {
   it("en rad som redovisas med 0 kr (under troskeln) far inga bilagor", () => {
-    const p = projekt({ id: "p1", kategori: "grundforbattring", namn: "Liten atgard" });
+    const p = projekt({ id: "p1", atgardstyp: "nybyggnad", namn: "Liten atgard" });
     const k = kostnad({
       id: "k1",
       betaldatum: "2030-04-01",
@@ -49,7 +50,7 @@ describe("byggBilageforteckning – radurvalet", () => {
   });
 
   it("en rad med belopp over noll far sina bilagor, numrerade fran 1", () => {
-    const p = projekt({ id: "p1", kategori: "grundforbattring", namn: "Nytt kök" });
+    const p = projekt({ id: "p1", atgardstyp: "nybyggnad", namn: "Nytt kök" });
     const k = kostnad({ id: "k1", betaldatum: "2030-04-01", totalbelopp: 800_000, projekt_id: "p1" });
     const ex = byggK6aExport(bygg({ projekt: [p], kostnader: [k] }));
 
@@ -69,7 +70,7 @@ describe("byggBilageforteckning – radurvalet", () => {
 
 describe("byggBilageforteckning – kopplingen bilaga till rad", () => {
   it("flera kostnader pa samma rad ordnas efter betaldatum, bilagorna i uppladdningsordning", () => {
-    const p = projekt({ id: "p1", kategori: "grundforbattring", namn: "Bygga altan" });
+    const p = projekt({ id: "p1", atgardstyp: "nybyggnad", namn: "Bygga altan" });
     const senare = kostnad({ id: "k1", betaldatum: "2030-06-01", totalbelopp: 400_000, projekt_id: "p1" });
     const tidigare = kostnad({ id: "k2", betaldatum: "2030-01-08", totalbelopp: 300_000, projekt_id: "p1" });
     const ex = byggK6aExport(bygg({ projekt: [p], kostnader: [senare, tidigare] }));
@@ -90,7 +91,7 @@ describe("byggBilageforteckning – kopplingen bilaga till rad", () => {
   });
 
   it("en kostnad utan registrerade bilagor bidrar med inga poster", () => {
-    const p = projekt({ id: "p1", kategori: "grundforbattring", namn: "Nytt kök" });
+    const p = projekt({ id: "p1", atgardstyp: "nybyggnad", namn: "Nytt kök" });
     const k = kostnad({ id: "k1", betaldatum: "2030-04-01", totalbelopp: 800_000, projekt_id: "p1" });
     const ex = byggK6aExport(bygg({ projekt: [p], kostnader: [k] }));
 
@@ -101,7 +102,7 @@ describe("byggBilageforteckning – kopplingen bilaga till rad", () => {
 
 describe("byggBilageforteckning – arkiverat och privatmarkerat kommer inte med", () => {
   it("en arkiverad kostnads bilagor kommer inte med, aven om de finns i bilagekartan", () => {
-    const p = projekt({ id: "p1", kategori: "grundforbattring", namn: "Nytt kök" });
+    const p = projekt({ id: "p1", atgardstyp: "nybyggnad", namn: "Nytt kök" });
     const arkiveradKostnad = kostnad({
       id: "k1",
       betaldatum: "2030-04-01",
@@ -117,7 +118,7 @@ describe("byggBilageforteckning – arkiverat och privatmarkerat kommer inte med
   });
 
   it("en kostnad vars enda rad ar privatmarkerad kommer inte med", () => {
-    const p = projekt({ id: "p1", kategori: "grundforbattring", namn: "Nytt kök" });
+    const p = projekt({ id: "p1", atgardstyp: "nybyggnad", namn: "Nytt kök" });
     const privatKostnad = kostnad({
       id: "k1",
       betaldatum: "2030-04-01",

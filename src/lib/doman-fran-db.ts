@@ -28,11 +28,11 @@ export function tillDomanProjekt(p: PrismaProjekt): DomanProjekt {
   return {
     id: p.id,
     namn: p.namn,
-    kategori: p.kategori,
-    slitet_vid_tilltrade: p.slitet_vid_tilltrade,
-    battre_skick_vid_forsaljning: p.battre_skick_vid_forsaljning,
-    kvarvarande_andel:
-      p.kvarvarande_andel === null ? null : Number(p.kvarvarande_andel),
+    atgardstyp: p.atgardstyp,
+    battre_kvalitet: p.battre_kvalitet,
+    merkostnad: p.merkostnad,
+    skick_forvarv: p.skick_forvarv,
+    skick_forsaljning: p.skick_forsaljning,
   };
 }
 

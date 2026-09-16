@@ -78,7 +78,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { skapaUtkast, sparaKostnad, type KostnadResultat } from "./actions";
 import { analyseraBilaga, taBortBilaga } from "@/app/kostnad/bilaga-actions";
 import { UtkastRaderaKnapp } from "@/app/kostnad/utkast-radera";
@@ -215,6 +216,17 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
   const [filer, setFiler] = useState<File[]>([]);
   const [filstatus, setFilstatus] = useState<Record<string, Filstatus>>({});
   const filInputRef = useRef<HTMLInputElement | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
+
+  // Dialogen "Inget kvitto bifogat" (produktspec avsnitt 4.7): visas nar
+  // formularet skickas helt utan bilagor. En ref, inte state – "Spara ändå"
+  // maste garantera att nasta requestSubmit() i SAMMA hanterare ser vardet
+  // direkt, och en setState-uppdatering hade fortfarande last det gamla
+  // vardet fram till nasta rendering. Bekraftar anvandaren en gang ska
+  // dialogen aldrig komma tillbaka i det har formularet, aven om andra falt
+  // andras efterat.
+  const bilagaBekraftadRef = useRef(false);
+  const [visaBilagaDialog, setVisaBilagaDialog] = useState(false);
 
   // Forhandsvisning direkt vid val, innan sparning – ett filnamn i gra text ar
   // inte en bekraftelse pa att ratt fil valts (docs/design.md, "Bilagor").
@@ -521,6 +533,35 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
     setValdIndex((v) => (index >= 0 && index < v ? v - 1 : v));
   }
 
+  // Fangar formularsubmit INNAN server-actionen skicka() kors, sa att
+  // sparningen kan stoppas nar bilaga saknas helt (produktspec avsnitt 4.7).
+  // Ar poster.length redan 0 och anvandaren INTE redan valt "Spara ändå" i
+  // det har formularet visas dialogen i stallet, och sjalva sparningen vantar
+  // tills anvandaren svarat.
+  function hanteraSubmit(e: FormEvent<HTMLFormElement>) {
+    if (poster.length === 0 && !bilagaBekraftadRef.current) {
+      e.preventDefault();
+      setVisaBilagaDialog(true);
+    }
+  }
+
+  // "Bifoga något": stanger dialogen och oppnar filvaljaren direkt – anvandaren
+  // ska aldrig behova leta efter knappen for att gora det ratta (produktspec
+  // avsnitt 4.7).
+  function bilagaDialogBifoga() {
+    setVisaBilagaDialog(false);
+    filInputRef.current?.click();
+  }
+
+  // "Spara ändå": bekraftar valet permanent for det har formularet (se
+  // bilagaBekraftadRef) och triggar om submiten – som nu gar igenom eftersom
+  // villkoret i hanteraSubmit inte langre stammer.
+  function bilagaDialogSparaAnda() {
+    bilagaBekraftadRef.current = true;
+    setVisaBilagaDialog(false);
+    formRef.current?.requestSubmit();
+  }
+
   // Sparningen: uppdatera utkastet (eller skapa en ny kostnad om ingen fil
   // valdes) via server action, ladda upp ev. bilagor som annu inte kommit fram,
   // ga sedan till startskarmen.
@@ -583,6 +624,13 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
 
   const nagotAutoifyllt =
     autoFalt.belopp || autoFalt.datum || autoFalt.leverantor;
+  // Skiljer "Allt avläst" fran "Nagot falt kunde inte lasas" (produktspec,
+  // "Dokumentavlasning"): om inget falt star tomt efter avlasningen las alla
+  // tre, annars ar det atminstone ett som saknas.
+  const allaTreLasta =
+    falt.belopp.trim() !== "" &&
+    falt.datum.trim() !== "" &&
+    falt.leverantor.trim() !== "";
 
   // Statusraden for ett enskilt falt (produktspec, "Dokumentavlasning"): sag
   // inte samma sak tva ganger. Gruppmeddelandet har redan sagt att de ifyllda
@@ -598,7 +646,12 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
 
   return (
     <>
-    <form action={skicka} className="flex flex-col gap-5 p-5">
+    <form
+      ref={formRef}
+      action={skicka}
+      onSubmit={hanteraSubmit}
+      className="flex flex-col gap-5 p-5"
+    >
       {/* Bilagan forst. Ingen filknapp – sista rutan i raden ar hela kontrollen. */}
       <div>
         <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
@@ -831,13 +884,16 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
 
       {/* Forsta/andra laget: nagot fylldes i. ETT meddelande over hela
           gruppen bar beskedet – sag inte samma sak igen under varje falt
-          (produktspec, "Dokumentavlasning"). Samma text oavsett om allt eller
-          bara nagot av de tre falten gick att lasa; de falt som INTE gick att
-          lasa far dessutom sin egen rad (se faltStatus). */}
+          (produktspec, "Dokumentavlasning"). Lyckades alla tre far
+          gruppmeddelandet saga det rakt ut i stallet for en text som later
+          som nagot gick fel; lyckades bara nagra ar det den befintliga
+          texten, och de falt som INTE gick att lasa far dessutom sin egen
+          rad (se faltStatus). */}
       {avlasningKord === true && nagotAutoifyllt ? (
         <p className="rounded-lg bg-bg-klart px-3 py-2 font-granssnitt text-sm text-text-klart">
-          Fälten som kunde läsas är ifyllda från kvittot – kontrollera att de
-          stämmer innan du sparar.
+          {allaTreLasta
+            ? "Belopp, datum och leverantör är ifyllda från kvittot – kontrollera att de stämmer innan du sparar."
+            : "Fälten som kunde läsas är ifyllda från kvittot – kontrollera att de stämmer innan du sparar."}
         </p>
       ) : null}
 
@@ -902,7 +958,7 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
           (docs/design.md, "Datum i kostnadsformularet"). En avvikande betaldag
           hor till "Andra uppgifter". */}
       <Falt
-        etikett="Datum"
+        etikett="Kvittots datum"
         obligatoriskt
         hjalp={faltStatus(falt.datum.trim() === "")}
       >
@@ -1008,7 +1064,73 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
         <UtkastRaderaKnapp kostnadId={utkast.id} lage="knapp" />
       </div>
     ) : null}
+
+    {visaBilagaDialog ? (
+      <BilagaSaknasDialog
+        onBifoga={bilagaDialogBifoga}
+        onSparaAnda={bilagaDialogSparaAnda}
+      />
+    ) : null}
     </>
+  );
+}
+
+/**
+ * "Inget kvitto bifogat" (produktspec avsnitt 4.7): visas nar formularet
+ * skickas helt utan bilagor, sa att den som glomt bifoga upptacker det innan
+ * kostnaden sparas i stallet for aldrig. Hindrar aldrig – bara tva vagar ut.
+ * "Bifoga något" ar primarknappen, "Spara ändå" en dampad textlank bredvid,
+ * inte lika lockande att trycka pa av misstag men fullt mojlig att valja.
+ */
+function BilagaSaknasDialog({
+  onBifoga,
+  onSparaAnda,
+}: {
+  onBifoga: () => void;
+  onSparaAnda: () => void;
+}) {
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bilaga-saknas-rubrik"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--text-primar)_90%,transparent)] p-4"
+    >
+      <div className="w-full max-w-sm rounded-lg bg-yta-upphojd p-5">
+        <h2
+          id="bilaga-saknas-rubrik"
+          className="font-rubrik text-base text-text-primar"
+        >
+          Inget kvitto bifogat
+        </h2>
+        <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
+          Kostnaden sparas ändå. Men om Skatteverket frågar är underlaget
+          svagare utan något som styrker vad du köpte och när.
+        </p>
+        <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
+          Foton före och efter, bygglov, kontoutdrag eller lånehandlingar
+          räknas också. Har du inget av det blir din beskrivning i &quot;Vad
+          gällde det?&quot; viktigare – skriv vad som gjordes och när.
+        </p>
+        <div className="mt-4 flex flex-col items-center gap-3">
+          <button
+            type="button"
+            onClick={onBifoga}
+            className={PRIMARKNAPP_KLASS}
+          >
+            Bifoga något
+          </button>
+          <button
+            type="button"
+            onClick={onSparaAnda}
+            className="font-granssnitt text-sm text-text-dampad underline"
+          >
+            Spara ändå
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 

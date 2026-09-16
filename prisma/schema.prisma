@@ -23,9 +23,11 @@ enum husform {
   kedjehus
 }
 
-enum projektkategori {
-  grundforbattring
-  reparation
+enum atgardstyp {
+  nybyggnad
+  planlosning
+  nytt_tillagg
+  utbytt
 }
 
 enum regelparameterenhet {
@@ -55,6 +57,22 @@ model bostad {
   upplatelseform    upplatelseform
   husform           husform? // rent informativt, styr ingenting
   tilltradesdatum   DateTime       @db.Date
+  // De tva bostadsfragorna (produktspec 4.1, 4.6, CLAUDE.md). Fragor om
+  // bostaden, inte om atgarden – stalls darfor EN gang, i genomgangen innan
+  // forsta hogen klassificeras, aldrig i registreringen. Gar att andra i
+  // installningarna efterat.
+  //
+  // Reparation och underhall raknas aldrig med om bostaden var nybyggd vid
+  // forvarvet, utom vid ombildning fran hyresratt – da fanns lagenheten redan
+  // och var anvand (produktspec 4.6).
+  nybyggd_vid_forvarv        Boolean @default(false)
+  ombildning_fran_hyresratt  Boolean @default(false)
+  // Rent tekniskt bokforingsfalt: har de tva fragorna ovan stallts an? Bada
+  // falten defaultar till false, som ocksa ar det vanligaste RIKTIGA svaret –
+  // utan denna flagga gar "obesvarat" och "besvarat nej" inte att skilja at,
+  // och genomgangen skulle inte kunna blockera tills de faktiskt besvarats
+  // (produktspec 4.1: "De blockerar genomgangen tills de besvarats").
+  bostadsfragor_besvarade    Boolean @default(false)
   // Vinstberakningens belopp. BigInt, inte Int: Postgres int4 tar slut vid
   // 2147483647 oren (~21,5 miljoner kr) och en villaforsaljning kan ligga hogre.
   kopeskilling      BigInt? // oren
@@ -97,18 +115,21 @@ model regelparameter {
   @@index([nyckel, giltig_fran])
 }
 
-// Klassificeringen sitter har, inte pa kostnaden. De fyra projektfragorna.
+// Klassificeringen sitter har, inte pa kostnaden. Fragetradet (produktspec 4.1,
+// CLAUDE.md): atgardstyp/battre_kvalitet/merkostnad ar svaren pa fraga 2-5,
+// skick_forvarv/skick_forsaljning pa fraga 6-7, motivering pa fraga 8.
 model projekt {
-  id                           String           @id @default(uuid()) @db.Uuid
-  bostad_id                    String           @db.Uuid
-  namn                         String // fraga 1, fritext
-  ar                           Int // etikett for gruppering; auktoritativt ar kommer fran betaldatum
-  kategori                     projektkategori? // fraga 2; null tills klassificeringsgenomgangens fas 2 svarat
-  motivering                   String? // fraga 4, "hur vet du det?" – fritext, bar hela bevisningen
-  slitet_vid_tilltrade         Boolean? // fraga 3, null tills stalld
-  battre_skick_vid_forsaljning Boolean? // bekraftas vid forsaljning, null fram till dess
-  kvarvarande_andel            Decimal?         @db.Decimal(5, 4) // forslitning, 0..1, satts vid forsaljning
-  skapad_at                    DateTime         @default(now())
+  id                String      @id @default(uuid()) @db.Uuid
+  bostad_id         String      @db.Uuid
+  namn              String // fraga 1, fritext
+  ar                Int // etikett for gruppering; auktoritativt ar kommer fran betaldatum
+  atgardstyp        atgardstyp? // fraga 2-4; null tills klassificeringsgenomgangens fas 2 svarat
+  battre_kvalitet   Boolean? // fraga 5, endast relevant nar atgardstyp = utbytt
+  merkostnad        Int? // oren, obligatorisk och > 0 nar battre_kvalitet = true
+  skick_forvarv     Int? // fraga 6, 0-5, stalls bara nar atgarden har en reparationsdel
+  skick_forsaljning Int? // fraga 7, 0-5, null fram till forsaljningen
+  motivering        String? // fraga 8, "hur vet du det?" – fritext, valfri, bar bevisningen
+  skapad_at         DateTime    @default(now())
 
   bostad       bostad          @relation(fields: [bostad_id], references: [id], onDelete: Cascade)
   fordelningar radfordelning[]

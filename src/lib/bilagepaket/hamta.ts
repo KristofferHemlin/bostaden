@@ -111,6 +111,8 @@ export async function hamtaBilagepaketdata(
       upplatelseform: bostad.upplatelseform,
       tilltradesdatum: isoDatum(bostad.tilltradesdatum),
       forsaljningsdatum: isoDatum(bostad.forsaljningsdatum),
+      nybyggd_vid_forvarv: bostad.nybyggd_vid_forvarv,
+      ombildning_fran_hyresratt: bostad.ombildning_fran_hyresratt,
     },
     medlemskap: { agarandel },
     projekt: projektRader.map(tillDomanProjekt),

@@ -1,28 +1,14 @@
 import { describe, expect, it } from "vitest";
-import {
-  arBidragForbattringsutgift,
-  troskelgrundandeArsbelopp,
-} from "@/doman/berakningar";
 import { byggK6aExport, type K6aIndata } from "@/doman/export-k6a";
 import { REGELPARAMETRAR, kostnad, projekt } from "./_hjalp";
 
-describe("hog utan kategori (grupperad men inte klassificerad)", () => {
-  it("bidrar inte till arets troskelsumma forran fas 2 satt kategorin", () => {
-    const hog = projekt({ id: "p1", kategori: null });
-    const k = kostnad({
-      id: "k1",
-      betaldatum: "2026-05-01",
-      totalbelopp: 800_000,
-      projekt_id: "p1",
+describe("hog utan atgardstyp (grupperad men inte klassificerad)", () => {
+  it("exporten utelamnar den inte tyst – den listas som 'behover klassificeras', och bidrar inte till nagon sida", () => {
+    const hog = projekt({
+      id: "p1",
+      atgardstyp: null,
+      namn: "Bauhaus i augusti",
     });
-    expect(arBidragForbattringsutgift(hog)).toBe(false);
-    expect(
-      troskelgrundandeArsbelopp({ kostnader: [k], projekt: [hog] }, 2026),
-    ).toBe(0);
-  });
-
-  it("exporten utelamnar den inte tyst – den listas som 'behover klassificeras'", () => {
-    const hog = projekt({ id: "p1", kategori: null, namn: "Bauhaus i augusti" });
     const k = kostnad({
       id: "k1",
       betaldatum: "2026-05-01",
@@ -34,6 +20,7 @@ describe("hog utan kategori (grupperad men inte klassificerad)", () => {
         upplatelseform: "bostadsratt",
         tilltradesdatum: "2010-01-01",
         forsaljningsdatum: "2032-06-01",
+        nybyggd_vid_forvarv: false,
       },
       medlemskap: { agarandel: 100 },
       projekt: [hog],

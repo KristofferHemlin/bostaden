@@ -15,21 +15,33 @@ export const REGELPARAMETRAR: Regelparameter[] = [
     giltig_fran: "1970-01-01",
     giltig_till: null,
   },
+  {
+    nyckel: "bakre_grans_fastighet",
+    varde: 1952,
+    enhet: "ar",
+    giltig_fran: "1900-01-01",
+    giltig_till: null,
+  },
+  {
+    nyckel: "bakre_grans_bostadsratt",
+    varde: 1974,
+    enhet: "ar",
+    giltig_fran: "1900-01-01",
+    giltig_till: null,
+  },
 ];
 
 export function projekt(over: Partial<Projekt> = {}): Projekt {
   return {
     id: over.id ?? "p1",
     namn: over.namn ?? "Projekt",
-    kategori: over.kategori === undefined ? "grundforbattring" : over.kategori,
-    slitet_vid_tilltrade:
-      over.slitet_vid_tilltrade === undefined ? null : over.slitet_vid_tilltrade,
-    battre_skick_vid_forsaljning:
-      over.battre_skick_vid_forsaljning === undefined
-        ? null
-        : over.battre_skick_vid_forsaljning,
-    kvarvarande_andel:
-      over.kvarvarande_andel === undefined ? null : over.kvarvarande_andel,
+    atgardstyp: over.atgardstyp === undefined ? "nybyggnad" : over.atgardstyp,
+    battre_kvalitet:
+      over.battre_kvalitet === undefined ? null : over.battre_kvalitet,
+    merkostnad: over.merkostnad === undefined ? null : over.merkostnad,
+    skick_forvarv: over.skick_forvarv === undefined ? null : over.skick_forvarv,
+    skick_forsaljning:
+      over.skick_forsaljning === undefined ? null : over.skick_forsaljning,
   };
 }
 

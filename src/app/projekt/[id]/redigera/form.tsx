@@ -1,9 +1,8 @@
 "use client";
 
 // Redigeringsformular for ett projekt (produktspec 6.4, docs/design.md).
-// Fragorna 1-4 kommer fran <ProjektfragorFalt> – samma komponent som
-// genomgangens fas 2. Fraga 4 ar ren fritext (`motivering`) och ar det enda som
-// bar bevisningen; nagon baslinje att koppla till finns inte.
+// Fragorna kommer fran <FragetradetFalt> – samma komponent som genomgangens
+// fas 2, sa fragorna aldrig glider isar mellan flodena.
 //
 // Borttagningen ligger sist. Har projektet kopplade kostnader visas de i stallet
 // for en delete-knapp – de maste flyttas eller kopplas loss forst. Annars ett
@@ -17,9 +16,9 @@ import {
   type ProjektResultat,
 } from "../../actions";
 import {
-  ProjektfragorFalt,
-  type ProjektfragorVarden,
-} from "../../projektfragor-falt";
+  FragetradetFalt,
+  type FragetradetVarden,
+} from "../../fragetradet";
 import { PRIMARKNAPP_KLASS } from "@/components/skarm";
 
 const START: ProjektResultat = {};
@@ -37,7 +36,7 @@ export function RedigeraProjektForm({
 }: {
   projektId: string;
   blockerande: Blockerande[];
-  varden: ProjektfragorVarden;
+  varden: FragetradetVarden;
 }) {
   const [resultat, spara, sparar] = useActionState(redigeraProjekt, START);
   const [radera, raderaAction, raderar] = useActionState(taBortProjekt, START);
@@ -48,7 +47,7 @@ export function RedigeraProjektForm({
       <form action={spara} className="flex flex-col gap-6 p-5">
         <input type="hidden" name="projekt_id" value={projektId} />
 
-        <ProjektfragorFalt initial={varden} />
+        <FragetradetFalt initial={varden} />
 
         {resultat.fel ? (
           <p className="font-granssnitt text-sm text-accent-mork">

@@ -1,21 +1,20 @@
 "use server";
 
-// Klassificeringsgenomgangen, fas 2: for varje hog stalls de fyra fragorna EN
-// gang (produktspec 6.2, "Klassificeringsgenomgangen"). Det ar forst har
+// Klassificeringsgenomgangen, fas 2: for varje hog stalls fragetradet EN gang
+// (produktspec 4.1, 6.2, "Klassificeringsgenomgangen"). Det ar forst har
 // skatteterminologin blir relevant – da har anvandaren redan bestamt vad hogen
 // ar i fas 1.
 //
-// En hog ar ett projekt med kategori = null. `klassificeraHog` satter kategorin
-// och ovriga svar; darefter faller hogen ur fas 2:s lista. Redan klassificerade
-// hogar ror vi inte har – de andras via projektets vanliga redigering (6.4).
+// En hog ar ett projekt med atgardstyp = null. `klassificeraHog` satter
+// atgardstyp (m.fl. svar via tolkaFragetradetFormData – samma tolkning som
+// projektets redigering anvander); darefter faller hogen ur fas 2:s lista.
+// Redan klassificerade hogar ror vi inte har – de andras via projektets
+// vanliga redigering (produktspec 6.4).
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import {
-  tolkaProjektfragor,
-  type SlitetSvar,
-} from "@/doman/projektfragor";
 import { serverfelMeddelande } from "@/lib/databas-fel";
+import { tolkaFragetradetFormData } from "@/lib/fragetradet-formdata";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
@@ -30,30 +29,19 @@ export async function klassificeraHog(
   const { bostadId, anvandareId } = await kravBostad();
 
   const projektId = String(formData.get("projekt_id") ?? "");
-  const namn = String(formData.get("namn") ?? "").trim();
-  const fanns = String(formData.get("fanns") ?? "");
-  const slitet = String(formData.get("slitet") ?? "");
-  const motivering = String(formData.get("motivering") ?? "").trim();
 
-  if (!namn) return { fel: "Ge högen ett namn." };
-  if (fanns !== "nytt" && fanns !== "fanns") {
-    return { fel: "Svara på om det var nytt eller fanns förut." };
-  }
+  const tolkat = tolkaFragetradetFormData(formData);
+  if ("fel" in tolkat) return tolkat;
 
   try {
     const projekt = await prisma.projekt.findFirst({
       where: { id: projektId, bostad_id: bostadId },
-      select: { id: true, kategori: true, ar: true },
+      select: { id: true, atgardstyp: true, ar: true },
     });
     if (!projekt) return { fel: "Högen hittades inte." };
-    if (projekt.kategori !== null) {
+    if (projekt.atgardstyp !== null) {
       return { fel: "Den högen är redan klassificerad." };
     }
-
-    const { kategori, slitet_vid_tilltrade } = tolkaProjektfragor(
-      fanns,
-      slitet as SlitetSvar,
-    );
 
     // Ar-etiketten sätts om till tidigaste betaldatum bland hogens kvitton, sa att
     // den stammer med det som faktiskt raknas. Allt som avgor tröskel och
@@ -75,11 +63,13 @@ export async function klassificeraHog(
     await prisma.projekt.update({
       where: { id: projektId },
       data: {
-        namn,
+        namn: tolkat.namn,
         ar: nyttAr,
-        kategori,
-        slitet_vid_tilltrade,
-        motivering: motivering || null,
+        atgardstyp: tolkat.atgardstyp,
+        battre_kvalitet: tolkat.battre_kvalitet,
+        merkostnad: tolkat.merkostnad,
+        skick_forvarv: tolkat.skick_forvarv,
+        motivering: tolkat.motivering,
       },
     });
   } catch (fel) {
@@ -94,6 +84,68 @@ export async function klassificeraHog(
   revalidatePath("/projekt");
   revalidatePath("/projekt/[id]", "page");
   revalidatePath("/kostnad");
+  revalidatePath("/export");
+  redirect("/genomgang/fragor");
+}
+
+// De tva bostadsfragorna (produktspec 4.1, 4.6): stalls EN gang per bostad,
+// som ett steg innan forsta hogen klassificeras – aldrig per atgard. Blockerar
+// genomgangen tills de ar besvarade, eftersom reparationsdelen annars inte gar
+// att rakna. Gar att andra i installningarna efterat (se installningar/
+// actions.ts), som ocksa satter bostadsfragor_besvarade – darfor rors den
+// flaggan bara har och dar, aldrig i klassificeringen av en enskild hog.
+
+export interface BostadsfragorResultat {
+  fel?: string;
+}
+
+export async function sparaBostadsfragor(
+  _foreg: BostadsfragorResultat,
+  formData: FormData,
+): Promise<BostadsfragorResultat> {
+  const { bostadId, anvandareId } = await kravBostad();
+
+  const forstaAgare = String(formData.get("forsta_agare") ?? "");
+  if (forstaAgare !== "ja" && forstaAgare !== "nej") {
+    return { fel: "Svara på om du var första ägaren av bostaden." };
+  }
+  const nybyggdVidForvarv = forstaAgare === "ja";
+
+  // Fraga 2 stalls bara nar fraga 1 ar "ja" – ar den "nej" paverkar svaret
+  // inget (villkoret ar nybyggd_vid_forvarv OCH INTE ombildning), sa det
+  // lagras som false utan att fragas.
+  let ombildningFranHyresratt = false;
+  if (nybyggdVidForvarv) {
+    const ombildning = String(formData.get("ombildning") ?? "");
+    if (ombildning !== "ja" && ombildning !== "nej") {
+      return {
+        fel: "Svara på om du köpte bostaden i samband med en ombildning från hyresrätt.",
+      };
+    }
+    ombildningFranHyresratt = ombildning === "ja";
+  }
+
+  try {
+    await prisma.bostad.update({
+      where: { id: bostadId },
+      data: {
+        nybyggd_vid_forvarv: nybyggdVidForvarv,
+        ombildning_fran_hyresratt: ombildningFranHyresratt,
+        bostadsfragor_besvarade: true,
+      },
+    });
+  } catch (fel) {
+    return {
+      fel: serverfelMeddelande(fel, {
+        sida: "genomgang/fragor",
+        anrop: "sparaBostadsfragor",
+        anvandareId,
+      }),
+    };
+  }
+
+  revalidatePath("/genomgang/fragor");
+  revalidatePath("/installningar");
   revalidatePath("/export");
   redirect("/genomgang/fragor");
 }

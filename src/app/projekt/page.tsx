@@ -5,6 +5,7 @@ import Link from "next/link";
 import { KategoriInfo } from "./kategori-info";
 import { Listrad, Skarm } from "@/components/skarm";
 import { bidragForKostnad } from "@/doman/berakningar";
+import { atgardKategoriText } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
 import { formateraKronor } from "@/lib/format";
@@ -23,26 +24,15 @@ export default async function ProjektlistaSida() {
       if (k.arkiverad || !k.betaldatum) continue;
       belopp += bidragForKostnad(k, p.id);
     }
-    if (p.kategori === null) {
-      // En hog fran klassificeringsgenomgangens fas 1 som annu inte klassificerats.
-      return {
-        id: p.id,
-        namn: p.namn,
-        ar: p.ar,
-        belopp,
-        status: "Behöver klassificeras",
-        atgard: true,
-      };
-    }
-    const kategoriText =
-      p.kategori === "grundforbattring" ? "Grundförbättring" : "Reparation";
     return {
       id: p.id,
       namn: p.namn,
       ar: p.ar,
       belopp,
-      status: kategoriText,
-      atgard: false,
+      // En hog fran klassificeringsgenomgangens fas 1 (atgardstyp = null) har
+      // annu inte gatt igenom fragetradet – prickas som en atgard.
+      status: atgardKategoriText(p.atgardstyp, p.battre_kvalitet),
+      atgard: p.atgardstyp === null,
     };
   });
 

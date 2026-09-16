@@ -1,12 +1,22 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { Kortval } from "@/app/projekt/fragetradet";
 import { AgarandelFalt } from "@/components/agarandel-falt";
 import { BeloppFalt } from "@/components/belopp-falt";
 import { Falt, INPUT_KLASS, Meddelanderuta, PRIMARKNAPP_KLASS } from "@/components/skarm";
 import { TilltradesdatumFalt } from "@/components/tilltradesdatum-falt";
 import { formateraBeloppInmatning } from "@/lib/format";
 import { sparaInstallningar, type InstallningarResultat } from "./actions";
+
+// Bostadsfragorna (produktspec 4.1, 4.6) – samma tva fragor som i genomgangen
+// (genomgang/fragor/bostadsfragor.tsx), men har med det aktuella svaret
+// forvalt: till skillnad fran genomgangens forsta-gangen-skarm ar detta en
+// redigering av ett redan besvarat faktum, inte ett obesvarat forval.
+const HJALP_FORSTA_AGARE =
+  "Svara ja om bostaden var nybyggd eller nyproduktion när du köpte den, eller om du köpte en tomt och byggde hus på den.";
+const HJALP_OMBILDNING =
+  "Den som köpte sin hyresrätt vid ombildningen är formellt första ägare av bostadsrätten, men lägenheten fanns och var använd sedan tidigare – då gäller vanliga regler för reparationer.";
 
 const START: InstallningarResultat = {};
 
@@ -61,6 +71,8 @@ export function InstallningarForm({
   agarandel,
   kapitaltillskott,
   identifiering,
+  nybyggdVidForvarv,
+  ombildningFranHyresratt,
 }: {
   upplatelseform: "bostadsratt" | "fastighet";
   sald: boolean;
@@ -71,9 +83,17 @@ export function InstallningarForm({
   agarandel: string;
   kapitaltillskott: string;
   identifiering: string;
+  nybyggdVidForvarv: boolean;
+  ombildningFranHyresratt: boolean;
 }) {
   const [resultat, action, pagar] = useActionState(sparaInstallningar, START);
   const [upplatelseformVal, setUpplatelseformVal] = useState(upplatelseform);
+  const [forstaAgare, setForstaAgare] = useState<"ja" | "nej">(
+    nybyggdVidForvarv ? "ja" : "nej",
+  );
+  const [ombildning, setOmbildning] = useState<"ja" | "nej">(
+    ombildningFranHyresratt ? "ja" : "nej",
+  );
   // Ett foreslaget byte som vantar pa bekraftelse (produktspec 4.8) – null nar
   // inget kort just klickats. Sjalva bytet av upplatelseformVal sker forst nar
   // bekraftelsen godkanns, aldrig direkt vid klicket.
@@ -214,6 +234,58 @@ export function InstallningarForm({
           defaultValue={tilltradesdatum}
         />
       </Falt>
+
+      {/* Vanligt <span> som etikett, inte <label> (samma skal som "Vad äger
+          du?" ovan) – ett Falt skulle lagga tva klickbara kort i en enda
+          label, vilket bara ett av dem kan aga. */}
+      <div>
+        <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
+          Var du första ägaren av bostaden?
+        </span>
+        <div className="grid grid-cols-2 gap-2">
+          <Kortval
+            vald={forstaAgare === "ja"}
+            text="Ja"
+            onClick={() => setForstaAgare("ja")}
+          />
+          <Kortval
+            vald={forstaAgare === "nej"}
+            text="Nej"
+            onClick={() => {
+              setForstaAgare("nej");
+              setOmbildning("nej");
+            }}
+          />
+        </div>
+        <p className="mt-1.5 font-granssnitt text-xs text-text-dampad">
+          {HJALP_FORSTA_AGARE}
+        </p>
+      </div>
+      <input type="hidden" name="forsta_agare" value={forstaAgare} />
+
+      {forstaAgare === "ja" ? (
+        <div>
+          <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
+            Köpte du bostaden i samband med ombildning från hyresrätt?
+          </span>
+          <div className="grid grid-cols-2 gap-2">
+            <Kortval
+              vald={ombildning === "ja"}
+              text="Ja"
+              onClick={() => setOmbildning("ja")}
+            />
+            <Kortval
+              vald={ombildning === "nej"}
+              text="Nej"
+              onClick={() => setOmbildning("nej")}
+            />
+          </div>
+          <p className="mt-1.5 font-granssnitt text-xs text-text-dampad">
+            {HJALP_OMBILDNING}
+          </p>
+        </div>
+      ) : null}
+      <input type="hidden" name="ombildning" value={ombildning} />
 
       <Falt etikett="Storlek" hjalp="Boarea i kvadratmeter.">
         <input

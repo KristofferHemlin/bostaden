@@ -46,6 +46,8 @@ export default async function InstallningarSida() {
         agarandel={agarandel === 100 ? "" : String(agarandel)}
         kapitaltillskott={kronor(bostad.kapitaltillskott)}
         identifiering={bostad.identifiering ?? ""}
+        nybyggdVidForvarv={bostad.nybyggd_vid_forvarv}
+        ombildningFranHyresratt={bostad.ombildning_fran_hyresratt}
       />
 
       {/* Arkivexport: laddar ner samtliga bilagor som ett zip-arkiv

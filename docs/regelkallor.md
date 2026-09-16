@@ -30,6 +30,36 @@ Samtliga uppgifter nedan kontrollerades **2026-08-28** mot Skatteverkets egna si
 
 ---
 
+## Besvarat av Skatteverket 2026-09-15
+
+Telefonsamtal med Skatteupplysningen. Svaren är vägledning, inte bindande förhandsbesked.
+
+**Räknas 5 000-gränsen per bostad eller per delägare?** Per bostad. Två delägare som tillsammans lagt ned 8 000 kr under ett kalenderår har passerat gränsen. Appen räknade redan så; antagandet är nu bekräftat.
+
+**Vad ingår i tröskelsumman när en utgift inte är avdragsgill?** Endast avdragsgilla belopp. En reparation utanför femårsfönstret räknas varken av eller in, och kan därför inte lyfta året över gränsen. 3 000 kr grundförbättring plus 3 000 kr utfallen reparation samma år ger 0 kr avdragsgillt.
+
+**Appen antog tidigare motsatsen** – att fönstret begränsade avdragsrätten snarare än utgiftens karaktär, och att den utfallna reparationen därför räknades in i tröskelsumman. Det var fel och är rättat i `CLAUDE.md` och specen.
+
+**Behandlas tomt och utvändiga anläggningar annorlunda än byggnaden?** Nej. Dränering, stödmur och altan följer samma regler, med samma uppdelning i grundförbättring respektive förbättrande åtgärd.
+
+Källa som anvisades: Skatteverkets sida *Avdrag för renoveringar och nybyggnad*, senast ändrad 2026-01-27.
+
+---
+
+## Funnet på Skatteverkets sida 2026-09-15 – ej implementerat
+
+Tre regler som framgår av samma sida och som appen i dag inte hanterar. De är inte tolkningar utan uttryckliga villkor.
+
+**Grundförbättringar har en bakre tidsgräns.** Utgifter för grundförbättringar i småhus före 1952 och i bostadsrätt före 1974 är inte avdragsgilla. Appen har i dag en enda undre gräns på 1970-01-01 i `regelparameter`, satt av tekniska skäl. Den är fel åt båda hållen: den avvisar en giltig grundförbättring i ett småhus från 1965, och släpper igenom en ogiltig i en bostadsrätt från 1972. Gränsen beror på upplåtelseform och hör hemma som två regelparametrar.
+
+**Var bostaden nybyggd när den köptes faller reparationsavdraget bort helt.** Ett uttryckligt villkor under "Inget avdrag". Appen frågar aldrig om det. Det är en fråga om bostaden, inte om åtgärden, och hör därför hemma vid registreringen eller i inställningarna snarare än i klassificeringen.
+
+**Byte till betydligt bättre material delar åtgärden i två.** Merkostnaden jämfört med ett likvärdigt byte är grundförbättring utan tidsgräns; resten är reparation med femårsfönster. Skatteverkets eget exempel: plastmatta byts mot kakel för 30 000 kr, varav 10 000 kr är merkostnaden och därmed grundförbättring, medan 20 000 kr faller bort eftersom arbetet gjordes tio år före försäljningen.
+
+Appen tillåter att en åtgärd delas mellan kategorier, men de fyra frågorna leder aldrig dit: fråga 2 skiljer bara på "fanns förut" och "nytt", och ett exklusivare kök hamnar då helt under reparation. Uppdelningen är användarens bedömning och ska inte automatiseras – men frågan måste ställas, annars görs den aldrig.
+
+---
+
 ## Öppna rättsfrågor
 
 **Räknas 5 000-gränsen per bostad eller per delägare?** Rättsläget är oklart. Etablerade skatteprogram utgår från att gränsen räknas per bostad, men noterar att enskilda skattegranskare kan anse att den ska räknas per delägare. Blankettanvisningarna talar om ett belopp per bostad.
@@ -108,3 +138,5 @@ Historiska poster ska räknas enligt reglerna som gällde vid utgiftstillfället
 |---|---|---|
 | 2026-08-28 | Första kontrollen av samtliga regler ovan | Skatteverkets webbplats och blanketter |
 | 2026-09-09 | Fastigheter kontrollerade. Beräkningsreglerna identiska med bostadsrätt; skillnaderna är blankettnamn, kapitaltillskott och köpkostnader | Skatteverkets sidor och SKV 379 |
+| 2026-09-15 | Tröskeln bekräftad per bostad. Tröskelsumman rättad: endast avdragsgilla belopp räknas in, även för femårsfönstret. Tomt och anläggningar följer samma regler | Skatteupplysningen, telefon |
+| 2026-09-15 | Tre oimplementerade regler funna: bakre tidsgräns 1952/1974 för grundförbättringar, nybyggd bostad vid förvärv, uppdelning vid byte till exklusivare material | Skatteverket, Avdrag för renoveringar och nybyggnad |

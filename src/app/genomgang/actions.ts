@@ -3,8 +3,8 @@
 // Klassificeringsgenomgangen (produktspec, "Klassificeringsgenomgangen").
 // Server-actions for fas 1: gruppera oklassificerade kvitton i hogar.
 //
-// En hog ar ett projekt. Fas 1 skapar det med kategori = null; fas 2
-// (src/app/genomgang/fragor) satter kategorin och ovriga svar.
+// En hog ar ett projekt. Fas 1 skapar det med atgardstyp = null; fas 2
+// (src/app/genomgang/fragor) satter atgardstyp och ovriga svar.
 //
 // "Raknas inte" ar ingen hog – det ar kostnad.arkiverad = true. Ordet
 // "arkiverad" visas aldrig for anvandaren. Ett kvitto som hamnat dar gar att
@@ -84,14 +84,14 @@ async function kopplaKvittonTillHog(
 }
 
 /** Tar bort en hog om den inte langre har nagra kopplade rader OCH inte ar
- *  klassificerad. En klassificerad hog (kategori satt) ror vi aldrig har. */
+ *  klassificerad. En klassificerad hog (atgardstyp satt) ror vi aldrig har. */
 async function stadaTomHog(projektId: string): Promise<void> {
   const projekt = await prisma.projekt.findUnique({
     where: { id: projektId },
-    select: { kategori: true, fordelningar: { select: { id: true }, take: 1 } },
+    select: { atgardstyp: true, fordelningar: { select: { id: true }, take: 1 } },
   });
   if (!projekt) return;
-  if (projekt.kategori === null && projekt.fordelningar.length === 0) {
+  if (projekt.atgardstyp === null && projekt.fordelningar.length === 0) {
     await prisma.projekt.delete({ where: { id: projektId } });
   }
 }
@@ -124,7 +124,7 @@ export async function skapaHog(
         : new Date().getUTCFullYear();
 
     const projekt = await prisma.projekt.create({
-      data: { bostad_id: bostadId, namn, ar: hogAr, kategori: null },
+      data: { bostad_id: bostadId, namn, ar: hogAr, atgardstyp: null },
       select: { id: true },
     });
 
@@ -151,7 +151,7 @@ export async function skapaHog(
  * Doper om en hog direkt i grupperingsvyn. Namnet foreslas fran forsta kvittots
  * anteckning, men forslaget ar ofta leverantoren – och hogens namn hamnar i
  * K6A-underlagets atgardskolumn, dar det ska sta vad utgiften avser. Bara hogar
- * som annu inte gatt igenom fragorna (kategori = null) doper man om har;
+ * som annu inte gatt igenom fragorna (atgardstyp = null) doper man om har;
  * klassificerade hogar andras via projektets redigering.
  */
 export async function dopOmHog(
@@ -168,10 +168,10 @@ export async function dopOmHog(
   try {
     const projekt = await prisma.projekt.findFirst({
       where: { id: projektId, bostad_id: bostadId },
-      select: { id: true, kategori: true },
+      select: { id: true, atgardstyp: true },
     });
     if (!projekt) return { fel: "Högen hittades inte." };
-    if (projekt.kategori !== null) {
+    if (projekt.atgardstyp !== null) {
       return { fel: "Den högen är redan klassificerad och byter namn via projektet." };
     }
 
@@ -195,10 +195,10 @@ export async function laggIHog(
   try {
     const projekt = await prisma.projekt.findFirst({
       where: { id: projektId, bostad_id: bostadId },
-      select: { id: true, kategori: true },
+      select: { id: true, atgardstyp: true },
     });
     if (!projekt) return { fel: "Högen hittades inte." };
-    if (projekt.kategori !== null) {
+    if (projekt.atgardstyp !== null) {
       return {
         fel: "Den högen är redan klassificerad. Lägg kvittot i en hög som inte gått igenom frågorna än.",
       };
@@ -225,10 +225,10 @@ export async function flyttaUturHog(
   try {
     const projekt = await prisma.projekt.findFirst({
       where: { id: projektId, bostad_id: bostadId },
-      select: { id: true, kategori: true },
+      select: { id: true, atgardstyp: true },
     });
     if (!projekt) return { fel: "Högen hittades inte." };
-    if (projekt.kategori !== null) {
+    if (projekt.atgardstyp !== null) {
       return { fel: "Den högen är redan klassificerad och ändras via projektet." };
     }
 

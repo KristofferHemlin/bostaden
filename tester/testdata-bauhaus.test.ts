@@ -32,10 +32,10 @@ describe("Bauhaus-kvittot ur produktspec avsnitt 11", () => {
     expect(privat).toBe(22_900);
   });
 
-  it("projektet 'Mala sovrum' ar en reparation som annu inte fatt sina fyra svar", () => {
+  it("projektet 'Mala sovrum' ar grupperat men annu inte klassificerat – fragetradet ar inte kort", () => {
     const p = SEED_PROJEKT.find((x) => x.id === PROJEKT_MALA_SOVRUM)!;
-    expect(p.kategori).toBe("reparation");
-    expect(p.slitet_vid_tilltrade).toBeNull();
+    expect(p.atgardstyp).toBeNull();
+    expect(p.skick_forvarv).toBeNull();
     expect(p.motivering).toBeNull();
   });
 

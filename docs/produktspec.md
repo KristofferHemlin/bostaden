@@ -47,7 +47,7 @@ Högens namn föreslås från första kvittots anteckning och går att ändra. D
 
 **"Räknas inte" är en egen hög.** Dit dras kvitton som var privata eller av annat skäl inte hör till underlaget. Den högen ställer inga frågor, och de kvittona dyker aldrig upp i genomgången igen. Bilaga och belopp ligger kvar i arkivet – det är en klassificering, inte en radering.
 
-**Fas 2: klassificera.** För varje hög ställs de fyra frågorna en gång, med högens kvitton synliga bredvid. Det är först här skatteterminologin blir relevant, och då har användaren redan bestämt vad högen är.
+**Fas 2: klassificera.** För varje hög ställs frågeträdet en gång, med högens kvitton synliga bredvid. Det är först här skatteterminologin blir relevant, och då har användaren redan bestämt vad högen är.
 
 Högar som redan klassificerats visas inte alls. Genomgången blir kortare varje gång och slutar med en tom lista för den som gör den löpande.
 
@@ -75,99 +75,185 @@ Modellera upplåtelseform som ett riktigt fält från start. Hårdkoda aldrig bo
 
 Dessa regler styr all beräkning. De får inte förenklas.
 
-### 4.1 Två kategorier av förbättringsutgift
+Modellen speglar Skatteverkets egen e-tjänst *Räkna ut avdrag för renoveringar och nybyggnation*, verifierad mot den 2026-09-15. Varje tal i avsnittet är kontrollerat mot verktyget. Se `docs/regelkallor.md` för genomgången.
 
-**Grundförbättring** – ny-, till- eller ombyggnad. Något tillförs som inte fanns förut, eller standarden höjs. Ingen tidsgräns bakåt.
+**Varför spegla dem exakt.** Skatteverkets verktyg ställer sina frågor i deklarationsögonblicket, när ingen längre minns hur badrummet såg ut vid inflyttningen. Samma frågor ställda samma vecka som arbetet utfördes får sanna svar i stället för rekonstruerade. Produkten är inte en kopia av deras tjänst – den är deras tjänst flyttad till den tidpunkt då den fungerar.
 
-**Förbättrande reparation och underhåll** – återställande eller uppfräschning. Avdragsgill endast om:
-- kostnaden är nedlagd under försäljningsåret eller de fem närmast föregående kalenderåren, och
-- bostaden är i bättre skick vid försäljningen än vid förvärvet
+### 4.1 Frågeträdet
 
-En reparation av något som gått sönder under den egna ägartiden är inte avdragsgill – den återställer bara skicket från tillträdet.
+Frågorna ställs en gång per åtgärd, aldrig per kvitto. Grenar som inte påverkar resultatet hoppas över, precis som i Skatteverkets verktyg.
 
-### 4.2 Tröskeln
+| # | Fråga | Följd |
+|---|---|---|
+| 1 | Vad gjorde du? | Fritext, blir åtgärdens namn och hamnar i underlagets åtgärdskolumn |
+| 2 | Byggde du något nytt som inte fanns tidigare? | Ja → hela beloppet är grundförbättring, klart |
+| 3 | Ändrade du planlösningen? | Ja → hela beloppet är grundförbättring, klart |
+| 4 | Satte du in något nytt, eller bytte du ut något som fanns? | Nytt → hela beloppet är grundförbättring, klart |
+| 5 | Är det nya av bättre kvalitet, eller liknande som tidigare? | Bättre → merkostnaden är grundförbättring, resten reparation. Liknande → allt är reparation |
+| 6 | Hur var skicket vid förvärvet? | Heltal 0–5 |
+| 7 | Hur var skicket vid försäljningen? | Heltal 0–5, ställs först vid försäljningen |
+| 8 | Hur vet du det? | Fritext, valfritt, blockerar aldrig |
 
-Sammanlagda förbättringsutgifter måste uppgå till minst 5 000 kr under ett och samma kalenderår för att något avdrag alls ska medges det året. Båda kategorierna summeras ihop vid prövningen. Understiger året tröskeln faller hela årets utgifter bort.
+Fråga 6 och 7 ställs bara när åtgärden har en reparationsdel. En ren grundförbättring har ingen, och skicket saknar då betydelse.
 
-**Prövningsordning.** Tröskeln prövas på årets avdragsgrundande belopp för hela bostaden, före ägarandel och före förslitning. Ägarandelen påverkar först det belopp som redovisas; förslitningen påverkar först exportens avdragsgilla kolumn. Ingen av dem får dras av innan tröskeln prövas.
+**Merkostnaden är obligatorisk och större än noll** när svaret på fråga 5 är att det nya är bättre. Säger man att det blev bättre måste det ha blivit dyrare, annars var bytet per definition likvärdigt. Skatteverkets verktyg avvisar noll här.
 
-Undvik ordet *brutto* i kod och gränssnitt – det är tvetydigt, eftersom ROT och försäkringsersättning dras av redan innan tröskeln prövas. Använd `avdragsgrundande_belopp` för beloppet efter dessa avdrag men före ägarandel och förslitning.
+**Fråga 6 ställs tidigt, fråga 7 sent.** Skicket vid förvärvet är det som blir omöjligt att minnas – det ska fångas medan det går. Skicket vid försäljningen handlar om hur något ser ut efter års användning och kan inte besvaras i förväg. Det är samma tidsdelning som produktens två faser i övrigt.
 
-**Formel per kostnad.** Beräkningen sker i denna ordning och ingen annan:
+**Fråga 8 är inte pynt.** Reparationsavdraget hänger helt på två subjektiva siffror – samma kvitto kan ge 0 eller hela beloppet beroende på skickbedömningen. Ingen annan del av beräkningen har den hävstången. Motiveringen är det som gör en sådan siffra möjlig att försvara, och när kvitto saknas är den dessutom en del av bevisningen.
+
+**Men den ställs bara när svaret betyder något.** Är `skick_forvarv` 0, 1 eller 2 – alltså när användaren påstår att något var dåligt vid tillträdet – är motiveringen värdefull och fältet visas. Är den 3 eller högre blir reparationsavdraget litet ändå, och då finns inget att försvara.
+
+Skälet är att genomgången redan är produktens tyngsta moment. Ett tomt textfält efter sex frågor är där folk ger upp, och ett fält som bara syns när det spelar roll blir också ett fält man faktiskt fyller i.
+
+**Frågorna om bostaden ställs en gång, först i genomgången.** `nybyggd_vid_forvarv` och `ombildning_fran_hyresratt` hör till bostaden, inte till åtgärden, och ställs därför en gång per bostad innan den första högen klassificeras.
+
+De hör inte hemma i registreringen. Den är avsiktligt kort, frågorna är svåra att svara på innan man vet varför de ställs, och de påverkar ingenting förrän något klassificeras. I genomgången finns tid och sammanhanget är uppenbart – det är redan appens enda skärm där svåra frågor hör hemma.
+
+**De blockerar genomgången tills de besvarats.** Utan svaret går reparationsdelen inte att räkna. Det är rätt plats för ett krav; inmatningen är det inte.
+
+Frågorna ska gå att ändra i inställningarna efteråt, som allt annat om bostaden.
+
+Formuleringarna följer Skatteverkets:
+
+> **Var du första ägaren av bostaden?**
+> Svara ja om bostaden var nybyggd eller nyproduktion när du köpte den, eller om du köpte en tomt och byggde hus på den.
+>
+> **Köpte du bostaden i samband med ombildning från hyresrätt?**
+> Visas bara när svaret ovan är ja.
+
+### 4.2 Beräkningen
+
+Ordningen är bindande.
 
 ```
-avdragsgrundande_belopp = totalbelopp - rot_utnyttjat - forsakringsersattning
-reduktionsfaktor        = avdragsgrundande_belopp / totalbelopp
-bidrag(rad, projekt)    = rad.belopp * fordelningsandel * reduktionsfaktor
+1.  avdragsgrundande = belopp - rot_utnyttjat - forsakringsersattning
+    reduktionsfaktor = avdragsgrundande / belopp
+
+2.  grundforbattringsdel:
+      nybyggnad | planlosning | nytt_tillagg → hela avdragsgrundande
+      utbytt + battre_kvalitet               → merkostnad * reduktionsfaktor
+      utbytt + liknande_kvalitet             → 0
+    reparationsunderlag = avdragsgrundande - grundforbattringsdel
+
+3.  Tidsgränser:
+      reparationsunderlag = 0 utanför femårsfönstret
+      grundforbattringsdel = 0 före den bakre gränsen för upplåtelseformen
+      grundforbattringsdel = 0 om raden bidrar till en reparationsdel och
+        bostaden var nybyggd vid förvärvet – se 4.6
+
+4.  TRÖSKELN prövas här, per kalenderår, på summan av
+      grundforbattringsdel + reparationsunderlag
+    för hela bostaden. Understiger året tröskeln faller allt bort.
+
+5.  skickfaktor = max(0, skick_forsaljning - skick_forvarv) / 5
+    reparation  = reparationsunderlag * skickfaktor
+
+6.  Ägarandel tillämpas sist, på båda kategorierna.
 ```
 
-ROT och försäkringsersättning fördelas alltså proportionellt över kostnadens rader, aldrig mot en enskild rad. En kostnad vars rader bara är fördelade till 60 % bidrar med 60 % av det reducerade beloppet; resterande 40 % ligger kvar som okopplat och räknas inte alls.
+**Tidsgränsen räknas bort före tröskeln, skickbedömningen efter.** Skälet är att femårsfönstret avgör om utgiften alls kan vara avdragsgill, medan skicket bara avgör hur mycket av en i övrigt giltig utgift som är det.
 
-Årets summa är sedan summan av alla bidrag med `betaldatum` inom kalenderåret, och den jämförs mot `troskelbelopp`.
+Praktisk följd: en reparation utanför fönstret kan inte lyfta året över tröskeln och göra en grundförbättring avdragsgill. Men en reparation där skicket knappt förbättrats räknas med hela sitt underlag i tröskelprövningen, även om avdraget blir nästan noll.
 
-**Vad som ingår i tröskelsumman.** Skilj på två sorters grindar. De som avgör om utgiften över huvud taget *är* en förbättringsutgift – `slitet_vid_tilltrade` och `battre_skick_vid_forsaljning` – exkluderar beloppet både från avdraget och från tröskelsumman. Faller någon av dem är åtgärden normalt underhåll, som inte är en förbättringsutgift och därför inte kan lyfta året över gränsen.
+Verifierat med tre fall i Skatteverkets verktyg; siffrorna står bland testfallen i `CLAUDE.md`.
 
-Femårsfönstret fungerar tvärtom: det begränsar avdraget för en utgift som *var* en förbättringsutgift när den lades ned. En reparation utanför fönstret räknas därför in i sitt utgiftsårs tröskelsumma men dras inte av. Det spelar roll när samma år innehåller en grundförbättring, eftersom grundförbättringar saknar tidsgräns – reparationen kan då lyfta året över tröskeln och göra grundförbättringen avdragsgill.
+**Avrundning sker uppåt.** Skickfaktorn ger brutna belopp, och Skatteverkets verktyg avrundar dem uppåt till hela kronor i den skattskyldiges favör – inte enligt vanliga avrundningsregler. 2 999 × 0,6 blir 1 800 kr, inte 1 799. Verifierat i tre fall; se `CLAUDE.md`.
 
-Detta är en tolkning, inte en verifierad regel; se `docs/regelkallor.md`.
+Avrundningen gäller bara reparationsdelen efter skickfaktorn, och sker vid utskrift snarare än i kedjan. Interna belopp är heltal i ören enligt konventionerna.
 
-Rättsläget om tröskeln ska räknas per bostad eller per delägare är oklart – se `docs/regelkallor.md`. Appen räknar per bostad, men när användarens andel understiger 5 000 kr trots att bruttobeloppet passerar ska en upplysning visas om att bedömningen kan gå åt andra hållet.
+### 4.3 Tröskeln
 
-### 4.3 Vad som inte får räknas med
+Sammanlagda förbättringsutgifter måste uppgå till minst 5 000 kr under ett och samma kalenderår för att något avdrag alls ska medges det året. Båda kategorierna summeras ihop. Understiger året tröskeln faller hela årets utgifter bort.
 
-- Lös inredning och egendom som flyttar med ägaren (möbler, textilier, verktyg, torkställ)
-- Eget arbete – endast material får räknas
+Tröskeln räknas **per bostad, inte per delägare**. Bekräftat av Skatteverkets upplysningstjänst 2026-09-15: två delägare som tillsammans lagt ned 8 000 kr under ett år har passerat gränsen, även om ingen av dem ensam nått 5 000 kr.
+
+### 4.4 Skickskalan
+
+Ett heltal 0–5, där 0 är mycket dåligt skick och 5 är nytt skick. Faktorn är skillnaden delat med fem.
+
+Skalan är Skatteverkets egen konstruktion och inte en lagregel. Appen använder den ändå, så att siffrorna stämmer med vad användaren senare möter i deklarationen.
+
+Är skicket lika eller sämre vid försäljningen blir avdraget noll – åtgärden har då inte förbättrat bostaden jämfört med förvärvet. Resultatet får aldrig bli negativt.
+
+`skick_forsaljning` är null fram till försäljningen. Null blockerar aldrig inmatning eller översikt, bara exporten, som ändå inte kan tas fram innan försäljningen är registrerad.
+
+### 4.5 Tidsgränser
+
+**Femårsfönstret** gäller reparationsdelen: försäljningsåret plus de fem närmast föregående kalenderåren. Grundförbättringar har ingen motsvarande gräns.
+
+**Bakre gräns för grundförbättringar:** inga avdrag i småhus före 1952, eller i bostadsrätt före 1974. Gränsen beror på upplåtelseform och lagras som två regelparametrar, aldrig som en konstant.
+
+**Året bestäms av betaldatum**, aldrig av fakturadatum eller dokumentdatum. Skatteverkets verktyg frågar i stället efter det år åtgärden utfördes. De sammanfaller oftast; se den öppna frågan i `docs/regelkallor.md`.
+
+### 4.6 Vad som inte får räknas med
+
+- Lös inredning och egendom som flyttar med ägaren
+- Eget arbete – endast material och hyra av verktyg får räknas
+- Inköp av verktyg, arbetskläder, mat och dryck
 - Den del av arbetskostnaden som motsvaras av utnyttjad ROT-skattereduktion
 - Utgift som täcks av försäkrings- eller skadeersättning
 - I bostadsrätt: åtgärder på sådant föreningen ansvarar för enligt stadgarna
+- **Reparation och underhåll om bostaden var nybyggd när den förvärvades.** Var allt nytt vid tillträdet kan ingenting ha blivit bättre, och varje reparation återställer ett skick som redan fanns
 
-### 4.4 Datum
+**Ombildning från hyresrätt är undantaget.** Den som köpte sin hyresrätt när föreningen ombildades är formellt första ägaren av bostadsrätten, men lägenheten fanns och var använd. Då gäller vanliga regler.
 
-Året bestäms av **betaldatum**, inte fakturadatum. En faktura utställd i december och betald i januari hör till januari.
+Villkoret är alltså `nybyggd_vid_forvarv` **och inte** `ombildning_fran_hyresratt`. Verifierat mot Skatteverkets e-tjänst 2026-09-16: med första ägaren = ja och ombildning = nej ställs skickfrågorna inte alls, medan de ställs och ger avdrag när ombildning = ja.
 
-### 4.5 Förslitning
+Det är en av få regler där ett för hårt villkor kostar användaren pengar hen har rätt till, och ombildningar är vanliga i storstäderna.
 
-En förbättrande reparation kan ha konsumerats delvis av slitage mellan åtgärden och försäljningen. Endast den kvarvarande delen är avdragsgill. Andelen bedöms av användaren vid försäljningen, inte vid inköpet – modellen ska ha ett fält för detta som är null fram till dess. Förslitningen påverkar aldrig tröskelprövningen, bara det belopp som hamnar i exportens avdragsgilla kolumn.
+### 4.7 Bevisning
 
-### 4.6 Bevisning
+Formellt råder fri bevisning. Skatteverket medger avdrag med skäligt belopp även utan kvitto, om annat underlag visar att en förbättring skett, arbetets omfattning och när det utfördes – foton, ritningar, kontoutdrag, lånehandlingar, bygglovshandlingar.
 
-Formellt råder fri bevisning; kvitton är det vanliga men inte enda beviset. Gränssnittet ska därför aldrig påstå att ett avdrag är omöjligt utan kvitto, bara att underlaget är svagare.
+Ett kontoutdrag ensamt räcker inte. Det visar belopp, datum och butik, men inte vad som köptes eller att en förbättring skett.
 
-### 4.7 Ägarandel
+**Därför är en samtida anteckning en del av bevisningen**, inte bara ett minnesstöd. "Målade om sovrummet, väggarna var slitna sedan vi flyttade in", skriven samma vecka, säger något om omfattning och tidpunkt som samma mening skriven femton år senare inte gör.
+
+Appen ska tillåta utgifter utan kvitto, och då säga vad som stöder dem. Gränssnittet ska aldrig påstå att avdrag är omöjligt utan kvitto – bara att underlaget är svagare. Skatteverket noterar samtidigt att skattetillägg kan utgå för avdrag man inte haft utgifter för; det är ett skäl att upplysa, inte att avråda.
+
+**Sparas en kostnad helt utan bilaga visas en dialog innan den sparas.** Den som glömt bifoga upptäcker det annars aldrig – sparaknappen fungerar ju – och en ruta längre ned i formuläret scrollas förbi. Dialogen fångar båda fallen: den som glömde och den som verkligen saknar kvittot.
+
+Den hindrar aldrig. Två vägar ut, och den som sparar ändå ska inte behöva leta efter knappen.
+
+> **Inget kvitto bifogat**
+>
+> Kostnaden sparas ändå. Men om Skatteverket frågar är underlaget svagare utan något som styrker vad du köpte och när.
+>
+> Foton före och efter, bygglov, kontoutdrag eller lånehandlingar räknas också. Har du inget av det blir din beskrivning i "Vad gällde det?" viktigare – skriv vad som gjordes och när.
+>
+> **Bifoga något** · Spara ändå
+
+Primärknappen återvänder till formuläret med filväljaren öppen. "Spara ändå" är en dämpad textlänk bredvid.
+
+Dialogen visas bara när bilagor saknas helt, och bara en gång per formulär – har användaren valt att spara ändå ska den inte återkomma för att något annat fält ändrats.
+
+### 4.8 Ägarandel
 
 Förbättringsutgifterna fördelas mellan delägarna efter ägarandel. Äger användaren halva bostaden ska underlaget visa halva beloppet. Detta gäller även när bara den ena personen använder appen.
 
-**Andelen är ett tal mellan 0 och 100, och ska valideras som ett.** Fältet multiplicerar hela underlaget: skrivs 1000 i stället för 100 blir avdraget tio gånger för stort, och ingenting i appen ser konstigt ut – siffrorna är bara större. Det är ett fel som upptäcks av Skatteverket och inte av användaren.
+Ägarandelen tillhör relationen mellan person och bostad, inte bostaden i sig, och lagras därför på medlemskapstabellen.
 
-Intervallet är därför större än 0 till och med 100. Noll avvisas, eftersom det betyder att ingenting är ditt och nästan alltid är ett skrivfel. Decimaler tillåts – tre syskon som ärvt en bostad har 33,33 procent var.
+**Andelen är ett tal större än 0 till och med 100, och ska valideras som ett.** Fältet multiplicerar hela underlaget: skrivs 1000 i stället för 100 blir avdraget tio gånger för stort utan att något ser konstigt ut. Noll avvisas, decimaler tillåts, kontrollen ligger både i gränssnittet och på servern, och ett tomt fält betyder hela bostaden.
 
-Kontrollen ligger både i gränssnittet och på servern, av samma skäl som för tillträdesdatumet: värdet påverkar beräkningen, och klientvalidering går att kringgå. Ett tomt fält betyder fortfarande hela bostaden.
+Exporten ska hantera båda varianterna: antingen anges beloppen för hela bostaden med markering att de är gemensamma, eller så anges den egna andelen. Appen räknar fram individuella belopp och visar samtidigt beloppet för hela bostaden.
 
-Ägarandelen tillhör relationen mellan person och bostad, inte bostaden i sig, och lagras därför på medlemskapstabellen. Det gör att en delägare som inte använder appen inte behöver modelleras – användarens egen andel räcker – samtidigt som två personer i samma hushåll kan ha var sin andel senare.
+### 4.9 Skillnader mellan upplåtelseformerna
 
-Exporten ska hantera båda varianterna: antingen anges beloppen för hela bostaden med markering att de är gemensamma för flera delägare, eller så anges den egna andelen. Appen räknar fram individuella belopp och visar samtidigt bruttobeloppet, så att användaren kan välja variant och den andra delägaren kan använda samma sammanställning.
+Beräkningsreglerna är identiska. `upplatelseform` styr fyra saker:
 
-### 4.8 Skillnader mellan upplåtelseformerna
+- **Blankettnamnet i exporten.** K5 för fastighet, K6 för bostadsrätt
+- **Den bakre tidsgränsen.** 1952 för småhus, 1974 för bostadsrätt
+- **Kapitaltillskott** visas bara för bostadsrätt
+- **Köpkostnadernas hjälptext och identifieringsfältet.** Föreningens namn respektive fastighetsbeteckning
 
-**Insamlingsläget är borttaget.** Fastigheter stöds fullt ut. Beräkningsreglerna är identiska med bostadsrätt – samma kategorier, samma tröskel, samma femårsfönster, samma avräkning av ROT och försäkringsersättning, samma hjälpblankett SKV 2197 med punkt 4 och 5. Se `docs/regelkallor.md`.
+Ett paritetstest låser fast att samma indata ger samma resultat för båda formerna, med undantag för den bakre tidsgränsen. `husform` är rent informativt.
 
-`upplatelseform` styr därför bara tre saker i gränssnittet:
+**Upplåtelseformen går att byta fram till försäljningen, men aldrig efter.** Ett byte kräver en bekräftelse som säger vilka fält som töms och vad som behöver skrivas om. Efter att bostaden markerats som såld är formen låst – då är blanketten vald och underlaget framtaget, och ett byte gör dokumentationen osann i efterhand.
 
-- **Blankettnamnet i exporten.** K5 för fastighet, K6 för bostadsrätt.
-- **Kapitaltillskott** visas bara för bostadsrätt. Det finns inte för fastighet.
-- **Köpkostnadernas hjälptext.** Lagfart, pantbrev och inköpsprovision för fastighet; överlåtelseavgift för bostadsrätt.
+### 4.10 Utanför modellen
 
-Ingen skillnad i domänlogiken. `husform` är fortfarande rent informativt.
-
-**Upplåtelseformen går att byta fram till försäljningen, men aldrig efter.**
-
-Kvittona påverkas inte av formen. Belopp, datum, rader och ROT är desamma, och beräkningen är identisk – det är vad paritetstestet låser fast. Det som påverkas är uppgifterna runt omkring: kapitaltillskott finns bara för bostadsrätt, identifieringen byter innebörd från föreningens namn till fastighetsbeteckning, och köpkostnaderna betyder olika saker. Står "Brf Lindhagensterassen 1" kvar i ett fält som plötsligt heter Fastighetsbeteckning är det tyst fel.
-
-Ett byte kräver därför en bekräftelse som säger vad som händer: vilka fält som töms och vad som behöver skrivas om. Fälten som inte längre hör hemma töms vid bytet i stället för att ligga kvar osynliga i databasen. Har klassificeringen besvarats med att föreningen ansvarar för något ska den frågan tas om, eftersom den inte finns för en fastighet.
-
-**Efter att bostaden markerats som såld är formen låst.** Då är blanketten vald, underlaget framtaget och kanske ett PDF-paket skapat – ett byte gör dokumentationen osann i efterhand. Det är först vid försäljningen formen verkligen spelar roll, och därför går gränsen där.
-
-Formen låses inte tidigare än så. Den väljs i registreringens andra steg, innan användaren hunnit förstå vad valet betyder, och den som valt fel måste kunna rätta det utan att börja om. Skyddet ligger i att bytet kostar något synligt, inte i att det är omöjligt.
+**Arv, gåva och bodelning.** Skatteverket frågar om detta och säger att den tidigare ägarens utgifter ska läggas till. Appen hanterar det inte. Hur tröskeln och femårsfönstret då räknas är en obesvarad fråga – se `docs/regelkallor.md`.
 
 ---
 
@@ -189,6 +275,8 @@ Formen låses inte tidigare än så. Den väljs i registreringens andra steg, in
 | kopkostnader | int? | stämpelskatt/lagfart eller överlåtelseavgift |
 | kapitaltillskott | int? | endast bostadsrätt, hämtas från föreningen |
 | uppskov_tidigare | int? | påverkar vinstberäkning, inte avdrag |
+| nybyggd_vid_forvarv | bool | var du första ägaren av en nyproduktion? Se 4.6. Default false |
+| ombildning_fran_hyresratt | bool | köptes bostaden vid en ombildning? Upphäver villkoret ovan. Default false |
 | forsaljningsdatum | date? | sätts när bostaden markeras som såld |
 | forsaljningspris | int? | |
 
@@ -201,45 +289,34 @@ Kopplingen mellan användare och bostad. Finns från början även om det bara n
 |---|---|---|
 | anvandare_id | fk | |
 | bostad_id | fk | |
-| agarandel | decimal | procent, default 100 – se 4.7 |
+| agarandel | decimal | procent, större än 0 till och med 100, default 100 – se 4.8 |
 
 Projekt och kostnader hänger på `bostad_id`, aldrig direkt på användaren. Flera bostäder per användare och två personer per hushåll ska kunna läggas till utan migrering.
 
-### Regelparameter
-Skattereglernas numeriska värden lagras som data med giltighetsperiod, aldrig som konstanter i koden. Historiska poster ska räknas enligt de regler som gällde vid utgiftstillfället.
-
-| Fält | Typ | Not |
-|---|---|---|
-| nyckel | string | t.ex. `troskelbelopp`, `reparationsfonster_ar` |
-| varde | int | |
-| enhet | enum | `oren` \| `ar` – varde är enhetslöst utan denna |
-| giltig_fran | date | |
-| giltig_till | date? | null = gäller tills vidare |
-| kalla | string? | hänvisning för spårbarhet |
-
-Seedas med `troskelbelopp` = 500000 (ören) och `reparationsfonster_ar` = 5, båda med `giltig_fran` satt till 1970-01-01. Det är den undre gränsen: en kostnad med betaldatum före dess avvisas vid inmatning i stället för att beräkningen kastar fel senare. Saknas ett värde inom intervallet ska beräkningen kasta fel, aldrig tyst falla tillbaka på en konstant.
-
 ### Projekt
-Klassificeringen sitter här, inte på kostnaden.
+En åtgärd. Klassificeringen sitter här, inte på kostnaden.
 
 | Fält | Typ | Not |
 |---|---|---|
 | bostad_id | fk | |
-| namn | string | fritext, t.ex. "måla sovrum" |
+| namn | string | fritext, svaret på fråga 1 |
 | ar | int | etikett för gruppering; auktoritativt år kommer från betaldatum |
-| kategori | enum | `grundforbattring` \| `reparation` |
-| motivering | text? | "hur vet du att det var slitet?" |
-| slitet_vid_tilltrade | bool? | svaret på fråga 3; null tills frågan ställts |
-| battre_skick_vid_forsaljning | bool? | bekräftas vid försäljning, null fram till dess |
-| kvarvarande_andel | decimal? | förslitning, sätts vid försäljning, null fram till dess |
+| atgardstyp | enum | `nybyggnad` \| `planlosning` \| `nytt_tillagg` \| `utbytt` – resultatet av frågeträdets steg 2–4 |
+| battre_kvalitet | bool? | endast när `atgardstyp` är `utbytt`; svaret på fråga 5 |
+| merkostnad | int? | ören, obligatorisk och > 0 när `battre_kvalitet` är true |
+| skick_forvarv | int? | 0–5, ställs i klassificeringen |
+| skick_forsaljning | int? | 0–5, null fram till försäljningen |
+| motivering | text? | svaret på fråga 8 |
+
+**Kategorierna är härledda, inte lagrade.** En åtgärd kan bidra till både grundförbättring och reparation samtidigt – ett exklusivare kök är merkostnaden i den ena kategorin och resten i den andra. Ett lagrat `kategori`-fält kan inte uttrycka det och glider dessutom isär från frågeträdets svar vid varje redigering.
+
+De tidigare fälten `kategori`, `slitet_vid_tilltrade`, `battre_skick_vid_forsaljning` och `kvarvarande_andel` är borttagna. De två sista ersätts av `skick_forvarv` och `skick_forsaljning`: i stället för att be användaren uppskatta en andel ber appen om två observationer vid tidpunkter då de går att göra.
 
 **Året är en etikett, inte en sanning.** `ar` sätts som förval till betaldatumets år för den kostnad som skapade projektet, och till innevarande år om projektet skapas fristående. Det sätts när projektet skapas och används för gruppering i gränssnittet, men allt som räknas – tröskeln, femårsfönstret, exportens rader – utgår från kostnadernas `betaldatum`. Ett projekt vars kostnader spänner över ett årsskifte ger därför automatiskt två rader i exporten utan att användaren behöver dela projektet. Avviker en kostnads betaldatum från projektets år visas en upplysning, aldrig en blockering.
 
-**Fråga 3 och 4 lagras separat.** `slitet_vid_tilltrade` är användarens påstående, `motivering` är hur hen vet det. Ett projekt med `kategori = reparation` och `slitet_vid_tilltrade = false` är inte avdragsgillt oavsett motivering – det återställer bara skicket från tillträdet.
-
 **Ingen baslinje, ingen underlagsstyrka.** En tidigare version av modellen hade en `baslinjepost` med foton och besiktningsprotokoll från tillträdet, och en härledd `underlagsstyrka` som visade om ett projekt hade den kopplingen.
 
-Den är borttagen. Skälet är inte att bevisning saknar betydelse, utan att ingen fotograferar sin lägenhet innan de renoverar. Den som får en fråga från Skatteverket berättar hur det såg ut, och fri bevisning gäller. `motivering` – fritextsvaret på fråga 4 – är den realistiska versionen av samma sak, och den kostar användaren en mening i stället för en fotosession.
+Den är borttagen. Skälet är inte att bevisning saknar betydelse, utan att ingen fotograferar sin lägenhet innan de renoverar. Den som får en fråga från Skatteverket berättar hur det såg ut, och fri bevisning gäller. `motivering` – fritextsvaret på fråga 8 – är den realistiska versionen av samma sak, och den kostar användaren en mening i stället för en fotosession.
 
 Bevisfrågan gäller åtgärden, inte artikeln. En pensel har inte en egen bevissituation skild från färgen.
 
@@ -307,22 +384,21 @@ Ingången är alltid en och samma knapp. Fråga aldrig användaren om dokumentty
 
 **Ingen projektkoppling sker här.** Klassificeringen hör till genomgången, som användaren startar när hen själv vill. Ett kvitto som just sparats är oklassificerat, och det är det normala tillståndet.
 
+**Datumfältet heter samma sak överallt.** I inmatningen finns ett fält, i redigeringsvyn två – men det gemensamma fältet ska ha samma etikett på båda ställena, annars undrar användaren vilket av dem hen fyllde i. "Kvittots datum" i båda.
+
 Betaldatum som avviker från kvittots datum, uppdelning och koppling till en gruppering görs i efterhand från kvittots detaljvy. Inget av det är brådskande – till skillnad från att fånga kvittot medan det finns.
 
-### 6.2 De fyra projektfrågorna
+### 6.2 Frågeträdet
 
-Ställs en gång per projekt, aldrig per kvitto. Formuleras på vanlig svenska – användaren ska aldrig behöva veta vad en grundförbättring heter.
+Ställs en gång per åtgärd, aldrig per kvitto. Se avsnitt 4.1 för den fullständiga modellen.
 
-1. Vad gjorde du? *(fritext → projektnamn)*
-2. Fanns det här förut, eller är det nytt? *(nytt → grundförbättring)*
-3. Var det slitet eller trasigt **när du flyttade in**? *(avgör om reparationen är avdragsgill; ställs bara när svaret på fråga 2 är att det fanns förut – för en grundförbättring saknar skicket betydelse)*
-4. Hur vet du det? *(fritext, valfritt)*
+Formuleringarna följer Skatteverkets egna, av två skäl: de är prövade på riktiga användare, och den som sedan öppnar Skatteverkets verktyg möter samma frågor och kan jämföra.
 
-Svaret sparas som `motivering`. En mening räcker: "mäklarbilden visar fläckig vägg bakom garderoben" eller "väggarna var gulnade när vi flyttade in". Det är vad man skulle säga till Skatteverket om frågan kom, och det är allt som behövs.
+**Var inte rädd för att förklara.** Skatteverket lägger en hjälpruta med konkreta exempel vid varje fråga – vad som räknas som ändrad planlösning, vad bättre kvalitet betyder, hur merkostnaden uppskattas. Det gör frågorna långa men begripliga. Genomgången är produktens tyngsta moment och tål det; inmatningen gör det inte.
 
-Tidsankaret i fråga 3 är kritiskt. "Var det slitet?" utan "när du flyttade in" ger fel svar, eftersom användare annars jämför med hur det såg ut dagen innan åtgärden.
+**Tidsankaret i skickfrågorna är kritiskt.** "Hur var skicket?" utan "när du köpte bostaden" ger fel svar, eftersom användare annars jämför med hur det såg ut dagen innan åtgärden.
 
-Fråga 4 blockerar aldrig och påverkar ingen beräkning. Den bevarar resonemanget.
+Fråga 8 blockerar aldrig och påverkar ingen beräkning. Den bevarar resonemanget, och är en del av bevisningen när kvitto saknas – se 4.7.
 
 ### 6.3 Inkorg för okopplade kostnader
 
@@ -487,11 +563,13 @@ Efter att bilagan laddats upp har fältgruppen därför tre tillstånd:
 
 | Läge | Vad användaren ser |
 |---|---|
-| Allt avläst | Ett meddelande över fältgruppen: fälten fylldes i från kvittot, kontrollera dem. Inga rader under fälten |
-| Något fält kunde inte läsas | Samma meddelande över gruppen, plus en rad **endast** under de fält som saknas |
+| Allt avläst | "Belopp, datum och leverantör är ifyllda från kvittot – kontrollera att de stämmer." Inga rader under fälten |
+| Något fält kunde inte läsas | "Fälten som kunde läsas är ifyllda från kvittot – kontrollera att de stämmer." Plus en rad **endast** under de fält som saknas |
 | Avläsningen kördes inte | Ett meddelande över hela fältgruppen: kvittot är sparat, uppgifterna får fyllas i själv |
 
 **Säg inte samma sak två gånger.** Ett meddelande över gruppen och sedan en identisk rad under varje fält gör ett kort formulär till en vägg av text, och då slutar raderna betyda något. Lyckades allt bär gruppmeddelandet beskedet ensamt. Lyckades två av tre är det den tredje som ska ha text – den raden betyder då något, just för att den är den enda.
+
+**Och texten får inte antyda ett fel som inte finns.** "Fälten som kunde läsas är ifyllda" låter som om något misslyckats, och skapar oro när allt gick igenom. Lyckades alla tre ska meddelandet säga det rakt ut.
 
 Gränsen går vid uppladdningen. Innan bilagan är uppe är ingenting sagt om fälten, eftersom det brådskande – att fånga kvittot – inte är klart. Efteråt handlar allt om vem som fyller i, och då ska det synas.
 
@@ -516,7 +594,7 @@ Byggordningen är en **tunn skiva genom hela produkten först**, inte lager för
 1. **Datamodell och exportformat** – definiera K6A-utdata först, låt schemat följa *(klart)*
 2. **Inloggning** – Supabase Auth med e-post, ingen registreringsdesign, bara fungerande
 3. **Onboarding** – skapa bostad med upplåtelseform och tillträdesdatum
-4. **Projekt** – skapa med de fyra frågorna, lista, öppna
+4. **Projekt** – skapa med frågeträdet, lista, öppna
 5. **Kostnad** – manuell inmatning av belopp, datum, leverantör, koppling till projekt
 6. **Översikt** – årssumma mot tröskeln, projektlista
 7. **Exportvy** – K6A-sammanställningen på skärm med de två summorna. Ingen PDF, inga bilagor, bara talen och raderna

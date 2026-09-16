@@ -1,4 +1,4 @@
-import type { Kostnad, Kostnadsrad, Projekt, Projektkategori } from "./typer";
+import type { Kostnad, Kostnadsrad, Projekt } from "./typer";
 
 /** Avrundar till hela oren. Anvands forst pa slutliga aggregat, aldrig mitt i en kedja. */
 export function avrunda(oren: number): number {
@@ -74,6 +74,25 @@ export function bidragForKostnad(kostnad: Kostnad, projektId: string): number {
   );
 }
 
+/**
+ * Radens belopp attribuerat till ett projekt, FORE reduktionsfaktorn (ROT/
+ * forsakring). Anvands for att bygga den syntetiska "cellkostnad" som
+ * fragetradets berakning (src/doman/atgardsberakning.ts) kors mot nar en atgard
+ * (projekt, kalenderar) fatt bidrag fran flera kostnader/rader – se
+ * export-k6a.ts. bidragForRad ar motsvarigheten EFTER reduktionsfaktorn.
+ */
+export function beloppForRad(rad: Kostnadsrad, projektId: string): number {
+  return rad.belopp * andelTillProjekt(rad, projektId);
+}
+
+/** Summan av alla raders (oreducerade) belopp fran en kostnad till ett projekt. */
+export function beloppForKostnad(kostnad: Kostnad, projektId: string): number {
+  return kostnad.rader.reduce(
+    (summa, rad) => summa + beloppForRad(rad, projektId),
+    0,
+  );
+}
+
 export interface ArssummeIndata {
   /** Alla bostadens kostnader. */
   kostnader: Kostnad[];
@@ -133,51 +152,6 @@ export function inlagtArsbelopp(
     }
   }
   return avrunda(summa);
-}
-
-/**
- * Ar projektets bidrag over huvud taget en forbattringsutgift? Grindarna
- * `slitet_vid_tilltrade` och `battre_skick_vid_forsaljning` avgor det – ar nagon
- * av dem `false` ar atgarden normalt underhall och exkluderas bade fran avdraget
- * OCH fran troskelsumman (produktspec 4.2). Femarsfonstret raknas inte hit: en
- * reparation utanfor fonstret VAR en forbattringsutgift nar den lades ned och
- * ingar darfor i sitt utgiftsars troskelsumma, aven om den inte dras av.
- * `null` pa en grind (fragan inte besvarad) exkluderar inte – bara ett
- * uttryckligt `false`.
- *
- * `kategori = null` (hogen ar grupperad men inte klassificerad) exkluderar
- * daremot: en hog som annu inte gatt igenom fas 2 far inte lyfta aret over
- * troskeln. Sa fort fas 2 satt kategorin rors talet igen.
- */
-export function arBidragForbattringsutgift(projekt: {
-  kategori: Projektkategori | null;
-  slitet_vid_tilltrade: boolean | null;
-  battre_skick_vid_forsaljning: boolean | null;
-}): boolean {
-  if (projekt.kategori === null) return false;
-  if (projekt.kategori !== "reparation") return true;
-  return (
-    projekt.slitet_vid_tilltrade !== false &&
-    projekt.battre_skick_vid_forsaljning !== false
-  );
-}
-
-/**
- * Arets troskelgrundande belopp for hela bostaden: som arssummaForBostad, men
- * bidrag fran projekt som inte ar forbattringsutgifter raknas bort. Detta ar
- * talet som jamfors mot troskelbeloppet.
- */
-export function troskelgrundandeArsbelopp(
-  indata: ArssummeIndata,
-  ar: number,
-): number {
-  return arssummaForBostad(
-    {
-      kostnader: indata.kostnader,
-      projekt: indata.projekt.filter(arBidragForbattringsutgift),
-    },
-    ar,
-  );
 }
 
 /** Nar arets summa minst nar troskeln. */

@@ -157,8 +157,8 @@ export function isoDatum(d: Date): string {
 
 /**
  * Tolkar en procentsträng fran ett inmatningsfalt till en andel 0..1. Tar "80",
- * "80 %" och "33,33". Anvands for forslitningens `kvarvarande_andel`, som matas
- * in i procent men lagras som 0..1. Returnerar null nar strangen ar tom eller
+ * "80 %" och "33,33". Anvands t.ex. for radfordelningens `andel`, som matas in
+ * i procent men lagras som 0..1. Returnerar null nar strangen ar tom eller
  * inte gar att tolka som ett tal i intervallet 0–100 – null betyder "inte satt
  * an" och far aldrig bli 0.
  */

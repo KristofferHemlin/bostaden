@@ -1,9 +1,9 @@
 "use client";
 
-// Fas 2: klassificera en hog i taget. Fragorna 2-4 kommer fran <Projektfragor>
-// – samma komponent som skapa- och redigeringsflodena, sa de stalls ordagrant
-// likadant overallt. Fraga 1 (namnet) ar ett vanligt textfalt har, forifyllt
-// med hogens namn fran fas 1.
+// Fas 2: klassificera en hog i taget. Fragorna kommer fran <Fragetradet> –
+// samma komponent som projektets redigering, sa de stalls ordagrant likadant
+// overallt. Fraga 1 (namnet) ar ett vanligt textfalt har, forifyllt med
+// hogens namn fran fas 1.
 //
 // "Hoppa over" gar vidare till nasta hog utan att spara – hogen ligger kvar och
 // dyker upp nasta gang. "Spara och nasta" klassificerar hogen; server-actionen
@@ -13,11 +13,11 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { klassificeraHog, type FragorResultat } from "./actions";
 import {
-  Projektfragor,
+  Fragetradet,
+  FragetradetDoldaFalt,
   TOMMA_SVAR,
-  type ProjektfragorSvar,
-} from "@/app/projekt/projektfragor-falt";
-import { fraga3Relevant } from "@/doman/projektfragor";
+  type FragetradetUIState,
+} from "@/app/projekt/fragetradet";
 import {
   Falt,
   Friskrivning,
@@ -86,7 +86,7 @@ function HogFormular({
 }) {
   const [resultat, action, pagar] = useActionState(klassificeraHog, START);
   const [namn, setNamn] = useState(hog.namn);
-  const [svar, setSvar] = useState<ProjektfragorSvar>(TOMMA_SVAR);
+  const [svar, setSvar] = useState<FragetradetUIState>(TOMMA_SVAR);
 
   return (
     <div className="flex flex-col">
@@ -137,27 +137,19 @@ function HogFormular({
           />
         </Falt>
 
-        <Projektfragor
+        <Fragetradet
           varden={svar}
           onChange={(delvis) => setSvar((s) => ({ ...s, ...delvis }))}
         />
 
         <input type="hidden" name="namn" value={namn} />
-        <input type="hidden" name="fanns" value={svar.fanns} />
-        <input
-          type="hidden"
-          name="slitet"
-          value={fraga3Relevant(svar.fanns) ? svar.slitet : ""}
-        />
-        <input type="hidden" name="motivering" value={svar.motivering} />
+        <FragetradetDoldaFalt svar={svar} />
 
         {resultat.fel ? (
           <p className="font-granssnitt text-sm text-accent-mork">
             {resultat.fel}
           </p>
         ) : null}
-
-        <Friskrivning />
 
         <button type="submit" disabled={pagar} className={PRIMARKNAPP_KLASS}>
           {pagar ? "Sparar…" : "Spara och nästa"}
@@ -177,6 +169,13 @@ function HogFormular({
         >
           Avbryt genomgången
         </Link>
+
+        {/* Avskild langst ned, inte direkt under fritextfaltets hjalptext –
+            tva dampade rader under varandra las annars som om bada gallde
+            faltet (docs/design.md, "Projektfragorna"). */}
+        <div className="border-t border-linje pt-4">
+          <Friskrivning />
+        </div>
       </form>
     </div>
   );

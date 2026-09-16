@@ -55,6 +55,9 @@ async function main() {
       namn: SEED_BOSTAD.namn,
       upplatelseform: SEED_BOSTAD.upplatelseform,
       tilltradesdatum: d(SEED_BOSTAD.tilltradesdatum),
+      nybyggd_vid_forvarv: SEED_BOSTAD.nybyggd_vid_forvarv,
+      ombildning_fran_hyresratt: SEED_BOSTAD.ombildning_fran_hyresratt,
+      bostadsfragor_besvarade: SEED_BOSTAD.bostadsfragor_besvarade,
       forsaljningsdatum: SEED_BOSTAD.forsaljningsdatum
         ? d(SEED_BOSTAD.forsaljningsdatum)
         : null,
@@ -74,11 +77,12 @@ async function main() {
         bostad_id: p.bostad_id,
         namn: p.namn,
         ar: p.ar,
-        kategori: p.kategori,
         motivering: p.motivering,
-        slitet_vid_tilltrade: p.slitet_vid_tilltrade,
-        battre_skick_vid_forsaljning: p.battre_skick_vid_forsaljning,
-        kvarvarande_andel: p.kvarvarande_andel,
+        atgardstyp: p.atgardstyp,
+        battre_kvalitet: p.battre_kvalitet,
+        merkostnad: p.merkostnad,
+        skick_forvarv: p.skick_forvarv,
+        skick_forsaljning: p.skick_forsaljning,
       },
     });
   }
@@ -113,7 +117,7 @@ async function main() {
   }
 
   console.log(
-    "Seed klar (idempotent): 2 regelparametrar, seed-bostad + seed-anvandare, 3 projekt, 3 kostnader.",
+    `Seed klar (idempotent): ${seedNycklar.length} regelparametrar, seed-bostad + seed-anvandare, 3 projekt, 3 kostnader.`,
   );
 }
 
