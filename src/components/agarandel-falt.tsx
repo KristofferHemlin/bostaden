@@ -10,8 +10,8 @@
 // vid sparande.
 //
 // Valideringen (`@/lib/agarandel`) delas med servern (installningar/actions.ts)
-// sa att bada sidor provar exakt samma regel, precis som for tilltradesdatumet
-// (`@/components/tilltradesdatum-falt`).
+// sa att bada sidor provar exakt samma regel, precis som for datumfalten
+// (`@/components/datum-falt`).
 
 import { useState } from "react";
 import { INPUT_KLASS } from "@/components/skarm";

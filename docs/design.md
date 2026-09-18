@@ -244,6 +244,16 @@ Skälet är att ett kvitto ofta läggs in långt efter att det betalades – ett
 
 Projekt och kostnader visas som rader avdelade med 1px linjer, inte som separata kort. Varje rad har namnet på första raden och en dämpad andra rad med kategori eller status, med beloppet högerställt på samma höjd som namnet. Rader vars status kräver åtgärd markeras med en liten fylld prick i `--accent` före den dämpade texten, inte genom att färga hela raden. Med flera rader i samma läge blir orange text en vägg av varningar, och färgen tappar sin betydelse.
 
+**Alla datum matas in i tre fält – aldrig med den infödda datumväljaren.** År, månad, dag, med automatiskt hopp framåt när ett fält är fullt och backsteg genom tomma fält. Numeriskt tangentbord. Gäller kvittodatum, betaldatum och tillträdesdatum, i registreringen, inmatningen, redigeringen och inställningarna.
+
+Den infödda väljaren är bättre i ett avseende: ett ifyllt datum går att läsa på en blick, medan tre rutor med siffror måste sättas ihop i huvudet. Den förlorar ändå, av tre skäl.
+
+**Fältet ska fungera när avläsningen inte gör det.** Går modellen ner, tar kvoten slut eller är kvittot suddigt står användaren med ett tomt fält och ett gammalt kvitto. Ett datum från 2010 blir då hundratals svep i iOS hjulväljare. Det är samma tänk som de tre tillstånden efter avläsningen: det dåliga fallet ska vara uthärdligt.
+
+**Ett fält som byter utseende är en sak som kan gå fel.** Att visa väljaren när avläsningen lyckats och tre fält annars ger två varianter att bygga, testa och förklara.
+
+**Och den infödda väljaren ser olika ut på olika telefoner.** Safari centrerar sitt värde i hela fältets bredd medan allt annat i appen är vänsterställt, och formatet följer telefonens språkinställning – `11 nov. 2011` där appen i övrigt skriver `2011-11-11`. Ingetdera går att styra.
+
 **Hela kortet är klickbart, inte bara rubriken.** På projektlistan täcker länken i dag namn, kategori och belopp men inte kvittona under – kortet ser ut som en enhet medan bara övre halvan reagerar.
 
 Lös det med en utsträckt länk: kortet får `position: relative` och länken ett `::after` som täcker hela ytan. Då finns fortfarande en enda riktig länk för skärmläsare, och kvittoraderna kan senare få egna länkar genom att lyftas ovanför med `z-index`. Att svepa hela kortet i en `<a>` stänger den dörren, eftersom länkar inte får nästlas.

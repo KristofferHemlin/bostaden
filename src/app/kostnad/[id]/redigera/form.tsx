@@ -47,6 +47,7 @@ import {
 } from "../actions";
 import { Bilagor } from "../bilagor";
 import { BeloppFalt } from "@/components/belopp-falt";
+import { DatumFalt } from "@/components/datum-falt";
 import {
   Falt,
   INPUT_KLASS,
@@ -174,13 +175,7 @@ export function RedigeraKostnadForm({
         </UtfallbarSektion>
 
         <Falt etikett="Datum" obligatoriskt>
-          <input
-            type="date"
-            name="dokumentdatum"
-            required
-            defaultValue={varden.dokumentdatum}
-            className={INPUT_KLASS}
-          />
+          <DatumFalt name="dokumentdatum" defaultValue={varden.dokumentdatum} />
         </Falt>
 
         <Falt etikett="Leverantör" obligatoriskt>
@@ -214,12 +209,7 @@ export function RedigeraKostnadForm({
         {/* Redigeringsvyns egna extrafalt, efter inmatningens grund ovan. */}
         <div>
           <Falt etikett="Betaldatum">
-            <input
-              type="date"
-              name="betaldatum"
-              defaultValue={varden.betaldatum}
-              className={INPUT_KLASS}
-            />
+            <DatumFalt name="betaldatum" defaultValue={varden.betaldatum} />
           </Falt>
           <p className="mt-1 font-granssnitt text-xs text-text-dampad">
             Lämna tomt om fakturan inte är betald än.

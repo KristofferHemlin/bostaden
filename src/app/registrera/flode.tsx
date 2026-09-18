@@ -24,7 +24,7 @@ import {
   PRIMARKNAPP_KLASS,
   SEKUNDARKNAPP_KLASS,
 } from "@/components/skarm";
-import { TilltradesdatumFalt } from "@/components/tilltradesdatum-falt";
+import { DatumFalt } from "@/components/datum-falt";
 import { forsokBorjaInskickning, useDubbelinskickRef } from "@/lib/dubbelinskick";
 import { slutforRegistrering, type RegistreringResultat } from "./actions";
 import { AdressFalt } from "./adress-falt";
@@ -213,9 +213,10 @@ export function RegistreraFlode({
         </div>
 
         <Falt etikett="Tillträdesdatum" obligatoriskt>
-          <TilltradesdatumFalt
+          <DatumFalt
             name="tilltradesdatum"
             onChange={setTilltradesdatum}
+            framtidsFelmeddelande="Tillträdesdatum kan inte ligga i framtiden."
           />
         </Falt>
 

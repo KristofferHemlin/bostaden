@@ -84,6 +84,7 @@ import { skapaUtkast, sparaKostnad, type KostnadResultat } from "./actions";
 import { analyseraBilaga, taBortBilaga } from "@/app/kostnad/bilaga-actions";
 import { UtkastRaderaKnapp } from "@/app/kostnad/utkast-radera";
 import { BeloppFalt } from "@/components/belopp-falt";
+import { DatumFalt } from "@/components/datum-falt";
 import { forsokBorjaInskickning, useDubbelinskickRef } from "@/lib/dubbelinskick";
 import {
   Falt,
@@ -980,12 +981,9 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
         obligatoriskt
         hjalp={faltStatus(falt.datum.trim() === "")}
       >
-        <input
-          type="date"
-          required
-          value={falt.datum}
-          onChange={(e) => setFalt((f) => ({ ...f, datum: e.target.value }))}
-          className={INPUT_KLASS}
+        <DatumFalt
+          defaultValue={falt.datum}
+          onChange={(iso) => setFalt((f) => ({ ...f, datum: iso }))}
         />
       </Falt>
 

@@ -5,7 +5,7 @@ import { Kortval } from "@/app/projekt/fragetradet";
 import { AgarandelFalt } from "@/components/agarandel-falt";
 import { BeloppFalt } from "@/components/belopp-falt";
 import { Falt, INPUT_KLASS, Meddelanderuta, PRIMARKNAPP_KLASS } from "@/components/skarm";
-import { TilltradesdatumFalt } from "@/components/tilltradesdatum-falt";
+import { DatumFalt } from "@/components/datum-falt";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { formateraBeloppInmatning } from "@/lib/format";
 import { sparaInstallningar, type InstallningarResultat } from "./actions";
@@ -231,9 +231,10 @@ export function InstallningarForm({
         obligatoriskt
         hjalp="Baslinjen för skickbedömningen – gränsen för vilka utgifter som är dina."
       >
-        <TilltradesdatumFalt
+        <DatumFalt
           name="tilltradesdatum"
           defaultValue={tilltradesdatum}
+          framtidsFelmeddelande="Tillträdesdatum kan inte ligga i framtiden."
         />
       </Falt>
 
