@@ -116,9 +116,24 @@ export default async function ProjektlistaSida() {
               </p>
               <div className="divide-y divide-linje">
                 {perAr.get(ar)!.map((r) => (
-                  <div key={r.id}>
+                  // Utstrackt lank (docs/design.md, "Listrader"): kortet – rad
+                  // OCH kvittolistan under – ska vara en enda klickyta, inte
+                  // bara den ovre halvan. `relative` har gor kortet till den
+                  // forfader som Listrads `::after` (via `strackt`) tacker.
+                  // Hovringen (`hover:bg-yta-hover`) sitter pa SAMMA element
+                  // – inte `group-hover` pa en inre rad, som bara skulle lysa
+                  // upp Listrads egen (mindre) box trots att hela kortet
+                  // svarar pa ett tryck (docs/design.md, "Listrader": "mark-
+                  // eringen hor pa samma element som bar group och relative").
+                  // Ingen `group`-klass behovs: har ar det elementet som
+                  // hovras som ocksa ska fargas, sa en vanlig `hover:`-variant
+                  // racker – `group-hover` pa sig sjalv skulle aldrig traffa,
+                  // eftersom Tailwind genererar den regeln som en efterkommare
+                  // (`.group:hover .group-hover\:x`), aldrig elementet sjalvt.
+                  <div key={r.id} className="relative hover:bg-yta-hover">
                     <Listrad
                       href={`/projekt/${r.id}`}
+                      strackt
                       namn={r.namn}
                       status={r.status}
                       atgard={r.atgard}

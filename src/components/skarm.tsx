@@ -55,16 +55,44 @@ export function Meddelanderuta({ children }: { children: ReactNode }) {
 export function Listrad({
   namn,
   status,
+  underStatus,
   belopp,
   href,
+  strackt,
   atgard,
   bild,
   slutknapp,
 }: {
   namn: string;
   status?: string;
+  /**
+   * Valfri tredje rad, dampad precis som status men pa en egen rad i stallet
+   * for hopslagen med "·" – anvands for ett faktum om posten som inte hor
+   * ihop med leverantor/datum, t.ex. att bilaga saknas (produktspec 4.7).
+   * Inget eget varningsutseende: samma text-dampad, ingen ikon, ingen farg.
+   */
+  underStatus?: string;
   belopp?: string;
   href?: string;
+  /**
+   * Anvand en utstrackt lank i stallet for att svepa hela raden i <Link>
+   * (docs/design.md, "Listrader"): namnet blir den riktiga lanken (en enda,
+   * for skarmlasare), och dess `::after` tacker hela ytan – INTE bara den
+   * har radens egen box, utan den narmsta forfader som satt `position:
+   * relative`. Den forfadern maste satsas av anroparen, ETT STEG OVANFOR den
+   * har raden, och far da omsluta ovrigt innehall (t.ex. kvittorader under
+   * ett projekt) som ocksa ska bli klickbart. Utan `strackt` (default) sveps
+   * hela radens synliga innehall i <Link> som forut – ratt nar raden inte ar
+   * en del av ett storre kort.
+   *
+   * Hovringen hor da OCKSA hemma pa anroparens `relative`-element (samma ett
+   * som ovan), inte har inne i Listrad (docs/design.md, "Listrader":
+   * "markeringen hor pa samma element som bar group och relative") – annars
+   * tacker fargen bara Listrads egen (mindre) box och inte hela kortet
+   * klicket faktiskt galler. Rack med en vanlig `hover:bg-yta-hover` dar,
+   * ingen `group`-klass: det ar samma element som hovras och som ska fargas.
+   */
+  strackt?: boolean;
   atgard?: boolean;
   /** Liten miniatyr till vanster – anvands for utkast som annu bara ar en bild. */
   bild?: { src: string; alt: string };
@@ -75,6 +103,15 @@ export function Listrad({
    */
   slutknapp?: ReactNode;
 }) {
+  const namnInnehall =
+    strackt && href ? (
+      <Link href={href} className="after:absolute after:inset-0 after:content-['']">
+        {namn}
+      </Link>
+    ) : (
+      namn
+    );
+
   const innehall = (
     <div className="flex items-baseline justify-between gap-3 p-4">
       {bild ? (
@@ -86,7 +123,7 @@ export function Listrad({
       ) : null}
       <div className="min-w-0 flex-1">
         <p className="truncate font-granssnitt text-base text-text-primar">
-          {namn}
+          {namnInnehall}
         </p>
         {status ? (
           <p className="mt-0.5 flex items-center gap-1.5 font-granssnitt text-sm text-text-dampad">
@@ -99,6 +136,11 @@ export function Listrad({
             {status}
           </p>
         ) : null}
+        {underStatus ? (
+          <p className="mt-0.5 font-granssnitt text-xs text-text-dampad">
+            {underStatus}
+          </p>
+        ) : null}
       </div>
       {belopp ? (
         <span className="shrink-0 font-rubrik text-base tabular-nums text-text-primar">
@@ -107,6 +149,14 @@ export function Listrad({
       ) : null}
     </div>
   );
+
+  // Utstrackt lank: `innehall` renderas rakt av (namnet bar redan sin egen
+  // <Link> med `::after` ovan) – ingen ny <Link> sveper hela raden, och ingen
+  // `position: relative` sats HAR, sa `::after` letar sig upp till anroparens
+  // egen forfader i stallet (docs/design.md, "Listrader").
+  if (href && strackt) {
+    return innehall;
+  }
 
   if (href) {
     const lank = (

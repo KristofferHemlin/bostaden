@@ -467,6 +467,16 @@ Rader grupperas per åtgärd och år, aldrig per kvitto. Kvittona ligger under s
 
 ### Bilagepaketet som PDF
 
+**Dolt i gränssnittet tills vidare.** Funktionen är byggd och testad, men knappen visas inte. Skälet är att den behövs först om Skatteverket begär in en redogörelse, och det gör de sällan – medan varje knapp som inte fungerar perfekt kostar förtroende för allt annat.
+
+**Koden ligger kvar och testerna fortsätter köras.** Att ta bort den vore att kasta det största enskilda byggsteget i projektet, och att återinföra det skulle bli en vecka i stället för en rad. Testerna gör dessutom att en framtida ändring i beräkningen säger till om paketet slutar stämma.
+
+**Deklarationsvyn säger vad som gäller i stället för ingenting.** Den som fått sina två tal undrar rimligen vad hen visar om Skatteverket frågar. En dämpad rad om att kvittona finns sparade och går att ladda ner som zip-arkiv svarar på det. Det är ett undantag från regeln om att appen aldrig beskriver sin egen byggordning: den regeln finns för att slippa berätta om sådant användaren inte efterfrågat, och här står hen inför en verklig fråga.
+
+**Talen är leveransen, paketet är försäkringen.** Talen behövs av alla som säljer, en bestämd månad. Paketet behövs sällan, men skyddar avdraget när det behövs. Att det kan vänta beror på att det bara är en presentation av data som redan samlats in – kvittona, klassificeringen och kopplingen mellan belopp och bilaga finns på plats långt innan frågan kommer.
+
+---
+
 **Vad det är:** ett enda PDF-dokument som utgör den redogörelse Skatteverket kan begära in. Inte en zip, inte en skärmbild av exportvyn. Ett dokument man kan mejla eller skriva ut och som står på egna ben utan appen.
 
 **Vad det inte är:** ingen kopia av blanketternas grafiska form. Blanketternas numrering och layout ändras mellan år – paketet följer blankettens *innehåll*, och pekar ut vilka tal som förs till vilken ruta. Det är inte heller något som lämnas in, och det är inte skatterådgivning.

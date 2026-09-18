@@ -244,12 +244,20 @@ export default async function Oversikt() {
           </Link>
 
           {/* Kvittolistan som eget kort: rubriken "Senaste kvitton" och en
-              hogerstalld lank "Visa alla" i samma rad. */}
+              hogerstalld lank "Visa alla" i samma rad.
+              En dampad underrad forklarar urvalet – utan den ser ett kvitto
+              fran ett annat ar ut som ett fel nar det dyker upp har men inte
+              paverkar "Inlagt"-nyckeltalet ovan, som bara raknar {VISAT_AR}. */}
           <Kort>
-            <div className="flex items-baseline justify-between gap-3 border-b border-linje p-4">
-              <h2 className="font-rubrik text-base text-text-primar">
-                Senaste kvitton
-              </h2>
+            <div className="flex items-start justify-between gap-3 border-b border-linje p-4">
+              <div>
+                <h2 className="font-rubrik text-base text-text-primar">
+                  Senaste kvitton
+                </h2>
+                <p className="mt-0.5 font-granssnitt text-xs text-text-dampad">
+                  De sex senast tillagda, oavsett år
+                </p>
+              </div>
               <Link
                 href="/kostnad"
                 className="shrink-0 font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"

@@ -30,11 +30,33 @@ export interface Fragetradssvar {
   merkostnad: number | null;
 }
 
+/**
+ * Vilken regel som nollade en kategori. Anvands av exportvyn for att forklara
+ * en 0-kr-rad (docs/design.md, Exportvyn: "En rad som ger 0 kr maste saga
+ * varfor") – fyra orsaker, fyra helt olika betydelser for anvandaren. Den
+ * bakre gransen for grundforbattringar nollar ocksa ett falt men saknar en
+ * egen orsak har: den star inte med i docs/design.md:s tabell och ar sallsynt
+ * nog (fastighet fore 1952, bostadsratt fore 1974) att den lamnas utanfor i
+ * den har versionen.
+ */
+export type NollOrsak =
+  | "troskel"
+  | "femarsfonster"
+  | "skicket_forbattrades_inte"
+  | "nybyggd_vid_forvarv";
+
 export interface KategoriUppdelning {
   /** Oren. */
   grundforbattringsdel: number;
   /** Oren, fore forslitning. */
   reparationsunderlag: number;
+  /** Satt ENDAST nar grundforbattringsdel nollats av troskeln – aldrig nar
+   *  den redan var 0 av andra skal (fragetradet sjalvt, eller bakre gransen). */
+  grundforbattring_orsak?: NollOrsak;
+  /** Satt ENDAST nar reparationsunderlag nollats av femarsfonstret,
+   *  nybyggd-vid-forvarv-undantaget, eller troskeln – aldrig nar det redan
+   *  var 0 av fragetradets egen uppdelning (t.ex. en ren grundforbattring). */
+  reparation_orsak?: NollOrsak;
 }
 
 /**
@@ -133,6 +155,15 @@ export function tillampaTidsgranser(
       ? uppdelning.grundforbattringsdel
       : 0,
     reparationsunderlag: reparationTillaten ? uppdelning.reparationsunderlag : 0,
+    // Orsaken satts bara nar tidsgransen faktiskt nollade nagot (reparationen
+    // var > 0 innan) – annars var faltet redan 0 av fragetradets egen
+    // uppdelning, och den nollningen behover ingen forklaring.
+    reparation_orsak:
+      !reparationTillaten && uppdelning.reparationsunderlag > 0
+        ? nybyggdUtanOmbildning
+          ? "nybyggd_vid_forvarv"
+          : "femarsfonster"
+        : undefined,
   };
 }
 
@@ -151,7 +182,18 @@ export function troskelprovaArspostar<T extends KategoriUppdelning>(
     0,
   );
   if (summa < troskelbelopp) {
-    return poster.map(() => ({ grundforbattringsdel: 0, reparationsunderlag: 0 }));
+    // Orsaken "troskel" satts bara pa ett falt som troskeln faktiskt nollade
+    // (det var > 0 innan). Ett falt som redan var 0 – t.ex. en reparation som
+    // redan fallit ur femarsfonstret – behaller sin egen forklaring i stallet
+    // for att skrivas over, eftersom det INTE var troskeln som nollade den.
+    return poster.map((p) => ({
+      grundforbattringsdel: 0,
+      reparationsunderlag: 0,
+      grundforbattring_orsak:
+        p.grundforbattringsdel > 0 ? "troskel" : p.grundforbattring_orsak,
+      reparation_orsak:
+        p.reparationsunderlag > 0 ? "troskel" : p.reparation_orsak,
+    }));
   }
   return poster;
 }
@@ -172,6 +214,10 @@ export interface AvdragEfterSkick {
    *  se avrundaReparationUppat. Rundar man har ackumuleras felet over manga
    *  atgarder. */
   reparation: number;
+  /** Satt ENDAST nar skickfaktorn sjalv nollade reparationen (underlaget var
+   *  > 0 men skicket inte battre vid forsaljningen an vid forvarvet) – aldrig
+   *  nar underlaget redan var 0 av en tidigare regel. */
+  reparation_orsak?: NollOrsak;
 }
 
 /**
@@ -183,10 +229,14 @@ export function tillampaSkickfaktor(
   skickForvarv: number,
   skickForsaljning: number,
 ): AvdragEfterSkick {
+  const faktor = skickfaktor(skickForvarv, skickForsaljning);
   return {
     grundforbattring: uppdelning.grundforbattringsdel,
-    reparation:
-      uppdelning.reparationsunderlag * skickfaktor(skickForvarv, skickForsaljning),
+    reparation: uppdelning.reparationsunderlag * faktor,
+    reparation_orsak:
+      faktor === 0 && uppdelning.reparationsunderlag > 0
+        ? "skicket_forbattrades_inte"
+        : undefined,
   };
 }
 

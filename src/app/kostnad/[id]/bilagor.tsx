@@ -8,6 +8,12 @@
 // darfor stor: minst 96px, styrande regel ar att tre rutor (inkl. +-rutan)
 // ska rymmas pa en rad pa 390px – med kortets padding landar det pa 100px.
 //
+// SAMMA komponent anvands pa bade detaljvyn och redigeringsformularet
+// (docs/design.md, "Bilagor": "Tva olika satt att hantera bilagor i samma
+// app ar tva satt att gora fel") – `storForhandsvisning` slar bara pa en
+// stor forhandsvisning ovanfor raden at redigeringsformularet. Uppladdning,
+// radering och miniatyrraden ar identiska pa bagge stallena.
+//
 // En bild som annu inte hamtats far ALDRIG se ut som en tom ruta – det ar
 // exakt den signal som far anvandaren att tro att kvittot ar borta.
 // <Miniatyrbild> visar darfor ett laddningslage tills webblasaren bekraftat
@@ -78,9 +84,22 @@ const RUTA =
 export function Bilagor({
   kostnadId,
   bilagor,
+  storForhandsvisning,
 }: {
   kostnadId: string;
   bilagor: Bilagevy[];
+  /**
+   * Visar den valda bilagan stort ovanfor miniatyrraden (docs/design.md,
+   * "Bilagor": "Redigeringsvyn visar bilagan... storre an miniatyren pa
+   * detaljvyn"). Anvands av redigeringsformularet; detaljvyn lamnar den
+   * ostangd. SAMMA komponent pa bagge stallena – bara detta flagg-skiljer
+   * dem, inte tva parallella satt att hantera bilagor.
+   *
+   * Nar den ar pa byter en miniatyr vilken bilaga som visas stort i stallet
+   * for att oppna helskarmsvyn direkt ("...med miniatyrraden under sa att
+   * man kan byta") – helskarmsvyn nas da via den stora bilden i stallet.
+   */
+  storForhandsvisning?: boolean;
 }) {
   const router = useRouter();
 
@@ -93,6 +112,13 @@ export function Bilagor({
 
   // Helskarmsvyn – bara for att titta, ingen radering dar.
   const [oppen, setOppen] = useState<Bilagevy | null>(null);
+
+  // Vilken bilaga den stora forhandsvisningen visar (bara relevant nar
+  // storForhandsvisning ar pa). Klampas mot bilagor.length sa en radering
+  // aldrig lamnar ett index utanfor arrayen.
+  const [storIndex, setStorIndex] = useState(0);
+  const sakerStorIndex =
+    bilagor.length > 0 ? Math.min(storIndex, bilagor.length - 1) : 0;
 
   // Raderingsbekraftelsen galler en bilaga i taget, oavsett vilken miniatyrs
   // papperskorg som utlost den.
@@ -156,12 +182,31 @@ export function Bilagor({
 
   return (
     <div className="p-4">
+      {/* "Kvitto eller faktura" – samma rubrik som i inmatningen. "Bilagor" ar
+          internt sprak (docs/design.md, "Ordval i gränssnittet": anvandaren
+          moter alltid ordet "kvitto"). */}
       <p className="mb-2 font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
-        Bilagor
+        Kvitto eller faktura
       </p>
 
+      {/* Stor forhandsvisning, bara i redigeringsformularet (docs/design.md,
+          "Bilagor"). Ateranvander <Miniatyrinnehall> – samma bild/PDF/fel-
+          hantering som miniatyren, bara i en storre, fullbred ruta.
+          Klick oppnar helskarmsvyn; miniatyrraden nedanfor byter vilken
+          bilaga som visas har i stallet for att oppna den direkt. */}
+      {storForhandsvisning && bilagor.length > 0 ? (
+        <button
+          type="button"
+          onClick={() => setOppen(bilagor[sakerStorIndex])}
+          aria-label={`Öppna ${bilagor[sakerStorIndex].filnamn}`}
+          className="relative mb-2 flex h-72 w-full flex-col items-center justify-center overflow-hidden rounded-lg border border-linje bg-yta-nedsankt text-center"
+        >
+          <Miniatyrinnehall bilaga={bilagor[sakerStorIndex]} />
+        </button>
+      ) : null}
+
       <div className="flex flex-wrap gap-2">
-        {bilagor.map((b) => {
+        {bilagor.map((b, i) => {
           // Vid radering ska raderingen ALDRIG behova las av bekraftelsetexten
           // for att veta vilken ruta den galler – med tva kvitton fran samma
           // butik bredvid varandra ar det annars omojligt att se. Den valda
@@ -184,6 +229,10 @@ export function Bilagor({
           // nagonsin malas, och forblir synlig oavsett vad rutan visar.
           const vald = bekraftaBilaga?.id === b.id;
           const dampad = bekraftaBilaga !== null && !vald;
+          // Med stor forhandsvisning pa markeras ocksa den bilaga som visas
+          // dar – samma ringstil som raderingsvalet, eftersom bada betyder
+          // "det har ar den som galler just nu" och aldrig visas samtidigt.
+          const valdForStor = Boolean(storForhandsvisning) && i === sakerStorIndex;
           return (
             <div
               key={b.id}
@@ -191,12 +240,16 @@ export function Bilagor({
             >
               <button
                 type="button"
-                onClick={() => setOppen(b)}
+                onClick={() =>
+                  storForhandsvisning ? setStorIndex(i) : setOppen(b)
+                }
                 className={`${RUTA} transition-colors hover:bg-sand ${
-                  vald ? "ring-2 ring-text-primar" : ""
+                  vald || valdForStor ? "ring-2 ring-text-primar" : ""
                 }`}
                 title={b.filnamn}
-                aria-label={`Öppna ${b.filnamn}`}
+                aria-label={
+                  storForhandsvisning ? `Visa ${b.filnamn}` : `Öppna ${b.filnamn}`
+                }
               >
                 <Miniatyrinnehall bilaga={b} />
               </button>
@@ -245,6 +298,14 @@ export function Bilagor({
           </span>
         </label>
       </div>
+
+      {/* Samma formathjalp som i inmatningen (kostnad/nytt/form.tsx) – samma
+          uppladdningskontroll ("+"-rutan ovan) forekommer pa bagge stallena
+          och fortjanar samma forklaring. */}
+      <p className="mt-2 font-granssnitt text-xs text-text-dampad">
+        JPG, PNG, HEIC eller PDF. Max 10 MB per fil. Går att lägga till
+        senare.
+      </p>
 
       {laddarUpp ? (
         <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
@@ -323,9 +384,15 @@ export function Bilagor({
   );
 }
 
-/** Innehallet i en miniatyrruta – samma for miniatyren som for den stora ytan
- * i helskarmsvyn (bild, PDF-ikon eller felikon). */
-function Miniatyrinnehall({ bilaga }: { bilaga: Bilagevy }) {
+/**
+ * Innehallet i en miniatyrruta – samma for miniatyren som for den stora ytan
+ * i helskarmsvyn (bild, PDF-ikon eller felikon). Exporterad sa att
+ * redigeringsformularets miniatyrrad (kostnad/[id]/redigera/form.tsx,
+ * docs/design.md "Bilagor": "Har kostnaden flera bilagor visas den forsta,
+ * med miniatyrraden under sa att man kan byta") ateranvander samma
+ * bild/PDF/fel-hantering i stallet for att duplicera den.
+ */
+export function Miniatyrinnehall({ bilaga }: { bilaga: Bilagevy }) {
   if (bilaga.arBild) {
     return (
       <Miniatyrbild
@@ -363,9 +430,31 @@ function Miniatyrinnehall({ bilaga }: { bilaga: Bilagevy }) {
  * Bilden visas HEL, aldrig beskuren: object-contain mot rutans
  * --yta-nedsankt-bakgrund, sa att ett avklippt eller suddigt kvitto syns i
  * stallet for att doljas av en beskarning av mitten.
+ *
+ * VERIFIERAT FYND (i webblasaren, inte bara i koden): miniatyren pa
+ * /kostnad/<id> kunde snurra for evigt trots att natverksanropet mot
+ * /bilaga/<id> svarade 200 pa under en sekund – inget lasgsamt anrop, inget
+ * fel. `img.complete` var `true` och `naturalWidth` var satt, men klassen
+ * innehol fortfarande "invisible": <img onLoad> hade helt enkelt aldrig
+ * kort. Orsaken ar en kand React/webblasar-fallgrop: load/error pa <img>
+ * bubblar inte, och for en bild webblasaren redan har i sin cache (som hande
+ * har efter en tidigare sidladdning) kan den avfyra "load" SYNKRONT nar src
+ * satts – innan Reacts commit-fas hunnit binda onLoad-lyssnaren. Handelsen
+ * missas da helt och lage blir kvar pa "laddar". Fixen kontrollerar darfor
+ * `img.complete` direkt efter montering och hamtar da igen det missade
+ * utfallet i stallet for att lita pa att handelsen alltid kommer.
  */
 function Miniatyrbild({ src, alt }: { src: string; alt: string }) {
   const [lage, setLage] = useState<"laddar" | "klar" | "fel">("laddar");
+  const bildRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const bild = bildRef.current;
+    if (bild?.complete) {
+      setLage(bild.naturalWidth > 0 ? "klar" : "fel");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (lage === "fel") {
     return (
@@ -389,6 +478,7 @@ function Miniatyrbild({ src, alt }: { src: string; alt: string }) {
         </span>
       ) : null}
       <img
+        ref={bildRef}
         src={src}
         alt={alt}
         onLoad={() => setLage("klar")}

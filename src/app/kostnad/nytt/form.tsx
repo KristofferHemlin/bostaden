@@ -853,7 +853,7 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
             <img
               src={`/bilaga/${valdPost.b.id}?variant=visning`}
               alt={`Förhandsvisning av ${valdPost.b.filnamn}`}
-              className="max-h-[55vh] w-full object-contain"
+              className="max-h-[30vh] w-full object-contain"
             />
           ) : (
             <DokumentIkon namn={valdPost.b.filnamn} />
@@ -882,7 +882,7 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
               src={forhandsvisning.bildUrl}
               alt={`Förhandsvisning av ${forhandsvisning.namn}`}
               onError={() => setRenderFel(true)}
-              className="max-h-[55vh] w-full object-contain"
+              className="max-h-[30vh] w-full object-contain"
             />
           ) : (
             <p className="px-4 py-10 text-center font-granssnitt text-xs text-text-dampad">

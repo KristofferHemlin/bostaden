@@ -21,11 +21,12 @@ import {
   avrundaReparationUppat,
   delaIKategorier,
   innanforBakreGrans,
-  skickfaktor,
+  tillampaSkickfaktor,
   tillampaTidsgranser,
   troskelprovaArspostar,
   type Fragetradssvar,
   type KategoriUppdelning,
+  type NollOrsak,
 } from "./atgardsberakning";
 import { slaUppRegelparameter } from "./regelparameter";
 import type {
@@ -50,6 +51,10 @@ export interface K6aExportrad {
   /** Kostnader som bidrog, for bilage-PDF:ns ordning. */
   kostnad_ider: string[];
   varningar: string[];
+  /** Forklaringen till varfor raden visar 0 kr (docs/design.md, Exportvyn),
+   *  eller null nar raden har ett belopp. Fyra olika regler ger noll och de
+   *  betyder helt olika saker – aldrig bara en tom nolla. */
+  forklaring: string | null;
 }
 
 export interface K6aSida {
@@ -109,6 +114,19 @@ interface CellSplit {
   cell: Cell;
   uppdelning: KategoriUppdelning;
 }
+
+/** Forklaringstexterna till en 0-kr-rad (docs/design.md, Exportvyn). Troskeln
+ *  ar formulerad med Skatteverkets egen ordalydelse ("Kostnaden for det aret
+ *  som atgarden utfordes behover sammanlagt uppga till minst 5 000 kronor"),
+ *  eftersom det ar det vanligaste fallet av alla fyra. */
+const NOLLFORKLARINGAR: Record<NollOrsak, string> = {
+  troskel:
+    "Kostnaden för det året som åtgärden utfördes behöver sammanlagt uppgå till minst 5 000 kronor.",
+  femarsfonster: "Åtgärden utfördes mer än fem år före försäljningen.",
+  skicket_forbattrades_inte:
+    "Det du bytte ut var i samma eller sämre skick vid försäljningen än vid förvärvet.",
+  nybyggd_vid_forvarv: "Allt var nytt vid tillträdet, så reparationer räknas inte.",
+};
 
 export function byggK6aExport(indata: K6aIndata): K6aExport {
   const { bostad, medlemskap, projekt, kostnader, regelparametrar } = indata;
@@ -253,6 +271,10 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
         avdragsgill_del_individuellt: null,
         kostnad_ider: [...cell.kostnadIder].sort(),
         varningar: [],
+        forklaring:
+          beloppBrutto === 0 && uppdelning.grundforbattring_orsak
+            ? NOLLFORKLARINGAR[uppdelning.grundforbattring_orsak]
+            : null,
       });
     }
 
@@ -260,6 +282,13 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
       const beloppBrutto = avrunda(uppdelning.reparationsunderlag);
       const radVarningar: string[] = [];
       let avdragsgillDelBrutto: number | null;
+      // Beloppet kan redan vara nollat av en tidsgrans eller troskeln – den
+      // orsaken galler aven nar bostaden inte ar sald an, till skillnad fran
+      // skickfaktorns orsak nedan som forutsatter ett forsaljningsdatum.
+      let forklaring: string | null =
+        beloppBrutto === 0 && uppdelning.reparation_orsak
+          ? NOLLFORKLARINGAR[uppdelning.reparation_orsak]
+          : null;
 
       if (!sald) {
         // Skickfaktorn utgar fran forsaljningsdatumet – utan det gar den inte
@@ -272,24 +301,30 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
         // ga att rakna ut. Saknas nagon antas den mest konservativa grunden
         // (faktor 0, inget avdrag) – samma riktning som en obesvarad
         // grundfraga redan hanteras i fragetradet – i stallet for att gissa
-        // ett varde som paverkar avdraget.
-        let faktor: number;
+        // ett varde som paverkar avdraget. En saknad skickfraga ar en
+        // varning (nagot fattas), inte en forklaring (en regel har slagit
+        // till) – de tva ar olika saker.
         if (p.skick_forvarv === null) {
           radVarningar.push(
             `Projekt "${p.namn}": frågan om skick vid förvärvet är inte besvarad.`,
           );
-          faktor = 0;
+          avdragsgillDelBrutto = 0;
         } else if (p.skick_forsaljning === null) {
           radVarningar.push(
             `Projekt "${p.namn}": skick vid försäljningen är inte bekräftat.`,
           );
-          faktor = 0;
+          avdragsgillDelBrutto = 0;
         } else {
-          faktor = skickfaktor(p.skick_forvarv, p.skick_forsaljning);
+          const avdrag = tillampaSkickfaktor(
+            uppdelning,
+            p.skick_forvarv,
+            p.skick_forsaljning,
+          );
+          avdragsgillDelBrutto = avrundaReparationUppat(avdrag.reparation);
+          if (avdrag.reparation_orsak) {
+            forklaring = NOLLFORKLARINGAR[avdrag.reparation_orsak];
+          }
         }
-        avdragsgillDelBrutto = avrundaReparationUppat(
-          uppdelning.reparationsunderlag * faktor,
-        );
       }
 
       varningar.push(...radVarningar);
@@ -309,6 +344,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
             : individuelltBelopp(avdragsgillDelBrutto, medlemskap.agarandel),
         kostnad_ider: [...cell.kostnadIder].sort(),
         varningar: radVarningar,
+        forklaring,
       });
     }
   }
@@ -413,6 +449,10 @@ function buildCellSplit(
       reparationsunderlag: nybyggdUtanOmbildning
         ? 0
         : raaUppdelning.reparationsunderlag,
+      reparation_orsak:
+        nybyggdUtanOmbildning && raaUppdelning.reparationsunderlag > 0
+          ? "nybyggd_vid_forvarv"
+          : undefined,
     },
   };
 }

@@ -10,6 +10,7 @@
 import { redirect } from "next/navigation";
 import { Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
+import { BILAGEPAKET_SYNLIGT } from "@/lib/bilagepaket/flagga";
 import { isoDatum } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -18,6 +19,10 @@ import { BilagepaketFlode } from "./flode";
 export const dynamic = "force-dynamic";
 
 export default async function BilagepaketSida() {
+  // Bilagepaketet ar dolt i granssnittet tills vidare (docs/produktspec.md
+  // avsnitt 8). Koden och rutten ligger orort kvar – bara natt via flaggan.
+  if (!BILAGEPAKET_SYNLIGT) redirect("/export");
+
   const { bostadId, agarandel } = await kravBostad();
   const bostad = await prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } });
 

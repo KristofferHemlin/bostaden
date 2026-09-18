@@ -224,7 +224,11 @@ Raderna visar **anteckningen som huvudtext**, med leverantör och datum dämpat 
 
 Raderingen tar med bilagorna. Ett utkast utan sin bild är ingenting.
 
-**Ingen markering av underlagsstyrka.** Baslinjen är borttagen ur produkten – se produktspec. Det som bär bevisningen är fritextsvaret på fråga 4, och det hör hemma på grupperingens detaljvy, inte som en etikett i en lista.
+**Ingen markering av underlagsstyrka.** Baslinjen är borttagen ur produkten – se produktspec. Det som bär bevisningen är motiveringen i frågeträdet, och den hör hemma på grupperingens detaljvy, inte som en etikett i en lista.
+
+Regeln gäller appens **bedömning** av bevisvärde. `underlagsstyrka` var ett härlett omdöme om hur väl ett projekt var underbyggt, och sådana omdömen ska appen inte fälla.
+
+**Att en bilaga saknas är däremot ett faktum**, i samma klass som belopp och datum, och det ska synas. En rad utan bilaga får en dämpad text – "Inget kvitto bifogat" – utan ikon och utan varningsfärg, skild från statusraden. Den som går igenom sitt arkiv om åtta år ska kunna se vilka poster som har något bakom sig.
 
 **Ingången till klassificeringen ligger här, inte på startskärmen.** En rad överst i listan – "N kvitton att klassificera" med åtgärdsprick – som leder till genomgången. Kvittolistan är där man går för att se sina kvitton, och det är där man märker att några saknar gruppering.
 
@@ -239,6 +243,16 @@ Skälet är att ett kvitto ofta läggs in långt efter att det betalades – ett
 ### Listrader
 
 Projekt och kostnader visas som rader avdelade med 1px linjer, inte som separata kort. Varje rad har namnet på första raden och en dämpad andra rad med kategori eller status, med beloppet högerställt på samma höjd som namnet. Rader vars status kräver åtgärd markeras med en liten fylld prick i `--accent` före den dämpade texten, inte genom att färga hela raden. Med flera rader i samma läge blir orange text en vägg av varningar, och färgen tappar sin betydelse.
+
+**Hela kortet är klickbart, inte bara rubriken.** På projektlistan täcker länken i dag namn, kategori och belopp men inte kvittona under – kortet ser ut som en enhet medan bara övre halvan reagerar.
+
+Lös det med en utsträckt länk: kortet får `position: relative` och länken ett `::after` som täcker hela ytan. Då finns fortfarande en enda riktig länk för skärmläsare, och kvittoraderna kan senare få egna länkar genom att lyftas ovanför med `z-index`. Att svepa hela kortet i en `<a>` stänger den dörren, eftersom länkar inte får nästlas.
+
+Regeln gäller varje kort eller rad som leder någonstans: klickytan är det man ser, inte det som råkar vara text.
+
+**Och markeringen ska täcka samma yta som klicket.** Ligger hovringen på en inre rad medan klickytan spänner över hela kortet lyser bara rubriken upp, och färgen säger en sak medan klicket säger en annan.
+
+Sätt en vanlig `hover:` direkt på samma element som bär `relative` och den utsträckta länken. Inte `group-hover` – den kräver en strikt förfader och matchar aldrig när klassen sitter på samma element som `group`.
 
 **Projektlistan visar sina kvitton.** Under varje projekts namn står de kvitton som hör dit, med leverantör och datum. Utan dem är raden ett belopp utan förklaring, och den som undrar var summan kommer ifrån måste öppna varje projekt.
 
@@ -346,6 +360,14 @@ Raden om oklassificerade kvitton ligger kvar som en klickbar ingång till genomg
 ### Bilagor
 
 Bilagor visas som en rad små miniatyrer under kostnadens uppgifter, med en `+`-ruta sist för att lägga till fler. Tryck på en miniatyr öppnar filen i helskärm.
+
+**Redigeringsvyn visar bilagan.** Den som ändrar belopp eller datum gör det mot kvittot, och att behöva backa ut för att läsa av det är onödig friktion. Bilagan visas överst i formuläret, större än miniatyren på detaljvyn – det är här man faktiskt behöver läsa den.
+
+Har kostnaden flera bilagor visas den första, med miniatyrraden under så att man kan byta.
+
+**Bilagorna går att ändra där, inte bara att se.** Skärmen heter "Ändra kvitto" och låter i dag ändra allt utom bilagan – den som öppnar den för att byta ut en suddig bild måste backa till detaljvyn. Miniatyrraden ska fungera som på detaljvyn: papperskorg per bilaga med samma bekräftelse, och en `+`-ruta för att lägga till fler.
+
+Samma komponent på båda ställena. Två olika sätt att hantera bilagor i samma app är två sätt att göra fel.
 
 **En miniatyr som laddar får aldrig se ut som en tom ruta.** Fram tills bilden är hämtad visas ett tydligt laddningsläge i rutan. En blank sandfärgad fyrkant där kvittot ska vara är exakt den signal som förstör förtroendet för ett arkiv – användaren drar slutsatsen att bilden är borta, inte att den är på väg. Samma sak gäller när en bild verkligen inte går att läsa: då står det att den inte kunde visas, aldrig ingenting.
 
@@ -663,6 +685,21 @@ Poängen är att sidan ska vara meningsfull under hela ägandet i stället för 
 **Samma information står aldrig två gånger.** Oklassificerade högar redovisas i en enda lista med namn, år och belopp, en åtgärdsprick och en knapp till genomgången. Ingen andra lista som upprepar samma högar i längre meningar – konsekvensen sägs en gång, i en rad ovanför listan.
 
 En varning per hög som fyller fyra rader var gör skärmen till en vägg av text, och läsaren slutar läsa vid den andra punkten.
+
+**En rad som ger 0 kr måste säga varför.** Tre olika regler ger noll, och de betyder helt olika saker för användaren:
+
+| Orsak | Vad raden säger |
+|---|---|
+| Året nådde inte tröskeln | Utgifterna för året understeg 5 000 kr, så inget avdrag medges för året |
+| Reparationen ligger utanför femårsfönstret | Åtgärden utfördes mer än fem år före försäljningen |
+| Skicket förbättrades inte | Det du bytte ut var i samma eller sämre skick vid försäljningen än vid förvärvet |
+| Bostaden var nybyggd vid förvärvet | Allt var nytt vid tillträdet, så reparationer räknas inte |
+
+Förklaringen står **under sin egen rad**, inte samlad per år. Raderna i sammanställningen står i en lång lista och är inte grupperade visuellt; en förklaring långt från sin rad går inte att koppla ihop. Det blir repetitivt när flera rader delar orsak, och det priset är värt att betala.
+
+Tröskelfallet är det viktigaste. De flesta har ett eller två kvitton ett enskilt år och når inte 5 000 kr – det är det vanligaste tillståndet av alla. Utan förklaringen ser appen ut att räkna fel just när den räknar rätt, och användaren får dessutom inte veta att ett kvitto till samma år hade gjort båda avdragsgilla.
+
+Formuleringen följer Skatteverkets egen: *"Kostnaden för det året som åtgärden utfördes behöver sammanlagt uppgå till minst 5 000 kronor."*
 
 **Summorna dämpas när de är ofullständiga.** Två stora nollor på en skärm som heter Deklarationsunderlag ser trasigt ut. Finns oklassificerade högar sätts talen i `--text-sekundar` i stället för `--text-primar`, så att blicken går till listan över det som återstår. När allt är klassificerat får de full tyngd.
 

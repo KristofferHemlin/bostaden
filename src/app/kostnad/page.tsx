@@ -15,6 +15,13 @@
 // (docs/design.md, Kvittolistan): en rad overst i listan med atgardsprick.
 // Kvittolistan ar dar man gar for att se sina kvitton, och det ar dar man
 // marker att nagra saknar gruppering.
+//
+// Ett sparat, icke-arkiverat kvitto utan bilaga far en egen dampad rad "Inget
+// kvitto bifogat" (produktspec 4.7: underlaget ar svagare utan kvitto, och
+// appen ska saga det). Det ar ett faktum om posten, inte en bedomning av
+// underlagsstyrka – den funktionen (baslinjen) togs bort ur produkten, se
+// docs/design.md, Kvittolistan. Utkast far ingen egen markering: de flaggas
+// redan som ofullstandiga.
 
 import Link from "next/link";
 import { UtkastRaderaKnapp } from "./utkast-radera";
@@ -34,6 +41,10 @@ interface KvittoRad {
   id: string;
   namn: string;
   status: string;
+  /** Dampad tredje rad: "Inget kvitto bifogat" nar bilaga saknas (produktspec
+   * 4.7). Ett faktum om posten, som belopp och datum – ingen bedomning av
+   * underlagsstyrka (den togs bort ur produkten, se docs/design.md). */
+  underStatus: string | undefined;
   atgard: boolean;
   utkast: boolean;
   belopp: string | undefined;
@@ -105,10 +116,16 @@ export default async function KvittolistaSida() {
     }
 
     const forstaBilaga = k.bilagor[0];
+    // Markeringen galler bara sparade, aktiva kvitton. Ett utkast flaggas
+    // redan som ofullstandigt (atgard-pricken), och ett arkiverat kvitto
+    // raknas inte med oavsett bilaga – att papeka bilagan dar lagger till
+    // brus utan att saga nagot nytt.
+    const saknarBilaga = !k.arkiverad && !utkast && k.bilagor.length === 0;
     const rad: KvittoRad = {
       id: k.id,
       namn: notering || leverantor || "Kvitto",
       status,
+      underStatus: saknarBilaga ? "Inget kvitto bifogat" : undefined,
       atgard,
       utkast,
       belopp: utkast ? undefined : formateraKronor(k.totalbelopp ?? 0),
@@ -203,6 +220,7 @@ export default async function KvittolistaSida() {
                     key={r.id}
                     namn={r.namn}
                     status={r.status}
+                    underStatus={r.underStatus}
                     atgard={r.atgard}
                     belopp={r.belopp}
                     href={r.href}

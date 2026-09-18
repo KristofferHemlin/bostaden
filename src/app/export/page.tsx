@@ -29,6 +29,7 @@ import {
 } from "@/doman/export-k6a";
 import { behoverSkickForsaljning } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
+import { BILAGEPAKET_SYNLIGT } from "@/lib/bilagepaket/flagga";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
 import { kravBostad } from "@/lib/session";
@@ -231,26 +232,38 @@ export default async function ExportSida() {
         ) : null}
 
         <div className="space-y-4 p-4">
-          {/* Bilagepaketet som PDF (docs/produktspec.md avsnitt 8): knappen
-              ligger under summorna och ar otillganglig fore forsaljning,
-              aldrig en sparr framfor sidan i ovrigt (docs/design.md,
-              Exportvyn). */}
-          {ex.sald ? (
-            <Link href="/export/paket" className={PRIMARKNAPP_KLASS}>
-              Skapa bilagepaket (PDF)
-            </Link>
-          ) : (
-            <div>
-              <span
-                aria-disabled
-                className={`${PRIMARKNAPP_KLASS} pointer-events-none opacity-60`}
-              >
+          {/* Bilagepaketet som PDF (docs/produktspec.md avsnitt 8): dolt i
+              granssnittet tills vidare via BILAGEPAKET_SYNLIGT. Koden, rutten
+              och testerna ligger orort – bara knappen ar borta. I stallet en
+              dampad rad om att kvittona finns sparade som zip i
+              installningarna, sa den som fatt sina tva tal vet vad hon visar
+              om Skatteverket fragar. */}
+          {BILAGEPAKET_SYNLIGT ? (
+            ex.sald ? (
+              <Link href="/export/paket" className={PRIMARKNAPP_KLASS}>
                 Skapa bilagepaket (PDF)
-              </span>
-              <p className="mt-1.5 font-granssnitt text-xs text-text-dampad">
-                Kräver att bostaden är markerad som såld.
-              </p>
-            </div>
+              </Link>
+            ) : (
+              <div>
+                <span
+                  aria-disabled
+                  className={`${PRIMARKNAPP_KLASS} pointer-events-none opacity-60`}
+                >
+                  Skapa bilagepaket (PDF)
+                </span>
+                <p className="mt-1.5 font-granssnitt text-xs text-text-dampad">
+                  Kräver att bostaden är markerad som såld.
+                </p>
+              </div>
+            )
+          ) : (
+            <p className="font-granssnitt text-xs text-text-dampad">
+              Kvittona finns sparade och går att ladda ner som zip-arkiv från{" "}
+              <Link href="/installningar" className="underline">
+                inställningarna
+              </Link>
+              , om Skatteverket begär in en redogörelse.
+            </p>
           )}
 
           {ex.sald ? (
@@ -338,6 +351,11 @@ function SidaBlock({
                           {v}
                         </span>
                       ))}
+                      {r.forklaring ? (
+                        <span className="mt-0.5 block text-xs text-text-dampad">
+                          {r.forklaring}
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3 text-text-sekundar">{r.ar}</td>
                     <td className="px-4 py-3 text-right text-text-primar">

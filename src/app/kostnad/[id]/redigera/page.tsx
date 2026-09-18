@@ -11,6 +11,7 @@ import { arEnkelKostnad } from "@/doman/berakningar";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { isoDatum } from "@/lib/format";
+import { listaKostnadsbilagor } from "@/lib/lagring/bilagor";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
@@ -45,6 +46,12 @@ export default async function RedigeraKostnadSida({
   // Ett utkast kompletteras i inmatningsformularet, inte i redigeringen.
   if (kostnad.totalbelopp === null) redirect(`/kostnad/nytt?utkast=${id}`);
 
+  // Bilagan visas overst i formuläret (docs/design.md, "Bilagor"): den som
+  // andrar belopp eller datum gor det mot kvittot, och ska inte behova backa
+  // ut till detaljvyn for att lasa av det. Hamtas EFTER agarskapskontrollen
+  // ovan – aldrig med `id` direkt, som skulle lacka en annan bostads bilagor.
+  const bilagor = await listaKostnadsbilagor(kostnad.id);
+
   const { bostadsnamn } = bostadHeader(bostad);
   const enkel = arEnkelKostnad(tillDomanKostnad(kostnad));
 
@@ -64,6 +71,7 @@ export default async function RedigeraKostnadSida({
         kostnadId={id}
         enkel={enkel}
         projekt={projekt}
+        bilagor={bilagor}
         varden={{
           leverantor: kostnad.leverantor ?? "",
           totalbelopp: orenTillFalt(kostnad.totalbelopp),
@@ -77,6 +85,7 @@ export default async function RedigeraKostnadSida({
             kostnad.rot_utnyttjat !== null
               ? orenTillFalt(kostnad.rot_utnyttjat)
               : "",
+          anteckning: kostnad.anteckning ?? "",
         }}
       />
     </Skarm>

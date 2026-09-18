@@ -77,6 +77,9 @@ export async function redigeraKostnad(
   const dokumentdatum = String(formData.get("dokumentdatum") ?? "").trim();
   const betaldatum = String(formData.get("betaldatum") ?? "").trim();
   const projektId = String(formData.get("projekt_id") ?? "").trim();
+  // "Vad gällde det?" – samma falt som i inmatningen (produktspec 4.7). Valfri,
+  // tom strang blir null precis som vid inmatningen.
+  const anteckning = String(formData.get("anteckning") ?? "").trim();
 
   // ROT-avdraget (docs/design.md, "ROT-avdrag"). Ett enda falt, far lamnas tomt,
   // anges i kronor.
@@ -126,7 +129,13 @@ export async function redigeraKostnad(
     // Belopp och koppling hor till raduppdelningen (senare steg).
     await prisma.kostnad.update({
       where: { id },
-      data: { leverantor, dokumentdatum: dok, betaldatum: bet, ...rotFalt },
+      data: {
+        leverantor,
+        dokumentdatum: dok,
+        betaldatum: bet,
+        anteckning: anteckning || null,
+        ...rotFalt,
+      },
     });
     revalideraKostnadsvyer(id);
     redirect(`/kostnad/${id}`);
@@ -162,6 +171,7 @@ export async function redigeraKostnad(
         totalbelopp,
         dokumentdatum: dok,
         betaldatum: bet,
+        anteckning: anteckning || null,
         ...rotFalt,
       },
     }),

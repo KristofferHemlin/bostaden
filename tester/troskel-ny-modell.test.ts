@@ -75,14 +75,32 @@ describe("troskeln provas fore skickbedomningen, pa summan av bada kategorierna"
     );
 
     expect(uA).toEqual({ grundforbattringsdel: 300_000, reparationsunderlag: 0 });
-    expect(uB).toEqual({ grundforbattringsdel: 100, reparationsunderlag: 0 });
+    // uB:s reparationsunderlag ar redan nollat av femarsfonstret, med orsaken
+    // ihagkommen for exportvyns forklaring.
+    expect(uB).toEqual({
+      grundforbattringsdel: 100,
+      reparationsunderlag: 0,
+      reparation_orsak: "femarsfonster",
+    });
 
     const summa = uA.grundforbattringsdel + uA.reparationsunderlag + uB.grundforbattringsdel + uB.reparationsunderlag;
     expect(summa).toBe(300_100); // 3 001 kr, under troskeln
 
     const [tA, tB] = troskelprovaArspostar([uA, uB], TROSKEL);
-    expect(tA).toEqual({ grundforbattringsdel: 0, reparationsunderlag: 0 });
-    expect(tB).toEqual({ grundforbattringsdel: 0, reparationsunderlag: 0 });
+    // Troskeln nollar bada grundforbattringsdelarna (de var > 0) och far
+    // ratten till orsaken "troskel". uB:s reparationsunderlag var redan 0 av
+    // femarsfonstret – den orsaken far INTE skrivas over av troskeln.
+    expect(tA).toEqual({
+      grundforbattringsdel: 0,
+      reparationsunderlag: 0,
+      grundforbattring_orsak: "troskel",
+    });
+    expect(tB).toEqual({
+      grundforbattringsdel: 0,
+      reparationsunderlag: 0,
+      grundforbattring_orsak: "troskel",
+      reparation_orsak: "femarsfonster",
+    });
   });
 
   it("troskeln raknas per bostad, inte per delagare: tva delagare med halften var och 8 000 kr under ett ar passerar gransen", () => {

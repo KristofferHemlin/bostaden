@@ -6,6 +6,16 @@
 // inmatningen, sa progressiv utvikning skulle bara vara i vagen. Tomt betaldatum
 // = obetald = raknas inte in i arssumman.
 //
+// Faltordningen foljer inmatningens (kostnad/nytt/form.tsx) som grund –
+// Totalbelopp, ROT, Datum, Leverantör, Vad gällde det – med redigeringsvyns
+// egna extrafalt, betaldatum och projektkoppling, lagda EFTER dem. Tva
+// skarmar for samma sak ska inte kasta om ordningen pa varandra utan skal.
+//
+// "Vad gällde det?" (anteckning) ar SAMMA falt som i inmatningen – etikett,
+// hjalptext och placeholder ordagrant desamma. Den bar bevisningen nar kvitto
+// saknas (produktspec 4.7) och ar fragetradets forval for atgardens namn, och
+// maste darfor ga att ratta har, inte bara sattas en gang vid inmatningen.
+//
 // Ar kostnaden uppdelad pa flera rader visas belopp och projektkoppling som
 // lasta, med en lank till "Dela upp kvittot" dar raderna andras (steg 10).
 //
@@ -19,6 +29,14 @@
 //
 // Borttagningen ligger sist, tydligt skild fran spara-knappen, och kraver ett
 // extra bekraftelsesteg. Den tar med bilagorna.
+//
+// Bilagan visas overst, storre an miniatyren pa detaljvyn, och gar att andra
+// har – inte bara att se (docs/design.md, "Bilagor"): den som oppnar skarmen
+// for att byta ut en suddig bild ska inte behova backa till detaljvyn.
+// ATERANVANDER <Bilagor> RAKT AV (samma komponent som detaljvyn, med
+// `storForhandsvisning` pa) – uppladdning, radering och miniatyrrad ar
+// darmed identiska pa bagge stallena. "Tva olika satt att hantera bilagor i
+// samma app ar tva satt att gora fel" (docs/design.md, "Bilagor").
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
@@ -27,6 +45,7 @@ import {
   taBortKostnad,
   type KostnadRedigeraResultat,
 } from "../actions";
+import { Bilagor } from "../bilagor";
 import { BeloppFalt } from "@/components/belopp-falt";
 import {
   Falt,
@@ -37,6 +56,7 @@ import {
 } from "@/components/skarm";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { formateraBeloppInmatning, formateraKronor } from "@/lib/format";
+import type { Bilagevy } from "@/lib/lagring/bilagor";
 
 const START: KostnadRedigeraResultat = {};
 
@@ -50,11 +70,13 @@ export function RedigeraKostnadForm({
   kostnadId,
   enkel,
   projekt,
+  bilagor,
   varden,
 }: {
   kostnadId: string;
   enkel: boolean;
   projekt: Projektval[];
+  bilagor: Bilagevy[];
   varden: {
     leverantor: string;
     totalbelopp: string;
@@ -63,6 +85,7 @@ export function RedigeraKostnadForm({
     betaldatum: string;
     projektId: string;
     rotUtnyttjat: string;
+    anteckning: string;
   };
 }) {
   const [resultat, spara, sparar] = useActionState(redigeraKostnad, START);
@@ -74,6 +97,9 @@ export function RedigeraKostnadForm({
     formateraBeloppInmatning(varden.totalbelopp),
   );
 
+  // "Vad gällde det?" – samma falt som i inmatningen, sparas i anteckning.
+  const [anteckning, setAnteckning] = useState(varden.anteckning);
+
   // ROT-raden "Drogs ROT av på fakturan?" (docs/design.md, "ROT-avdrag"). Ett
   // enda falt, ROT-beloppet i kronor. Oppen fran start nar den redan har ett
   // varde, annars hopfalld. Far lamnas tom.
@@ -84,20 +110,20 @@ export function RedigeraKostnadForm({
 
   return (
     <>
-      <form action={spara} onSubmit={hanteraSparaSubmit} className="flex flex-col gap-5 p-5">
+      {/* Samma <Bilagor> som detaljvyn (docs/design.md, "Bilagor") – bara
+          `storForhandsvisning` skiljer dem. Ligger UTANFOR <form> nedan, som
+          en egen sektion med sin egen padding, precis som pa detaljvyn: den
+          har sina egna server actions for uppladdning/radering, helt
+          fristaende fran "Spara ändringar". */}
+      <Bilagor kostnadId={kostnadId} bilagor={bilagor} storForhandsvisning />
+
+      <form action={spara} onSubmit={hanteraSparaSubmit} className="flex flex-col gap-5 border-t border-linje p-5">
         <input type="hidden" name="kostnad_id" value={kostnadId} />
 
-        <Falt etikett="Leverantör" obligatoriskt>
-          <input
-            type="text"
-            name="leverantor"
-            required
-            defaultValue={varden.leverantor}
-            className={INPUT_KLASS}
-            placeholder="t.ex. Bauhaus Bromma"
-          />
-        </Falt>
-
+        {/* Fran har och ner: inmatningens ordning (kostnad/nytt/form.tsx) som
+            grund – Totalbelopp, ROT, Datum, Leverantör, Vad gällde det – med
+            redigeringsvyns egna extrafalt (betaldatum, projektkoppling) lagda
+            EFTER dem. */}
         {enkel ? (
           <Falt
             etikett="Totalbelopp"
@@ -124,30 +150,6 @@ export function RedigeraKostnadForm({
           </div>
         )}
 
-        <Falt etikett="Datum" obligatoriskt>
-          <input
-            type="date"
-            name="dokumentdatum"
-            required
-            defaultValue={varden.dokumentdatum}
-            className={INPUT_KLASS}
-          />
-        </Falt>
-
-        <div>
-          <Falt etikett="Betaldatum">
-            <input
-              type="date"
-              name="betaldatum"
-              defaultValue={varden.betaldatum}
-              className={INPUT_KLASS}
-            />
-          </Falt>
-          <p className="mt-1 font-granssnitt text-xs text-text-dampad">
-            Lämna tomt om fakturan inte är betald än.
-          </p>
-        </div>
-
         {/* "Drogs ROT av på fakturan?" – ett enda fält, etiketterat
             "ROT-avdrag", ROT-beloppet i kronor (docs/design.md, "ROT-avdrag").
             Knapp med chevron, öppen från start när fältet redan har ett
@@ -170,6 +172,59 @@ export function RedigeraKostnadForm({
             />
           </Falt>
         </UtfallbarSektion>
+
+        <Falt etikett="Datum" obligatoriskt>
+          <input
+            type="date"
+            name="dokumentdatum"
+            required
+            defaultValue={varden.dokumentdatum}
+            className={INPUT_KLASS}
+          />
+        </Falt>
+
+        <Falt etikett="Leverantör" obligatoriskt>
+          <input
+            type="text"
+            name="leverantor"
+            required
+            defaultValue={varden.leverantor}
+            className={INPUT_KLASS}
+            placeholder="t.ex. Bauhaus Bromma"
+          />
+        </Falt>
+
+        {/* "Vad gällde det?" – samma etikett, hjalptext och placeholder som i
+            inmatningen (produktspec 4.7: bar bevisningen nar kvitto saknas,
+            och ar fragetradets forval for atgardens namn). */}
+        <Falt
+          etikett="Vad gällde det?"
+          hjalp="En beskrivande mening, inte ett ord – det är den som gör kvittot begripligt om flera år."
+        >
+          <textarea
+            name="anteckning"
+            value={anteckning}
+            onChange={(e) => setAnteckning(e.target.value)}
+            rows={3}
+            className={`${INPUT_KLASS} min-h-[4.5rem] resize-y`}
+            placeholder="t.ex. målade om sovrummet, väggarna var slitna sedan vi flyttade in"
+          />
+        </Falt>
+
+        {/* Redigeringsvyns egna extrafalt, efter inmatningens grund ovan. */}
+        <div>
+          <Falt etikett="Betaldatum">
+            <input
+              type="date"
+              name="betaldatum"
+              defaultValue={varden.betaldatum}
+              className={INPUT_KLASS}
+            />
+          </Falt>
+          <p className="mt-1 font-granssnitt text-xs text-text-dampad">
+            Lämna tomt om fakturan inte är betald än.
+          </p>
+        </div>
 
         {enkel ? (
           <Falt etikett="Koppla till projekt">

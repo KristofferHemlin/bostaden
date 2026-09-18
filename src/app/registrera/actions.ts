@@ -17,8 +17,10 @@
 // dolda falt till fas 2. Utan e-postbekraftelse finns ingen session att lasa
 // authId ur i fas 2, sa den maste folja med formularet.
 //
-// Bostadssteget har fem falt: upplatelseform, tilltradesdatum, adress, ort och
-// kopeskilling. Endast de tva forsta ar obligatoriska. Storlek hor hemma pa
+// Bostadssteget har sex falt: upplatelseform, tilltradesdatum, identifiering,
+// adress, ort och kopeskilling. Endast de tva forsta ar obligatoriska.
+// Identifieringen (foreningens namn/fastighetsbeteckningen, produktspec 8)
+// och kopeskillingen gar bra att fylla i senare. Storlek hor hemma pa
 // installningssidan (docs/design.md, Registreringsflodet), inte har.
 
 import { redirect } from "next/navigation";
@@ -70,6 +72,8 @@ export async function slutforRegistrering(
   const adress = las(formData, "adress");
   const ort = las(formData, "ort");
   const kopeskillingText = las(formData, "kopeskilling");
+  const identifieringText = las(formData, "identifiering");
+  const identifiering = identifieringText === "" ? null : identifieringText;
   // Adressfaltet ar alltid fritext. Kom place_id + koordinater med fran ett valt
   // Places-forslag sparas de, annars sparas adressen som den ar med falten null.
   const geokod = tolkaGeokod(
@@ -139,6 +143,7 @@ export async function slutforRegistrering(
       latitud: geokod.latitud,
       longitud: geokod.longitud,
       kopeskilling,
+      identifiering,
       upplatelseform: upplatelseform as "bostadsratt" | "fastighet",
       tilltradesdatum: new Date(`${tilltradesdatum}T00:00:00.000Z`),
       medlemskap: { create: { anvandare_id: authId, agarandel: 100 } },
