@@ -20,7 +20,7 @@ import {
   taBortBilaga,
 } from "@/lib/lagring/bilagor";
 import { oreFranKronor } from "@/lib/format";
-import { tolkaUppdelning } from "@/lib/kostnadsuppdelning";
+import { enkelPrivatUppdelning, tolkaUppdelning } from "@/lib/kostnadsuppdelning";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
@@ -279,6 +279,100 @@ export async function delaUppKostnad(
         },
       }),
     ),
+  ]);
+
+  revalideraKostnadsvyer(id);
+  redirect(`/kostnad/${id}`);
+}
+
+// Privatfaltet pa kvittots detaljvy (produktspec 5, "Kostnadsrad": "det
+// vanliga fallet far inte krava bokforing"). Ett enda belopp racker for att
+// markera att en del av kvittot var privat – de tva raderna byggs har i
+// bakgrunden, sa datamodellen forblir oforandrad. Faltet later bara kostnader
+// i den kanoniska formen (arEnkelKostnad, eller precis de tva rader detta
+// faltet sjalvt skapar) ostorda; ett genuint flerprojektfall hanteras bara i
+// uppdelningsvyn (delaUppKostnad ovan).
+export async function sparaPrivatbelopp(
+  _foreg: KostnadRedigeraResultat,
+  formData: FormData,
+): Promise<KostnadRedigeraResultat> {
+  const { bostadId } = await kravBostad();
+  const id = String(formData.get("kostnad_id") ?? "");
+
+  const kostnad = await prisma.kostnad.findFirst({
+    where: { id, bostad_id: bostadId },
+    include: { rader: { include: { fordelningar: true } } },
+  });
+  if (!kostnad) return { fel: "Kostnaden hittades inte." };
+  if (kostnad.totalbelopp === null) {
+    return { fel: "Kvittot är fortfarande ett utkast. Komplettera det först." };
+  }
+
+  const nuvarande = enkelPrivatUppdelning(tillDomanKostnad(kostnad));
+  if (!nuvarande) {
+    return {
+      fel: "Kvittot är uppdelat på flera projekt. Ändra det via uppdelningen i stället.",
+    };
+  }
+
+  const artikel = nuvarande.ovrigArtikel || kostnad.leverantor || "Kvitto";
+  const ovrigFordelning = nuvarande.projektId
+    ? {
+        create: [
+          { projekt_id: nuvarande.projektId, privat: false, andel: 1 },
+        ],
+      }
+    : undefined;
+
+  const privatText = String(formData.get("privatbelopp") ?? "").trim();
+
+  if (privatText === "") {
+    // Tomt falt: tillbaka till en enda rad pa hela beloppet, med samma koppling.
+    await prisma.$transaction([
+      prisma.kostnadsrad.deleteMany({ where: { kostnad_id: id } }),
+      prisma.kostnadsrad.create({
+        data: {
+          kostnad_id: id,
+          artikel,
+          belopp: kostnad.totalbelopp,
+          fordelningar: ovrigFordelning,
+        },
+      }),
+    ]);
+    revalideraKostnadsvyer(id);
+    redirect(`/kostnad/${id}`);
+  }
+
+  const privatOren = oreFranKronor(privatText);
+  if (privatOren === null || privatOren <= 0) {
+    return { fel: "Ange ett belopp större än noll, t.ex. 400." };
+  }
+  if (privatOren >= kostnad.totalbelopp) {
+    return {
+      fel:
+        'Beloppet måste vara mindre än kvittots totalbelopp. Är allt privat hör ' +
+        'kvittot hemma i "Hör inte till bostaden".',
+    };
+  }
+
+  await prisma.$transaction([
+    prisma.kostnadsrad.deleteMany({ where: { kostnad_id: id } }),
+    prisma.kostnadsrad.create({
+      data: {
+        kostnad_id: id,
+        artikel: "Privat",
+        belopp: privatOren,
+        fordelningar: { create: [{ privat: true, andel: 1 }] },
+      },
+    }),
+    prisma.kostnadsrad.create({
+      data: {
+        kostnad_id: id,
+        artikel,
+        belopp: kostnad.totalbelopp - privatOren,
+        fordelningar: ovrigFordelning,
+      },
+    }),
   ]);
 
   revalideraKostnadsvyer(id);

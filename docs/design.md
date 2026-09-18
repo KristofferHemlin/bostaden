@@ -244,6 +244,14 @@ Skälet är att ett kvitto ofta läggs in långt efter att det betalades – ett
 
 Projekt och kostnader visas som rader avdelade med 1px linjer, inte som separata kort. Varje rad har namnet på första raden och en dämpad andra rad med kategori eller status, med beloppet högerställt på samma höjd som namnet. Rader vars status kräver åtgärd markeras med en liten fylld prick i `--accent` före den dämpade texten, inte genom att färga hela raden. Med flera rader i samma läge blir orange text en vägg av varningar, och färgen tappar sin betydelse.
 
+**Formathjälpen hör till uppladdningen, inte till visningen.** Raden om tillåtna filformat och storleksgräns visas där en bilaga faktiskt läggs till – i inmatningen och i redigeringsvyn. På kvittots detaljvy, dit man går för att titta, är den brus.
+
+**Startskärmens underrubrik säger "De sex senast tillagda"** – inte mer. Att förklara att listan gäller oavsett år säger något användaren inte undrat över.
+
+**"Räknas inte med" heter "Hör inte till bostaden".** Den första säger inte vad som inte räknas eller varför; den andra säger precis vad valet betyder. Det gäller matkassen som råkade fotograferas och möbler som flyttar med.
+
+**Varje nytt steg i ett flerstegsflöde börjar överst.** Efter en besvarad hög står användaren längst ned på mobilen, och nästa hög öppnas där. Rulla till toppen när steget byts – annars ser det ut som om ingenting hände.
+
 **Alla datum matas in i tre fält – aldrig med den infödda datumväljaren.** År, månad, dag, med automatiskt hopp framåt när ett fält är fullt och backsteg genom tomma fält. Numeriskt tangentbord. Gäller kvittodatum, betaldatum och tillträdesdatum, i registreringen, inmatningen, redigeringen och inställningarna.
 
 Den infödda väljaren är bättre i ett avseende: ett ifyllt datum går att läsa på en blick, medan tre rutor med siffror måste sättas ihop i huvudet. Den förlorar ändå, av tre skäl.

@@ -14,7 +14,7 @@
 // Ingen ny berakningsregel: sjalva bidraget och den proportionella ROT-/
 // forsakringsreduktionen over raderna raknas av src/doman/berakningar.ts.
 
-import type { Kostnadsrad } from "@/doman/typer";
+import type { Kostnad, Kostnadsrad } from "@/doman/typer";
 import { andelFranProcent, formateraKronor, oreFranKronor } from "@/lib/format";
 
 export interface UppdelningsradIndata {
@@ -94,4 +94,59 @@ export function tolkaUppdelning(
   }
 
   return { rader, projektIder: [...projektIder] };
+}
+
+export interface EnkelPrivatUppdelning {
+  /** Nuvarande privatbelopp i oren, 0 nar kvittot inte ar delat. */
+  privatbelopp: number;
+  /** Artikelnamnet pa den ovriga (icke-privata) delen, bevaras vid omsparning. */
+  ovrigArtikel: string;
+  /** Projektet den ovriga delen ar kopplad till, eller null nar den ar okopplad. */
+  projektId: string | null;
+}
+
+/**
+ * Kanoniska formen privatfaltet pa kvittots detaljvy kanner igen och kan
+ * andra (produktspec 5, "Kostnadsrad": "det vanliga fallet far inte krava
+ * bokforing"): antingen en enda rad utan privat del (arEnkelKostnad), eller
+ * exakt de tva rader faltet sjalvt skapar – en helt privat och en ovrig rad
+ * med hogst en fordelning pa hela sitt belopp.
+ *
+ * Allt annat – flera projekt, en delad andel, fler an tva rader – ar en
+ * uppdelning gjord fran /dela och hanteras bara dar; funktionen ger null och
+ * faltet later kostnaden ostord.
+ */
+export function enkelPrivatUppdelning(
+  kostnad: Kostnad,
+): EnkelPrivatUppdelning | null {
+  if (kostnad.totalbelopp === null) return null; // utkast
+
+  function ovrig(rad: Kostnadsrad): EnkelPrivatUppdelning | null {
+    if (rad.fordelningar.length > 1) return null;
+    const f = rad.fordelningar[0];
+    if (f && (f.privat || f.andel !== 1)) return null;
+    return {
+      privatbelopp: 0,
+      ovrigArtikel: rad.artikel,
+      projektId: f?.projekt_id ?? null,
+    };
+  }
+
+  if (kostnad.rader.length === 1) {
+    return ovrig(kostnad.rader[0]);
+  }
+  if (kostnad.rader.length !== 2) return null;
+
+  const privatRad = kostnad.rader.find(
+    (r) =>
+      r.fordelningar.length === 1 &&
+      r.fordelningar[0].privat &&
+      r.fordelningar[0].andel === 1,
+  );
+  const ovrigRad = kostnad.rader.find((r) => r !== privatRad);
+  if (!privatRad || !ovrigRad) return null;
+
+  const resultat = ovrig(ovrigRad);
+  if (!resultat) return null;
+  return { ...resultat, privatbelopp: privatRad.belopp };
 }

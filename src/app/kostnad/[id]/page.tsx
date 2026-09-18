@@ -11,10 +11,13 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AterforKnapp } from "./aterfor-knapp";
 import { Bilagor } from "./bilagor";
+import { PrivatFalt } from "./privat-falt";
 import { SEKUNDARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
+import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { listaKostnadsbilagor } from "@/lib/lagring/bilagor";
-import { formateraKronor, isoDatum } from "@/lib/format";
+import { enkelPrivatUppdelning } from "@/lib/kostnadsuppdelning";
+import { formateraKronor, isoDatum, orenTillFalt } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
@@ -62,6 +65,15 @@ export default async function KostnadSida({
   // Utkast har redirectats bort ovan – har ar leverantor, datum och belopp satta.
   const datum = kostnad.betaldatum ?? kostnad.dokumentdatum;
 
+  // Privatfaltet (produktspec 5, "Kostnadsrad") later bara kostnader i den
+  // kanoniska formen – null betyder ett genuint flerprojektfall som bara gar
+  // att andra via uppdelningsvyn (/dela).
+  const privatDel = enkelPrivatUppdelning(tillDomanKostnad(kostnad));
+  const privatFalt =
+    privatDel && privatDel.privatbelopp > 0
+      ? orenTillFalt(privatDel.privatbelopp)
+      : "";
+
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
@@ -85,8 +97,7 @@ export default async function KostnadSida({
       {kostnad.arkiverad ? (
         <section className="border-b border-linje p-4">
           <p className="font-granssnitt text-sm text-text-sekundar">
-            Det här kvittot räknas inte med i underlaget. Bild och belopp ligger
-            kvar.
+            Det här kvittot hör inte till bostaden. Bild och belopp ligger kvar.
           </p>
           <AterforKnapp kostnadId={kostnad.id} />
         </section>
@@ -101,13 +112,19 @@ export default async function KostnadSida({
         >
           Ändra uppgifter
         </Link>
-        <Link
-          href={`/kostnad/${kostnad.id}/dela`}
-          className={SEKUNDARKNAPP_KLASS}
-        >
-          Var något på kvittot privat?
-        </Link>
+        {!privatDel ? (
+          <Link
+            href={`/kostnad/${kostnad.id}/dela`}
+            className={SEKUNDARKNAPP_KLASS}
+          >
+            Var något på kvittot privat?
+          </Link>
+        ) : null}
       </div>
+
+      {privatDel ? (
+        <PrivatFalt kostnadId={kostnad.id} forvalt={privatFalt} />
+      ) : null}
     </Skarm>
   );
 }

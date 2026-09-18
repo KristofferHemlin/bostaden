@@ -12,7 +12,7 @@
 // redirectar tillbaka hit med en hog farre.
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { klassificeraHog, type FragorResultat } from "./actions";
 import {
   Fragetradet,
@@ -91,6 +91,15 @@ function HogFormular({
   const [namn, setNamn] = useState(hog.namnforslag);
   const [svar, setSvar] = useState<FragetradetUIState>(TOMMA_SVAR);
   const hanteraSubmit = useForhindraDubbelinskick(pagar);
+
+  // Nasta hog oppnas overst (docs/design.md, "Varje nytt steg i ett
+  // flerstegsflode borjar overst") – utan detta star anvandaren langst ned pa
+  // mobilen efter en besvarad hog, dar forra formularets skickaknapp lag.
+  // `key={hog.id}` pa HogFormular (Fas2 ovan) gor att effekten kors pa varje
+  // ny hog, bade efter "Spara och nasta" och efter "Hoppa over".
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
     <div className="flex flex-col">

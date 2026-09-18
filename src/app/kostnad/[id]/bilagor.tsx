@@ -299,13 +299,16 @@ export function Bilagor({
         </label>
       </div>
 
-      {/* Samma formathjalp som i inmatningen (kostnad/nytt/form.tsx) – samma
-          uppladdningskontroll ("+"-rutan ovan) forekommer pa bagge stallena
-          och fortjanar samma forklaring. */}
-      <p className="mt-2 font-granssnitt text-xs text-text-dampad">
-        JPG, PNG, HEIC eller PDF. Max 10 MB per fil. Går att lägga till
-        senare.
-      </p>
+      {/* Samma formathjalp som i inmatningen (kostnad/nytt/form.tsx) – men bara
+          dar en bilaga faktiskt laggs till. Pa detaljvyn (storForhandsvisning
+          av), dit man gar for att titta, ar den brus (docs/design.md,
+          "Formathjalpen hor till uppladdningen, inte till visningen"). */}
+      {storForhandsvisning ? (
+        <p className="mt-2 font-granssnitt text-xs text-text-dampad">
+          JPG, PNG, HEIC eller PDF. Max 10 MB per fil. Går att lägga till
+          senare.
+        </p>
+      ) : null}
 
       {laddarUpp ? (
         <p className="mt-2 font-granssnitt text-sm text-text-sekundar">

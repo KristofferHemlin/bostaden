@@ -112,6 +112,12 @@ Fråga 6 och 7 ställs bara när åtgärden har en reparationsdel. En ren grundf
 
 Skälet är att genomgången redan är produktens tyngsta moment. Ett tomt textfält efter sex frågor är där folk ger upp, och ett fält som bara syns när det spelar roll blir också ett fält man faktiskt fyller i.
 
+**Registreringen frågar inte efter identifieringen.** Föreningens namn respektive fastighetsbeteckningen finns bara i inställningarna.
+
+Skälet är att uppgiften behövs först på bilagepaketets försättssida, där en granskare ska kunna se vilket objekt underlaget gäller. Den påverkar ingen beräkning och syns inte i något flöde. Att lägga den i registreringen gör steg två längre för att lösa ett problem som uppstår långt senare.
+
+Fältet har därför ingen synlig efterfrågan just nu – paketet är dolt, och kompletteringssteget som annars skulle fråga körs aldrig. Det är avsiktligt. Kravet vaknar samma dag som paketet slås på, eftersom kompletteringssteget redan är byggt och redan frågar efter identifieringen när den saknas.
+
 **Frågorna om bostaden ställs en gång, först i genomgången.** `nybyggd_vid_forvarv` och `ombildning_fran_hyresratt` hör till bostaden, inte till åtgärden, och ställs därför en gång per bostad innan den första högen klassificeras.
 
 De hör inte hemma i registreringen. Den är avsiktligt kort, frågorna är svåra att svara på innan man vet varför de ställs, och de påverkar ingenting förrän något klassificeras. I genomgången finns tid och sammanhanget är uppenbart – det är redan appens enda skärm där svåra frågor hör hemma.
@@ -368,6 +374,25 @@ Möjliggör att ett kvitto delas mellan projekt eller mellan projekt och privat.
 | fordelning | { projekt_id \| `privat`, andel }[] |
 
 Radnivå är obligatoriskt, inte en finess. Ett typiskt byggvarukvitto innehåller både projektmaterial och privata inköp.
+
+**Men det vanliga fallet får inte kräva bokföring.** Att markera att 400 kr av ett kvitto var privat kräver i dag två rader, två namn, två belopp, en projektkoppling och en procentandel – sex fält och två begrepp för uppgiften *det här var inte bostaden*.
+
+Appen behöver inte veta vad som köptes, bara hur mycket som inte räknas. Kvittots detaljvy får därför ett enda fält:
+
+> **Var något på kvittot privat?**
+> Ange beloppet som inte hörde till bostaden. Resten räknas med.
+
+Fältet skapar de två raderna i bakgrunden: en privat rad med det angivna beloppet, och en rad med resten som ärver kvittots projektkoppling. Datamodellen är oförändrad, beräkningen likaså, och den som vill se detaljerna kan öppna uppdelningen.
+
+Töms fältet försvinner raderna och kvittot räknas i sin helhet igen. Beloppet måste vara större än noll och mindre än totalbeloppet – är allt privat hör kvittot hemma i "Räknas inte".
+
+**Uppdelningsvyn finns kvar** för det den är byggd för: en entreprenörsfaktura med flera poster som ska fördelas mellan olika projekt. Det är ett annat och ovanligare behov, och det motiverar sin komplexitet. Privatfältet gör det inte.
+
+**Fältet finns bara i efterhand**, inte i inmatningen. Den ska vara kort, och man vet oftast först senare att något på kvittot var privat.
+
+**Och det ligger sist på detaljvyn**, under bilagorna. Uppgiften är sällan aktuell; den som öppnar ett kvitto vill i regel se bilden eller rätta uppgifterna. Ett valfritt fält högst upp tar den bästa platsen på skärmen från det man faktiskt kom för.
+
+Sparaknappen är sekundär. Skärmens orange hör till den huvudsakliga handlingen, och det är inte att markera ett privat belopp.
 
 **En rad skapas alltid.** Registreras en kostnad utan artikelspecifikation skapas automatiskt en enda rad på hela totalbeloppet, med artikelnamnet satt till leverantören. "Dela upp" ersätter den raden med flera. Kostnad och rader har alltså aldrig olika totaler – summan av radernas belopp ska alltid vara lika med `totalbelopp`, och det valideras.
 

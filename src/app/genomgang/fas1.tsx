@@ -426,7 +426,7 @@ export function Fas1({
                 disabled={raknasPagar}
                 className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
               >
-                {raknasPagar ? "Sparar…" : "Räknas inte med"}
+                {raknasPagar ? "Sparar…" : "Hör inte till bostaden"}
               </button>
             </form>
           </div>
@@ -441,7 +441,7 @@ export function Fas1({
             onClick={() => setVisaRaknasInte((v) => !v)}
             className="flex w-full items-center justify-between px-4 py-3 font-granssnitt text-sm text-text-sekundar hover:text-text-primar"
           >
-            <span>Räknas inte med ({raknasInteLista.length})</span>
+            <span>Hör inte till bostaden ({raknasInteLista.length})</span>
             <span aria-hidden>{visaRaknasInte ? "–" : "+"}</span>
           </button>
           {visaRaknasInte ? (

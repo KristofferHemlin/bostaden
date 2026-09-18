@@ -45,6 +45,9 @@ export async function markeraSald(
   if (forsaljningsdatum < TIDIGASTE_DATUM) {
     return { fel: "Försäljningsdatum före 1970 stöds inte." };
   }
+  if (forsaljningsdatum > isoDatum(new Date())) {
+    return { fel: "Försäljningsdatum kan inte ligga i framtiden." };
+  }
   if (forsaljningsdatum < tilltrade) {
     return {
       fel: `Försäljningsdatum kan inte ligga före tillträdet (${tilltrade}).`,

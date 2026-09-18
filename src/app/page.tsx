@@ -255,7 +255,7 @@ export default async function Oversikt() {
                   Senaste kvitton
                 </h2>
                 <p className="mt-0.5 font-granssnitt text-xs text-text-dampad">
-                  De sex senast tillagda, oavsett år
+                  De sex senast tillagda
                 </p>
               </div>
               <Link

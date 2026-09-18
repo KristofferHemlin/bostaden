@@ -105,7 +105,7 @@ export default async function KvittolistaSida() {
     let status: string;
     let atgard = false;
     if (k.arkiverad) {
-      status = "Räknas inte med";
+      status = "Hör inte till bostaden";
     } else if (utkast) {
       status = "Utkast · komplettera uppgifterna";
       atgard = true;
