@@ -38,17 +38,6 @@ const UPPLATELSEFORMER = [
   { varde: "fastighet", etikett: "Villa eller radhus", emoji: "🏡" },
 ];
 
-// Samma monster som installningarnas identifieringsfalt (src/app/installningar/
-// form.tsx): etikett och hjalptext foljer upplatelseformen (produktspec 8,
-// "Forsattssida"). Faltet ar valfritt har liksom overallt annars – det gar
-// bra att fylla i senare, precis som kopeskillingen.
-const IDENTIFIERING_ETIKETT_BOSTADSRATT = "Föreningens namn";
-const IDENTIFIERING_ETIKETT_FASTIGHET = "Fastighetsbeteckning";
-const IDENTIFIERING_HJALP_BOSTADSRATT =
-  "Står i årsredovisningen eller på överlåtelseavtalet. Går att fylla i senare.";
-const IDENTIFIERING_HJALP_FASTIGHET =
-  "Står på lagfarten eller köpekontraktet, t.ex. \"Söderhamn Kvarnen 3:1\". Går att fylla i senare.";
-
 export function RegistreraFlode({
   endastBostad = false,
 }: {
@@ -68,7 +57,6 @@ export function RegistreraFlode({
   const [losenord, setLosenord] = useState("");
   const [upplatelseform, setUpplatelseform] = useState("bostadsratt");
   const [tilltradesdatum, setTilltradesdatum] = useState("");
-  const [identifiering, setIdentifiering] = useState("");
   const [kopeskilling, setKopeskilling] = useState("");
   const [lokaltFel, setLokaltFel] = useState<string | null>(null);
 
@@ -223,32 +211,6 @@ export function RegistreraFlode({
           </div>
           <input type="hidden" name="upplatelseform" value={upplatelseform} />
         </div>
-
-        <Falt
-          etikett={
-            upplatelseform === "bostadsratt"
-              ? IDENTIFIERING_ETIKETT_BOSTADSRATT
-              : IDENTIFIERING_ETIKETT_FASTIGHET
-          }
-          hjalp={
-            upplatelseform === "bostadsratt"
-              ? IDENTIFIERING_HJALP_BOSTADSRATT
-              : IDENTIFIERING_HJALP_FASTIGHET
-          }
-        >
-          <input
-            type="text"
-            name="identifiering"
-            value={identifiering}
-            onChange={(e) => setIdentifiering(e.target.value)}
-            className={INPUT_KLASS}
-            placeholder={
-              upplatelseform === "bostadsratt"
-                ? "t.ex. Brf Ulriksborg"
-                : "t.ex. Söderhamn Kvarnen 3:1"
-            }
-          />
-        </Falt>
 
         <Falt etikett="Tillträdesdatum" obligatoriskt>
           <TilltradesdatumFalt
