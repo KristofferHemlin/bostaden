@@ -197,6 +197,12 @@ model bilaga {
   // gjorts – oavsett utfall – sa att ett aterupptaget utkast hoppar over
   // avlasningen och visar sina redan sparade varden direkt.
   dokument_analyserad   Boolean  @default(false)
+  // Flersidiga PDF:er (docs/design.md, "Bilagor"). Sidantalet lases ur PDF:ens
+  // sidtrad vid uppladdningen (ingen rendering, se src/lib/lagring/pdf-sidor.ts) –
+  // sjalva sidorna renderas i webblasaren (src/lib/pdfjs-klient.ts) och lagras
+  // aldrig i Storage. Null for bilder, och for PDF:er dar rakningen inte
+  // gjorts an (aldre bilagor fore backfillen) eller misslyckades (trasig PDF).
+  sidantal              Int?
   skapad_at             DateTime @default(now())
 
   kostnad kostnad? @relation(fields: [kostnad_id], references: [id], onDelete: Cascade)

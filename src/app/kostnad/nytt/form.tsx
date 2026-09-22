@@ -84,6 +84,7 @@ import { skapaUtkast, sparaKostnad, type KostnadResultat } from "./actions";
 import { analyseraBilaga, taBortBilaga } from "@/app/kostnad/bilaga-actions";
 import { UtkastRaderaKnapp } from "@/app/kostnad/utkast-radera";
 import { BeloppFalt } from "@/components/belopp-falt";
+import { BilagaSidbladdrare, PdfMiniatyrbild } from "@/components/bilaga-sidbladdrare";
 import { DatumFalt } from "@/components/datum-falt";
 import { forsokBorjaInskickning, useDubbelinskickRef } from "@/lib/dubbelinskick";
 import {
@@ -98,6 +99,7 @@ import { formateraBeloppInmatning } from "@/lib/format";
 import { laddaUppKostnadsbilaga } from "@/lib/lagring/bilaga-klient";
 import { kannIgenFormat } from "@/lib/lagring/bilaga-regler";
 import type { Bilagevy } from "@/lib/lagring/bilagor";
+import { oppnaPdf } from "@/lib/pdfjs-klient";
 
 const START: KostnadResultat = {};
 
@@ -120,51 +122,24 @@ interface Miniatyr {
 
 interface Forhandsvisning {
   namn: string;
-  /** Renderad bild att visa i full bredd, null medan en PDF fortfarande renderas. */
-  bildUrl: string | null;
-  arPdf: boolean;
+  /** Object-URL till bilden. Anvands bara for bilder – en ANNU EJ uppladdad PDF
+   *  gar i stallet genom BilagaSidbladdrare (docs/design.md, "Bilagor"). */
+  bildUrl: string;
 }
 
-// pdf.js laddas forst nar en PDF ska visas (haller det borta fran
-// forstaladdningen). Byggena laddas som RENA ES-moduler fran /pdfjs/ i stallet
-// for att buntas: det moderna pdf.mjs kraschar under Next:s webpack
-// ("Object.defineProperty called on non-object" i __webpack_require__.r).
-// webpackIgnore lamnar importen som en akta runtime-import; filerna kopieras dit
-// av scripts/kopiera-pdfjs.mjs (predev/prebuild). workerSrc pekar pa samma katalog
-// sa att pdf.js spanner en riktig web worker.
-type Pdfjs = typeof import("pdfjs-dist/legacy/build/pdf.mjs");
-let pdfjsModul: Promise<Pdfjs> | null = null;
+// pdf.js-laddningen och sidrenderingen ar delad med BilagaSidbladdrare (samma
+// bibliotek, samma ES-modul-inladdning) – se src/lib/pdfjs-klient.ts.
 
-function laddaPdfjs(): Promise<Pdfjs> {
-  if (!pdfjsModul) {
-    const url = "/pdfjs/pdf.min.mjs";
-    pdfjsModul = import(/* webpackIgnore: true */ url).then((lib: Pdfjs) => {
-      lib.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
-      return lib;
-    });
-  }
-  return pdfjsModul;
-}
-
-// Renderar forsta sidan av en PDF till en PNG och returnerar en object-URL.
-// Kastar vid minsta problem – anroparen faller da tillbaka pa dokumentikonen.
-async function renderaPdfForstaSida(fil: File): Promise<string> {
-  const pdfjs = await laddaPdfjs();
+// Antal sidor i en ANNU EJ uppladdad lokal PDF-fil. Webblasaren har redan hela
+// filen i minnet, sa detta ar omedelbart – ingen anledning att vanta pa att
+// uppladdningen bekraftats eller pa serverns motsvarande rakning
+// (src/lib/lagring/pdf-sidor.ts) innan sidbladdraren kan visas. Kastar vid
+// minsta problem – anroparen faller da tillbaka pa dokumentikonen.
+async function lasLokaltPdfSidantal(fil: File): Promise<number> {
   const data = new Uint8Array(await fil.arrayBuffer());
-  const dok = await pdfjs.getDocument({ data }).promise;
+  const dok = await oppnaPdf(data);
   try {
-    const sida = await dok.getPage(1);
-    // ~2x for skarpa pa mobilskarmar med hog pixeltäthet.
-    const viewport = sida.getViewport({ scale: 2 });
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.ceil(viewport.width);
-    canvas.height = Math.ceil(viewport.height);
-    await sida.render({ canvas, viewport }).promise;
-    const blob = await new Promise<Blob | null>((klar) =>
-      canvas.toBlob(klar, "image/png"),
-    );
-    if (!blob) throw new Error("toBlob gav null");
-    return URL.createObjectURL(blob);
+    return dok.numPages;
   } finally {
     void dok.destroy();
   }
@@ -242,6 +217,13 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
   const [forhandsvisning, setForhandsvisning] =
     useState<Forhandsvisning | null>(null);
   const [renderFel, setRenderFel] = useState(false);
+  // Sidantalet for en ANNU EJ uppladdad lokal PDF, per fil (docs/design.md,
+  // "Bilagor") – last direkt ur webblasarens egen kopia (lasLokaltPdfSidantal)
+  // sa att sidbladdraren kan visas direkt vid val, inte forst efter att
+  // uppladdningen hunnit bekraftas och servern rakat sidorna pa nytt.
+  const [lokaltPdfSidantal, setLokaltPdfSidantal] = useState<
+    Record<string, number>
+  >({});
 
   // Falten analysen kan fylla i. Kontrollerade sa att avlasningen kan lasa av om
   // de redan har ett varde – tomma falt fylls, allt annat lamnas.
@@ -297,6 +279,12 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
   const sakerValdIndex = Math.min(valdIndex, Math.max(0, poster.length - 1));
   const valdPost = poster[sakerValdIndex] ?? null;
   const forhandsFil = valdPost?.typ === "fil" ? valdPost.fil : null;
+  const arForhandsPdf = forhandsFil
+    ? kannIgenFormat(forhandsFil.type, forhandsFil.name)?.andelse === "pdf"
+    : false;
+  const forhandsPdfSidantal = forhandsFil
+    ? (lokaltPdfSidantal[filnyckel(forhandsFil)] ?? null)
+    : null;
 
   const uppladdningPagar = Object.values(filstatus).some((s) => s.pagar);
 
@@ -323,8 +311,12 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
     };
   }, [filer]);
 
-  // Full-bredds-forhandsvisning av den valda bilagan. Bild visas direkt; PDF
-  // renderas till en bild av sin forsta sida med pdf.js. Gar det inte -> ikon.
+  // Full-bredds-forhandsvisning av den valda bilagan. Bild visas direkt. PDF
+  // gar via BilagaSidbladdrare (rendering per sida, se den komponenten) – har
+  // last vi bara sidantalet, direkt ur webblasarens egen kopia av filen, sa
+  // att sidbladdraren kan visas UTAN att vanta pa serverns motsvarande
+  // rakning (docs/design.md, "Bilagor": bladdringen ska fungera direkt vid
+  // val, inte forst nar ett aterupptaget utkast oppnas).
   useEffect(() => {
     if (!forhandsFil) {
       setForhandsvisning(null);
@@ -335,38 +327,23 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
     let skapadUrl: string | null = null;
     const arPdf =
       kannIgenFormat(forhandsFil.type, forhandsFil.name)?.andelse === "pdf";
+    setForhandsvisning(null);
     setRenderFel(false);
 
     if (arPdf) {
-      setForhandsvisning({
-        namn: forhandsFil.name,
-        bildUrl: null,
-        arPdf: true,
-      });
-      renderaPdfForstaSida(forhandsFil)
-        .then((url) => {
-          if (avbruten) {
-            URL.revokeObjectURL(url);
-            return;
-          }
-          skapadUrl = url;
-          setForhandsvisning({
-            namn: forhandsFil.name,
-            bildUrl: url,
-            arPdf: true,
-          });
+      const nyckel = filnyckel(forhandsFil);
+      lasLokaltPdfSidantal(forhandsFil)
+        .then((sidantal) => {
+          if (avbruten) return;
+          setLokaltPdfSidantal((s) => ({ ...s, [nyckel]: sidantal }));
         })
         .catch((fel) => {
-          console.error("PDF-förhandsvisning kunde inte renderas:", fel);
+          console.error("PDF-sidantalet kunde inte läsas lokalt:", fel);
           if (!avbruten) setRenderFel(true);
         });
     } else {
       skapadUrl = URL.createObjectURL(forhandsFil);
-      setForhandsvisning({
-        namn: forhandsFil.name,
-        bildUrl: skapadUrl,
-        arPdf: false,
-      });
+      setForhandsvisning({ namn: forhandsFil.name, bildUrl: skapadUrl });
     }
 
     return () => {
@@ -715,7 +692,12 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
                   aria-label={`Visa ${b.filnamn} i förhandsvisningen`}
                   className="absolute inset-0 flex items-center justify-center"
                 >
-                  {b.arBild ? (
+                  {b.sidantal != null ? (
+                    // Flersidig PDF (docs/design.md, "Bilagor"): sida 1, ingen
+                    // svepbar sidbladdrare i den har lilla rutan – bara den
+                    // stora forhandsvisningen langre ned svarar pa svep.
+                    <PdfMiniatyrbild bilagaId={b.id} filnamn={b.filnamn} />
+                  ) : b.arBild ? (
                     <img
                       src={`/bilaga/${b.id}?variant=visning`}
                       alt={b.filnamn}
@@ -842,30 +824,78 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
       </div>
 
       {/* En redan uppladdad bilaga (aterupptaget utkast) – visas via den
-          signerade visningslanken, ingen lokal rendering. */}
+          signerade visningslanken, ingen lokal rendering. Flersidig PDF
+          (docs/design.md, "Bilagor"): sidbladdraren i stallet for en enkel
+          bild – den galler aven "inmatningen" i listan over stora vyer. */}
       {valdPost?.typ === "befintlig" ? (
-        <div className="relative overflow-hidden rounded-lg border border-linje bg-yta-nedsankt">
+        valdPost.b.sidantal != null ? (
+          <div className="relative">
+            {avlasningPagar ? (
+              <span className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-yta-upphojd">
+                <SnurraGlyf />
+              </span>
+            ) : null}
+            <BilagaSidbladdrare
+              key={valdPost.b.id}
+              kalla={{ typ: "bilaga", bilagaId: valdPost.b.id }}
+              sidantal={valdPost.b.sidantal}
+              filnamn={valdPost.b.filnamn}
+              className="h-[30vh] max-h-[30vh] w-full"
+            />
+          </div>
+        ) : (
+          <div className="relative overflow-hidden rounded-lg border border-linje bg-yta-nedsankt">
+            {avlasningPagar ? (
+              <span className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-yta-upphojd">
+                <SnurraGlyf />
+              </span>
+            ) : null}
+            {valdPost.b.arBild ? (
+              <img
+                src={`/bilaga/${valdPost.b.id}?variant=visning`}
+                alt={`Förhandsvisning av ${valdPost.b.filnamn}`}
+                className="max-h-[30vh] w-full object-contain"
+              />
+            ) : (
+              <DokumentIkon namn={valdPost.b.filnamn} />
+            )}
+          </div>
+        )
+      ) : null}
+
+      {/* Den valda bilagan renderad i full bredd – att jamfora falten mot.
+          Flersidig PDF (docs/design.md, "Bilagor"): sidbladdraren direkt,
+          fodd av sidantalet lasLokaltPdfSidantal redan last ur den lokala
+          filen – ingen vantan pa uppladdningen. Ikonen ar sista utvag nar
+          rakningen misslyckas. */}
+      {forhandsFil && arForhandsPdf ? (
+        <div className="relative">
           {avlasningPagar ? (
             <span className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-yta-upphojd">
               <SnurraGlyf />
             </span>
           ) : null}
-          {valdPost.b.arBild ? (
-            <img
-              src={`/bilaga/${valdPost.b.id}?variant=visning`}
-              alt={`Förhandsvisning av ${valdPost.b.filnamn}`}
-              className="max-h-[30vh] w-full object-contain"
+          {renderFel ? (
+            <div className="overflow-hidden rounded-lg border border-linje bg-yta-nedsankt">
+              <DokumentIkon namn={forhandsFil.name} />
+            </div>
+          ) : forhandsPdfSidantal != null ? (
+            <BilagaSidbladdrare
+              key={filnyckel(forhandsFil)}
+              kalla={{ typ: "lokal", fil: forhandsFil }}
+              sidantal={forhandsPdfSidantal}
+              filnamn={forhandsFil.name}
+              className="h-[30vh] max-h-[30vh] w-full"
             />
           ) : (
-            <DokumentIkon namn={valdPost.b.filnamn} />
+            <div className="overflow-hidden rounded-lg border border-linje bg-yta-nedsankt">
+              <p className="px-4 py-10 text-center font-granssnitt text-xs text-text-dampad">
+                Läser PDF…
+              </p>
+            </div>
           )}
         </div>
-      ) : null}
-
-      {/* Den valda bilagan renderad i full bredd – att jamfora falten mot. PDF
-          som en bild av forsta sidan, aldrig webblasarens visare. Ikonen ar
-          sista utvag nar renderingen misslyckas. */}
-      {forhandsvisning ? (
+      ) : forhandsvisning ? (
         <div className="relative overflow-hidden rounded-lg border border-linje bg-yta-nedsankt">
           {/* Liten roterande indikator i ovre hornet under avlasningen – en text
               under bilden ar latt att missa (docs/design.md,
@@ -878,17 +908,13 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
           ) : null}
           {renderFel ? (
             <DokumentIkon namn={forhandsvisning.namn} />
-          ) : forhandsvisning.bildUrl ? (
+          ) : (
             <img
               src={forhandsvisning.bildUrl}
               alt={`Förhandsvisning av ${forhandsvisning.namn}`}
               onError={() => setRenderFel(true)}
               className="max-h-[30vh] w-full object-contain"
             />
-          ) : (
-            <p className="px-4 py-10 text-center font-granssnitt text-xs text-text-dampad">
-              Återger PDF…
-            </p>
           )}
         </div>
       ) : null}

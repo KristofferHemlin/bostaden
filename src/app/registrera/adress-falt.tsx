@@ -44,12 +44,25 @@ function nyToken(): string {
   }
 }
 
-export function AdressFalt() {
-  const [adress, setAdress] = useState("");
-  const [ort, setOrt] = useState("");
-  const [platsId, setPlatsId] = useState("");
-  const [lat, setLat] = useState("");
-  const [lng, setLng] = useState("");
+export function AdressFalt({
+  forval,
+}: {
+  /** Startvarden – utelamnas i registreringen (dar faltet alltid borjar tomt);
+   *  anvands av installningarnas kort Bostaden for att visa en redan sparad
+   *  adress. */
+  forval?: {
+    adress?: string;
+    ort?: string;
+    platsId?: string;
+    lat?: string;
+    lng?: string;
+  };
+}) {
+  const [adress, setAdress] = useState(forval?.adress ?? "");
+  const [ort, setOrt] = useState(forval?.ort ?? "");
+  const [platsId, setPlatsId] = useState(forval?.platsId ?? "");
+  const [lat, setLat] = useState(forval?.lat ?? "");
+  const [lng, setLng] = useState(forval?.lng ?? "");
 
   const [forslag, setForslag] = useState<Forslag[]>([]);
   const [oppen, setOppen] = useState(false);

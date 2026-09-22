@@ -6,7 +6,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { supabaseNyckel, supabaseUrl } from "./konfig";
 
-const OSKYDDADE_PREFIX = ["/login", "/auth", "/registrera"];
+const OSKYDDADE_PREFIX = ["/login", "/auth", "/registrera", "/integritetspolicy"];
 
 export async function uppdateraSession(
   request: NextRequest,

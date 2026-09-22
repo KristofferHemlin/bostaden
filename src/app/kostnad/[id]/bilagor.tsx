@@ -57,6 +57,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { revalideraKostnadssida, taBortBilagaAction } from "./actions";
 import type { BilagaResultat } from "./actions";
+import { BilagaSidbladdrare, PdfMiniatyrbild } from "@/components/bilaga-sidbladdrare";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { valideraBilaga } from "@/lib/lagring/bilaga-regler";
 import { laddaUppKostnadsbilaga } from "@/lib/lagring/bilaga-klient";
@@ -195,14 +196,31 @@ export function Bilagor({
           Klick oppnar helskarmsvyn; miniatyrraden nedanfor byter vilken
           bilaga som visas har i stallet for att oppna den direkt. */}
       {storForhandsvisning && bilagor.length > 0 ? (
-        <button
-          type="button"
-          onClick={() => setOppen(bilagor[sakerStorIndex])}
-          aria-label={`Öppna ${bilagor[sakerStorIndex].filnamn}`}
-          className="relative mb-2 flex h-72 w-full flex-col items-center justify-center overflow-hidden rounded-lg border border-linje bg-yta-nedsankt text-center"
-        >
-          <Miniatyrinnehall bilaga={bilagor[sakerStorIndex]} />
-        </button>
+        bilagor[sakerStorIndex].sidantal != null ? (
+          // Flersidig PDF (docs/design.md, "Bilagor"): sidbladdraren ligger
+          // HAR direkt, inte bakom en <button> – svepet behover sin egen
+          // klickyta, och varje sida oppnar helskarmsvyn for sig via
+          // onSidaTryckt i stallet.
+          <div className="mb-2">
+            <BilagaSidbladdrare
+              key={bilagor[sakerStorIndex].id}
+              kalla={{ typ: "bilaga", bilagaId: bilagor[sakerStorIndex].id }}
+              sidantal={bilagor[sakerStorIndex].sidantal!}
+              filnamn={bilagor[sakerStorIndex].filnamn}
+              className="h-72 w-full"
+              onSidaTryckt={() => setOppen(bilagor[sakerStorIndex])}
+            />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setOppen(bilagor[sakerStorIndex])}
+            aria-label={`Öppna ${bilagor[sakerStorIndex].filnamn}`}
+            className="relative mb-2 flex h-72 w-full flex-col items-center justify-center overflow-hidden rounded-lg border border-linje bg-yta-nedsankt text-center"
+          >
+            <Miniatyrinnehall bilaga={bilagor[sakerStorIndex]} />
+          </button>
+        )
       ) : null}
 
       <div className="flex flex-wrap gap-2">
@@ -396,6 +414,26 @@ export function Bilagor({
  * bild/PDF/fel-hantering i stallet for att duplicera den.
  */
 export function Miniatyrinnehall({ bilaga }: { bilaga: Bilagevy }) {
+  // Flersidig PDF (docs/design.md, "Bilagor"): miniatyren visar sida 1 och en
+  // dampad rad med antalet sidor, aldrig ett svep – miniatyrraden valjer
+  // DOKUMENT, sidbladdraren (BilagaSidbladdrare) valjer SIDA, och de tva
+  // gesterna far aldrig blandas ihop i samma ruta.
+  if (bilaga.sidantal != null) {
+    return (
+      <>
+        {/* Bilden lamnar en egen remsa langst ned at bildtexten – ingen
+            overlagg pa fotot att lasa mot, se kommentaren ovan. Rastriseras i
+            webblasaren (PdfMiniatyrbild), inte servern – se
+            src/lib/lagring/pdf-sidor.ts. */}
+        <div className="absolute inset-x-0 top-0 bottom-[15px]">
+          <PdfMiniatyrbild bilagaId={bilaga.id} filnamn={bilaga.filnamn} />
+        </div>
+        <span className="absolute inset-x-0 bottom-0 truncate px-1 text-center font-granssnitt text-[9px] leading-[15px] text-text-dampad">
+          {bilaga.sidantal} {bilaga.sidantal === 1 ? "sida" : "sidor"}
+        </span>
+      </>
+    );
+  }
   if (bilaga.arBild) {
     return (
       <Miniatyrbild
@@ -576,7 +614,15 @@ function Helskarmsvy({
           <StangIkon />
         </button>
 
-        {bilaga.arBild ? (
+        {bilaga.sidantal != null ? (
+          <BilagaSidbladdrare
+            key={bilaga.id}
+            kalla={{ typ: "bilaga", bilagaId: bilaga.id }}
+            sidantal={bilaga.sidantal}
+            filnamn={bilaga.filnamn}
+            className="h-[75vh] max-h-[75vh] w-[min(90vw,600px)]"
+          />
+        ) : bilaga.arBild ? (
           <img
             src={`/bilaga/${bilaga.id}?variant=visning`}
             alt={bilaga.filnamn}

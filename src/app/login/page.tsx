@@ -39,7 +39,11 @@ function LoginInnehall() {
   const hanteraSubmit = useForhindraDubbelinskick(pagar);
   // Registreringsflodet skickar hit med ?epost=... nar adressen redan har ett
   // konto (docs/design.md, Registreringsflodet) – forifyll den da.
-  const forifyllEpost = useSearchParams().get("epost") ?? "";
+  const sokparametrar = useSearchParams();
+  const forifyllEpost = sokparametrar.get("epost") ?? "";
+  // Kontoraderingen (produktspec avsnitt 14) skickar hit med ?kontoraderat=1 –
+  // ett kort besked om att kontot ar borttaget, inte bara en tom inloggningsvy.
+  const kontoRaderat = sokparametrar.get("kontoraderat") === "1";
 
   return (
     <div className="flex min-h-screen w-full items-center bg-yta-bas">
@@ -59,6 +63,12 @@ function LoginInnehall() {
             säljer.
           </p>
         </header>
+
+        {kontoRaderat ? (
+          <div className="mb-4">
+            <Meddelanderuta>Kontot är borttaget.</Meddelanderuta>
+          </div>
+        ) : null}
 
         <div className="rounded-xl bg-yta-upphojd p-5">
           <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-4">

@@ -236,9 +236,9 @@ På startskärmen finns ingen sådan sektion. Att möta en påminnelse varje gå
 
 **Kvitton grupperas per år med tydlig avdelare.** Tröskeln gäller per kalenderår och åren är helt skilda åt i underlaget – en lista där 2025 och 2026 glöser samman döljer produktens viktigaste struktur. Årsrubriken är en egen rad på `--yta-nedsankt` med årtalet och årets summa högerställd.
 
-**Inom varje år sorteras raderna på datum, nyast först** – aldrig på när posten lades in. En årsrubrik lovar tidsordning, och en lista som under rubriken 2026 visar april, april, mars, augusti ser ut som en bugg även när den inte är det. Samma sak gäller de senaste kvittona på startskärmen: de är sorterade på kvittots datum, inte på när de skapades.
+**Inom varje år sorteras raderna på datum, nyast först** – aldrig på när posten lades in. En årsrubrik lovar tidsordning, och en lista som under rubriken 2026 visar april, april, mars, augusti ser ut som en bugg även när den inte är det. Ett kvitto ofta läggs in långt efter att det betalades, och ett kvitto från 2016 som fotograferas i dag ska hamna under 2016.
 
-Skälet är att ett kvitto ofta läggs in långt efter att det betalades – ett kvitto från 2016 som fotograferas i dag hamnar annars överst i en lista som i övrigt visar innevarande år.
+**Startskärmens lista är undantaget: den sorteras på när kvittot lades in.** Den har inga årsrubriker och lovar ingen tidsordning. Dess jobb är att bekräfta att det du just sparade kom med – och ett gammalt kvitto som hamnar sist i en datumsorterad lista ser ut som om det aldrig sparades. Underrubriken "De sex senast tillagda" säger precis det.
 
 ### Listrader
 
@@ -379,6 +379,18 @@ Raden om oklassificerade kvitton ligger kvar som en klickbar ingång till genomg
 
 Bilagor visas som en rad små miniatyrer under kostnadens uppgifter, med en `+`-ruta sist för att lägga till fler. Tryck på en miniatyr öppnar filen i helskärm.
 
+**En PDF med flera sidor visas med alla sidor.** Förhandsbilden visar i dag bara sida 1, och en faktura där det viktiga står på sida 3 går inte att läsa i appen.
+
+**Sidorna bläddras i sidled, inte uppifrån och ned.** Förhandsbilden är begränsad i höjd för att fälten ska synas. Blir den en egen vertikal rullyta hamnar användaren i en ruta som rullar inuti en sida som rullar, och tummen fastnar i fel av dem. Svep i sidled krockar inte med sidans rullning – samma mönster som ett inlägg med flera bilder.
+
+En dämpad `2 / 3` i hörnet säger var man är. På dator finns pilar för föregående och nästa sida, eftersom svep inte är självklart med mus.
+
+**Två nivåer, två gester.** Miniatyrraden väljer dokument, svepet väljer sida. Två PDF:er med tre sidor var fungerar utan förklaring.
+
+**Miniatyren visar sida 1 och antalet sidor**, som en dämpad rad under: *3 sidor*. Annars finns ingenting som säger att det finns mer att se.
+
+Gäller överallt där en bilaga visas stor: inmatningen, detaljvyn, redigeringsvyn och helskärmsvyn. Bädda inte in PDF:en i en `iframe` – Safari på iPhone visar då ofta bara första sidan, vilket är exakt det fel som ska lösas.
+
 **Redigeringsvyn visar bilagan.** Den som ändrar belopp eller datum gör det mot kvittot, och att behöva backa ut för att läsa av det är onödig friktion. Bilagan visas överst i formuläret, större än miniatyren på detaljvyn – det är här man faktiskt behöver läsa den.
 
 Har kostnaden flera bilagor visas den första, med miniatyrraden under så att man kan byta.
@@ -447,7 +459,7 @@ Förhandsvisningen ligger kvar medan man fyller i fälten, så att man kan kontr
 
 **Under uppladdning visas tydlig status**, och kostnaden sparas inte förrän servern bekräftat. En bild som tyst försvinner är det värsta som kan hända i en app vars hela syfte är att spara kvitton. Misslyckas uppladdningen visas felet med möjlighet att försöka igen, och filen släpps inte ur minnet dessförinnan.
 
-En kostnad utan bilaga är inget fel och ska inte markeras som ett. Underlagsstyrkan hör till projektet, inte till den enskilda kostnaden.
+En kostnad utan bilaga är inget fel, men det är ett faktum som ska synas – se Listrader. Markeringen är dämpad text, aldrig en varning.
 
 ### Inmatningen har fem fält, inget mer
 
@@ -670,7 +682,24 @@ Det är ett undantag från regeln att tomma tillstånd har en primärknapp. Rege
 
 Här ligger allt som beskriver bostaden men inte behövs för att komma igång. Fälten är valfria, och sidan ska aldrig kännas som ett formulär man måste fylla i.
 
-**Uppgifter om bostaden:** adress, ort, upplåtelseform, tillträdesdatum, storlek, köpeskilling, köpkostnader, ägarandel. För bostadsrätt även kapitaltillskott; för fastighet inte, eftersom det inte finns.
+**Sidan visar värden, inte fält.** Den besöks oftast för att kontrollera en enda uppgift, och en lång rad öppna inmatningsfält med hjälptext under vart och ett gör den övermäktig. Uppgifterna visas därför i läsläge – etikett till vänster, värde till höger, samma form som kvittots detaljvy. Ett tomt värde står som ett dämpat *Inte ifyllt*.
+
+**Fyra kort med rubrik:**
+
+| Kort | Innehåll |
+|---|---|
+| Bostaden | Adress, ort, upplåtelseform, tillträdesdatum, föreningens namn eller fastighetsbeteckning |
+| Köpet | Köpeskilling, köpkostnader, kapitaltillskott (bara bostadsrätt), storlek |
+| Ägandet | Ägarandel, första ägaren, ombildning från hyresrätt |
+| Ditt konto | Ladda ner allt, logga ut, integritetspolicy, radera konto |
+
+**Varje kort ändras för sig.** En dämpad *Ändra* i kortets hörn öppnar just det kortet som formulär, med fält och hjälptexter, och med *Spara* och *Avbryt*. Övriga kort ligger kvar i läsläge. Ett öppet kort i taget; öppnas ett annat medan det första har osparade ändringar ska användaren få frågan om de ska sparas eller kastas.
+
+Hjälptexterna syns bara i redigeringsläget. Det är där de behövs, och det är där sidans mesta text försvinner.
+
+**Ditt konto har inget läsläge** – det är handlingar, inte uppgifter. Zip-exporten och utloggningen som sekundärknappar. Sist, på en egen dämpad rad, integritetspolicyn som länk och raderingen som textlänk. Raderingen fäller ut sin bekräftelse som i dag.
+
+Mönstret är detsamma som för kvitton: först visas det, sedan ändras det. Sidan behöver ingen egen logik för det.
 
 **Tillträdesdatum är obligatoriskt här**, till skillnad från sidans övriga fält, och upplåtelseformen kräver en bekräftelse för att bytas. Se CLAUDE.md respektive `docs/produktspec.md` avsnitt 4.8 för skälen.
 
@@ -682,7 +711,7 @@ Hjälptexten för köpkostnader skiljer sig: lagfart, pantbrev och inköpsprovis
 
 **Storlek används inte i någon beräkning i dag**, men ligger kvar avsiktligt: den behövs för en framtida värdering av bostaden, och den är lätt att svara på. Ta inte bort den som ett oanvänt fält.
 
-**Utloggningen ligger längst ned**, som en sekundärknapp avskild med en linje. Inte en primärknapp – utloggning är ingen huvudhandling och ska inte dra blicken från det man kom hit för. Den hör inte hemma på startskärmen.
+**Utloggningen ligger i kortet Ditt konto**, som en sekundärknapp. Inte en primärknapp – utloggning är ingen huvudhandling och ska inte dra blicken från det man kom hit för. Den hör inte hemma på startskärmen.
 
 Sidan ska gå att lämna halvfylld. Ingen validering utöver att angivna belopp är tolkbara.
 
@@ -718,6 +747,8 @@ Förklaringen står **under sin egen rad**, inte samlad per år. Raderna i samma
 Tröskelfallet är det viktigaste. De flesta har ett eller två kvitton ett enskilt år och når inte 5 000 kr – det är det vanligaste tillståndet av alla. Utan förklaringen ser appen ut att räkna fel just när den räknar rätt, och användaren får dessutom inte veta att ett kvitto till samma år hade gjort båda avdragsgilla.
 
 Formuleringen följer Skatteverkets egen: *"Kostnaden för det året som åtgärden utfördes behöver sammanlagt uppgå till minst 5 000 kronor."*
+
+**Nollraden får ingen orange prick.** Pricken betyder att något kräver åtgärd, och en rad som föll på en regel kräver ingenting – den är slutgiltig. Förklaringen under raden bär beskedet ensam. En prick här skulle lära användaren att pricken ibland betyder "titta" och ibland "gör något", och då slutar den betyda någonting.
 
 **Summorna dämpas när de är ofullständiga.** Två stora nollor på en skärm som heter Deklarationsunderlag ser trasigt ut. Finns oklassificerade högar sätts talen i `--text-sekundar` i stället för `--text-primar`, så att blicken går till listan över det som återstår. När allt är klassificerat får de full tyngd.
 

@@ -275,6 +275,25 @@ export function RegistreraFlode({
             Jag har redan ett konto
           </Link>
         ) : null}
+
+        {/* Undertexten fran produktspec 14, "Integritetspolicyn" – under
+            knappen i steg 1. Ingen kryssruta: behandlingen bygger pa avtal,
+            inte samtycke. Lanken oppnas i en ny flik sa att det pabörjade
+            formularet inte forsvinner. */}
+        {steg === 1 ? (
+          <p className="text-center font-granssnitt text-xs text-text-dampad">
+            Genom att skapa ett konto godkänner du villkoren. Läs hur vi
+            hanterar dina uppgifter i{" "}
+            <Link
+              href="/integritetspolicy"
+              target="_blank"
+              className="underline"
+            >
+              integritetspolicyn
+            </Link>
+            .
+          </p>
+        ) : null}
       </div>
     </form>
   );

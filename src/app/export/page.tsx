@@ -324,7 +324,6 @@ function SidaBlock({
             </thead>
             <tbody className="divide-y divide-linje border-t border-linje">
               {rader.map((r, i) => {
-                const attgora = r.belopp_brutto === 0;
                 // Vilket tal delagarens "Din andel"-kolumn visar: pa sida 2 ar
                 // det den avdragsgilla delen (det som summeras till ruta 5), pa
                 // sida 1 hela beloppet.
@@ -334,13 +333,11 @@ function SidaBlock({
                 return (
                   <tr key={`${r.atgard}-${r.ar}-${i}`} className="align-top">
                     <td className="px-4 py-3">
+                      {/* Ingen orange prick pa nollrader (docs/design.md,
+                          Exportvyn): pricken betyder att nagot kraver atgard, och
+                          en rad som fallit pa en regel ar slutgiltig – forklaringen
+                          under raden bar beskedet ensam. */}
                       <span className="flex items-center gap-1.5 text-text-primar">
-                        {attgora ? (
-                          <span
-                            aria-hidden
-                            className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
-                          />
-                        ) : null}
                         {r.atgard}
                       </span>
                       {r.varningar.map((v) => (

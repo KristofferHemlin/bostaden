@@ -4,7 +4,10 @@ import { lagringsnyckel, slumpatFilnamn } from "@/lib/lagring/bilaga-regler";
 // Visningsversionen (produktspec avsnitt 9, "Visningsversion"): en JPG med
 // langsta sidan ~2000px, genererad vid uppladdningen for ALLA bildbilagor –
 // inte bara HEIC – och anvand i helskarmsvisningen i stallet for originalet.
-// PDF far ingen visningsversion. Misslyckas konverteringen ska uppladdningen
+// Flersidiga PDF:er far pa samma satt sitt sidantal last vid uppladdningen
+// (docs/design.md, "Bilagor") – men ingen rendering: se den langa
+// kommentaren i src/lib/lagring/pdf-sidor.ts for varfor sidorna renderas i
+// webblasaren i stallet. Misslyckas nagon konvertering ska uppladdningen
 // aldrig blockeras: originalet ar sparat och det racker.
 
 const h = vi.hoisted(() => ({
@@ -20,6 +23,7 @@ const h = vi.hoisted(() => ({
   heicTillJpeg: vi.fn(),
   skalaTillMiniatyr: vi.fn(),
   skalaTillVisningsversion: vi.fn(),
+  raknaPdfSidor: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -44,6 +48,9 @@ vi.mock("@/lib/lagring/miniatyr", () => ({
 }));
 vi.mock("@/lib/lagring/visning", () => ({
   skalaTillVisningsversion: h.skalaTillVisningsversion,
+}));
+vi.mock("@/lib/lagring/pdf-sidor", () => ({
+  raknaPdfSidor: h.raknaPdfSidor,
 }));
 
 import { bekraftaKostnadsbilaga, signeradBilagelank } from "@/lib/lagring/bilagor";
@@ -70,6 +77,7 @@ beforeEach(() => {
     error: null,
   });
   h.upload.mockResolvedValue({ error: null });
+  h.remove.mockResolvedValue({ error: null });
   h.bilagaCreate.mockImplementation(({ data }: { data: { id?: string } }) =>
     Promise.resolve({ id: "bilaga-1", ...data }),
   );
@@ -142,7 +150,8 @@ describe("bekraftaKostnadsbilaga skapar en visningsversion", () => {
     });
   });
 
-  it("PDF far varken miniatyr eller visningsversion, och originalet hamtas aldrig", async () => {
+  it("en flersidig PDF far sitt sidantal last, men ingen miniatyr, visningsversion eller uppladdning", async () => {
+    h.raknaPdfSidor.mockResolvedValue(3);
     const nyckel = nyckelFor("pdf");
 
     const r = await bekraftaKostnadsbilaga({
@@ -155,10 +164,44 @@ describe("bekraftaKostnadsbilaga skapar en visningsversion", () => {
     });
 
     expect(r.ok).toBe(true);
-    expect(h.download).not.toHaveBeenCalled();
+    expect(h.download).toHaveBeenCalledOnce();
+    expect(h.raknaPdfSidor).toHaveBeenCalledOnce();
+    // Ingen rendering server-sida (se src/lib/lagring/pdf-sidor.ts) – bara
+    // sidantalet lases, aldrig nagon uppladdning for en PDF.
+    expect(h.skalaTillMiniatyr).not.toHaveBeenCalled();
+    expect(h.skalaTillVisningsversion).not.toHaveBeenCalled();
+    expect(h.upload).not.toHaveBeenCalled();
+
+    expect(h.bilagaCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        miniatyrnyckel: null,
+        visningsnyckel: null,
+        sidantal: 3,
+      }),
+    });
+  });
+
+  it("en trasig PDF blockerar aldrig uppladdningen, och lamnar sidantalet tomt", async () => {
+    h.raknaPdfSidor.mockRejectedValue(new Error("trasig PDF"));
+    const nyckel = nyckelFor("pdf");
+
+    const r = await bekraftaKostnadsbilaga({
+      bostadId: BOSTAD,
+      kostnadId: KOSTNAD,
+      nyckel,
+      filnamn: "faktura.pdf",
+      mimetyp: "application/pdf",
+      storlek: 1000,
+    });
+
+    expect(r.ok).toBe(true);
     expect(h.upload).not.toHaveBeenCalled();
     expect(h.bilagaCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({ miniatyrnyckel: null, visningsnyckel: null }),
+      data: expect.objectContaining({
+        miniatyrnyckel: null,
+        visningsnyckel: null,
+        sidantal: null,
+      }),
     });
   });
 

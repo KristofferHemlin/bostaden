@@ -37,6 +37,7 @@ import {
 } from "./bilaga-regler";
 import { bilagelager } from "./klient";
 import { heicTillJpeg, skalaTillMiniatyr } from "./miniatyr";
+import { raknaPdfSidor } from "./pdf-sidor";
 import { skalaTillVisningsversion } from "./visning";
 
 const SIGNERAD_LANK_SEKUNDER = 60;
@@ -174,6 +175,28 @@ export async function bekraftaKostnadsbilaga(params: {
   const upplagt: string[] = [nyckel];
   let miniatyr: string | null = null;
   let visning: string | null = null;
+  let sidantal: number | null = null;
+
+  // Sidantalet for en flersidig PDF (docs/design.md, "Bilagor"): bara
+  // sidtradet lases, ingen rendering – se den langa kommentaren i
+  // src/lib/lagring/pdf-sidor.ts for varfor sjalva sidorna renderas i
+  // webblasaren i stallet (src/components/bilaga-sidbladdrare.tsx).
+  // Misslyckas rakningen (trasig PDF) skapas raden anda utan sidantal – da
+  // faller granssnittet tillbaka pa dokumentikonen, precis som forut.
+  if (format.andelse === "pdf") {
+    try {
+      const { data: blob, error } = await lager.download(nyckel);
+      if (error || !blob) throw error ?? new Error("kunde inte hämta originalet");
+      const original = Buffer.from(await blob.arrayBuffer());
+      sidantal = await raknaPdfSidor(original);
+    } catch (fel) {
+      sidantal = null;
+      console.error(
+        `PDF-sidantalet kunde inte läsas för bilaga ${nyckel} (kostnad ${kostnadId}):`,
+        fel,
+      );
+    }
+  }
 
   // HEIC kan ingen webblasare visa – en JPG-miniatyr genereras server-sida, och
   // alla bildformat far dessutom en visningsversion (~2000px) for helskarm och
@@ -245,6 +268,7 @@ export async function bekraftaKostnadsbilaga(params: {
         lagringsnyckel: nyckel,
         miniatyrnyckel: miniatyr,
         visningsnyckel: visning,
+        sidantal,
         filnamn: filnamn || "kvitto",
         mimetyp: format.mimetyp,
         storlek: faktiskStorlek,
@@ -305,7 +329,9 @@ export type Lankvariant = "original" | "visning";
 /**
  * Kort signerad URL, skapad pa servern efter behorighetskontroll. "visning" ger
  * visningsversionen nar en sadan finns, annars miniatyren (HEIC utan
- * visningsversion), annars originalet; "original" ger alltid originalfilen.
+ * visningsversion), annars originalet; "original" ger alltid originalfilen –
+ * bl.a. det en flersidig PDF hamtas som av klienten for att rendera sina
+ * sidor sjalv (src/lib/pdfjs-klient.ts, docs/design.md "Bilagor").
  */
 export async function signeradBilagelank(
   bilagaId: string,
@@ -416,6 +442,12 @@ export interface Bilagevy {
   /** Sant nar dokumentavlasningen redan korts pa bilagan (oavsett utfall). Ett
    *  aterupptat utkast kor da inte avlasningen om. */
   analyserad: boolean;
+  /** Sidantalet for en PDF (docs/design.md, "Bilagor") – lest ur sidtradet vid
+   *  uppladdningen, ingen rendering. Null for bilder, och for PDF:er dar
+   *  rakningen inte gjorts an (aldre bilagor fore backfillen) eller
+   *  misslyckades (trasig PDF). Granssnittet faller da tillbaka pa
+   *  dokumentikonen i stallet for sidbladdraren. */
+  sidantal: number | null;
 }
 
 /** Bilagorna for en kostnad, i uppladdningsordning. */
@@ -431,6 +463,7 @@ export async function listaKostnadsbilagor(
       mimetyp: true,
       miniatyrnyckel: true,
       dokument_analyserad: true,
+      sidantal: true,
     },
   });
   return rader.map((b) => ({
@@ -439,5 +472,6 @@ export async function listaKostnadsbilagor(
     arPdf: b.mimetyp === "application/pdf",
     arBild: arVisningsbarBild(b.mimetyp, b.miniatyrnyckel !== null),
     analyserad: b.dokument_analyserad,
+    sidantal: b.sidantal,
   }));
 }

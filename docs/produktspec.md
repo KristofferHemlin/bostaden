@@ -568,6 +568,9 @@ Levereras som nedladdning. Ingen integration behövs.
 
 ### Dokumentavläsning
 
+**Modellen läser hela dokumentet, inte första sidan.** En flersidig PDF skickas som dokument i sin helhet, aldrig som en bild av sida 1. Fakturor har nästan alltid totalbeloppet sist; läses bara första sidan hamnar specifikationens första rad i totalbeloppsfältet, och felet syns inte förrän någon jämför med papperet.
+
+
 När en bilaga valts skickas den till en språkmodell som returnerar tre fält: datum, totalbelopp inklusive moms, och leverantör. Ingen egen OCR, ingen artikelkategorisering.
 
 **Kostnaden skapas som utkast så snart en fil valts.** Då finns ett `kostnad_id`, filen laddas upp direkt till sin riktiga plats i lagringen, och analysen läser den därifrån. Filen laddas upp en gång, inte två.
@@ -765,3 +768,47 @@ Bara id:t. Aldrig e-post, aldrig namn.
 Inställningen "Prevent Storing of IP Addresses" har dessutom en bekräftad bugg: adressen scrubbas, men geo-datat räknas ut dessförinnan och blir kvar. Det som fungerar är en regel under Advanced Data Scrubbing i organisationens inställningar: `[Remove] [Anything] from [$user.geo.**]`. Den är satt på organisationsnivå, så den gäller även framtida projekt. Den som en dag läser filtreringskoden och drar slutsatsen att allt skydd ligger där har fel – en del av det ligger i ett kontogränssnitt hos en leverantör, och följer inte med repot.
 
 **Regeln om bekräftad uppladdning saknar testtäckning.** De tysta fel som hittades i uppladdningsflödet visar att en formulering i en fil inte räcker. Det behövs ett test som fångar en misslyckad uppladdning som ändå tolkas som lyckad.
+
+---
+
+## 14. Konto och integritet
+
+### Integritetspolicyn
+
+Texten ligger i `src/innehall/integritetspolicy.md` och visas på en egen sida, `/integritetspolicy`, som går att nå utan inloggning – den ska kunna läsas innan kontot skapas.
+
+**Appen ändrar aldrig i policytexten.** Den renderas som den står. Ändringar görs i filen av den som ansvarar för policyn, och datumet i slutet uppdateras samtidigt.
+
+**Registreringens steg 1 har en undertext** under knappen:
+
+> Genom att skapa ett konto godkänner du villkoren. Läs hur vi hanterar dina uppgifter i integritetspolicyn.
+
+"Integritetspolicyn" är en länk som öppnar sidan i en ny flik, så att det påbörjade formuläret inte försvinner.
+
+**Ingen kryssruta.** Behandlingen bygger på avtal, inte samtycke – kravet är att informera, inte att be om lov. En kryssruta signalerar ett samtycke som inte är den rättsliga grunden, och den gör registreringen ett steg längre utan att ge något.
+
+Länken finns också i inställningarna, nära kontoraderingen.
+
+### Kontoradering
+
+Policyn lovar att både databasuppgifter och uppladdade filer tas bort när kontot raderas. Utan en fungerande radering är det löftet osant.
+
+**Placering:** längst ned på inställningssidan, under utloggningen, som en dämpad textlänk – inte en knapp. Radering är inte något användaren ska snubbla på.
+
+**Bekräftelsen säger vad som försvinner**, inte bara om man är säker: alla kvitton, alla bilagor, alla grupperingar och hela deklarationsunderlaget. Den påminner om att zip-arkivet går att ladda ner först, med en länk dit – den som lämnar ska kunna ta med sig sina filer.
+
+**Användaren skriver sin e-postadress för att bekräfta.** Det är appens enda oåterkalleliga åtgärd och den enda som kräver mer än ett klick.
+
+**Raderingen tar bort allt**, i den här ordningen:
+
+1. Filerna i lagringen – original, visningsversion och miniatyr för varje bilaga
+2. Databasposterna – kostnadsrader, bilagor, kostnader, projekt, medlemskap, bostad
+3. Användarkontot i Supabase Auth
+
+Filerna först, eftersom en databaspost som raderats utan sin fil lämnar en föräldralös bilaga i lagringen som ingen längre vet om. Det är exakt det policyn säger inte ska hända.
+
+**Misslyckas något ska det synas.** Går lagringen igenom men databasen inte, eller tvärtom, får användaren veta det. Ingenting får vara halvraderat utan att någon vet om det.
+
+Efter raderingen loggas användaren ut och hamnar på inloggningssidan med ett kort besked om att kontot är borttaget.
+
+**Delar två personer en bostad** raderas bara den egna medlemskapet och det som bara den personen äger. Samägande finns inte ännu, men raderingen ska byggas så att den inte behöver skrivas om när det kommer.

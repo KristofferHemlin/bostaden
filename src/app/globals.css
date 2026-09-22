@@ -48,3 +48,14 @@ body {
     font-size: 106.25%;
   }
 }
+
+/* Sidbladdraren for flersidiga PDF:er (docs/design.md, "Bilagor"): ett
+   horisontellt snapp-svep, inte en synlig rullningslist – samma monster som
+   ett inlagg med flera bilder. scrollbar-width tacker Firefox; resten tar
+   webkit-varianten (Chrome/Safari saknar en Tailwind-utility for detta). */
+.dold-rullist {
+  scrollbar-width: none;
+}
+.dold-rullist::-webkit-scrollbar {
+  display: none;
+}

@@ -6,6 +6,13 @@ export default defineConfig({
     include: ["tester/**/*.test.ts"],
     environment: "node",
   },
+  // Kallkoden anvander den automatiska JSX-korkorningen (som Next/SWC anvander
+  // i appen) och importerar aldrig React sjalv – utan detta faller Vitests
+  // standard-esbuild tillbaka pa den klassiska korkorningen och letar efter en
+  // global `React` som inte finns.
+  esbuild: {
+    jsx: "automatic",
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

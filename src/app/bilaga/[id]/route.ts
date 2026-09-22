@@ -2,8 +2,14 @@
 // skapar en kort signerad URL och skickar vidare till den. Klienten far aldrig
 // en permanent lank (produktspec avsnitt 12).
 //
-//   GET /bilaga/<id>              -> visningsversionen (~2000px JPG) om sadan finns
-//   GET /bilaga/<id>?variant=original  -> originalfilen
+//   GET /bilaga/<id>                    -> visningsversionen (~2000px JPG) om sadan finns
+//   GET /bilaga/<id>?variant=original   -> originalfilen. En flersidig PDF hamtas
+//                                          HAR av klienten, som renderar sina egna
+//                                          sidor (src/lib/pdfjs-klient.ts,
+//                                          docs/design.md "Bilagor") – se den
+//                                          langa kommentaren i
+//                                          src/lib/lagring/pdf-sidor.ts for varfor
+//                                          sidorna inte rastriseras pa servern.
 
 import { NextResponse, type NextRequest } from "next/server";
 import { signeradBilagelank, type Lankvariant } from "@/lib/lagring/bilagor";
