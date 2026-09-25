@@ -6,21 +6,40 @@
 // aldrig automatiskt.
 //
 // Har ligger ocksa redigering och borttagning av sjalva kostnaden (produktspec
-// 6.4). Leverantor och datum gar alltid att andra; belopp och projektkoppling
-// bara nar kostnaden ar "enkel" (en rad pa hela beloppet, hogst en fordelning) –
-// en uppdelad kostnad andras per rad via delaUppKostnad (steg 10). Att ta bort
-// kostnaden helt tar med bilagorna, eftersom det ar en uttrycklig begaran.
+// 6.4). Leverantor, datum och ROT gar alltid att andra. Belopp, projektkoppling
+// och privatbeloppet gar att andra i SAMMA formular, i ETT enda anrop till
+// redigeraKostnad, nar enkelPrivatUppdelning kanner igen radernas form (en
+// enda rad, eller den kanoniska tva-radiga privat+ovrigt-uppdelningen) – ett
+// genuint flerprojektfall andras per rad via delaUppKostnad (steg 10) istallet.
+//
+// Privatfaltet ar ETT FALT BLAND DE ANDRA (docs/design.md, "Ett kvitto ar en
+// skarm, inte tva"), inte en egen sparning: bade det och de ovriga faltens
+// omskrivning av kostnadsraderna sker i SAMMA transaktion i redigeraKostnad.
+// Formular far inte nastlas, sa det maste vara sa – tva formular med varsin
+// Spara hade lamnat anvandaren med tva knappar for en och samma sak.
+//
+// Att ta bort kostnaden helt tar med bilagorna, eftersom det ar en uttrycklig
+// begaran.
+//
+// redigeraKostnad REDIRECTAR ALDRIG (docs/design.md, "Ett kvitto ar en skarm,
+// inte tva"): redigeringen sker pa plats i andringslaget, sa en lyckad
+// sparning bara revalidatePath:ar och returnerar – klienten (kvitto-kort.tsx)
+// vaxlar sjalv tillbaka till lasläget via useActionState:s pagar-flagga
+// (samma monster som installningar/kort.tsx).
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { arEnkelKostnad } from "@/doman/berakningar";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import {
   taBortAllaBilagorForKostnad,
   taBortBilaga,
 } from "@/lib/lagring/bilagor";
 import { oreFranKronor } from "@/lib/format";
-import { enkelPrivatUppdelning, tolkaUppdelning } from "@/lib/kostnadsuppdelning";
+import {
+  byggRedigeradeRader,
+  enkelPrivatUppdelning,
+  tolkaUppdelning,
+} from "@/lib/kostnadsuppdelning";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
@@ -96,12 +115,6 @@ export async function redigeraKostnad(
     }
   }
 
-  // ROT-beloppet ar en del av totalbeloppet – ett varde over det ar en
-  // felskrivning.
-  if (rotUtnyttjat !== null && rotUtnyttjat > kostnad.totalbelopp) {
-    return { fel: "ROT-avdraget kan inte vara större än totalbeloppet." };
-  }
-
   // Ar ROT eller forsakringsersattning satt far kostnaden bara vara kopplad
   // till ett projekt (produktspec 5). En enkel kostnad har alltid hogst ett
   // projekt; en uppdelad kan spanna flera och maste da kontrolleras.
@@ -122,11 +135,24 @@ export async function redigeraKostnad(
 
   const rotFalt = { rot_utnyttjat: rotUtnyttjat };
 
-  const enkel = arEnkelKostnad(tillDomanKostnad(kostnad));
+  // Privatfaltet ar ETT FALT BLAND DE ANDRA i samma formular (docs/design.md,
+  // "Ett kvitto ar en skarm, inte tva") – inte en egen sparning. Villkoret ar
+  // darfor enkelPrivatUppdelning, INTE arEnkelKostnad: den kanner ocksa igen
+  // den kanoniska tva-radiga privat+ovrigt-formen (dar arEnkelKostnad ar
+  // false), sa belopp/ROT/projekt/privatbelopp hor ihop som EN grupp som
+  // antingen ar hela redigerbar eller hela last – aldrig delad mellan tva
+  // formular som inte far nastlas.
+  const privatDel = enkelPrivatUppdelning(tillDomanKostnad(kostnad));
 
-  if (!enkel) {
-    // Uppdelad kostnad: bara leverantor, datum och ROT-faltet andras har.
-    // Belopp och koppling hor till raduppdelningen (senare steg).
+  if (!privatDel) {
+    // Genuint flerprojektfall: bara leverantor, datum och ROT-faltet andras
+    // har. Belopp, projektkoppling och privatbelopp hor till raduppdelningen
+    // (delaUppKostnad, steg 10). Totalbeloppet gar darfor INTE att andra i den
+    // har grenen (falet visas last i granssnittet) – ROT jamfors darfor mot
+    // det SPARADE beloppet, det enda som galler har.
+    if (rotUtnyttjat !== null && rotUtnyttjat > kostnad.totalbelopp) {
+      return { fel: "ROT-avdraget kan inte vara större än totalbeloppet." };
+    }
     await prisma.kostnad.update({
       where: { id },
       data: {
@@ -138,13 +164,21 @@ export async function redigeraKostnad(
       },
     });
     revalideraKostnadsvyer(id);
-    redirect(`/kostnad/${id}`);
+    // Ingen redirect (docs/design.md, "Ett kvitto ar en skarm, inte tva"):
+    // sparningen sker pa plats, och klienten vaxlar sjalv tillbaka till
+    // lasläget nar useActionState-anropet gar fran pagar till klart.
+    return {};
   }
 
   const totalbelopp = oreFranKronor(String(formData.get("totalbelopp") ?? ""));
   if (totalbelopp === null || totalbelopp <= 0) {
     return { fel: "Fyll i ett belopp större än noll, t.ex. 1 020,95." };
   }
+  // ROT jamfors mot det NYSS INSKRIVNA totalbeloppet (bagge i oren), inte det
+  // sedan tidigare SPARADE (kostnad.totalbelopp) – en tidigare version gjorde
+  // just det, vilket avvisade giltiga sparningar dar bade belopp och ROT
+  // hojdes i samma omgang (t.ex. totalbelopp 344 250 kr, ROT 75 000 kr,
+  // avvisat nar det gamla sparade beloppet rakade vara mindre an ROT-beloppet).
   if (rotUtnyttjat !== null && rotUtnyttjat > totalbelopp) {
     return { fel: "ROT-avdraget kan inte vara större än totalbeloppet." };
   }
@@ -159,9 +193,35 @@ export async function redigeraKostnad(
     kopplatProjekt = projekt.id;
   }
 
-  const rad = kostnad.rader[0];
-  const nyArtikel =
-    rad.artikel === kostnad.leverantor ? leverantor : rad.artikel;
+  // Privatbeloppet (docs/design.md, "Ett kvitto ar en skarm, inte tva"): ett
+  // vanligt falt bland de andra, tomt nar inget av kvittot ar privat.
+  const privatText = String(formData.get("privatbelopp") ?? "").trim();
+  let privatbelopp = 0;
+  if (privatText !== "") {
+    const parsat = oreFranKronor(privatText);
+    if (parsat === null || parsat <= 0) {
+      return { fel: "Ange ett privatbelopp större än noll, t.ex. 400." };
+    }
+    privatbelopp = parsat;
+  }
+
+  // byggRedigeradeRader (src/lib/kostnadsuppdelning.ts) ar den enda platsen
+  // som bestammer kostnadens rader efter sparningen – bade totalbeloppet/
+  // projektkopplingen och privatbeloppet gar genom den, sa de aldrig kan sla
+  // ut varandra genom att komma fran tva olika sparningar. `artikel` foljer
+  // den "ovriga" (icke-privata) radens namn oavsett om kostnaden i dag ar en
+  // enda rad eller redan den tva-radiga privata uppdelningen –
+  // enkelPrivatUppdelning har redan hittat ratt rad.
+  const nyaRader = byggRedigeradeRader({
+    totalbelopp,
+    artikel:
+      privatDel.ovrigArtikel === kostnad.leverantor
+        ? leverantor
+        : privatDel.ovrigArtikel,
+    projektId: kopplatProjekt,
+    privatbelopp,
+  });
+  if ("fel" in nyaRader) return { fel: nyaRader.fel };
 
   await prisma.$transaction([
     prisma.kostnad.update({
@@ -175,28 +235,32 @@ export async function redigeraKostnad(
         ...rotFalt,
       },
     }),
-    prisma.kostnadsrad.update({
-      where: { id: rad.id },
-      data: { belopp: totalbelopp, artikel: nyArtikel },
-    }),
-    // Fordelningen byggs om fran grunden: enklast och kan inte glida isar.
-    prisma.radfordelning.deleteMany({ where: { kostnadsrad_id: rad.id } }),
-    ...(kopplatProjekt
-      ? [
-          prisma.radfordelning.create({
-            data: {
-              kostnadsrad_id: rad.id,
-              projekt_id: kopplatProjekt,
-              privat: false,
-              andel: 1,
-            },
-          }),
-        ]
-      : []),
+    // Raderna byggs om fran grunden – enklast och kan inte glida isar, precis
+    // som delaUppKostnad gor.
+    prisma.kostnadsrad.deleteMany({ where: { kostnad_id: id } }),
+    ...nyaRader.rader.map((rad) =>
+      prisma.kostnadsrad.create({
+        data: {
+          kostnad_id: id,
+          artikel: rad.artikel,
+          belopp: rad.belopp,
+          fordelningar: rad.fordelningar.length
+            ? {
+                create: rad.fordelningar.map((f) => ({
+                  projekt_id: f.projekt_id,
+                  privat: f.privat,
+                  andel: f.andel,
+                })),
+              }
+            : undefined,
+        },
+      }),
+    ),
   ]);
 
   revalideraKostnadsvyer(id);
-  redirect(`/kostnad/${id}`);
+  // Ingen redirect har heller – se kommentaren i grenen ovan.
+  return {};
 }
 
 // Steg 10: dela upp ett kvitto pa radniva. Varje rad far en artikel, ett belopp
@@ -279,100 +343,6 @@ export async function delaUppKostnad(
         },
       }),
     ),
-  ]);
-
-  revalideraKostnadsvyer(id);
-  redirect(`/kostnad/${id}`);
-}
-
-// Privatfaltet pa kvittots detaljvy (produktspec 5, "Kostnadsrad": "det
-// vanliga fallet far inte krava bokforing"). Ett enda belopp racker for att
-// markera att en del av kvittot var privat – de tva raderna byggs har i
-// bakgrunden, sa datamodellen forblir oforandrad. Faltet later bara kostnader
-// i den kanoniska formen (arEnkelKostnad, eller precis de tva rader detta
-// faltet sjalvt skapar) ostorda; ett genuint flerprojektfall hanteras bara i
-// uppdelningsvyn (delaUppKostnad ovan).
-export async function sparaPrivatbelopp(
-  _foreg: KostnadRedigeraResultat,
-  formData: FormData,
-): Promise<KostnadRedigeraResultat> {
-  const { bostadId } = await kravBostad();
-  const id = String(formData.get("kostnad_id") ?? "");
-
-  const kostnad = await prisma.kostnad.findFirst({
-    where: { id, bostad_id: bostadId },
-    include: { rader: { include: { fordelningar: true } } },
-  });
-  if (!kostnad) return { fel: "Kostnaden hittades inte." };
-  if (kostnad.totalbelopp === null) {
-    return { fel: "Kvittot är fortfarande ett utkast. Komplettera det först." };
-  }
-
-  const nuvarande = enkelPrivatUppdelning(tillDomanKostnad(kostnad));
-  if (!nuvarande) {
-    return {
-      fel: "Kvittot är uppdelat på flera projekt. Ändra det via uppdelningen i stället.",
-    };
-  }
-
-  const artikel = nuvarande.ovrigArtikel || kostnad.leverantor || "Kvitto";
-  const ovrigFordelning = nuvarande.projektId
-    ? {
-        create: [
-          { projekt_id: nuvarande.projektId, privat: false, andel: 1 },
-        ],
-      }
-    : undefined;
-
-  const privatText = String(formData.get("privatbelopp") ?? "").trim();
-
-  if (privatText === "") {
-    // Tomt falt: tillbaka till en enda rad pa hela beloppet, med samma koppling.
-    await prisma.$transaction([
-      prisma.kostnadsrad.deleteMany({ where: { kostnad_id: id } }),
-      prisma.kostnadsrad.create({
-        data: {
-          kostnad_id: id,
-          artikel,
-          belopp: kostnad.totalbelopp,
-          fordelningar: ovrigFordelning,
-        },
-      }),
-    ]);
-    revalideraKostnadsvyer(id);
-    redirect(`/kostnad/${id}`);
-  }
-
-  const privatOren = oreFranKronor(privatText);
-  if (privatOren === null || privatOren <= 0) {
-    return { fel: "Ange ett belopp större än noll, t.ex. 400." };
-  }
-  if (privatOren >= kostnad.totalbelopp) {
-    return {
-      fel:
-        'Beloppet måste vara mindre än kvittots totalbelopp. Är allt privat hör ' +
-        'kvittot hemma i "Hör inte till bostaden".',
-    };
-  }
-
-  await prisma.$transaction([
-    prisma.kostnadsrad.deleteMany({ where: { kostnad_id: id } }),
-    prisma.kostnadsrad.create({
-      data: {
-        kostnad_id: id,
-        artikel: "Privat",
-        belopp: privatOren,
-        fordelningar: { create: [{ privat: true, andel: 1 }] },
-      },
-    }),
-    prisma.kostnadsrad.create({
-      data: {
-        kostnad_id: id,
-        artikel,
-        belopp: kostnad.totalbelopp - privatOren,
-        fordelningar: ovrigFordelning,
-      },
-    }),
   ]);
 
   revalideraKostnadsvyer(id);

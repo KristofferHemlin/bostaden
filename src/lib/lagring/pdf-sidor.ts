@@ -42,15 +42,46 @@ async function sakerstallPdfjsModul(): Promise<void> {
   modulDefinierad = true;
 }
 
+export interface PdfInfo {
+  sidantal: number;
+  /**
+   * Forsta sidans matt (docs/produktspec.md, "PDF-sidor renderas i
+   * webbläsaren": "För en PDF ger första sidans proportioner samma sak").
+   * `getViewport` lasker bara sidans /MediaBox (och /Rotate) – ingen
+   * rendering, samma sorts sidtrads-lasning som sidantalet – sa den ror
+   * aldrig den canvas-kedja som kraschar i Node (se filkommentaren ovan).
+   * Enheten ar PDF-punkter (72 per tum), inte pixlar, men matten anvands bara
+   * som ETT FORHALLANDE for att reservera ratt yta i forhandsvisningen, sa
+   * enheten spelar ingen roll.
+   */
+  bredd: number;
+  hojd: number;
+}
+
 /**
- * Antal sidor i en PDF-buffert. Kastar om dokumentet inte gar att lasa –
- * anroparen (bekraftaKostnadsbilaga) fangar detta sa att uppladdningen
- * aldrig blockeras: originalet ar redan sparat, sidantalet ar bara en
- * komfortuppgift ovanpa det.
+ * Sidantal och forsta sidans matt for en PDF-buffert. Kastar om dokumentet
+ * inte gar att lasa – anroparen (bekraftaKostnadsbilaga) fangar detta sa att
+ * uppladdningen aldrig blockeras: originalet ar redan sparat, bada uppgifterna
+ * ar bara en komfortuppgift ovanpa det.
  */
-export async function raknaPdfSidor(pdf: Buffer): Promise<number> {
+export async function lasPdfInfo(pdf: Buffer): Promise<PdfInfo> {
   await sakerstallPdfjsModul();
   const dokument = await getDocumentProxy(new Uint8Array(pdf));
   if (dokument.numPages < 1) throw new Error("PDF:en har inga sidor.");
-  return dokument.numPages;
+  const forstaSidan = await dokument.getPage(1);
+  const { width, height } = forstaSidan.getViewport({ scale: 1 });
+  return {
+    sidantal: dokument.numPages,
+    bredd: Math.round(width),
+    hojd: Math.round(height),
+  };
+}
+
+/**
+ * Bara sidantalet, for anropare som inte behover mattet (produktspec 6:
+ * sidbladdraren och miniatyren, dar sidbilderna inte langre lagras). Tunn
+ * wrapper runt lasPdfInfo sa att bada haller sig till samma pdf.js-anrop.
+ */
+export async function raknaPdfSidor(pdf: Buffer): Promise<number> {
+  return (await lasPdfInfo(pdf)).sidantal;
 }

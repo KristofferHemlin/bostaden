@@ -40,6 +40,12 @@ Detta är produktens kärna. Fel här ger felaktiga deklarationsunderlag. Approx
 
 Modellen speglar Skatteverkets egen e-tjänst *Räkna ut avdrag för renoveringar och nybyggnation*, verifierad mot den 2026-09-15. Avvik inte från den utan att först läsa `docs/regelkallor.md`.
 
+**Den här filen är ensam källa för varje regel som avgör ett tal eller en ordning.** Beloppsgränser, tidsgränser, skalor, beräkningens steg och deras inbördes ordning står här och ingen annanstans. `docs/produktspec.md` beskriver produkten – flöden, skärmar, datamodell, export – och förklarar skälen bakom reglerna, men upprepar dem inte och innehåller inga tal ur dem.
+
+Skälet är erfarenhet, inte prydlighet: reglerna stod en gång i båda filerna, de gled isär, och den felaktiga versionen låg kvar tills någon råkade jämföra. Står ett tal på två ställen kommer de förr eller senare att säga olika, och ingenting i appen kraschar när det händer.
+
+Hittar du ett tal ur det här avsnittet återgivet i specen är det ett fel som ska rättas där, inte en andra sanning att väga mot.
+
 ### Frågeträdet per åtgärd
 
 Frågorna ställs en gång per åtgärd, aldrig per kvitto. Grenar som inte påverkar resultatet hoppas över.
@@ -63,6 +69,10 @@ Frågorna ställs en gång per åtgärd, aldrig per kvitto. Grenar som inte påv
 
 Fråga 6 och 7 ställs bara när åtgärden har en reparationsdel. En ren grundförbättring har ingen, och då är skicket utan betydelse.
 
+**Merkostnaden är obligatorisk och större än noll** när svaret på fråga 5 är att det nya är av bättre kvalitet. Säger man att det blev bättre måste det ha blivit dyrare, annars var bytet per definition likvärdigt. Skatteverkets verktyg avvisar noll här.
+
+**Fråga 8 ställs bara när `skick_forvarv` är 0, 1 eller 2.** Är skicket vid förvärvet satt högre blir reparationsavdraget litet ändå, och då finns inget att försvara. Skälen till att fältet är villkorat står i `docs/produktspec.md` avsnitt 4.1.
+
 **Fråga 6 ställs tidigt, fråga 7 sent.** Skicket vid förvärvet är det som blir omöjligt att minnas – det ska fångas medan det går. Skicket vid försäljningen kan inte besvaras i förväg, eftersom det handlar om hur något ser ut efter års användning.
 
 ### Beräkningen
@@ -79,9 +89,11 @@ Ordningen är bindande.
       utbytt + liknande_kvalitet             → 0
     reparationsunderlag = avdragsgrundande - grundforbattringsdel
 
-3.  Tidsgränser:
+3.  Bortfall:
       reparationsunderlag = 0 om betaldatum ligger utanför
         försäljningsåret plus de fem närmast föregående kalenderåren
+      reparationsunderlag = 0 om bostaden var nybyggd vid förvärvet och
+        inte köptes vid ombildning från hyresrätt (se nedan)
       grundforbattringsdel = 0 om betaldatum ligger före den bakre
         gränsen för upplåtelseformen (se nedan)
       Grundförbättringar har i övrigt ingen tidsgräns
@@ -98,6 +110,8 @@ Ordningen är bindande.
 ```
 
 **Tidsgränsen räknas bort före tröskeln, skickbedömningen efter.** Det är den enda ordningen som stämmer med Skatteverkets verktyg, och den är lätt att få fel. En reparation som fallit ur femårsfönstret kan inte lyfta året över tröskeln. En reparation vars skick knappt förbättrats räknas däremot med hela sitt underlag i tröskelprövningen, även om avdraget blir nästan noll.
+
+**Nybyggd-regeln ligger i steg 3 av samma skäl**, trots att den inte är en tidsgräns: var bostaden nybyggd vid förvärvet är reparationen inte en förbättringsutgift, och ett belopp som aldrig var avdragsgillt kan inte lyfta året över tröskeln. Den träffar bara reparationsdelen – en merkostnad för bättre kvalitet är en standardhöjning oavsett bostadens skick vid köpet.
 
 **Avrundning sker uppåt, och först vid utskrift.**
 
@@ -150,6 +164,8 @@ Aldrig av fakturadatum eller dokumentdatum. Skatteverkets verktyg frågar efter 
 ### Ägarandel
 
 Förbättringsutgifter fördelas mellan delägarna efter ägarandel. Underlaget ska visa både beloppet för hela bostaden och användarens andel. Andelen ligger på medlemskapet, inte på bostaden.
+
+**Andelen är ett tal större än 0 till och med 100, och valideras som ett** – i gränssnittet och på servern. Fältet multiplicerar hela underlaget: skrivs 1000 i stället för 100 blir avdraget tio gånger för stort utan att något ser konstigt ut. Noll avvisas, decimaler tillåts, och ett tomt fält betyder hela bostaden.
 
 ---
 
@@ -241,6 +257,26 @@ Regeln gäller varje formulär som skickar något, inte bara kvittoinmatningen. 
 **Tillstånd härleds, lagras inte.** På `kostnad` är `arkiverad` det enda lagrade tillståndet. Obetald, okopplad och kopplad beräknas ur `betaldatum` och radernas fördelningar. Betalning och projektkoppling är oberoende – en faktura kan vara både obetald och okopplad.
 
 **Ägarandel ligger på medlemskapet**, inte på bostaden. Andelen tillhör relationen mellan person och bostad.
+
+---
+
+## Databasen delas med produktionen
+
+Det finns ingen separat utvecklingsdatabas. `localhost` och den driftsatta appen använder samma Supabase-projekt, och det är ett medvetet val som gäller tills produkten har användare nog att motivera en andra miljö.
+
+Följden är att varje rad kan tillhöra en riktig person, och att ett engångsjobb som går fel förstör något som inte går att skriva om. Bilagorna är dessutom det enda exemplaret – kvitton som raderas finns ingen annanstans.
+
+**Läs fritt.** Frågor mot databasen är aldrig ett problem.
+
+**Rör bara det du själv skapat.** Rader som fanns före din session ändras eller raderas inte utan att det uttryckligen är uppgiften. Skapar du testdata för att undersöka något, städa bort just den och inget mer.
+
+**Aldrig breda skrivningar.** Ingen `DELETE` eller `UPDATE` utan ett villkor som träffar bestämda rader, ingen `TRUNCATE`, ingen återställning, ingen omseedning. Ett villkor som skulle kunna träffa fler rader än du räknat med är samma sak som ett fel.
+
+**Engångsjobb körs torrt först.** Ett skript som ändrar data ska först kunna köras i ett läge som bara loggar vad det skulle göra, och antalet rader ska stämma med förväntan innan det körs på riktigt.
+
+**Migreringar: additiva utan att fråga, allt annat med.** Nya tabeller och nya kolumner som får vara tomma kan läggas till direkt. Att ta bort, byta namn på eller ändra typ för något som redan finns körs mot levande data och ska beskrivas och godkännas först.
+
+**Rör aldrig processer du inte startat.** Dev-servern tillhör den som kör den. Behöver något startas om, säg till i stället för att döda det – en server som dödas mitt i ett bygge lämnar en halvbyggd katalog efter sig, och felsökningen av den kostar mer än väntan.
 
 ---
 

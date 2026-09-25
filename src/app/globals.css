@@ -40,12 +40,13 @@ body {
   color: var(--text-primar);
 }
 
-/* Skrivbord: basstorleken pa text ett steg upp (docs/design.md, Skrivbordsvyn).
-   rem-baserad spacing i Tailwind foljer med, sa kortens innerpadding blir
-   generosare pa kopet. */
+/* Skrivbord: basstorleken pa text ett steg upp (docs/design.md, Skrivbordsvyn)
+   – 16 -> 18px, samma steg som text-base -> text-lg. 106.25% (17px) gick inte
+   att se: texten sag ut att ligga kvar pa mobilstorlek. rem-baserad spacing i
+   Tailwind foljer med, sa kortens innerpadding vaxer i samma takt. */
 @media (min-width: 640px) {
   :root {
-    font-size: 106.25%;
+    font-size: 112.5%;
   }
 }
 

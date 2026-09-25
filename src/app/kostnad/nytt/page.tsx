@@ -13,6 +13,7 @@ import { notFound, redirect } from "next/navigation";
 import { NyKostnadForm } from "./form";
 import { Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
+import { isoDatum } from "@/lib/format";
 import { listaKostnadsbilagor } from "@/lib/lagring/bilagor";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -59,9 +60,16 @@ export default async function NyKostnadSida({
     <Skarm
       bostadsnamn={bostadsnamn}
       rubrik={utkast ? "Komplettera kvittot" : "Nytt kvitto"}
-      bakLank={{ href: "/", text: "Översikt" }}
     >
-      <NyKostnadForm utkast={utkast} />
+      <NyKostnadForm
+        utkast={utkast}
+        innehav={{
+          tilltradesdatum: isoDatum(bostad.tilltradesdatum),
+          forsaljningsdatum: bostad.forsaljningsdatum
+            ? isoDatum(bostad.forsaljningsdatum)
+            : null,
+        }}
+      />
     </Skarm>
   );
 }

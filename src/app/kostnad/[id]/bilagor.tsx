@@ -8,11 +8,11 @@
 // darfor stor: minst 96px, styrande regel ar att tre rutor (inkl. +-rutan)
 // ska rymmas pa en rad pa 390px – med kortets padding landar det pa 100px.
 //
-// SAMMA komponent anvands pa bade detaljvyn och redigeringsformularet
-// (docs/design.md, "Bilagor": "Tva olika satt att hantera bilagor i samma
-// app ar tva satt att gora fel") – `storForhandsvisning` slar bara pa en
-// stor forhandsvisning ovanfor raden at redigeringsformularet. Uppladdning,
-// radering och miniatyrraden ar identiska pa bagge stallena.
+// SAMMA komponent anvands i bade lasläget och andringslaget pa kvittots skarm
+// (docs/design.md, "Bilagor": "Tva olika satt att hantera bilagor i samma app
+// ar tva satt att gora fel") – `redigerbar` (default true) styr om raden ar
+// en editor eller rent visande, se dess kommentar nedan. `storForhandsvisning`
+// slar pa den stora forhandsvisningen ovanfor raden pa bagge stallena.
 //
 // En bild som annu inte hamtats far ALDRIG se ut som en tom ruta – det ar
 // exakt den signal som far anvandaren att tro att kvittot ar borta.
@@ -57,7 +57,12 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { revalideraKostnadssida, taBortBilagaAction } from "./actions";
 import type { BilagaResultat } from "./actions";
-import { BilagaSidbladdrare, PdfMiniatyrbild } from "@/components/bilaga-sidbladdrare";
+import {
+  BilagaSidbladdrare,
+  FORHANDSRAM,
+  PdfMiniatyrbild,
+} from "@/components/bilaga-sidbladdrare";
+import { bildAspekt, forhandsramStil } from "@/lib/bildaspekt";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { valideraBilaga } from "@/lib/lagring/bilaga-regler";
 import { laddaUppKostnadsbilaga } from "@/lib/lagring/bilaga-klient";
@@ -68,39 +73,70 @@ const START: BilagaResultat = {};
 const ACCEPT =
   "image/jpeg,image/png,image/heic,image/heif,application/pdf,.jpg,.jpeg,.png,.heic,.heif,.pdf";
 
-// Stor, staende ruta (docs/design.md, "Bilagor"): FAST storlek – 100px bred,
-// 133px hog (ungefar 3:4) – oavsett hur manga bilagor kostnaden har. flex-none
+// Stor, staende ruta (docs/design.md, "Bilagor"): FAST storlek – 80px bred,
+// 107px hog (3:4) – oavsett hur manga bilagor kostnaden har. flex-none
 // nollstaller bade flex-grow och flex-shrink explicit sa rutan aldrig stracks
 // ut for att fylla raden (ett kvitto med en bilaga ska visa den lika stort som
 // ett med tre). Bredd och hojd anges som fasta pixelvarden i stallet for
 // aspect-ratio-utiliteten, sa storleken aldrig beror pa flex-layouten.
 //
-// Tre rutor (tva bilagor + "Lagg till") ska rymmas pa en rad pa 390px. Med
-// kortets och sektionens padding (main px-4 + denna sektionens p-4 = 64px)
-// ater raden 326px pa en 390px-skarm; 100px per ruta + gap-2 ger 316px, dvs
-// plats kvar.
+// Storleken krympte fran 100px (docs/design.md, "Bilagor": "Miniatyren ska ga
+// att skilja fran sina grannar, inte att lasa"). Den markerade bilagan visas
+// numera stor OVANFOR raden pa alla tre skarmarna dar bilagor forekommer, sa
+// raden har bara kvar att vaxla mellan dokument – en bytesknapp behover vara
+// urskiljbar, inte lasbar. Papperskorgens tryckyta (44px, se nedan) ar dock
+// OFORANDRAD trots den mindre rutan – storleken provas forst eftersom den ar
+// billig att andra tillbaka.
 const RUTA =
-  "relative flex h-[133px] w-[100px] flex-none flex-col items-center justify-center overflow-hidden rounded-lg bg-yta-nedsankt text-center";
+  "relative flex h-[107px] w-[80px] flex-none flex-col items-center justify-center overflow-hidden rounded-lg bg-yta-nedsankt text-center";
+
+// bildAspekt (src/lib/bildaspekt.ts, delad med kostnad/nytt/form.tsx) ger
+// bilagans matt som ett bredd/hojd-forhallande, for att reservera ratt yta at
+// den stora forhandsvisningen INNAN filen hamtats (docs/produktspec.md,
+// "PDF-sidor renderas i webbläsaren"). Faller tillbaka pa ett staende format
+// nar matten saknas.
 
 export function Bilagor({
   kostnadId,
   bilagor,
   storForhandsvisning,
+  dolgUppladdningshjalp,
+  redigerbar = true,
 }: {
   kostnadId: string;
   bilagor: Bilagevy[];
   /**
    * Visar den valda bilagan stort ovanfor miniatyrraden (docs/design.md,
-   * "Bilagor": "Redigeringsvyn visar bilagan... storre an miniatyren pa
-   * detaljvyn"). Anvands av redigeringsformularet; detaljvyn lamnar den
-   * ostangd. SAMMA komponent pa bagge stallena – bara detta flagg-skiljer
-   * dem, inte tva parallella satt att hantera bilagor.
+   * "Bilagor": "Den markerade bilagan visas stort, med miniatyrraden under
+   * for att byta dokument"). Pa av i inmatningen (kostnad/nytt/form.tsx, som
+   * har en egen implementation); pa har, i bade lasläget och andringslaget.
    *
    * Nar den ar pa byter en miniatyr vilken bilaga som visas stort i stallet
-   * for att oppna helskarmsvyn direkt ("...med miniatyrraden under sa att
-   * man kan byta") – helskarmsvyn nas da via den stora bilden i stallet.
+   * for att oppna helskarmsvyn direkt – helskarmsvyn nas da via den stora
+   * bilden i stallet.
    */
   storForhandsvisning?: boolean;
+  /**
+   * Doljer rubriken "Kvitto eller faktura" och formathjalpen under raden
+   * (docs/design.md, "Kvittots detaljvy" och "Bilagor": bada hor till
+   * UPPLADDNINGEN, inte till visningen – pa detaljvyn star bilden redan vald
+   * och synlig, och da ar de brus). Uppladdning och radering fungerar
+   * oforandrat, bara texten dolls.
+   */
+  dolgUppladdningshjalp?: boolean;
+  /**
+   * Ett kvitto ar en skarm, inte tva (docs/design.md): i LASLAGET (default
+   * pa, alla tidigare anropare far oforandrat beteende) ar miniatyrraden rent
+   * visande – papperskorgen och +-rutan hor bara till ANDRINGSLAGET.
+   *
+   * Nar `redigerbar` ar false visas raden BARA nar kostnaden har fler an en
+   * bilaga, och da enbart for att vaxla vilken som visas stort ovanfor ("Har
+   * kvittot en enda bilaga visas ingen rad alls, eftersom miniatyren da ar en
+   * kopia av bilden ovanfor"). Nar den ar true (andringslaget) vaxer raden
+   * till sin fulla form och visas alltid, aven med noll eller en bilaga,
+   * eftersom +-rutan da behovs for att lagga till den forsta.
+   */
+  redigerbar?: boolean;
 }) {
   const router = useRouter();
 
@@ -120,6 +156,13 @@ export function Bilagor({
   const [storIndex, setStorIndex] = useState(0);
   const sakerStorIndex =
     bilagor.length > 0 ? Math.min(storIndex, bilagor.length - 1) : 0;
+
+  // Bildens FAKTISKA proportioner nar den val laddats, per bilaga-id. Det
+  // lagrade mattet (bildAspekt) reserverar ytan innan dess, men saknas det
+  // (aldre bilagor fore backfillen) star ramen annars kvar pa 3:4-fallbacken
+  // och far en form som dokumentet inte fyller (docs/design.md, "Bilagor":
+  // "Ramen har dokumentets form").
+  const [laddadAspekt, setLaddadAspekt] = useState<Record<string, number>>({});
 
   // Raderingsbekraftelsen galler en bilaga i taget, oavsett vilken miniatyrs
   // papperskorg som utlost den.
@@ -183,145 +226,196 @@ export function Bilagor({
 
   return (
     <div className="p-4">
-      {/* "Kvitto eller faktura" – samma rubrik som i inmatningen. "Bilagor" ar
-          internt sprak (docs/design.md, "Ordval i gränssnittet": anvandaren
-          moter alltid ordet "kvitto"). */}
-      <p className="mb-2 font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
-        Kvitto eller faktura
-      </p>
+      {/* "Kvitto eller faktura" hor till UPPLADDNINGEN, inte till visningen
+          (docs/design.md, "Kvittots detaljvy") – pa detaljvyn star bilden
+          redan vald och synlig, dar ar rubriken brus. Och aven i
+          andringslaget bara sa lange raden ar tom (docs/design.md, "Bilagor":
+          "Etiketten över raden visas bara när ingen bilaga finns"). */}
+      {!dolgUppladdningshjalp && bilagor.length === 0 ? (
+        <p className="mb-2 font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
+          Kvitto eller faktura
+        </p>
+      ) : null}
 
-      {/* Stor forhandsvisning, bara i redigeringsformularet (docs/design.md,
-          "Bilagor"). Ateranvander <Miniatyrinnehall> – samma bild/PDF/fel-
-          hantering som miniatyren, bara i en storre, fullbred ruta.
-          Klick oppnar helskarmsvyn; miniatyrraden nedanfor byter vilken
-          bilaga som visas har i stallet for att oppna den direkt. */}
+      {/* Stor forhandsvisning, i bade lasläget och andringslaget
+          (docs/design.md, "Bilagor" och "Kvittots detaljvy"): den far HELA
+          kortets bredd, med hojden begransad till omkring 60% av
+          skarmhojden – det som slar i taket forst galler. Ateranvander
+          <Miniatyrinnehall> for PDF/fel-lagen – bild-fallet renderas har
+          direkt med `naturlig` sa containern haller bildens EGNA proportioner
+          i stallet for ett fast hojdtak. Klick oppnar helskarmsvyn;
+          miniatyrraden nedanfor byter vilken bilaga som visas har i stallet
+          for att oppna den direkt. */}
       {storForhandsvisning && bilagor.length > 0 ? (
         bilagor[sakerStorIndex].sidantal != null ? (
           // Flersidig PDF (docs/design.md, "Bilagor"): sidbladdraren ligger
           // HAR direkt, inte bakom en <button> – svepet behover sin egen
           // klickyta, och varje sida oppnar helskarmsvyn for sig via
-          // onSidaTryckt i stallet.
-          <div className="mb-2">
+          // onSidaTryckt i stallet. `naturligStorlek` later containern halla
+          // sida 1:s egna proportioner (max 60% av skarmhojden).
+          // `initialAspekt` (bilagans lagrade matt, docs/produktspec.md,
+          // "PDF-sidor renderas i webbläsaren") reserverar ratt yta REDAN
+          // INNAN filen hamtats for att renderas, i stallet for att vanta pa
+          // att sida 1 faktiskt ritats.
+          <div>
             <BilagaSidbladdrare
               key={bilagor[sakerStorIndex].id}
               kalla={{ typ: "bilaga", bilagaId: bilagor[sakerStorIndex].id }}
               sidantal={bilagor[sakerStorIndex].sidantal!}
               filnamn={bilagor[sakerStorIndex].filnamn}
-              className="h-72 w-full"
+              naturligStorlek
+              initialAspekt={bildAspekt(bilagor[sakerStorIndex])}
               onSidaTryckt={() => setOppen(bilagor[sakerStorIndex])}
             />
           </div>
         ) : (
+          // aspect-ratio (docs/produktspec.md, "PDF-sidor renderas i
+          // webbläsaren") reserverar ratt yta INNAN bilden hamtats, ur det
+          // matt som lastes vid uppladdningen – samma monster som
+          // BilagaSidbladdrare:s naturligStil ovan. Fallback pa ett staende
+          // format nar mattet saknas (aldre bilagor fore backfillen).
           <button
             type="button"
             onClick={() => setOppen(bilagor[sakerStorIndex])}
             aria-label={`Öppna ${bilagor[sakerStorIndex].filnamn}`}
-            className="relative mb-2 flex h-72 w-full flex-col items-center justify-center overflow-hidden rounded-lg border border-linje bg-yta-nedsankt text-center"
+            style={forhandsramStil(
+              laddadAspekt[bilagor[sakerStorIndex].id] ??
+                bildAspekt(bilagor[sakerStorIndex]),
+              "60vh",
+            )}
+            className={`relative mx-auto flex flex-col items-center justify-center text-center ${FORHANDSRAM}`}
           >
-            <Miniatyrinnehall bilaga={bilagor[sakerStorIndex]} />
+            <Miniatyrinnehall
+              bilaga={bilagor[sakerStorIndex]}
+              naturlig
+              onMatt={(aspekt) => {
+                const id = bilagor[sakerStorIndex].id;
+                setLaddadAspekt((a) =>
+                  a[id] === aspekt ? a : { ...a, [id]: aspekt },
+                );
+              }}
+            />
           </button>
         )
       ) : null}
 
-      <div className="flex flex-wrap gap-2">
-        {bilagor.map((b, i) => {
-          // Vid radering ska raderingen ALDRIG behova las av bekraftelsetexten
-          // for att veta vilken ruta den galler – med tva kvitton fran samma
-          // butik bredvid varandra ar det annars omojligt att se. Den valda
-          // rutan far en tydlig ram; de andra dampas som ett andra, svagare
-          // stod – men ramen ar den som bar signalen (verifierat i
-          // webblasaren: dampningen ensam later inte se VILKEN ruta som
-          // avses). Markeringen bars ALDRIG av papperskorgens farg – orange
-          // betyder handling, inte radering av bevisning (docs/design.md,
-          // "Bilagor").
-          //
-          // INTE ring-inset (som anvands for markerad bilaga i
-          // nya-kvitto-formularet): dar ligger ramen ovanpa en <img
-          // aspect-ratio>-platshallare utan eget innehall an sjalva bilden,
-          // men har fyller <Miniatyrbild> hela rutan med en `absolute
-          // inset-0`-bild som malas som ett SENARE lager an knappens egen
-          // box-shadow – en inset-ring hamnar da exakt dar bilden ligger och
-          // syns aldrig (bekraftat med getComputedStyle: boxShadow fanns och
-          // hade ratt farg, men var helt dold bakom bilden). En vanlig
-          // (icke-inset) ring ligger UTANFOR knappens kant, dar ingen bild
-          // nagonsin malas, och forblir synlig oavsett vad rutan visar.
-          const vald = bekraftaBilaga?.id === b.id;
-          const dampad = bekraftaBilaga !== null && !vald;
-          // Med stor forhandsvisning pa markeras ocksa den bilaga som visas
-          // dar – samma ringstil som raderingsvalet, eftersom bada betyder
-          // "det har ar den som galler just nu" och aldrig visas samtidigt.
-          const valdForStor = Boolean(storForhandsvisning) && i === sakerStorIndex;
-          return (
-            <div
-              key={b.id}
-              className={`relative flex-none transition-opacity ${dampad ? "opacity-40" : ""}`}
-            >
-              <button
-                type="button"
-                onClick={() =>
-                  storForhandsvisning ? setStorIndex(i) : setOppen(b)
-                }
-                className={`${RUTA} transition-colors hover:bg-sand ${
-                  vald || valdForStor ? "ring-2 ring-text-primar" : ""
-                }`}
-                title={b.filnamn}
-                aria-label={
-                  storForhandsvisning ? `Visa ${b.filnamn}` : `Öppna ${b.filnamn}`
-                }
-              >
-                <Miniatyrinnehall bilaga={b} />
-              </button>
-
-              {/* Papperskorgen ar ett SYSKON till oppningsknappen (aldrig
-                  nastlad – knappar far inte nastlas), lagd EFTER den i
-                  markupen sa den malas ovanpa. Ett klick i hornet trafffar
-                  alltid den har knappen, aldrig oppningsknappen under
-                  (docs/design.md, "Bilagor"). */}
-              <button
-                type="button"
-                onClick={() => setBekraftaBilaga(b)}
-                aria-label={`Ta bort ${b.filnamn}`}
-                className="absolute right-0 top-0 z-10 flex h-11 w-11 items-center justify-center text-text-primar transition-colors hover:text-accent-mork"
-              >
-                {/* Helt tackande – en genomskinlig platta later kvittot lysa
-                    igenom och gor ikonen olaslig mot ett vitt kassakvitto
-                    (docs/design.md, "Bilagor"). */}
-                <span
-                  aria-hidden
-                  className="absolute inset-1.5 rounded-full bg-yta-upphojd"
-                />
-                <PapperskorgIkon />
-              </button>
-            </div>
-          );
-        })}
-
-        <label
-          className={`${RUTA} cursor-pointer text-text-sekundar transition-colors hover:bg-sand`}
+      {/* Lasläget: raden ar rent visande och visas bara nar det finns nagot
+          att vaxla mellan – en ensam bilaga ar redan visad stort ovanfor
+          (docs/design.md, "Ett kvitto ar en skarm, inte tva"). Andringslaget
+          visar raden alltid, aven tom, eftersom +-rutan da behovs. */}
+      {/* Luft mot den stora bilden: samma avstand som mellan tva falt (gap-5
+          i formularen) – utan den klistrar raden i bildens underkant och de
+          tva lases som ett block (docs/design.md, "Bilagor"). */}
+      {redigerbar || bilagor.length > 1 ? (
+        <div
+          className={`flex flex-wrap gap-2 ${
+            storForhandsvisning && bilagor.length > 0 ? "mt-5" : ""
+          }`}
         >
-          <input
-            ref={inputRef}
-            type="file"
-            multiple
-            accept={ACCEPT}
-            className="sr-only"
-            disabled={laddarUpp}
-            onChange={(e) => valjFiler(e.target.files)}
-          />
-          <span aria-hidden className="text-xl leading-none">
-            +
-          </span>
-          <span className="mt-0.5 font-granssnitt text-[10px]">
-            {laddarUpp ? "Laddar upp…" : "Lägg till"}
-          </span>
-        </label>
-      </div>
+          {bilagor.map((b, i) => {
+            // Vid radering ska raderingen ALDRIG behova las av bekraftelsetexten
+            // for att veta vilken ruta den galler – med tva kvitton fran samma
+            // butik bredvid varandra ar det annars omojligt att se. Den valda
+            // rutan far en tydlig ram; de andra dampas som ett andra, svagare
+            // stod – men ramen ar den som bar signalen (verifierat i
+            // webblasaren: dampningen ensam later inte se VILKEN ruta som
+            // avses). Markeringen bars ALDRIG av papperskorgens farg – orange
+            // betyder handling, inte radering av bevisning (docs/design.md,
+            // "Bilagor").
+            //
+            // INTE ring-inset (som anvands for markerad bilaga i
+            // nya-kvitto-formularet): dar ligger ramen ovanpa en <img
+            // aspect-ratio>-platshallare utan eget innehall an sjalva bilden,
+            // men har fyller <Miniatyrbild> hela rutan med en `absolute
+            // inset-0`-bild som malas som ett SENARE lager an knappens egen
+            // box-shadow – en inset-ring hamnar da exakt dar bilden ligger och
+            // syns aldrig (bekraftat med getComputedStyle: boxShadow fanns och
+            // hade ratt farg, men var helt dold bakom bilden). En vanlig
+            // (icke-inset) ring ligger UTANFOR knappens kant, dar ingen bild
+            // nagonsin malas, och forblir synlig oavsett vad rutan visar.
+            const vald = bekraftaBilaga?.id === b.id;
+            const dampad = bekraftaBilaga !== null && !vald;
+            // Med stor forhandsvisning pa markeras ocksa den bilaga som visas
+            // dar – samma ringstil som raderingsvalet, eftersom bada betyder
+            // "det har ar den som galler just nu" och aldrig visas samtidigt.
+            const valdForStor = Boolean(storForhandsvisning) && i === sakerStorIndex;
+            return (
+              <div
+                key={b.id}
+                className={`relative flex-none transition-opacity ${dampad ? "opacity-40" : ""}`}
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    storForhandsvisning ? setStorIndex(i) : setOppen(b)
+                  }
+                  className={`${RUTA} transition-colors hover:bg-sand ${
+                    vald || valdForStor ? "ring-2 ring-text-primar" : ""
+                  }`}
+                  title={b.filnamn}
+                  aria-label={
+                    storForhandsvisning ? `Visa ${b.filnamn}` : `Öppna ${b.filnamn}`
+                  }
+                >
+                  <Miniatyrinnehall bilaga={b} />
+                </button>
+
+                {/* Papperskorgen och +-rutan hor bara till ANDRINGSLAGET
+                    (docs/design.md, "Ett kvitto ar en skarm, inte tva") – ett
+                    SYSKON till oppningsknappen (aldrig nastlad – knappar far
+                    inte nastlas), lagd EFTER den i markupen sa den malas
+                    ovanpa. Ett klick i hornet trafffar alltid den har knappen,
+                    aldrig oppningsknappen under (docs/design.md, "Bilagor"). */}
+                {redigerbar ? (
+                  <button
+                    type="button"
+                    onClick={() => setBekraftaBilaga(b)}
+                    aria-label={`Ta bort ${b.filnamn}`}
+                    className="absolute right-0 top-0 z-10 flex h-11 w-11 items-center justify-center text-text-primar transition-colors hover:text-accent-mork"
+                  >
+                    {/* Helt tackande – en genomskinlig platta later kvittot lysa
+                        igenom och gor ikonen olaslig mot ett vitt kassakvitto
+                        (docs/design.md, "Bilagor"). */}
+                    <span
+                      aria-hidden
+                      className="absolute inset-1.5 rounded-full bg-yta-upphojd"
+                    />
+                    <PapperskorgIkon />
+                  </button>
+                ) : null}
+              </div>
+            );
+          })}
+
+          {redigerbar ? (
+            <label
+              className={`${RUTA} cursor-pointer text-text-sekundar transition-colors hover:bg-sand`}
+            >
+              <input
+                ref={inputRef}
+                type="file"
+                multiple
+                accept={ACCEPT}
+                className="sr-only"
+                disabled={laddarUpp}
+                onChange={(e) => valjFiler(e.target.files)}
+              />
+              <span aria-hidden className="text-xl leading-none">
+                +
+              </span>
+              <span className="mt-0.5 font-granssnitt text-[10px]">
+                {laddarUpp ? "Laddar upp…" : "Lägg till"}
+              </span>
+            </label>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* Samma formathjalp som i inmatningen (kostnad/nytt/form.tsx) – men bara
-          dar en bilaga faktiskt laggs till. Pa detaljvyn (storForhandsvisning
-          av), dit man gar for att titta, ar den brus (docs/design.md,
-          "Formathjalpen hor till uppladdningen, inte till visningen"). */}
-      {storForhandsvisning ? (
+          i ANDRINGSLAGET. I lasläget, dit man gar for att titta, ar den brus
+          (docs/design.md, "Kvittots detaljvy": "precis som formathjalpen,
+          brus pa den skarm man gatt till for att titta"). */}
+      {storForhandsvisning && !dolgUppladdningshjalp ? (
         <p className="mt-2 font-granssnitt text-xs text-text-dampad">
           JPG, PNG, HEIC eller PDF. Max 10 MB per fil. Går att lägga till
           senare.
@@ -407,13 +501,24 @@ export function Bilagor({
 
 /**
  * Innehallet i en miniatyrruta – samma for miniatyren som for den stora ytan
- * i helskarmsvyn (bild, PDF-ikon eller felikon). Exporterad sa att
- * redigeringsformularets miniatyrrad (kostnad/[id]/redigera/form.tsx,
- * docs/design.md "Bilagor": "Har kostnaden flera bilagor visas den forsta,
- * med miniatyrraden under sa att man kan byta") ateranvander samma
- * bild/PDF/fel-hantering i stallet for att duplicera den.
+ * i helskarmsvyn (bild, PDF-ikon eller felikon).
  */
-export function Miniatyrinnehall({ bilaga }: { bilaga: Bilagevy }) {
+function Miniatyrinnehall({
+  bilaga,
+  naturlig,
+  onMatt,
+}: {
+  bilaga: Bilagevy;
+  /** Bildens bredd/hojd nar den laddats – se Miniatyrbild. */
+  onMatt?: (aspekt: number) => void;
+  /**
+   * Detaljvyns stora forhandsvisning (docs/design.md, "Kvittots detaljvy"):
+   * bilden lagges i NORMALT flode i stallet for `absolute inset-0` (som
+   * kraver en ruta med redan kand hojd, t.ex. h-72). Ramen runt har redan
+   * bildens egen form (forhandsramStil), sa bilden fyller den helt.
+   */
+  naturlig?: boolean;
+}) {
   // Flersidig PDF (docs/design.md, "Bilagor"): miniatyren visar sida 1 och en
   // dampad rad med antalet sidor, aldrig ett svep – miniatyrraden valjer
   // DOKUMENT, sidbladdraren (BilagaSidbladdrare) valjer SIDA, och de tva
@@ -439,6 +544,8 @@ export function Miniatyrinnehall({ bilaga }: { bilaga: Bilagevy }) {
       <Miniatyrbild
         src={`/bilaga/${bilaga.id}?variant=visning`}
         alt={bilaga.filnamn}
+        naturlig={naturlig}
+        onMatt={onMatt}
       />
     );
   }
@@ -485,14 +592,31 @@ export function Miniatyrinnehall({ bilaga }: { bilaga: Bilagevy }) {
  * `img.complete` direkt efter montering och hamtar da igen det missade
  * utfallet i stallet for att lita pa att handelsen alltid kommer.
  */
-function Miniatyrbild({ src, alt }: { src: string; alt: string }) {
+function Miniatyrbild({
+  src,
+  alt,
+  naturlig,
+  onMatt,
+}: {
+  src: string;
+  alt: string;
+  naturlig?: boolean;
+  /** Anropas med bildens bredd/hojd nar den laddats, sa ramen kan ta dess form. */
+  onMatt?: (aspekt: number) => void;
+}) {
   const [lage, setLage] = useState<"laddar" | "klar" | "fel">("laddar");
   const bildRef = useRef<HTMLImageElement>(null);
+
+  function klar(bild: HTMLImageElement) {
+    setLage("klar");
+    if (bild.naturalHeight > 0) onMatt?.(bild.naturalWidth / bild.naturalHeight);
+  }
 
   useEffect(() => {
     const bild = bildRef.current;
     if (bild?.complete) {
-      setLage(bild.naturalWidth > 0 ? "klar" : "fel");
+      if (bild.naturalWidth > 0) klar(bild);
+      else setLage("fel");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -505,6 +629,37 @@ function Miniatyrbild({ src, alt }: { src: string; alt: string }) {
           Kunde inte visas
         </span>
       </span>
+    );
+  }
+
+  // Detaljvyns lage (docs/design.md, "Kvittots detaljvy"): bilden ligger i
+  // NORMALT flode – width 100%, height auto upp till max-height 60vh – i
+  // stallet for att fylla en ruta med redan kand hojd. Anroparen reserverar
+  // ratt hojd redan via `aspect-ratio` (bildAspekt, ur bilagans lagrade matt,
+  // docs/produktspec.md "PDF-sidor renderas i webbläsaren"), sa
+  // laddningssnurran syns i ratt stor ruta aven innan bilden hamtats.
+  if (naturlig) {
+    return (
+      <>
+        {lage === "laddar" ? (
+          <span
+            aria-hidden
+            className="absolute inset-0 flex items-center justify-center"
+          >
+            <span className="h-6 w-6 animate-spin rounded-full border-2 border-text-dampad border-t-transparent" />
+          </span>
+        ) : null}
+        <img
+          ref={bildRef}
+          src={src}
+          alt={alt}
+          onLoad={(e) => klar(e.currentTarget)}
+          onError={() => setLage("fel")}
+          className={`h-full w-full object-contain ${
+            lage === "laddar" ? "invisible" : ""
+          }`}
+        />
+      </>
     );
   }
 
@@ -522,7 +677,7 @@ function Miniatyrbild({ src, alt }: { src: string; alt: string }) {
         ref={bildRef}
         src={src}
         alt={alt}
-        onLoad={() => setLage("klar")}
+        onLoad={(e) => klar(e.currentTarget)}
         onError={() => setLage("fel")}
         className={`absolute inset-0 h-full w-full object-contain ${
           lage === "laddar" ? "invisible" : ""
@@ -626,7 +781,7 @@ function Helskarmsvy({
           <img
             src={`/bilaga/${bilaga.id}?variant=visning`}
             alt={bilaga.filnamn}
-            className="max-h-[75vh] max-w-full object-contain"
+            className={`max-h-[75vh] max-w-full object-contain ${FORHANDSRAM}`}
           />
         ) : (
           <div className="flex flex-col items-center gap-3 px-2 py-6 text-text-sekundar">

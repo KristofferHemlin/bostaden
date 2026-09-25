@@ -36,7 +36,6 @@ import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
-import { sorteraPaDatumFallande } from "@/lib/sortering";
 import { kravBostad } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -67,14 +66,12 @@ export default async function Oversikt() {
     prisma.kostnad.count({ where: { bostad_id: bostadId, arkiverad: false } }),
   ]);
 
-  // Urvalet (de sex senast TILLAGDA) kommer fran frageordningen ovan, men
-  // visningsordningen ar kvittots eget datum, nyast forst – aldrig nar posten
-  // skapades (docs/design.md, Kvittolistan). Ett kvitto fran 2016 som
-  // fotograferas i dag ska inte hamna overst bland arets rader.
-  const senasteKvittonSorterade = sorteraPaDatumFallande(senasteKvitton, (k) => {
-    const datumRad = k.betaldatum ?? k.dokumentdatum;
-    return datumRad ? isoDatum(datumRad) : null;
-  });
+  // Startskarmens lista ar undantaget fran kvittolistans datumsortering
+  // (docs/design.md, Listrader): den sorteras pa nar kvittot lades in, inte
+  // pa kvittots eget datum. Listan har inga arsrubriker och lovar ingen
+  // tidsordning – jobbet ar att bekrafta att det just sparade kvittot kom
+  // med, och prisma-frageordningen ovan ar redan skapad_at fallande.
+  const senasteKvittonSorterade = senasteKvitton;
 
   const VISAT_AR = new Date().getUTCFullYear();
   const inomVisatAr = (betaldatum: string | null) =>

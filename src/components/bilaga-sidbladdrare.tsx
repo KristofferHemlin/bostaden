@@ -33,8 +33,22 @@
 // Bygger INTE en <iframe> mot originalet – Safari pa iPhone visar da ofta bara
 // forsta sidan, exakt felet flersidesvyn finns for att losa.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { forhandsramStil, STAENDE_FALLBACK_ASPEKT } from "@/lib/bildaspekt";
 import { oppnaPdf, renderaPdfSida, type PdfDokument } from "@/lib/pdfjs-klient";
+
+/**
+ * Ramen runt en stor forhandsvisning (docs/design.md, "Bilagor":
+ * "Förhandsvisningen ligger alltid i en ram"). 1px --linje och kortens
+ * hornradie (12px, docs/design.md, "Form") – inte inputfaltens 8px. Delad sa
+ * att inmatningen, kvittots skarm och helskarmsvyn inte kan glida isar: utan
+ * ram flyter ett foto med ljus bakgrund ihop med kortet.
+ *
+ * Ingen fyllning: ramen har dokumentets form (forhandsramStil i
+ * src/lib/bildaspekt.ts), sa det finns ingen tom yta att fylla – en sandfargad
+ * bakgrund skulle bara synas som kanter dar dokumentet inte nar ut.
+ */
+export const FORHANDSRAM = "overflow-hidden rounded-xl border border-linje";
 
 /**
  * Varifran sidorna hamtas. "bilaga" ar en redan uppladdad bilaga – originalet
@@ -59,19 +73,64 @@ export function BilagaSidbladdrare({
   sidantal,
   filnamn,
   className,
+  naturligStorlek,
+  naturligMaxHojd = "60vh",
+  initialAspekt,
   onSidaTryckt,
+  overlagg,
 }: {
   kalla: BilagaKalla;
   sidantal: number;
   filnamn: string;
-  /** Fyller HELA denna klass (t.ex. "h-72 w-full" eller "max-h-[75vh] max-w-full") – anroparen bestammer storleken. */
-  className: string;
+  /** Fyller HELA denna klass (t.ex. "h-72 w-full" eller "max-h-[75vh] max-w-full") – anroparen bestammer storleken. Med `naturligStorlek` satt ger komponenten sjalv bredd och hojd; klassen ska da vara tom. */
+  className?: string;
+  /**
+   * Detaljvyns lage (docs/design.md, "Kvittots detaljvy"): containern far
+   * ingen egen hojdklass utifran, utan haller sida 1:s FAKTISKA proportioner
+   * (aspect-ratio) upp till `naturligMaxHojd` – aldrig en gissad kvot. Fram
+   * tills sida 1 renderats anvands `initialAspekt` (fallback 3/4) sa rutan
+   * inte kollapsar till noll under laddning.
+   */
+  naturligStorlek?: boolean;
+  /**
+   * Hojdtaket i naturligStorlek-lage – 60vh pa kvittots skarm (default), 50vh
+   * i inmatningen (docs/design.md, "Bilagor": "Breddregeln gäller överallt,
+   * höjdtaket skiljer sig" – i inmatningen ska bild och falt ses tillsammans,
+   * darfor ett lagre tak).
+   */
+  naturligMaxHojd?: string;
+  /**
+   * Forsta sidans matt, LASTA VID UPPLADDNINGEN (`bilaga.bredd`/`bilaga.hojd`,
+   * docs/produktspec.md, "PDF-sidor renderas i webbläsaren") – anges som
+   * bredd/hojd. Later containern reservera ratt yta INNAN filen ens hamtats,
+   * i stallet for att vanta pa att sida 1 faktiskt renderats har (vilket
+   * kraver att hela PDF:en laddats ner forst). Anvands bara med
+   * `naturligStorlek`; saknas den (aldre bilagor fore backfillen, eller en
+   * lokal fil som annu inte laddats upp) faller kvoten tillbaka pa 3/4 tills
+   * sida 1 renderats.
+   */
+  initialAspekt?: number;
   /** Nar satt blir varje sida klickbar, t.ex. for att oppna helskarmsvyn pa just den sidan. */
   onSidaTryckt?: (sida: number) => void;
+  /**
+   * Nagot som ska ligga OVANPA sidan, inuti ramen – t.ex. inmatningens
+   * avlasningssnurra. Ramen ar centrerad och smalare an kortet
+   * (docs/design.md, "Bilagor"), sa en markering positionerad mot en yttre
+   * behallare hamnar annars utanfor dokumentet.
+   */
+  overlagg?: ReactNode;
 }) {
   const [aktivSida, setAktivSida] = useState(1);
   const [sidbilder, setSidbilder] = useState<Record<number, string>>({});
   const [sidfel, setSidfel] = useState<Record<number, boolean>>({});
+  // Bara for naturligStorlek: sida 1:s riktiga bredd/hojd, en gang faststalld
+  // och sedan oforandrad – containerns storlek ska inte hoppa till nar man
+  // svepar vidare till andra sidor. Startar pa `initialAspekt` (det lagrade
+  // mattet) nar det finns, sa ytan ar ratt reserverad redan fore forsta
+  // renderingen – annars null, och 3/4-fallbacken i `naturligStil` galler.
+  const [sida1Aspekt, setSida1Aspekt] = useState<number | null>(
+    initialAspekt ?? null,
+  );
   const dokRef = useRef<PdfDokument | null>(null);
   const laddningRef = useRef<Promise<PdfDokument> | null>(null);
   const pagarRef = useRef<Set<number>>(new Set());
@@ -106,9 +165,10 @@ export function BilagaSidbladdrare({
     pagarRef.current.add(sida);
     sakerstallDokument()
       .then((dok) => renderaPdfSida(dok, sida))
-      .then((url) => {
+      .then(({ url, bredd, hojd }) => {
         pagarRef.current.delete(sida);
         setSidbilder((f) => ({ ...f, [sida]: url }));
+        if (sida === 1) setSida1Aspekt(bredd / hojd);
       })
       .catch(() => {
         pagarRef.current.delete(sida);
@@ -153,8 +213,21 @@ export function BilagaSidbladdrare({
     el.scrollTo({ left: (klampad - 1) * el.clientWidth, behavior: "smooth" });
   }
 
+  // Ramen tar sida 1:s form, begransad av kortets bredd OCH hojdtaket, och
+  // centreras (docs/design.md, "Bilagor": "Ramen har dokumentets form och är
+  // centrerad i kortet"). Tidigare aspect-ratio + max-height lat bredden ligga
+  // kvar pa kortets fulla bredd nar hojden klampades – en A4-sida hamnade da
+  // smal mitt i en bred ram.
+  const naturligStil = naturligStorlek
+    ? forhandsramStil(sida1Aspekt ?? STAENDE_FALLBACK_ASPEKT, naturligMaxHojd)
+    : undefined;
+
   return (
-    <div className={`relative overflow-hidden rounded-lg border border-linje bg-yta-nedsankt ${className}`}>
+    <div
+      className={`relative ${FORHANDSRAM} ${naturligStorlek ? "mx-auto" : ""} ${className ?? ""}`}
+      style={naturligStil}
+    >
+      {overlagg}
       <div
         ref={rullref}
         onScroll={pahandelseScroll}
@@ -280,7 +353,7 @@ export function PdfMiniatyrbild({
       const data = new Uint8Array(await svar.arrayBuffer());
       const dok = await oppnaPdf(data);
       try {
-        const sidUrl = await renderaPdfSida(dok, 1, 1);
+        const { url: sidUrl } = await renderaPdfSida(dok, 1, 1);
         if (avbruten) {
           URL.revokeObjectURL(sidUrl);
           return;

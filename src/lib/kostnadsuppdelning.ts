@@ -150,3 +150,67 @@ export function enkelPrivatUppdelning(
   if (!resultat) return null;
   return { ...resultat, privatbelopp: privatRad.belopp };
 }
+
+export type RedigeringRaderResultat =
+  | { rader: Kostnadsrad[] }
+  | { fel: string };
+
+/**
+ * Motstycket till enkelPrivatUppdelning: bygger de rader kostnaden ska ha
+ * EFTER en sparning i kvittots andringslage, dar totalbelopp, projektkoppling
+ * och privatbelopp ar ETT FALT BLAND DE ANDRA i SAMMA formular (docs/design.md,
+ * "Ett kvitto ar en skarm, inte tva") – inte en egen sparning. Anropas av
+ * redigeraKostnad (kostnad/[id]/actions.ts), som skriver de returnerade
+ * raderna och kostnadens ovriga falt i EN OCH SAMMA transaktion, sa att ett
+ * andrat falt (t.ex. leverantoren som `artikel` foljer) och ett satt
+ * privatbelopp aldrig kan sla ut varandra genom att komma fran tva olika
+ * sparningar.
+ *
+ * `privatbelopp` 0 ger en enda rad; ett positivt belopp ger tva (Privat +
+ * den ovriga delen), symmetriskt med hur enkelPrivatUppdelning laser tillbaka
+ * dem.
+ */
+export function byggRedigeradeRader({
+  totalbelopp,
+  artikel,
+  projektId,
+  privatbelopp,
+}: {
+  totalbelopp: number;
+  artikel: string;
+  projektId: string | null;
+  privatbelopp: number;
+}): RedigeringRaderResultat {
+  if (privatbelopp > 0 && privatbelopp >= totalbelopp) {
+    return {
+      fel:
+        'Privatbeloppet måste vara mindre än kvittots totalbelopp. Är allt ' +
+        'privat hör kvittot hemma i "Hör inte till bostaden".',
+    };
+  }
+
+  const ovrigFordelning: Kostnadsrad["fordelningar"] = projektId
+    ? [{ projekt_id: projektId, privat: false, andel: 1 }]
+    : [];
+
+  if (privatbelopp <= 0) {
+    return {
+      rader: [{ artikel, belopp: totalbelopp, fordelningar: ovrigFordelning }],
+    };
+  }
+
+  return {
+    rader: [
+      {
+        artikel: "Privat",
+        belopp: privatbelopp,
+        fordelningar: [{ projekt_id: null, privat: true, andel: 1 }],
+      },
+      {
+        artikel,
+        belopp: totalbelopp - privatbelopp,
+        fordelningar: ovrigFordelning,
+      },
+    ],
+  };
+}

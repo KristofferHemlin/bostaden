@@ -27,7 +27,7 @@
 
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { loggaUt } from "@/app/login/actions";
 import { Kortval } from "@/app/projekt/fragetradet";
 import { AdressFalt } from "@/app/registrera/adress-falt";
@@ -43,6 +43,7 @@ import {
 } from "@/components/skarm";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { formateraBeloppInmatning, formateraKronor } from "@/lib/format";
+import { useNarKlar } from "@/lib/nar-klar";
 import { ArkivexportKnapp } from "./arkivexport-knapp";
 import {
   sparaAgandet,
@@ -61,38 +62,6 @@ const KORT_TITEL: Record<KortNamn, string> = {
 };
 
 const START: InstallningarResultat = {};
-
-// Anropar `onKlar` nar en sparning gar fran pagaende till klar – aldrig vid
-// forsta monteringen. Maste ligga i en useEffect (inte direkt i render-
-// kroppen): att anropa en satt-tillstand-funktion pa foraldern medan barnet
-// sjalvt renderar ar en otillaten sidoeffekt i React.
-//
-// Jamfor FOREGAENDE och NUVARANDE `pagar` i SAMMA effekt-korning, i stallet
-// for en "har vi monterats forut"-flagga. En sadan flagga ser ut att fungera
-// men gar sonder under Reacts StrictMode i utveckling: StrictMode kor varje
-// effekt monteras->avmonteras->monteras pa nytt, och en `useRef`-flagga
-// OVERLEVER den falska av- och ompmonteringen (bara sjalva komponentraden
-// gor det, inte en genuin avmontering) – det gjorde att andra passets korning
-// las flaggan som redan satt och tolkade det forsta arliga mountet som en
-// "sparning just klar", vilket stangde kortet exakt nar det oppnades
-// (verifierat i webblasaren: tva renderingar med oppen=true foljda direkt av
-// tva med oppen=false, allt inom samma klick). Att jamfora varden i stallet
-// for att lita pa en engangsflagga ar immunt mot detta – bada
-// StrictMode-passen raknar ratt eftersom `pagar` faktiskt inte andrats
-// mellan dem.
-function useNarKlar(
-  pagar: boolean,
-  fel: boolean,
-  onKlar: (fel: boolean) => void,
-) {
-  const forraPagar = useRef(pagar);
-  useEffect(() => {
-    const blevKlar = forraPagar.current && !pagar;
-    forraPagar.current = pagar;
-    if (blevKlar) onKlar(fel);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagar]);
-}
 
 export interface BostadenData {
   adress: string;

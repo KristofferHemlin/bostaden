@@ -22,7 +22,6 @@ export default async function InstallningarSida() {
     <Skarm
       bostadsnamn={bostadsnamn}
       rubrik="Inställningar"
-      bakLank={{ href: "/", text: "Översikt" }}
       egnaKort
     >
       <InstallningarKort

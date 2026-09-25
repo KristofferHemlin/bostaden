@@ -23,7 +23,8 @@ const h = vi.hoisted(() => ({
   heicTillJpeg: vi.fn(),
   skalaTillMiniatyr: vi.fn(),
   skalaTillVisningsversion: vi.fn(),
-  raknaPdfSidor: vi.fn(),
+  lasPdfInfo: vi.fn(),
+  lasBildmatt: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -50,7 +51,10 @@ vi.mock("@/lib/lagring/visning", () => ({
   skalaTillVisningsversion: h.skalaTillVisningsversion,
 }));
 vi.mock("@/lib/lagring/pdf-sidor", () => ({
-  raknaPdfSidor: h.raknaPdfSidor,
+  lasPdfInfo: h.lasPdfInfo,
+}));
+vi.mock("@/lib/lagring/bildmatt", () => ({
+  lasBildmatt: h.lasBildmatt,
 }));
 
 import { bekraftaKostnadsbilaga, signeradBilagelank } from "@/lib/lagring/bilagor";
@@ -81,6 +85,7 @@ beforeEach(() => {
   h.bilagaCreate.mockImplementation(({ data }: { data: { id?: string } }) =>
     Promise.resolve({ id: "bilaga-1", ...data }),
   );
+  h.lasBildmatt.mockResolvedValue({ bredd: 800, hojd: 600 });
 });
 
 describe("bekraftaKostnadsbilaga skapar en visningsversion", () => {
@@ -116,6 +121,8 @@ describe("bekraftaKostnadsbilaga skapar en visningsversion", () => {
       data: expect.objectContaining({
         miniatyrnyckel: null,
         visningsnyckel: `${nyckel.replace(/\.jpg$/, "")}.visning.jpg`,
+        bredd: 800,
+        hojd: 600,
       }),
     });
   });
@@ -150,8 +157,8 @@ describe("bekraftaKostnadsbilaga skapar en visningsversion", () => {
     });
   });
 
-  it("en flersidig PDF far sitt sidantal last, men ingen miniatyr, visningsversion eller uppladdning", async () => {
-    h.raknaPdfSidor.mockResolvedValue(3);
+  it("en flersidig PDF far sitt sidantal och sina matt lasta, men ingen miniatyr, visningsversion eller uppladdning", async () => {
+    h.lasPdfInfo.mockResolvedValue({ sidantal: 3, bredd: 400, hojd: 300 });
     const nyckel = nyckelFor("pdf");
 
     const r = await bekraftaKostnadsbilaga({
@@ -165,9 +172,9 @@ describe("bekraftaKostnadsbilaga skapar en visningsversion", () => {
 
     expect(r.ok).toBe(true);
     expect(h.download).toHaveBeenCalledOnce();
-    expect(h.raknaPdfSidor).toHaveBeenCalledOnce();
+    expect(h.lasPdfInfo).toHaveBeenCalledOnce();
     // Ingen rendering server-sida (se src/lib/lagring/pdf-sidor.ts) – bara
-    // sidantalet lases, aldrig nagon uppladdning for en PDF.
+    // sidantalet och forsta sidans matt lases, aldrig nagon uppladdning.
     expect(h.skalaTillMiniatyr).not.toHaveBeenCalled();
     expect(h.skalaTillVisningsversion).not.toHaveBeenCalled();
     expect(h.upload).not.toHaveBeenCalled();
@@ -177,12 +184,14 @@ describe("bekraftaKostnadsbilaga skapar en visningsversion", () => {
         miniatyrnyckel: null,
         visningsnyckel: null,
         sidantal: 3,
+        bredd: 400,
+        hojd: 300,
       }),
     });
   });
 
-  it("en trasig PDF blockerar aldrig uppladdningen, och lamnar sidantalet tomt", async () => {
-    h.raknaPdfSidor.mockRejectedValue(new Error("trasig PDF"));
+  it("en trasig PDF blockerar aldrig uppladdningen, och lamnar sidantal och matt tomma", async () => {
+    h.lasPdfInfo.mockRejectedValue(new Error("trasig PDF"));
     const nyckel = nyckelFor("pdf");
 
     const r = await bekraftaKostnadsbilaga({
@@ -201,6 +210,8 @@ describe("bekraftaKostnadsbilaga skapar en visningsversion", () => {
         miniatyrnyckel: null,
         visningsnyckel: null,
         sidantal: null,
+        bredd: null,
+        hojd: null,
       }),
     });
   });
@@ -221,6 +232,30 @@ describe("bekraftaKostnadsbilaga skapar en visningsversion", () => {
     expect(r.ok).toBe(true);
     expect(h.bilagaCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({ visningsnyckel: null }),
+    });
+  });
+
+  it("en bild vars matt inte gar att lasa blockerar varken uppladdningen eller visningsversionen", async () => {
+    h.skalaTillVisningsversion.mockResolvedValue(Buffer.from("visning-jpeg"));
+    h.lasBildmatt.mockRejectedValue(new Error("sharp kraschade"));
+    const nyckel = nyckelFor("png");
+
+    const r = await bekraftaKostnadsbilaga({
+      bostadId: BOSTAD,
+      kostnadId: KOSTNAD,
+      nyckel,
+      filnamn: "kvitto.png",
+      mimetyp: "image/png",
+      storlek: 1000,
+    });
+
+    expect(r.ok).toBe(true);
+    expect(h.bilagaCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        visningsnyckel: expect.stringMatching(/\.visning\.jpg$/),
+        bredd: null,
+        hojd: null,
+      }),
     });
   });
 

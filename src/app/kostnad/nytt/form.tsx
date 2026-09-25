@@ -84,8 +84,18 @@ import { skapaUtkast, sparaKostnad, type KostnadResultat } from "./actions";
 import { analyseraBilaga, taBortBilaga } from "@/app/kostnad/bilaga-actions";
 import { UtkastRaderaKnapp } from "@/app/kostnad/utkast-radera";
 import { BeloppFalt } from "@/components/belopp-falt";
-import { BilagaSidbladdrare, PdfMiniatyrbild } from "@/components/bilaga-sidbladdrare";
+import {
+  BilagaSidbladdrare,
+  FORHANDSRAM,
+  PdfMiniatyrbild,
+} from "@/components/bilaga-sidbladdrare";
 import { DatumFalt } from "@/components/datum-falt";
+import { KvittodatumNotis } from "@/components/kvittodatum-notis";
+import {
+  bildAspekt,
+  forhandsramStil,
+  STAENDE_FALLBACK_ASPEKT,
+} from "@/lib/bildaspekt";
 import { forsokBorjaInskickning, useDubbelinskickRef } from "@/lib/dubbelinskick";
 import {
   Falt,
@@ -96,6 +106,10 @@ import {
   UtfallbarSektion,
 } from "@/components/skarm";
 import { formateraBeloppInmatning } from "@/lib/format";
+import {
+  kvittodatumNotis,
+  type Innehavsgranser,
+} from "@/lib/kvittodatum-notis";
 import { laddaUppKostnadsbilaga } from "@/lib/lagring/bilaga-klient";
 import { kannIgenFormat } from "@/lib/lagring/bilaga-regler";
 import type { Bilagevy } from "@/lib/lagring/bilagor";
@@ -106,11 +120,14 @@ const START: KostnadResultat = {};
 const BILAGA_ACCEPT =
   "image/jpeg,image/png,image/heic,image/heif,application/pdf,.jpg,.jpeg,.png,.heic,.heif,.pdf";
 
+// Samma matt som miniatyrrutan pa kvittots skarm (docs/design.md, "Bilagor":
+// "Rutan ar omkring 80px bred, staende i 3:4") – ovanfor 3:4 ar hela bilden
+// synlig (object-contain), aldrig en beskarning.
 const RUTA =
-  "relative flex h-16 w-16 shrink-0 flex-col items-center justify-center overflow-hidden rounded-lg bg-yta-nedsankt text-center";
+  "relative flex h-[107px] w-[80px] flex-none flex-col items-center justify-center overflow-hidden rounded-lg bg-yta-nedsankt text-center";
 
 const LAGG_TILL_RUTA =
-  "flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-linje font-granssnitt text-[10px] leading-tight text-text-sekundar transition-colors hover:bg-yta-nedsankt";
+  "flex h-[107px] w-[80px] flex-none flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-linje font-granssnitt text-[10px] leading-tight text-text-sekundar transition-colors hover:bg-yta-nedsankt";
 
 interface Miniatyr {
   namn: string;
@@ -168,7 +185,13 @@ interface Filstatus {
   fel?: string;
 }
 
-export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
+export function NyKostnadForm({
+  utkast,
+  innehav,
+}: {
+  utkast?: Utkast;
+  innehav: Innehavsgranser;
+}) {
   const router = useRouter();
 
   // Kostnaden sparas via server action, sedan laddar webblasaren upp ev.
@@ -217,6 +240,29 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
   const [forhandsvisning, setForhandsvisning] =
     useState<Forhandsvisning | null>(null);
   const [renderFel, setRenderFel] = useState(false);
+  // Ramen foljer dokumentets EGNA proportioner i stallet for en fast liggande
+  // ruta (docs/design.md, "Bilagor"). Filen ar redan lokal, sa mattet lases
+  // direkt ur den rendrade bildens naturalWidth/Height (img onLoad) – ingen
+  // lagrad matt finns annu eftersom filen inte laddats upp. Null tills bilden
+  // laddat, da faller STAENDE_FALLBACK_ASPEKT (bildaspekt.ts) in.
+  const [forhandsAspekt, setForhandsAspekt] = useState<number | null>(null);
+  // En redan uppladdad bilds forhandsvisning kan misslyckas (t.ex. en
+  // tillfallig 500 fran /bilaga/[id] – signeradBilagelank genererar en ny
+  // signerad lank per anrop). Utan onError blir en misslyckad laddning en
+  // permanent tom ruta – exakt det docs/design.md, "Bilagor" varnar for:
+  // "Samma sak galler nar en bild verkligen inte gar att lasa: da star det
+  // att den inte kunde visas, aldrig ingenting." Per bilaga-id (inte en enda
+  // boolean) sa att ett fel pa en bilaga inte smittar av sig nar man vaxlar
+  // till en annan och sedan tillbaka.
+  const [befintligBildFel, setBefintligBildFel] = useState<
+    Record<string, boolean>
+  >({});
+  // Den uppladdade bildens faktiska proportioner nar den laddats, per id –
+  // saknar bilagan lagrade matt star ramen annars kvar pa 3:4-fallbacken
+  // (docs/design.md, "Bilagor": "Ramen har dokumentets form").
+  const [befintligAspekt, setBefintligAspekt] = useState<
+    Record<string, number>
+  >({});
   // Sidantalet for en ANNU EJ uppladdad lokal PDF, per fil (docs/design.md,
   // "Bilagor") – last direkt ur webblasarens egen kopia (lasLokaltPdfSidantal)
   // sa att sidbladdraren kan visas direkt vid val, inte forst efter att
@@ -321,6 +367,7 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
     if (!forhandsFil) {
       setForhandsvisning(null);
       setRenderFel(false);
+      setForhandsAspekt(null);
       return;
     }
     let avbruten = false;
@@ -329,6 +376,7 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
       kannIgenFormat(forhandsFil.type, forhandsFil.name)?.andelse === "pdf";
     setForhandsvisning(null);
     setRenderFel(false);
+    setForhandsAspekt(null);
 
     if (arPdf) {
       const nyckel = filnyckel(forhandsFil);
@@ -641,6 +689,17 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
     return "Kunde inte läsas av kvittot – fyll i för hand.";
   }
 
+  // Liten roterande indikator i ovre hornet under avlasningen – en text under
+  // bilden ar latt att missa (docs/design.md, "Kostnadsformularets ordning").
+  // Ligger alltid INUTI ramen: ramen ar centrerad och kan vara smalare an
+  // kortet (docs/design.md, "Bilagor"), sa en markering mot en yttre
+  // behallare hamnar utanfor dokumentet.
+  const avlasningsmarkering = avlasningPagar ? (
+    <span className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-yta-upphojd">
+      <SnurraGlyf />
+    </span>
+  ) : null;
+
   return (
     <>
     <form
@@ -650,9 +709,143 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
     >
       {/* Bilagan forst. Ingen filknapp – sista rutan i raden ar hela kontrollen. */}
       <div>
-        <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
-          Kvitto eller faktura
-        </span>
+        {/* Etiketten sager vad man ska valja – nar valet ar gjort och syns
+            ar den brus (docs/design.md, "Bilagor"). */}
+        {poster.length === 0 ? (
+          <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
+            Kvitto eller faktura
+          </span>
+        ) : null}
+
+        {/* En redan uppladdad bilaga (aterupptaget utkast) – visas via den
+            signerade visningslanken, ingen lokal rendering. Flersidig PDF
+            (docs/design.md, "Bilagor"): sidbladdraren i stallet for en enkel
+            bild – den galler aven "inmatningen" i listan over stora vyer.
+            Ramen foljer DOKUMENTETS proportioner i stallet for att fylla en fast
+            liggande ruta (docs/design.md, "Bilagor": "Förhandsvisningen följer
+            dokumentets proportioner, den fyller inte en fast låda") – annars
+            renderas ett staende kvitto eller en A4-faktura smalt i mitten med
+            tom bakgrund pa bada sidor. Mattet kommer fran bilagans LAGRADE
+            bredd/hojd (docs/produktspec.md, "PDF-sidor renderas i webbläsaren"),
+            sa ytan ar ratt reserverad redan innan filen hamtats. Taket ar 50vh
+            har, lagre an kvittots skarms 60vh (docs/design.md: "I inmatningen
+            skriver man av ett nyss valt kvitto in i tomma fält... taket är
+            därför lägre"). */}
+        {valdPost?.typ === "befintlig" ? (
+          valdPost.b.sidantal != null ? (
+            <BilagaSidbladdrare
+              key={valdPost.b.id}
+              kalla={{ typ: "bilaga", bilagaId: valdPost.b.id }}
+              sidantal={valdPost.b.sidantal}
+              filnamn={valdPost.b.filnamn}
+              naturligStorlek
+              naturligMaxHojd="50vh"
+              initialAspekt={bildAspekt(valdPost.b)}
+              overlagg={avlasningsmarkering}
+            />
+          ) : (
+            <div
+              style={forhandsramStil(
+                befintligAspekt[valdPost.b.id] ?? bildAspekt(valdPost.b),
+                "50vh",
+              )}
+              className={`relative mx-auto flex flex-col items-center justify-center ${FORHANDSRAM}`}
+            >
+              {avlasningsmarkering}
+              {valdPost.b.arBild && !befintligBildFel[valdPost.b.id] ? (
+                <img
+                  key={valdPost.b.id}
+                  src={`/bilaga/${valdPost.b.id}?variant=visning`}
+                  alt={`Förhandsvisning av ${valdPost.b.filnamn}`}
+                  onLoad={(e) => {
+                    const { naturalWidth: b, naturalHeight: h } = e.currentTarget;
+                    if (h > 0) {
+                      setBefintligAspekt((a) => ({ ...a, [valdPost.b.id]: b / h }));
+                    }
+                  }}
+                  onError={() =>
+                    setBefintligBildFel((f) => ({ ...f, [valdPost.b.id]: true }))
+                  }
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <DokumentIkon namn={valdPost.b.filnamn} />
+              )}
+            </div>
+          )
+        ) : null}
+
+        {/* Den valda bilagan renderad i full bredd – att jamfora falten mot.
+            Flersidig PDF (docs/design.md, "Bilagor"): sidbladdraren direkt,
+            fodd av sidantalet lasLokaltPdfSidantal redan last ur den lokala
+            filen – ingen vantan pa uppladdningen. Ikonen ar sista utvag nar
+            rakningen misslyckas.
+            Ramen foljer DOKUMENTETS proportioner i stallet for att fylla en fast
+            liggande ruta (docs/design.md, "Bilagor": "Förhandsvisningen följer
+            dokumentets proportioner, den fyller inte en fast låda") – annars
+            renderas ett staende kvitto eller en A4-faktura smalt i mitten med
+            tom bakgrund pa bada sidor. Filen ar HAR redan lokal (ingen lagrad
+            matt finns annu), sa PDF:ens matt kommer fran sida 1:s FAKTISKA
+            rendering (BilagaSidbladdrare, ingen initialAspekt) och bildens fran
+            <img>:s egna naturalWidth/Height via onLoad – bagge faller pa
+            STAENDE_FALLBACK_ASPEKT tills dess. Taket ar 50vh, lagre an kvittots
+            skarms 60vh (docs/design.md: "I inmatningen... taket är därför
+            lägre"). */}
+        {forhandsFil && arForhandsPdf ? (
+          forhandsPdfSidantal != null && !renderFel ? (
+            <BilagaSidbladdrare
+              key={filnyckel(forhandsFil)}
+              kalla={{ typ: "lokal", fil: forhandsFil }}
+              sidantal={forhandsPdfSidantal}
+              filnamn={forhandsFil.name}
+              naturligStorlek
+              naturligMaxHojd="50vh"
+              overlagg={avlasningsmarkering}
+            />
+          ) : (
+            // Ikonen (rakningen misslyckades) och "Läser PDF…" ligger i samma
+            // centrerade, staende ram som sidan sedan far – ingen ram i full
+            // bredd som hoppar ihop nar sida 1 ritats.
+            <div
+              style={forhandsramStil(STAENDE_FALLBACK_ASPEKT, "50vh")}
+              className={`relative mx-auto flex flex-col items-center justify-center ${FORHANDSRAM}`}
+            >
+              {avlasningsmarkering}
+              {renderFel ? (
+                <DokumentIkon namn={forhandsFil.name} />
+              ) : (
+                <p className="px-4 text-center font-granssnitt text-xs text-text-dampad">
+                  Läser PDF…
+                </p>
+              )}
+            </div>
+          )
+        ) : forhandsvisning ? (
+          <div
+            style={forhandsramStil(
+              forhandsAspekt ?? STAENDE_FALLBACK_ASPEKT,
+              "50vh",
+            )}
+            className={`relative mx-auto flex flex-col items-center justify-center ${FORHANDSRAM}`}
+          >
+            {avlasningsmarkering}
+            {renderFel ? (
+              <DokumentIkon namn={forhandsvisning.namn} />
+            ) : (
+              <img
+                src={forhandsvisning.bildUrl}
+                alt={`Förhandsvisning av ${forhandsvisning.namn}`}
+                onLoad={(e) =>
+                  setForhandsAspekt(
+                    e.currentTarget.naturalWidth / e.currentTarget.naturalHeight,
+                  )
+                }
+                onError={() => setRenderFel(true)}
+                className="h-full w-full object-contain"
+              />
+            )}
+          </div>
+        ) : null}
 
         {/* Sa lange ingen bilaga alls ar vald ersatts raden av en knapp i full
             bredd (docs/design.md, "Bilagor"): en tom streckad ruta las inte
@@ -669,7 +862,10 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
             Välj kvitto eller ta ett foto
           </button>
         ) : (
-        <div className="flex flex-wrap items-start gap-2">
+        // mt-5: samma avstand som mellan tva falt (formularets gap-5) – raden
+        // ska inte klistra i forhandsvisningens underkant (docs/design.md,
+        // "Bilagor").
+        <div className="mt-5 flex flex-wrap items-start gap-2">
           {/* Redan uppladdade bilagor (aterupptaget utkast). */}
           {befintliga.map((b, i) => {
             const flera = poster.length > 1;
@@ -701,7 +897,7 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
                     <img
                       src={`/bilaga/${b.id}?variant=visning`}
                       alt={b.filnamn}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-contain"
                     />
                   ) : (
                     <span className="flex flex-col items-center gap-0.5">
@@ -759,7 +955,7 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
                     <img
                       src={m.url}
                       alt={fil.name}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-contain"
                     />
                   ) : (
                     <span className="flex flex-col items-center gap-0.5">
@@ -822,102 +1018,6 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
           className="hidden"
         />
       </div>
-
-      {/* En redan uppladdad bilaga (aterupptaget utkast) – visas via den
-          signerade visningslanken, ingen lokal rendering. Flersidig PDF
-          (docs/design.md, "Bilagor"): sidbladdraren i stallet for en enkel
-          bild – den galler aven "inmatningen" i listan over stora vyer. */}
-      {valdPost?.typ === "befintlig" ? (
-        valdPost.b.sidantal != null ? (
-          <div className="relative">
-            {avlasningPagar ? (
-              <span className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-yta-upphojd">
-                <SnurraGlyf />
-              </span>
-            ) : null}
-            <BilagaSidbladdrare
-              key={valdPost.b.id}
-              kalla={{ typ: "bilaga", bilagaId: valdPost.b.id }}
-              sidantal={valdPost.b.sidantal}
-              filnamn={valdPost.b.filnamn}
-              className="h-[30vh] max-h-[30vh] w-full"
-            />
-          </div>
-        ) : (
-          <div className="relative overflow-hidden rounded-lg border border-linje bg-yta-nedsankt">
-            {avlasningPagar ? (
-              <span className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-yta-upphojd">
-                <SnurraGlyf />
-              </span>
-            ) : null}
-            {valdPost.b.arBild ? (
-              <img
-                src={`/bilaga/${valdPost.b.id}?variant=visning`}
-                alt={`Förhandsvisning av ${valdPost.b.filnamn}`}
-                className="max-h-[30vh] w-full object-contain"
-              />
-            ) : (
-              <DokumentIkon namn={valdPost.b.filnamn} />
-            )}
-          </div>
-        )
-      ) : null}
-
-      {/* Den valda bilagan renderad i full bredd – att jamfora falten mot.
-          Flersidig PDF (docs/design.md, "Bilagor"): sidbladdraren direkt,
-          fodd av sidantalet lasLokaltPdfSidantal redan last ur den lokala
-          filen – ingen vantan pa uppladdningen. Ikonen ar sista utvag nar
-          rakningen misslyckas. */}
-      {forhandsFil && arForhandsPdf ? (
-        <div className="relative">
-          {avlasningPagar ? (
-            <span className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-yta-upphojd">
-              <SnurraGlyf />
-            </span>
-          ) : null}
-          {renderFel ? (
-            <div className="overflow-hidden rounded-lg border border-linje bg-yta-nedsankt">
-              <DokumentIkon namn={forhandsFil.name} />
-            </div>
-          ) : forhandsPdfSidantal != null ? (
-            <BilagaSidbladdrare
-              key={filnyckel(forhandsFil)}
-              kalla={{ typ: "lokal", fil: forhandsFil }}
-              sidantal={forhandsPdfSidantal}
-              filnamn={forhandsFil.name}
-              className="h-[30vh] max-h-[30vh] w-full"
-            />
-          ) : (
-            <div className="overflow-hidden rounded-lg border border-linje bg-yta-nedsankt">
-              <p className="px-4 py-10 text-center font-granssnitt text-xs text-text-dampad">
-                Läser PDF…
-              </p>
-            </div>
-          )}
-        </div>
-      ) : forhandsvisning ? (
-        <div className="relative overflow-hidden rounded-lg border border-linje bg-yta-nedsankt">
-          {/* Liten roterande indikator i ovre hornet under avlasningen – en text
-              under bilden ar latt att missa (docs/design.md,
-              "Kostnadsformularets ordning"). Forsvinner nar svaret kommit,
-              oavsett utfall. */}
-          {avlasningPagar ? (
-            <span className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-yta-upphojd">
-              <SnurraGlyf />
-            </span>
-          ) : null}
-          {renderFel ? (
-            <DokumentIkon namn={forhandsvisning.namn} />
-          ) : (
-            <img
-              src={forhandsvisning.bildUrl}
-              alt={`Förhandsvisning av ${forhandsvisning.namn}`}
-              onError={() => setRenderFel(true)}
-              className="max-h-[30vh] w-full object-contain"
-            />
-          )}
-        </div>
-      ) : null}
 
       {/* Diskret statusrad under avlasningen – gar att ignorera, falten ar
           redigerbara hela tiden. */}
@@ -1012,6 +1112,11 @@ export function NyKostnadForm({ utkast }: { utkast?: Utkast }) {
           onChange={(iso) => setFalt((f) => ({ ...f, datum: iso }))}
         />
       </Falt>
+
+      {/* Kvittodatum utanfor innehavet (docs/design.md): dokumentdatumet ar
+          samma falt som betaldatumet har (se ovan), sa notisen prova
+          `falt.datum` direkt. */}
+      <KvittodatumNotis notis={kvittodatumNotis(falt.datum, innehav)} />
 
       <Falt
         etikett="Leverantör"

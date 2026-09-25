@@ -43,6 +43,17 @@ export async function oppnaPdf(data: Uint8Array): Promise<PdfDokument> {
   return pdfjs.getDocument({ data }).promise;
 }
 
+export interface RenderadPdfSida {
+  url: string;
+  /** Sidans rastriserade bredd och hojd i pixlar – forhallandet mellan dem ar
+   * sidans EGNA proportioner (docs/design.md, "Kvittots detaljvy":
+   * forhandsvisningen ska halla kvittots proportioner). Anvands av
+   * <BilagaSidbladdrare naturligStorlek> for att satta containerns
+   * aspect-ratio efter den faktiska sidan i stallet for en gissad. */
+  bredd: number;
+  hojd: number;
+}
+
 /**
  * Renderar en sida (1-indexerad) ur ett redan oppnat dokument till en PNG och
  * returnerar en object-URL. Kastar vid minsta problem – anroparen faller da
@@ -52,7 +63,7 @@ export async function renderaPdfSida(
   dokument: PdfDokument,
   sidnummer: number,
   skala = 2,
-): Promise<string> {
+): Promise<RenderadPdfSida> {
   const sida = await dokument.getPage(sidnummer);
   // ~2x for skarpa pa mobilskarmar med hog pixeltäthet.
   const viewport = sida.getViewport({ scale: skala });
@@ -64,5 +75,9 @@ export async function renderaPdfSida(
     canvas.toBlob(klar, "image/png"),
   );
   if (!blob) throw new Error("toBlob gav null");
-  return URL.createObjectURL(blob);
+  return {
+    url: URL.createObjectURL(blob),
+    bredd: viewport.width,
+    hojd: viewport.height,
+  };
 }

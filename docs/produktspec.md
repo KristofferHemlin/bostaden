@@ -15,7 +15,7 @@ Det svåra är inte att spara kvitton. Det svåra är att avgörandet om avdrags
 ## 2. Vad produkten gör
 
 1. Samlar kostnader (kvitton och fakturor) med bild eller PDF som permanent arkiv
-2. Bevakar den årliga 5 000-kronorströskeln medan året fortfarande går att påverka
+2. Bevakar den årliga tröskeln medan året fortfarande går att påverka
 3. Klassificerar allt vid försäljningen, i en guide som går igenom det sparade
 4. Producerar ett deklarationsunderlag i hjälpblankett SKV 2197:s form
 
@@ -79,38 +79,25 @@ Modellera upplåtelseform som ett riktigt fält från start. Hårdkoda aldrig bo
 
 ## 4. Domänregler
 
-Dessa regler styr all beräkning. De får inte förenklas.
+**Reglerna står i `CLAUDE.md`, inte här.** Frågeträdet, beräkningens steg och deras ordning, tröskeln, tidsgränserna, skickskalan och vad som inte får räknas med – allt som avgör ett tal – har sin enda beskrivning under *Domänregler* i `CLAUDE.md`. Det här avsnittet förklarar varför de ser ut som de gör och vad de betyder för produkten, men definierar ingenting och återger inga av deras tal.
 
-Modellen speglar Skatteverkets egen e-tjänst *Räkna ut avdrag för renoveringar och nybyggnation*, verifierad mot den 2026-09-15. Varje tal i avsnittet är kontrollerat mot verktyget. Se `docs/regelkallor.md` för genomgången.
+Ordningen är medveten. `CLAUDE.md` läses in i varje session; den här filen öppnas när ett byggsteg kräver den. Reglerna hör därför hemma i den fil som alltid är närvarande, och beskrivningen av produkten i den som läses när något ska byggas.
 
-**Varför spegla dem exakt.** Skatteverkets verktyg ställer sina frågor i deklarationsögonblicket, när ingen längre minns hur badrummet såg ut vid inflyttningen. Samma frågor ställda samma vecka som arbetet utfördes får sanna svar i stället för rekonstruerade. Produkten är inte en kopia av deras tjänst – den är deras tjänst flyttad till den tidpunkt då den fungerar.
+Reglerna stod en gång i båda filerna. De gled isär, och den felaktiga versionen låg kvar tills någon råkade jämföra – se ändringsloggen i `docs/regelkallor.md`. Skriv därför aldrig tillbaka ett belopp, ett årtal eller ett beräkningssteg i den här filen, inte ens som exempel. Behöver du ett tal för att göra en förklaring begriplig är det ett tecken på att förklaringen hör hemma i `CLAUDE.md` bredvid regeln.
+
+**Varför modellen speglar Skatteverkets e-tjänst exakt.** Deras verktyg ställer sina frågor i deklarationsögonblicket, när ingen längre minns hur badrummet såg ut vid inflyttningen. Samma frågor ställda samma vecka som arbetet utfördes får sanna svar i stället för rekonstruerade. Produkten är inte en kopia av deras tjänst – den är deras tjänst flyttad till den tidpunkt då den fungerar.
 
 ### 4.1 Frågeträdet
 
-Frågorna ställs en gång per åtgärd, aldrig per kvitto. Grenar som inte påverkar resultatet hoppas över, precis som i Skatteverkets verktyg.
+Trädet står under *Frågeträdet per åtgärd* i `CLAUDE.md`. Här står varför det ser ut som det gör.
 
-| # | Fråga | Följd |
-|---|---|---|
-| 1 | Vad gjorde du? | Fritext, blir åtgärdens namn och hamnar i underlagets åtgärdskolumn |
-| 2 | Byggde du något nytt som inte fanns tidigare? | Ja → hela beloppet är grundförbättring, klart |
-| 3 | Ändrade du planlösningen? | Ja → hela beloppet är grundförbättring, klart |
-| 4 | Satte du in något nytt, eller bytte du ut något som fanns? | Nytt → hela beloppet är grundförbättring, klart |
-| 5 | Är det nya av bättre kvalitet, eller liknande som tidigare? | Bättre → merkostnaden är grundförbättring, resten reparation. Liknande → allt är reparation |
-| 6 | Hur var skicket vid förvärvet? | Heltal 0–5 |
-| 7 | Hur var skicket vid försäljningen? | Heltal 0–5, ställs först vid försäljningen |
-| 8 | Hur vet du det? | Fritext, valfritt, blockerar aldrig |
+**Frågorna hör till åtgärden, inte till kvittot.** Med hundra kvitton och tio åtgärder ställs de tio gånger, inte hundra. Det är hela skälet till att klassificeringsgenomgången grupperar först och frågar sedan.
 
-Fråga 6 och 7 ställs bara när åtgärden har en reparationsdel. En ren grundförbättring har ingen, och skicket saknar då betydelse.
+**Skicket vid förvärvet fångas tidigt, skicket vid försäljningen sent.** Det förstnämnda är det som blir omöjligt att minnas och ska fångas medan det går; det andra handlar om hur något ser ut efter års användning och kan inte besvaras i förväg. Samma tidsdelning som produktens två faser i övrigt.
 
-**Merkostnaden är obligatorisk och större än noll** när svaret på fråga 5 är att det nya är bättre. Säger man att det blev bättre måste det ha blivit dyrare, annars var bytet per definition likvärdigt. Skatteverkets verktyg avvisar noll här.
+**Motiveringen är inte pynt.** Reparationsavdraget hänger helt på två subjektiva skattningar – samma kvitto kan ge noll eller hela beloppet beroende på skickbedömningen. Ingen annan del av beräkningen har den hävstången. Motiveringen är det som gör en sådan siffra möjlig att försvara, och när kvitto saknas är den dessutom en del av bevisningen.
 
-**Fråga 6 ställs tidigt, fråga 7 sent.** Skicket vid förvärvet är det som blir omöjligt att minnas – det ska fångas medan det går. Skicket vid försäljningen handlar om hur något ser ut efter års användning och kan inte besvaras i förväg. Det är samma tidsdelning som produktens två faser i övrigt.
-
-**Fråga 8 är inte pynt.** Reparationsavdraget hänger helt på två subjektiva siffror – samma kvitto kan ge 0 eller hela beloppet beroende på skickbedömningen. Ingen annan del av beräkningen har den hävstången. Motiveringen är det som gör en sådan siffra möjlig att försvara, och när kvitto saknas är den dessutom en del av bevisningen.
-
-**Men den ställs bara när svaret betyder något.** Är `skick_forvarv` 0, 1 eller 2 – alltså när användaren påstår att något var dåligt vid tillträdet – är motiveringen värdefull och fältet visas. Är den 3 eller högre blir reparationsavdraget litet ändå, och då finns inget att försvara.
-
-Skälet är att genomgången redan är produktens tyngsta moment. Ett tomt textfält efter sex frågor är där folk ger upp, och ett fält som bara syns när det spelar roll blir också ett fält man faktiskt fyller i.
+Att den bara efterfrågas i den nedre delen av skickskalan är ett gränssnittsbeslut med samma skäl: genomgången är produktens tyngsta moment, ett tomt textfält efter sex frågor är där folk ger upp, och ett fält som bara syns när det spelar roll blir också ett fält man faktiskt fyller i. Villkoret står hos regeln.
 
 **Registreringen frågar inte efter identifieringen.** Föreningens namn respektive fastighetsbeteckningen finns bara i inställningarna.
 
@@ -140,83 +127,49 @@ Formuleringarna följer Skatteverkets:
 
 ### 4.2 Beräkningen
 
-Ordningen är bindande.
+Kedjan och dess bindande ordning står under *Beräkningen* i `CLAUDE.md`. Här står vad ordningen betyder.
 
-```
-1.  avdragsgrundande = belopp - rot_utnyttjat - forsakringsersattning
-    reduktionsfaktor = avdragsgrundande / belopp
+**Var ett bortfall räknas av spelar roll för summan.** Att en utgift faller bort före tröskelprövningen är något annat än att den faller bort efter: i det första fallet kan den inte längre hjälpa årets andra utgifter över gränsen, i det andra räknas den med i prövningen men ger själv lite eller inget avdrag. Skillnaden syns bara när samma år innehåller både en grundförbättring och en utgift som faller.
 
-2.  grundforbattringsdel:
-      nybyggnad | planlosning | nytt_tillagg → hela avdragsgrundande
-      utbytt + battre_kvalitet               → merkostnad * reduktionsfaktor
-      utbytt + liknande_kvalitet             → 0
-    reparationsunderlag = avdragsgrundande - grundforbattringsdel
+Det är den enskilt lättaste delen av modellen att få fel, och felet ger ett underlag som ser rimligt ut. Kedjans ordning är därför bindande och står på ett enda ställe.
 
-3.  Tidsgränser:
-      reparationsunderlag = 0 utanför femårsfönstret
-      grundforbattringsdel = 0 före den bakre gränsen för upplåtelseformen
-      grundforbattringsdel = 0 om raden bidrar till en reparationsdel och
-        bostaden var nybyggd vid förvärvet – se 4.6
-
-4.  TRÖSKELN prövas här, per kalenderår, på summan av
-      grundforbattringsdel + reparationsunderlag
-    för hela bostaden. Understiger året tröskeln faller allt bort.
-
-5.  skickfaktor = max(0, skick_forsaljning - skick_forvarv) / 5
-    reparation  = reparationsunderlag * skickfaktor
-
-6.  Ägarandel tillämpas sist, på båda kategorierna.
-```
-
-**Tidsgränsen räknas bort före tröskeln, skickbedömningen efter.** Skälet är att femårsfönstret avgör om utgiften alls kan vara avdragsgill, medan skicket bara avgör hur mycket av en i övrigt giltig utgift som är det.
-
-Praktisk följd: en reparation utanför fönstret kan inte lyfta året över tröskeln och göra en grundförbättring avdragsgill. Men en reparation där skicket knappt förbättrats räknas med hela sitt underlag i tröskelprövningen, även om avdraget blir nästan noll.
-
-Verifierat med tre fall i Skatteverkets verktyg; siffrorna står bland testfallen i `CLAUDE.md`.
-
-**Avrundning sker uppåt.** Skickfaktorn ger brutna belopp, och Skatteverkets verktyg avrundar dem uppåt till hela kronor i den skattskyldiges favör – inte enligt vanliga avrundningsregler. 2 999 × 0,6 blir 1 800 kr, inte 1 799. Verifierat i tre fall; se `CLAUDE.md`.
-
-Avrundningen gäller bara reparationsdelen efter skickfaktorn, och sker vid utskrift snarare än i kedjan. Interna belopp är heltal i ören enligt konventionerna.
+**Avrundningen går uppåt, i den skattskyldiges favör**, och sker först när ett tal visas eller hamnar i exporten. Interna belopp är heltal i ören. Avrundas det mitt i kedjan ackumuleras felet över många åtgärder.
 
 ### 4.3 Tröskeln
 
-Sammanlagda förbättringsutgifter måste uppgå till minst 5 000 kr under ett och samma kalenderår för att något avdrag alls ska medges det året. Båda kategorierna summeras ihop. Understiger året tröskeln faller hela årets utgifter bort.
+Beloppet och villkoret står under *Tröskeln* i `CLAUDE.md`.
 
-Tröskeln räknas **per bostad, inte per delägare**. Bekräftat av Skatteverkets upplysningstjänst 2026-09-15: två delägare som tillsammans lagt ned 8 000 kr under ett år har passerat gränsen, även om ingen av dem ensam nått 5 000 kr.
+Tröskeln räknas per bostad, inte per delägare, vilket är den vanligare tolkningen och den mer generösa för användaren. Rättsläget är inte helt avgjort – se *Öppna rättsfrågor* i `docs/regelkallor.md`. När användarens egen andel understiger gränsen trots att beloppet för hela bostaden passerar den ska en upplysning visas om att bedömningen kan gå åt andra hållet.
+
+Tröskeln är också produktens vanligaste besked. De flesta har ett eller två kvitton ett enskilt år och når inte över den, vilket gör förklaringen av varför ett år ger noll till en av de viktigaste texterna i hela appen – se Exportvyn i `docs/design.md`.
 
 ### 4.4 Skickskalan
 
-Ett heltal 0–5, där 0 är mycket dåligt skick och 5 är nytt skick. Faktorn är skillnaden delat med fem.
+Skalan och faktorn står under *Skickskalan* i `CLAUDE.md`.
 
-Skalan är Skatteverkets egen konstruktion och inte en lagregel. Appen använder den ändå, så att siffrorna stämmer med vad användaren senare möter i deklarationen.
+Den är Skatteverkets egen konstruktion och inte en lagregel. Appen använder den ändå, så att siffrorna stämmer med vad användaren senare möter i deklarationen – produkten ska kunna ställas bredvid Skatteverkets verktyg utan att de säger emot varandra.
 
-Är skicket lika eller sämre vid försäljningen blir avdraget noll – åtgärden har då inte förbättrat bostaden jämfört med förvärvet. Resultatet får aldrig bli negativt.
+Skattningen är användarens, aldrig appens. Appen tar emot två observationer och räknar; den härleder dem inte ur avskrivningstider eller artikeltexter. Se *Bedömningar som appen inte ska göra* i `docs/regelkallor.md`.
 
-`skick_forsaljning` är null fram till försäljningen. Null blockerar aldrig inmatning eller översikt, bara exporten, som ändå inte kan tas fram innan försäljningen är registrerad.
+`skick_forsaljning` saknas fram till försäljningen. Det blockerar aldrig inmatning eller översikt, bara exporten, som ändå inte kan tas fram innan försäljningen är registrerad.
 
 ### 4.5 Tidsgränser
 
-**Femårsfönstret** gäller reparationsdelen: försäljningsåret plus de fem närmast föregående kalenderåren. Grundförbättringar har ingen motsvarande gräns.
+Femårsfönstret, den bakre gränsen per upplåtelseform och regeln om att året bestäms av betaldatum står under *Bortfall*, *Bakre tidsgräns för grundförbättringar* och *Året bestäms av betaldatum* i `CLAUDE.md`.
 
-**Bakre gräns för grundförbättringar:** inga avdrag i småhus före 1952, eller i bostadsrätt före 1974. Gränsen beror på upplåtelseform och lagras som två regelparametrar, aldrig som en konstant.
+Gränserna lagras som regelparametrar med giltighetsperiod, aldrig som konstanter i koden. Historiska poster ska räknas enligt reglerna som gällde vid utgiftstillfället, inte enligt de nya.
 
-**Året bestäms av betaldatum**, aldrig av fakturadatum eller dokumentdatum. Skatteverkets verktyg frågar i stället efter det år åtgärden utfördes. De sammanfaller oftast; se den öppna frågan i `docs/regelkallor.md`.
+Att året bestäms av betaldatum är ett medvetet val som avviker från hur Skatteverkets verktyg frågar. Det är en öppen fråga, inte ett konstaterat fel – se `docs/regelkallor.md`.
 
 ### 4.6 Vad som inte får räknas med
 
-- Lös inredning och egendom som flyttar med ägaren
-- Eget arbete – endast material och hyra av verktyg får räknas
-- Inköp av verktyg, arbetskläder, mat och dryck
-- Den del av arbetskostnaden som motsvaras av utnyttjad ROT-skattereduktion
-- Utgift som täcks av försäkrings- eller skadeersättning
-- I bostadsrätt: åtgärder på sådant föreningen ansvarar för enligt stadgarna
-- **Reparation och underhåll om bostaden var nybyggd när den förvärvades.** Var allt nytt vid tillträdet kan ingenting ha blivit bättre, och varje reparation återställer ett skick som redan fanns
+Listan står under *Räknas inte med* i `CLAUDE.md`.
 
-**Ombildning från hyresrätt är undantaget.** Den som köpte sin hyresrätt när föreningen ombildades är formellt första ägaren av bostadsrätten, men lägenheten fanns och var använd. Då gäller vanliga regler.
+**Ombildning från hyresrätt är undantaget som är värt att förstå.** Den som köpte sin hyresrätt när föreningen ombildades är formellt första ägaren av bostadsrätten, men lägenheten fanns och var använd. Då gäller vanliga regler.
 
-Villkoret är alltså `nybyggd_vid_forvarv` **och inte** `ombildning_fran_hyresratt`. Verifierat mot Skatteverkets e-tjänst 2026-09-16: med första ägaren = ja och ombildning = nej ställs skickfrågorna inte alls, medan de ställs och ger avdrag när ombildning = ja.
+Det är en av få regler där ett för hårt villkor kostar användaren pengar hen har rätt till, och ombildningar är vanliga i storstäderna. Verifierat mot Skatteverkets e-tjänst 2026-09-16.
 
-Det är en av få regler där ett för hårt villkor kostar användaren pengar hen har rätt till, och ombildningar är vanliga i storstäderna.
+Flera av punkterna i listan går inte att avgöra ur ett kvitto – om en garderob följer med vid flytt, vad föreningens stadgar lägger på medlemmen. Appen frågar och litar på svaret. Se *Bedömningar som appen inte ska göra* i `docs/regelkallor.md`.
 
 ### 4.7 Bevisning
 
@@ -250,7 +203,7 @@ Förbättringsutgifterna fördelas mellan delägarna efter ägarandel. Äger anv
 
 Ägarandelen tillhör relationen mellan person och bostad, inte bostaden i sig, och lagras därför på medlemskapstabellen.
 
-**Andelen är ett tal större än 0 till och med 100, och ska valideras som ett.** Fältet multiplicerar hela underlaget: skrivs 1000 i stället för 100 blir avdraget tio gånger för stort utan att något ser konstigt ut. Noll avvisas, decimaler tillåts, kontrollen ligger både i gränssnittet och på servern, och ett tomt fält betyder hela bostaden.
+Andelens tillåtna intervall och valideringen av den står under *Ägarandel* i `CLAUDE.md`. Skälet att den valideras hårt är att fältet multiplicerar hela underlaget – en felskrivning där ger ett avdrag som är flera gånger för stort utan att något ser konstigt ut.
 
 Exporten ska hantera båda varianterna: antingen anges beloppen för hela bostaden med markering att de är gemensamma, eller så anges den egna andelen. Appen räknar fram individuella belopp och visar samtidigt beloppet för hela bostaden.
 
@@ -259,7 +212,7 @@ Exporten ska hantera båda varianterna: antingen anges beloppen för hela bostad
 Beräkningsreglerna är identiska. `upplatelseform` styr fyra saker:
 
 - **Blankettnamnet i exporten.** K5 för fastighet, K6 för bostadsrätt
-- **Den bakre tidsgränsen.** 1952 för småhus, 1974 för bostadsrätt
+- **Den bakre tidsgränsen**, som skiljer sig mellan formerna – årtalen står under *Bakre tidsgräns för grundförbättringar* i `CLAUDE.md`
 - **Kapitaltillskott** visas bara för bostadsrätt
 - **Köpkostnadernas hjälptext och identifieringsfältet.** Föreningens namn respektive fastighetsbeteckning
 
@@ -320,8 +273,8 @@ En åtgärd. Klassificeringen sitter här, inte på kostnaden.
 | atgardstyp | enum | `nybyggnad` \| `planlosning` \| `nytt_tillagg` \| `utbytt` – resultatet av frågeträdets steg 2–4 |
 | battre_kvalitet | bool? | endast när `atgardstyp` är `utbytt`; svaret på fråga 5 |
 | merkostnad | int? | ören, obligatorisk och > 0 när `battre_kvalitet` är true |
-| skick_forvarv | int? | 0–5, ställs i klassificeringen |
-| skick_forsaljning | int? | 0–5, null fram till försäljningen |
+| skick_forvarv | int? | skickskalan, se `CLAUDE.md`; ställs i klassificeringen |
+| skick_forsaljning | int? | skickskalan, se `CLAUDE.md`; null fram till försäljningen |
 | motivering | text? | svaret på fråga 8 |
 
 **Kategorierna är härledda, inte lagrade.** En åtgärd kan bidra till både grundförbättring och reparation samtidigt – ett exklusivare kök är merkostnaden i den ena kategorin och resten i den andra. Ett lagrat `kategori`-fält kan inte uttrycka det och glider dessutom isär från frågeträdets svar vid varje redigering.
@@ -390,7 +343,11 @@ Töms fältet försvinner raderna och kvittot räknas i sin helhet igen. Beloppe
 
 **Fältet finns bara i efterhand**, inte i inmatningen. Den ska vara kort, och man vet oftast först senare att något på kvittot var privat.
 
-**Och det ligger sist på detaljvyn**, under bilagorna. Uppgiften är sällan aktuell; den som öppnar ett kvitto vill i regel se bilden eller rätta uppgifterna. Ett valfritt fält högst upp tar den bästa platsen på skärmen från det man faktiskt kom för.
+**Och det bor i kvittots ändringsläge**, bland de andra uppgifterna om kvittot – inte i läsläget. Uppgiften är sällan aktuell, och ett fält som alltid står öppet gör att varje kvitto man öppnar slutar med en obesvarad fråga och en sparaknapp utan något att spara.
+
+Att avgöra vad som var privat kräver dessutom att man läser kvittoraderna, och ändringsläget är den enda plats där beloppet skrivs in med bilagan uppslagen ovanför. Se *Ett kvitto är en skärm, inte två* i `docs/design.md`.
+
+Finns ett privat belopp visas det i läsläget som en dämpad rad, på samma sätt som grupperingen. Saknas det står ingenting.
 
 Sparaknappen är sekundär. Skärmens orange hör till den huvudsakliga handlingen, och det är inte att markera ett privat belopp.
 
@@ -462,7 +419,7 @@ Måste finnas från början: omklassificera projekt, dela upp ett kvitto som lag
 Rubrik som inbjuder, en rad förklaring, en knapp. Ingenting annat.
 
 ### Översikt
-- Årssumma mot 5 000-tröskeln med progressfält
+- Årssumma mot årets tröskel med progressfält
 - Progressfältet är **sand under tröskeln, orange över** – under tröskeln är läget inte bra, det är oavslutat. Inför inte rött eller grönt; se `docs/design.md`
 - Siffran heter **"Inlagt 2026"**, aldrig "underlag" och aldrig "avdrag". Den visar summan av allt som lagts in, klassificerat eller ej. Att kalla den något annat vore ett påstående appen inte kan stå för innan klassificeringen är gjord
 - Under progressfältet en rad som förklarar tröskeln och att beloppet är preliminärt tills allt klassificerats. När inget oklassificerat återstår faller den bort
@@ -697,12 +654,31 @@ Seeda även ett projekt kopplat till kvittot ("måla sovrum", 2026, kategori `re
 | Namngivning | Svenska genomgående, ASCII-translittererat |
 | Tester | Domänregler + nödvändiga flöden |
 | Export | Ingår i v1, hela vägen till PDF |
+| PDF-sidor | Renderas i webbläsaren med pdf.js; serversidan läser bara sidantalet |
 
 Supabase valdes för att databas, auth och filhantering ska komma från samma leverantör. Alternativet Vercel Postgres plus Blob saknar auth och hade krävt en fjärde tjänst.
 
 Kostnadsinmatning sker manuellt, via filuppladdning och via kamera. På mobil webb räcker `<input type="file" accept="image/*" capture="environment">` – inget kamera-API behövs.
 
 Fillagringen är värd särskild omsorg. Bilagorna är produktens mest långlivade värde: de ska överleva tio–tjugo år och en eventuell nedläggning av tjänsten. Bygg export av hela arkivet som en tidig funktion, inte en sen.
+
+### PDF-sidor renderas i webbläsaren
+
+Flersidiga PDF:er visas sida för sida, och sidorna ritas i användarens webbläsare med pdf.js. Serversidan läser bara hur många sidor filen har, lagrat i `bilaga.sidantal`, så att bläddraren vet hur många sidor som finns innan filen laddats ned.
+
+**Bildens mått lagras av samma skäl.** `bilaga.bredd` och `bilaga.hojd` sätts vid uppladdningen, när bilden ändå finns i minnet för konverteringen och miniatyren. Utan dem vet sidan inte hur hög förhandsvisningen blir förrän filen hämtats, och reserverar då för lite yta: allt under hoppar nedåt när bilden landar. Uppmätt 2026-09-23 till 357 px, alltså en halv telefonskärm som rör sig under tummen precis när man ska trycka.
+
+Måtten gäller bildbilagor. För en PDF ger första sidans proportioner samma sak och läses när sidantalet läses.
+
+**Befintliga bilagor saknar måtten** och fylls på med ett engångsjobb med logg, samma mönster som visningsversionen. Tills dess reserveras ytan efter ett stående format, eftersom ett kvitto oftast är avlångt – det ger ett mindre hopp än att reservera för lite.
+
+**Rendera inte på serversidan.** Det prövades 2026-09-18 och misslyckades: pdf.js ritar mot en canvas som Node saknar, och både `@napi-rs/canvas` och `node-canvas` kastar fel i pdf.js egen ritkod på vanliga fakturor med logotyp eller inbäddade bilder – oberoende av vilken canvas som används. Webbläsaren har en riktig canvas, och samma fil renderades där korrekt.
+
+**Inte MuPDF.** Det renderade samma fil felfritt, men är AGPL. För en tjänst som tar betalt innebär det antingen att publicera hela källkoden för varje nätverksanvändare, eller att köpa en kommersiell licens. Det beslutet ska inte smyga in via ett renderingsbibliotek.
+
+Bara den visade sidan och dess grannar ritas, eftersom bläddraren visar en sida i taget. En inskannad faktura på tjugo sidor ska inte fylla minnet på en äldre telefon. Går en PDF inte att rendera visas den generiska ikonen med en länk till filen.
+
+Förhandsvisningen före uppladdning och bläddraren delar samma kod i `src/lib/pdfjs-klient.ts`.
 
 ### Bilagor och lagring
 

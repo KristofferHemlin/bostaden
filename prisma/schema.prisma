@@ -203,6 +203,15 @@ model bilaga {
   // aldrig i Storage. Null for bilder, och for PDF:er dar rakningen inte
   // gjorts an (aldre bilagor fore backfillen) eller misslyckades (trasig PDF).
   sidantal              Int?
+  // Bildens mått i pixlar, lästa vid uppladdningen medan filen ändå finns i
+  // minnet for miniatyr-/visningskonverteringen (docs/produktspec.md,
+  // "PDF-sidor renderas i webbläsaren"). Anvands for att reservera ratt yta
+  // at forhandsvisningen INNAN filen hamtats, sa inget hoppar nar bilden
+  // landar. For en PDF ar det forsta sidans matt, laset i samma steg som
+  // sidantalet. Null for aldre bilagor fore backfillen (se
+  // scripts/fyll-pa-bilaga-matt.ts) eller nar matten inte gick att lasa.
+  bredd                 Int?
+  hojd                  Int?
   skapad_at             DateTime @default(now())
 
   kostnad kostnad? @relation(fields: [kostnad_id], references: [id], onDelete: Cascade)

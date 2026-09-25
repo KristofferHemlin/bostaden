@@ -85,7 +85,7 @@ export function RedigeraProjektForm({
               {blockerande.map((k) => (
                 <li key={k.id}>
                   <Link
-                    href={`/kostnad/${k.id}/redigera`}
+                    href={`/kostnad/${k.id}`}
                     className="flex items-baseline justify-between gap-3 px-3 py-2 font-granssnitt text-sm text-text-primar hover:text-accent-mork"
                   >
                     <span className="truncate">{k.leverantor}</span>

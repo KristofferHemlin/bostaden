@@ -35,9 +35,10 @@ import {
   valideraBilaga,
   visningsnyckel,
 } from "./bilaga-regler";
+import { lasBildmatt } from "./bildmatt";
 import { bilagelager } from "./klient";
 import { heicTillJpeg, skalaTillMiniatyr } from "./miniatyr";
-import { raknaPdfSidor } from "./pdf-sidor";
+import { lasPdfInfo } from "./pdf-sidor";
 import { skalaTillVisningsversion } from "./visning";
 
 const SIGNERAD_LANK_SEKUNDER = 60;
@@ -176,19 +177,30 @@ export async function bekraftaKostnadsbilaga(params: {
   let miniatyr: string | null = null;
   let visning: string | null = null;
   let sidantal: number | null = null;
+  // Bildens matt (docs/produktspec.md, "PDF-sidor renderas i webbläsaren"):
+  // reserverar ratt yta at forhandsvisningen innan filen hamtats. Null for
+  // aldre bilagor fore backfillen (scripts/fyll-pa-bilaga-matt.ts) eller om
+  // matningen misslyckas.
+  let bredd: number | null = null;
+  let hojd: number | null = null;
 
-  // Sidantalet for en flersidig PDF (docs/design.md, "Bilagor"): bara
+  // Sidantalet och forsta sidans matt for en flersidig PDF (docs/design.md,
+  // "Bilagor"; docs/produktspec.md, "PDF-sidor renderas i webbläsaren"): bara
   // sidtradet lases, ingen rendering – se den langa kommentaren i
   // src/lib/lagring/pdf-sidor.ts for varfor sjalva sidorna renderas i
   // webblasaren i stallet (src/components/bilaga-sidbladdrare.tsx).
-  // Misslyckas rakningen (trasig PDF) skapas raden anda utan sidantal – da
-  // faller granssnittet tillbaka pa dokumentikonen, precis som forut.
+  // Misslyckas lasningen (trasig PDF) skapas raden anda utan sidantal/matt –
+  // da faller granssnittet tillbaka pa dokumentikonen respektive ett staende
+  // format, precis som forut.
   if (format.andelse === "pdf") {
     try {
       const { data: blob, error } = await lager.download(nyckel);
       if (error || !blob) throw error ?? new Error("kunde inte hämta originalet");
       const original = Buffer.from(await blob.arrayBuffer());
-      sidantal = await raknaPdfSidor(original);
+      const info = await lasPdfInfo(original);
+      sidantal = info.sidantal;
+      bredd = info.bredd;
+      hojd = info.hojd;
     } catch (fel) {
       sidantal = null;
       console.error(
@@ -251,6 +263,22 @@ export async function bekraftaKostnadsbilaga(params: {
           fel,
         );
       }
+
+      // Bildens matt (docs/produktspec.md, "PDF-sidor renderas i
+      // webbläsaren"): lases ur SAMMA fullstora buffert som miniatyren/
+      // visningsversionen, sa bilden inte avkodas en gang till. Ett eget
+      // try/catch – misslyckas mätningen ska den inte dra med sig en redan
+      // lyckad miniatyr/visningsversion.
+      try {
+        const matt = await lasBildmatt(visningsunderlag);
+        bredd = matt.bredd;
+        hojd = matt.hojd;
+      } catch (fel) {
+        console.error(
+          `Bildens mått kunde inte läsas för bilaga ${nyckel} (kostnad ${kostnadId}):`,
+          fel,
+        );
+      }
     } catch (fel) {
       // Originalet gick inte att hämta från Storage, eller HEIC gick inte att
       // avkoda alls – varken miniatyr eller visningsversion gick att skapa.
@@ -269,6 +297,8 @@ export async function bekraftaKostnadsbilaga(params: {
         miniatyrnyckel: miniatyr,
         visningsnyckel: visning,
         sidantal,
+        bredd,
+        hojd,
         filnamn: filnamn || "kvitto",
         mimetyp: format.mimetyp,
         storlek: faktiskStorlek,
@@ -448,6 +478,16 @@ export interface Bilagevy {
    *  misslyckades (trasig PDF). Granssnittet faller da tillbaka pa
    *  dokumentikonen i stallet for sidbladdraren. */
   sidantal: number | null;
+  /**
+   * Bildens matt i pixlar – forsta sidans for en PDF (docs/produktspec.md,
+   * "PDF-sidor renderas i webbläsaren"). Anvands for att reservera ratt yta
+   * at forhandsvisningen INNAN filen hamtats, som ett `aspect-ratio`
+   * (src/app/kostnad/[id]/bilagor.tsx). Null for aldre bilagor fore
+   * backfillen (scripts/fyll-pa-bilaga-matt.ts) eller nar matningen
+   * misslyckades – granssnittet reserverar da ett staende format i stallet.
+   */
+  bredd: number | null;
+  hojd: number | null;
 }
 
 /** Bilagorna for en kostnad, i uppladdningsordning. */
@@ -459,6 +499,8 @@ export async function listaKostnadsbilagor(
     orderBy: { skapad_at: "asc" },
     select: {
       id: true,
+      bredd: true,
+      hojd: true,
       filnamn: true,
       mimetyp: true,
       miniatyrnyckel: true,
@@ -473,5 +515,7 @@ export async function listaKostnadsbilagor(
     arBild: arVisningsbarBild(b.mimetyp, b.miniatyrnyckel !== null),
     analyserad: b.dokument_analyserad,
     sidantal: b.sidantal,
+    bredd: b.bredd,
+    hojd: b.hojd,
   }));
 }
