@@ -26,7 +26,12 @@ import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { listaKostnadsbilagor } from "@/lib/lagring/bilagor";
 import { enkelPrivatUppdelning } from "@/lib/kostnadsuppdelning";
-import { formateraKronor, isoDatum, orenTillFalt } from "@/lib/format";
+import {
+  formateraKronor,
+  isoDatum,
+  orenTillFalt,
+  rotRadILaslage,
+} from "@/lib/format";
 import { kvittodatumNotis } from "@/lib/kvittodatum-notis";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -119,6 +124,7 @@ export default async function KostnadSida({
         lasVarden={{
           sammanfattningsnamn,
           belopp: formateraKronor(kostnad.totalbelopp),
+          rot: rotRadILaslage(kostnad.rot_utnyttjat),
           datum: datum ? isoDatum(datum) : "–",
           leverantor: kostnad.leverantor ?? "–",
           kvittodatumNotisText,

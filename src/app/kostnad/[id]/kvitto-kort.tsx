@@ -54,7 +54,11 @@ import {
   UtfallbarSektion,
 } from "@/components/skarm";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
-import { formateraBeloppInmatning, formateraKronor } from "@/lib/format";
+import {
+  formateraBeloppInmatning,
+  formateraKronor,
+  totalbeloppHjalptext,
+} from "@/lib/format";
 import {
   kvittodatumNotis,
   type Innehavsgranser,
@@ -73,6 +77,9 @@ interface Projektval {
 interface LasVarden {
   sammanfattningsnamn: string;
   belopp: string;
+  /** Formaterat ROT-belopp, eller null nar det ar tomt eller noll – da star
+   *  raden inte dar (docs/design.md, "ROT-avdrag"). */
+  rot: string | null;
   datum: string;
   leverantor: string;
   kvittodatumNotisText: string | null;
@@ -201,6 +208,7 @@ function LasVy({
         </div>
         <div className="mt-2 space-y-2 font-granssnitt text-sm">
           <Rad etikett="Belopp" varde={varden.belopp} />
+          {varden.rot ? <Rad etikett="ROT-avdrag" varde={varden.rot} /> : null}
           <Rad etikett="Datum" varde={varden.datum} />
           <Rad etikett="Leverantör" varde={varden.leverantor} />
         </div>
@@ -312,7 +320,7 @@ function RedigeraVy({
           <Falt
             etikett="Totalbelopp"
             obligatoriskt
-            hjalp="Hela kvittosumman, t.ex. 1 020,95."
+            hjalp={totalbeloppHjalptext(rotUtnyttjat)}
           >
             <BeloppFalt
               name="totalbelopp"

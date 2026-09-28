@@ -34,6 +34,7 @@ import { arOklassificerad } from "@/doman/genomgang";
 import { slaUppRegelparameter } from "@/doman/regelparameter";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
+import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 import { formateraKronor, isoDatum } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -50,7 +51,8 @@ export default async function Oversikt() {
   // kvitton lases separat: listan ar kapad till sex.
   const [senasteKvitton, antalKvitton] = await Promise.all([
     prisma.kostnad.findMany({
-      where: { bostad_id: bostadId, arkiverad: false },
+      // Tomma utkast visas inte bland de sex senaste (src/lib/tomt-utkast.ts).
+      where: { bostad_id: bostadId, arkiverad: false, ...INTE_TOMT_UTKAST },
       orderBy: { skapad_at: "desc" },
       take: 6,
       select: {
@@ -63,7 +65,9 @@ export default async function Oversikt() {
         skapad_at: true,
       },
     }),
-    prisma.kostnad.count({ where: { bostad_id: bostadId, arkiverad: false } }),
+    prisma.kostnad.count({
+      where: { bostad_id: bostadId, arkiverad: false, ...INTE_TOMT_UTKAST },
+    }),
   ]);
 
   // Startskarmens lista ar undantaget fran kvittolistans datumsortering

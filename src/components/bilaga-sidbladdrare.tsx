@@ -51,6 +51,32 @@ import { oppnaPdf, renderaPdfSida, type PdfDokument } from "@/lib/pdfjs-klient";
 export const FORHANDSRAM = "overflow-hidden rounded-xl border border-linje";
 
 /**
+ * Den roterande indikatorn i forhandsvisningens ovre horn medan en bilaga
+ * sparas eller lases av (docs/design.md, "Kostnadsformularets ordning").
+ * Delad sa att inmatningen och kvittots andringslage visar EXAKT samma sak
+ * under samma uppladdning. Laggs INUTI ramen (som ar `relative`) – ramen kan
+ * vara smalare an kortet, och en markering mot en yttre behallare hamnar da
+ * utanfor dokumentet.
+ */
+export function Vantemarkering() {
+  return (
+    <span className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-yta-upphojd">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        aria-hidden
+        className="h-4 w-4 animate-spin text-text-sekundar"
+      >
+        <path d="M12 3a9 9 0 1 0 9 9" />
+      </svg>
+    </span>
+  );
+}
+
+/**
  * Varifran sidorna hamtas. "bilaga" ar en redan uppladdad bilaga – originalet
  * hamtas via den signerade `/bilaga/[id]`-rutten. "lokal" ar en ANNU EJ
  * uppladdad fil, vald i samma session (produktspec, "Dokumentavlasning":

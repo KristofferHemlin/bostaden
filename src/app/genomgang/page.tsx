@@ -20,6 +20,7 @@ import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { isoDatum } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
+import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 
 export const dynamic = "force-dynamic";
 
@@ -49,8 +50,10 @@ export default async function GenomgangSida() {
   }
 
   const [kostnadRader, projektRader] = await Promise.all([
+    // Samma urval som kvittolistans "N kvitton att klassificera" – tomma
+    // utkast ingar inte (src/lib/tomt-utkast.ts).
     prisma.kostnad.findMany({
-      where: { bostad_id: bostadId },
+      where: { bostad_id: bostadId, ...INTE_TOMT_UTKAST },
       include: { rader: { include: { fordelningar: true } } },
       orderBy: [{ betaldatum: "asc" }, { dokumentdatum: "asc" }],
     }),

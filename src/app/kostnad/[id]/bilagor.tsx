@@ -53,7 +53,13 @@
 // bekraftelsesteg – den ar permanent.
 
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useRef, useState } from "react";
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { createPortal } from "react-dom";
 import { revalideraKostnadssida, taBortBilagaAction } from "./actions";
 import type { BilagaResultat } from "./actions";
@@ -61,10 +67,11 @@ import {
   BilagaSidbladdrare,
   FORHANDSRAM,
   PdfMiniatyrbild,
+  Vantemarkering,
 } from "@/components/bilaga-sidbladdrare";
 import { bildAspekt, forhandsramStil } from "@/lib/bildaspekt";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
-import { valideraBilaga } from "@/lib/lagring/bilaga-regler";
+import { avvisningVidVal } from "@/lib/lagring/bilaga-regler";
 import { laddaUppKostnadsbilaga } from "@/lib/lagring/bilaga-klient";
 import type { Bilagevy } from "@/lib/lagring/bilagor";
 
@@ -145,7 +152,15 @@ export function Bilagor({
   const [koa, setKoa] = useState<File[]>([]);
   const [laddarUpp, setLaddarUpp] = useState(false);
   const [uppladdningsfel, setUppladdningsfel] = useState<string | null>(null);
+  // Orsaken till att senaste valet avvisades – tar formathjalpens plats
+  // (docs/design.md, "Bilagor"). Nollas nar ett giltigt val gjorts.
+  const [avvisning, setAvvisning] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Uppladdningen ar inte klar for anvandaren forran den nya bilagan syns –
+  // refresh:en efter bekraftelsen raknas darfor in, annars slocknar
+  // indikatorn en stund innan miniatyren dyker upp.
+  const [uppdaterar, startaUppdatering] = useTransition();
+  const sparar = laddarUpp || uppdaterar;
 
   // Helskarmsvyn – bara for att titta, ingen radering dar.
   const [oppen, setOppen] = useState<Bilagevy | null>(null);
@@ -203,24 +218,27 @@ export function Bilagor({
     setLaddarUpp(false);
     if (inputRef.current) inputRef.current.value = "";
     await revalideraKostnadssida(kostnadId);
-    router.refresh();
+    startaUppdatering(() => router.refresh());
   }
 
   function valjFiler(lista: FileList | null) {
     if (!lista || lista.length === 0) return;
     const filer = Array.from(lista);
-    // Samma grind som servern, direkt vid valet.
+    // Samma grind som servern, direkt vid valet – och felet sager orsaken i
+    // stallet for att upprepa listan (docs/design.md, "Bilagor").
     for (const fil of filer) {
-      const grind = valideraBilaga({
+      const orsak = avvisningVidVal({
         mimetyp: fil.type,
         storlek: fil.size,
         filnamn: fil.name,
       });
-      if (!grind.ok) {
-        setUppladdningsfel(`${fil.name || "Filen"}: ${grind.fel}`);
+      if (orsak) {
+        setAvvisning(orsak);
+        if (inputRef.current) inputRef.current.value = "";
         return;
       }
     }
+    setAvvisning(null);
     void laddaUpp(filer);
   }
 
@@ -266,6 +284,7 @@ export function Bilagor({
               naturligStorlek
               initialAspekt={bildAspekt(bilagor[sakerStorIndex])}
               onSidaTryckt={() => setOppen(bilagor[sakerStorIndex])}
+              overlagg={sparar ? <Vantemarkering /> : null}
             />
           </div>
         ) : (
@@ -285,6 +304,9 @@ export function Bilagor({
             )}
             className={`relative mx-auto flex flex-col items-center justify-center text-center ${FORHANDSRAM}`}
           >
+            {/* Samma indikator som i inmatningen under samma uppladdning
+                (docs/design.md, "Kostnadsformularets ordning"). */}
+            {sparar ? <Vantemarkering /> : null}
             <Miniatyrinnehall
               bilaga={bilagor[sakerStorIndex]}
               naturlig
@@ -397,35 +419,41 @@ export function Bilagor({
                 multiple
                 accept={ACCEPT}
                 className="sr-only"
-                disabled={laddarUpp}
+                disabled={sparar}
                 onChange={(e) => valjFiler(e.target.files)}
               />
               <span aria-hidden className="text-xl leading-none">
                 +
               </span>
               <span className="mt-0.5 font-granssnitt text-[10px]">
-                {laddarUpp ? "Laddar upp…" : "Lägg till"}
+                Lägg till
               </span>
             </label>
           ) : null}
         </div>
       ) : null}
 
-      {/* Samma formathjalp som i inmatningen (kostnad/nytt/form.tsx) – men bara
-          i ANDRINGSLAGET. I lasläget, dit man gar for att titta, ar den brus
-          (docs/design.md, "Kvittots detaljvy": "precis som formathjalpen,
-          brus pa den skarm man gatt till for att titta"). */}
-      {storForhandsvisning && !dolgUppladdningshjalp ? (
+      {/* Samma formathjalp som i inmatningen (kostnad/nytt/form.tsx): bara i
+          ANDRINGSLAGET och bara sa lange ingen bilaga finns – samma villkor
+          som etiketten "Kvitto eller faktura". I lasläget finns den aldrig.
+          Avvisas en fil tar felet radens plats och sager orsaken
+          (docs/design.md, "Bilagor"). */}
+      {redigerbar && avvisning ? (
+        <p role="alert" className="mt-2 font-granssnitt text-xs text-accent-mork">
+          {avvisning}
+        </p>
+      ) : redigerbar && !dolgUppladdningshjalp && bilagor.length === 0 ? (
         <p className="mt-2 font-granssnitt text-xs text-text-dampad">
           JPG, PNG, HEIC eller PDF. Max 10 MB per fil. Går att lägga till
           senare.
         </p>
       ) : null}
 
-      {laddarUpp ? (
-        <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
-          Laddar upp{koa.length > 1 ? ` (${koa.length} kvar)` : ""} – bilagan
-          sparas inte förrän servern bekräftat.
+      {/* Samma statusrad som inmatningen under samma uppladdning. Inget
+          andra steg foljer har – andringslaget har ingen avlasning. */}
+      {sparar ? (
+        <p role="status" className="mt-2 font-granssnitt text-xs text-text-dampad">
+          Sparar kvittot
         </p>
       ) : null}
 
@@ -444,7 +472,7 @@ export function Bilagor({
         </div>
       ) : null}
 
-      {bilagor.length === 0 && !laddarUpp && !uppladdningsfel ? (
+      {bilagor.length === 0 && !sparar && !uppladdningsfel ? (
         <p className="mt-2 font-granssnitt text-sm text-text-dampad">
           Inga bilagor än. Ett kvitto utan bild är inget fel – underlaget blir
           bara svagare.

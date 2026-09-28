@@ -38,6 +38,27 @@ export function formateraKronorEllerStreck(oren: number | null): string {
 }
 
 /**
+ * ROT-raden i kvittots lasläge (docs/design.md, "ROT-avdrag"): formaterat
+ * belopp nar ROT ar storre an noll, annars null – da star raden inte dar.
+ */
+export function rotRadILaslage(oren: number | null): string | null {
+  return oren !== null && oren > 0 ? formateraKronor(oren) : null;
+}
+
+/**
+ * Hjalptexten under Totalbelopp (docs/design.md, "ROT-avdrag"). Pa en faktura
+ * dar ROT redan ar avraknat ar fakturans slutsumma INTE totalbeloppet – skrivs
+ * den in blir underlaget for lagt med hela ROT-beloppet. Star ett belopp i
+ * ROT-faltet byter texten darfor lydelse; annars galler kvittotexten.
+ */
+export function totalbeloppHjalptext(rotText: string): string {
+  const rot = oreFranKronor(rotText);
+  return rot !== null && rot > 0
+    ? "Summan innan ROT drogs av – fakturans summa inklusive moms, före avdraget."
+    : "Hela kvittosumman, t.ex. 1 020,95.";
+}
+
+/**
  * Tolkar en kronsträng fran ett inmatningsfalt till heltal oren. Tar bade
  * "1 020,95", "1020.95" och "1020" – tusentalsavgransare (mellanslag, hart
  * mellanslag, punkt som grupp) tas bort, komma eller punkt som decimaltecken.

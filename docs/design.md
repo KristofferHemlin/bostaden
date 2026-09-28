@@ -226,6 +226,10 @@ Raderna visar **anteckningen som huvudtext**, med leverantör och datum dämpat 
 
 Raderingen tar med bilagorna. Ett utkast utan sin bild är ingenting.
 
+**Ett tomt utkast finns inte.** Utkastet skapas först när det finns något att spara – en vald bilaga eller ett ifyllt fält. Den som öppnar nytt kvitto och går därifrån utan att röra något lämnar inget spår, varken i databasen eller i listorna. Har utkastet däremot ett påbörjat värde ligger det kvar och syns, eftersom det då är arbete som annars går förlorat.
+
+Ett utkast utan både bilaga och fält räknas inte heller i "N kvitton att klassificera", och visas inte bland de sex senaste. Uppmätt 2026-09-28 stod tre sådana rader i listan efter några avbrutna uppladdningar, två av dem helt tomma, grupperade under *Utan datum, 0 kr* – vilket är precis vad en testperson skapar de första minuterna.
+
 **Appen fäller inga omdömen om bevisvärde.** Ingen etikett som graderar hur väl en post är underbyggd. Det som bär bevisningen är motiveringen i frågeträdet, och den hör hemma på grupperingens detaljvy, inte som en märkning i en lista.
 
 **Att en bilaga saknas är däremot ett faktum**, i samma klass som belopp och datum, och det ska synas. En rad utan bilaga får en dämpad text – "Inget kvitto bifogat" – utan ikon och utan varningsfärg, skild från statusraden. Den som går igenom sitt arkiv om åtta år ska kunna se vilka poster som har något bakom sig.
@@ -471,6 +475,10 @@ Knappen som bekräftar är aldrig orange. Orange betyder handling i den här app
 
 **Helskärmsvyn finns för att titta, ingenting annat.** Ingen raderingsåtgärd där, och inget filnamn – `IMG_9915.jpeg` säger ingenting om kvittot.
 
+**Här finns ingen ram.** Regeln om att förhandsvisningens ram ska ha dokumentets form gäller bilder inuti ett kort. I helskärm är den mörka ytan inramningen, och att rita en ruta inuti den vore en låda i en låda.
+
+**Men dokumentet ska fylla den plats som finns.** Så stort som höjd och bredd medger, centrerat mot den mörka ytan, oavsett filtyp. Ligger en sida i en fast ruta som är mindre än skärmen tillåter är det ett fel – helskärm är hela skälet att vyn öppnas, och den som trycker sig hit gör det för att läsa det finstilta.
+
 Vyn ligger över en mörk halvgenomskinlig yta som täcker hela skärmen, inklusive topprad och flikrad. Utan den ser vyn ut som att sidan bytt innehåll i stället för att något öppnats ovanpå, och då finns ingenting som antyder att den går att stänga. Den mörka ytan gör samtidigt att "utanför bilden" blir en synlig och tillräckligt stor tryckyta.
 
 Ett kryss ligger i övre högra hörnet. Klick utanför och Escape stänger också, men på telefon finns ingen Escape och ytan runt en stor bild är liten – krysset är det enda som fungerar med tummen.
@@ -497,7 +505,9 @@ Rutan är därför stående, ungefär 3:4, med bilden centrerad och inpassad mot
 
 I stället är sista rutan i miniatyrraden en streckad ruta i samma storlek som miniatyrerna, med ett plustecken och texten "Lägg till". Den är hela uppladdningskontrollen: filinputen ligger dold bakom den. Under raden står en dämpad rad med tillåtna format och storleksgräns.
 
-**Formathjälpen hör till uppladdningen, inte till visningen.** Den raden visas bara där en bilaga faktiskt läggs till – i inmatningen och i kvittots ändringsläge. I läsläget, dit man går för att titta, är den brus.
+**Formathjälpen hör till uppladdningen, inte till visningen** – och bara till det ögonblick då valet görs. Raden med tillåtna format och storleksgräns står under den tomma rutan, i inmatningen och i kvittots ändringsläge. Så snart en bilaga finns försvinner den: valet är gjort och syns på skärmen, och en regel för vad som hade gått att välja är då samma brus som "Kvitto eller faktura" över en ifylld rad. I läsläget, dit man går för att titta, finns den aldrig.
+
+**Avvisas filen tar felet radens plats, och säger orsaken i stället för listan.** "Bilden är 14 MB, gränsen går vid 10" och "Det formatet går inte att läsa – välj jpg, png eller pdf" är två olika problem med två olika åtgärder. En upprepad uppräkning av tillåtna format lämnar användaren att själv lista ut vilken av reglerna som brast.
 
 **Men när ingen bilaga valts än ser rutan inte ut som en knapp.** En tom streckad kvadrat bland formulärets fält lästes inte som appens viktigaste handling när någon annan än den som byggt appen provade – hen letade i flera sekunder efter var man lägger till bilden.
 
@@ -637,6 +647,14 @@ Arbetskostnad och materialkostnad behövs inte. Det enda som påverkar underlage
 
 Raden går att lämna tom. Vet man inte beloppet just nu sparas kvittot ändå, och det kan fyllas i senare via Ändra uppgifter.
 
+**Totalbeloppet är summan före ROT.** Underlaget räknas som totalbelopp minus ROT, alltså det man själv betalat. En faktura visar oftast "Att betala" efter att avdraget redan dragits – det talet är alltså inte totalbeloppet, och läses det in som ett sådant dras ROT två gånger. Hur talet räknas fram ur en faktura står i `CLAUDE.md` under *Avläsningen läser, den räknar aldrig*.
+
+**Hjälptexten under Totalbelopp ändras när ROT är ifyllt.** "Hela kvittosumman" räcker för ett butikskvitto men säger ingenting på en faktura där avdraget redan är avräknat – fakturans egen slutsumma är då inte totalbeloppet, och den som skriver in den för hand får ett underlag som är för lågt med hela ROT-beloppet. Står det ett belopp i ROT-fältet säger hjälptexten i stället att beloppet är summan innan ROT drogs av, alltså fakturans summa inklusive moms men före avdraget.
+
+Det är det enda stället i formuläret där en hjälptext byter lydelse, och det är motiverat: fältet betyder faktiskt olika saker i de två fallen, och det är den enda punkt där en användare kan göra ett fel på tiotusen kronor utan att något ser konstigt ut.
+
+**ROT-raden syns i läsläget när den har ett värde.** Ett kvitto på 50 000 kronor med 10 000 i ROT ger 40 000 i underlaget, och de två talen står på olika skärmar. Utan raden finns ingenstans att gå för att förstå varför de skiljer sig, och skillnaden läses då som ett räknefel. Är beloppet noll eller tomt står raden inte där – den skulle bara vara brus på det stora flertalet kvitton.
+
 ### Uppdelning av kvitto
 
 Uppdelning görs i efterhand, i kvittots ändringsläge under fältet "Var något på kvittot privat?". Den finns inte i inmatningen.
@@ -657,9 +675,15 @@ När en fil valts läses den av och belopp, datum och leverantör fylls i automa
 
 **Analysen skriver aldrig över något användaren redan skrivit.** Bara tomma fält fylls. Och den blockerar aldrig: misslyckas den, tar för lång tid eller är formatet oläsbart, händer ingenting alls – inget felmeddelande, inga tomma fält som ser trasiga ut. Användaren fyller i som vanligt utan att veta att något försökte hjälpa till.
 
-Under avläsningen visas en liten roterande indikator i förhandsvisningens övre hörn, tillsammans med en diskret statusrad. Indikatorn behövs för att avläsningen tar några sekunder och en text under bilden är lätt att missa – utan den ser det ut som att ingenting händer.
+**Två steg, inte ett – och de sker i tur och ordning.** Filen sparas först och läses av sedan. Att starta båda samtidigt skulle betyda att filens byte skickas två gånger, en gång till lagringen och en gång till avläsningen, och på en telefon över mobilnät är överföringen den långsamma delen. Parallellitet gör då totaltiden längre, inte kortare. Ordningen ligger fast av samma skäl som står i produktspecen under *Filen laddas upp en gång, inte två*.
 
-Indikatorn försvinner när svaret kommit, oavsett om något fylldes i eller inte. Fälten är redigerbara hela tiden och avläsningen blockerar aldrig.
+**Men båda stegen ska synas, och de ska ha var sitt namn.** Den roterande indikatorn i förhandsvisningens övre hörn tänds när filen valts och slocknar först när avläsningen svarat, utan att blinka däremellan. Statusraden under byter text: *Sparar kvittot* medan filen går upp, *Läser av belopp och datum* medan modellen arbetar.
+
+Indikatorn behövs för att en text under bilden är lätt att missa – utan den ser det ut som att ingenting händer. Och utan det andra namnet ser skärmen likadan ut under två väntetider i rad, så den som väntar inte kan avgöra om något går framåt eller har hängt sig. Prövat på telefon 2026-09-28: det var den enda invändningen mot inmatningsflödet, och den handlade om beskedet, inte om tiden.
+
+Indikatorn försvinner när svaret kommit, oavsett om något fylldes i eller inte.
+
+**Fälten är öppna hela tiden, även under uppladdningen.** Den som redan vet beloppet ska kunna skriva in det medan filen går upp. Avläsningen fyller ändå bara i det som är tomt, så ingenting av det man hinner skriva går förlorat, och den blockerar aldrig.
 
 ### Progressfältet mot tröskeln
 

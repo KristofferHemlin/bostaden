@@ -34,6 +34,7 @@ import { formateraKronor, isoDatum } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { sorteraPaDatumFallande } from "@/lib/sortering";
 import { kravBostad } from "@/lib/session";
+import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 
 export const dynamic = "force-dynamic";
 
@@ -67,8 +68,10 @@ export default async function KvittolistaSida() {
 
   const [bostad, kostnadRader] = await Promise.all([
     prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } }),
+    // Tomma utkast visas inte och raknas inte som "att klassificera"
+    // (src/lib/tomt-utkast.ts).
     prisma.kostnad.findMany({
-      where: { bostad_id: bostadId },
+      where: { bostad_id: bostadId, ...INTE_TOMT_UTKAST },
       include: {
         bilagor: {
           select: { id: true },

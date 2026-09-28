@@ -10,17 +10,33 @@
 //
 // Valuta: all berakning i appen antar svenska kronor. Ett eurobelopp i ett
 // kronfalt ger ett felaktigt underlag utan att nagot ser konstigt ut. Modellen
-// instrueras att returnera totalbelopp som null nar valutan inte ar SEK, och
+// instrueras att returnera beloppen som null nar valutan inte ar SEK, och
 // detta backas upp har: sager modellens `valuta`-falt nagot annat an kronor
 // nollas beloppet oavsett vilket tal modellen rakat fylla i. Samma grind galler
 // rot_utnyttjat – ocksa ett kronbelopp, ocksa oanvandbart i en annan valuta.
+//
+// Totalbeloppet ar summan FORE ROT (docs/design.md, "ROT-avdrag"). Underlaget
+// raknas som totalbelopp minus ROT, och en faktura visar "Att betala" efter att
+// avdraget redan dragits – laser man in det talet dras ROT tva ganger.
+//
+// Avlasningen laser, den raknar aldrig (CLAUDE.md, "Avlasningen laser, den
+// raknar aldrig"). Totalbeloppet raknas ALLTID har ur de tryckta talen:
+// att_betala + rot_utnyttjat, eller att_betala nar ROT saknas. Modellen ombeds
+// dessutom lasa netto, moms och summa_fore_rot – inte for att anvandas som
+// kalla utan som kontroll. Uppmatt 2026-09-28: modellen returnerade
+// summa_fore_rot = 61 812,50 for en faktura dar talet inte star tryckt, och
+// raknat fel med tusen kronor. Ett felaktigt men rimligt belopp passerar varje
+// mansklig granskning; ett tomt falt syns. Darfor: stammer tva vagar av
+// tryckta tal till samma summa inte overens lamnas beloppet tomt. En avvikande
+// summa_fore_rot rapporteras men vager inte ensam (se kontrolleraTotalbelopp).
 
 import { oreFranKronor } from "@/lib/format";
 
 export interface Dokumentfalt {
   /** Betal-/kvittodatum som "YYYY-MM-DD", eller null nar det inte gar att lasa. */
   datum: string | null;
-  /** Hela summan inklusive moms som heltal oren, eller null. */
+  /** Hela summan inklusive moms och FORE ROT-avdrag, som heltal oren, eller
+   *  null. Underlaget ar totalbelopp minus rot_utnyttjat. */
   totalbelopp: number | null;
   /** Leverantorens namn, trimmat, eller null. */
   leverantor: string | null;
@@ -150,23 +166,131 @@ function tolkaLeverantor(varde: unknown): string | null {
 }
 
 /**
- * Tolkar modellens textsvar till tre falt. Allt som inte gar att lasa sakert
- * blir null. Kastar aldrig.
+ * Storsta tillatna skillnad mellan tva vagar till samma summa: oresavrundning
+ * till hela kronor. Allt utover det betyder att ett tal lasts fel.
  */
-export function tolkaDokumentsvar(text: unknown): Dokumentfalt {
-  if (typeof text !== "string") return { ...TOMT_DOKUMENTFALT };
+const ORESAVRUNDNING = 50;
+
+/** Vilken kontroll som slog fel. Namnet ar det enda som rapporteras – aldrig talen. */
+export type Avlasningsavvikelse =
+  | "netto+moms ≠ att_betala+rot"
+  | "summa_fore_rot avviker";
+
+interface LastaBelopp {
+  attBetala: number | null;
+  rot: number | null;
+  netto: number | null;
+  moms: number | null;
+  summaForeRot: number | null;
+}
+
+function stammer(a: number, b: number): boolean {
+  return Math.abs(a - b) <= ORESAVRUNDNING;
+}
+
+/**
+ * Totalbeloppet ur de tryckta talen, provat mot de ovriga. Kallan ar alltid
+ * att_betala (+ rot_utnyttjat nar ROT finns); netto + moms och summa_fore_rot
+ * ar bara kontroller och blir aldrig totalbeloppet.
+ *
+ * - netto + moms avviker: nagot av de tryckta talen ar fellast, och vilket gar
+ *   inte att veta. Beloppet lamnas tomt.
+ * - summa_fore_rot avviker: rapporteras, men beloppet star. Regeln om tva
+ *   oense vagar galler tryckta tal, och summa_fore_rot ar faltet modellen
+ *   raknar ut sjalv – ingen jamlike. Ett tomt belopp pa en ROT-faktura leder
+ *   dessutom anvandaren att skriva in slutsumman, som redan ar efter
+ *   avdraget, och underlaget blir for lagt med hela ROT-beloppet.
+ *
+ * Ett vanligt butikskvitto med bara en totalsumma har inget att kontrollera
+ * mot och gar igenom som forut.
+ */
+function kontrolleraTotalbelopp(b: LastaBelopp): {
+  totalbelopp: number | null;
+  avvikelser: Avlasningsavvikelse[];
+} {
+  if (b.attBetala === null) return { totalbelopp: null, avvikelser: [] };
+  const summa = b.attBetala + (b.rot ?? 0);
+
+  const avvikelser: Avlasningsavvikelse[] = [];
+  const nettoMoms =
+    b.netto !== null && b.moms !== null ? b.netto + b.moms : null;
+  const bekraftad = nettoMoms !== null && stammer(nettoMoms, summa);
+
+  if (nettoMoms !== null && !bekraftad) {
+    avvikelser.push("netto+moms ≠ att_betala+rot");
+  }
+  if (b.summaForeRot !== null && !stammer(b.summaForeRot, summa)) {
+    avvikelser.push("summa_fore_rot avviker");
+  }
+
+  const godkand = nettoMoms === null || bekraftad;
+  return { totalbelopp: godkand ? summa : null, avvikelser };
+}
+
+/** Tolkningen med det som behovs for att rapportera ett obrukbart svar. */
+export interface Dokumenttolkning {
+  falt: Dokumentfalt;
+  /** Falskt nar svaret inte innehaller nagot JSON-objekt alls. */
+  tolkbart: boolean;
+  avvikelser: Avlasningsavvikelse[];
+}
+
+/**
+ * Tolkar modellens textsvar och rapporterar vad som inte holl. Allt som inte
+ * gar att lasa sakert blir null. Kastar aldrig.
+ */
+export function tolkaDokumentsvarMedKontroll(text: unknown): Dokumenttolkning {
+  const otolkbart: Dokumenttolkning = {
+    falt: { ...TOMT_DOKUMENTFALT },
+    tolkbart: false,
+    avvikelser: [],
+  };
+  if (typeof text !== "string") return otolkbart;
 
   const rot = extraheraJson(text);
   if (rot === null || typeof rot !== "object" || Array.isArray(rot)) {
-    return { ...TOMT_DOKUMENTFALT };
+    return otolkbart;
   }
 
   const o = rot as Record<string, unknown>;
   const blockerad = valutaBlockerarBelopp(o.valuta);
+  const belopp = (varde: unknown) => (blockerad ? null : tolkaBelopp(varde));
+  const rotBelopp = belopp(o.rot_utnyttjat);
+  const { totalbelopp, avvikelser } = kontrolleraTotalbelopp({
+    attBetala: belopp(o.att_betala),
+    rot: rotBelopp,
+    netto: belopp(o.netto),
+    moms: belopp(o.moms),
+    summaForeRot: belopp(o.summa_fore_rot),
+  });
+
   return {
-    datum: tolkaDatum(o.datum),
-    totalbelopp: blockerad ? null : tolkaBelopp(o.totalbelopp),
-    leverantor: tolkaLeverantor(o.leverantor),
-    rot_utnyttjat: blockerad ? null : tolkaBelopp(o.rot_utnyttjat),
+    falt: {
+      datum: tolkaDatum(o.datum),
+      totalbelopp,
+      leverantor: tolkaLeverantor(o.leverantor),
+      rot_utnyttjat: rotBelopp,
+    },
+    tolkbart: true,
+    avvikelser,
   };
+}
+
+/** Bara falten – se tolkaDokumentsvarMedKontroll. Kastar aldrig. */
+export function tolkaDokumentsvar(text: unknown): Dokumentfalt {
+  return tolkaDokumentsvarMedKontroll(text).falt;
+}
+
+/**
+ * Det som ska till Sentry for ett tolkat svar, som felmeddelanden. Bara namnet
+ * pa kontrollen som slog fel eller att svaret var obrukbart – aldrig tal,
+ * leverantor eller svarstext (produktspec avsnitt 13).
+ */
+export function avlasningsrapporter(tolkning: Dokumenttolkning): string[] {
+  if (!tolkning.tolkbart) {
+    return ["Dokumentavläsning: modellens svar gick inte att tolka"];
+  }
+  return tolkning.avvikelser.map(
+    (a) => `Dokumentavläsning: ${a}`,
+  );
 }

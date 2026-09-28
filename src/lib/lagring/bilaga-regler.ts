@@ -133,6 +133,36 @@ export function valideraBilaga(fil: {
   return { ok: true, format };
 }
 
+const MEGABYTE = 1024 * 1024;
+
+/**
+ * Texten som tar formathjalpens plats nar en fil avvisas vid valet
+ * (docs/design.md, "Bilagor": felet sager ORSAKEN, inte listan). Null for en
+ * giltig fil. Samma granser som valideraBilaga, men fel format provas fore
+ * storleken – en for stor video ar i forsta hand fel sorts fil. Storleken
+ * avrundas aldrig ned till gransen: 10 MB och en byte visas som 10,1.
+ */
+export function avvisningVidVal(fil: {
+  mimetyp: string;
+  storlek: number;
+  filnamn: string;
+}): string | null {
+  const format = kannIgenFormat(fil.mimetyp, fil.filnamn);
+  if (!format) return "Det formatet går inte att läsa – välj jpg, png eller pdf";
+  if (!Number.isFinite(fil.storlek) || fil.storlek <= 0) return "Filen är tom.";
+  if (fil.storlek > MAX_BILAGA_BYTES) {
+    const grans = MAX_BILAGA_BYTES / MEGABYTE;
+    const mb = fil.storlek / MEGABYTE;
+    const visad =
+      Math.round(mb) > grans
+        ? String(Math.round(mb))
+        : (Math.ceil(mb * 10) / 10).toString().replace(".", ",");
+    const vad = format.andelse === "pdf" ? "Filen" : "Bilden";
+    return `${vad} är ${visad} MB, gränsen går vid ${grans}`;
+  }
+  return null;
+}
+
 /**
  * Slumpat, icke gissningsbart filnamn. Anvandarens eget filnamn hamnar aldrig
  * har – det lagras separat i databasen.

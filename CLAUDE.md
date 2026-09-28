@@ -161,6 +161,18 @@ Aldrig av fakturadatum eller dokumentdatum. Skatteverkets verktyg frågar efter 
 - I bostadsrätt: sådant föreningen ansvarar för
 - Reparation och underhåll om bostaden var nybyggd när den förvärvades – utom vid ombildning från hyresrätt, då lägenheten fanns och var använd. Villkoret är `nybyggd_vid_forvarv` och inte `ombildning_fran_hyresratt`
 
+### Avläsningen läser, den räknar aldrig
+
+Ett tal som kommer från avläsningen ska stå tryckt på dokumentet. Varje summa, differens eller produkt räknas fram av koden ur de tryckta talen – aldrig av modellen, och aldrig av ett fält modellen fyllt i med ett eget räkneresultat.
+
+Regeln finns för att en felräkning från en modell ser ut precis som en avläsning. Uppmätt 2026-09-28: en faktura med 48 650,00 exkl. moms, 12 162,50 i moms, 11 587,50 i ROT och 49 225,00 att betala gav `summa_fore_rot = 61 812,50`. Talet står inte på fakturan, modellen hade räknat ut det själv trots att instruktionen förbjuder det, och den hade räknat fel med tusen kronor. Koden valde det före de tryckta talen, och underlaget blev tusen kronor för högt.
+
+**Totalbeloppet räknas därför alltid som `att_betala + rot_utnyttjat`**, och som `att_betala` när ROT saknas.
+
+**Läs fler tal än som behövs, och låt dem kontrollera varandra.** En felläst rad går rakt in i underlaget och ser ut som en avläsning, men ett tryckt tal går att pröva mot andra tryckta tal. En faktura visar normalt netto, moms, ROT och att betala, och `netto + moms` ska då ge samma summa som `att_betala + rot_utnyttjat`. En summa före ROT som modellen läser prövas på samma sätt och används aldrig som källa.
+
+**Stämmer de inte överens lämnas beloppet tomt.** Skiljer sig två vägar till samma summa med mer än öresavrundning har något lästs fel, och vilket av talen det är går inte att veta. Det gäller två vägar av tryckta tal. Avviker bara `summa_fore_rot`, som är det fält modellen räknar ut själv, väger det inte – då gäller `att_betala + rot_utnyttjat`, även när det inte finns netto och moms att pröva mot. Ett tomt fält på en ROT-faktura leder användaren att skriva in fakturans slutsumma, som redan är efter avdraget, och underlaget blir för lågt med hela ROT-beloppet. Fältet får då samma tillstånd som när ingenting kunde läsas – användaren fyller i själv – medan datum och leverantör fylls i som vanligt. Ett tomt fält syns, ett rimligt men felaktigt förifyllt gör det inte, och skillnaden mellan 60 812,50 och 61 812,50 passerar varje mänsklig granskning. Avvikelsen rapporteras till Sentry, men **utan belopp**: bara vilken kontroll som slog fel. Belopp hör aldrig hemma i en felrapport, och felsammanhanget utökas inte – se produktspecens avsnitt om felrapportering. Vilken kontroll som brast räcker för att veta hur ofta det händer och på vilken sorts dokument; behövs talen finns kvittot kvar i appen.
+
 ### Ägarandel
 
 Förbättringsutgifter fördelas mellan delägarna efter ägarandel. Underlaget ska visa både beloppet för hela bostaden och användarens andel. Andelen ligger på medlemskapet, inte på bostaden.

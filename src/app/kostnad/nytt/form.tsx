@@ -88,6 +88,7 @@ import {
   BilagaSidbladdrare,
   FORHANDSRAM,
   PdfMiniatyrbild,
+  Vantemarkering,
 } from "@/components/bilaga-sidbladdrare";
 import { DatumFalt } from "@/components/datum-falt";
 import { KvittodatumNotis } from "@/components/kvittodatum-notis";
@@ -105,13 +106,13 @@ import {
   SEKUNDARKNAPP_KLASS,
   UtfallbarSektion,
 } from "@/components/skarm";
-import { formateraBeloppInmatning } from "@/lib/format";
+import { formateraBeloppInmatning, totalbeloppHjalptext } from "@/lib/format";
 import {
   kvittodatumNotis,
   type Innehavsgranser,
 } from "@/lib/kvittodatum-notis";
 import { laddaUppKostnadsbilaga } from "@/lib/lagring/bilaga-klient";
-import { kannIgenFormat } from "@/lib/lagring/bilaga-regler";
+import { avvisningVidVal, kannIgenFormat } from "@/lib/lagring/bilaga-regler";
 import type { Bilagevy } from "@/lib/lagring/bilagor";
 import { oppnaPdf } from "@/lib/pdfjs-klient";
 
@@ -216,6 +217,9 @@ export function NyKostnadForm({
   const [filer, setFiler] = useState<File[]>([]);
   const [filstatus, setFilstatus] = useState<Record<string, Filstatus>>({});
   const filInputRef = useRef<HTMLInputElement | null>(null);
+  // Orsaken till att senaste valet avvisades – tar formathjalpens plats
+  // (docs/design.md, "Bilagor"). Nollas nar ett giltigt val gjorts.
+  const [avvisning, setAvvisning] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
 
   // Dialogen "Inget kvitto bifogat" (produktspec avsnitt 4.7): visas nar
@@ -333,6 +337,18 @@ export function NyKostnadForm({
     : null;
 
   const uppladdningPagar = Object.values(filstatus).some((s) => s.pagar);
+
+  // Tva steg i tur och ordning, med var sitt namn (docs/design.md,
+  // "Kostnadsformularets ordning"): filen sparas, sedan lases den av.
+  // Indikatorn ar pa under BADA och slocknar forst nar avlasningen svarat –
+  // laddaEn tander avlasningen i samma rendering som uppladdningen slacks, sa
+  // den blinkar aldrig mellan stegen. Loper stegen om varandra (flera filer)
+  // namns avlasningen, eftersom det ar den forsta filens flode som visas.
+  const vantesteg: "sparar" | "laser" | null = avlasningPagar
+    ? "laser"
+    : uppladdningPagar
+      ? "sparar"
+      : null;
 
   // Miniatyrraden: bilder (JPG/PNG) far en liten miniatyr; PDF och HEIC far en
   // dokumentikon med formatetiketten under (aldrig filnamnet), centrerad i en
@@ -493,6 +509,10 @@ export function NyKostnadForm({
     const nyckel = filnyckel(fil);
     setFilstatus((s) => ({ ...s, [nyckel]: { pagar: true } }));
     const r = await laddaUppKostnadsbilaga(kostnadId, fil);
+    const analyseras = Boolean(r.ok && r.bilagaId && !analysKordRef.current);
+    // Avlasningen tands FORE uppladdningen slacks – indikatorn far inte
+    // slockna och tandas igen mellan stegen.
+    if (analyseras) setAvlasningPagar(true);
     setFilstatus((s) => ({
       ...s,
       [nyckel]: {
@@ -501,7 +521,7 @@ export function NyKostnadForm({
         fel: r.ok ? undefined : (r.fel ?? "uppladdningen misslyckades"),
       },
     }));
-    if (r.ok && r.bilagaId && !analysKordRef.current) {
+    if (analyseras && r.bilagaId) {
       analysKordRef.current = true;
       void analysera(r.bilagaId);
     }
@@ -517,7 +537,29 @@ export function NyKostnadForm({
       (f) => !redan.has(filnyckel(f)) && !redan.has(f.name),
     );
     if (tillagda.length === 0) return;
+    // Samma grind som servern, direkt vid valet – och felet sager orsaken
+    // (docs/design.md, "Bilagor"). Avvisas en fil avvisas hela valet, samma
+    // som pa kvittots skarm.
+    for (const fil of tillagda) {
+      const orsak = avvisningVidVal({
+        mimetyp: fil.type,
+        storlek: fil.size,
+        filnamn: fil.name,
+      });
+      if (orsak) {
+        setAvvisning(orsak);
+        return;
+      }
+    }
+    setAvvisning(null);
     setFiler((prev) => [...prev, ...tillagda]);
+    // Indikatorn tands redan nar filen valts, inte forst nar utkastet skapats
+    // och sjalva overforingen borjar.
+    setFilstatus((s) => {
+      const nasta = { ...s };
+      for (const fil of tillagda) nasta[filnyckel(fil)] = { pagar: true };
+      return nasta;
+    });
 
     let kostnadId: string;
     try {
@@ -689,16 +731,15 @@ export function NyKostnadForm({
     return "Kunde inte läsas av kvittot – fyll i för hand.";
   }
 
-  // Liten roterande indikator i ovre hornet under avlasningen – en text under
-  // bilden ar latt att missa (docs/design.md, "Kostnadsformularets ordning").
+  // Liten roterande indikator i ovre hornet under uppladdning OCH avlasning –
+  // en text under bilden ar latt att missa (docs/design.md,
+  // "Kostnadsformularets ordning"). Samma markering pa alla vagar in i
+  // forhandsvisningen: lokal bild, lokal PDF, och uppladdad bild/PDF i ett
+  // aterupptaget utkast.
   // Ligger alltid INUTI ramen: ramen ar centrerad och kan vara smalare an
   // kortet (docs/design.md, "Bilagor"), sa en markering mot en yttre
   // behallare hamnar utanfor dokumentet.
-  const avlasningsmarkering = avlasningPagar ? (
-    <span className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-yta-upphojd">
-      <SnurraGlyf />
-    </span>
-  ) : null;
+  const avlasningsmarkering = vantesteg ? <Vantemarkering /> : null;
 
   return (
     <>
@@ -820,7 +861,10 @@ export function NyKostnadForm({
               )}
             </div>
           )
-        ) : forhandsvisning ? (
+        ) : forhandsFil && forhandsvisning ? (
+          // `forhandsFil &&`: forhandsvisning ar state och kan ligga kvar en
+          // rendering efter att en befintlig bilaga valts – utan villkoret
+          // monteras Vantemarkering dubbelt under den renderingen.
           <div
             style={forhandsramStil(
               forhandsAspekt ?? STAENDE_FALLBACK_ASPEKT,
@@ -966,16 +1010,6 @@ export function NyKostnadForm({
                     </span>
                   )}
                 </button>
-                {st?.pagar ? (
-                  // Tonad platta bakom snurran sa den syns aven mot en ljus
-                  // bild. `/70` pa tokenet hade varit osynlig CSS – Tailwinds
-                  // opacitetsmodifierare genererar ingen regel mot dessa
-                  // var()-baserade farger (docs/design.md, "Farger") – darfor
-                  // color-mix() i stallet.
-                  <span className="absolute inset-0 z-10 flex items-center justify-center bg-[color-mix(in_srgb,var(--yta-nedsankt)_70%,transparent)]">
-                    <SnurraGlyf />
-                  </span>
-                ) : null}
                 <button
                   type="button"
                   onClick={() => taBortFil(j)}
@@ -1000,10 +1034,19 @@ export function NyKostnadForm({
         </div>
         )}
 
-        <p className="mt-2 font-granssnitt text-xs text-text-dampad">
-          JPG, PNG, HEIC eller PDF. Max 10 MB per fil. Går att lägga till
-          senare.
-        </p>
+        {/* Formathjalpen hor till ogonblicket da valet gors – den star bara
+            sa lange ingen bilaga finns. Avvisas en fil tar felet dess plats
+            och sager orsaken (docs/design.md, "Bilagor"). */}
+        {avvisning ? (
+          <p role="alert" className="mt-2 font-granssnitt text-xs text-accent-mork">
+            {avvisning}
+          </p>
+        ) : poster.length === 0 ? (
+          <p className="mt-2 font-granssnitt text-xs text-text-dampad">
+            JPG, PNG, HEIC eller PDF. Max 10 MB per fil. Går att lägga till
+            senare.
+          </p>
+        ) : null}
 
         <input
           ref={filInputRef}
@@ -1019,11 +1062,14 @@ export function NyKostnadForm({
         />
       </div>
 
-      {/* Diskret statusrad under avlasningen – gar att ignorera, falten ar
-          redigerbara hela tiden. */}
-      {avlasningPagar ? (
-        <p className="font-granssnitt text-xs text-text-dampad">
-          Läser av kvittot…
+      {/* Diskret statusrad som byter text med steget (docs/design.md,
+          "Kostnadsformularets ordning") – gar att ignorera, falten ar
+          redigerbara hela tiden, aven under uppladdningen. */}
+      {vantesteg ? (
+        <p role="status" className="font-granssnitt text-xs text-text-dampad">
+          {vantesteg === "laser"
+            ? "Läser av belopp och datum"
+            : "Sparar kvittot"}
         </p>
       ) : null}
 
@@ -1064,7 +1110,7 @@ export function NyKostnadForm({
         obligatoriskt
         hjalp={
           faltStatus(falt.belopp.trim() === "") ??
-          "Hela kvittosumman, t.ex. 1 020,95."
+          totalbeloppHjalptext(rotUtnyttjat)
         }
       >
         <BeloppFalt
@@ -1192,13 +1238,10 @@ export function NyKostnadForm({
         disabled={pagar || uppladdningPagar}
         className={PRIMARKNAPP_KLASS}
       >
-        {pagar
-          ? "Sparar…"
-          : uppladdningPagar
-            ? "Laddar upp bilagan…"
-            : utkast
-              ? "Spara kvittot"
-              : "Spara kvitto"}
+        {/* Knappen ar otillganglig under uppladdningen men bar inget eget
+            besked – statusraden och Vantemarkering i forhandsvisningens horn
+            ar det enda (docs/design.md, "Kostnadsformularets ordning"). */}
+        {pagar ? "Sparar…" : utkast ? "Spara kvittot" : "Spara kvitto"}
       </button>
     </form>
 
@@ -1310,22 +1353,6 @@ function DokumentGlyf() {
     >
       <path d="M14 3v5h5" />
       <path d="M18 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8l6 6v10a2 2 0 0 1-2 2z" />
-    </svg>
-  );
-}
-
-function SnurraGlyf() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      aria-hidden
-      className="h-4 w-4 animate-spin text-text-sekundar"
-    >
-      <path d="M12 3a9 9 0 1 0 9 9" />
     </svg>
   );
 }

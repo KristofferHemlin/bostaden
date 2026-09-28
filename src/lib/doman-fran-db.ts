@@ -10,6 +10,7 @@ import type {
 } from "@/doman/typer";
 import { isoDatum } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 
 type PrismaProjekt = Prisma.projektGetPayload<Record<string, never>>;
 type PrismaRegelparameter = Prisma.regelparameterGetPayload<
@@ -77,8 +78,10 @@ export async function hamtaBostadsdata(bostadId: string) {
         where: { bostad_id: bostadId },
         orderBy: [{ ar: "desc" }, { skapad_at: "asc" }],
       }),
+      // Tomma utkast (src/lib/tomt-utkast.ts) finns inte for nagon vy –
+      // de bidrar anda med 0 till varje summa.
       prisma.kostnad.findMany({
-        where: { bostad_id: bostadId },
+        where: { bostad_id: bostadId, ...INTE_TOMT_UTKAST },
         include: kostnadMedRader,
         orderBy: { skapad_at: "asc" },
       }),
