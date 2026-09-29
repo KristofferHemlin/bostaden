@@ -115,6 +115,16 @@ De sammanfaller oftast men inte alltid – en åtgärd utförd i december och be
 
 Appen räknar per bostad. När användarens egen andel understiger 5 000 kr trots att beloppet för hela bostaden passerar ska en upplysning visas om att bedömningen kan gå åt andra hållet. Kontrollerat 2026-08-28, bekräftat 2026-09-15.
 
+**Hur hanteras en delägare som köpt in sig senare?** Modellen har ett `tilltradesdatum` på bostaden och antar att alla delägare tillträdde samtidigt. Den som köper in sig efteråt har eget anskaffningsdatum, egen innehavstid och en egen bedömning av skicket vid sitt tillträde. Den som säljer halva sin bostad till en partner har dessutom gjort en avyttring som skulle ha deklarerats det året.
+
+Genomgången 2026-09-29 gav ingen vägledning för det fallet. SKV 321 beskriver individuella belopp för "flera delägare som har sålt samtidigt, men ska deklarera exempelvis olika inköpspris", men säger ingenting om vad som händer med förbättringsutgifter som lades ut innan den ena blev delägare. Frågan ska ställas till upplysningstjänsten innan funktionen byggs.
+
+Tills dess bär inbjudan till samägande en mening om att funktionen gäller delägare som tillträdde samtidigt och att ingen köpt ut den andra under innehavet. Det är ett medvetet val 2026-09-29: en tyst felkälla ger ett underlag som ser riktigt ut men är fel, vilket är värre än en utebliven funktion. Frågan står här och inte i en att-göra-lista, eftersom svaret är rättsligt och inte tekniskt.
+
+**Kan en samägare dra av mer än sin andel av något hen betalat själv?** Huvudregeln är nej. Avdragen är kopplade till bostaden och inte till ägarna, och fördelas efter ägarandel oavsett vem som betalade fakturan – äger två personer hälften var och renoverar för 100 000 kr drar var och en av 50 000. SKV 321 formulerar det som att förbättringsutgifterna "fördelas normalt mellan dig och övriga delägare efter vars och ens ägarandel".
+
+Appen ska därför inte erbjuda något val här. Ordet *normalt* och det faktum att Skatteverket publicerat en rättsfallskommentar med rubriken *Fördelning av förbättringsutgifter* (KRNS mål nr 1790-20) tyder ändå på att det finns kantfall. Kommentaren gick inte att läsa 2026-09-29 – Skatteverkets rättsliga vägledning avvisar automatiska anrop – så innehållet är okänt. Fråga upplysningstjänsten om det finns situationer där en samägare får dra av mer än sin ägarandel.
+
 **Utfört eller betalat år?** Skatteverkets verktyg frågar efter det år åtgärden utfördes; appen använder betaldatum. Vilket som styr tröskeln och femårsfönstret är inte klarlagt. Se avsnittet om e-tjänsten ovan – regeln valdes medvetet och ska inte ändras åt något håll utan ett samtal till upplysningstjänsten.
 
 ### Stängd 2026-09-15: vad ingår i tröskelsumman när en utgift inte är avdragsgill?
@@ -199,3 +209,4 @@ Historiska poster ska räknas enligt reglerna som gällde vid utgiftstillfället
 | 2026-09-22 | Nybyggd-regeln rättad i produktspecens beräkningskedja. Den stod som bortfall av grundförbättringsdelen; det är reparationsunderlaget som faller bort, och ombildning från hyresrätt upphäver villkoret. Samma steg speglat i `CLAUDE.md`, som saknade regeln helt | Internt, mot 4.6 och testfallen i `CLAUDE.md` |
 | 2026-09-22 | Den gamla tröskeltolkningen struken ur Öppna rättsfrågor. Den motsade rättelsen från 2026-09-15 i samma fil | Internt |
 | 2026-09-23 | `CLAUDE.md` är nu ensam källa för reglerna. Produktspecens avsnitt 4 behåller skälen men innehåller inga tal ur dem, och två regler som bara bodde där – merkostnadens minimum och ägarandelens intervall – flyttade in. Ingen regel ändrade innebörd | Internt |
+| 2026-09-29 | Samägande genomgånget. Två redovisningssätt bekräftade: gemensamma belopp med ägarandel i procent, eller individuella belopp för delägare med olika inköpspris. Förbättringsutgifter fördelas efter ägarandel oavsett vem som betalat. Bodelning ger kontinuitet, köpekontrakt ger en avyttring. Tre frågor kvar om senare inköp och utköp | Hjälptexter till K5/K6, SKV 321 utgåva 15, sidan om försäljning av bostadsrätt |

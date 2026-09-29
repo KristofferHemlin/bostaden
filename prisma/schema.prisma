@@ -41,22 +41,27 @@ model anvandare {
   epost      String       @unique
   skapad_at  DateTime     @default(now())
   medlemskap medlemskap[]
+
+  // Vem som lade in ett kvitto respektive besvarade en atgards fragor
+  // (docs/design.md, "Samagande – medlemskapet"). Bara for visning.
+  kostnader_skapade      kostnad[] @relation("kostnad_skapad_av")
+  projekt_klassificerade projekt[] @relation("projekt_klassificerad_av")
 }
 
 // Bostaden. Obligatoriskt vid registrering: endast upplatelseform och tilltradesdatum.
 model bostad {
-  id                String         @id @default(uuid()) @db.Uuid
-  namn              String?
-  adress            String? // fritext eller vald fran adresstjanst; namn faller tillbaka pa adress i headern
-  place_id          String? // Google Places-id, null vid fritext
-  latitud           Decimal?       @db.Decimal(9, 6) // null vid fritext
-  longitud          Decimal?       @db.Decimal(9, 6) // null vid fritext
-  ort               String? // valfritt; fylls fran valt Places-forslag
-  storlek           Int? // valfritt, boarea i kvadratmeter
-  identifiering     String? // foreningens namn (bostadsratt) eller fastighetsbeteckning (fastighet); forsattssidans rad, utelamnas nar tom
-  upplatelseform    upplatelseform
-  husform           husform? // rent informativt, styr ingenting
-  tilltradesdatum   DateTime       @db.Date
+  id                        String         @id @default(uuid()) @db.Uuid
+  namn                      String?
+  adress                    String? // fritext eller vald fran adresstjanst; namn faller tillbaka pa adress i headern
+  place_id                  String? // Google Places-id, null vid fritext
+  latitud                   Decimal?       @db.Decimal(9, 6) // null vid fritext
+  longitud                  Decimal?       @db.Decimal(9, 6) // null vid fritext
+  ort                       String? // valfritt; fylls fran valt Places-forslag
+  storlek                   Int? // valfritt, boarea i kvadratmeter
+  identifiering             String? // foreningens namn (bostadsratt) eller fastighetsbeteckning (fastighet); forsattssidans rad, utelamnas nar tom
+  upplatelseform            upplatelseform
+  husform                   husform? // rent informativt, styr ingenting
+  tilltradesdatum           DateTime       @db.Date
   // De tva bostadsfragorna (produktspec 4.1, 4.6, CLAUDE.md). Fragor om
   // bostaden, inte om atgarden – stalls darfor EN gang, i genomgangen innan
   // forsta hogen klassificeras, aldrig i registreringen. Gar att andra i
@@ -65,23 +70,23 @@ model bostad {
   // Reparation och underhall raknas aldrig med om bostaden var nybyggd vid
   // forvarvet, utom vid ombildning fran hyresratt – da fanns lagenheten redan
   // och var anvand (produktspec 4.6).
-  nybyggd_vid_forvarv        Boolean @default(false)
-  ombildning_fran_hyresratt  Boolean @default(false)
+  nybyggd_vid_forvarv       Boolean        @default(false)
+  ombildning_fran_hyresratt Boolean        @default(false)
   // Rent tekniskt bokforingsfalt: har de tva fragorna ovan stallts an? Bada
   // falten defaultar till false, som ocksa ar det vanligaste RIKTIGA svaret –
   // utan denna flagga gar "obesvarat" och "besvarat nej" inte att skilja at,
   // och genomgangen skulle inte kunna blockera tills de faktiskt besvarats
   // (produktspec 4.1: "De blockerar genomgangen tills de besvarats").
-  bostadsfragor_besvarade    Boolean @default(false)
+  bostadsfragor_besvarade   Boolean        @default(false)
   // Vinstberakningens belopp. BigInt, inte Int: Postgres int4 tar slut vid
   // 2147483647 oren (~21,5 miljoner kr) och en villaforsaljning kan ligga hogre.
-  kopeskilling      BigInt? // oren
-  kopkostnader      BigInt? // oren, stampelskatt/lagfart eller overlatelseavgift
-  kapitaltillskott  BigInt? // oren, endast bostadsratt
-  uppskov_tidigare  BigInt? // oren, paverkar vinstberakning, inte avdrag
-  forsaljningsdatum DateTime?      @db.Date
-  forsaljningspris  BigInt? // oren
-  skapad_at         DateTime       @default(now())
+  kopeskilling              BigInt? // oren
+  kopkostnader              BigInt? // oren, stampelskatt/lagfart eller overlatelseavgift
+  kapitaltillskott          BigInt? // oren, endast bostadsratt
+  uppskov_tidigare          BigInt? // oren, paverkar vinstberakning, inte avdrag
+  forsaljningsdatum         DateTime?      @db.Date
+  forsaljningspris          BigInt? // oren
+  skapad_at                 DateTime       @default(now())
 
   medlemskap medlemskap[]
   projekt    projekt[]
@@ -129,10 +134,15 @@ model projekt {
   skick_forvarv     Int? // fraga 6, 0-5, stalls bara nar atgarden har en reparationsdel
   skick_forsaljning Int? // fraga 7, 0-5, null fram till forsaljningen
   motivering        String? // fraga 8, "hur vet du det?" – fritext, valfri, bar bevisningen
+  // Vem som senast besvarade fragetradet (fas 2 eller redigeringen). Bara for
+  // raden "Besvarat av" nar bostaden har fler an en medlem. Null for aldre
+  // svar och nar personen raderat sitt konto – raden uteblir da, den gissar inte.
+  klassificerad_av  String?     @db.Uuid
   skapad_at         DateTime    @default(now())
 
-  bostad       bostad          @relation(fields: [bostad_id], references: [id], onDelete: Cascade)
-  fordelningar radfordelning[]
+  bostad         bostad          @relation(fields: [bostad_id], references: [id], onDelete: Cascade)
+  klassificerare anvandare?      @relation("projekt_klassificerad_av", fields: [klassificerad_av], references: [id], onDelete: SetNull)
+  fordelningar   radfordelning[]
 }
 
 // Ett kvitto eller en faktura. Tillstand (obetald/okopplad/kopplad) harleds, lagras inte.
@@ -147,9 +157,14 @@ model kostnad {
   forsakringsersattning Int? // oren, dras bort fran underlaget
   arkiverad             Boolean   @default(false)
   anteckning            String? // "Vad gallde det?" – valfri fritext, bar minnet till klassificeringen (produktspec 2b)
+  // Vem som lade in kvittot. Bara for raden "Tillagt av" nar bostaden har fler
+  // an en medlem. Null for aldre kvitton och nar personen raderat sitt konto –
+  // raden uteblir da, den gissar inte.
+  skapad_av             String?   @db.Uuid
   skapad_at             DateTime  @default(now())
 
   bostad  bostad        @relation(fields: [bostad_id], references: [id], onDelete: Cascade)
+  skapare anvandare?    @relation("kostnad_skapad_av", fields: [skapad_av], references: [id], onDelete: SetNull)
   rader   kostnadsrad[]
   bilagor bilaga[]
 }

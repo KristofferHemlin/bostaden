@@ -276,7 +276,18 @@ Regeln gäller varje formulär som skickar något, inte bara kvittoinmatningen. 
 
 Det finns ingen separat utvecklingsdatabas. `localhost` och den driftsatta appen använder samma Supabase-projekt, och det är ett medvetet val som gäller tills produkten har användare nog att motivera en andra miljö.
 
-Följden är att varje rad kan tillhöra en riktig person, och att ett engångsjobb som går fel förstör något som inte går att skriva om. Bilagorna är dessutom det enda exemplaret – kvitton som raderas finns ingen annanstans.
+Följden är att varje rad kan tillhöra en riktig person, och att ett engångsjobb som går fel förstör något som inte går att skriva om. Bilagorna är dessutom det enda exemplaret – kvitton som raderas finns ingen annanstans. Säkerhetskopieringen vilar dessutom på att någon gör den för hand, så det som försvinner kan vara borta för gott.
+
+**Det här får aldrig göras mot databasen, oavsett hur uppgiften är formulerad:**
+
+- tömma, nollställa eller återskapa den, helt eller delvis
+- `TRUNCATE`, `DROP`, `DELETE` eller `UPDATE` utan ett villkor som träffar bestämda rader
+- köra om en seed, eller seeda över befintliga rader
+- lämna dess adress till ett verktyg som behöver en databas att arbeta i – skuggdatabas, testdatabas, jämförelsedatabas
+- `prisma migrate diff`, `prisma migrate dev` eller `prisma db push` mot den
+- stänga av RLS, eller lämna en tabell öppen efter att den skapats eller ändrats
+
+Behöver uppgiften något av det, är svaret att fråga – aldrig att göra det och rapportera efteråt. En användare som ber om det har nästan alltid menat något annat.
 
 **Läs fritt.** Frågor mot databasen är aldrig ett problem.
 
@@ -284,7 +295,17 @@ Följden är att varje rad kan tillhöra en riktig person, och att ett engångsj
 
 **Aldrig breda skrivningar.** Ingen `DELETE` eller `UPDATE` utan ett villkor som träffar bestämda rader, ingen `TRUNCATE`, ingen återställning, ingen omseedning. Ett villkor som skulle kunna träffa fler rader än du räknat med är samma sak som ett fel.
 
+**Det är adressen som avgör, inte kommandot.** Den produktionsdatabas som `.env` pekar ut får bara nås av appen själv och av migreringar som är uppgiften. Den lämnas aldrig till ett verktyg som behöver en databas att arbeta i – och särskilt aldrig som skuggdatabas. `prisma migrate diff`, `prisma migrate dev` och `prisma db push` nollställer eller skriver om den databas de får peka på, och de gör det som en avsedd del av sitt arbete, inte som ett fel. Behöver du en tom databas att verifiera mot, be om en.
+
+Den 2026-09-29 tömdes produktionen av `prisma migrate diff --shadow-database-url` med produktionens adress. Alla rader i `public` försvann, `_prisma_migrations` med dem, och tabellerna återskapades utan RLS. Kommandot var inte en skrivning i den meningen regeln ovan beskriver, och det är därför den här regeln finns.
+
+**RLS är påslaget på varje tabell i `public`.** Utan policyer, vilket betyder neka allt via PostgREST; appens serverkod går förbi det med sin egen anslutning. Avslaget RLS betyder att anon-rollens rättigheter gäller, och anon-nyckeln ligger i webbläsarens kod. Varje gång en tabell skapas, återskapas eller ändras ska RLS kontrolleras efteråt – Postgres standard är avslaget, så det som återskapas kommer tillbaka öppet.
+
 **Engångsjobb körs torrt först.** Ett skript som ändrar data ska först kunna köras i ett läge som bara loggar vad det skulle göra, och antalet rader ska stämma med förväntan innan det körs på riktigt.
+
+**Data API är avstängt.** Hela REST-ytan mot databasen är av i Supabases panel, kontrollerat 2026-09-29: inga scheman kan frågas och `/rest/v1/` svarar med fel. Appen går aldrig den vägen – Prisma ansluter direkt – så det finns ingenting att servera där. RLS ligger kvar bakom som ett andra lager, och rättigheterna för anon och authenticated saknas som ett tredje.
+
+Inställningen bor i panelen och inte i repot, vilket är dess svaghet: den syns ingenstans i koden och följer inte med om projektet byggs upp på nytt. Den som återskapar projektet måste göra om den. Och skulle något senare behöva `supabase-js` från webbläsaren mot en egen tabell kommer det inte att fungera, med ett svårtytt fel – det är en avsedd följd, inte en bugg. Slå inte på Data API för att "laga" ett sådant fel utan att fråga.
 
 **Migreringar: additiva utan att fråga, allt annat med.** Nya tabeller och nya kolumner som får vara tomma kan läggas till direkt. Att ta bort, byta namn på eller ändra typ för något som redan finns körs mot levande data och ska beskrivas och godkännas först.
 

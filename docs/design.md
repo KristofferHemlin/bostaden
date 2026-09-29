@@ -870,6 +870,54 @@ Hjälptexten för köpkostnader skiljer sig: lagfart, pantbrev och inköpsprovis
 
 Sidan ska gå att lämna halvfylld. Ingen validering utöver att angivna belopp är tolkbara.
 
+### Samägande – medlemskapet
+
+**Allt hänger på bostaden, ingenting på personen.** Kostnader, projekt och bilagor pekar på `bostad_id`, och kopplingen mellan användare och bostad går via medlemskapet – se `CLAUDE.md`. Åtkomstkontrollen ska därför pröva medlemskapet, aldrig anta att en bostad har exakt en ägare. Bilagornas sökvägar är gissningsbara med flit, vilket gör kontrollen till enda skyddet.
+
+**Kvittot visar vem som lade in det.** En dämpad rad i läsläget: *Tillagt av dig* för egna poster, och för den andras det som identifierar henne. Användare har i dag ingen namnuppgift, så där står e-postadressen – ett namnfält som ingenting skriver till är sämre än en adress som stämmer. Om ett förnamn ska efterfrågas vid registreringen avgörs i inbjudningsomgången, och raden byter då till namnet med adressen som reserv.
+
+Med två delägare är "vem la in de här 40 000?" en fråga som kommer att ställas, och utan raden är den obesvarbar. Samma sak för klassificeringssvaren, eftersom den som svarar först bestämmer och den andra ska kunna se vem det var. Raden visas bara när bostaden har fler än en medlem – ensam är den brus.
+
+**Klassificeringsfrågorna besvaras gemensamt.** Den som svarar först bestämmer. Skickbedömningen är subjektiv och två delägare kan tycka olika, men de deklarerar samma åtgärd på samma bostad – två olika underlag för samma renovering är svårare att försvara än ett.
+
+**Fördelningen efter ägarandel är inget val.** Avdragen hör till bostaden, inte till personen, och fördelas efter ägarandel oavsett vem som betalade fakturan. Appen erbjuder därför ingen möjlighet för en delägare att ta hela beloppet – ett sådant val vore en inbjudan till en position Skatteverkets huvudregel inte accepterar. Källan står i `docs/regelkallor.md`.
+
+**Exportvyn säger vems underlag det är.** Har bostaden fler än en medlem står det överst vem sammanställningen gäller, vilken andel den bygger på, och att den andra delägaren deklarerar sin del separat. Utan den raden kan båda föra in hela beloppet i sina deklarationer. Att varje delägare deklarerar sin egen andel är bekräftat – se `docs/regelkallor.md`.
+
+**Kontoraderingen tar bara bort det som är ditt.** Är du sista medlemmen försvinner bostaden med allt som hänger på den, som i dag. Finns det fler medlemmar tas bara ditt medlemskap bort, och bostaden med sina kvitton och bilagor ligger kvar hos de andra. En separation får aldrig radera den andras arkiv.
+
+**Tas en delägare bort stannar allt i bostaden.** Kvittona dokumenterar bostaden, inte personen, och ett underlag med hål i är farligt just för att hålen inte syns. Den som lämnar ska kunna ladda ner sitt zip-arkiv först.
+
+### Att bjuda in en delägare
+
+**Frågan ställs där ägandet ändå beskrivs**, i kortet Ägandet, och inte som en egen del av appen. Anger användaren en ägarandel under 100 % visas raden om att bjuda in den andra delägaren. Äger man hela bostaden finns den inte – då är den brus.
+
+**Den som bjuder in anger sin egen andel, inbjudan får resten.** En inbjudan som inte lösts in har inget medlemskap att skriva andelen på, och låter man båda ange sin andel var för sig kan bostaden kortvarigt ägas till 150 %. Kontrollen att summan aldrig överstiger 100 % ligger på servern, inte bara i formuläret.
+
+**Ett informationssteg före koden** säger vad som delas – allt: varje kvitto, varje belopp, hela historiken och underlaget – och vilka som ryms i funktionen: delägare som tillträdde samtidigt, där ingen köpt ut den andra under innehavet. Modellen har ett förvärv per bostad medan verkligheten har ett per person och andel, och den som köpt in sig senare skulle få ett underlag som ser riktigt ut men är fel. Skälen står som öppna rättsfrågor i `docs/regelkallor.md`.
+
+**Inbjudan är en post, inte en länk.** Den ställs till en e-postadress och ligger kvar tills den accepteras eller återkallas. Loggar någon in med den adressen visas den på startskärmen, oavsett hur hen kom dit. QR-koden och länken är genvägar till samma post.
+
+Det är skälet att posten väljs framför en ren länk: den överlever ett glömt lösenord, en stängd flik, ett byte från telefon till dator. Den som återställer sitt lösenord loggar in och hittar inbjudan där, utan att behöva leta rätt på koden igen.
+
+**Länken är ingen nyckel.** Den pekar bara ut vilken inbjudan det gäller; för att lösa in den måste man vara inloggad som just den adressen. Någon som hittar koden kan därför inte göra något med den. Giltighetstiden är städning, inte skydd.
+
+**Sidan bakom koden måste bevisa vem den kommer från**, innan det finns ett fält att fylla i: vem som bjudit in, vilken adress bostaden har, och vad åtkomsten innebär. En kod som leder rakt till ett lösenordsfält har formen av ett nätfiskeflöde.
+
+**En och samma länk, med två utgångar.** Vilken som visas avgörs när den öppnas, inte när den skapas – annars blir koden fel byggd om den inbjudna hinner skapa konto under tiden. Har adressen ett konto står det *Logga in för att ansluta*, annars *Skapa konto*.
+
+**Den som bjuder in får ändå veta.** När adressen angetts kan appen säga att personen redan har ett konto och att inbjudan dyker upp på hennes startsida nästa gång hon loggar in. Uppslagningen sker på servern. Den informerar bara – den förgrenar ingenting.
+
+**Ett bekräftelsesteg, inte ett inmatningssteg.** Den som accepterar får se vad den andra redan registrerat – adress, tillträdesdatum, köpeskilling – och svarar på en enda fråga: stämmer det här för dig också? Ja betyder att förutsättningarna för funktionen är uppfyllda. Nej betyder att appen säger att den inte hanterar delägare som tillträtt vid olika tidpunkter ännu, och stannar.
+
+Steget är alltså en detektor, inte en fälla. Vi får veta hur vanligt fallet är, användaren får veta sanningen, och ingen får ett underlag som ser rätt ut och är fel. När de öppna rättsfrågorna är besvarade byts bekräftelsen mot riktiga fält utan att flödet ändrar form.
+
+**Den som redan har en bostad kan inte ansluta ännu.** Inbjudan ligger kvar på startskärmen med ett ärligt besked: appen hanterar en bostad per person i dag, och den dag växlaren finns går inbjudan att acceptera. **Ingen bostad tas bort**, inte ens en tom – ingenting kastas, ingenting låses. Den vanliga vägen berörs inte: en partner som aldrig använt appen registrerar sig och ansluts till den befintliga bostaden i stället för att skapa en egen.
+
+**Kortet visar vem som äger vad, hos båda.** Efter anslutningen listar Ägandet båda delägarna med sina andelar, på bådas konton. En utestående inbjudan syns där med sin adress och går att återkalla.
+
+**Fel adress ger ett begripligt besked.** Försöker någon lösa in en inbjudan som inloggad med en annan adress ska det stå varför det inte går, inte ett generiskt fel.
+
 ### Exportvyn
 
 **Sidan går alltid att öppna, också innan bostaden är såld.** Att kräva ett försäljningsdatum för att ens få titta lär användaren att sidan inte är för honom eller henne, och nyfikenheten på vad man samlat ihop är både legitim och nyttig – den är hela skälet att fortsätta lägga in kvitton.
