@@ -4,9 +4,8 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { arOskyddadSokvag } from "@/lib/oskyddade-sokvagar";
 import { supabaseNyckel, supabaseUrl } from "./konfig";
-
-const OSKYDDADE_PREFIX = ["/login", "/auth", "/registrera", "/integritetspolicy"];
 
 export async function uppdateraSession(
   request: NextRequest,
@@ -42,10 +41,7 @@ export async function uppdateraSession(
     data: { user },
   } = await supabase.auth.getUser();
 
-  const sokvag = request.nextUrl.pathname;
-  const oskyddad = OSKYDDADE_PREFIX.some(
-    (p) => sokvag === p || sokvag.startsWith(`${p}/`),
-  );
+  const oskyddad = arOskyddadSokvag(request.nextUrl.pathname);
 
   if (!user && !oskyddad) {
     const omdirigering = request.nextUrl.clone();

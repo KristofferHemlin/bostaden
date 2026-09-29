@@ -25,6 +25,7 @@
 // horde till och att filen inte kunde lasas – aldrig ett tyst hal.
 
 import { PageSizes, PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { blankettTexter } from "@/doman/blankett";
 import type { K6aExportrad } from "@/doman/export-k6a";
 import { formateraKronor } from "@/lib/format";
 import type { BilagepaketBilagesida, BilagepaketData, BilagepaketRadavdrag } from "./hamta";
@@ -69,15 +70,15 @@ export async function byggBilagepaketPdf(
   ]);
   const rv: Ritverktyg = { doc, font, fontFet };
 
-  const blankett = data.forsattsdata.upplatelseform === "fastighet" ? "K5" : "K6";
+  const texter = blankettTexter(data.forsattsdata.upplatelseform);
 
-  ritaForsattssida(rv, data, blankett);
+  ritaForsattssida(rv, data, texter.blankett);
   ritaSammanstallningssida(rv, {
     titel: "Sida 1 · Grundförbättringar",
     rader: data.ex.sida1.rader,
     visaAvdragsgill: false,
     gemensam: data.ex.delagarvariant === "gemensam_med_andel",
-    rutaText: `Förs till ${blankett}, ruta 4`,
+    rutaText: texter.ruta4,
     summaBrutto: data.ex.ruta4_brutto,
     summaIndividuellt: data.ex.ruta4_individuellt,
     agarandelProcent: data.ex.agarandel_procent,
@@ -89,7 +90,7 @@ export async function byggBilagepaketPdf(
     rader: data.ex.sida2.rader,
     visaAvdragsgill: true,
     gemensam: data.ex.delagarvariant === "gemensam_med_andel",
-    rutaText: `Förs till ${blankett}, ruta 5`,
+    rutaText: texter.ruta5,
     summaBrutto: data.ex.ruta5_brutto,
     summaIndividuellt: data.ex.ruta5_individuellt,
     agarandelProcent: data.ex.agarandel_procent,

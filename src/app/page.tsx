@@ -14,6 +14,9 @@
 // adressen star precis som pa alla andra sidor.
 //
 // Ingen inmatning har – bara lasning. All berakning bor i src/doman.
+//
+// Utan session visas i stallet landningssidan (docs/design.md, Landningssidan).
+// Ingen inloggad ser den nagonsin; ingen utloggad nar startskarmen.
 
 import Link from "next/link";
 import {
@@ -37,11 +40,16 @@ import { hamtaBostadsdata } from "@/lib/doman-fran-db";
 import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 import { formateraKronor, isoDatum } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
-import { kravBostad } from "@/lib/session";
+import { Landningssida } from "@/app/landningssida";
+import { hamtaAnvandare, kravBostad } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function Oversikt() {
+  // hamtaAnvandare ar cachad per begaran (rot-layouten har redan kallat den)
+  // och gor inga databasanrop utan session.
+  if (!(await hamtaAnvandare())) return <Landningssida />;
+
   const { bostadId } = await kravBostad();
   const { bostad, kostnader, regelparametrar } = await hamtaBostadsdata(bostadId);
   const { bostadsnamn } = bostadHeader(bostad);

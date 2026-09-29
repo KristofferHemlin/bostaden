@@ -27,6 +27,7 @@ import {
   type K6aExportrad,
   type K6aIndata,
 } from "@/doman/export-k6a";
+import { blankettTexter } from "@/doman/blankett";
 import { behoverSkickForsaljning } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { BILAGEPAKET_SYNLIGT } from "@/lib/bilagepaket/flagga";
@@ -43,9 +44,8 @@ export default async function ExportSida() {
   const { bostadsnamn } = bostadHeader(bostad);
 
   // Enda skillnaden mellan upplatelseformerna i den har vyn: huvudblanketten som
-  // de tva talen skrivs av till (produktspec 4.8). SKV 2197 ar samma
-  // hjalpblankett for bada.
-  const blankett = bostad.upplatelseform === "fastighet" ? "K5" : "K6";
+  // de tva talen skrivs av till (produktspec 4.9, src/doman/blankett.ts).
+  const texter = blankettTexter(bostad.upplatelseform);
 
   return (
     <Skarm bostadsnamn={bostadsnamn} rubrik="Deklarationsunderlag">
@@ -122,7 +122,7 @@ export default async function ExportSida() {
           <Meddelanderuta>
             {gemensam
               ? "Din ägarandel är under 100 %. Sammanställningen visar både hela bostadens belopp och din andel, så att den andra delägaren kan använda samma underlag."
-              : `Sammanställningen följer Skatteverkets hjälpblankett SKV 2197 och pekar ut vad som förs till ${blankett}. Den lämnas inte in – spara den.`}
+              : texter.inledning}
           </Meddelanderuta>
         </div>
 
@@ -135,7 +135,7 @@ export default async function ExportSida() {
         />
 
         <RutaCallout
-          rubrik={`Förs till ${blankett}, ruta 4`}
+          rubrik={texter.ruta4}
           underrad="Summa sida 1 – grundförbättringar"
           brutto={ex.ruta4_brutto}
           individuellt={ex.ruta4_individuellt}
@@ -154,7 +154,7 @@ export default async function ExportSida() {
 
         {ex.sald ? (
           <RutaCallout
-            rubrik={`Förs till ${blankett}, ruta 5`}
+            rubrik={texter.ruta5}
             underrad="Summa sida 2 – avdragsgill del efter förslitning"
             brutto={ex.ruta5_brutto}
             individuellt={ex.ruta5_individuellt}

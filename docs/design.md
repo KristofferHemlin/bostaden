@@ -723,6 +723,36 @@ Klick, aldrig hover. Hover finns inte på telefon, och det är där appen använ
 
 Motiveringen – fråga 8, "Hur vet du det?" – ligger sist och blockerar aldrig. Den visas bara när `skick_forvarv` är 0, 1 eller 2; se `docs/produktspec.md` avsnitt 4.1.
 
+### Landningssidan
+
+Den som inte är inloggad möter en sida som förklarar produkten, inte ett inloggningskort. Inloggningssidan ligger kvar som den är, på sin egen rutt.
+
+**Sidan skrivs för en främling.** Inte för de första testpersonerna, som ändå vet vad det handlar om, utan för någon som fått länken vidarskickad utan förklaring. Den ska ensam svara på vad det här är och varför det spelar roll. Det är också skälet att den byggs nu och inte efter testet: den är det första testpersonerna möter, och en produkt som inte förklarar sig själv får fynd om förvirring i stället för om flödet.
+
+**Löftet är förlusten först, enkelheten som svar.** Att börja i vad man går miste om ger skälet att läsa vidare; att sedan visa hur lite det kostar i möda ger skälet att börja. Omvänd ordning ger en app som låter smidig utan att någon förstår varför de skulle vilja ha den.
+
+Texten är:
+
+> **Det du gjort med bostaden sänker skatten när du säljer. Om kvittot finns kvar.**
+>
+> Nytt kök, omdragen el, ett tak – sådant får dras av från vinsten den dag bostaden säljs. Men avdraget kräver att du kan visa vad du gjort, och försäljningen kan ligga tjugo år bort. De flesta betalar för mycket i vinstskatt av ett enda skäl: kvittona är borta.
+>
+> **Fota kvittot när du har det i handen.** Appen läser av belopp, datum och leverantör. Det tar tio sekunder, och du behöver inte kunna en enda skatteregel för att göra det.
+>
+> **Frågorna ställs medan du minns svaren.** Var badrummet slitet innan? Höjde du standarden eller lagade du något? Det är omöjligt att svara på om åtta år och enkelt i dag.
+>
+> **Den dag du säljer är underlaget färdigt.** En sammanställning i Skatteverkets eget format, med talen du ska föra in i deklarationen. Kvittona ligger kvar om Skatteverket skulle fråga.
+
+**Inget blankettnamn på den här sidan.** Varken K5 eller K6, och inte SKV 2197. Namnet beror på upplåtelseformen och hälften av läsarna skulle få fel – och ingen som inte redan sålt en bostad vet vad någotdera betyder. Appen säger rätt namn när det är dags, på exportvyn.
+
+**Skapa konto är den orange knappen här**, tvärtemot inloggningssidan, med Logga in som sekundärknapp bredvid eller under. Det är den handling sidan finns för. Bär båda knapparna orange försvinner skillnaden och sidan tappar sitt ärende.
+
+**Ingenting om pris.** Ett medvetet val 2026-09-29, inte en glömska. Den kända risken är att en läsare antar prenumeration, eftersom det är vad de flesta appar har, och avstår av det skälet. Blir det ett återkommande fynd i användartestet är åtgärden en rad om affärsmodellen utan siffra, inte en prislista.
+
+**Inga bilder.** Vi har ingen egen fotografi, och en köpt bild för in färger och en ton som ligger utanför paletten. Sidan bärs av text, luft och samma tokens som resten av appen – en enda kolumn, samma maxbredd, ingen ny visuell värld att underhålla.
+
+**En skärm, ingen scrollsaga.** Inga sektioner att bläddra igenom, inga kundcitat, inga logotyper. Det finns inget att styrka ännu, och en tom marknadsföringsstruktur syns.
+
 ### Registreringsflödet
 
 Att skapa konto är ett eget flöde, inte samma formulär som inloggningen med en extra knapp. Den som trycker "Skapa konto" ska veta vad som händer härnäst.
