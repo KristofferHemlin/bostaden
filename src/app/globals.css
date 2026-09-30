@@ -13,12 +13,16 @@
   --text-sekundar: #4a5c66;
   --text-dampad: #6b7c85;
 
-  --accent: #cc6631;
-  --accent-mork: #a94e22;
+  /* --accent ar den enda orange som far bara ljus text (5,13 mot kort).
+     --accent-ljus ar for stora marken och ikoner, aldrig text i
+     granssnittsstorlek. Se docs/design.md, Farger. */
+  --accent: #a94e22;
+  --accent-ljus: #cc6631;
+  --accent-mork: #8b401c;
   --sand: #d8c0a8;
   --sand-mork: #b99a76;
 
-  --linje: #dccfc0;
+  --linje: #d1c5b6;
 
   /* Hovring i listor (docs/design.md, "Listrader"): markbart svagare an
      arsrubrikens band. Fylls en hovrad med samma --yta-nedsankt som
@@ -26,12 +30,11 @@
      Anvands ENDAST for radhovring, aldrig for rubrikband eller inputfalt. */
   --yta-hover: color-mix(in srgb, var(--yta-nedsankt) 40%, var(--yta-upphojd));
 
-  /* Tva dampade statusfarger – ENDAST till meddelanderutor (docs/design.md).
-     Bla for forklaringar som inte kraver nagot, gron for bekraftelser. Aldrig i
-     troskelfaltet, i listor, pa knappar eller som textfarg utanfor sina rutor. */
-  --bg-info: #dde7ec;
-  --text-info: #2c5568;
-  --bg-klart: #dfe8dc;
+  /* Bekraftelser – en handelse som just intraffat – och ENDAST till
+     Bekraftelseruta (docs/design.md, Meddelanderutor). Forklaringar bar
+     --sand. Aldrig i troskelfaltet, i listor, pa knappar eller som textfarg
+     utanfor rutan. Inget blatt i paletten. */
+  --bg-klart: #c9d1c6;
   --text-klart: #3d5e3a;
 }
 

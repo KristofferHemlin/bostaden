@@ -57,7 +57,7 @@ export function RedigeraProjektForm({
         <FragetradetFalt initial={varden} />
 
         {resultat.fel ? (
-          <p className="font-granssnitt text-sm text-accent-mork">
+          <p className="font-granssnitt text-sm text-accent">
             {resultat.fel}
           </p>
         ) : null}
@@ -107,7 +107,7 @@ export function RedigeraProjektForm({
               – projektet har inga kopplade.
             </p>
             {radera.fel ? (
-              <p className="font-granssnitt text-sm text-accent-mork">
+              <p className="font-granssnitt text-sm text-accent">
                 {radera.fel}
               </p>
             ) : null}

@@ -60,7 +60,7 @@ export default async function SkickForsaljningSida() {
           <p className="font-rubrik text-lg text-text-primar">
             Inget mer att bedöma
           </p>
-          <p className="mt-1 font-granssnitt text-sm text-text-dampad">
+          <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
             Alla åtgärder med en reparationsdel har fått sitt skick vid
             försäljningen bedömt. Nya åtgärder du klassificerar dyker upp här
             om de behöver samma bedömning.

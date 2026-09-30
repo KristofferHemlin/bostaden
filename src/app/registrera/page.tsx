@@ -33,14 +33,14 @@ export default async function RegistreraSida() {
           <h1 className="font-rubrik text-2xl text-text-primar">
             {endastBostad ? "Lägg upp din bostad" : "Skapa konto"}
           </h1>
-          <p className="mt-1 font-granssnitt text-sm text-text-dampad">
+          <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
             {endastBostad
               ? "Sista steget innan du kommer igång."
               : "Två korta steg: konto och din bostad."}
           </p>
         </header>
 
-        <div className="overflow-hidden rounded-xl bg-yta-upphojd">
+        <div className="overflow-hidden rounded-xl border border-linje bg-yta-upphojd">
           <RegistreraFlode endastBostad={endastBostad} />
         </div>
       </main>

@@ -65,7 +65,7 @@ export function UtkastRaderaKnapp({
           <SoptunnaGlyf />
         </button>
         {resultat.fel ? (
-          <span className="mt-0.5 max-w-[8rem] text-right font-granssnitt text-xs text-accent-mork">
+          <span className="mt-0.5 max-w-[8rem] text-right font-granssnitt text-xs text-accent">
             {resultat.fel}
           </span>
         ) : null}
@@ -77,7 +77,7 @@ export function UtkastRaderaKnapp({
     <form action={raderaAction} onSubmit={hanteraSubmit} className="flex flex-col gap-2">
       <input type="hidden" name="kostnad_id" value={kostnadId} />
       {resultat.fel ? (
-        <p className="font-granssnitt text-sm text-accent-mork">{resultat.fel}</p>
+        <p className="font-granssnitt text-sm text-accent">{resultat.fel}</p>
       ) : null}
       <button
         type="submit"

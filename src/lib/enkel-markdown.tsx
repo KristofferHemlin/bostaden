@@ -85,7 +85,7 @@ function renderTabell(rader: string[], key: number): ReactNode {
     <div key={key} className="overflow-x-auto">
       <table className="w-full border-collapse font-granssnitt text-sm">
         <thead>
-          <tr className="text-left text-text-dampad">
+          <tr className="text-left text-text-sekundar">
             {celler(rubrikrad).map((c, i) => (
               <th key={i} className="px-3 py-2 font-normal">
                 {parseInline(c, `${key}-h-${i}`)}

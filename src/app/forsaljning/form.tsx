@@ -48,7 +48,7 @@ export function ForsaljningForm({
       </Falt>
 
       {resultat.fel ? (
-        <p className="font-granssnitt text-sm text-accent-mork">{resultat.fel}</p>
+        <p className="font-granssnitt text-sm text-accent">{resultat.fel}</p>
       ) : null}
 
       <button type="submit" disabled={pagar} className={PRIMARKNAPP_KLASS}>

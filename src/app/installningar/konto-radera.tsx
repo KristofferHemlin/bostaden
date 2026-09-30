@@ -30,7 +30,7 @@ export function KontoRadera({ epost }: { epost: string }) {
       <button
         type="button"
         onClick={() => setOppen(true)}
-        className="self-start font-granssnitt text-sm text-text-dampad underline underline-offset-2 hover:text-text-sekundar"
+        className="self-start font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
       >
         Radera kontot
       </button>
@@ -70,7 +70,7 @@ export function KontoRadera({ epost }: { epost: string }) {
       <input type="hidden" name="epost_bekraftelse" value={inskrivenEpost} />
 
       {resultat.fel ? (
-        <p className="font-granssnitt text-sm text-accent-mork">{resultat.fel}</p>
+        <p className="font-granssnitt text-sm text-accent">{resultat.fel}</p>
       ) : null}
 
       <div className="flex gap-4">

@@ -7,12 +7,14 @@
 // projektfragorna (hover finns inte pa telefon).
 
 import { useState } from "react";
+import { talSomOrd } from "@/doman/regeltext";
 
-export function KategoriInfo() {
+/** `fonsterAr` ur regelparametern – talet skrivs aldrig bokstavligt har. */
+export function KategoriInfo({ fonsterAr }: { fonsterAr: number }) {
   const [visa, setVisa] = useState(false);
   return (
     <div>
-      <p className="flex items-center gap-2 font-granssnitt text-xs text-text-dampad">
+      <p className="flex items-center gap-2 font-granssnitt text-xs text-text-sekundar">
         <span>Vad betyder grundförbättring och reparation?</span>
         <button
           type="button"
@@ -25,15 +27,16 @@ export function KategoriInfo() {
         </button>
       </p>
       {visa ? (
-        <div className="mt-2 space-y-2 rounded-lg bg-bg-info px-3 py-2 font-granssnitt text-sm text-text-info">
+        <div className="mt-2 space-y-2 rounded-lg bg-sand px-3 py-2 font-granssnitt text-sm text-text-primar">
           <p>
-            <span className="font-medium">Grundförbättring:</span> något tillfördes
-            eller standarden höjdes. Ingen tidsgräns bakåt.
+            <span className="font-medium">Grundförbättring:</span> något
+            tillfördes eller standarden höjdes. Ingen tidsgräns bakåt.
           </p>
           <p>
-            <span className="font-medium">Reparation:</span> något fräschades upp
-            eller lagades. Avdragsgill bara inom fem år före försäljningen och bara
-            om bostaden är i bättre skick än vid tillträdet.
+            <span className="font-medium">Reparation:</span> något fräschades
+            upp eller lagades. Avdragsgill bara inom {talSomOrd(fonsterAr)} år
+            före försäljningen och bara om bostaden är i bättre skick än vid
+            tillträdet.
           </p>
         </div>
       ) : null}

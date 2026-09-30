@@ -14,7 +14,7 @@
 // (`@/components/datum-falt`).
 
 import { useState } from "react";
-import { INPUT_KLASS } from "@/components/skarm";
+import { FALTFEL_KLASS, INPUT_KLASS } from "@/components/skarm";
 import { agarandelFel } from "@/lib/agarandel";
 
 // Bara siffror och EN decimalavgransare (komma eller punkt) kommer igenom –
@@ -59,7 +59,7 @@ export function AgarandelFalt({
         placeholder="t.ex. 50"
       />
       {fel ? (
-        <p className="mt-1.5 font-granssnitt text-xs text-accent-mork">{fel}</p>
+        <p className={`mt-1.5 ${FALTFEL_KLASS}`}>{fel}</p>
       ) : null}
     </div>
   );

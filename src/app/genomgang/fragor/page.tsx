@@ -94,7 +94,7 @@ export default async function FragorSida() {
           <p className="font-rubrik text-lg text-text-primar">
             Inget mer att klassificera
           </p>
-          <p className="mt-1 font-granssnitt text-sm text-text-dampad">
+          <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
             Alla högar har gått igenom frågorna. Nya kvitton du lägger in dyker
             upp här när du startar genomgången igen.
           </p>

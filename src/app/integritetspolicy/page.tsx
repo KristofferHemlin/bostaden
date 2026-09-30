@@ -13,6 +13,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import Link from "next/link";
 import { EnkelMarkdown } from "@/lib/enkel-markdown";
+import { KOLUMN_KLASS } from "@/components/skarm";
 
 export const metadata = {
   title: "Integritetspolicy – Bostadsunderlag",
@@ -28,7 +29,7 @@ export default async function IntegritetspolicySida() {
   return (
     <div className="min-h-screen w-full bg-yta-bas">
       <div className="w-full border-b border-linje bg-yta-upphojd">
-        <div className="mx-auto flex w-full max-w-[620px] items-center gap-2.5 px-4 py-3">
+        <div className={`${KOLUMN_KLASS} flex items-center gap-2.5 px-4 py-3`}>
           <Link href="/" className="flex items-center gap-2.5">
             <img
               src="/kajin-hem-logo.png"
@@ -43,8 +44,8 @@ export default async function IntegritetspolicySida() {
         </div>
       </div>
 
-      <main className="mx-auto w-full max-w-[620px] px-4 py-6 sm:py-10">
-        <div className="overflow-hidden rounded-xl bg-yta-upphojd p-5 sm:p-8">
+      <main className={`${KOLUMN_KLASS} px-4 py-6 sm:py-10`}>
+        <div className="overflow-hidden rounded-xl border border-linje bg-yta-upphojd p-5 sm:p-8">
           <EnkelMarkdown text={text} />
         </div>
       </main>

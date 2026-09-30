@@ -34,6 +34,7 @@
 import { useEffect, useRef, useState } from "react";
 import { isoDatum } from "@/lib/format";
 import { datumfel } from "@/lib/datum";
+import { FALTFEL_KLASS } from "@/components/skarm";
 
 const FALT_BAS =
   "rounded-lg border-0 bg-yta-nedsankt px-2 py-3 text-center font-granssnitt text-base tabular-nums text-text-primar outline-none placeholder:text-text-dampad focus:ring-2 focus:ring-accent";
@@ -183,7 +184,7 @@ export function DatumFalt({
       </div>
       {name ? <input type="hidden" name={name} value={iso} /> : null}
       {fel ? (
-        <p className="mt-1.5 font-granssnitt text-xs text-accent-mork">
+        <p className={`mt-1.5 ${FALTFEL_KLASS}`}>
           {fel}
         </p>
       ) : null}

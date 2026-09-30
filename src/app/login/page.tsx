@@ -14,9 +14,9 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useActionState, useState } from "react";
 import { hanteraAuth, type AuthResultat } from "./actions";
 import {
+  Bekraftelseruta,
   Falt,
   INPUT_KLASS,
-  Meddelanderuta,
   PRIMARKNAPP_KLASS,
   SANDKNAPP_KLASS,
 } from "@/components/skarm";
@@ -52,13 +52,13 @@ function LoginInnehall() {
           <div className="flex items-center gap-2">
             <span
               aria-hidden
-              className="inline-block h-3.5 w-3.5 rounded-[4px] bg-accent"
+              className="inline-block h-3.5 w-3.5 rounded-[4px] bg-accent-ljus"
             />
             <h1 className="font-rubrik text-2xl text-text-primar">
               Bostadsunderlag
             </h1>
           </div>
-          <p className="mt-1 pl-6 font-granssnitt text-sm text-text-dampad">
+          <p className="mt-1 pl-6 font-granssnitt text-sm text-text-sekundar">
             Spara kvittona på det du gör med bostaden, dra av dem den dag du
             säljer.
           </p>
@@ -66,11 +66,11 @@ function LoginInnehall() {
 
         {kontoRaderat ? (
           <div className="mb-4">
-            <Meddelanderuta>Kontot är borttaget.</Meddelanderuta>
+            <Bekraftelseruta>Kontot är borttaget.</Bekraftelseruta>
           </div>
         ) : null}
 
-        <div className="rounded-xl bg-yta-upphojd p-5">
+        <div className="rounded-xl border border-linje bg-yta-upphojd p-5">
           <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-4">
             <Falt etikett="E-post">
               <input
@@ -96,12 +96,12 @@ function LoginInnehall() {
             ) : null}
 
             {resultat.fel ? (
-              <p className="font-granssnitt text-sm text-accent-mork">
+              <p className="font-granssnitt text-sm text-accent">
                 {resultat.fel}
               </p>
             ) : null}
             {resultat.meddelande ? (
-              <Meddelanderuta>{resultat.meddelande}</Meddelanderuta>
+              <Bekraftelseruta>{resultat.meddelande}</Bekraftelseruta>
             ) : null}
 
             <button
@@ -128,13 +128,13 @@ function LoginInnehall() {
             <Link href="/registrera" className={SANDKNAPP_KLASS}>
               Skapa konto
             </Link>
-            {/* E-postlank: dampad, centrerad textlank i --text-dampad. */}
+            {/* E-postlank: dampad, centrerad textlank i --text-sekundar. */}
             <button
               type="button"
               onClick={() =>
                 setLage((l) => (l === "losenord" ? "magisk" : "losenord"))
               }
-              className="font-granssnitt text-sm text-text-dampad underline underline-offset-2 hover:text-text-sekundar"
+              className="font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
             >
               {lage === "losenord"
                 ? "Logga in med e-postlänk i stället"

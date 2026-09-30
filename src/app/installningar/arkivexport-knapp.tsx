@@ -143,14 +143,14 @@ export function ArkivexportKnapp() {
       </button>
 
       {steg.fas === "tom" ? (
-        <p className="font-granssnitt text-sm text-text-dampad">
+        <p className="font-granssnitt text-sm text-text-sekundar">
           Inga bilagor att ladda ner än.
         </p>
       ) : null}
 
       {steg.fas === "fel" ? (
         <div className="flex flex-col gap-2">
-          <p className="font-granssnitt text-sm text-accent-mork">{steg.melding}</p>
+          <p className="font-granssnitt text-sm text-accent">{steg.melding}</p>
           {steg.saknade.length > 0 ? (
             <ul className="max-h-40 overflow-y-auto rounded-lg bg-yta-nedsankt p-3 font-granssnitt text-xs text-text-sekundar">
               {steg.saknade.map((sokvag) => (

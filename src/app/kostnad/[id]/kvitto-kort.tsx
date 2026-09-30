@@ -47,6 +47,7 @@ import { DatumFalt } from "@/components/datum-falt";
 import { KvittodatumNotis } from "@/components/kvittodatum-notis";
 import {
   Falt,
+  HJALPTEXT_KLASS,
   INPUT_KLASS,
   Meddelanderuta,
   PRIMARKNAPP_KLASS,
@@ -169,7 +170,7 @@ export function KvittoKort({
 function Rad({ etikett, varde }: { etikett: string; varde: string }) {
   return (
     <div className="flex justify-between gap-3">
-      <span className="text-text-dampad">{etikett}</span>
+      <span className="text-text-sekundar">{etikett}</span>
       <span className="text-right text-text-primar">{varde}</span>
     </div>
   );
@@ -201,7 +202,7 @@ function LasVy({
           <button
             type="button"
             onClick={onAndra}
-            className="shrink-0 pt-0.5 font-granssnitt text-sm text-text-dampad underline underline-offset-2 hover:text-text-sekundar"
+            className="shrink-0 pt-0.5 font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
           >
             Ändra
           </button>
@@ -213,12 +214,12 @@ function LasVy({
           <Rad etikett="Leverantör" varde={varden.leverantor} />
         </div>
         {varden.kvittodatumNotisText ? (
-          <p className="mt-2 font-granssnitt text-xs text-text-dampad">
+          <p className="mt-2 font-granssnitt text-xs text-text-sekundar">
             {varden.kvittodatumNotisText}
           </p>
         ) : null}
         {varden.grupperingar.length > 0 ? (
-          <p className="mt-2 font-granssnitt text-sm text-text-dampad">
+          <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
             Hör till {varden.grupperingar.join(", ")}
           </p>
         ) : null}
@@ -226,7 +227,7 @@ function LasVy({
             grupperingen ovan, ingen ikon och ingen farg (docs/design.md,
             "Ett kvitto ar en skarm, inte tva"). Saknas det star ingenting. */}
         {varden.privatbelopp ? (
-          <p className="mt-2 font-granssnitt text-sm text-text-dampad">
+          <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
             {varden.privatbelopp} hörde inte till bostaden
           </p>
         ) : null}
@@ -406,7 +407,7 @@ function RedigeraVy({
           <Falt etikett="Betaldatum">
             <DatumFalt name="betaldatum" defaultValue={varden.betaldatum} />
           </Falt>
-          <p className="mt-1 font-granssnitt text-xs text-text-dampad">
+          <p className={`mt-1 ${HJALPTEXT_KLASS}`}>
             Lämna tomt om fakturan inte är betald än.
           </p>
         </div>
@@ -473,7 +474,7 @@ function RedigeraVy({
         ) : null}
 
         {resultat.fel ? (
-          <p className="font-granssnitt text-sm text-accent-mork">
+          <p className="font-granssnitt text-sm text-accent">
             {resultat.fel}
           </p>
         ) : null}
@@ -522,7 +523,7 @@ function RedigeraVy({
               Ta bort kvittot och alla dess bilagor? Det går inte att ångra.
             </p>
             {radera.fel ? (
-              <p className="font-granssnitt text-sm text-accent-mork">
+              <p className="font-granssnitt text-sm text-accent">
                 {radera.fel}
               </p>
             ) : null}

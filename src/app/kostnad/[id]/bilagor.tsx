@@ -74,6 +74,7 @@ import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { avvisningVidVal } from "@/lib/lagring/bilaga-regler";
 import { laddaUppKostnadsbilaga } from "@/lib/lagring/bilaga-klient";
 import type { Bilagevy } from "@/lib/lagring/bilagor";
+import { HJALPTEXT_KLASS, FALTFEL_KLASS } from "@/components/skarm";
 
 const START: BilagaResultat = {};
 
@@ -250,7 +251,7 @@ export function Bilagor({
           andringslaget bara sa lange raden ar tom (docs/design.md, "Bilagor":
           "Etiketten över raden visas bara när ingen bilaga finns"). */}
       {!dolgUppladdningshjalp && bilagor.length === 0 ? (
-        <p className="mb-2 font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
+        <p className="mb-2 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
           Kvitto eller faktura
         </p>
       ) : null}
@@ -439,11 +440,11 @@ export function Bilagor({
           Avvisas en fil tar felet radens plats och sager orsaken
           (docs/design.md, "Bilagor"). */}
       {redigerbar && avvisning ? (
-        <p role="alert" className="mt-2 font-granssnitt text-xs text-accent-mork">
+        <p role="alert" className={`mt-2 ${FALTFEL_KLASS}`}>
           {avvisning}
         </p>
       ) : redigerbar && !dolgUppladdningshjalp && bilagor.length === 0 ? (
-        <p className="mt-2 font-granssnitt text-xs text-text-dampad">
+        <p className={`mt-2 ${HJALPTEXT_KLASS}`}>
           JPG, PNG, HEIC eller PDF. Max 10 MB per fil. Går att lägga till
           senare.
         </p>
@@ -452,13 +453,13 @@ export function Bilagor({
       {/* Samma statusrad som inmatningen under samma uppladdning. Inget
           andra steg foljer har – andringslaget har ingen avlasning. */}
       {sparar ? (
-        <p role="status" className="mt-2 font-granssnitt text-xs text-text-dampad">
+        <p role="status" className="mt-2 font-granssnitt text-xs text-text-sekundar">
           Sparar kvittot
         </p>
       ) : null}
 
       {uppladdningsfel ? (
-        <div className="mt-2 font-granssnitt text-sm text-accent-mork">
+        <div className="mt-2 font-granssnitt text-sm text-accent">
           <p>{uppladdningsfel}</p>
           {koa.length > 0 ? (
             <button
@@ -473,7 +474,7 @@ export function Bilagor({
       ) : null}
 
       {bilagor.length === 0 && !sparar && !uppladdningsfel ? (
-        <p className="mt-2 font-granssnitt text-sm text-text-dampad">
+        <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
           Inga bilagor än. Ett kvitto utan bild är inget fel – underlaget blir
           bara svagare.
         </p>
@@ -495,7 +496,7 @@ export function Bilagor({
             Kvittots uppgifter ligger kvar.
           </p>
           {radera.fel ? (
-            <p className="font-granssnitt text-sm text-accent-mork">
+            <p className="font-granssnitt text-sm text-accent">
               {radera.fel}
             </p>
           ) : null}

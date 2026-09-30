@@ -53,7 +53,7 @@ export function Bostadsfragor({
 
   return (
     <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-6 p-5">
-      <p className="font-granssnitt text-sm text-text-dampad">
+      <p className="font-granssnitt text-sm text-text-sekundar">
         Två frågor om bostaden, en gång för alla. Svaren avgör om reparationer
         senare kan räknas som avdrag – du kan ändra dem i inställningarna om
         du svarar fel.
@@ -102,7 +102,7 @@ export function Bostadsfragor({
       <input type="hidden" name="nasta" value={nasta} />
 
       {resultat.fel ? (
-        <p className="font-granssnitt text-sm text-accent-mork">
+        <p className="font-granssnitt text-sm text-accent">
           {resultat.fel}
         </p>
       ) : null}

@@ -7,6 +7,7 @@
 
 import { describe, expect, it } from "vitest";
 import { byggK6aExport, type K6aIndata } from "@/doman/export-k6a";
+import type { Regelparameter } from "@/doman/typer";
 import { REGELPARAMETRAR, kostnad, projekt } from "./_hjalp";
 
 function bygg(over: Partial<K6aIndata>): K6aIndata {
@@ -38,7 +39,7 @@ describe("forklaringen till en 0-kr-rad i K6A-exporten", () => {
     const rad = ex.sida1.rader.find((r) => r.atgard === "Liten atgard");
     expect(rad?.belopp_brutto).toBe(0);
     expect(rad?.forklaring).toBe(
-      "Kostnaden för det året som åtgärden utfördes behöver sammanlagt uppgå till minst 5 000 kronor.",
+      "Kostnaden för det året som åtgärden utfördes behöver sammanlagt uppgå till minst 5\u00a0000\u00a0kronor.",
     );
   });
 
@@ -173,5 +174,76 @@ describe("forklaringen till en 0-kr-rad i K6A-exporten", () => {
     expect(rad?.avdragsgill_del_brutto).toBe(0);
     expect(rad?.forklaring).toBeNull();
     expect(rad?.varningar.length).toBeGreaterThan(0);
+  });
+});
+
+// docs/design.md, Exportvyn: "Beloppet i den texten skrivs aldrig som en
+// bokstavlig siffra i koden." Tröskeln och tidsfönstret är regelparametrar.
+// Ändras värdet ska förklaringen följa med – och den ska nämna det värde som
+// gällde det år raden gäller, precis som beräkningen gör.
+describe("förklaringen följer regelparametern", () => {
+  // Tröskeln höjs till 6 000 kr från 2030; 2029 och tidigare gäller 5 000 kr.
+  const HOJD_TROSKEL: Regelparameter[] = [
+    ...REGELPARAMETRAR.filter((p) => p.nyckel !== "troskelbelopp"),
+    {
+      nyckel: "troskelbelopp",
+      varde: 500_000,
+      enhet: "oren",
+      giltig_fran: "1970-01-01",
+      giltig_till: "2029-12-31",
+    },
+    {
+      nyckel: "troskelbelopp",
+      varde: 600_000,
+      enhet: "oren",
+      giltig_fran: "2030-01-01",
+      giltig_till: null,
+    },
+  ];
+
+  it("ett ändrat tröskelbelopp står i förklaringen, per radens år", () => {
+    const p2029 = projekt({ id: "p1", atgardstyp: "nybyggnad", namn: "Altan 2029" });
+    const p2030 = projekt({ id: "p2", atgardstyp: "nybyggnad", namn: "Altan 2030" });
+    const kostnader = [
+      kostnad({ id: "k1", betaldatum: "2029-05-01", totalbelopp: 421_000, projekt_id: "p1" }),
+      // 5 500 kr: hade klarat den gamla tröskeln men inte den nya.
+      kostnad({ id: "k2", betaldatum: "2030-05-01", totalbelopp: 550_000, projekt_id: "p2" }),
+    ];
+    const ex = byggK6aExport(
+      bygg({ projekt: [p2029, p2030], kostnader, regelparametrar: HOJD_TROSKEL }),
+    );
+    const rad2029 = ex.sida1.rader.find((r) => r.atgard === "Altan 2029");
+    const rad2030 = ex.sida1.rader.find((r) => r.atgard === "Altan 2030");
+    expect(rad2029?.belopp_brutto).toBe(0);
+    expect(rad2029?.forklaring).toContain("minst 5\u00a0000\u00a0kronor");
+    expect(rad2030?.belopp_brutto).toBe(0);
+    expect(rad2030?.forklaring).toContain("minst 6\u00a0000\u00a0kronor");
+    expect(rad2030?.forklaring).not.toContain("5\u00a0000");
+  });
+
+  it("ett ändrat tidsfönster för reparationer står i förklaringen", () => {
+    const SEXARSFONSTER: Regelparameter[] = REGELPARAMETRAR.map((p) =>
+      p.nyckel === "reparationsfonster_ar" ? { ...p, varde: 6 } : p,
+    );
+    const p = projekt({
+      id: "p1",
+      atgardstyp: "utbytt",
+      battre_kvalitet: false,
+      namn: "Slipa golv",
+      skick_forvarv: 0,
+      skick_forsaljning: 5,
+    });
+    const k = kostnad({
+      id: "k1",
+      betaldatum: "2025-04-01", // försäljning 2032, sexårsfönster 2026–2032
+      totalbelopp: 800_000,
+      projekt_id: "p1",
+    });
+    const ex = byggK6aExport(
+      bygg({ projekt: [p], kostnader: [k], regelparametrar: SEXARSFONSTER }),
+    );
+    const rad = ex.sida2.rader.find((r) => r.atgard === "Slipa golv");
+    expect(rad?.belopp_brutto).toBe(0);
+    expect(rad?.forklaring).toBe("Åtgärden utfördes mer än sex år före försäljningen.");
   });
 });

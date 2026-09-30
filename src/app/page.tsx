@@ -174,15 +174,15 @@ export default async function Oversikt() {
               Så fungerar det
             </p>
             <div className="mt-2 space-y-1.5">
-              <p className="font-granssnitt text-sm text-text-dampad">
+              <p className="font-granssnitt text-sm text-text-sekundar">
                 Fota kvittot eller ladda upp fakturan. Appen läser av belopp,
                 datum och leverantör.
               </p>
-              <p className="font-granssnitt text-sm text-text-dampad">
+              <p className="font-granssnitt text-sm text-text-sekundar">
                 Skattefrågorna kommer senare, inte nu. Du svarar på dem när du
                 vill, och senast när du säljer.
               </p>
-              <p className="font-granssnitt text-sm text-text-dampad">
+              <p className="font-granssnitt text-sm text-text-sekundar">
                 Allt ligger kvar tills du behöver det. Även om det dröjer
                 tjugo år.
               </p>
@@ -232,12 +232,12 @@ export default async function Oversikt() {
               {naddTroskel ? (
                 // Den enda gangen pa aret appen har goda nyheter – en hel mening,
                 // inte tva ord i smatext.
-                <p className="mt-2 font-granssnitt text-xs text-text-dampad">
+                <p className="mt-2 font-granssnitt text-xs text-text-sekundar">
                   Tröskeln för {VISAT_AR} är passerad – allt du lägger in i år
                   räknas
                 </p>
               ) : (
-                <div className="mt-2 flex items-baseline justify-between gap-3 font-granssnitt text-xs tabular-nums text-text-dampad">
+                <div className="mt-2 flex items-baseline justify-between gap-3 font-granssnitt text-xs tabular-nums text-text-sekundar">
                   <span>Tröskel {formateraKronor(troskelbelopp)}</span>
                   <span>{formateraKronor(aterstaende)} kvar</span>
                 </div>
@@ -263,7 +263,7 @@ export default async function Oversikt() {
                 <h2 className="font-rubrik text-base text-text-primar">
                   Senaste kvitton
                 </h2>
-                <p className="mt-0.5 font-granssnitt text-xs text-text-dampad">
+                <p className="mt-0.5 font-granssnitt text-xs text-text-sekundar">
                   De sex senast tillagda
                 </p>
               </div>
@@ -330,7 +330,7 @@ function Nyckeltal({
   return (
     <Link href={href} className="block">
       <Kort className="p-3 transition-colors hover:bg-yta-nedsankt">
-        <p className="font-granssnitt text-[11px] leading-tight text-text-dampad">
+        <p className="font-granssnitt text-[11px] leading-tight text-text-sekundar">
           {etikett}
         </p>
         <p className="mt-1 font-rubrik text-sm tabular-nums text-text-primar sm:text-base">

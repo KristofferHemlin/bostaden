@@ -33,7 +33,7 @@ const START: GenomgangResultat = {};
 // hander"). Samma visuella sprak som SEKUNDARKNAPP_KLASS, men utan w-full sa
 // den far plats bredvid textlanken "Inte en hog".
 const SKAPA_HOG_INLINE_KLASS =
-  "inline-flex min-h-[44px] items-center justify-center rounded-full border border-linje px-5 py-3 font-granssnitt text-base text-text-primar transition-colors hover:bg-yta-nedsankt disabled:opacity-60";
+  "inline-flex min-h-[44px] items-center justify-center rounded-full border border-sand-mork px-5 py-3 font-granssnitt text-base text-text-primar transition-colors hover:bg-yta-nedsankt disabled:opacity-60";
 
 interface Kvitto {
   id: string;
@@ -154,14 +154,14 @@ export function Fas1({
 
       {fel ? (
         <div className="border-b border-linje px-4 py-3">
-          <p className="font-granssnitt text-sm text-accent-mork">{fel}</p>
+          <p className="font-granssnitt text-sm text-accent">{fel}</p>
         </div>
       ) : null}
 
       {/* Forslag – bekraftas ett i taget, tillampas aldrig automatiskt. */}
       {kvarStarForslag.length > 0 ? (
         <section className="border-b border-linje">
-          <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
+          <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
             Förslag på högar
           </p>
           <div className="divide-y divide-linje">
@@ -173,7 +173,7 @@ export function Fas1({
               if (kvitton.length < 2) return null;
               return (
                 <div key={nyckel} className="p-4">
-                  <p className="font-granssnitt text-sm text-text-dampad">
+                  <p className="font-granssnitt text-sm text-text-sekundar">
                     {f.motiv}
                   </p>
                   <ul className="mt-2 space-y-1">
@@ -185,7 +185,7 @@ export function Fas1({
                         <span className="min-w-0 truncate text-text-primar">
                           {kvittoRubrik(k)}
                         </span>
-                        <span className="shrink-0 tabular-nums text-text-dampad">
+                        <span className="shrink-0 tabular-nums text-text-sekundar">
                           {formateraKronorEllerStreck(k.belopp)}
                         </span>
                       </li>
@@ -236,7 +236,7 @@ export function Fas1({
       {/* Dina hogar – null-kategori-projekt som annu inte gatt igenom fas 2. */}
       {hogar.length > 0 ? (
         <section className="border-b border-linje">
-          <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
+          <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
             Dina högar
           </p>
           <div className="divide-y divide-linje">
@@ -259,7 +259,7 @@ export function Fas1({
                         {kvittoRubrik(k)}
                       </span>
                       <span className="flex shrink-0 items-baseline gap-3">
-                        <span className="tabular-nums text-text-dampad">
+                        <span className="tabular-nums text-text-sekundar">
                           {formateraKronorEllerStreck(k.belopp)}
                         </span>
                         <form
@@ -288,7 +288,7 @@ export function Fas1({
                     </li>
                   ))}
                   {h.kvitton.length === 0 ? (
-                    <li className="font-granssnitt text-sm text-text-dampad">
+                    <li className="font-granssnitt text-sm text-text-sekundar">
                       Inga kvitton i högen.
                     </li>
                   ) : null}
@@ -328,11 +328,11 @@ export function Fas1({
 
       {/* Kvitton att ga igenom. */}
       <section className="border-b border-linje">
-        <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
+        <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
           Kvitton att gå igenom
         </p>
         {oklassificerade.length === 0 ? (
-          <p className="px-4 py-3 font-granssnitt text-sm text-text-dampad">
+          <p className="px-4 py-3 font-granssnitt text-sm text-text-sekundar">
             Inga oklassificerade kvitton kvar.
           </p>
         ) : (
@@ -352,7 +352,7 @@ export function Fas1({
                       <span className="block truncate font-granssnitt text-base text-text-primar">
                         {kvittoRubrik(k)}
                       </span>
-                      <span className="block font-granssnitt text-sm text-text-dampad">
+                      <span className="block font-granssnitt text-sm text-text-sekundar">
                         {kvittoUnderrad(k)}
                       </span>
                     </span>
@@ -455,12 +455,12 @@ export function Fas1({
                     <span className="block truncate font-granssnitt text-sm text-text-primar">
                       {kvittoRubrik(k)}
                     </span>
-                    <span className="block font-granssnitt text-xs text-text-dampad">
+                    <span className="block font-granssnitt text-xs text-text-sekundar">
                       {kvittoUnderrad(k)}
                     </span>
                   </span>
                   <span className="flex shrink-0 items-baseline gap-3">
-                    <span className="font-granssnitt text-sm tabular-nums text-text-dampad">
+                    <span className="font-granssnitt text-sm tabular-nums text-text-sekundar">
                       {formateraKronorEllerStreck(k.belopp)}
                     </span>
                     <form action={aterforAction} onSubmit={hanteraAterforSubmit}>

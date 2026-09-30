@@ -16,7 +16,13 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { skapaBilagepaket } from "./actions";
-import { Falt, INPUT_KLASS, Meddelanderuta, PRIMARKNAPP_KLASS } from "@/components/skarm";
+import {
+  Bekraftelseruta,
+  Falt,
+  INPUT_KLASS,
+  Meddelanderuta,
+  PRIMARKNAPP_KLASS,
+} from "@/components/skarm";
 import type { BilagepaketData, BilagepaketResultat } from "@/lib/bilagepaket/hamta";
 import { byggBilagepaketPdf } from "@/lib/bilagepaket/pdf";
 
@@ -104,10 +110,10 @@ export function BilagepaketFlode({
   if (byggsteg.fas === "klar") {
     return (
       <div className="flex flex-col gap-4 p-5">
-        <Meddelanderuta>
+        <Bekraftelseruta>
           Paketet är nedladdat. Spara det någonstans säkert – det är underlaget
           Skatteverket kan begära in.
-        </Meddelanderuta>
+        </Bekraftelseruta>
         <button
           type="button"
           onClick={() => resultat.ok && byggOchLaddaNer(resultat.data)}
@@ -122,7 +128,7 @@ export function BilagepaketFlode({
   if (byggsteg.fas === "byggfel") {
     return (
       <div className="flex flex-col gap-4 p-5">
-        <p className="font-granssnitt text-sm text-accent-mork">{byggsteg.melding}</p>
+        <p className="font-granssnitt text-sm text-accent">{byggsteg.melding}</p>
         <button
           type="button"
           onClick={() => resultat.ok && byggOchLaddaNer(resultat.data)}
@@ -181,14 +187,14 @@ export function BilagepaketFlode({
       {identifiering === "" ? (
         <button
           type="submit"
-          className="self-start font-granssnitt text-sm text-text-dampad underline hover:text-text-sekundar"
+          className="self-start font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
         >
           Fortsätt utan den uppgiften
         </button>
       ) : null}
 
       {!resultat.ok && resultat.fel ? (
-        <p className="font-granssnitt text-sm text-accent-mork">{resultat.fel}</p>
+        <p className="font-granssnitt text-sm text-accent">{resultat.fel}</p>
       ) : null}
 
       <button type="submit" disabled={sparar} className={PRIMARKNAPP_KLASS}>

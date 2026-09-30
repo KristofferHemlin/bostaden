@@ -14,29 +14,83 @@ Visuellt ligger referensen närmare ett bokomslag än en dashboard: platta ytor,
 
 Härledda ur logotypen. Använd tokens, aldrig hex direkt i komponenter.
 
+Paletten mättes 2026-09-29 och gjordes om till ett system. Alla tal nedan är kontrastkvoter enligt WCAG; gränsen för brödtext är 4,5 och för stor text 3,0.
+
 ```css
 --yta-bas:        #F0E9DF;  /* sidbakgrund – varm off-white, aldrig vit */
 --yta-upphojd:    #FAF6F0;  /* kort och paneler */
 --yta-nedsankt:   #E4D8CC;  /* inputfält, progressspår */
 
 --text-primar:    #0C2430;  /* petrolblå – ersätter svart */
---text-sekundar:  #4A5C66;
---text-dampad:    #6B7C85;
+--text-sekundar:  #4A5C66;  /* all sekundär information, inklusive hjälptexter */
+--text-dampad:    #6B7C85;  /* endast text ingen behöver läsa – se regeln nedan */
 
---accent:         #CC6631;  /* bränd orange */
---accent-mork:    #A94E22;  /* hover och nedtryckt */
---sand:           #D8C0A8;
---sand-mork:      #B99A76;  /* progressfyllning under troskeln */
+--accent:         #A94E22;  /* handling: primärknappen och allt som bär ljus text */
+--accent-ljus:    #CC6631;  /* stora märken och ikoner, aldrig under brödtext */
+--accent-mork:    #8B401C;  /* hover och nedtryckt */
 
---linje:          #DCCFC0;
+--sand:           #D8C0A8;  /* sekundärknappens yta, förklarande rutor */
+--sand-mork:      #B99A76;  /* sekundärknappens kant, progressfyllning under tröskeln */
 
---bg-info:        #DDE7EC;  /* förklarande rutor */
---text-info:      #2C5568;
---bg-klart:       #DFE8DC;  /* bekräftelser */
+--linje:          #D1C5B6;
+
+--bg-klart:       #C9D1C6;  /* bekräftelser – förklaringar bär --sand */
 --text-klart:     #3D5E3A;
 ```
 
-### Regler
+### Ytstegen
+
+Tre nivåer, och bara tre: **sida, kort, nedsänkt**. En ny yta läggs aldrig in mitt emellan – hela paletten ligger inom ett smalt ljushetsspann, och ett fjärde steg skulle inte gå att uppfatta.
+
+Att stegen är små är avsiktligt och ger det platta, tryckta uttrycket. Följden är att **ytskillnad ensam inte räcker för att bära en gräns som spelar roll**. Ett kort avgränsas av sin yta plus sin 1px `--linje`; en knapp av sin form.
+
+### Två textfärger bär information, den tredje bär ingenting
+
+`--text-primar` och `--text-sekundar` är de enda som får bära något användaren behöver läsa. Sekundär ligger på 6,47 mot kort och 5,78 mot sidan – den är dämpad på riktigt och ändå läsbar.
+
+**`--text-dampad` används bara för text ingen behöver läsa.** Sidräknaren på en flersidig PDF, en etikett på en miniatyr. Aldrig hjälptexter, aldrig statusrader, aldrig förklaringar. Den ligger på 4,02 mot kort och 3,09 mot inputfält, alltså under gränsen för brödtext, och det var därför hjälptexterna var svårlästa på telefon.
+
+**Dämpning görs med storlek och vikt, inte med en tredje färg.** En hjälptext under ett fält är `--text-sekundar` i mindre grad, inte en blekare färg. Tre dämpade nivåer får inte plats på en ljus varm bakgrund utan att den understa faller under kravet.
+
+### Orange betyder handling, ingenting annat
+
+Högst ett orange element per skärm, och det är primärknappen.
+
+**`--accent` är knappens färg** och den enda orange som får bära ljus text: 5,13 mot `--yta-upphojd`. Den tidigare tonen `#CC6631` gav 3,54 och klarade alltså inte brödtextkravet på en knappetikett.
+
+**`--accent-ljus` är kvar för stora märken och ikoner** där texten inte ska läsas som brödtext – ett stort tal, en ikon, en grafisk detalj. Den bär aldrig text i gränssnittsstorlek.
+
+Orange är aldrig en statusfärg. Ett tillstånd som är avklarat sägs med ord, inte med färg – ett fullt orange progressfält bredvid en orange knapp ger två saker som skriker och ingen hierarki mellan dem.
+
+**Tyngd på en skärm utan orange bärs av rubriken och en upphöjd yta**, aldrig av en färg som lånas in för att fylla tomrummet. En vy utan primärhandling ska vara lugn, inte livlös – och lösningen är typografisk storlek, inte kulör.
+
+### Tryckbart och skrivbart skiljs åt med form
+
+**Sekundärknappen har en 1px kant i `--sand-mork`.** Utan den låg den på 1,25 i kontrast mot inputfältet och lästes som ett tomt fält – det var samma fynd som att någon inte förstod att ROT-raden gick att öppna.
+
+**Inputfält har ingen kant.** Fylld yta med kant betyder tryck; fylld yta utan kant betyder skriv. Regeln är formen, inte färgen, och den håller även för den som inte skiljer färgerna åt.
+
+### Meddelanderutor
+
+**En förklaring bärs av sand, en bekräftelse av grönt.** Skillnaden är inte hur viktig rutan är utan vad den är: en förklaring hör till sidan och har stått där hela tiden, medan en bekräftelse är en händelse som just inträffat. "Sammanställningen följer Skatteverkets hjälpblankett" är det förra. "Belopp, datum och leverantör är ifyllda från kvittot" är det senare.
+
+Förklaringsrutan är därför `--sand` mot kortets yta, och bekräftelserutan `--bg-klart` med `--text-klart`.
+
+**Blått finns inte i paletten.** Det var den enda kalla tonen i en genomgående varm palett och den lästes som en främling. `--bg-info` och `--text-info` ströks 2026-09-29, efter att det visat sig att koden redan använde sand och att filen sagt emot sig själv på den punkten en tid.
+
+**En händelse som inte är en framgång bär sand, inte grönt.** "Kvittot är sparat. Vi kunde inte läsa av det automatiskt – fyll i uppgifterna nedan själv" är en händelse, men budskapet är att något inte fungerade och att användaren får göra jobbet. En grön ruta hade sagt att det gick bra. Sand är det neutrala svaret, och appen har medvetet ingen varningsfärg att ta till.
+
+`--bg-klart` mörknades samtidigt från 1,17 mot kortet, där den var nästan osynlig, till 1,45. Texten i den ligger kvar över kravet. Hämta aldrig in signalgrönt från ett standardbibliotek.
+
+De används **aldrig** i tröskelfältet, i listor, på knappar eller som textfärg utanför sina rutor. Tröskelfältet är alltid `--sand-mork` mot `--yta-nedsankt`, oavsett hur fullt det är.
+
+Rött förekommer inte alls. Formulärfel visas med `--accent` och en tydlig text – appen har inga tillstånd som är farliga nog att kräva en varningsfärg.
+
+### Regler som gäller oavsett palett
+
+**Bakgrunden är aldrig vit.** Det är det enskilt viktigaste beslutet och det som gör att appen inte ser ut som alla andra.
+
+**Svart förekommer inte.** Petrolblå är textfärgen.
 
 **Opacitetsmodifieraren fungerar inte mot de här färgerna.** `bg-text-primar/90` och liknande genererar **ingen CSS alls** – tyst, utan varning. Tailwinds `/NN` kräver separata kanalvärden för att kunna bygga `rgb(var(--x) / 90%)`, och variablerna här innehåller hela hex-strängar. Klassen ser rätt ut i koden, men regeln existerar inte i den byggda stilmallen.
 
@@ -50,23 +104,9 @@ bg-[color-mix(in_srgb,var(--text-primar)_90%,transparent)]
 
 Misstänker du att något inte syns som borde: läs av `getComputedStyle(el).backgroundColor` i webbläsaren. Får du `rgba(0, 0, 0, 0)` är det här orsaken, inte layouten.
 
-**Bakgrunden är aldrig vit.** Det är det enskilt viktigaste beslutet och det som gör att appen inte ser ut som alla andra. Vit bakgrund under den här paletten får logotypen att sväva på fel underlag.
-
-**Svart förekommer inte.** Petrolblå är textfärgen.
-
-**Orange betyder handling, ingenting annat.** Det är den enda mättade färgen och den bärs av primärknappen. Högst ett orange element per skärm.
-
-Orange är därför aldrig en statusfärg. Ett tillstånd som är avklarat sägs med ord, inte med färg – ett fullt orange progressfält bredvid en orange knapp ger två saker som skriker och ingen hierarki mellan dem, och knappen som ändrar utseende beroende på hur mycket man lagt in är det sämre av de två alternativen.
-
-**Orange får aldrig bära brödtext.** Kontrasten räcker för knappar, ikoner och stora tal, inte för löpande text.
-
-**Två dämpade statusfärger finns, och bara till meddelanderutor.** Blå för förklaringar som inte kräver något av användaren, grön för bekräftelser. Båda är avmättade och varma nog att sitta bredvid sand och orange utan att bryta uttrycket – hämta aldrig in klarblått eller signalgrönt från ett standardbibliotek.
-
-De används **aldrig** i tröskelfältet, i listor, på knappar eller som textfärg utanför sina rutor. Tröskelfältet är alltid `--sand-mork` mot `--yta-nedsankt`, oavsett hur fullt det är.
-
-Rött förekommer inte alls. Formulärfel visas med `--accent` och en tydlig text – appen har inga tillstånd som är farliga nog att kräva en varningsfärg.
-
 **Inget mörkt läge i v1.** Varma cremepaletter inverterar illa och kräver en egen färguppsättning. Skjut upp det.
+
+**En ny färg läggs inte till utan att kontrasten räknas.** Varje ton i listan ovan har ett uppmätt tal mot de ytor den används på. En färg som väljs för att den ser bra ut i en komponent, utan att prövas mot kravet, är hur den förra paletten hamnade under gränsen på tre ställen utan att någon märkte det.
 
 ---
 
@@ -143,9 +183,17 @@ På skrivbord ligger flikarna kvar som ren text i toppraden – där finns ingen
 
 ## Skrivbordsvyn
 
-Innehållet centreras i en kolumn på högst 620px under toppraden.
+Innehållet centreras i en kolumn på högst 680px under toppraden.
 
-**Kolumnen gäller innehållet, aldrig toppraden.** Toppraden spänner hela skärmbredden med adressen längst till vänster och flikarna plus kugghjulet till höger. Ges toppraden samma 620px klumpar logotyp, adress, flikar och kugghjul ihop sig mitt på en bred skärm, och adressen kapas trots att det finns hundratals pixlar tomma på båda sidor. Det är den vanligaste orsaken till att raden ser trång ut på en skärm som inte är det.
+**En bredd, inga undantag.** Allt innehåll ligger i samma kolumn: metrikraden, korten, formulären, listorna och exportens tabeller. Två bredder prövades 2026-09-29 – 620 för text och 820 för tabeller – och resultatet var koncentriskt men ojämnt. Ögat läser ojämna kanter som slarv även när talen är medvetna, och en jämn stapel är lugnare än en stapel med ett motiverat undantag.
+
+680 är en kompromiss med två skäl. Under den blir exportens tabell trång: åtgärd, år och belopp på samma rad kräver plats när åtgärden är en hel mening. Över den blir brödtexten längre än åttio tecken per rad, vilket är för långt att läsa bekvämt. Appen har inga långa stycken, så åttio tecken håller.
+
+**Inloggning och registrering är undantagna.** De ligger på 430 px och ska göra det. De är ett formulärkort utan topprad, vertikalt centrerat, med ett fält i taget – inte en innehållskolumn. Ett 680 px brett inloggningskort ser tomt ut. Skillnaden är alltså avsiktlig och inte ett ställe som missats.
+
+**Om stapeln ändå känns lös efter användartestet** är nästa sak att pröva att göra sidan till ett enda ark: en yta, en kant, och sektioner avdelade med tunna linjer i stället för mellanrum mellan fristående kort. Det skulle läsas som ett dokument i stället för som en instrumentpanel, vilket är närmare det produkten är. Men det ritar om varje skärm, så det görs inte på misstanke – det görs om fem personer bekräftar att den nuvarande stapeln ser ofärdig ut.
+
+**Kolumnen gäller innehållet, aldrig toppraden.** Toppraden spänner hela skärmbredden med adressen längst till vänster och flikarna plus kugghjulet till höger. Ges toppraden samma 680px klumpar logotyp, adress, flikar och kugghjul ihop sig mitt på en bred skärm, och adressen kapas trots att det finns hundratals pixlar tomma på båda sidor. Det är den vanligaste orsaken till att raden ser trång ut på en skärm som inte är det.
 
 Utan toppraden svävar kortet ensamt i en tom yta – det är vad som händer om skrivbordsvyn lämnas ospecificerad.
 
@@ -882,7 +930,9 @@ Med två delägare är "vem la in de här 40 000?" en fråga som kommer att stä
 
 **Fördelningen efter ägarandel är inget val.** Avdragen hör till bostaden, inte till personen, och fördelas efter ägarandel oavsett vem som betalade fakturan. Appen erbjuder därför ingen möjlighet för en delägare att ta hela beloppet – ett sådant val vore en inbjudan till en position Skatteverkets huvudregel inte accepterar. Källan står i `docs/regelkallor.md`.
 
-**Exportvyn säger vems underlag det är.** Har bostaden fler än en medlem står det överst vem sammanställningen gäller, vilken andel den bygger på, och att den andra delägaren deklarerar sin del separat. Utan den raden kan båda föra in hela beloppet i sina deklarationer. Att varje delägare deklarerar sin egen andel är bekräftat – se `docs/regelkallor.md`.
+**Exportvyn säger vems underlag det är.** Har bostaden fler än en medlem och inga andelar är satta står det att sammanställningen gäller **hela bostaden**, och att var och en deklarerar sin andel av den. Är andelarna satta – vilket sker när bostaden markeras som såld – står det i stället vem underlaget gäller och vilken andel det bygger på.
+
+Utan den raden ser båda delägarna samma summa, tror att den är deras, och för in hela beloppet var. Att varje delägare deklarerar sin egen andel är bekräftat – se `docs/regelkallor.md`.
 
 **Kontoraderingen tar bara bort det som är ditt.** Är du sista medlemmen försvinner bostaden med allt som hänger på den, som i dag. Finns det fler medlemmar tas bara ditt medlemskap bort, och bostaden med sina kvitton och bilagor ligger kvar hos de andra. En separation får aldrig radera den andras arkiv.
 
@@ -890,31 +940,33 @@ Med två delägare är "vem la in de här 40 000?" en fråga som kommer att stä
 
 ### Att bjuda in en delägare
 
-**Frågan ställs där ägandet ändå beskrivs**, i kortet Ägandet, och inte som en egen del av appen. Anger användaren en ägarandel under 100 % visas raden om att bjuda in den andra delägaren. Äger man hela bostaden finns den inte – då är den brus.
+**Inbjudan ger tillgång till ett arkiv, ingenting mer.** Den säger ingenting om ägande, andelar eller vem som ska deklarera vad. Två personer ser samma bostad, samma kvitton, samma översikt, och båda kan lägga in nya.
 
-**Den som bjuder in anger sin egen andel, inbjudan får resten.** En inbjudan som inte lösts in har inget medlemskap att skriva andelen på, och låter man båda ange sin andel var för sig kan bostaden kortvarigt ägas till 150 %. Kontrollen att summan aldrig överstiger 100 % ligger på servern, inte bara i formuläret.
+Det är en omläggning gjord 2026-09-29, efter att den första modellen visat sig kräva svar på frågor som inte spelar roll förrän långt senare. Appen är ett arkiv i tjugo år och en deklaration i en vecka. Andelar, anskaffningsdatum och inköpspris hör till den veckan, och att fråga efter dem vid inbjudan är att kräva besked om något som ännu inte hänt – precis det tvåfasmodellen finns för att undvika.
 
-**Ett informationssteg före koden** säger vad som delas – allt: varje kvitto, varje belopp, hela historiken och underlaget – och vilka som ryms i funktionen: delägare som tillträdde samtidigt, där ingen köpt ut den andra under innehavet. Modellen har ett förvärv per bostad medan verkligheten har ett per person och andel, och den som köpt in sig senare skulle få ett underlag som ser riktigt ut men är fel. Skälen står som öppna rättsfrågor i `docs/regelkallor.md`.
+**Frågorna ställs när bostaden markeras som såld.** Då, och först då, frågar appen varje medlem om sin ägarandel, sitt anskaffningsdatum och sitt inköpspris. Det är också då de öppna rättsfrågorna i `docs/regelkallor.md` måste vara besvarade – inte innan någon bjuder in.
+
+**Så länge andelarna inte är satta är underlaget för hela bostaden.** Det står med de orden i exportvyn när bostaden har fler än en medlem. Utan den raden ser båda delägarna samma summa, tror att den är deras, och för in hela beloppet var – samma dubbelräkning som den första modellen skulle ha hindrat, bara flyttad till en skärm där den är billigare att hindra.
+
+En ensam ägare berörs inte. Den som äger halva sin bostad och använder appen själv anger sin andel i kortet Ägandet som i dag, och får ett underlag för sin del.
+
+**Frågan ställs där ägandet ändå beskrivs**, i kortet Ägandet i inställningarna. Kortet visar vilka som har tillgång till bostaden, hos båda, och en utestående inbjudan med den adress den ställts till.
 
 **Inbjudan är en post, inte en länk.** Den ställs till en e-postadress och ligger kvar tills den accepteras eller återkallas. Loggar någon in med den adressen visas den på startskärmen, oavsett hur hen kom dit. QR-koden och länken är genvägar till samma post.
 
-Det är skälet att posten väljs framför en ren länk: den överlever ett glömt lösenord, en stängd flik, ett byte från telefon till dator. Den som återställer sitt lösenord loggar in och hittar inbjudan där, utan att behöva leta rätt på koden igen.
+Posten valdes framför en ren länk därför att den överlever ett glömt lösenord, en stängd flik och ett byte från telefon till dator. Den som återställer sitt lösenord loggar in och hittar inbjudan där, utan att behöva leta rätt på koden igen.
 
 **Länken är ingen nyckel.** Den pekar bara ut vilken inbjudan det gäller; för att lösa in den måste man vara inloggad som just den adressen. Någon som hittar koden kan därför inte göra något med den. Giltighetstiden är städning, inte skydd.
+
+**Ett informationssteg före koden säger vad som delas: allt.** Varje kvitto, varje belopp, hela historiken och underlaget. Den som bjuder in delar sin renoveringshistorik med någon annan, och det ska stå innan koden skapas, inte efteråt.
 
 **Sidan bakom koden måste bevisa vem den kommer från**, innan det finns ett fält att fylla i: vem som bjudit in, vilken adress bostaden har, och vad åtkomsten innebär. En kod som leder rakt till ett lösenordsfält har formen av ett nätfiskeflöde.
 
 **En och samma länk, med två utgångar.** Vilken som visas avgörs när den öppnas, inte när den skapas – annars blir koden fel byggd om den inbjudna hinner skapa konto under tiden. Har adressen ett konto står det *Logga in för att ansluta*, annars *Skapa konto*.
 
-**Den som bjuder in får ändå veta.** När adressen angetts kan appen säga att personen redan har ett konto och att inbjudan dyker upp på hennes startsida nästa gång hon loggar in. Uppslagningen sker på servern. Den informerar bara – den förgrenar ingenting.
+**Den som bjuder in får ändå veta.** När adressen angetts kan appen säga att personen redan har ett konto och att inbjudan dyker upp på hennes startsida nästa gång hon loggar in. Uppslagningen sker på servern och informerar bara – den förgrenar ingenting.
 
-**Ett bekräftelsesteg, inte ett inmatningssteg.** Den som accepterar får se vad den andra redan registrerat – adress, tillträdesdatum, köpeskilling – och svarar på en enda fråga: stämmer det här för dig också? Ja betyder att förutsättningarna för funktionen är uppfyllda. Nej betyder att appen säger att den inte hanterar delägare som tillträtt vid olika tidpunkter ännu, och stannar.
-
-Steget är alltså en detektor, inte en fälla. Vi får veta hur vanligt fallet är, användaren får veta sanningen, och ingen får ett underlag som ser rätt ut och är fel. När de öppna rättsfrågorna är besvarade byts bekräftelsen mot riktiga fält utan att flödet ändrar form.
-
-**Den som redan har en bostad kan inte ansluta ännu.** Inbjudan ligger kvar på startskärmen med ett ärligt besked: appen hanterar en bostad per person i dag, och den dag växlaren finns går inbjudan att acceptera. **Ingen bostad tas bort**, inte ens en tom – ingenting kastas, ingenting låses. Den vanliga vägen berörs inte: en partner som aldrig använt appen registrerar sig och ansluts till den befintliga bostaden i stället för att skapa en egen.
-
-**Kortet visar vem som äger vad, hos båda.** Efter anslutningen listar Ägandet båda delägarna med sina andelar, på bådas konton. En utestående inbjudan syns där med sin adress och går att återkalla.
+**Den som redan har en bostad kan inte ansluta ännu.** Inbjudan ligger kvar på startskärmen med ett ärligt besked: appen hanterar en bostad per person i dag, och den dag växlaren finns går den att acceptera. **Ingen bostad tas bort**, inte ens en tom. Den vanliga vägen berörs inte: en partner som aldrig använt appen registrerar sig och ansluts till den befintliga bostaden i stället för att skapa en egen.
 
 **Fel adress ger ett begripligt besked.** Försöker någon lösa in en inbjudan som inloggad med en annan adress ska det stå varför det inte går, inte ett generiskt fel.
 
@@ -950,6 +1002,8 @@ Förklaringen står **under sin egen rad**, inte samlad per år. Raderna i samma
 Tröskelfallet är det viktigaste. De flesta har ett eller två kvitton ett enskilt år och når inte 5 000 kr – det är det vanligaste tillståndet av alla. Utan förklaringen ser appen ut att räkna fel just när den räknar rätt, och användaren får dessutom inte veta att ett kvitto till samma år hade gjort båda avdragsgilla.
 
 Formuleringen följer Skatteverkets egen: *"Kostnaden för det året som åtgärden utfördes behöver sammanlagt uppgå till minst 5 000 kronor."*
+
+**Exportvyn hänvisar inte till zip-arkivet.** Raden om att kvittona går att ladda ner från inställningarna ströks 2026-09-29. Den sa något sant och viktigt – att bevisningen finns kvar om Skatteverket frågar – men på fel skärm. Exportvyns uppgift är två tal, och varje mening som inte är de talen eller deras förklaring konkurrerar med dem. Zip-arkivet har sin egen förklaring i inställningarna, där den som behöver det letar.
 
 **Beloppet i den texten skrivs aldrig som en bokstavlig siffra i koden.** Det hämtas ur regelparametern för det år raden gäller, precis som beräkningen gör. Tröskeln är ett nominellt belopp utan indexering och har ändrats förr; en hårdkodad siffra i en förklaring blir då en text som säger emot uträkningen strax intill, och det är den sortens fel ingen letar efter. Samma sak gäller varje annan skärmtext som nämner en gräns eller ett årtal ur domänreglerna.
 

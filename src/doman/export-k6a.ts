@@ -29,6 +29,7 @@ import {
   type NollOrsak,
 } from "./atgardsberakning";
 import { slaUppRegelparameter } from "./regelparameter";
+import { reparationsfonsterForklaring, troskelForklaring } from "./regeltext";
 import type {
   Bostad,
   Kostnad,
@@ -115,18 +116,16 @@ interface CellSplit {
   uppdelning: KategoriUppdelning;
 }
 
-/** Forklaringstexterna till en 0-kr-rad (docs/design.md, Exportvyn). Troskeln
- *  ar formulerad med Skatteverkets egen ordalydelse ("Kostnaden for det aret
- *  som atgarden utfordes behover sammanlagt uppga till minst 5 000 kronor"),
- *  eftersom det ar det vanligaste fallet av alla fyra. */
-const NOLLFORKLARINGAR: Record<NollOrsak, string> = {
-  troskel:
-    "Kostnaden för det året som åtgärden utfördes behöver sammanlagt uppgå till minst 5 000 kronor.",
-  femarsfonster: "Åtgärden utfördes mer än fem år före försäljningen.",
+/** Forklaringstexterna till en 0-kr-rad (docs/design.md, Exportvyn). Tva av
+ *  dem namner en grans ur domanreglerna – troskelbeloppet och tidsfonstret for
+ *  reparationer – och far talet ur regelparametern, samma varde som
+ *  berakningen anvande for raden (src/doman/regeltext.ts). */
+const FASTA_NOLLFORKLARINGAR = {
   skicket_forbattrades_inte:
     "Det du bytte ut var i samma eller sämre skick vid försäljningen än vid förvärvet.",
-  nybyggd_vid_forvarv: "Allt var nytt vid tillträdet, så reparationer räknas inte.",
-};
+  nybyggd_vid_forvarv:
+    "Allt var nytt vid tillträdet, så reparationer räknas inte.",
+} as const;
 
 export function byggK6aExport(indata: K6aIndata): K6aExport {
   const { bostad, medlemskap, projekt, kostnader, regelparametrar } = indata;
@@ -153,6 +152,28 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
         )
       : null;
   const varningar: string[] = [];
+
+  // Troskelbeloppet per kalenderar, som det provades i steg 4 – forklaringen
+  // till en rad som foll pa troskeln ska namna exakt det beloppet.
+  const troskelPerAr = new Map<number, number>();
+  const nollforklaring = (orsak: NollOrsak, ar: number): string => {
+    switch (orsak) {
+      case "troskel": {
+        const belopp = troskelPerAr.get(ar);
+        if (belopp === undefined) {
+          throw new Error(`Tröskeln för ${ar} har inte prövats.`);
+        }
+        return troskelForklaring(belopp);
+      }
+      case "femarsfonster":
+        if (fonsterAr === null) {
+          throw new Error("Tidsfönstret saknas utan försäljningsdatum.");
+        }
+        return reparationsfonsterForklaring(fonsterAr);
+      default:
+        return FASTA_NOLLFORKLARINGAR[orsak];
+    }
+  };
 
   // 1. Alla bidrag per (projekt, kalenderar ur betaldatum). Bade rart
   //    (oreducerat) och avdragsgrundande (efter ROT/forsakring) belopp
@@ -225,6 +246,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
       "troskelbelopp",
       `${ar}-12-31`,
     );
+    troskelPerAr.set(ar, troskelbelopp);
     const provade = troskelprovaArspostar(
       grupp.map((s) => s.uppdelning),
       troskelbelopp,
@@ -273,7 +295,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
         varningar: [],
         forklaring:
           beloppBrutto === 0 && uppdelning.grundforbattring_orsak
-            ? NOLLFORKLARINGAR[uppdelning.grundforbattring_orsak]
+            ? nollforklaring(uppdelning.grundforbattring_orsak, ar)
             : null,
       });
     }
@@ -287,7 +309,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
       // skickfaktorns orsak nedan som forutsatter ett forsaljningsdatum.
       let forklaring: string | null =
         beloppBrutto === 0 && uppdelning.reparation_orsak
-          ? NOLLFORKLARINGAR[uppdelning.reparation_orsak]
+          ? nollforklaring(uppdelning.reparation_orsak, ar)
           : null;
 
       if (!sald) {
@@ -322,7 +344,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
           );
           avdragsgillDelBrutto = avrundaReparationUppat(avdrag.reparation);
           if (avdrag.reparation_orsak) {
-            forklaring = NOLLFORKLARINGAR[avdrag.reparation_orsak];
+            forklaring = nollforklaring(avdrag.reparation_orsak, ar);
           }
         }
       }

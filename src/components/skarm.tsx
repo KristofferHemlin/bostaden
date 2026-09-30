@@ -1,7 +1,7 @@
 // Genomgaende skarmstruktur (docs/design.md, Navigation): en toppradsapparat pa
 // --yta-upphojd med logotyp och bostadsnamn – och pa skrivbord aven huvudmenyn –
 // allt pa EN rad. Pa mobil ligger menyn i stallet fast i skarmens nederkant (se
-// Toppnavigering). Sedan innehallet centrerat i en kolumn pa hogst 620px i ETT
+// Toppnavigering). Sedan innehallet centrerat i en kolumn pa hogst 680px i ETT
 // kort pa --yta-upphojd. Inga kort i kort. Adressen ligger ALLTID i toppraden,
 // pa varenda skarm. Sidrubriken upprepar aldrig bostadsnamnet – den sager vad
 // sidan visar ("Kvitton", "Projekt", ...). Startskarmen har ingen sidrubrik
@@ -16,17 +16,26 @@ const LOGO_SRC = "/kajin-hem-logo.png";
 export const INPUT_KLASS =
   "w-full rounded-lg border-0 bg-yta-nedsankt px-3 py-3 font-granssnitt text-base text-text-primar outline-none placeholder:text-text-dampad focus:ring-2 focus:ring-accent";
 
-export const PRIMARKNAPP_KLASS =
-  "flex min-h-[44px] w-full items-center justify-center rounded-full bg-accent px-5 py-3 font-granssnitt text-base font-medium text-yta-upphojd transition-colors hover:bg-accent-mork disabled:opacity-60";
+// Hjalptexter under falt (docs/design.md, "Tva textfarger bar information"):
+// --text-sekundar, aldrig --text-dampad, och aldrig mindre an 14px pa telefon.
+// Dampningen bars av storlek och vikt, inte av en blekare ton. Felmeddelanden under falt har samma storlek – de tar samma plats.
+export const HJALPTEXT_KLASS = "font-granssnitt text-sm text-text-sekundar";
+export const FALTFEL_KLASS = "font-granssnitt text-sm text-accent";
 
+export const PRIMARKNAPP_KLASS =
+  "flex min-h-[44px] w-full items-center justify-center rounded-full border border-transparent bg-accent px-5 py-3 font-granssnitt text-base font-medium text-yta-upphojd transition-colors hover:bg-accent-mork disabled:opacity-60";
+
+// Sekundarknapparna har en 1px kant i --sand-mork, inputfalten ingen
+// (docs/design.md, "Tryckbart och skrivbart skiljs at med form"): fylld yta med
+// kant betyder tryck, fylld yta utan kant betyder skriv.
 export const SEKUNDARKNAPP_KLASS =
-  "flex min-h-[44px] w-full items-center justify-center rounded-full border border-linje px-5 py-3 font-granssnitt text-base text-text-primar transition-colors hover:bg-yta-nedsankt";
+  "flex min-h-[44px] w-full items-center justify-center rounded-full border border-sand-mork px-5 py-3 font-granssnitt text-base text-text-primar transition-colors hover:bg-yta-nedsankt";
 
 // Sandknapp: samma form och hojd som primarknappen men i --sand med
 // --text-primar (docs/design.md, Inloggningssidan). Bar aldrig orange – den ar
 // en vag in i produkten men inte den handling skarmen finns for.
 export const SANDKNAPP_KLASS =
-  "flex min-h-[44px] w-full items-center justify-center rounded-full bg-sand px-5 py-3 font-granssnitt text-base font-medium text-text-primar transition-colors hover:bg-sand-mork disabled:opacity-60";
+  "flex min-h-[44px] w-full items-center justify-center rounded-full border border-sand-mork bg-sand px-5 py-3 font-granssnitt text-base font-medium text-text-primar transition-colors hover:bg-sand-mork disabled:opacity-60";
 
 /**
  * Friskrivningen (docs/design.md, Exportvyn): en dampad rad, inte en
@@ -36,17 +45,34 @@ export const SANDKNAPP_KLASS =
  */
 export function Friskrivning() {
   return (
-    <p className="font-granssnitt text-xs text-text-dampad">
+    <p className="font-granssnitt text-xs text-text-sekundar">
       Appen ger ingen skatterådgivning. Vid gränsfall svarar Skatteverkets
       upplysningstjänst.
     </p>
   );
 }
 
+/**
+ * Forklaringsrutan (docs/design.md, Meddelanderutor): nagot som hor till sidan
+ * och har statt dar hela tiden. --sand mot kortets yta, ingen ram, ingen ikon.
+ * Hogst en per skarm. En handelse som just intraffat ar en Bekraftelseruta.
+ */
 export function Meddelanderuta({ children }: { children: ReactNode }) {
-  // --sand bakgrund, ingen ram, ingen ikon. Hogst en per skarm.
   return (
     <div className="rounded-lg bg-sand px-3 py-3 font-granssnitt text-sm text-text-primar">
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Bekraftelserutan (docs/design.md, Meddelanderutor): en handelse som just
+ * intraffat – nagot sparades, skickades eller fylldes i. --bg-klart med
+ * --text-klart, samma form som forklaringsrutan.
+ */
+export function Bekraftelseruta({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-lg bg-bg-klart px-3 py-3 font-granssnitt text-sm text-text-klart">
       {children}
     </div>
   );
@@ -69,7 +95,7 @@ export function Listrad({
    * Valfri tredje rad, dampad precis som status men pa en egen rad i stallet
    * for hopslagen med "·" – anvands for ett faktum om posten som inte hor
    * ihop med leverantor/datum, t.ex. att bilaga saknas (produktspec 4.7).
-   * Inget eget varningsutseende: samma text-dampad, ingen ikon, ingen farg.
+   * Inget eget varningsutseende: samma text-sekundar, ingen ikon, ingen farg.
    */
   underStatus?: string;
   belopp?: string;
@@ -126,7 +152,7 @@ export function Listrad({
           {namnInnehall}
         </p>
         {status ? (
-          <p className="mt-0.5 flex items-center gap-1.5 font-granssnitt text-sm text-text-dampad">
+          <p className="mt-0.5 flex items-center gap-1.5 font-granssnitt text-sm text-text-sekundar">
             {atgard ? (
               <span
                 aria-hidden
@@ -137,7 +163,7 @@ export function Listrad({
           </p>
         ) : null}
         {underStatus ? (
-          <p className="mt-0.5 font-granssnitt text-xs text-text-dampad">
+          <p className="mt-0.5 font-granssnitt text-xs text-text-sekundar">
             {underStatus}
           </p>
         ) : null}
@@ -203,14 +229,14 @@ export function Falt({
       <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
         {etikett}
         {obligatoriskt ? (
-          <span aria-hidden className="ml-0.5 text-text-dampad">
+          <span aria-hidden className="ml-0.5 text-text-sekundar">
             *
           </span>
         ) : null}
       </span>
       {children}
       {hjalp ? (
-        <span className="mt-1 block font-granssnitt text-xs text-text-dampad">
+        <span className={`mt-1 block ${HJALPTEXT_KLASS}`}>
           {hjalp}
         </span>
       ) : null}
@@ -289,8 +315,9 @@ function ChevronNed({ className }: { className?: string }) {
 }
 
 /**
- * Ett kort pa --yta-upphojd mot sidbakgrunden (docs/design.md, "Genomgaende
- * struktur"). Innehall av olika slag hor hemma i OLIKA kort, med luft emellan –
+ * Ett kort pa --yta-upphojd mot sidbakgrunden, avgransat av sin yta plus en
+ * 1px --linje (docs/design.md, "Ytstegen" och "Genomgaende struktur") – ytstegen
+ * ar for sma for att bara granser ensamma. Innehall av olika slag hor hemma i OLIKA kort, med luft emellan –
  * pa oversikten ar metriken ett kort och kvittolistan ett annat. Anvands med
  * <Skarm egnaKort>, som da later sidan komponera sina egna kort i stallet for
  * att svepa in allt i ett.
@@ -304,7 +331,7 @@ export function Kort({
 }) {
   return (
     <div
-      className={`overflow-hidden rounded-xl bg-yta-upphojd${
+      className={`overflow-hidden rounded-xl border border-linje bg-yta-upphojd${
         className ? ` ${className}` : ""
       }`}
     >
@@ -331,6 +358,14 @@ export interface SkarmProps {
   children: ReactNode;
 }
 
+/**
+ * Innehallskolumnen (docs/design.md, Skrivbordsvyn): en bredd, inga undantag.
+ * Metrikraden, korten, formularen, listorna och exportens tabeller ligger alla
+ * har. Anvands av <Skarm> och av de sidor som star utan den (landningssidan,
+ * felsidan, integritetspolicyn) – ingen skarm satter en egen bredd.
+ */
+export const KOLUMN_KLASS = "mx-auto w-full max-w-[680px]";
+
 export function Skarm({
   bostadsnamn,
   rubrik,
@@ -345,7 +380,7 @@ export function Skarm({
           huvudmenyn – allt pa en rad (docs/design.md, Navigation). Pa mobil
           hamnar <Toppnavigering> i stallet fast i nederkanten. */}
       <div className="w-full border-b border-linje bg-yta-upphojd">
-        {/* Toppraden spanner HELA skarmbredden – 620px-kolumnen galler bara
+        {/* Toppraden spanner HELA skarmbredden – 680px-kolumnen galler bara
             innehallet under (docs/design.md, Skrivbordsvyn). Anvands samma
             max-w har klumpar logotyp, adress, flikar och kugghjul ihop sig
             mitt pa en bred skarm och adressen kapas i onodan. */}
@@ -384,7 +419,7 @@ export function Skarm({
 
       {/* Nederkantsmarginal sa att innehallet inte doljs bakom den fasta
           mobilnavigationen. */}
-      <main className="mx-auto w-full max-w-[620px] px-4 py-6 pb-28 sm:py-10 sm:pb-10">
+      <main className={`${KOLUMN_KLASS} px-4 py-6 pb-28 sm:py-10 sm:pb-10`}>
         {bakLink(bakLank)}
 
         {rubrik ? (
@@ -398,7 +433,7 @@ export function Skarm({
         {egnaKort ? (
           <div className="flex flex-col gap-4 sm:gap-5">{children}</div>
         ) : (
-          <div className="overflow-hidden rounded-xl bg-yta-upphojd">
+          <div className="overflow-hidden rounded-xl border border-linje bg-yta-upphojd">
             {children}
           </div>
         )}

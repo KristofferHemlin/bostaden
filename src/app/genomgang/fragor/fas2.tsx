@@ -54,7 +54,7 @@ export function Fas2({ hogar }: { hogar: Hog[] }) {
         <p className="font-rubrik text-lg text-text-primar">
           Du hoppade över resten
         </p>
-        <p className="mt-1 font-granssnitt text-sm text-text-dampad">
+        <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
           De högar du hoppade över ligger kvar oklassificerade och dyker upp
           nästa gång du startar genomgången.
         </p>
@@ -104,14 +104,14 @@ function HogFormular({
   return (
     <div className="flex flex-col">
       <div className="border-b border-linje px-4 py-3">
-        <p className="font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
+        <p className="font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
           Hög {position} av {antal}
         </p>
       </div>
 
       {/* Hogens kvitton – synliga bredvid fragorna. */}
       <section className="border-b border-linje">
-        <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
+        <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
           Kvitton i högen
         </p>
         <ul className="divide-y divide-linje">
@@ -124,7 +124,7 @@ function HogFormular({
                 <span className="block truncate font-granssnitt text-sm text-text-primar">
                   {k.rubrik}
                 </span>
-                <span className="block font-granssnitt text-xs text-text-dampad">
+                <span className="block font-granssnitt text-xs text-text-sekundar">
                   {k.underrad}
                 </span>
               </span>
@@ -163,7 +163,7 @@ function HogFormular({
         <FragetradetDoldaFalt svar={svar} />
 
         {resultat.fel ? (
-          <p className="font-granssnitt text-sm text-accent-mork">
+          <p className="font-granssnitt text-sm text-accent">
             {resultat.fel}
           </p>
         ) : null}

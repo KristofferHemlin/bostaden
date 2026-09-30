@@ -16,6 +16,7 @@
 import Link from "next/link";
 import {
   Friskrivning,
+  Kort,
   Meddelanderuta,
   PRIMARKNAPP_KLASS,
   SEKUNDARKNAPP_KLASS,
@@ -28,6 +29,8 @@ import {
   type K6aIndata,
 } from "@/doman/export-k6a";
 import { blankettTexter } from "@/doman/blankett";
+import { slaUppRegelparameter } from "@/doman/regelparameter";
+import { reparationsfonsterNamn } from "@/doman/regeltext";
 import { behoverSkickForsaljning } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { BILAGEPAKET_SYNLIGT } from "@/lib/bilagepaket/flagga";
@@ -47,8 +50,23 @@ export default async function ExportSida() {
   // de tva talen skrivs av till (produktspec 4.9, src/doman/blankett.ts).
   const texter = blankettTexter(bostad.upplatelseform);
 
+  // Tidsfonstret for reparationer namns i forklaringen innan bostaden ar sald.
+  // Talet ur regelparametern, aldrig bokstavligt (docs/design.md, Exportvyn);
+  // utan forsaljningsdatum galler vardet for i dag.
+  const fonsterAr = slaUppRegelparameter(
+    regelparametrar,
+    "reparationsfonster_ar",
+    bostad.forsaljningsdatum
+      ? isoDatum(bostad.forsaljningsdatum)
+      : isoDatum(new Date()),
+  );
+  const fonsterNamn = reparationsfonsterNamn(fonsterAr);
+
   return (
-    <Skarm bostadsnamn={bostadsnamn} rubrik="Deklarationsunderlag">
+    // Egna kort: uppgifterna, sida 1, sida 2 och det som aterstar ar innehall
+    // av olika slag (docs/design.md, "Innehall av olika slag hor hemma i olika
+    // kort"). Alla i samma kolumn.
+    <Skarm bostadsnamn={bostadsnamn} rubrik="Deklarationsunderlag" egnaKort>
       {renderaInnehall()}
     </Skarm>
   );
@@ -75,14 +93,16 @@ export default async function ExportSida() {
       ex = byggK6aExport(indata);
     } catch (fel) {
       return (
-        <div className="p-5">
-          <Meddelanderuta>
-            Underlaget kunde inte beräknas: {(fel as Error).message}
-          </Meddelanderuta>
-          <Link href="/forsaljning" className={`${SEKUNDARKNAPP_KLASS} mt-4`}>
-            Se över försäljningsuppgifterna
-          </Link>
-        </div>
+        <Kort>
+          <div className="p-5">
+            <Meddelanderuta>
+              Underlaget kunde inte beräknas: {(fel as Error).message}
+            </Meddelanderuta>
+            <Link href="/forsaljning" className={`${SEKUNDARKNAPP_KLASS} mt-4`}>
+              Se över försäljningsuppgifterna
+            </Link>
+          </div>
+        </Kort>
       );
     }
 
@@ -103,180 +123,183 @@ export default async function ExportSida() {
 
     return (
       <>
-        <section className="space-y-1 border-b border-linje p-4 font-granssnitt text-sm text-text-dampad">
-          <div className="flex justify-between gap-3">
-            <span>Försäljningsdatum</span>
-            <span className="tabular-nums text-text-primar">
-              {ex.genererad_for_datum ?? "Inte såld än"}
-            </span>
+        <Kort className="divide-y divide-linje">
+          <section className="space-y-1 p-4 font-granssnitt text-sm text-text-sekundar">
+            <div className="flex justify-between gap-3">
+              <span>Försäljningsdatum</span>
+              <span className="tabular-nums text-text-primar">
+                {ex.genererad_for_datum ?? "Inte såld än"}
+              </span>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span>Ägarandel</span>
+              <span className="tabular-nums text-text-primar">
+                {ex.agarandel_procent} %
+              </span>
+            </div>
+          </section>
+
+          <div className="p-4">
+            <Meddelanderuta>
+              {gemensam
+                ? "Din ägarandel är under 100 %. Sammanställningen visar både hela bostadens belopp och din andel, så att den andra delägaren kan använda samma underlag."
+                : texter.inledning}
+            </Meddelanderuta>
           </div>
-          <div className="flex justify-between gap-3">
-            <span>Ägarandel</span>
-            <span className="tabular-nums text-text-primar">
-              {ex.agarandel_procent} %
-            </span>
-          </div>
-        </section>
+        </Kort>
 
-        <div className="border-b border-linje p-4">
-          <Meddelanderuta>
-            {gemensam
-              ? "Din ägarandel är under 100 %. Sammanställningen visar både hela bostadens belopp och din andel, så att den andra delägaren kan använda samma underlag."
-              : texter.inledning}
-          </Meddelanderuta>
-        </div>
+        <Kort className="divide-y divide-linje">
+          <SidaBlock
+            etikett="Sida 1 · Grundförbättringar"
+            rader={ex.sida1.rader}
+            gemensam={gemensam}
+            visaAvdragsgill={false}
+            tomtText="Inga grundförbättringar registrerade."
+          />
 
-        <SidaBlock
-          etikett="Sida 1 · Grundförbättringar"
-          rader={ex.sida1.rader}
-          gemensam={gemensam}
-          visaAvdragsgill={false}
-          tomtText="Inga grundförbättringar registrerade."
-        />
-
-        <RutaCallout
-          rubrik={texter.ruta4}
-          underrad="Summa sida 1 – grundförbättringar"
-          brutto={ex.ruta4_brutto}
-          individuellt={ex.ruta4_individuellt}
-          gemensam={gemensam}
-          agarandel={ex.agarandel_procent}
-          dampad={harOklassificerade}
-        />
-
-        <SidaBlock
-          etikett="Sida 2 · Förbättrande reparationer"
-          rader={ex.sida2.rader}
-          gemensam={gemensam}
-          visaAvdragsgill={ex.sald}
-          tomtText="Inga förbättrande reparationer registrerade."
-        />
-
-        {ex.sald ? (
           <RutaCallout
-            rubrik={texter.ruta5}
-            underrad="Summa sida 2 – avdragsgill del efter förslitning"
-            brutto={ex.ruta5_brutto}
-            individuellt={ex.ruta5_individuellt}
+            rubrik={texter.ruta4}
+            underrad="Summa sida 1 – grundförbättringar"
+            brutto={ex.ruta4_brutto}
+            individuellt={ex.ruta4_individuellt}
             gemensam={gemensam}
             agarandel={ex.agarandel_procent}
             dampad={harOklassificerade}
           />
-        ) : (
-          <div className="border-b border-linje p-4">
-            <Meddelanderuta>
-              Femårsregeln och förslitningen räknas bakåt från
-              försäljningsdatumet, så den avdragsgilla delen på sida 2 går inte
-              att beräkna förrän bostaden är markerad som såld. Sida 1 påverkas
-              inte – grundförbättringar har ingen tidsgräns.
-            </Meddelanderuta>
-          </div>
-        )}
+        </Kort>
 
-        {harOklassificerade ? (
-          <section className="border-b border-linje p-4">
-            <p className="font-granssnitt text-sm font-medium text-text-primar">
-              Behöver klassificeras
-            </p>
-            <p className="mt-1 font-granssnitt text-xs text-text-dampad">
-              De här högarna är grupperade men har inte gått igenom frågorna, så
-              de ingår inte i talen ovan. Kör klassificeringsgenomgången för att
-              ta med dem.
-            </p>
-            <ul className="mt-2 divide-y divide-linje border-t border-linje">
-              {ex.oklassificerade_hogar.map((h) => (
-                <li
-                  key={`${h.namn}-${h.ar}`}
-                  className="flex items-baseline justify-between gap-3 py-2 font-granssnitt text-sm"
-                >
-                  <span className="flex items-center gap-1.5 text-text-primar">
-                    <span
-                      aria-hidden
-                      className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
-                    />
-                    {h.namn}
-                  </span>
-                  <span className="flex shrink-0 items-baseline gap-3 tabular-nums">
-                    <span className="text-text-sekundar">{h.ar}</span>
-                    <span className="text-text-primar">
-                      {formateraKronor(h.belopp_brutto)}
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <Link href="/genomgang" className={`${SEKUNDARKNAPP_KLASS} mt-3`}>
-              Till klassificeringen
-            </Link>
-          </section>
-        ) : null}
-
-        {atgarderUtanSkickForsaljning > 0 ? (
-          <section className="border-b border-linje p-4">
-            <p className="font-granssnitt text-sm font-medium text-text-primar">
-              Skick vid försäljningen
-            </p>
-            <p className="mt-1 font-granssnitt text-xs text-text-dampad">
-              {atgarderUtanSkickForsaljning}{" "}
-              {atgarderUtanSkickForsaljning === 1 ? "åtgärd" : "åtgärder"} på
-              sida 2 saknar bedömningen av skicket vid försäljningen, så den
-              avdragsgilla delen är inte klar.
-            </p>
-            <Link
-              href="/forsaljning/skick"
-              className={`${SEKUNDARKNAPP_KLASS} mt-3`}
-            >
-              Bedöm skicket
-            </Link>
-          </section>
-        ) : null}
-
-        <div className="space-y-4 p-4">
-          {/* Bilagepaketet som PDF (docs/produktspec.md avsnitt 8): dolt i
-              granssnittet tills vidare via BILAGEPAKET_SYNLIGT. Koden, rutten
-              och testerna ligger orort – bara knappen ar borta. I stallet en
-              dampad rad om att kvittona finns sparade som zip i
-              installningarna, sa den som fatt sina tva tal vet vad hon visar
-              om Skatteverket fragar. */}
-          {BILAGEPAKET_SYNLIGT ? (
-            ex.sald ? (
-              <Link href="/export/paket" className={PRIMARKNAPP_KLASS}>
-                Skapa bilagepaket (PDF)
-              </Link>
-            ) : (
-              <div>
-                <span
-                  aria-disabled
-                  className={`${PRIMARKNAPP_KLASS} pointer-events-none opacity-60`}
-                >
-                  Skapa bilagepaket (PDF)
-                </span>
-                <p className="mt-1.5 font-granssnitt text-xs text-text-dampad">
-                  Kräver att bostaden är markerad som såld.
-                </p>
-              </div>
-            )
-          ) : (
-            <p className="font-granssnitt text-xs text-text-dampad">
-              Kvittona finns sparade och går att ladda ner som zip-arkiv från{" "}
-              <Link href="/installningar" className="underline">
-                inställningarna
-              </Link>
-              , om Skatteverket begär in en redogörelse.
-            </p>
-          )}
+        <Kort className="divide-y divide-linje">
+          <SidaBlock
+            etikett="Sida 2 · Förbättrande reparationer"
+            rader={ex.sida2.rader}
+            gemensam={gemensam}
+            visaAvdragsgill={ex.sald}
+            tomtText="Inga förbättrande reparationer registrerade."
+          />
 
           {ex.sald ? (
-            <Link href="/forsaljning" className={SEKUNDARKNAPP_KLASS}>
-              Ändra försäljningsuppgifter
-            </Link>
-          ) : (
-            <Link href="/forsaljning" className={PRIMARKNAPP_KLASS}>
-              Markera som såld
-            </Link>
+            <RutaCallout
+              rubrik={texter.ruta5}
+              underrad="Summa sida 2 – avdragsgill del efter förslitning"
+              brutto={ex.ruta5_brutto}
+              individuellt={ex.ruta5_individuellt}
+              gemensam={gemensam}
+              agarandel={ex.agarandel_procent}
+              dampad={harOklassificerade}
+            />
+          ) : null}
+        </Kort>
+
+        <Kort className="divide-y divide-linje">
+          {ex.sald ? null : (
+            <div className="p-4">
+              <Meddelanderuta>
+                {fonsterNamn.charAt(0).toUpperCase() + fonsterNamn.slice(1)} och
+                förslitningen räknas bakåt från försäljningsdatumet, så den
+                avdragsgilla delen på sida 2 går inte att beräkna förrän
+                bostaden är markerad som såld. Sida 1 påverkas inte –
+                grundförbättringar har ingen tidsgräns.
+              </Meddelanderuta>
+            </div>
           )}
-          <Friskrivning />
-        </div>
+
+          {harOklassificerade ? (
+            <section className="p-4">
+              <p className="font-granssnitt text-sm font-medium text-text-primar">
+                Behöver klassificeras
+              </p>
+              <p className="mt-1 font-granssnitt text-xs text-text-sekundar">
+                De här högarna är grupperade men har inte gått igenom frågorna,
+                så de ingår inte i talen ovan. Kör klassificeringsgenomgången
+                för att ta med dem.
+              </p>
+              <ul className="mt-2 divide-y divide-linje border-t border-linje">
+                {ex.oklassificerade_hogar.map((h) => (
+                  <li
+                    key={`${h.namn}-${h.ar}`}
+                    className="flex items-baseline justify-between gap-3 py-2 font-granssnitt text-sm"
+                  >
+                    <span className="flex items-center gap-1.5 text-text-primar">
+                      <span
+                        aria-hidden
+                        className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
+                      />
+                      {h.namn}
+                    </span>
+                    <span className="flex shrink-0 items-baseline gap-3 tabular-nums">
+                      <span className="text-text-sekundar">{h.ar}</span>
+                      <span className="text-text-primar">
+                        {formateraKronor(h.belopp_brutto)}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/genomgang" className={`${SEKUNDARKNAPP_KLASS} mt-3`}>
+                Till klassificeringen
+              </Link>
+            </section>
+          ) : null}
+
+          {atgarderUtanSkickForsaljning > 0 ? (
+            <section className="p-4">
+              <p className="font-granssnitt text-sm font-medium text-text-primar">
+                Skick vid försäljningen
+              </p>
+              <p className="mt-1 font-granssnitt text-xs text-text-sekundar">
+                {atgarderUtanSkickForsaljning}{" "}
+                {atgarderUtanSkickForsaljning === 1 ? "åtgärd" : "åtgärder"} på
+                sida 2 saknar bedömningen av skicket vid försäljningen, så den
+                avdragsgilla delen är inte klar.
+              </p>
+              <Link
+                href="/forsaljning/skick"
+                className={`${SEKUNDARKNAPP_KLASS} mt-3`}
+              >
+                Bedöm skicket
+              </Link>
+            </section>
+          ) : null}
+
+          <div className="space-y-4 p-4">
+            {/* Bilagepaketet som PDF (docs/produktspec.md avsnitt 8): dolt i
+                granssnittet tills vidare via BILAGEPAKET_SYNLIGT. Koden, rutten
+                och testerna ligger orort – bara knappen ar borta. Ingen
+                hanvisning till zip-arkivet i dess stalle: exportvyns uppgift
+                ar tva tal, och zip-arkivet forklaras i installningarna
+                (docs/design.md, Exportvyn). */}
+            {BILAGEPAKET_SYNLIGT ? (
+              ex.sald ? (
+                <Link href="/export/paket" className={PRIMARKNAPP_KLASS}>
+                  Skapa bilagepaket (PDF)
+                </Link>
+              ) : (
+                <div>
+                  <span
+                    aria-disabled
+                    className={`${PRIMARKNAPP_KLASS} pointer-events-none opacity-60`}
+                  >
+                    Skapa bilagepaket (PDF)
+                  </span>
+                  <p className="mt-1.5 font-granssnitt text-xs text-text-sekundar">
+                    Kräver att bostaden är markerad som såld.
+                  </p>
+                </div>
+              )
+            ) : null}
+
+            {ex.sald ? (
+              <Link href="/forsaljning" className={SEKUNDARKNAPP_KLASS}>
+                Ändra försäljningsuppgifter
+              </Link>
+            ) : (
+              <Link href="/forsaljning" className={PRIMARKNAPP_KLASS}>
+                Markera som såld
+              </Link>
+            )}
+            <Friskrivning />
+          </div>
+        </Kort>
       </>
     );
   }
@@ -296,19 +319,19 @@ function SidaBlock({
   tomtText: string;
 }) {
   return (
-    <section className="border-b border-linje">
-      <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
+    <section>
+      <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
         {etikett}
       </p>
       {rader.length === 0 ? (
-        <p className="px-4 py-3 font-granssnitt text-sm text-text-dampad">
+        <p className="px-4 py-3 font-granssnitt text-sm text-text-sekundar">
           {tomtText}
         </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse font-granssnitt text-sm tabular-nums">
             <thead>
-              <tr className="text-left text-text-dampad">
+              <tr className="text-left text-text-sekundar">
                 <th className="px-4 py-2 font-normal">Åtgärd</th>
                 <th className="px-4 py-2 font-normal">År</th>
                 <th className="px-4 py-2 text-right font-normal">Belopp</th>
@@ -318,7 +341,9 @@ function SidaBlock({
                   </th>
                 ) : null}
                 {gemensam ? (
-                  <th className="px-4 py-2 text-right font-normal">Din andel</th>
+                  <th className="px-4 py-2 text-right font-normal">
+                    Din andel
+                  </th>
                 ) : null}
               </tr>
             </thead>
@@ -328,7 +353,7 @@ function SidaBlock({
                 // det den avdragsgilla delen (det som summeras till ruta 5), pa
                 // sida 1 hela beloppet.
                 const individuelltVarde = visaAvdragsgill
-                  ? r.avdragsgill_del_individuellt ?? 0
+                  ? (r.avdragsgill_del_individuellt ?? 0)
                   : r.belopp_individuellt;
                 return (
                   <tr key={`${r.atgard}-${r.ar}-${i}`} className="align-top">
@@ -343,13 +368,13 @@ function SidaBlock({
                       {r.varningar.map((v) => (
                         <span
                           key={v}
-                          className="mt-0.5 block text-xs text-text-dampad"
+                          className="mt-0.5 block text-xs text-text-sekundar"
                         >
                           {v}
                         </span>
                       ))}
                       {r.forklaring ? (
-                        <span className="mt-0.5 block text-xs text-text-dampad">
+                        <span className="mt-0.5 block text-xs text-text-sekundar">
                           {r.forklaring}
                         </span>
                       ) : null}
@@ -399,7 +424,7 @@ function RutaCallout({
   dampad: boolean;
 }) {
   return (
-    <section className="border-b border-linje p-4">
+    <section className="p-4">
       <div className="flex items-baseline justify-between gap-3">
         <span className="font-granssnitt text-sm text-text-sekundar">
           {rubrik}
@@ -412,9 +437,11 @@ function RutaCallout({
           {formateraKronor(gemensam ? individuellt : brutto)}
         </span>
       </div>
-      <p className="mt-1 font-granssnitt text-xs text-text-dampad">{underrad}</p>
+      <p className="mt-1 font-granssnitt text-xs text-text-sekundar">
+        {underrad}
+      </p>
       {gemensam ? (
-        <p className="mt-1 font-granssnitt text-xs tabular-nums text-text-dampad">
+        <p className="mt-1 font-granssnitt text-xs tabular-nums text-text-sekundar">
           Hela bostaden {formateraKronor(brutto)} · din andel {agarandel} %
         </p>
       ) : null}

@@ -124,11 +124,11 @@ export default async function ProjektSida({
       </section>
 
       <section>
-        <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
+        <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
           Kopplade kostnader
         </p>
         {kostnader.length === 0 ? (
-          <p className="px-4 py-3 font-granssnitt text-sm text-text-dampad">
+          <p className="px-4 py-3 font-granssnitt text-sm text-text-sekundar">
             Inga kostnader kopplade än.
           </p>
         ) : (
@@ -193,7 +193,7 @@ function Rad({
 }) {
   return (
     <div className="flex justify-between gap-3">
-      <span className="text-text-dampad">{etikett}</span>
+      <span className="text-text-sekundar">{etikett}</span>
       <span className="flex items-center gap-1.5 text-right text-text-primar">
         {atgard ? (
           <span

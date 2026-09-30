@@ -6,6 +6,7 @@ import { KategoriInfo } from "./kategori-info";
 import { Listrad, Skarm } from "@/components/skarm";
 import { beloppForKostnad, bidragForKostnad } from "@/doman/berakningar";
 import { atgardKategoriText } from "@/doman/fragetradet";
+import { slaUppRegelparameter } from "@/doman/regelparameter";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
@@ -19,9 +20,19 @@ const MAX_KVITTON_VISADE = 5;
 
 export default async function ProjektlistaSida() {
   const { bostadId } = await kravBostad();
-  const { bostad, projektRader, kostnader, kostnadRader } =
+  const { bostad, projektRader, kostnader, kostnadRader, regelparametrar } =
     await hamtaBostadsdata(bostadId);
   const { bostadsnamn } = bostadHeader(bostad);
+
+  // Tidsfonstret for reparationer, som informationsknappen namner. Ur
+  // regelparametern for forsaljningsdatumet eller, fore forsaljningen, i dag.
+  const fonsterAr = slaUppRegelparameter(
+    regelparametrar,
+    "reparationsfonster_ar",
+    bostad.forsaljningsdatum
+      ? isoDatum(bostad.forsaljningsdatum)
+      : isoDatum(new Date()),
+  );
 
   const domanKostnadPerId = new Map(kostnader.map((k) => [k.id, k]));
 
@@ -83,7 +94,9 @@ export default async function ProjektlistaSida() {
     <Skarm
       bostadsnamn={bostadsnamn}
       rubrik="Projekt"
-      rubrikExtra={rader.length > 0 ? <KategoriInfo /> : undefined}
+      rubrikExtra={
+        rader.length > 0 ? <KategoriInfo fonsterAr={fonsterAr} /> : undefined
+      }
     >
       {rader.length === 0 ? (
         <div className="p-5">
@@ -95,7 +108,7 @@ export default async function ProjektlistaSida() {
               skapas inte som en egen uppgift utan uppstår ur klassificeringen.
               En textlänk till genomgången räcker (docs/design.md, "Tomma
               tillstånd": ingen knapp för att skapa en gruppering). */}
-          <p className="mt-1 font-granssnitt text-sm text-text-dampad">
+          <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
             Ett projekt samlar allt du gjort med en och samma sak – till exempel
             att måla sovrummet. Grupperingar skapas när du{" "}
             <Link
@@ -111,7 +124,7 @@ export default async function ProjektlistaSida() {
         <>
           {arSorterade.map((ar) => (
             <div key={ar} className="border-b border-linje last:border-b-0">
-              <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
+              <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
                 {ar}
               </p>
               <div className="divide-y divide-linje">
@@ -144,7 +157,7 @@ export default async function ProjektlistaSida() {
                         {r.kvitton.slice(0, MAX_KVITTON_VISADE).map((k) => (
                           <li
                             key={k.id}
-                            className="flex items-baseline justify-between gap-3 font-granssnitt text-sm text-text-dampad"
+                            className="flex items-baseline justify-between gap-3 font-granssnitt text-sm text-text-sekundar"
                           >
                             <span className="min-w-0 truncate">
                               {[k.leverantor, k.datum]
@@ -157,7 +170,7 @@ export default async function ProjektlistaSida() {
                           </li>
                         ))}
                         {r.kvitton.length > MAX_KVITTON_VISADE ? (
-                          <li className="font-granssnitt text-xs text-text-dampad">
+                          <li className="font-granssnitt text-xs text-text-sekundar">
                             +{r.kvitton.length - MAX_KVITTON_VISADE} till
                           </li>
                         ) : null}

@@ -44,7 +44,7 @@ export function SkickForsaljningFlode({ atgarder }: { atgarder: Atgard[] }) {
         <p className="font-rubrik text-lg text-text-primar">
           Du hoppade över resten
         </p>
-        <p className="mt-1 font-granssnitt text-sm text-text-dampad">
+        <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
           De åtgärder du hoppade över ligger kvar obesvarade och dyker upp
           nästa gång du öppnar den här sidan.
         </p>
@@ -84,14 +84,14 @@ function AtgardFormular({
   return (
     <div className="flex flex-col">
       <div className="border-b border-linje px-4 py-3">
-        <p className="font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
+        <p className="font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
           Åtgärd {position} av {antal}
         </p>
       </div>
 
       <div className="border-b border-linje px-4 py-3">
         <p className="font-rubrik text-lg text-text-primar">{atgard.namn}</p>
-        <p className="mt-0.5 font-granssnitt text-sm text-text-dampad">
+        <p className="mt-0.5 font-granssnitt text-sm text-text-sekundar">
           {atgard.ar}
           {atgard.skickForvarv !== null
             ? ` · Skick vid förvärvet: ${atgard.skickForvarv} – ${SKICK_ORD[atgard.skickForvarv]}`
@@ -119,7 +119,7 @@ function AtgardFormular({
         <input type="hidden" name="skick_forsaljning" value={skick} />
 
         {resultat.fel ? (
-          <p className="font-granssnitt text-sm text-accent-mork">
+          <p className="font-granssnitt text-sm text-accent">
             {resultat.fel}
           </p>
         ) : null}

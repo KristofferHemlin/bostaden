@@ -285,7 +285,7 @@ export function AdressFalt({
                       {f.primar}
                     </span>
                     {f.sekundar ? (
-                      <span className="block truncate text-xs text-text-dampad">
+                      <span className="block truncate text-xs text-text-sekundar">
                         {f.sekundar}
                       </span>
                     ) : null}

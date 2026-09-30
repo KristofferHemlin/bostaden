@@ -99,7 +99,10 @@ import {
 } from "@/lib/bildaspekt";
 import { forsokBorjaInskickning, useDubbelinskickRef } from "@/lib/dubbelinskick";
 import {
+  Bekraftelseruta,
   Falt,
+  FALTFEL_KLASS,
+  HJALPTEXT_KLASS,
   INPUT_KLASS,
   Meddelanderuta,
   PRIMARKNAPP_KLASS,
@@ -855,7 +858,7 @@ export function NyKostnadForm({
               {renderFel ? (
                 <DokumentIkon namn={forhandsFil.name} />
               ) : (
-                <p className="px-4 text-center font-granssnitt text-xs text-text-dampad">
+                <p className="px-4 text-center font-granssnitt text-xs text-text-sekundar">
                   Läser PDF…
                 </p>
               )}
@@ -979,7 +982,7 @@ export function NyKostnadForm({
               <div
                 key={filnyckel(fil)}
                 className={`${RUTA} ${
-                  st?.fel ? "ring-2 ring-inset ring-accent-mork" : ""
+                  st?.fel ? "ring-2 ring-inset ring-accent" : ""
                 } ${
                   flera && vald
                     ? "ring-2 ring-inset ring-text-primar"
@@ -1038,11 +1041,11 @@ export function NyKostnadForm({
             sa lange ingen bilaga finns. Avvisas en fil tar felet dess plats
             och sager orsaken (docs/design.md, "Bilagor"). */}
         {avvisning ? (
-          <p role="alert" className="mt-2 font-granssnitt text-xs text-accent-mork">
+          <p role="alert" className={`mt-2 ${FALTFEL_KLASS}`}>
             {avvisning}
           </p>
         ) : poster.length === 0 ? (
-          <p className="mt-2 font-granssnitt text-xs text-text-dampad">
+          <p className={`mt-2 ${HJALPTEXT_KLASS}`}>
             JPG, PNG, HEIC eller PDF. Max 10 MB per fil. Går att lägga till
             senare.
           </p>
@@ -1066,7 +1069,7 @@ export function NyKostnadForm({
           "Kostnadsformularets ordning") – gar att ignorera, falten ar
           redigerbara hela tiden, aven under uppladdningen. */}
       {vantesteg ? (
-        <p role="status" className="font-granssnitt text-xs text-text-dampad">
+        <p role="status" className="font-granssnitt text-xs text-text-sekundar">
           {vantesteg === "laser"
             ? "Läser av belopp och datum"
             : "Sparar kvittot"}
@@ -1081,11 +1084,11 @@ export function NyKostnadForm({
           texten, och de falt som INTE gick att lasa far dessutom sin egen
           rad (se faltStatus). */}
       {avlasningKord === true && nagotAutoifyllt ? (
-        <p className="rounded-lg bg-bg-klart px-3 py-2 font-granssnitt text-sm text-text-klart">
+        <Bekraftelseruta>
           {allaTreLasta
             ? "Belopp, datum och leverantör är ifyllda från kvittot – kontrollera att de stämmer innan du sparar."
             : "Fälten som kunde läsas är ifyllda från kvittot – kontrollera att de stämmer innan du sparar."}
-        </p>
+        </Bekraftelseruta>
       ) : null}
 
       {/* Tredje laget: avlasningen kordes aldrig alls – nyckel saknas,
@@ -1214,13 +1217,13 @@ export function NyKostnadForm({
           (kvittot ligger kvar som utkast) men visas sa att den gar att gora om
           via krysset och ett nytt val. */}
       {Object.values(filstatus).some((s) => s.fel) ? (
-        <p className="font-granssnitt text-sm text-accent-mork">
+        <p className="font-granssnitt text-sm text-accent">
           En bilaga kunde inte laddas upp. Ta bort den och välj filen igen.
         </p>
       ) : null}
 
       {resultat.fel ? (
-        <div className="font-granssnitt text-sm text-accent-mork">
+        <div className="font-granssnitt text-sm text-accent">
           <p>{resultat.fel}</p>
           {resultat.kostnadId ? (
             <Link
@@ -1313,7 +1316,7 @@ function BilagaSaknasDialog({
           <button
             type="button"
             onClick={onSparaAnda}
-            className="font-granssnitt text-sm text-text-dampad underline"
+            className="font-granssnitt text-sm text-text-sekundar underline"
           >
             Spara ändå
           </button>
@@ -1332,7 +1335,7 @@ function DokumentIkon({ namn }: { namn: string }) {
       <span className="break-words font-granssnitt text-sm text-text-sekundar">
         {namn}
       </span>
-      <span className="font-granssnitt text-xs text-text-dampad">
+      <span className="font-granssnitt text-xs text-text-sekundar">
         Kan inte visas här – öppna filen för att kontrollera den.
       </span>
     </div>

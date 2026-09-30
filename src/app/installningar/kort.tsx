@@ -36,6 +36,7 @@ import { BeloppFalt } from "@/components/belopp-falt";
 import { DatumFalt } from "@/components/datum-falt";
 import {
   Falt,
+  HJALPTEXT_KLASS,
   INPUT_KLASS,
   Kort,
   PRIMARKNAPP_KLASS,
@@ -214,9 +215,9 @@ function Rad({ etikett, varde }: { etikett: string; varde: string | null }) {
   const tomt = varde == null || varde.trim() === "";
   return (
     <div className="flex justify-between gap-3 py-1.5">
-      <span className="text-text-dampad">{etikett}</span>
+      <span className="text-text-sekundar">{etikett}</span>
       <span
-        className={`text-right ${tomt ? "text-text-dampad" : "text-text-primar"}`}
+        className={`text-right ${tomt ? "text-text-sekundar" : "text-text-primar"}`}
       >
         {tomt ? "Inte ifyllt" : varde}
       </span>
@@ -240,7 +241,7 @@ function KortHuvud({
         <button
           type="button"
           onClick={onAndra}
-          className="font-granssnitt text-sm text-text-dampad underline underline-offset-2 hover:text-text-sekundar"
+          className="font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
         >
           Ändra
         </button>
@@ -410,7 +411,7 @@ function BostadenEditForm({
           <input type="hidden" name="upplatelseform" value={upplatelseformVal} />
 
           {data.sald ? (
-            <p className="mt-1.5 font-granssnitt text-xs text-text-dampad">
+            <p className={`mt-1.5 ${HJALPTEXT_KLASS}`}>
               Låst efter försäljningen – underlaget är framtaget och blanketten
               vald.
             </p>
@@ -473,7 +474,7 @@ function BostadenEditForm({
         </Falt>
 
         {resultat.fel ? (
-          <p className="font-granssnitt text-sm text-accent-mork">{resultat.fel}</p>
+          <p className="font-granssnitt text-sm text-accent">{resultat.fel}</p>
         ) : null}
 
         <div className="flex flex-col gap-2">
@@ -654,7 +655,7 @@ function KopetEditForm({
         </Falt>
 
         {resultat.fel ? (
-          <p className="font-granssnitt text-sm text-accent-mork">{resultat.fel}</p>
+          <p className="font-granssnitt text-sm text-accent">{resultat.fel}</p>
         ) : null}
 
         <div className="flex flex-col gap-2">
@@ -801,7 +802,7 @@ function AgandetEditForm({
               }}
             />
           </div>
-          <p className="mt-1.5 font-granssnitt text-xs text-text-dampad">
+          <p className={`mt-1.5 ${HJALPTEXT_KLASS}`}>
             {HJALP_FORSTA_AGARE}
           </p>
         </div>
@@ -830,7 +831,7 @@ function AgandetEditForm({
                 }}
               />
             </div>
-            <p className="mt-1.5 font-granssnitt text-xs text-text-dampad">
+            <p className={`mt-1.5 ${HJALPTEXT_KLASS}`}>
               {HJALP_OMBILDNING}
             </p>
           </div>
@@ -838,7 +839,7 @@ function AgandetEditForm({
         <input type="hidden" name="ombildning" value={ombildning} />
 
         {resultat.fel ? (
-          <p className="font-granssnitt text-sm text-accent-mork">{resultat.fel}</p>
+          <p className="font-granssnitt text-sm text-accent">{resultat.fel}</p>
         ) : null}
 
         <div className="flex flex-col gap-2">
@@ -887,7 +888,7 @@ function DittKontoKort({ epost }: { epost: string }) {
         <div className="flex flex-col items-start gap-3 border-t border-linje pt-3">
           <Link
             href="/integritetspolicy"
-            className="font-granssnitt text-sm text-text-dampad underline underline-offset-2 hover:text-text-sekundar"
+            className="font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
           >
             Integritetspolicyn
           </Link>
@@ -944,7 +945,7 @@ function BytKortDialog({
             type="button"
             onClick={onKasta}
             disabled={pagar}
-            className="font-granssnitt text-sm text-text-dampad underline disabled:opacity-60"
+            className="font-granssnitt text-sm text-text-sekundar underline disabled:opacity-60"
           >
             Kasta ändringarna
           </button>

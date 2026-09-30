@@ -9,3 +9,9 @@ next-env.d.ts
 
 # Genererad kopia av pdf.js browser-byggena (se scripts/kopiera-pdfjs.mjs)
 /public/pdfjs
+
+# Säkerhetskopior (scripts/sakerhetskopiera.ts) – personuppgifter och fakturor.
+# Skriptet skriver utanför repot och vägrar skriva inuti det; det här är ett
+# andra lager om en kopia ändå flyttas hit.
+sakerhetskopior/
+bostadsunderlag-*/

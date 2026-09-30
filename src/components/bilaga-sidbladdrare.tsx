@@ -319,7 +319,7 @@ function SidBildInnehall({
   onClick?: () => void;
 }) {
   const innehall = fel ? (
-    <span className="absolute inset-0 flex items-center justify-center px-2 text-center font-granssnitt text-xs text-text-dampad">
+    <span className="absolute inset-0 flex items-center justify-center px-2 text-center font-granssnitt text-xs text-text-sekundar">
       Sida {sida} kunde inte visas
     </span>
   ) : url ? (

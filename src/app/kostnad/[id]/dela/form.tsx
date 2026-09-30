@@ -16,7 +16,13 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { delaUppKostnad, type KostnadRedigeraResultat } from "../actions";
 import { BeloppFalt } from "@/components/belopp-falt";
-import { Falt, INPUT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
+import {
+  Bekraftelseruta,
+  Falt,
+  HJALPTEXT_KLASS,
+  INPUT_KLASS,
+  PRIMARKNAPP_KLASS,
+} from "@/components/skarm";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import {
   formateraBeloppInmatning,
@@ -118,7 +124,7 @@ export function DelaUppForm({
         <p className="font-rubrik text-lg tabular-nums text-text-primar">
           {formateraKronor(totalbelopp)}
         </p>
-        <p className="mt-1 font-granssnitt text-xs text-text-dampad">
+        <p className={`mt-1 ${HJALPTEXT_KLASS}`}>
           Radernas belopp ska tillsammans bli exakt den summan.
         </p>
       </div>
@@ -129,7 +135,7 @@ export function DelaUppForm({
           return (
             <div key={r.nyckel} className="flex flex-col gap-4 p-5">
               <div className="flex items-center justify-between">
-                <span className="font-granssnitt text-xs uppercase tracking-wide text-text-dampad">
+                <span className="font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
                   Rad {index + 1}
                 </span>
                 {rader.length > 2 ? (
@@ -217,9 +223,9 @@ export function DelaUppForm({
         </button>
 
         {garIhop ? (
-          <p className="rounded-lg bg-bg-klart px-3 py-2 font-granssnitt text-sm text-text-klart">
+          <Bekraftelseruta>
             Raderna går ihop med totalbeloppet.
-          </p>
+          </Bekraftelseruta>
         ) : (
           <p className="font-granssnitt text-sm text-text-sekundar">
             Fördelat{" "}
@@ -235,7 +241,7 @@ export function DelaUppForm({
         )}
 
         {resultat.fel ? (
-          <p className="font-granssnitt text-sm text-accent-mork">
+          <p className="font-granssnitt text-sm text-accent">
             {resultat.fel}
           </p>
         ) : null}

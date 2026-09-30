@@ -18,9 +18,9 @@ import Link from "next/link";
 import { useActionState, useEffect, useState } from "react";
 import { BeloppFalt } from "@/components/belopp-falt";
 import {
+  Bekraftelseruta,
   Falt,
   INPUT_KLASS,
-  Meddelanderuta,
   PRIMARKNAPP_KLASS,
   SEKUNDARKNAPP_KLASS,
 } from "@/components/skarm";
@@ -238,7 +238,7 @@ export function RegistreraFlode({
 
       {felText ? (
         <div className="flex flex-col gap-2">
-          <p className="font-granssnitt text-sm text-accent-mork">{felText}</p>
+          <p className="font-granssnitt text-sm text-accent">{felText}</p>
           {steg === 1 && resultat.epostUpptagen ? (
             <Link
               href={`/login?epost=${encodeURIComponent(resultat.epost ?? epost)}`}
@@ -250,7 +250,7 @@ export function RegistreraFlode({
         </div>
       ) : null}
       {resultat.meddelande ? (
-        <Meddelanderuta>{resultat.meddelande}</Meddelanderuta>
+        <Bekraftelseruta>{resultat.meddelande}</Bekraftelseruta>
       ) : null}
 
       <div className="flex flex-col gap-2">
@@ -281,7 +281,7 @@ export function RegistreraFlode({
             inte samtycke. Lanken oppnas i en ny flik sa att det pabörjade
             formularet inte forsvinner. */}
         {steg === 1 ? (
-          <p className="text-center font-granssnitt text-xs text-text-dampad">
+          <p className="text-center font-granssnitt text-xs text-text-sekundar">
             Genom att skapa ett konto godkänner du villkoren. Läs hur vi
             hanterar dina uppgifter i{" "}
             <Link
@@ -303,7 +303,7 @@ function StegRubrik({ rubrik, text }: { rubrik: string; text: string }) {
   return (
     <div>
       <h2 className="font-rubrik text-lg text-text-primar">{rubrik}</h2>
-      <p className="mt-0.5 font-granssnitt text-sm text-text-dampad">{text}</p>
+      <p className="mt-0.5 font-granssnitt text-sm text-text-sekundar">{text}</p>
     </div>
   );
 }
@@ -325,7 +325,7 @@ function Forlopp({ steg, av }: { steg: number; av: number }) {
           />
         ))}
       </ol>
-      <p className="font-granssnitt text-xs text-text-dampad">
+      <p className="font-granssnitt text-xs text-text-sekundar">
         Steg {steg} av {av}
       </p>
     </div>

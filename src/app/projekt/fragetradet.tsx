@@ -116,13 +116,13 @@ export function Fraga({
         {rubrik}
       </legend>
       {visaHjalp ? (
-        <div className="mb-2 flex items-start gap-2 rounded-lg bg-bg-info px-3 py-2 font-granssnitt text-sm text-text-info">
+        <div className="mb-2 flex items-start gap-2 rounded-lg bg-sand px-3 py-2 font-granssnitt text-sm text-text-primar">
           <p className="flex-1">{hjalp}</p>
           <button
             type="button"
             aria-label="Stäng hjälptexten"
             onClick={() => setVisaHjalp(false)}
-            className="shrink-0 font-granssnitt text-sm leading-none text-text-info transition-opacity hover:opacity-70"
+            className="shrink-0 font-granssnitt text-sm leading-none text-text-primar transition-opacity hover:opacity-70"
           >
             ✕
           </button>

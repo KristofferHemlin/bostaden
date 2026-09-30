@@ -178,7 +178,7 @@ export default async function KvittolistaSida() {
           <p className="font-rubrik text-lg text-text-primar">
             Lägg till ditt första kvitto
           </p>
-          <p className="mt-1 font-granssnitt text-sm text-text-dampad">
+          <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
             Fånga kvittot medan det är färskt. Att koppla det till ett projekt kan
             vänta – oklassificerade kvitton ligger kvar här tills du hinner.
           </p>

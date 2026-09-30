@@ -20,7 +20,12 @@
 
 import { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
-import { Meddelanderuta, PRIMARKNAPP_KLASS, SEKUNDARKNAPP_KLASS } from "@/components/skarm";
+import {
+  KOLUMN_KLASS,
+  Meddelanderuta,
+  PRIMARKNAPP_KLASS,
+  SEKUNDARKNAPP_KLASS,
+} from "@/components/skarm";
 import { DATABAS_SOVER_DIGEST, MEDDELANDE_DATABAS_SOVER } from "@/lib/databas-fel-digest";
 
 export default function Fel({
@@ -38,7 +43,7 @@ export default function Fel({
   }, [error, databasSover]);
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[620px] flex-col justify-center gap-4 p-5">
+    <div className={`${KOLUMN_KLASS} flex min-h-dvh flex-col justify-center gap-4 p-5`}>
       <Meddelanderuta>
         {databasSover
           ? MEDDELANDE_DATABAS_SOVER

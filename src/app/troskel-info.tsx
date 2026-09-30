@@ -15,7 +15,7 @@ export function TroskelInfo() {
   const [visa, setVisa] = useState(false);
   return (
     <div className="mt-2">
-      <p className="flex items-center gap-2 font-granssnitt text-xs text-text-dampad">
+      <p className="flex items-center gap-2 font-granssnitt text-xs text-text-sekundar">
         <span>Preliminärt tills kvittona klassificerats.</span>
         <button
           type="button"
@@ -28,7 +28,7 @@ export function TroskelInfo() {
         </button>
       </p>
       {visa ? (
-        <p className="mt-2 rounded-lg bg-bg-info px-3 py-2 font-granssnitt text-sm text-text-info">
+        <p className="mt-2 rounded-lg bg-sand px-3 py-2 font-granssnitt text-sm text-text-primar">
           Beloppet visar allt som lagts in, inte bara det som blir avdragsgillt.
           Når året inte tröskeln faller hela årets belopp bort, inte bara
           mellanskillnaden.
