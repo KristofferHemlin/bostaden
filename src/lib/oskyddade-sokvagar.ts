@@ -4,7 +4,10 @@
 // sida. Pa "/" avgor sidan sjalv vad som visas: landningssidan utan session,
 // startskarmen med (docs/design.md, Landningssidan).
 
-const OSKYDDADE_PREFIX = ["/login", "/auth", "/registrera", "/integritetspolicy"];
+// "/inbjudan" – sidan bakom QR-koden ska ga att oppna utan konto; den visar
+// vem inbjudan kommer fran innan den ber om nagot (docs/design.md, "Att bjuda
+// in en delagare"). Att losa in kraver anda inloggning med ratt adress.
+const OSKYDDADE_PREFIX = ["/login", "/auth", "/registrera", "/integritetspolicy", "/inbjudan"];
 const OSKYDDADE_EXAKTA = ["/"];
 
 export function arOskyddadSokvag(sokvag: string): boolean {

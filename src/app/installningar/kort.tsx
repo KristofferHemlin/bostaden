@@ -52,6 +52,7 @@ import {
   sparaKopet,
   type InstallningarResultat,
 } from "./actions";
+import { DelaBostaden, type DelningData } from "./dela-bostaden";
 import { KontoRadera } from "./konto-radera";
 
 type KortNamn = "bostaden" | "kopet" | "agandet";
@@ -95,11 +96,17 @@ export function InstallningarKort({
   kopet,
   agandet,
   epost,
+  delad,
+  delning,
 }: {
   bostaden: BostadenData;
   kopet: KopetData;
   agandet: AgandetData;
   epost: string;
+  /** Vilka som har tillgang och utestaende inbjudningar (docs/design.md, "Att bjuda in en delagare"). */
+  delning: DelningData;
+  /** Bostaden har fler an en medlem – kontoraderingen tar da bara bort medlemskapet. */
+  delad: boolean;
 }) {
   const [oppetKort, setOppetKort] = useState<KortNamn | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -181,6 +188,7 @@ export function InstallningarKort({
       <Kort>
         <AgandetKort
           data={agandet}
+          delning={delning}
           oppen={oppetKort === "agandet"}
           formRef={formRef}
           onAndra={() => begarOppna("agandet")}
@@ -191,7 +199,7 @@ export function InstallningarKort({
       </Kort>
 
       <Kort>
-        <DittKontoKort epost={epost} />
+        <DittKontoKort epost={epost} delad={delad} />
       </Kort>
 
       {byteTill && oppetKort ? (
@@ -687,6 +695,7 @@ const HJALP_OMBILDNING =
 
 function AgandetKort({
   data,
+  delning,
   oppen,
   formRef,
   onAndra,
@@ -695,6 +704,7 @@ function AgandetKort({
   onKlar,
 }: {
   data: AgandetData;
+  delning: DelningData;
   oppen: boolean;
   formRef: React.RefObject<HTMLFormElement | null>;
   onAndra: () => void;
@@ -716,6 +726,7 @@ function AgandetKort({
             />
           ) : null}
         </div>
+        <DelaBostaden data={delning} />
       </>
     );
   }
@@ -865,7 +876,7 @@ function AgandetEditForm({
 // "Installningssidan").
 // ---------------------------------------------------------------------------
 
-function DittKontoKort({ epost }: { epost: string }) {
+function DittKontoKort({ epost, delad }: { epost: string; delad: boolean }) {
   return (
     <>
       <div className="p-4 pb-0">
@@ -892,7 +903,7 @@ function DittKontoKort({ epost }: { epost: string }) {
           >
             Integritetspolicyn
           </Link>
-          <KontoRadera epost={epost} />
+          <KontoRadera epost={epost} delad={delad} />
         </div>
       </div>
     </>

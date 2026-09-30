@@ -6,7 +6,8 @@
 import { bostadHeader } from "@/lib/bostad-header";
 import { isoDatum } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
-import { kravAnvandare, kravBostad } from "@/lib/session";
+import { arDeladBostad } from "@/lib/samagande";
+import { antalMedlemmar, kravAnvandare, kravBostad } from "@/lib/session";
 import { Skarm } from "@/components/skarm";
 import { InstallningarKort } from "./kort";
 
@@ -15,7 +16,20 @@ export const dynamic = "force-dynamic";
 export default async function InstallningarSida() {
   const anvandare = await kravAnvandare();
   const { bostadId, agarandel } = await kravBostad();
-  const bostad = await prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } });
+  const [bostad, medlemmar, medlemsrader, inbjudningar] = await Promise.all([
+    prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } }),
+    antalMedlemmar(bostadId),
+    prisma.medlemskap.findMany({
+      where: { bostad_id: bostadId },
+      orderBy: { skapad_at: "asc" },
+      select: { anvandare: { select: { id: true, epost: true } } },
+    }),
+    prisma.inbjudan.findMany({
+      where: { bostad_id: bostadId, status: "utestaende" },
+      orderBy: { skapad_at: "asc" },
+      select: { id: true, epost: true },
+    }),
+  ]);
   const { bostadsnamn } = bostadHeader(bostad);
 
   return (
@@ -49,6 +63,13 @@ export default async function InstallningarSida() {
           ombildningFranHyresratt: bostad.ombildning_fran_hyresratt,
         }}
         epost={anvandare.epost}
+        delad={arDeladBostad(medlemmar)}
+        delning={{
+          medlemmar: medlemsrader
+            .map((m) => ({ epost: m.anvandare.epost, du: m.anvandare.id === anvandare.id }))
+            .sort((a, b) => Number(b.du) - Number(a.du)),
+          inbjudningar,
+        }}
       />
     </Skarm>
   );

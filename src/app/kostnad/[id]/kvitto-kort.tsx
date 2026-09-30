@@ -87,6 +87,9 @@ interface LasVarden {
   grupperingar: string[];
   /** Formaterad kronsträng, eller null nar inget av kvittot ar privat. */
   privatbelopp: string | null;
+  /** "Tillagt av …" (src/lib/samagande.ts), eller null – ensam agare, eller
+   *  ett aldre kvitto utan uppgift. Da star ingenting. */
+  tillagtAv: string | null;
 }
 
 interface RedigeraVarden {
@@ -229,6 +232,11 @@ function LasVy({
         {varden.privatbelopp ? (
           <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
             {varden.privatbelopp} hörde inte till bostaden
+          </p>
+        ) : null}
+        {varden.tillagtAv ? (
+          <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
+            {varden.tillagtAv}
           </p>
         ) : null}
       </section>

@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Kontoraderingen (produktspec avsnitt 14, "Kontoradering"; CLAUDE.md).
-// Ordningen ar bindande: filerna forst, sedan databasposterna, sedan kontot i
-// Supabase Auth – och misslyckas ett steg ska det synas, inte fortsatta tyst.
-// Delade bostader (fler an ett medlemskap) ska lamnas orort; bara den egna
-// medlemskapsraden forsvinner, via cascaden nar anvandarraden tas bort.
+// Kontoraderingen (produktspec avsnitt 14, "Kontoradering"; CLAUDE.md;
+// docs/design.md, "Samagande – medlemskapet"). Ordningen ar bindande:
+// databasposterna forst, i en transaktion som ocksa avgor vad som ar
+// anvandarens ensamt; filerna forst nar den lyckats; sist kontot i Supabase
+// Auth. Misslyckas ett steg ska det synas, inte fortsatta tyst. Delade
+// bostader ror funktionen aldrig – och gar nagon med under tiden faller
+// transaktionen innan en enda fil tagits bort.
 
 const h = vi.hoisted(() => ({
   medlemskapFindMany: vi.fn(),
@@ -12,19 +14,28 @@ const h = vi.hoisted(() => ({
   bilagaFindMany: vi.fn(),
   bostadDeleteMany: vi.fn(),
   anvandareDelete: vi.fn(),
+  transaktion: vi.fn(),
   remove: vi.fn(),
   deleteUser: vi.fn(),
   captureException: vi.fn(),
 }));
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
+vi.mock("@/lib/prisma", () => {
+  const tx = {
     medlemskap: { findMany: h.medlemskapFindMany, count: h.medlemskapCount },
     bilaga: { findMany: h.bilagaFindMany },
     bostad: { deleteMany: h.bostadDeleteMany },
     anvandare: { delete: h.anvandareDelete },
-  },
-}));
+  };
+  return {
+    prisma: {
+      $transaction: (fn: (t: typeof tx) => unknown, opts: unknown) => {
+        h.transaktion(opts);
+        return fn(tx);
+      },
+    },
+  };
+});
 vi.mock("@/lib/lagring/klient", () => ({
   bilagelager: () => ({ remove: h.remove }),
   lagringsklient: () => ({ auth: { admin: { deleteUser: h.deleteUser } } }),
@@ -55,49 +66,65 @@ describe("raderaKonto – ensam agare av bostaden", () => {
     ]);
   });
 
-  it("tar bort filerna, bostaden och kontot – i den ordningen", async () => {
+  it("tar bort databasposterna, sedan filerna, sedan kontot – i den ordningen", async () => {
     const resultat = await raderaKonto(ANVANDARE);
 
     expect(resultat).toEqual({ ok: true });
-    expect(h.remove).toHaveBeenCalledWith(["a", "a-mini", "b", "b-vis"]);
+    expect(h.transaktion).toHaveBeenCalledWith({ isolationLevel: "Serializable" });
     expect(h.bostadDeleteMany).toHaveBeenCalledWith({
-      where: { id: { in: [BOSTAD_EGEN] } },
+      where: {
+        id: { in: [BOSTAD_EGEN] },
+        medlemskap: { every: { anvandare_id: ANVANDARE } },
+      },
     });
     expect(h.anvandareDelete).toHaveBeenCalledWith({ where: { id: ANVANDARE } });
+    expect(h.remove).toHaveBeenCalledWith(["a", "a-mini", "b", "b-vis"]);
     expect(h.deleteUser).toHaveBeenCalledWith(ANVANDARE);
 
-    // Ordningen: filerna fore databasen fore Auth-kontot.
-    const removeOrdning = h.remove.mock.invocationCallOrder[0];
     const bostadOrdning = h.bostadDeleteMany.mock.invocationCallOrder[0];
+    const anvandareOrdning = h.anvandareDelete.mock.invocationCallOrder[0];
+    const removeOrdning = h.remove.mock.invocationCallOrder[0];
     const kontoOrdning = h.deleteUser.mock.invocationCallOrder[0];
-    expect(removeOrdning).toBeLessThan(bostadOrdning);
-    expect(bostadOrdning).toBeLessThan(kontoOrdning);
+    expect(bostadOrdning).toBeLessThan(removeOrdning);
+    expect(anvandareOrdning).toBeLessThan(removeOrdning);
+    expect(removeOrdning).toBeLessThan(kontoOrdning);
   });
 
-  it("stannar och sager ifran nar filerna inte gar att ta bort – databasen ror aldrig", async () => {
-    h.remove.mockResolvedValue({ error: { message: "nere" } });
+  it("gar nagon med under tiden: transaktionen faller och ingen fil rors", async () => {
+    // Raderingens eget villkor traffar inte bostaden – den har fatt en medlem till.
+    h.bostadDeleteMany.mockResolvedValue({ count: 0 });
 
     const resultat = await raderaKonto(ANVANDARE);
 
     expect(resultat.ok).toBe(false);
-    if (!resultat.ok) expect(resultat.steg).toBe("lagring");
-    expect(h.bostadDeleteMany).not.toHaveBeenCalled();
+    if (!resultat.ok) expect(resultat.steg).toBe("databas");
     expect(h.anvandareDelete).not.toHaveBeenCalled();
+    expect(h.remove).not.toHaveBeenCalled();
     expect(h.deleteUser).not.toHaveBeenCalled();
   });
 
-  it("stannar och sager ifran nar databasposterna inte gar att radera – Auth-kontot ror aldrig", async () => {
+  it("stannar och sager ifran nar databasen inte svarar – ingen fil och inget konto rors", async () => {
     h.anvandareDelete.mockRejectedValue(new Error("databasen svarar inte"));
 
     const resultat = await raderaKonto(ANVANDARE);
 
     expect(resultat.ok).toBe(false);
     if (!resultat.ok) expect(resultat.steg).toBe("databas");
-    expect(h.remove).toHaveBeenCalled();
+    expect(h.remove).not.toHaveBeenCalled();
     expect(h.deleteUser).not.toHaveBeenCalled();
   });
 
-  it("sager ifran nar Auth-kontot inte gar att stanga, aven om filer och databas redan ar borta", async () => {
+  it("stannar och sager ifran nar filerna inte gar att ta bort – Auth-kontot rors inte", async () => {
+    h.remove.mockResolvedValue({ error: { message: "nere" } });
+
+    const resultat = await raderaKonto(ANVANDARE);
+
+    expect(resultat.ok).toBe(false);
+    if (!resultat.ok) expect(resultat.steg).toBe("lagring");
+    expect(h.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it("sager ifran nar Auth-kontot inte gar att stanga", async () => {
     h.deleteUser.mockResolvedValue({ error: { message: "kunde inte" } });
 
     const resultat = await raderaKonto(ANVANDARE);
@@ -105,25 +132,21 @@ describe("raderaKonto – ensam agare av bostaden", () => {
     expect(resultat.ok).toBe(false);
     if (!resultat.ok) expect(resultat.steg).toBe("konto");
     expect(h.bostadDeleteMany).toHaveBeenCalled();
-    expect(h.anvandareDelete).toHaveBeenCalled();
+    expect(h.remove).toHaveBeenCalled();
   });
 });
 
 describe("raderaKonto – delad bostad", () => {
   it("raderar bara den egna medlemskapsraden; bostaden, kostnaderna och bilagorna ror den aldrig", async () => {
     h.medlemskapFindMany.mockResolvedValue([{ bostad_id: BOSTAD_DELAD }]);
-    h.medlemskapCount.mockResolvedValue(2); // en till medlem pa samma bostad
+    h.medlemskapCount.mockResolvedValue(2);
 
     const resultat = await raderaKonto(ANVANDARE);
 
     expect(resultat).toEqual({ ok: true });
-    // Ingen bilagelista slogs upp och Storage-remove korde aldrig, eftersom
-    // bostaden inte ar helt anvandarens.
     expect(h.bilagaFindMany).not.toHaveBeenCalled();
-    expect(h.remove).not.toHaveBeenCalled();
     expect(h.bostadDeleteMany).not.toHaveBeenCalled();
-    // Anvandarraden tas anda bort – det ar den som cascadar bort just DEN har
-    // personens medlemskapsrad utan att röra bostaden.
+    expect(h.remove).not.toHaveBeenCalled();
     expect(h.anvandareDelete).toHaveBeenCalledWith({ where: { id: ANVANDARE } });
     expect(h.deleteUser).toHaveBeenCalledWith(ANVANDARE);
   });

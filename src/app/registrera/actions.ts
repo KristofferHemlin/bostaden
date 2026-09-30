@@ -194,6 +194,20 @@ async function skapaKonto(formData: FormData): Promise<RegistreringResultat> {
   }
 
   await sakerstallAnvandarrad(data.user.id, epost);
+
+  // Via en inbjudan finns bostaden redan (docs/design.md, "Att bjuda in en
+  // delagare"): inget bostadssteg. Med session vidare till inbjudan, dar
+  // anslutningen ar ett eget, uttryckligt tryck. Utan session (e-post ska
+  // bekraftas forst) vantar inbjudan pa startskarmen efter inloggningen.
+  const inbjudanId = las(formData, "inbjudan_id");
+  if (inbjudanId && UUID.test(inbjudanId)) {
+    if (data.session) redirect(`/inbjudan/${inbjudanId}`);
+    return {
+      meddelande:
+        "Kontot är skapat. Bekräfta din e-postadress via länken vi skickat och logga sedan in – inbjudan väntar på startsidan.",
+    };
+  }
+
   return {
     kontoSkapat: true,
     authId: data.user.id,

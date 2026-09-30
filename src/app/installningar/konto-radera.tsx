@@ -10,6 +10,10 @@
 // atgard och den enda som kraver mer an ett klick. Samma inline-monster som
 // "Ta bort kvittot" i kostnadens redigeringsvy, inte en modal: en dampad
 // textlank som fallar ut till ett bekraftelseblock, ingen orange knapp.
+//
+// Delas bostaden med nagon tas bara medlemskapet bort (src/lib/konto/radera.ts)
+// och texten sager det: kvittona ligger kvar hos de andra. Att lova att allt
+// forsvinner vore fel, och att tiga om att det ligger kvar vore varre.
 
 import { useActionState, useState } from "react";
 import { INPUT_KLASS } from "@/components/skarm";
@@ -19,7 +23,7 @@ import { raderaKontoAction, type KontoraderaResultat } from "./konto-actions";
 
 const START: KontoraderaResultat = {};
 
-export function KontoRadera({ epost }: { epost: string }) {
+export function KontoRadera({ epost, delad }: { epost: string; delad: boolean }) {
   const [oppen, setOppen] = useState(false);
   const [inskrivenEpost, setInskrivenEpost] = useState("");
   const [resultat, action, pagar] = useActionState(raderaKontoAction, START);
@@ -45,8 +49,9 @@ export function KontoRadera({ epost }: { epost: string }) {
     <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-3">
       <div>
         <p className="font-granssnitt text-sm text-text-primar">
-          Alla kvitton, alla bilagor, alla grupperingar och hela
-          deklarationsunderlaget försvinner. Det går inte att ångra.
+          {delad
+            ? "Ditt konto och din tillgång till bostaden försvinner. Kvittona, bilagorna och underlaget ligger kvar hos de andra delägarna. Det går inte att ångra."
+            : "Alla kvitton, alla bilagor, alla grupperingar och hela deklarationsunderlaget försvinner. Det går inte att ångra."}
         </p>
         <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
           Ladda ner dina filer först om du vill ha kvar dem.

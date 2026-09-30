@@ -12,6 +12,16 @@
 // All berakning bor i src/doman/export-k6a.ts. Har komponeras den bara. Ingen ny
 // domanregel. Struktur och farger: docs/design.md (metrikblock-monstret ateranvands
 // for ruta 4/5; inget rott/gront for status).
+//
+// Har bostaden fler an en medlem star overst att sammanstallningen galler hela
+// bostaden och att var och en deklarerar sin andel av den (docs/design.md,
+// "Samagande – medlemskapet"). Utan raden ser bada delagarna samma summa och
+// for in hela beloppet var. En rad, inget stycke – skarmens uppgift ar tva tal.
+//
+// I en delad bostad ar andelarna inte satta forran de fragas vid forsaljningen.
+// Da visas varken raden Agarandel eller rutan om den egna andelen, och beloppen
+// raknas med 100 % – en andel fran tiden som ensam agare skulle annars halvera
+// talen under en rad som sager hela bostaden (src/lib/samagande.ts).
 
 import Link from "next/link";
 import {
@@ -36,14 +46,17 @@ import { bostadHeader } from "@/lib/bostad-header";
 import { BILAGEPAKET_SYNLIGT } from "@/lib/bilagepaket/flagga";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
-import { kravBostad } from "@/lib/session";
+import { andelForUnderlag, arDeladBostad } from "@/lib/samagande";
+import { antalMedlemmar, kravBostad } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function ExportSida() {
   const { bostadId, agarandel } = await kravBostad();
-  const { bostad, projekt, kostnader, regelparametrar } =
-    await hamtaBostadsdata(bostadId);
+  const [{ bostad, projekt, kostnader, regelparametrar }, medlemmar] =
+    await Promise.all([hamtaBostadsdata(bostadId), antalMedlemmar(bostadId)]);
+  const delad = arDeladBostad(medlemmar);
+  const andel = andelForUnderlag(agarandel, medlemmar);
   const { bostadsnamn } = bostadHeader(bostad);
 
   // Enda skillnaden mellan upplatelseformerna i den har vyn: huvudblanketten som
@@ -82,7 +95,7 @@ export default async function ExportSida() {
         nybyggd_vid_forvarv: bostad.nybyggd_vid_forvarv,
         ombildning_fran_hyresratt: bostad.ombildning_fran_hyresratt,
       },
-      medlemskap: { agarandel },
+      medlemskap: { agarandel: andel ?? 100 },
       projekt,
       kostnader,
       regelparametrar,
@@ -124,6 +137,13 @@ export default async function ExportSida() {
     return (
       <>
         <Kort className="divide-y divide-linje">
+          {delad ? (
+            <p className="p-4 font-granssnitt text-sm text-text-primar">
+              Sammanställningen gäller{" "}
+              <span className="font-medium">hela bostaden</span> – var och en
+              deklarerar sin andel av den.
+            </p>
+          ) : null}
           <section className="space-y-1 p-4 font-granssnitt text-sm text-text-sekundar">
             <div className="flex justify-between gap-3">
               <span>Försäljningsdatum</span>
@@ -131,12 +151,14 @@ export default async function ExportSida() {
                 {ex.genererad_for_datum ?? "Inte såld än"}
               </span>
             </div>
-            <div className="flex justify-between gap-3">
-              <span>Ägarandel</span>
-              <span className="tabular-nums text-text-primar">
-                {ex.agarandel_procent} %
-              </span>
-            </div>
+            {andel !== null ? (
+              <div className="flex justify-between gap-3">
+                <span>Ägarandel</span>
+                <span className="tabular-nums text-text-primar">
+                  {ex.agarandel_procent} %
+                </span>
+              </div>
+            ) : null}
           </section>
 
           <div className="p-4">

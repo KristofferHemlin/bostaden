@@ -13,6 +13,10 @@
 // vidare; servern validerar samma sak defensivt.
 //
 // I lage `endastBostad` (inloggad utan bostad) visas bara bostadssteget.
+//
+// Med `inbjudan` (via koden, docs/design.md "Att bjuda in en delagare") visas
+// bara kontosteget, med adressen inbjudan galler ifylld och last – bostaden
+// finns redan. Servern skickar vidare till inbjudan nar kontot ar skapat.
 
 import Link from "next/link";
 import { useActionState, useEffect, useState } from "react";
@@ -40,8 +44,10 @@ const UPPLATELSEFORMER = [
 
 export function RegistreraFlode({
   endastBostad = false,
+  inbjudan,
 }: {
   endastBostad?: boolean;
+  inbjudan?: { id: string; epost: string };
 }) {
   const [resultat, action, pagar] = useActionState(slutforRegistrering, START);
   const pagarRef = useDubbelinskickRef(pagar);
@@ -53,7 +59,7 @@ export function RegistreraFlode({
   // steg 1 bara vidare utan att traffa servern pa nytt.
   const [kontoRedan, setKontoRedan] = useState(endastBostad);
 
-  const [epost, setEpost] = useState("");
+  const [epost, setEpost] = useState(inbjudan?.epost ?? "");
   const [losenord, setLosenord] = useState("");
   const [upplatelseform, setUpplatelseform] = useState("bostadsratt");
   const [tilltradesdatum, setTilltradesdatum] = useState("");
@@ -128,7 +134,8 @@ export function RegistreraFlode({
       onSubmit={hanteraSubmit}
       className="flex flex-col gap-5 p-5"
     >
-      {!endastBostad ? <Forlopp steg={steg} av={2} /> : null}
+      {!endastBostad && !inbjudan ? <Forlopp steg={steg} av={2} /> : null}
+      {inbjudan ? <input type="hidden" name="inbjudan_id" value={inbjudan.id} /> : null}
 
       {/* Vilket steg servern ska hantera. */}
       <input type="hidden" name="fas" value={steg === 1 ? "konto" : "bostad"} />
@@ -156,9 +163,15 @@ export function RegistreraFlode({
             autoComplete="email"
             value={epost}
             onChange={(e) => setEpost(e.target.value)}
+            readOnly={Boolean(inbjudan)}
             className={INPUT_KLASS}
             placeholder="du@exempel.se"
           />
+          {inbjudan ? (
+            <p className="mt-1.5 font-granssnitt text-sm text-text-sekundar">
+              Inbjudan gäller den här adressen.
+            </p>
+          ) : null}
         </Falt>
         <Falt etikett="Lösenord" obligatoriskt hjalp="Minst 8 tecken.">
           <input

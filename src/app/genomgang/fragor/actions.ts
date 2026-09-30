@@ -70,6 +70,7 @@ export async function klassificeraHog(
         merkostnad: tolkat.merkostnad,
         skick_forvarv: tolkat.skick_forvarv,
         motivering: tolkat.motivering,
+        klassificerad_av: anvandareId,
       },
     });
   } catch (fel) {

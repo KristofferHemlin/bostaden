@@ -38,7 +38,7 @@ export async function redigeraProjekt(
   _foreg: ProjektResultat,
   formData: FormData,
 ): Promise<ProjektResultat> {
-  const { bostadId } = await kravBostad();
+  const { bostadId, anvandareId } = await kravBostad();
   const id = String(formData.get("projekt_id") ?? "");
 
   const projekt = await prisma.projekt.findFirst({
@@ -59,6 +59,7 @@ export async function redigeraProjekt(
       merkostnad: tolkat.merkostnad,
       skick_forvarv: tolkat.skick_forvarv,
       motivering: tolkat.motivering,
+      klassificerad_av: anvandareId,
     },
   });
 

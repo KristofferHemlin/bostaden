@@ -66,6 +66,7 @@ export async function skapaUtkast(): Promise<{ kostnadId?: string; fel?: string 
         leverantor: null,
         totalbelopp: null,
         dokumentdatum: null,
+        skapad_av: anvandareId,
       },
       select: { id: true },
     });
@@ -207,6 +208,7 @@ export async function sparaKostnad(
     const skapad = await prisma.kostnad.create({
       data: {
         bostad_id: bostadId,
+        skapad_av: anvandareId,
         leverantor,
         totalbelopp,
         dokumentdatum: dok,

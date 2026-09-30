@@ -17,6 +17,10 @@
 // motsager hela produkten. Ar kvittot kopplat till en gruppering visas den
 // som en dampad rad med namnet; ar det inte kopplat visas ingen rad alls.
 // Detsamma galler ett eventuellt privat belopp.
+//
+// Delar flera personer bostaden star vem som lade in kvittot som en dampad rad
+// (docs/design.md, "Samagande – medlemskapet") – aldrig for en ensam agare,
+// och aldrig for ett aldre kvitto dar uppgiften saknas.
 
 import { notFound, redirect } from "next/navigation";
 import { KvittoKort } from "./kvitto-kort";
@@ -34,7 +38,8 @@ import {
 } from "@/lib/format";
 import { kvittodatumNotis } from "@/lib/kvittodatum-notis";
 import { prisma } from "@/lib/prisma";
-import { kravBostad } from "@/lib/session";
+import { upphovsrad } from "@/lib/samagande";
+import { antalMedlemmar, kravBostad } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -44,13 +49,14 @@ export default async function KostnadSida({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { bostadId } = await kravBostad();
+  const { bostadId, anvandareId } = await kravBostad();
 
-  const [kostnad, bostad, projekt] = await Promise.all([
+  const [kostnad, bostad, projekt, medlemmar] = await Promise.all([
     prisma.kostnad.findFirst({
       where: { id, bostad_id: bostadId },
       include: {
         rader: { include: { fordelningar: { include: { projekt: true } } } },
+        skapare: { select: { id: true, epost: true } },
       },
     }),
     prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } }),
@@ -59,6 +65,7 @@ export default async function KostnadSida({
       orderBy: [{ ar: "desc" }, { skapad_at: "asc" }],
       select: { id: true, namn: true, ar: true },
     }),
+    antalMedlemmar(bostadId),
   ]);
   if (!kostnad) notFound();
 
@@ -133,6 +140,7 @@ export default async function KostnadSida({
             privatDel && privatDel.privatbelopp > 0
               ? formateraKronor(privatDel.privatbelopp)
               : null,
+          tillagtAv: upphovsrad("Tillagt", kostnad.skapare, anvandareId, medlemmar),
         }}
         redigeraVarden={{
           leverantor: kostnad.leverantor ?? "",

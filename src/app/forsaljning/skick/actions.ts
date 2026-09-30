@@ -63,7 +63,9 @@ export async function sparaSkickForsaljning(
 
     await prisma.projekt.update({
       where: { id: projektId },
-      data: { skick_forsaljning: skickForsaljning },
+      // Skickbedomningen ar ett svar som klassificeringen: den satter
+      // "Besvarat av" (docs/design.md, "Samagande – medlemskapet").
+      data: { skick_forsaljning: skickForsaljning, klassificerad_av: anvandareId },
     });
   } catch (fel) {
     return {

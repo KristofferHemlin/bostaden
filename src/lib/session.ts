@@ -139,6 +139,18 @@ export async function hamtaAktivBostad(): Promise<AktivBostad | null> {
 }
 
 /**
+ * Antal medlemmar i bostaden. Styr det som bara ska synas nar bostaden delas
+ * (src/lib/samagande.ts) och vad kontoraderingen lovar. Cachad per begaran.
+ */
+export const antalMedlemmar = cache(async (bostadId: string): Promise<number> => {
+  try {
+    return await prisma.medlemskap.count({ where: { bostad_id: bostadId } });
+  } catch (fel) {
+    kastaVanligtDatabasfel(fel, { sida: "session", anrop: "antalMedlemmar" });
+  }
+});
+
+/**
  * Krav for alla skarmar som forutsatter en bostad (projekt, kostnad, oversikt).
  * Skickar till /login utan session och till /registrera utan bostad – dit gar
  * bade den som inte har konto och den inloggade (t.ex. via e-postlank) som annu

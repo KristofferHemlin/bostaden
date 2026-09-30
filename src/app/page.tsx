@@ -42,15 +42,24 @@ import { formateraKronor, isoDatum } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { Landningssida } from "@/app/landningssida";
 import { hamtaAnvandare, kravBostad } from "@/lib/session";
+import { inlosenFeltext, utestaendeInbjudningar } from "@/lib/inbjudan";
+import { Inbjudningskort } from "@/app/inbjudan/inbjudningskort";
 
 export const dynamic = "force-dynamic";
 
 export default async function Oversikt() {
   // hamtaAnvandare ar cachad per begaran (rot-layouten har redan kallat den)
   // och gor inga databasanrop utan session.
-  if (!(await hamtaAnvandare())) return <Landningssida />;
+  const anvandare = await hamtaAnvandare();
+  if (!anvandare) return <Landningssida />;
 
   const { bostadId } = await kravBostad();
+  // Inbjudningar till den inloggades adress (docs/design.md, "Att bjuda in en
+  // delagare"): de visas har oavsett hur hen kom hit. Den som redan har en
+  // bostad kan inte ansluta annu – beskedet sager det arligt, och inbjudan
+  // ligger kvar. Ingen bostad tas bort. Utan bostad hamnar man i stallet i
+  // registreringen, som visar samma inbjudan med en knapp.
+  const inbjudningar = await utestaendeInbjudningar(anvandare.epost);
   const { bostad, kostnader, regelparametrar } = await hamtaBostadsdata(bostadId);
   const { bostadsnamn } = bostadHeader(bostad);
 
@@ -143,6 +152,15 @@ export default async function Oversikt() {
     // Ingen sidrubrik: den aktiva fliken heter redan "Oversikt". Innehallet
     // borjar direkt under toppraden, dar adressen star som pa alla andra sidor.
     <Skarm bostadsnamn={bostadsnamn} egnaKort>
+      {inbjudningar.map((vy) => (
+        <Kort key={vy.id} className="p-5">
+          <Inbjudningskort vy={vy}>
+            <p className="font-granssnitt text-sm text-text-primar">
+              {inlosenFeltext("har_bostad")}
+            </p>
+          </Inbjudningskort>
+        </Kort>
+      ))}
       {tomt ? (
         // Forstaskarmen: den som just skapat kontot vet inte varfor kvitton ska
         // sparas. Skarmen ska saga det, inte forutsatta det.

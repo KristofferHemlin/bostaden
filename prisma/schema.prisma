@@ -30,6 +30,13 @@ enum atgardstyp {
   utbytt
 }
 
+// Inbjudans livscykel (docs/design.md, "Att bjuda in en delagare").
+enum inbjudningsstatus {
+  utestaende
+  accepterad
+  aterkallad
+}
+
 enum regelparameterenhet {
   oren
   ar
@@ -44,8 +51,9 @@ model anvandare {
 
   // Vem som lade in ett kvitto respektive besvarade en atgards fragor
   // (docs/design.md, "Samagande – medlemskapet"). Bara for visning.
-  kostnader_skapade      kostnad[] @relation("kostnad_skapad_av")
-  projekt_klassificerade projekt[] @relation("projekt_klassificerad_av")
+  kostnader_skapade      kostnad[]  @relation("kostnad_skapad_av")
+  projekt_klassificerade projekt[]  @relation("projekt_klassificerad_av")
+  inbjudningar_skickade  inbjudan[]
 }
 
 // Bostaden. Obligatoriskt vid registrering: endast upplatelseform och tilltradesdatum.
@@ -88,9 +96,10 @@ model bostad {
   forsaljningspris          BigInt? // oren
   skapad_at                 DateTime       @default(now())
 
-  medlemskap medlemskap[]
-  projekt    projekt[]
-  kostnader  kostnad[]
+  medlemskap   medlemskap[]
+  projekt      projekt[]
+  kostnader    kostnad[]
+  inbjudningar inbjudan[]
 }
 
 // Kopplingen anvandare–bostad. Agarandelen tillhor relationen, inte bostaden.
@@ -105,6 +114,27 @@ model medlemskap {
   bostad    bostad    @relation(fields: [bostad_id], references: [id], onDelete: Cascade)
 
   @@unique([anvandare_id, bostad_id])
+}
+
+// Inbjudan till en bostad (docs/design.md, "Att bjuda in en delagare"). Ger
+// tillgang till arkivet, ingenting annat: ingen andel, inget datum. Adressen
+// binder inbjudan – den kan bara losas in av den som ar inloggad med exakt
+// den adressen. Id:t i lanken ar ingen nyckel. Ligger kvar tills den
+// accepteras eller aterkallas; raderas aldrig av appen.
+model inbjudan {
+  id          String            @id @default(uuid()) @db.Uuid
+  bostad_id   String            @db.Uuid
+  epost       String // gemener, trimmad – jamfors mot inloggad adress i gemener
+  inbjuden_av String?           @db.Uuid // null nar den som bjod in raderat sitt konto
+  status      inbjudningsstatus @default(utestaende)
+  besvarad_at DateTime? // nar den accepterades eller aterkallades
+  skapad_at   DateTime          @default(now())
+
+  bostad    bostad     @relation(fields: [bostad_id], references: [id], onDelete: Cascade)
+  inbjudare anvandare? @relation(fields: [inbjuden_av], references: [id], onDelete: SetNull)
+
+  @@index([epost, status])
+  @@index([bostad_id, status])
 }
 
 // Skattereglernas numeriska varden med giltighetsperiod. Aldrig konstanter i koden.

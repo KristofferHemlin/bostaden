@@ -934,6 +934,12 @@ Med två delägare är "vem la in de här 40 000?" en fråga som kommer att stä
 
 Utan den raden ser båda delägarna samma summa, tror att den är deras, och för in hela beloppet var. Att varje delägare deklarerar sin egen andel är bekräftat – se `docs/regelkallor.md`.
 
+**Ägarandelen visas inte i en delad bostad förrän den är satt.** Har bostaden fler än en medlem och inga andelar är angivna finns varken raden *Ägarandel* eller rutan om den egna andelen i exportvyn. Två rader som säger emot varandra på samma skärm är värre än en rad för lite.
+
+**Och beloppen multipliceras inte med en gammal andel.** Den som ägde halva sin bostad, satte 50 %, och sedan bjuder in sin partner får se sina belopp fördubblas – det är riktigt, och raden ovanför förklarar varför. Skulle den gamla andelen ligga kvar och halvera talen visar skärmen halva bostaden under en rubrik som säger hela, och då ljuger rubriken. Andelarna frågas vid försäljningen, och först då blir underlaget personligt igen.
+
+**Skickbedömningen vid försäljningen räknas som ett svar.** Den sätter *Besvarat av* på samma sätt som klassificeringen och projektets redigering. "Var badrummet slitet innan?" är en åsikt, och med två delägare är frågan om vem som tyckte det lika befogad som vid klassificeringen.
+
 **Kontoraderingen tar bara bort det som är ditt.** Är du sista medlemmen försvinner bostaden med allt som hänger på den, som i dag. Finns det fler medlemmar tas bara ditt medlemskap bort, och bostaden med sina kvitton och bilagor ligger kvar hos de andra. En separation får aldrig radera den andras arkiv.
 
 **Tas en delägare bort stannar allt i bostaden.** Kvittona dokumenterar bostaden, inte personen, och ett underlag med hål i är farligt just för att hålen inte syns. Den som lämnar ska kunna ladda ner sitt zip-arkiv först.
@@ -951,6 +957,8 @@ Det är en omläggning gjord 2026-09-29, efter att den första modellen visat si
 En ensam ägare berörs inte. Den som äger halva sin bostad och använder appen själv anger sin andel i kortet Ägandet som i dag, och får ett underlag för sin del.
 
 **Frågan ställs där ägandet ändå beskrivs**, i kortet Ägandet i inställningarna. Kortet visar vilka som har tillgång till bostaden, hos båda, och en utestående inbjudan med den adress den ställts till.
+
+**Raden finns oavsett ägarandel.** Den villkorades tidigare på att andelen var under 100 %, vilket var rimligt när inbjudan handlade om ägande. Nu handlar den om åtkomst till ett arkiv, och den som äger sin bostad helt kan mycket väl vilja dela det med någon som bor där. Appen ska inte ha en åsikt om vem som får se ens egna kvitton.
 
 **Inbjudan är en post, inte en länk.** Den ställs till en e-postadress och ligger kvar tills den accepteras eller återkallas. Loggar någon in med den adressen visas den på startskärmen, oavsett hur hen kom dit. QR-koden och länken är genvägar till samma post.
 

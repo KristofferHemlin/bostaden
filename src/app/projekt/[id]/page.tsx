@@ -2,6 +2,10 @@
 // kopplats hit. Harifran lagger man till en kostnad. Fraga 8:s fritext
 // (`motivering`) visas som en egen rad nar den ar ifylld – den ar det enda
 // som bar bevisningen nar kvitto saknas.
+//
+// Delar flera personer bostaden star vem som besvarade fragorna som en dampad
+// rad (docs/design.md, "Samagande – medlemskapet"): den som svarar forst
+// bestammer, och den andra ska kunna se vem det var.
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -18,7 +22,8 @@ import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { formateraKronor } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
-import { kravBostad } from "@/lib/session";
+import { upphovsrad } from "@/lib/samagande";
+import { antalMedlemmar, kravBostad } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -36,10 +41,11 @@ export default async function ProjektSida({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { bostadId } = await kravBostad();
+  const { bostadId, anvandareId } = await kravBostad();
 
   const projekt = await prisma.projekt.findFirst({
     where: { id, bostad_id: bostadId },
+    include: { klassificerare: { select: { id: true, epost: true } } },
   });
   if (!projekt) notFound();
 
@@ -66,6 +72,14 @@ export default async function ProjektSida({
   // Reparationsdelen (och darmed skickfragorna) finns bara vid ett utbyte
   // (produktspec 4.1: en ren grundforbattring har inget "fore" att jamfora mot).
   const harReparationsdel = projekt.atgardstyp === "utbytt";
+  const besvaratAv = oklassificerad
+    ? null
+    : upphovsrad(
+        "Besvarat",
+        projekt.klassificerare,
+        anvandareId,
+        await antalMedlemmar(bostadId),
+      );
 
   return (
     <Skarm
@@ -120,6 +134,9 @@ export default async function ProjektSida({
         ) : null}
         {projekt.motivering ? (
           <p className="pt-1 text-text-sekundar">{projekt.motivering}</p>
+        ) : null}
+        {besvaratAv ? (
+          <p className="pt-1 text-text-sekundar">{besvaratAv}</p>
         ) : null}
       </section>
 
