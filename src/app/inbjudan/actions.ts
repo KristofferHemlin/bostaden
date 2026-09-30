@@ -47,6 +47,8 @@ export async function skapaInbjudanAction(
       anvandareId: anvandare.id,
       anvandarEpost: anvandare.epost,
       epost: String(formData.get("epost") ?? ""),
+      egenAndel: String(formData.get("egen_andel") ?? ""),
+      inbjudenAndel: String(formData.get("inbjuden_andel") ?? ""),
     });
     if (!resultat.ok) return { fel: resultat.fel };
 
@@ -61,6 +63,7 @@ export async function skapaInbjudanAction(
     });
 
     revalidatePath("/installningar");
+    revalidatePath("/export");
     return { ok: true, lank, qrSvg, epost: resultat.epost, harKonto: resultat.harKonto };
   } catch (fel) {
     return {

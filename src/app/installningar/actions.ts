@@ -1,8 +1,10 @@
 "use server";
 
-// Installningssidan (docs/design.md, "Installningssidan"): fyra kort, fyra
-// FRISTAENDE server actions – ett per kort. Sparas Kopet far Bostaden och
-// Agandet aldrig roras, inte ens med ett standardvarde for ett falt som inte
+// Installningssidan (docs/design.md, "Installningssidan"): fyra kort, varav tva
+// med uppgifter som andras har – Bostaden och Forvarvet – och tva FRISTAENDE
+// server actions, en per kort. (Tillgang andras via inbjudan,
+// src/app/inbjudan/actions.ts; Ditt konto har inga uppgifter.) Sparas
+// Bostaden far Forvarvet aldrig roras, inte ens med ett standardvarde for ett falt som inte
 // skickades med. Det har ar den viktigaste punkten i hela sidan: samma fel
 // har funnits forut, dar EN gemensam sparning for hela sidan tyst kunde satta
 // bostadsfragor_besvarade till sant nar vilken installning som helst
@@ -10,11 +12,16 @@
 // skriver ENDAST de falt som hor till dess eget kort i `data`-objektet, och
 // Prisma rör aldrig ett falt som inte star dar.
 //
+// Korten ar indelade efter vem uppgiften handlar om, inte vad den beskriver.
+// Bostaden beskriver objektet. Forvarvet beskriver hur bostaden blev nagons:
+// tilltradesdatum, kopeskilling, kopkostnader, agarandelen, forsta agaren och
+// ombildningen – den sista star bredvid sitt villkor. Bara agarandelen ligger
+// pa medlemskapet; de ovriga ligger pa bostaden och delas av alla som har
+// tillgang.
+//
 // Upplatelseform och tilltradesdatum satts vid registreringen och visas
-// medvetet inte i toppraden, men maste ga att se och andra har (docs/design.md,
-// "Installningssidan") – tilltradesdatumet ar baslinjen for hela skickbedom-
-// ningen. Bada ar OBLIGATORISKA, till skillnad fran resten av formularen, och
-// hor hemma i kortet Bostaden tillsammans med upplatelseformen de styr.
+// medvetet inte i toppraden, men maste ga att se och andra har – tilltrades-
+// datumet ar baslinjen for hela skickbedomningen. Bada ar OBLIGATORISKA.
 //
 // Upplatelseformen gar att byta fram till forsaljningen, aldrig efter
 // (produktspec 4.8). Klienten later ett byte kraeva en bekraftelse och lasar
@@ -23,7 +30,10 @@
 // faktiskt skickar.
 
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
 import { agarandelFranText } from "@/lib/agarandel";
+import { allaAndelar, hamtaAndelar } from "@/lib/andelar";
+import { andelssummaVidAndring, summeraAndelar } from "@/lib/samagande";
 import { isoDatum, oreFranKronor } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -68,11 +78,13 @@ function revalideraBostadssidor() {
 }
 
 /**
- * Kortet Bostaden: adress, ort, upplatelseform, tilltradesdatum,
- * identifiering. Skriver ENDAST dessa falt pa `bostad` – kopeskilling,
- * kopkostnader, kapitaltillskott, storlek (Kopet), nybyggd_vid_forvarv,
- * ombildning_fran_hyresratt, bostadsfragor_besvarade (Agandet) star inte i
- * `data` och rors darfor aldrig.
+ * Kortet Bostaden: adress, ort, upplatelseform, identifiering, storlek och
+ * kapitaltillskott. Skriver ENDAST dessa falt pa `bostad`.
+ *
+ * Kapitaltillskott finns bara for bostadsratt – ett falt som uteblir, inte ett
+ * kort som forsvinner. Det foljer upplatelseformen i SAMMA sparning: byts
+ * formen till fastighet nollstalls det, oavsett vad formularet skulle raka
+ * innehalla.
  */
 export async function sparaBostaden(
   _foreg: InstallningarResultat,
@@ -85,17 +97,9 @@ export async function sparaBostaden(
     return { fel: "Välj bostadsrätt eller villa/radhus." };
   }
 
-  const tilltradesdatum = las(formData, "tilltradesdatum");
-  if (!DATUM.test(tilltradesdatum)) {
-    return {
-      fel: "Tillträdesdatum behövs som baslinje för skickbedömningen och gränsen för vilka utgifter som är dina.",
-    };
-  }
-  if (tilltradesdatum < "1970-01-01") {
-    return { fel: "Tillträdesdatum före 1970 stöds inte." };
-  }
-  if (tilltradesdatum > isoDatum(new Date())) {
-    return { fel: "Tillträdesdatum kan inte ligga i framtiden." };
+  const storlek = storlekFranText(las(formData, "storlek"));
+  if (storlek === undefined) {
+    return { fel: "Storlek anges i kvadratmeter, t.ex. 72." };
   }
 
   // Upplatelseformen ar last efter forsaljning (produktspec 4.8): ett byte da
@@ -124,6 +128,14 @@ export async function sparaBostaden(
   const identifieringText = las(formData, "identifiering");
   const identifiering = identifieringText === "" ? null : identifieringText;
 
+  let kapitaltillskott: bigint | null | undefined = null;
+  if (upplatelseform === "bostadsratt") {
+    kapitaltillskott = beloppFranText(las(formData, "kapitaltillskott"));
+    if (kapitaltillskott === undefined) {
+      return { fel: "Kapitaltillskott anges som ett belopp, t.ex. 60 000." };
+    }
+  }
+
   await prisma.bostad.update({
     where: { id: bostadId },
     data: {
@@ -133,8 +145,9 @@ export async function sparaBostaden(
       latitud: geokod.latitud,
       longitud: geokod.longitud,
       upplatelseform: upplatelseform as "bostadsratt" | "fastighet",
-      tilltradesdatum: new Date(`${tilltradesdatum}T00:00:00.000Z`),
       identifiering,
+      storlek,
+      kapitaltillskott,
     },
   });
 
@@ -143,23 +156,40 @@ export async function sparaBostaden(
 }
 
 /**
- * Kortet Kopet: kopeskilling, kopkostnader, kapitaltillskott, storlek.
- * Kapitaltillskott finns bara for bostadsratt – kortet lasker den aktuella
- * upplatelseformen sjalvt (aldrig fran ett dolt falt formularet skickar) och
- * nollstaller kapitaltillskott om bostaden ar en fastighet, oavsett vad
- * formularet skulle raka innehalla. Det ar inte ett undantag fran "varje kort
- * sparar bara sina egna falt" – kapitaltillskott HOR till Kopet, precis som
- * kopeskillingen.
+ * Kortet Forvarvet: tilltradesdatum, kopeskilling, kopkostnader, forsta
+ * agaren, ombildningen (bostad) och agarandelen (medlemskap). Skriver ENDAST
+ * dessa – aldrig bostadsfragor_besvarade.
+ *
+ * Ombildningen har en enda uppgift: att upphava forsta agaren. Den fragas och
+ * skrivs bara nar forsta agaren ar ja. Ett nej nollstaller den INTE
+ * (docs/design.md, "Installningssidan") – ett kvarlamnat ja paverkar ingen
+ * utrakning, eftersom villkoret bara provas nar bostaden var nybyggd.
+ *
+ * Forsta agaren fragas har med ett konkret forval, sa den har sparningen far
+ * ALDRIG sjalv satta bostadsfragor_besvarade: ett forval ar inte ett svar
+ * (produktspec 4.1). Flaggan satts bara fran genomgangens Bostadsfragor.
+ *
+ * Agarandelen provas mot de andras pa servern: en andring som tar summan over
+ * 100 % avvisas (src/lib/samagande.ts, andelssummaVidAndring). Utestaende
+ * inbjudningar raknas med – de har redan sin andel reserverad.
  */
-export async function sparaKopet(
+export async function sparaForvarvet(
   _foreg: InstallningarResultat,
   formData: FormData,
 ): Promise<InstallningarResultat> {
-  const { bostadId } = await kravBostad();
+  const { anvandareId, bostadId } = await kravBostad();
 
-  const storlek = storlekFranText(las(formData, "storlek"));
-  if (storlek === undefined) {
-    return { fel: "Storlek anges i kvadratmeter, t.ex. 72." };
+  const tilltradesdatum = las(formData, "tilltradesdatum");
+  if (!DATUM.test(tilltradesdatum)) {
+    return {
+      fel: "Tillträdesdatum behövs som baslinje för skickbedömningen och gränsen för vilka utgifter som är dina.",
+    };
+  }
+  if (tilltradesdatum < "1970-01-01") {
+    return { fel: "Tillträdesdatum före 1970 stöds inte." };
+  }
+  if (tilltradesdatum > isoDatum(new Date())) {
+    return { fel: "Tillträdesdatum kan inte ligga i framtiden." };
   }
 
   const kopeskilling = beloppFranText(las(formData, "kopeskilling"));
@@ -172,73 +202,47 @@ export async function sparaKopet(
     return { fel: "Köpkostnader anges som ett belopp, t.ex. 45 000." };
   }
 
-  const bostadNu = await prisma.bostad.findUniqueOrThrow({
-    where: { id: bostadId },
-    select: { upplatelseform: true },
-  });
-
-  let kapitaltillskott: bigint | null | undefined = null;
-  if (bostadNu.upplatelseform === "bostadsratt") {
-    kapitaltillskott = beloppFranText(las(formData, "kapitaltillskott"));
-    if (kapitaltillskott === undefined) {
-      return { fel: "Kapitaltillskott anges som ett belopp, t.ex. 60 000." };
-    }
-  }
-
-  await prisma.bostad.update({
-    where: { id: bostadId },
-    data: { kopeskilling, kopkostnader, kapitaltillskott, storlek },
-  });
-
-  revalideraBostadssidor();
-  return {};
-}
-
-/**
- * Kortet Agandet: agarandel (medlemskap), forsta agaren, ombildning fran
- * hyresratt. Skriver ENDAST dessa – aldrig bostadsfragor_besvarade, som last
- * fran databasen och skrivs tillbaka oforandrad. Formularet har alltid ett
- * konkret val forvalt (aldrig ett obesvarat forval, till skillnad fran
- * genomgangens forsta-gangen-skarm), sa den har sparningen far ALDRIG sjalv
- * satta flaggan till sant: ett forval ar inte ett svar, och sparar
- * anvandaren nagot innan genomgangen nagonsin korts skulle "nej" annars
- * tystas ned som ett bekraftat svar ingen faktiskt gett (produktspec 4.1).
- * Flaggan far bara ga fran false till true fran sjalva
- * Bostadsfragor-skarmen (genomgang/fragor/actions.ts, sparaBostadsfragor).
- */
-export async function sparaAgandet(
-  _foreg: InstallningarResultat,
-  formData: FormData,
-): Promise<InstallningarResultat> {
-  const { anvandareId, bostadId } = await kravBostad();
-
   const agarandel = agarandelFranText(las(formData, "agarandel"));
   if (agarandel === undefined) {
     return { fel: "Ägarandel anges som ett tal mellan 0 och 100, t.ex. 50 eller 33,33." };
   }
 
   const nybyggdVidForvarv = las(formData, "forsta_agare") === "ja";
-  const ombildningFranHyresratt = nybyggdVidForvarv && las(formData, "ombildning") === "ja";
+  const ombildning = nybyggdVidForvarv
+    ? { ombildning_fran_hyresratt: las(formData, "ombildning") === "ja" }
+    : {};
 
-  const bostadNu = await prisma.bostad.findUniqueOrThrow({
-    where: { id: bostadId },
-    select: { bostadsfragor_besvarade: true },
-  });
+  // Provning och skrivning i samma transaktion, sa att tva samtidiga
+  // andringar inte tillsammans kan ta summan over 100 %.
+  const andelsfel = await prisma.$transaction(
+    async (tx) => {
+      const andelar = await hamtaAndelar(bostadId, tx);
+      const fore = summeraAndelar(allaAndelar(andelar));
+      const egenNu = andelar.medlemmar.find((m) => m.anvandareId === anvandareId)?.andel ?? 0;
+      const fel = andelssummaVidAndring({ fore, efter: summeraAndelar([fore, agarandel, -egenNu]) });
+      if (fel) return fel;
 
-  await prisma.bostad.update({
-    where: { id: bostadId },
-    data: {
-      nybyggd_vid_forvarv: nybyggdVidForvarv,
-      ombildning_fran_hyresratt: ombildningFranHyresratt,
-      bostadsfragor_besvarade: bostadNu.bostadsfragor_besvarade,
+      await tx.bostad.update({
+        where: { id: bostadId },
+        data: {
+          tilltradesdatum: new Date(`${tilltradesdatum}T00:00:00.000Z`),
+          kopeskilling,
+          kopkostnader,
+          nybyggd_vid_forvarv: nybyggdVidForvarv,
+          ...ombildning,
+        },
+      });
+
+      // Agarandelen tillhor relationen person–bostad, inte bostaden (CLAUDE.md).
+      await tx.medlemskap.updateMany({
+        where: { anvandare_id: anvandareId, bostad_id: bostadId },
+        data: { agarandel },
+      });
+      return null;
     },
-  });
-
-  // Agarandelen tillhor relationen person–bostad, inte bostaden (CLAUDE.md).
-  await prisma.medlemskap.updateMany({
-    where: { anvandare_id: anvandareId, bostad_id: bostadId },
-    data: { agarandel },
-  });
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+  );
+  if (andelsfel) return { fel: andelsfel };
 
   revalideraBostadssidor();
   return {};

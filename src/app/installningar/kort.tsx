@@ -1,6 +1,9 @@
 "use client";
 
-// Installningssidans fyra kort (docs/design.md, "Installningssidan"). Sidan
+// Installningssidans fyra kort (docs/design.md, "Installningssidan"): Bostaden,
+// Forvarvet, Tillgang och Ditt konto. Inget kort forsvinner beroende pa
+// upplatelseform – kapitaltillskott ar ett falt som uteblir, inte ett kort. Gransen mellan korten ar VEM
+// uppgiften handlar om, inte vad den beskriver. Sidan
 // visar VARDEN, inte falt: etikett till vanster, varde till hoger, samma form
 // som kvittots detaljvy (src/app/kostnad/[id]/page.tsx). Ett tomt varde star
 // som ett dampat "Inte ifyllt". En dampad "Ändra" i kortets horn oppnar just
@@ -8,7 +11,8 @@
 // texterna syns bara dar. Ovriga kort ligger kvar i lasläge.
 //
 // VARJE KORT SPARAR BARA SINA EGNA FALT (den viktigaste punkten – se
-// installningar/actions.ts): tre helt fristaende server actions, en per kort.
+// installningar/actions.ts): tva helt fristaende server actions, en per
+// redigerbart kort. Tillgang andras via inbjudan (./dela-bostaden.tsx).
 // Ett kort vet ingenting om de andras falt och kan darfor aldrig skriva over
 // dem, inte ens med ett standardvarde for nagot som inte skickades med.
 //
@@ -45,22 +49,21 @@ import {
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { formateraBeloppInmatning, formateraKronor } from "@/lib/format";
 import { useNarKlar } from "@/lib/nar-klar";
+import { formateraAndel } from "@/lib/samagande";
 import { ArkivexportKnapp } from "./arkivexport-knapp";
 import {
-  sparaAgandet,
   sparaBostaden,
-  sparaKopet,
+  sparaForvarvet,
   type InstallningarResultat,
 } from "./actions";
-import { DelaBostaden, type DelningData } from "./dela-bostaden";
+import { TillgangKort, type TillgangData } from "./dela-bostaden";
 import { KontoRadera } from "./konto-radera";
 
-type KortNamn = "bostaden" | "kopet" | "agandet";
+type KortNamn = "bostaden" | "forvarvet";
 
 const KORT_TITEL: Record<KortNamn, string> = {
   bostaden: "Bostaden",
-  kopet: "Köpet",
-  agandet: "Ägandet",
+  forvarvet: "Förvärvet",
 };
 
 const START: InstallningarResultat = {};
@@ -72,20 +75,19 @@ export interface BostadenData {
   lat: string;
   lng: string;
   upplatelseform: "bostadsratt" | "fastighet";
-  tilltradesdatum: string;
   identifiering: string;
+  storlek: string;
+  /** Bara for bostadsratt – faltet uteblir for en fastighet. */
+  kapitaltillskottOren: bigint | null;
   sald: boolean;
 }
 
-export interface KopetData {
-  storlek: string;
+export interface ForvarvetData {
+  tilltradesdatum: string;
   kopeskillingOren: bigint | null;
   kopkostnaderOren: bigint | null;
-  kapitaltillskottOren: bigint | null;
+  /** Styr hjalptexten for kopkostnader. */
   arBostadsratt: boolean;
-}
-
-export interface AgandetData {
   agarandelProcent: number;
   nybyggdVidForvarv: boolean;
   ombildningFranHyresratt: boolean;
@@ -93,18 +95,16 @@ export interface AgandetData {
 
 export function InstallningarKort({
   bostaden,
-  kopet,
-  agandet,
+  forvarvet,
+  tillgang,
   epost,
   delad,
-  delning,
 }: {
   bostaden: BostadenData;
-  kopet: KopetData;
-  agandet: AgandetData;
+  forvarvet: ForvarvetData;
   epost: string;
-  /** Vilka som har tillgang och utestaende inbjudningar (docs/design.md, "Att bjuda in en delagare"). */
-  delning: DelningData;
+  /** Vilka som har bostaden, deras andelar och utestaende inbjudningar. */
+  tillgang: TillgangData;
   /** Bostaden har fler an en medlem – kontoraderingen tar da bara bort medlemskapet. */
   delad: boolean;
 }) {
@@ -174,11 +174,11 @@ export function InstallningarKort({
       </Kort>
 
       <Kort>
-        <KopetKort
-          data={kopet}
-          oppen={oppetKort === "kopet"}
+        <ForvarvetKort
+          data={forvarvet}
+          oppen={oppetKort === "forvarvet"}
           formRef={formRef}
-          onAndra={() => begarOppna("kopet")}
+          onAndra={() => begarOppna("forvarvet")}
           onAvbryt={stangUtanAtSpara}
           onDirty={() => setDirty(true)}
           onKlar={narKlar}
@@ -186,16 +186,7 @@ export function InstallningarKort({
       </Kort>
 
       <Kort>
-        <AgandetKort
-          data={agandet}
-          delning={delning}
-          oppen={oppetKort === "agandet"}
-          formRef={formRef}
-          onAndra={() => begarOppna("agandet")}
-          onAvbryt={stangUtanAtSpara}
-          onDirty={() => setDirty(true)}
-          onKlar={narKlar}
-        />
+        <TillgangKort data={tillgang} />
       </Kort>
 
       <Kort>
@@ -259,7 +250,9 @@ function KortHuvud({
 }
 
 // ---------------------------------------------------------------------------
-// Bostaden: adress, ort, upplatelseform, tilltradesdatum, identifiering.
+// Bostaden: adress, ort, upplatelseform, identifiering, storlek och
+// kapitaltillskott (bara bostadsratt) – uppgifter om objektet, samma for alla
+// som delar det.
 // ---------------------------------------------------------------------------
 
 const UPPLATELSEFORMER = [
@@ -316,11 +309,14 @@ function BostadenKort({
                 ?.etikett ?? null
             }
           />
-          <Rad etikett="Tillträdesdatum" varde={data.tilltradesdatum} />
           <Rad
             etikett={identifieringEtikett(data.upplatelseform === "bostadsratt")}
             varde={data.identifiering}
           />
+          <Rad etikett="Storlek" varde={data.storlek ? `${data.storlek} m²` : null} />
+          {data.upplatelseform === "bostadsratt" ? (
+            <Rad etikett="Kapitaltillskott" varde={orenTillKronsträng(data.kapitaltillskottOren)} />
+          ) : null}
         </div>
       </>
     );
@@ -358,6 +354,9 @@ function BostadenEditForm({
   useNarKlar(pagar, Boolean(resultat.fel), onKlar);
 
   const [upplatelseformVal, setUpplatelseformVal] = useState(data.upplatelseform);
+  const [kapitaltillskott, setKapitaltillskott] = useState(() =>
+    beloppTillFalt(data.kapitaltillskottOren),
+  );
   const [bytesforslag, setBytesforslag] = useState<
     "bostadsratt" | "fastighet" | null
   >(null);
@@ -454,14 +453,6 @@ function BostadenEditForm({
           ) : null}
         </div>
 
-        <Falt etikett="Tillträdesdatum" obligatoriskt hjalp="Baslinjen för skickbedömningen – gränsen för vilka utgifter som är dina.">
-          <DatumFalt
-            name="tilltradesdatum"
-            defaultValue={data.tilltradesdatum}
-            framtidsFelmeddelande="Tillträdesdatum kan inte ligga i framtiden."
-          />
-        </Falt>
-
         <Falt
           etikett={identifieringEtikett(arBostadsratt)}
           hjalp={
@@ -481,162 +472,21 @@ function BostadenEditForm({
           />
         </Falt>
 
-        {resultat.fel ? (
-          <p className="font-granssnitt text-sm text-accent">{resultat.fel}</p>
-        ) : null}
-
-        <div className="flex flex-col gap-2">
-          <button type="submit" disabled={pagar} className={PRIMARKNAPP_KLASS}>
-            {pagar ? "Sparar…" : "Spara"}
-          </button>
-          <button
-            type="button"
-            onClick={onAvbryt}
-            disabled={pagar}
-            className={SEKUNDARKNAPP_KLASS}
-          >
-            Avbryt
-          </button>
-        </div>
-      </form>
-    </>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Kopet: kopeskilling, kopkostnader, kapitaltillskott (bara bostadsratt),
-// storlek.
-// ---------------------------------------------------------------------------
-
-function orenTillKronsträng(oren: bigint | null): string {
-  return oren != null ? formateraKronor(Number(oren)) : "";
-}
-
-function KopetKort({
-  data,
-  oppen,
-  formRef,
-  onAndra,
-  onAvbryt,
-  onDirty,
-  onKlar,
-}: {
-  data: KopetData;
-  oppen: boolean;
-  formRef: React.RefObject<HTMLFormElement | null>;
-  onAndra: () => void;
-  onAvbryt: () => void;
-  onDirty: () => void;
-  onKlar: (fel: boolean) => void;
-}) {
-  if (!oppen) {
-    return (
-      <>
-        <KortHuvud titel="Köpet" visaAndra onAndra={onAndra} />
-        <div className="p-4 font-granssnitt text-sm">
-          <Rad etikett="Köpeskilling" varde={orenTillKronsträng(data.kopeskillingOren)} />
-          <Rad etikett="Köpkostnader" varde={orenTillKronsträng(data.kopkostnaderOren)} />
-          {data.arBostadsratt ? (
-            <Rad
-              etikett="Kapitaltillskott"
-              varde={orenTillKronsträng(data.kapitaltillskottOren)}
-            />
-          ) : null}
-          <Rad etikett="Storlek" varde={data.storlek ? `${data.storlek} m²` : null} />
-        </div>
-      </>
-    );
-  }
-
-  return (
-    <>
-      <KortHuvud titel="Köpet" visaAndra={false} onAndra={onAndra} />
-      <KopetEditForm
-        data={data}
-        formRef={formRef}
-        onAvbryt={onAvbryt}
-        onDirty={onDirty}
-        onKlar={onKlar}
-      />
-    </>
-  );
-}
-
-function KopetEditForm({
-  data,
-  formRef,
-  onAvbryt,
-  onDirty,
-  onKlar,
-}: {
-  data: KopetData;
-  formRef: React.RefObject<HTMLFormElement | null>;
-  onAvbryt: () => void;
-  onDirty: () => void;
-  onKlar: (fel: boolean) => void;
-}) {
-  const [resultat, action, pagar] = useActionState(sparaKopet, START);
-  const hanteraSubmit = useForhindraDubbelinskick(pagar);
-  useNarKlar(pagar, Boolean(resultat.fel), onKlar);
-
-  const [kopeskilling, setKopeskilling] = useState(() =>
-    formateraBeloppInmatning(
-      data.kopeskillingOren != null ? String(data.kopeskillingOren / 100n) : "",
-    ),
-  );
-  const [kopkostnader, setKopkostnader] = useState(() =>
-    formateraBeloppInmatning(
-      data.kopkostnaderOren != null ? String(data.kopkostnaderOren / 100n) : "",
-    ),
-  );
-  const [kapitaltillskott, setKapitaltillskott] = useState(() =>
-    formateraBeloppInmatning(
-      data.kapitaltillskottOren != null
-        ? String(data.kapitaltillskottOren / 100n)
-        : "",
-    ),
-  );
-
-  return (
-    <>
-      <form
-        ref={formRef}
-        action={action}
-        onSubmit={hanteraSubmit}
-        onChange={onDirty}
-        className="flex flex-col gap-5 p-4"
-      >
-        <Falt
-          etikett="Köpeskilling"
-          hjalp="Står på köpekontraktet eller överlåtelseavtalet."
-        >
-          <BeloppFalt
-            name="kopeskilling"
-            value={kopeskilling}
-            onValueChange={setKopeskilling}
+        <Falt etikett="Storlek" hjalp="Boarea i kvadratmeter.">
+          <input
+            type="text"
+            name="storlek"
+            inputMode="numeric"
+            defaultValue={data.storlek}
             className={INPUT_KLASS}
-            placeholder="t.ex. 3 250 000"
+            placeholder="t.ex. 72"
           />
         </Falt>
 
-        <Falt
-          etikett="Köpkostnader"
-          hjalp={
-            data.arBostadsratt
-              ? "Överlåtelseavgiften du betalade när du köpte bostadsrätten."
-              : "Lagfart, pantbrev och inköpsprovision vid köpet."
-          }
-        >
-          <BeloppFalt
-            name="kopkostnader"
-            value={kopkostnader}
-            onValueChange={setKopkostnader}
-            className={INPUT_KLASS}
-            placeholder="t.ex. 45 000"
-          />
-        </Falt>
-
-        {data.arBostadsratt ? (
+        {/* Kapitaltillskott finns bara for bostadsratt och foljer formen som
+            ar vald i formularet – byts den till fastighet uteblir faltet och
+            servern nollstaller det. */}
+        {arBostadsratt ? (
           <Falt
             etikett="Kapitaltillskott"
             hjalp="Föreningens amorteringar under din innehavstid – står i uppgiften från föreningen."
@@ -651,17 +501,6 @@ function KopetEditForm({
           </Falt>
         ) : null}
 
-        <Falt etikett="Storlek" hjalp="Boarea i kvadratmeter.">
-          <input
-            type="text"
-            name="storlek"
-            inputMode="numeric"
-            defaultValue={data.storlek}
-            className={INPUT_KLASS}
-            placeholder="t.ex. 72"
-          />
-        </Falt>
-
         {resultat.fel ? (
           <p className="font-granssnitt text-sm text-accent">{resultat.fel}</p>
         ) : null}
@@ -685,7 +524,47 @@ function KopetEditForm({
 }
 
 // ---------------------------------------------------------------------------
-// Agandet: agarandel, forsta agaren, ombildning fran hyresratt.
+// Delat mellan korten.
+// ---------------------------------------------------------------------------
+
+function orenTillKronsträng(oren: bigint | null): string {
+  return oren != null ? formateraKronor(Number(oren)) : "";
+}
+
+function beloppTillFalt(oren: bigint | null): string {
+  return formateraBeloppInmatning(oren != null ? String(oren / 100n) : "");
+}
+
+function Spara({ pagar, onAvbryt }: { pagar: boolean; onAvbryt: () => void }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <button type="submit" disabled={pagar} className={PRIMARKNAPP_KLASS}>
+        {pagar ? "Sparar…" : "Spara"}
+      </button>
+      <button type="button" onClick={onAvbryt} disabled={pagar} className={SEKUNDARKNAPP_KLASS}>
+        Avbryt
+      </button>
+    </div>
+  );
+}
+
+interface KortProps<T> {
+  data: T;
+  oppen: boolean;
+  formRef: React.RefObject<HTMLFormElement | null>;
+  onAndra: () => void;
+  onAvbryt: () => void;
+  onDirty: () => void;
+  onKlar: (fel: boolean) => void;
+}
+
+// ---------------------------------------------------------------------------
+// Forvarvet: tilltradesdatum, kopeskilling, kopkostnader, agarandel, forsta
+// agaren och ombildning fran hyresratt – hur bostaden blev nagons. Ombildningen
+// star bredvid forsta agaren, sitt villkor, och visas bara nar den ar ja. Bara agarandelen ligger pa medlemskapet;
+// de ovriga ligger pa bostaden och delas av alla som har tillgang. Kortet
+// heter darfor Forvarvet och inte "Ditt forvarv", och raden overst sager det
+// (docs/design.md, "Installningssidan").
 // ---------------------------------------------------------------------------
 
 const HJALP_FORSTA_AGARE =
@@ -693,31 +572,26 @@ const HJALP_FORSTA_AGARE =
 const HJALP_OMBILDNING =
   "Den som köpte sin hyresrätt vid ombildningen är formellt första ägare av bostadsrätten, men lägenheten fanns och var använd sedan tidigare – då gäller vanliga regler för reparationer.";
 
-function AgandetKort({
-  data,
-  delning,
-  oppen,
-  formRef,
-  onAndra,
-  onAvbryt,
-  onDirty,
-  onKlar,
-}: {
-  data: AgandetData;
-  delning: DelningData;
-  oppen: boolean;
-  formRef: React.RefObject<HTMLFormElement | null>;
-  onAndra: () => void;
-  onAvbryt: () => void;
-  onDirty: () => void;
-  onKlar: (fel: boolean) => void;
-}) {
+function ForvarvetIntro() {
+  return (
+    <p className={`px-4 pt-2 ${HJALPTEXT_KLASS}`}>
+      Uppgifterna gäller bostaden och delas av alla som har tillgång till den.
+      Var och en bekräftar sina egna när bostaden markeras som såld.
+    </p>
+  );
+}
+
+function ForvarvetKort({ data, oppen, formRef, onAndra, onAvbryt, onDirty, onKlar }: KortProps<ForvarvetData>) {
   if (!oppen) {
     return (
       <>
-        <KortHuvud titel="Ägandet" visaAndra onAndra={onAndra} />
+        <KortHuvud titel="Förvärvet" visaAndra onAndra={onAndra} />
+        <ForvarvetIntro />
         <div className="p-4 font-granssnitt text-sm">
-          <Rad etikett="Ägarandel" varde={`${data.agarandelProcent} %`} />
+          <Rad etikett="Tillträdesdatum" varde={data.tilltradesdatum} />
+          <Rad etikett="Köpeskilling" varde={orenTillKronsträng(data.kopeskillingOren)} />
+          <Rad etikett="Köpkostnader" varde={orenTillKronsträng(data.kopkostnaderOren)} />
+          <Rad etikett="Ägarandel" varde={formateraAndel(data.agarandelProcent)} />
           <Rad etikett="Första ägaren" varde={data.nybyggdVidForvarv ? "Ja" : "Nej"} />
           {data.nybyggdVidForvarv ? (
             <Rad
@@ -726,42 +600,31 @@ function AgandetKort({
             />
           ) : null}
         </div>
-        <DelaBostaden data={delning} />
       </>
     );
   }
-
   return (
     <>
-      <KortHuvud titel="Ägandet" visaAndra={false} onAndra={onAndra} />
-      <AgandetEditForm
-        data={data}
-        formRef={formRef}
-        onAvbryt={onAvbryt}
-        onDirty={onDirty}
-        onKlar={onKlar}
-      />
+      <KortHuvud titel="Förvärvet" visaAndra={false} onAndra={onAndra} />
+      <ForvarvetIntro />
+      <ForvarvetEditForm data={data} formRef={formRef} onAvbryt={onAvbryt} onDirty={onDirty} onKlar={onKlar} />
     </>
   );
 }
 
-function AgandetEditForm({
+function ForvarvetEditForm({
   data,
   formRef,
   onAvbryt,
   onDirty,
   onKlar,
-}: {
-  data: AgandetData;
-  formRef: React.RefObject<HTMLFormElement | null>;
-  onAvbryt: () => void;
-  onDirty: () => void;
-  onKlar: (fel: boolean) => void;
-}) {
-  const [resultat, action, pagar] = useActionState(sparaAgandet, START);
+}: Omit<KortProps<ForvarvetData>, "oppen" | "onAndra">) {
+  const [resultat, action, pagar] = useActionState(sparaForvarvet, START);
   const hanteraSubmit = useForhindraDubbelinskick(pagar);
   useNarKlar(pagar, Boolean(resultat.fel), onKlar);
 
+  const [kopeskilling, setKopeskilling] = useState(() => beloppTillFalt(data.kopeskillingOren));
+  const [kopkostnader, setKopkostnader] = useState(() => beloppTillFalt(data.kopkostnaderOren));
   const [forstaAgare, setForstaAgare] = useState<"ja" | "nej">(
     data.nybyggdVidForvarv ? "ja" : "nej",
   );
@@ -770,104 +633,118 @@ function AgandetEditForm({
   );
 
   return (
-    <>
-      <form
-        ref={formRef}
-        action={action}
-        onSubmit={hanteraSubmit}
-        onChange={onDirty}
-        className="flex flex-col gap-5 p-4"
+    <form
+      ref={formRef}
+      action={action}
+      onSubmit={hanteraSubmit}
+      onChange={onDirty}
+      className="flex flex-col gap-5 p-4"
+    >
+      <Falt
+        etikett="Tillträdesdatum"
+        obligatoriskt
+        hjalp="Baslinjen för skickbedömningen – gränsen för vilka utgifter som är dina."
       >
-        <Falt
-          etikett="Ägarandel"
-          hjalp="Anges i procent. Lämna tomt om du äger hela bostaden själv."
-        >
-          <AgarandelFalt
-            name="agarandel"
-            defaultValue={
-              data.agarandelProcent === 100 ? "" : String(data.agarandelProcent)
-            }
-          />
-        </Falt>
+        <DatumFalt
+          name="tilltradesdatum"
+          defaultValue={data.tilltradesdatum}
+          framtidsFelmeddelande="Tillträdesdatum kan inte ligga i framtiden."
+        />
+      </Falt>
 
+      <Falt etikett="Köpeskilling" hjalp="Står på köpekontraktet eller överlåtelseavtalet.">
+        <BeloppFalt
+          name="kopeskilling"
+          value={kopeskilling}
+          onValueChange={setKopeskilling}
+          className={INPUT_KLASS}
+          placeholder="t.ex. 3 250 000"
+        />
+      </Falt>
+
+      <Falt
+        etikett="Köpkostnader"
+        hjalp={
+          data.arBostadsratt
+            ? "Överlåtelseavgiften du betalade när du köpte bostadsrätten."
+            : "Lagfart, pantbrev och inköpsprovision vid köpet."
+        }
+      >
+        <BeloppFalt
+          name="kopkostnader"
+          value={kopkostnader}
+          onValueChange={setKopkostnader}
+          className={INPUT_KLASS}
+          placeholder="t.ex. 45 000"
+        />
+      </Falt>
+
+      <Falt etikett="Ägarandel" hjalp="Anges i procent. Lämna tomt om du äger hela bostaden själv.">
+        <AgarandelFalt
+          name="agarandel"
+          defaultValue={data.agarandelProcent === 100 ? "" : String(data.agarandelProcent)}
+        />
+      </Falt>
+
+      <div>
+        <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
+          Var du första ägaren av bostaden?
+        </span>
+        <div className="grid grid-cols-2 gap-2">
+          <Kortval
+            vald={forstaAgare === "ja"}
+            text="Ja"
+            onClick={() => {
+              setForstaAgare("ja");
+              onDirty();
+            }}
+          />
+          <Kortval
+            vald={forstaAgare === "nej"}
+            text="Nej"
+            onClick={() => {
+              setForstaAgare("nej");
+              onDirty();
+            }}
+          />
+        </div>
+        <p className={`mt-1.5 ${HJALPTEXT_KLASS}`}>{HJALP_FORSTA_AGARE}</p>
+      </div>
+      <input type="hidden" name="forsta_agare" value={forstaAgare} />
+
+      {/* Ett nej nollstaller inte ombildningen (docs/design.md,
+          "Installningssidan") – ett kvarlamnat ja ar ofarligt. */}
+      {forstaAgare === "ja" ? (
         <div>
           <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
-            Var du första ägaren av bostaden?
+            Köptes bostaden i samband med ombildning från hyresrätt?
           </span>
           <div className="grid grid-cols-2 gap-2">
             <Kortval
-              vald={forstaAgare === "ja"}
+              vald={ombildning === "ja"}
               text="Ja"
               onClick={() => {
-                setForstaAgare("ja");
+                setOmbildning("ja");
                 onDirty();
               }}
             />
             <Kortval
-              vald={forstaAgare === "nej"}
+              vald={ombildning === "nej"}
               text="Nej"
               onClick={() => {
-                setForstaAgare("nej");
                 setOmbildning("nej");
                 onDirty();
               }}
             />
           </div>
-          <p className={`mt-1.5 ${HJALPTEXT_KLASS}`}>
-            {HJALP_FORSTA_AGARE}
-          </p>
+          <p className={`mt-1.5 ${HJALPTEXT_KLASS}`}>{HJALP_OMBILDNING}</p>
+          <input type="hidden" name="ombildning" value={ombildning} />
         </div>
-        <input type="hidden" name="forsta_agare" value={forstaAgare} />
+      ) : null}
 
-        {forstaAgare === "ja" ? (
-          <div>
-            <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
-              Köpte du bostaden i samband med ombildning från hyresrätt?
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <Kortval
-                vald={ombildning === "ja"}
-                text="Ja"
-                onClick={() => {
-                  setOmbildning("ja");
-                  onDirty();
-                }}
-              />
-              <Kortval
-                vald={ombildning === "nej"}
-                text="Nej"
-                onClick={() => {
-                  setOmbildning("nej");
-                  onDirty();
-                }}
-              />
-            </div>
-            <p className={`mt-1.5 ${HJALPTEXT_KLASS}`}>
-              {HJALP_OMBILDNING}
-            </p>
-          </div>
-        ) : null}
-        <input type="hidden" name="ombildning" value={ombildning} />
-
-        {resultat.fel ? (
-          <p className="font-granssnitt text-sm text-accent">{resultat.fel}</p>
-        ) : null}
-
-        <div className="flex flex-col gap-2">
-          <button type="submit" disabled={pagar} className={PRIMARKNAPP_KLASS}>
-            {pagar ? "Sparar…" : "Spara"}
-          </button>
-          <button
-            type="button"
-            onClick={onAvbryt}
-            disabled={pagar}
-            className={SEKUNDARKNAPP_KLASS}
-          >
-            Avbryt
-          </button>
-        </div>
-      </form>
-    </>
+      {resultat.fel ? <p className="font-granssnitt text-sm text-accent">{resultat.fel}</p> : null}
+      <Spara pagar={pagar} onAvbryt={onAvbryt} />
+    </form>
   );
 }
 

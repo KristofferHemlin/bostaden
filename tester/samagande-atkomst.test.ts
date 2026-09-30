@@ -122,7 +122,7 @@ import { klassificeraHog, sparaBostadsfragor } from "@/app/genomgang/fragor/acti
 import { redigeraProjekt, taBortProjekt } from "@/app/projekt/actions";
 import { sparaSkickForsaljning } from "@/app/forsaljning/skick/actions";
 import { markeraSald } from "@/app/forsaljning/actions";
-import { sparaAgandet, sparaBostaden, sparaKopet } from "@/app/installningar/actions";
+import { sparaBostaden, sparaForvarvet } from "@/app/installningar/actions";
 import { hamtaArkivexportlista } from "@/app/installningar/arkivexport-actions";
 import { skapaBilagepaket } from "@/app/export/paket/actions";
 import { aterkallaInbjudanAction, skapaInbjudanAction } from "@/app/inbjudan/actions";
@@ -513,15 +513,14 @@ const VAGAR_UTAN_ID: Vag[] = [
   { vag: "revalideraKostnadssida", anrop: () => revalideraKostnadssida(KX), avslag: "fel" },
   { vag: "hamtaArkivexportlista", anrop: () => hamtaArkivexportlista(), avslag: "fel" },
   { vag: "sparaBostaden", anrop: () => sparaBostaden(START, formular({ adress: "Kapat" })), avslag: "fel" },
-  { vag: "sparaKopet", anrop: () => sparaKopet(START, formular({ storlek: "80" })), avslag: "fel" },
-  { vag: "sparaAgandet", anrop: () => sparaAgandet(START, formular({ agarandel: "50" })), avslag: "fel" },
+  { vag: "sparaForvarvet", anrop: () => sparaForvarvet(START, formular({ tilltradesdatum: "2019-06-01", agarandel: "50" })), avslag: "fel" },
   {
     vag: "sparaBostadsfragor",
     anrop: () => sparaBostadsfragor(START, formular({ forsta_agare: "ja", ombildning: "nej" })),
     avslag: "fel",
   },
   { vag: "markeraSald", anrop: () => markeraSald(START, formular({ forsaljningsdatum: "2026-09-01" })), avslag: "fel" },
-  { vag: "skapaInbjudanAction", anrop: () => skapaInbjudanAction({}, formular({ epost: "erik@exempel.se" })), avslag: "fel" },
+  { vag: "skapaInbjudanAction", anrop: () => skapaInbjudanAction({}, formular({ epost: "erik@exempel.se", egen_andel: "50", inbjuden_andel: "50" })), avslag: "fel" },
   {
     vag: "skapaBilagepaket",
     anrop: () => skapaBilagepaket(START, formular({ agarandel: "100", tilltradesdatum: "2019-06-01" })),

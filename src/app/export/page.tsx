@@ -22,6 +22,10 @@
 // Da visas varken raden Agarandel eller rutan om den egna andelen, och beloppen
 // raknas med 100 % – en andel fran tiden som ensam agare skulle annars halvera
 // talen under en rad som sager hela bostaden (src/lib/samagande.ts).
+//
+// Ar lasarens egen andel kand – medlemmarnas andelar gar ihop – namnger raden
+// den: det ar den andelen hen for in i sin deklaration. Raden ar text, inte
+// matematik: beloppen ar fortfarande hela bostadens.
 
 import Link from "next/link";
 import {
@@ -46,17 +50,28 @@ import { bostadHeader } from "@/lib/bostad-header";
 import { BILAGEPAKET_SYNLIGT } from "@/lib/bilagepaket/flagga";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
-import { andelForUnderlag, arDeladBostad } from "@/lib/samagande";
-import { antalMedlemmar, kravBostad } from "@/lib/session";
+import { hamtaAndelar } from "@/lib/andelar";
+import {
+  andelForUnderlag,
+  arDeladBostad,
+  formateraAndel,
+  kandEgenAndel,
+} from "@/lib/samagande";
+import { kravBostad } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function ExportSida() {
   const { bostadId, agarandel } = await kravBostad();
-  const [{ bostad, projekt, kostnader, regelparametrar }, medlemmar] =
-    await Promise.all([hamtaBostadsdata(bostadId), antalMedlemmar(bostadId)]);
+  const [{ bostad, projekt, kostnader, regelparametrar }, andelar] =
+    await Promise.all([hamtaBostadsdata(bostadId), hamtaAndelar(bostadId)]);
+  const medlemmar = andelar.medlemmar.length;
   const delad = arDeladBostad(medlemmar);
   const andel = andelForUnderlag(agarandel, medlemmar);
+  const kandAndel = kandEgenAndel({
+    egenAndel: agarandel,
+    medlemsandelar: andelar.medlemmar.map((m) => m.andel),
+  });
   const { bostadsnamn } = bostadHeader(bostad);
 
   // Enda skillnaden mellan upplatelseformerna i den har vyn: huvudblanketten som
@@ -140,8 +155,10 @@ export default async function ExportSida() {
           {delad ? (
             <p className="p-4 font-granssnitt text-sm text-text-primar">
               Sammanställningen gäller{" "}
-              <span className="font-medium">hela bostaden</span> – var och en
-              deklarerar sin andel av den.
+              <span className="font-medium">hela bostaden</span>
+              {kandAndel !== null
+                ? `. Du äger ${formateraAndel(kandAndel)} – det är den andelen du för in i din deklaration.`
+                : " – var och en deklarerar sin andel av den."}
             </p>
           ) : null}
           <section className="space-y-1 p-4 font-granssnitt text-sm text-text-sekundar">

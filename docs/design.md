@@ -891,10 +891,24 @@ Här ligger allt som beskriver bostaden men inte behövs för att komma igång. 
 
 | Kort | Innehåll |
 |---|---|
-| Bostaden | Adress, ort, upplåtelseform, tillträdesdatum, föreningens namn eller fastighetsbeteckning |
-| Köpet | Köpeskilling, köpkostnader, kapitaltillskott (bara bostadsrätt), storlek |
-| Ägandet | Ägarandel, första ägaren, ombildning från hyresrätt |
+| Bostaden | Adress, ort, upplåtelseform, föreningens namn eller fastighetsbeteckning, storlek, kapitaltillskott (bara bostadsrätt) |
+| Förvärvet | Tillträdesdatum, köpeskilling, köpkostnader, ägarandel, första ägaren, ombildning från hyresrätt |
+| Tillgång | Vilka som har bostaden, deras andelar och summan, bjud in någon |
 | Ditt konto | Ladda ner allt, logga ut, integritetspolicy, radera konto |
+
+**Inget kort försvinner beroende på upplåtelseform.** Kapitaltillskott finns bara för bostadsrätt, men det är ett fält som uteblir – inte ett kort. Ett kort som finns för den ena formen och inte för den andra är en regel man måste minnas, och kapitaltillskottet är en uppgift om föreningen och alltså om objektet.
+
+**Gränsen mellan korten är vem uppgiften handlar om, inte vad den beskriver.** *Bostaden* beskriver objektet och är samma för alla som delar det. *Förvärvet* beskriver hur bostaden blev någons, och det är där två delägare i princip kan ha olika svar.
+
+**I princip, inte i praktiken – ännu.** Fyra av fälten under *Förvärvet* ligger på bostaden och delas av båda: tillträdesdatum, köpeskilling, köpkostnader och första ägaren. Bara ägarandelen ligger på medlemskapet och är personlig. Kortet heter därför *Förvärvet* och inte *Förvärvet*, och det säger i klartext att uppgifterna gäller bostaden och att var och en bekräftar sina egna när bostaden säljs.
+
+Att flytta de fyra till medlemskapet är rätt på sikt men ändrar vad beräkningen läser – tillträdesdatum är baslinjen för hela skickbedömningen – och det hänger på den öppna rättsfrågan om delägare som tillträtt vid olika tidpunkter i `docs/regelkallor.md`. Det görs med försäljningssteget, inte före.
+
+**Ombildning från hyresrätt står bredvid första ägaren**, trots att den strikt sett är en uppgift om huset. Fältet har en enda uppgift i appen: att upphäva första ägaren, och det visas bara när den är ja. Ett villkorat fält som bor i ett annat kort än sitt villkor är obegripligt både för den som läser skärmen och för den som läser koden. Närheten väger tyngre än renheten här.
+
+Att sätta första ägaren till nej nollställer inte ombildningen. Ett kvarlämnat ja påverkar ingen uträkning – villkoret prövas bara när bostaden var nybyggd vid förvärvet.
+
+**Första ägaren måste gå att rätta.** Den nollar reparationsavdrag, alltså kan ett felaktigt svar tyst kosta tiotusentals kronor. Samma skäl som gör att tillträdesdatum är obligatoriskt och ändringsbart här.
 
 **Varje kort ändras för sig.** En dämpad *Ändra* i kortets hörn öppnar just det kortet som formulär, med fält och hjälptexter, och med *Spara* och *Avbryt*. Övriga kort ligger kvar i läsläge. Ett öppet kort i taget; öppnas ett annat medan det första har osparade ändringar ska användaren få frågan om de ska sparas eller kastas.
 
@@ -930,7 +944,9 @@ Med två delägare är "vem la in de här 40 000?" en fråga som kommer att stä
 
 **Fördelningen efter ägarandel är inget val.** Avdragen hör till bostaden, inte till personen, och fördelas efter ägarandel oavsett vem som betalade fakturan. Appen erbjuder därför ingen möjlighet för en delägare att ta hela beloppet – ett sådant val vore en inbjudan till en position Skatteverkets huvudregel inte accepterar. Källan står i `docs/regelkallor.md`.
 
-**Exportvyn säger vems underlag det är.** Har bostaden fler än en medlem och inga andelar är satta står det att sammanställningen gäller **hela bostaden**, och att var och en deklarerar sin andel av den. Är andelarna satta – vilket sker när bostaden markeras som såld – står det i stället vem underlaget gäller och vilken andel det bygger på.
+**Exportvyn säger vems underlag det är.** Har bostaden fler än en medlem står det att sammanställningen gäller **hela bostaden**. Är läsarens andel känd namnger raden den: *"Sammanställningen gäller hela bostaden. Du äger 50 % – det är den andelen du för in i din deklaration."* Är den inte känd står det i stället att var och en deklarerar sin andel.
+
+Skillnaden är liten men avgörande: den som får veta vad hen ska göra gör det, medan den som påminns om att någon ska göra något ofta inte gör det. Det är den enda raden som står mellan två personer och att båda för in hela beloppet. Är andelarna satta – vilket sker när bostaden markeras som såld – står det i stället vem underlaget gäller och vilken andel det bygger på.
 
 Utan den raden ser båda delägarna samma summa, tror att den är deras, och för in hela beloppet var. Att varje delägare deklarerar sin egen andel är bekräftat – se `docs/regelkallor.md`.
 
@@ -954,9 +970,19 @@ Det är en omläggning gjord 2026-09-29, efter att den första modellen visat si
 
 **Så länge andelarna inte är satta är underlaget för hela bostaden.** Det står med de orden i exportvyn när bostaden har fler än en medlem. Utan den raden ser båda delägarna samma summa, tror att den är deras, och för in hela beloppet var – samma dubbelräkning som den första modellen skulle ha hindrat, bara flyttad till en skärm där den är billigare att hindra.
 
-En ensam ägare berörs inte. Den som äger halva sin bostad och använder appen själv anger sin andel i kortet Ägandet som i dag, och får ett underlag för sin del.
+En ensam ägare berörs inte. Den som äger halva sin bostad och använder appen själv anger sin andel i kortet Förvärvet, och får ett underlag för sin del.
 
-**Frågan ställs där ägandet ändå beskrivs**, i kortet Ägandet i inställningarna. Kortet visar vilka som har tillgång till bostaden, hos båda, och en utestående inbjudan med den adress den ställts till.
+**Frågan ställs där ägandet ändå beskrivs**, i kortet Tillgång i inställningarna. Kortet visar vilka som har tillgång till bostaden, hos båda, och en utestående inbjudan med den adress den ställts till.
+
+**Den som bjuder in anger den inbjudnas ägarandel.** Den som bjuder in vet nästan alltid hur de äger, och utan ett tal blir kortet Tillgång en lista med namn utan innebörd.
+
+Men andelen är ett **utgångsvärde, inte ett facit**. Den syns och går att ändra i *Förvärvet*, och den bekräftas när bostaden markeras som såld. Då blir frågan "ni har angett 50/50 – stämmer det?" i stället för ett tomt fält, vilket är mycket lättare att svara rätt på. Fältet multiplicerar hela underlaget den dagen, och ett tal som satts slarvigt vid en inbjudan för åtta år sedan ska inte få passera oläst.
+
+**Steget sätter båda andelarna, inte bara den inbjudnas.** `medlemskap.agarandel` har default 100, så den som registrerat sin bostad äger hela den i databasen. Ett steg som bara frågar efter den inbjudnas andel kan därför inte ge henne något alls utan att summan spränger 100 %. Steget visar vad den som bjuder in själv äger, låter hen ändra det, och sätter den inbjudnas – med summan synlig medan man skriver.
+
+**Summan får aldrig överstiga 100 %**, prövat på servern och inte bara i formuläret. Den får däremot gärna vara under: det finns delägare som inte använder appen, och syskon som ärvt en fjärdedel var. Kortet Tillgång visar summan och säger det när den inte går ihop, utan att kalla det ett fel.
+
+**Andelarna ändrar ingenting i underlaget så länge bostaden delas.** Exportvyn visar hela bostadens belopp, omultiplicerade – se *Samägande – medlemskapet*. Andelen är där för att vara synlig och rättbar, inte för att tyst justera ett tal.
 
 **Raden finns oavsett ägarandel.** Den villkorades tidigare på att andelen var under 100 %, vilket var rimligt när inbjudan handlade om ägande. Nu handlar den om åtkomst till ett arkiv, och den som äger sin bostad helt kan mycket väl vilja dela det med någon som bor där. Appen ska inte ha en åsikt om vem som får se ens egna kvitton.
 

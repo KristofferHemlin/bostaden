@@ -14,7 +14,10 @@
 
 import "server-only";
 import { Prisma } from "@prisma/client";
+import { agarandelFel, agarandelFranText } from "@/lib/agarandel";
+import { allaAndelar, hamtaAndelar } from "@/lib/andelar";
 import { prisma } from "@/lib/prisma";
+import { andelssummaVidInbjudan, summeraAndelar } from "@/lib/samagande";
 
 const EPOST = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -37,11 +40,26 @@ export type SkapaInbjudanResultat =
   | { ok: true; inbjudanId: string; epost: string; harKonto: boolean }
   | { ok: false; fel: string };
 
+/**
+ * Skapar en inbjudan och satter bada andelarna (docs/design.md, "Att bjuda in
+ * en delagare"). Den som bjuder in star pa standardvardet 100 %, sa ett steg
+ * som bara fragade efter den inbjudnas andel kunde inte ge henne nagot utan
+ * att summan sprangde 100 %. Den egna andelen sparas nu; den inbjudnas skrivs
+ * pa inbjudan och blir medlemskapets nar den loses in.
+ *
+ * Summan provas har, pa servern, i samma transaktion som skrivningarna: alla
+ * medlemmar, alla andra utestaende inbjudningar och den nya. Den far inte
+ * overstiga 100 %. Den far garna vara under.
+ */
 export async function skapaInbjudan(params: {
   bostadId: string;
   anvandareId: string;
   anvandarEpost: string;
   epost: string;
+  /** Den som bjuder ins egen andel, som text ur faltet. Tomt = hela bostaden. */
+  egenAndel: string;
+  /** Den inbjudnas andel, som text ur faltet. Maste anges. */
+  inbjudenAndel: string;
 }): Promise<SkapaInbjudanResultat> {
   const epost = normaliseraEpost(params.epost);
   if (!EPOST.test(epost)) return { ok: false, fel: "Fyll i en giltig e-postadress." };
@@ -49,29 +67,64 @@ export async function skapaInbjudan(params: {
     return { ok: false, fel: "Det är din egen adress." };
   }
 
-  const redanMedlem = await prisma.medlemskap.findFirst({
-    where: {
-      bostad_id: params.bostadId,
-      anvandare: { epost: { equals: epost, mode: "insensitive" } },
+  const egen = agarandelFranText(params.egenAndel);
+  if (egen === undefined) return { ok: false, fel: `Din andel: ${agarandelFel(params.egenAndel)}` };
+  if (params.inbjudenAndel.trim() === "") {
+    return { ok: false, fel: "Ange andelen för den du bjuder in." };
+  }
+  const inbjuden = agarandelFranText(params.inbjudenAndel);
+  if (inbjuden === undefined) {
+    return { ok: false, fel: `Den inbjudnas andel: ${agarandelFel(params.inbjudenAndel)}` };
+  }
+
+  const resultat = await prisma.$transaction(
+    async (tx): Promise<{ ok: true; inbjudanId: string } | { ok: false; fel: string }> => {
+      const redanMedlem = await tx.medlemskap.findFirst({
+        where: {
+          bostad_id: params.bostadId,
+          anvandare: { epost: { equals: epost, mode: "insensitive" } },
+        },
+        select: { id: true },
+      });
+      if (redanMedlem) return { ok: false, fel: "Den adressen har redan tillgång till bostaden." };
+
+      // Summan efter inbjudan: den egna andelen byts mot den nya, och en
+      // utestaende inbjudan till samma adress ersatts av den har.
+      const andelar = await hamtaAndelar(params.bostadId, tx);
+      const ovriga = allaAndelar({
+        medlemmar: andelar.medlemmar.filter((m) => m.anvandareId !== params.anvandareId),
+        inbjudningar: andelar.inbjudningar.filter((i) => i.epost !== epost),
+      });
+      const fel = andelssummaVidInbjudan(summeraAndelar([...ovriga, egen, inbjuden]));
+      if (fel) return { ok: false, fel };
+
+      await tx.medlemskap.updateMany({
+        where: { anvandare_id: params.anvandareId, bostad_id: params.bostadId },
+        data: { agarandel: egen },
+      });
+
+      // En utestaende inbjudan till samma adress ateranvands i stallet for att
+      // en till skapas – ett dubbelklick eller ett nytt forsok ger samma kod,
+      // med den senast angivna andelen.
+      const befintlig = await tx.inbjudan.findFirst({
+        where: { bostad_id: params.bostadId, epost, status: "utestaende" },
+        select: { id: true },
+      });
+      if (befintlig) {
+        await tx.inbjudan.update({ where: { id: befintlig.id }, data: { agarandel: inbjuden } });
+        return { ok: true, inbjudanId: befintlig.id };
+      }
+      const ny = await tx.inbjudan.create({
+        data: { bostad_id: params.bostadId, epost, inbjuden_av: params.anvandareId, agarandel: inbjuden },
+        select: { id: true },
+      });
+      return { ok: true, inbjudanId: ny.id };
     },
-    select: { id: true },
-  });
-  if (redanMedlem) return { ok: false, fel: "Den adressen har redan tillgång till bostaden." };
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+  );
+  if (!resultat.ok) return resultat;
 
-  // En utestaende inbjudan till samma adress ateranvands i stallet for att en
-  // till skapas – ett dubbelklick eller ett nytt forsok ger samma kod.
-  const befintlig = await prisma.inbjudan.findFirst({
-    where: { bostad_id: params.bostadId, epost, status: "utestaende" },
-    select: { id: true },
-  });
-  const inbjudan =
-    befintlig ??
-    (await prisma.inbjudan.create({
-      data: { bostad_id: params.bostadId, epost, inbjuden_av: params.anvandareId },
-      select: { id: true },
-    }));
-
-  return { ok: true, inbjudanId: inbjudan.id, epost, harKonto: await harKonto(epost) };
+  return { ok: true, inbjudanId: resultat.inbjudanId, epost, harKonto: await harKonto(epost) };
 }
 
 /** Aterkallar en utestaende inbjudan i bostaden. Ror aldrig en annan bostads. */
@@ -180,7 +233,7 @@ export async function losInInbjudan(params: {
       async (tx) => {
         const inbjudan = await tx.inbjudan.findUnique({
           where: { id: params.inbjudanId },
-          select: { bostad_id: true, epost: true, status: true },
+          select: { bostad_id: true, epost: true, status: true, agarandel: true },
         });
         if (!inbjudan) throw new Avbruten("finns_inte");
         if (inbjudan.status === "aterkallad") throw new Avbruten("aterkallad");
@@ -201,11 +254,15 @@ export async function losInInbjudan(params: {
         });
         if (count !== 1) throw new Avbruten("redan_inlost");
 
-        // Ingen andel anges: den fragas nar bostaden markeras som sald.
-        // Kolumnens standardvarde galler tills dess och anvands inte i en
-        // delad bostad (src/lib/samagande.ts, andelForUnderlag).
+        // Andelen den som bjod in angav blir medlemskapets. Ett utgangsvarde,
+        // bekraftat nar bostaden markeras som sald. En inbjudan fran innan
+        // andelen fragades har ingen och ger schemats standardvarde.
         await tx.medlemskap.create({
-          data: { anvandare_id: params.anvandareId, bostad_id: inbjudan.bostad_id },
+          data: {
+            anvandare_id: params.anvandareId,
+            bostad_id: inbjudan.bostad_id,
+            ...(inbjudan.agarandel !== null ? { agarandel: inbjudan.agarandel } : {}),
+          },
         });
         return inbjudan.bostad_id;
       },

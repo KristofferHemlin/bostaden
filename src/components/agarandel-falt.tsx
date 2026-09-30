@@ -33,10 +33,13 @@ function rensa(text: string): string {
 export function AgarandelFalt({
   name,
   defaultValue = "",
+  onVarde,
 }: {
   name: string;
   /** Startvarde som text, t.ex. "50" eller "33,33". Tomt betyder hela bostaden. */
   defaultValue?: string;
+  /** Faltets text efter varje andring – for en summa som visas medan man skriver. */
+  onVarde?: (text: string) => void;
 }) {
   const [varde, setVarde] = useState(defaultValue);
   const [fel, setFel] = useState<string | null>(() => agarandelFel(defaultValue));
@@ -45,6 +48,7 @@ export function AgarandelFalt({
     const nytt = rensa(e.target.value);
     setVarde(nytt);
     setFel(agarandelFel(nytt));
+    onVarde?.(nytt);
   }
 
   return (

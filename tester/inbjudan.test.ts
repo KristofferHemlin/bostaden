@@ -72,6 +72,8 @@ import ExportSida from "@/app/export/page";
 import KostnadSida from "@/app/kostnad/[id]/page";
 import OversiktSida from "@/app/page";
 import RegistreraSida from "@/app/registrera/page";
+import InstallningarSida from "@/app/installningar/page";
+import { sparaForvarvet } from "@/app/installningar/actions";
 import { sparaKostnad } from "@/app/kostnad/nytt/actions";
 import { hamtaArkivexportlista } from "@/app/installningar/arkivexport-actions";
 import { raderaKonto } from "@/lib/konto/radera";
@@ -158,11 +160,19 @@ function propsFor(nod: unknown, namn: string): Record<string, unknown>[] {
   return [...egen, ...propsFor(el.props?.children, namn)];
 }
 
+/** Formularet for en inbjudan – adressen och bada andelarna (50/50 om inget annat). */
+function inbjudan_formular(epost: string, egen = "50", inbjuden = "50"): FormData {
+  return formular({ epost, egen_andel: egen, inbjuden_andel: inbjuden });
+}
+
 /** Anna bjuder in `epost` och far tillbaka inbjudans id. */
-async function bjudIn(epost = EPOST[DORIS]): Promise<string> {
+async function bjudIn(epost = EPOST[DORIS], egen = "50", inbjuden = "50"): Promise<string> {
   const forra = h.inloggad;
   loggaIn(ANNA);
-  const res = (await skapaInbjudanAction({}, formular({ epost }))) as { ok: boolean; lank: string };
+  const res = (await skapaInbjudanAction({}, inbjudan_formular(epost, egen, inbjuden))) as {
+    ok: boolean;
+    lank: string;
+  };
   h.inloggad = forra;
   expect(res.ok).toBe(true);
   return res.lank.split("/inbjudan/")[1];
@@ -191,7 +201,7 @@ beforeEach(() => {
 describe("att bjuda in", () => {
   it("skapar en post med bostaden, adressen, vem som bjod in och status – och en lank och QR-kod", async () => {
     loggaIn(ANNA);
-    const res = (await skapaInbjudanAction({}, formular({ epost: "  Doris@Exempel.se " }))) as Record<string, unknown>;
+    const res = (await skapaInbjudanAction({}, inbjudan_formular("  Doris@Exempel.se "))) as Record<string, unknown>;
 
     expect(res.ok).toBe(true);
     expect(res.lank).toMatch(/^https:\/\/bostad\.test\/inbjudan\/[0-9a-f-]{36}$/);
@@ -203,8 +213,8 @@ describe("att bjuda in", () => {
 
   it("sager om adressen redan har ett konto – och nar den inte har det", async () => {
     loggaIn(ANNA);
-    const med = (await skapaInbjudanAction({}, formular({ epost: EPOST[DORIS] }))) as { harKonto: boolean };
-    const utan = (await skapaInbjudanAction({}, formular({ epost: "ny@exempel.se" }))) as { harKonto: boolean };
+    const med = (await skapaInbjudanAction({}, inbjudan_formular(EPOST[DORIS], "34", "33"))) as { harKonto: boolean };
+    const utan = (await skapaInbjudanAction({}, inbjudan_formular("ny@exempel.se", "34", "33"))) as { harKonto: boolean };
     expect(med.harKonto).toBe(true);
     expect(utan.harKonto).toBe(false);
   });
@@ -218,12 +228,12 @@ describe("att bjuda in", () => {
 
   it("avvisar den egna adressen och en adress som redan har tillgang", async () => {
     loggaIn(ANNA);
-    expect(await skapaInbjudanAction({}, formular({ epost: "ANNA@exempel.se" }))).toEqual({ fel: "Det är din egen adress." });
+    expect(await skapaInbjudanAction({}, inbjudan_formular("ANNA@exempel.se"))).toEqual({ fel: "Det är din egen adress." });
     const id = await bjudIn();
     loggaIn(DORIS);
     await losIn(id);
     loggaIn(ANNA);
-    expect(await skapaInbjudanAction({}, formular({ epost: EPOST[DORIS] }))).toEqual({
+    expect(await skapaInbjudanAction({}, inbjudan_formular(EPOST[DORIS]))).toEqual({
       fel: "Den adressen har redan tillgång till bostaden.",
     });
   });
@@ -454,12 +464,155 @@ describe("efter anslutningen", () => {
   it("kontoraderingen: den sista medlemmen tar bort bostaden, dess inbjudningar och filer", async () => {
     await raderaKonto(DORIS);
     loggaIn(ANNA);
-    await skapaInbjudanAction({}, formular({ epost: "ny@exempel.se" }));
+    await skapaInbjudanAction({}, inbjudan_formular("ny@exempel.se"));
 
     expect(await raderaKonto(ANNA)).toEqual({ ok: true });
 
     expect(h.db.tabell("bostad").map((b) => b.id)).toEqual([Y]);
     expect(h.db.tabell("inbjudan")).toHaveLength(0);
     expect(h.lager.remove).toHaveBeenCalledWith([BX_NYCKEL]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Agarandelen vid inbjudan (docs/design.md, "Att bjuda in en delagare").
+// Steget satter bada andelarna; summan far aldrig overstiga 100 % men garna
+// vara under. Andelarna andrar ingenting i underlaget sa lange bostaden delas.
+// ---------------------------------------------------------------------------
+
+const andelFor = (anvandare: string) =>
+  Number(h.db.tabell("medlemskap").find((m) => m.anvandare_id === anvandare)!.agarandel);
+
+describe("agarandelen vid inbjudan", () => {
+  it("en inbjudan med andel ger medlemskapet den andelen nar den loses in", async () => {
+    const id = await bjudIn(EPOST[DORIS], "60", "40");
+    expect(Number(inbjudan(id).agarandel)).toBe(40);
+
+    loggaIn(DORIS);
+    await losIn(id);
+
+    expect(andelFor(DORIS)).toBe(40);
+  });
+
+  it("den som bjuder in kan sanka sin egen andel i samma steg, och den sparas", async () => {
+    expect(andelFor(ANNA)).toBe(100);
+    await bjudIn(EPOST[DORIS], "50", "50");
+    expect(andelFor(ANNA)).toBe(50);
+  });
+
+  it("en inbjudan dar de tva andelarna tillsammans overstiger 100 % avvisas pa servern", async () => {
+    loggaIn(ANNA);
+    const res = await skapaInbjudanAction({}, inbjudan_formular(EPOST[DORIS], "60", "50"));
+
+    expect((res as { fel: string }).fel).toContain("110");
+    expect(h.db.tabell("inbjudan")).toHaveLength(0);
+    expect(andelFor(ANNA)).toBe(100); // den egna andelen sparas inte heller
+  });
+
+  it("en inbjudan vars andel skulle ta summan over 100 % avvisas pa servern", async () => {
+    // Anna och Doris ager halften var. En tredje inbjudan pa 10 % far inte plats.
+    const id = await bjudIn(EPOST[DORIS], "50", "50");
+    loggaIn(DORIS);
+    await losIn(id);
+
+    loggaIn(ANNA);
+    const res = await skapaInbjudanAction({}, inbjudan_formular("erik@exempel.se", "50", "10"));
+
+    expect((res as { fel: string }).fel).toContain("110");
+    expect(h.db.tabell("inbjudan").filter((i) => i.epost === "erik@exempel.se")).toHaveLength(0);
+  });
+
+  it("en utestaende inbjudan reserverar sin andel", async () => {
+    await bjudIn(EPOST[DORIS], "50", "50");
+    loggaIn(ANNA);
+    const res = await skapaInbjudanAction({}, inbjudan_formular("erik@exempel.se", "50", "10"));
+    expect((res as { fel: string }).fel).toContain("110");
+  });
+
+  it("den inbjudnas andel maste anges", async () => {
+    loggaIn(ANNA);
+    const res = await skapaInbjudanAction({}, inbjudan_formular(EPOST[DORIS], "50", ""));
+    expect(res).toEqual({ fel: "Ange andelen för den du bjuder in." });
+  });
+
+  it("en andring av egen andel som skulle ta summan over 100 % avvisas pa servern", async () => {
+    const id = await bjudIn(EPOST[DORIS], "50", "50");
+    loggaIn(DORIS);
+    await losIn(id);
+
+    const res = await sparaForvarvet({}, formular({ tilltradesdatum: "2019-06-01", agarandel: "60", forsta_agare: "nej" }));
+
+    expect(res.fel).toContain("110");
+    expect(andelFor(DORIS)).toBe(50);
+  });
+
+  it("en summa under 100 % tillats och syns i kortet Tillgang", async () => {
+    const id = await bjudIn(EPOST[DORIS], "25", "25");
+    loggaIn(DORIS);
+    await losIn(id);
+
+    loggaIn(ANNA);
+    const sida = await InstallningarSida();
+    const kort = propsFor(sida, "InstallningarKort")[0] as {
+      tillgang: { medlemmar: { epost: string; du: boolean; andel: number }[] };
+    };
+    expect(kort.tillgang.medlemmar).toEqual([
+      { epost: EPOST[ANNA], du: true, andel: 25 },
+      { epost: EPOST[DORIS], du: false, andel: 25 },
+    ]);
+    // Summan och dess rad raknas fram i kortet med samma rena funktioner
+    // (src/lib/samagande.ts), provade i tester/andelssumma.test.ts.
+  });
+});
+
+describe("exportvyns rad namnger andelen", () => {
+  const RAD_KAND = (andel: string) =>
+    `Sammanställningen gäller hela bostaden. Du äger ${andel} – det är den andelen du för in i din deklaration.`;
+  const RAD_OKAND = "Sammanställningen gäller hela bostaden – var och en deklarerar sin andel av den.";
+
+  it("namner lasarens egen andel nar den ar kand", async () => {
+    const id = await bjudIn(EPOST[DORIS], "70", "30");
+    loggaIn(DORIS);
+    await losIn(id);
+
+    loggaIn(ANNA);
+    expect(text(await ExportSida())).toContain(RAD_KAND("70\u00a0%"));
+    loggaIn(DORIS);
+    expect(text(await ExportSida())).toContain(RAD_KAND("30\u00a0%"));
+  });
+
+  it("sager som forut nar andelarna aldrig satts", async () => {
+    // En bostad delad innan andelen fragades: bada pa standardvardet 100.
+    h.db.lagg("medlemskap", { anvandare_id: DORIS, bostad_id: X });
+    loggaIn(ANNA);
+    const t = text(await ExportSida());
+    expect(t).toContain(RAD_OKAND);
+    expect(t).not.toContain("Du äger");
+  });
+
+  it("finns inte alls for en ensam agare", async () => {
+    loggaIn(ANNA);
+    expect(text(await ExportSida())).not.toContain("hela bostaden");
+  });
+
+  it("beloppen ar hela bostadens och oforandrade, vilka andelar som an satts", async () => {
+    const id = await bjudIn(EPOST[DORIS], "50", "50");
+    loggaIn(DORIS);
+    await losIn(id);
+
+    const brutto: number[] = [];
+    for (const [anna, doris] of [[50, 50], [70, 30], [25, 25], [100, 100]]) {
+      h.db.tabell("medlemskap").find((m) => m.anvandare_id === ANNA)!.agarandel = anna;
+      h.db.tabell("medlemskap").find((m) => m.anvandare_id === DORIS)!.agarandel = doris;
+      for (const vem of [ANNA, DORIS]) {
+        loggaIn(vem);
+        const vy = await ExportSida();
+        const [ruta4] = propsFor(vy, "RutaCallout");
+        expect(ruta4.gemensam).toBe(false);
+        expect(ruta4.individuellt).toBe(ruta4.brutto);
+        brutto.push(ruta4.brutto as number);
+      }
+    }
+    expect(new Set(brutto)).toEqual(new Set([1_249_000]));
   });
 });

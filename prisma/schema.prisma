@@ -126,6 +126,11 @@ model inbjudan {
   bostad_id   String            @db.Uuid
   epost       String // gemener, trimmad – jamfors mot inloggad adress i gemener
   inbjuden_av String?           @db.Uuid // null nar den som bjod in raderat sitt konto
+  // Den inbjudnas agarandel i procent, satt av den som bjod in. Blir
+  // medlemskapets andel nar inbjudan loses in. Ett utgangsvarde, inte ett
+  // facit – det bekraftas nar bostaden markeras som sald. Null for
+  // inbjudningar skapade innan andelen fragades; de ger da standardvardet.
+  agarandel   Decimal?          @db.Decimal(5, 2)
   status      inbjudningsstatus @default(utestaende)
   besvarad_at DateTime? // nar den accepterades eller aterkallades
   skapad_at   DateTime          @default(now())
