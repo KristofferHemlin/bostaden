@@ -2,16 +2,16 @@
 
 // Inloggningssidan (docs/design.md, Inloggningssidan). Tre vagar med tre olika
 // tyngder: "Logga in" ar primarknappen (orange), "Skapa konto" en sandknapp i
-// full bredd under avdelaren, och "Logga in med e-postlank i stallet" en dampad,
-// centrerad textlank under den. Att skapa konto ar ett eget flode (/registrera),
-// inte en andra knapp i formularet.
+// full bredd under avdelaren, och "Glomt losenordet?" en dampad, centrerad
+// textlank under den. Att skapa konto ar ett eget flode (/registrera), inte en
+// andra knapp i formularet. Inloggning med e-postlank ar borttagen (2026-10-01).
 //
 // Kortet ligger vertikalt centrerat – klistrat mot overkanten ser sidan ut som
 // en vy som inte hunnit ladda klart.
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useActionState, useState } from "react";
+import { Suspense, useActionState } from "react";
 import { hanteraAuth, type AuthResultat } from "./actions";
 import {
   Bekraftelseruta,
@@ -21,6 +21,7 @@ import {
   SANDKNAPP_KLASS,
 } from "@/components/skarm";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
+import { inloggningsfelFranLank } from "@/lib/inloggning";
 
 const START: AuthResultat = {};
 
@@ -34,7 +35,6 @@ export default function LoginSida() {
 }
 
 function LoginInnehall() {
-  const [lage, setLage] = useState<"losenord" | "magisk">("losenord");
   const [resultat, action, pagar] = useActionState(hanteraAuth, START);
   const hanteraSubmit = useForhindraDubbelinskick(pagar);
   // Registreringsflodet skickar hit med ?epost=... nar adressen redan har ett
@@ -44,6 +44,9 @@ function LoginInnehall() {
   // Kontoraderingen (produktspec avsnitt 14) skickar hit med ?kontoraderat=1 –
   // ett kort besked om att kontot ar borttaget, inte bara en tom inloggningsvy.
   const kontoRaderat = sokparametrar.get("kontoraderat") === "1";
+  // /auth/callback skickar hit med ?fel=lank nar en lank inte gick att losa in.
+  // Ett eget fel fran ett inloggningsforsok gar fore – det ar nyare.
+  const lankfel = inloggningsfelFranLank(sokparametrar.get("fel"));
 
   return (
     <div className="flex min-h-screen w-full items-center bg-yta-bas">
@@ -84,40 +87,27 @@ function LoginInnehall() {
               />
             </Falt>
 
-            {lage === "losenord" ? (
-              <Falt etikett="Lösenord">
-                <input
-                  type="password"
-                  name="losenord"
-                  autoComplete="current-password"
-                  className={INPUT_KLASS}
-                />
-              </Falt>
-            ) : null}
+            <Falt etikett="Lösenord">
+              <input
+                type="password"
+                name="losenord"
+                autoComplete="current-password"
+                className={INPUT_KLASS}
+              />
+            </Falt>
 
-            {resultat.fel ? (
+            {resultat.fel || lankfel ? (
               <p className="font-granssnitt text-sm text-accent">
-                {resultat.fel}
+                {resultat.fel ?? lankfel}
               </p>
-            ) : null}
-            {resultat.meddelande ? (
-              <Bekraftelseruta>{resultat.meddelande}</Bekraftelseruta>
             ) : null}
 
             <button
               type="submit"
-              name="avsikt"
-              value={lage === "losenord" ? "logga-in" : "magisk-lank"}
               disabled={pagar}
               className={PRIMARKNAPP_KLASS}
             >
-              {pagar
-                ? lage === "losenord"
-                  ? "Loggar in…"
-                  : "Skickar…"
-                : lage === "losenord"
-                  ? "Logga in"
-                  : "Skicka inloggningslänk"}
+              {pagar ? "Loggar in…" : "Logga in"}
             </button>
           </form>
 
@@ -129,26 +119,13 @@ function LoginInnehall() {
               Skapa konto
             </Link>
             {/* Glomt losenord: en egen lank som sager just det, under de tva
-                knapparna (docs/design.md, Inloggningssidan). E-postlanken
-                loser problemet tekniskt men lases inte som svaret pa det. */}
+                knapparna (docs/design.md, Inloggningssidan). */}
             <Link
               href="/losenord/glomt"
               className="text-center font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
             >
               Glömt lösenordet?
             </Link>
-            {/* E-postlank: dampad, centrerad textlank i --text-sekundar. */}
-            <button
-              type="button"
-              onClick={() =>
-                setLage((l) => (l === "losenord" ? "magisk" : "losenord"))
-              }
-              className="font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
-            >
-              {lage === "losenord"
-                ? "Logga in med e-postlänk i stället"
-                : "Logga in med lösenord i stället"}
-            </button>
           </div>
         </div>
       </main>

@@ -1,17 +1,20 @@
 "use server";
 
-// Inloggning via Supabase Auth. Tva satt pa samma sida: e-post + losenord som
-// forsta vag, magisk lank som alternativ. Att skapa konto ar ett eget flode
-// (/registrera) – ingen "skapa-konto"-avsikt har langre. En enda action-ingang;
-// knappen satter faltet "avsikt".
+// Inloggning via Supabase Auth: e-post + losenord. Att skapa konto ar ett eget
+// flode (/registrera), och glomt losenord likasa (/losenord/glomt).
+//
+// Inloggning med e-postlank (signInWithOtp) togs bort 2026-10-01
+// (docs/design.md, Inloggningssidan) – den fungerade inte, och en vag in som
+// inte fungerar ar samre an ingen. Grenen ar borta ur actionen och inte bara ur
+// granssnittet, sa att den inte heller nas med en handskriven begaran. Rutten
+// som tar emot lankar (/auth/callback) ligger kvar: aterstallningsmejlet landar
+// dar. Ska e-postlanken tillbaka finns den i git-historiken.
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { skapaServerklient } from "@/lib/supabase/server";
 
 export interface AuthResultat {
   fel?: string;
-  meddelande?: string;
 }
 
 function las(formData: FormData, nyckel: string): string {
@@ -22,26 +25,10 @@ export async function hanteraAuth(
   _foreg: AuthResultat,
   formData: FormData,
 ): Promise<AuthResultat> {
-  const avsikt = las(formData, "avsikt");
   const epost = las(formData, "epost");
   const losenord = String(formData.get("losenord") ?? "");
   const supabase = await skapaServerklient();
 
-  if (avsikt === "magisk-lank") {
-    if (!epost) return { fel: "Fyll i din e-postadress." };
-    const origin = (await headers()).get("origin") ?? "";
-    const { error } = await supabase.auth.signInWithOtp({
-      email: epost,
-      options: {
-        emailRedirectTo: `${origin}/auth/callback`,
-        shouldCreateUser: true,
-      },
-    });
-    if (error) return { fel: oversattFel(error.message) };
-    return { meddelande: `En inloggningslänk är på väg till ${epost}.` };
-  }
-
-  // avsikt === "logga-in" (default)
   if (!epost || !losenord) {
     return { fel: "Fyll i både e-post och lösenord." };
   }

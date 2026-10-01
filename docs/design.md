@@ -123,6 +123,14 @@ Båda finns på Google Fonts. Fraunces mjuka serif matchar logotypens geometri; 
 
 **Belopp sätts alltid med tabulära siffror** (`font-variant-numeric: tabular-nums`). Utan det hoppar kolumner när summan ändras, och den här appen visar belopp överallt.
 
+**Men Fraunces har inga tabulära siffror.** Uppmätt 2026-10-01 i den körande appen: `font-variant-numeric: tabular-nums` ger exakt samma bredd med och utan, och sexsiffriga tal skiljer sig 16,8 px beroende på vilka siffror de innehåller – en etta är 6,3 px, en åtta 8,1 px. Deklarationen står i CSS:en och gör ingenting. Det är samma slags fel som opacitetsmodifieraren under *Färger*: angivet, verkningslöst, tyst. Instrument Sans har siffrorna och de fungerar – samma prov ger 0 px skillnad med `tabular-nums` och 25 px utan.
+
+Följden är att belopp i Fraunces inte kan rättas in i en kolumn. Och det är värre än ojämnt: med proportionella siffror kan ett större belopp bli kortare än ett mindre – `111 111` är smalare än `99 999` – så längden slutar betyda storlek, vilket är precis vad blicken läser i en kolumn.
+
+**Därför: belopp som står i en kolumn sätts i Instrument Sans med tabulära siffror.** Det gäller exportvyns tabeller och kvittolistans beloppskolumn. Belopp som står för sig själva behåller Fraunces – metrikrutorna, ett enskilt kvittos summa – eftersom det inte finns någon kolumn att rätta in dem i och serifen hör till produktens karaktär där.
+
+Lägg aldrig tillbaka `tabular-nums` på Fraunces i tron att det hjälper. Behövs tabulära siffror är svaret att byta typsnitt för just det talet, inte att upprepa deklarationen.
+
 Svensk formatering genomgående: `1 020,95 kr` med hårt mellanslag som tusentalsavgränsare och komma som decimaltecken.
 
 **Öre visas bara när de är skilda från noll.** `7 925,90 kr` behåller sina, men ett jämnt belopp skrivs `1 200 kr` och inte `1 200,00 kr`. Två nollor efter ett jämnt belopp är brus, och de gör dessutom att blicken letar efter en decimal som inte finns. Gäller all utskrift av belopp, inte bara tröskeln.
@@ -272,9 +280,15 @@ Skälet till att *Senast tillagt* fick lämna: ett datum säger ingenting en vec
 
 **Rutorna är lika höga och beloppen ligger i underkant.** En etikett kan radbrytas, och i de här rutorna får beloppet göra det också. Ligger beloppen i överkant hamnar de på olika höjd så fort en ruta blir högre, och raden ser trasig ut fast varje ruta är riktig. Med lika höjd och beloppen i underkant står de alltid i linje.
 
-**Här, och bara här, får raden brytas före "kr".** Belopp över en miljon får inte plats på 390 px – uppmätt 2026-10-01 till 98 px text i en ruta med 89 px att ge. Talet hålls ihop, enheten flyttar ner, och eftersom beloppen ligger i underkant hamnar "kr"-raderna i linje med varandra. Undantaget gäller metrikrutorna och ingenting annat; överallt annars hålls belopp och enhet ihop.
+**Här, och bara här, får raden brytas före "kr".** Talet hålls ihop, enheten flyttar ner, och eftersom beloppen ligger i underkant hamnar "kr"-raderna i linje med varandra. Undantaget gäller metrikrutorna och ingenting annat; överallt annars hålls belopp och enhet ihop.
+
+Uppmätt 2026-10-01 vid 390 px: rutan är 114 px bred och har 88,9 px innanför sin padding. Det är ören som fyller den, inte miljonerna. `1 204 518,50 kr` är 98,9 px och svämmar över; samma belopp utan ören, `1 204 518 kr`, är 78,4 px och får gott och väl plats. Brytningen behövs alltså redan från `100 000,50 kr` (93,1 px), medan `99 999,50 kr` (83,2 px) klarar sig.
+
+Exakta gränser går inte att ange, eftersom Fraunces siffror är proportionella – se *Typografi*. Ett belopp med många ettor är smalare än ett med många nollor, så vilket belopp som bryts beror på siffrorna och inte bara på antalet. Det är ett skäl till att brytningen finns som tillåtelse i stället för att layouten räknar fram en gräns.
 
 En bostad man ägt i tjugo år har med marginal lagt in mer än en miljon. Det är alltså det förväntade läget för *Totalt inlagt*, inte ett kantfall.
+
+**Antalet är ett antal och bär ingen enhet.** Det formateras svenskt som alla andra tal – `1 000`, inte `1000` – med hårda mellanslag, och får därför aldrig brytas alls. Uppmätt till 60,6 px för `1 204 518` i rutans 88,9 px, så utrymmet är inget problem. Det ska inte gå genom beloppsformateringen: den tillåter brytning före "kr", och ett antal har inget "kr".
 
 **Valt bort:** att släppa ören i rutorna, eftersom det rundar ett belopp på en skärm men inte på en annan och appen bygger på att samma tal ser likadant ut överallt. Och att låta första rutan ta hela bredden när beloppet är långt, eftersom layouten då ändrar form när ett kvitto läggs in – en skärm som rör sig av sig själv är svårare att lita på än en som är trång.
 
@@ -861,23 +875,33 @@ Kortet ligger vertikalt centrerat i sidan. Klistrat mot överkanten med en halv 
 
 **Raden under logotypen säger vad appen är**, inte "Logga in för att fortsätta". Den som landar här utan konto ska förstå vad Bostadsunderlag gör innan hen bestämmer sig – en mening räcker: spara kvittona på det du gör med bostaden, dra av dem den dag du säljer.
 
-**De tre vägarna har tre olika tyngder.** Att ge dem samma utseende gör att den som ska skapa konto inte hittar dit, och två understrukna rader staplade läses dessutom som en meny.
+**De två vägarna in har olika tyngd, och hjälplänken en tredje.** Att ge dem samma utseende gör att den som ska skapa konto inte hittar dit.
 
 | Väg | Utseende |
 |---|---|
 | Logga in | Primärknapp, orange, full bredd |
 | Skapa konto | Sekundärknapp i `--sand` med `--text-primar`, full bredd, under avdelaren |
-| Logga in med e-postlänk i stället | Dämpad textlänk i `--text-dampad`, centrerad under sekundärknappen |
+| Glömt lösenordet? | Textlänk i `--text-sekundar`, centrerad under de två knapparna |
+
+**Textlänken är dämpad med storlek, inte med färg.** Den stod först i `--text-dampad`, vilket bröt mot regeln under *Färger*: den tonen bär bara text ingen behöver läsa. Den här är vägen ut ur ett låst läge och är precis den text som måste gå att läsa av den som redan är frustrerad.
 
 Sekundärknappen har samma form och höjd som primärknappen. Att skapa konto är en väg in i produkten, inte en fotnot – men den är inte handlingen den här sidan finns för, och därför bär den inte orange.
 
-**Den som glömt sitt lösenord måste se en väg som säger det.** E-postlänken löser problemet tekniskt, men ingen som står och inte kommer ihåg sitt lösenord läser "Logga in med e-postlänk i stället" som lösningen på just det. Det finns därför en egen länk som heter *Glömt lösenordet?*, under de två knapparna. En app man loggar in i två gånger om året är den app där lösenordet oftast är borta.
+**Den som glömt sitt lösenord måste se en väg som säger det.** Länken heter *Glömt lösenordet?* och ligger under de två knapparna. En app man loggar in i två gånger om året är den app där lösenordet oftast är borta.
+
+**Inloggning med e-postlänk är borttagen ur gränssnittet 2026-10-01.** Den fungerade inte – utgående mejl är inte uppsatt – och en väg in som inte fungerar är sämre än ingen väg alls: den ser ut som räddningen för den som inte kommer in, och lämnar hen sedan utan besked. Den var dessutom aldrig det rätta svaret på ett glömt lösenord; ingen som står och inte minns sitt lösenord läser "Logga in med e-postlänk i stället" som lösningen på just det. Den kan komma tillbaka senare, som en bekvämlighet och inte som en reservväg.
+
+**Borttagandet gäller gränssnittet, inte rutten som tar emot länken.** Återställningsmejlet landar på samma ställe, så den som river ut e-postinloggningen och tar rutten med sig har tagit bort återställningen också, utan att det syns på inloggningssidan.
+
+**Det minskar inte beroendet av mejl, det ökar det.** E-postlänken var i praktiken den enda väg tillbaka in som inte krävde ett minne av lösenordet. Utan den är återställningsmejlet den enda, och det måste alltså fungera på releasedagen – inte strax efter.
 
 **Återställningen säger aldrig om adressen finns.** Oavsett vad som skrivs in står samma besked: att om adressen finns hos oss är ett mejl på väg. Att svara olika vore att låta vem som helst ta reda på om en viss person använder tjänsten, och det är en uppgift om någon annan som vi inte har rätt att lämna ut.
 
 Beskedet säger också vad man ska göra om inget kommer – titta i skräpposten, och kontrollera att adressen stavades rätt – eftersom det är den vanligaste orsaken och den enda användaren kan åtgärda.
 
 **Länken i mejlet leder till en sida som bara sätter ett nytt lösenord**, och loggar in personen när det är gjort. Är länken använd eller för gammal säger sidan det i klartext och erbjuder att skicka en ny, i stället för att visa ett formulär som inte kan fungera.
+
+**Kommer en oanvändbar länk in mot inloggningssidan** står det på samma plats som inloggningens övriga fel: *"Länken gick inte att använda – den kan redan vara använd eller för gammal. Logga in med ditt lösenord, eller välj Glömt lösenordet? för att få en ny."* Ett nyare inloggningsfel tar över platsen. Beskedet nämner båda vägarna vidare, eftersom den som klickat på en död länk inte vet vilken av dem som gäller för just hen.
 
 **Vägen tillbaka in i sitt konto är inte en bekvämlighet.** Ett arkiv man inte kommer in i är borta för sin ägare, oavsett att raderna finns kvar i databasen. Det är skälet att den här sidan måste vara byggd före release och inte efter.
 
