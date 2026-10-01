@@ -119,6 +119,8 @@ Misstänker du att något inte syns som borde: läs av `getComputedStyle(el).bac
 
 Båda finns på Google Fonts. Fraunces mjuka serif matchar logotypens geometri; Instrument Sans håller gränssnittet neutralt så att rubrikerna får bära karaktären.
 
+**Mellanrummen i ett belopp är hårda mellanslag, inte vanliga.** Det gäller både tusentalsavgränsaren och mellanrummet före "kr". Skillnaden syns inte men avgör om texten kan radbrytas, och den har redan lurat en mätning: ett prov med vanliga mellanslag visade att långa belopp bryts i två rader, medan de i verkligheten svämmar över kanten. Mät alltid med det formaterade beloppet, aldrig med en sträng man skrivit för hand.
+
 **Belopp sätts alltid med tabulära siffror** (`font-variant-numeric: tabular-nums`). Utan det hoppar kolumner när summan ändras, och den här appen visar belopp överallt.
 
 Svensk formatering genomgående: `1 020,95 kr` med hårt mellanslag som tusentalsavgränsare och komma som decimaltecken.
@@ -259,6 +261,28 @@ Innehållet ligger i kort på `--yta-upphojd` mot sidbakgrunden, med 1px `--linj
 Överst på översikten står årets summa. Etiketten "Inlagt 2026" i dämpad text till vänster, beloppet stort och höger om det på samma baslinje. Under dem ett progressfält, och under det två rader småtext: tröskelbeloppet till vänster, återstående belopp till höger.
 
 Etiketten säger "Inlagt", aldrig "Underlag" eller "Avdrag". Siffran är summan av allt som lagts in, klassificerat eller ej, och appen kan inte påstå mer än så innan klassificeringen är gjord.
+
+**Raden visar tre tal, och alla tre växer.** *Totalt inlagt*, *Inlagt 2026* och *Antal kvitton*.
+
+**Etiketten bär inget årtal.** Den hette först *Samlat sedan 2022*, med årtalet från tillträdesdatumet. Det föll av två skäl: etiketten bröts i två rader vid 390 px, och den var inte sann för en utgift från före tillträdet eller en utan datum. Utan årtal försvinner båda problemen, och ingen ursäkt behövs för att summan räknar allt.
+
+Livstidssumman tillkom 2026-10-01 och ersatte *Senast tillagt*. Skälet till att den finns: årssumman nollställs varje nyår, så talet som ska få någon att återvända är som minst i januari. Ett tal som bara växer är produktens enda belöning under tjugo år då ingenting annat händer – den dag underlaget används är per definition den dag man slutar använda appen.
+
+Skälet till att *Senast tillagt* fick lämna: ett datum säger ingenting en vecka senare, och kvittolistan nedanför visar ändå vilket det senaste kvittot är och när det lades in.
+
+**Rutorna är lika höga och beloppen ligger i underkant.** En etikett kan radbrytas, och i de här rutorna får beloppet göra det också. Ligger beloppen i överkant hamnar de på olika höjd så fort en ruta blir högre, och raden ser trasig ut fast varje ruta är riktig. Med lika höjd och beloppen i underkant står de alltid i linje.
+
+**Här, och bara här, får raden brytas före "kr".** Belopp över en miljon får inte plats på 390 px – uppmätt 2026-10-01 till 98 px text i en ruta med 89 px att ge. Talet hålls ihop, enheten flyttar ner, och eftersom beloppen ligger i underkant hamnar "kr"-raderna i linje med varandra. Undantaget gäller metrikrutorna och ingenting annat; överallt annars hålls belopp och enhet ihop.
+
+En bostad man ägt i tjugo år har med marginal lagt in mer än en miljon. Det är alltså det förväntade läget för *Totalt inlagt*, inte ett kantfall.
+
+**Valt bort:** att släppa ören i rutorna, eftersom det rundar ett belopp på en skärm men inte på en annan och appen bygger på att samma tal ser likadant ut överallt. Och att låta första rutan ta hela bredden när beloppet är långt, eftersom layouten då ändrar form när ett kvitto läggs in – en skärm som rör sig av sig själv är svårare att lita på än en som är trång.
+
+**Livstidssumman räknar allt, också det årssumman inte kan.** Kostnader utan betaldatum ingår, liksom kostnader betalda före tillträdet. *Inlagt 2026* måste utesluta det första – utan datum finns inget år att höra till – men livstidssummans löfte är "allt du samlat", och ett tal som tyst utelämnar rader användaren ser i listan är värre än ett tal som är trubbigt.
+
+Etiketten *Totalt inlagt* är sann för alla tre fallen, vilket var skälet att årtalet ströks.
+
+**Ingen summa för det avdragsgilla.** Den går inte att veta före försäljningen – femårsfönstret, skicket och tröskeln hänger alla på försäljningsdatumet. Och ett tal för hur mycket som är beskrivet är samma påminnelse som regeln under *Kvittolistan* förbjuder på startskärmen: den som gör arkivet till en skuld man ådrar sig varje gång man sparar ett kvitto.
 
 Finns oklassificerade kostnader står **en enda kort rad** under fältet: "Preliminärt tills kvittona klassificerats." Förklaringen av vad tröskeln innebär – att hela årets belopp faller bort, inte bara mellanskillnaden – ligger bakom en informationsknapp, samma mönster som projektfrågorna. Tre rader brödtext ovanför kvittolistan gör förklaringen till huvudsaken i stället för siffran.
 

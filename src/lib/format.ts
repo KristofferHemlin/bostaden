@@ -30,6 +30,27 @@ export function formateraKronor(oren: number): string {
 }
 
 /**
+ * Ett antal for utskrift, t.ex. `1204518` -> `"1 204 518"` (docs/design.md,
+ * Typografi: svensk formatering genomgaende, for alla tal). Tusentalsavgransaren
+ * ar ett hart mellanslag sa att antalet aldrig bryts. Inget "kr" – och darfor
+ * inte heller metrikrutornas brytpunkt fore enheten.
+ */
+export function formateraAntal(antal: number): string {
+  return kronformatUtanOren.format(antal);
+}
+
+/**
+ * Som formateraKronor, men med ett vanligt mellanslag fore "kr" – for de tre
+ * metrikrutorna pa oversikten och ingen annanstans (docs/design.md,
+ * Metrikblock). Belopp over en miljon far inte plats pa 390 px; talet halls
+ * ihop av de harda tusentalsmellanslagen och enheten flyttar ner en rad.
+ */
+export function formateraKronorMetrikruta(oren: number): string {
+  const text = formateraKronor(oren);
+  return `${text.slice(0, -`${HART_MELLANSLAG}kr`.length)} kr`;
+}
+
+/**
  * Som formateraKronor men tal null – ett UTKAST har inget belopp an. Visas som
  * ett tankstreck, aldrig "0 kr" (det vore ett riktigt belopp).
  */

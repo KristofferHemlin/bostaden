@@ -4,8 +4,8 @@
 //   * Tom databas: rubrik som uppmaning, ett par meningar om varfor kvitton ska
 //     sparas, och en primarknapp "Lagg till kvitto". Ingen rundtur, inga
 //     pahittade siffror.
-//   * Med innehall: tre sma nyckeltal pa rad (arets summa, antal kvitton,
-//     senast tillagt), troskelraden i full bredd, primarknappen, och till sist
+//   * Med innehall: tre sma nyckeltal pa rad (totalt inlagt, arets summa,
+//     antal kvitton), troskelraden i full bredd, primarknappen, och till sist
 //     kvittolistan som eget kort.
 //
 // Startskarmen har ingen sidrubrik alls (docs/design.md, "Startskarmen med
@@ -31,6 +31,7 @@ import {
   harledKostnadstillstand,
   inlagtArsbelopp,
   kalenderAr,
+  samlatBelopp,
   troskelUppnadd,
 } from "@/doman/berakningar";
 import { arOklassificerad } from "@/doman/genomgang";
@@ -38,7 +39,12 @@ import { slaUppRegelparameter } from "@/doman/regelparameter";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
 import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
-import { formateraKronor, isoDatum } from "@/lib/format";
+import {
+  formateraAntal,
+  formateraKronor,
+  formateraKronorMetrikruta,
+  isoDatum,
+} from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { Landningssida } from "@/app/landningssida";
 import { hamtaAnvandare, kravBostad } from "@/lib/session";
@@ -130,18 +136,11 @@ export default async function Oversikt() {
     kostnader.filter(arOklassificerad).map((k) => k.id),
   );
 
-  // "Senast tillagt": datum for det kvitto som lades in sist. Nyckeltalet lankar
-  // till just det kvittot (docs/design.md, "Startskarmen med innehall") – till
-  // kompletteringen om det annu bara ar ett utkast, annars till detaljvyn.
-  const senasteKvitto = senasteKvitton[0];
-  const senastTillagt = senasteKvitto
-    ? isoDatum(senasteKvitto.skapad_at)
-    : "–";
-  const senastTillagtHref = senasteKvitto
-    ? senasteKvitto.totalbelopp === null
-      ? `/kostnad/nytt?utkast=${senasteKvitto.id}`
-      : `/kostnad/${senasteKvitto.id}`
-    : "/kostnad";
+  // "Totalt inlagt": allt som lagts in pa bostaden, oavsett ar, datum och
+  // klassificering (docs/design.md, Metrikblock). Arssumman nollstalls varje
+  // nyar – det har talet bara vaxer. Inget arstal i etiketten: summan raknar
+  // aven kostnader utan betaldatum och fore tilltradet.
+  const samlat = samlatBelopp({ kostnader });
 
   const tomt = kostnader.length === 0;
 
@@ -211,24 +210,24 @@ export default async function Oversikt() {
         <>
           {/* Tre sma nyckeltal pa rad, i egna kort. Pa mobil ligger de kvar i en
               rad med mindre text, aldrig staplade (docs/design.md, "Startskarmen
-              med innehall"). Inga statusfarger. Alla tre ar klickbara: "Inlagt"
-              och "Antal kvitton" till hela kvittolistan, "Senast tillagt" till
-              just det kvittot. */}
+              med innehall"). Inga statusfarger. Alla tre ar klickbara och leder
+              till hela kvittolistan. Inget fjarde tal – tre rutor ar vad raden
+              rymmer pa 390 px (docs/design.md, Metrikblock). */}
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             <Nyckeltal
+              etikett="Totalt inlagt"
+              varde={formateraKronorMetrikruta(samlat)}
+              href="/kostnad"
+            />
+            <Nyckeltal
               etikett={`Inlagt ${VISAT_AR}`}
-              varde={formateraKronor(inlagt)}
+              varde={formateraKronorMetrikruta(inlagt)}
               href="/kostnad"
             />
             <Nyckeltal
               etikett="Antal kvitton"
-              varde={String(antalKvitton)}
+              varde={formateraAntal(antalKvitton)}
               href="/kostnad"
-            />
-            <Nyckeltal
-              etikett="Senast tillagt"
-              varde={senastTillagt}
-              href={senastTillagtHref}
             />
           </div>
 
@@ -336,6 +335,13 @@ export default async function Oversikt() {
 // Ett nyckeltal: dampad etikett over ett varde i Fraunces med tabulara siffror.
 // Litet kort, ingen statusfarg (docs/design.md, "Startskarmen med innehall").
 // Alltid klickbart – ett tal man vill se narmare pa ska ga att trycka pa.
+//
+// Rutorna i raden ar lika hoga och vardet ligger i underkant (docs/design.md,
+// Metrikblock): etiketter och belopp over en miljon kan radbrytas vid 390 px,
+// och med vardet i overkant hamnar talen da pa olika hojd. Griden strackar
+// lanken till radens hojd; kortet fyller lanken och trycker ner vardet.
+// Beloppen formateras med formateraKronorMetrikruta, som later "kr" brytas ner
+// pa egen rad – annars svammar belopp over en miljon over kanten.
 function Nyckeltal({
   etikett,
   varde,
@@ -346,12 +352,12 @@ function Nyckeltal({
   href: string;
 }) {
   return (
-    <Link href={href} className="block">
-      <Kort className="p-3 transition-colors hover:bg-yta-nedsankt">
+    <Link href={href} className="block h-full">
+      <Kort className="flex h-full flex-col justify-between gap-1 p-3 transition-colors hover:bg-yta-nedsankt">
         <p className="font-granssnitt text-[11px] leading-tight text-text-sekundar">
           {etikett}
         </p>
-        <p className="mt-1 font-rubrik text-sm tabular-nums text-text-primar sm:text-base">
+        <p className="font-rubrik text-sm tabular-nums text-text-primar sm:text-base">
           {varde}
         </p>
       </Kort>

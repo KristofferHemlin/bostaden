@@ -136,12 +136,36 @@ export function inlagtArsbelopp(
   indata: { kostnader: Kostnad[] },
   ar: number,
 ): number {
+  return inlagtBelopp(
+    indata.kostnader,
+    (k) => k.betaldatum !== null && kalenderAr(k.betaldatum) === ar,
+  );
+}
+
+/**
+ * "Totalt inlagt" for oversikten (docs/design.md, Metrikblock): samma tal som
+ * inlagtArsbelopp, men utan arsgrans. Livstidssummans lofte ar "allt du
+ * samlat", sa aven kostnader utan betaldatum och kostnader fore tilltradet
+ * raknas med – ett tal som tyst utelamnar rader anvandaren ser i listan ar
+ * varre an ett som ar trubbigt. Allt annat delas med arssumman: privat, utkast
+ * och arkiverat raknas inte, och ROT/forsakringsersattning dras av
+ * proportionellt.
+ */
+export function samlatBelopp(indata: { kostnader: Kostnad[] }): number {
+  return inlagtBelopp(indata.kostnader, () => true);
+}
+
+/** Gemensam summering for "Inlagt {ar}" och "Totalt inlagt". `medtas` avgor
+ *  vilka kostnader som hor till urvalet; resten ar lika for bada. */
+function inlagtBelopp(
+  kostnader: Kostnad[],
+  medtas: (kostnad: Kostnad) => boolean,
+): number {
   let summa = 0;
-  for (const kostnad of indata.kostnader) {
+  for (const kostnad of kostnader) {
     if (kostnad.arkiverad) continue;
     if (arUtkast(kostnad)) continue;
-    if (kostnad.betaldatum === null) continue;
-    if (kalenderAr(kostnad.betaldatum) !== ar) continue;
+    if (!medtas(kostnad)) continue;
     const faktor = reduktionsfaktor(kostnad);
     for (const rad of kostnad.rader) {
       const privatAndel = rad.fordelningar.reduce(
