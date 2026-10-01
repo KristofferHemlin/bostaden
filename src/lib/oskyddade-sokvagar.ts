@@ -7,7 +7,8 @@
 // "/inbjudan" – sidan bakom QR-koden ska ga att oppna utan konto; den visar
 // vem inbjudan kommer fran innan den ber om nagot (docs/design.md, "Att bjuda
 // in en delagare"). Att losa in kraver anda inloggning med ratt adress.
-const OSKYDDADE_PREFIX = ["/login", "/auth", "/registrera", "/integritetspolicy", "/inbjudan"];
+// "/losenord" – den som glomt sitt losenord har per definition ingen session.
+const OSKYDDADE_PREFIX = ["/login", "/auth", "/registrera", "/integritetspolicy", "/inbjudan", "/losenord"];
 const OSKYDDADE_EXAKTA = ["/"];
 
 export function arOskyddadSokvag(sokvag: string): boolean {

@@ -19,6 +19,11 @@ describe("oskyddade sokvagar", () => {
     expect(arOskyddadSokvag("/registrera")).toBe(true);
     expect(arOskyddadSokvag("/auth/callback")).toBe(true);
   });
+
+  it("losenordsaterstallningen ar oskyddad – den som glomt losenordet har ingen session", () => {
+    expect(arOskyddadSokvag("/losenord/glomt")).toBe(true);
+    expect(arOskyddadSokvag("/losenord/nytt")).toBe(true);
+  });
 });
 
 describe("landningssidan", () => {
@@ -38,6 +43,14 @@ describe("landningssidan", () => {
   it("namner inget blankettnamn och inget pris", () => {
     expect(html).not.toMatch(/K5|K6|SKV\s*2197/);
     expect(html).not.toMatch(/(?<!\p{L})kr(?!\p{L})|kronor|pris|gratis|prenumeration/iu);
+  });
+
+  it("lovar inte att avdraget kraver kvitto (design.md, Landningssidan)", () => {
+    const text = html.replace(/<[^>]+>/g, "").replace(/\s+/g, " ");
+    expect(text).toContain(
+      "Men avdraget vilar på att du kan göra utgiften trolig, och försäljningen kan ligga tjugo år bort. Ett kvitto är det enklaste beviset som finns – och det är därför de flesta betalar för mycket i vinstskatt: kvittona är borta.",
+    );
+    expect(text).not.toMatch(/kräver att du kan visa/);
   });
 
   it("har ingen bild, ingen topprad och ingen flikrad", () => {

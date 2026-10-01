@@ -10,7 +10,7 @@
 
 Kristoffer Hemlin
 Ulriksborgsgatan 7, 112 18 Stockholm
-`[E-POSTADRESS]`
+kristofferhemlin@gmail.com
 
 Bostaden drivs i dag av en privatperson, inte av ett bolag. Det står här för att du ska veta vem som håller dina uppgifter innan du lämnar ifrån dig dem.
 
@@ -81,7 +81,7 @@ Du har rätt att få veta vilka uppgifter som finns om dig, att få felaktiga up
 
 **Du kan när som helst ladda ner allt du laddat upp** som ett zip-arkiv från inställningarna. Det kostar ingenting och kräver ingen kontakt med oss.
 
-Hör av dig till `[E-POSTADRESS]` om du vill utöva någon av rättigheterna.
+Hör av dig till kristofferhemlin@gmail.com om du vill utöva någon av rättigheterna.
 
 Är du missnöjd med hur dina uppgifter behandlas kan du klaga till Integritetsskyddsmyndigheten, IMY.
 

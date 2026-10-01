@@ -38,9 +38,10 @@ export function Landningssida() {
 
         <p className="mt-3 px-1 font-granssnitt text-base leading-snug text-text-sekundar sm:leading-6">
           Nytt kök, omdragen el, ett tak – sådant får dras av från vinsten den
-          dag bostaden säljs. Men avdraget kräver att du kan visa vad du gjort,
-          och försäljningen kan ligga tjugo år bort. De flesta betalar för
-          mycket i vinstskatt av ett enda skäl: kvittona är borta.
+          dag bostaden säljs. Men avdraget vilar på att du kan göra utgiften
+          trolig, och försäljningen kan ligga tjugo år bort. Ett kvitto är det
+          enklaste beviset som finns – och det är därför de flesta betalar för
+          mycket i vinstskatt: kvittona är borta.
         </p>
 
         <div className="mt-5 space-y-3 px-1 font-granssnitt text-base leading-snug text-text-sekundar sm:leading-6">

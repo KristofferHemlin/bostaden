@@ -30,6 +30,7 @@ import {
 } from "@/components/skarm";
 import { DatumFalt } from "@/components/datum-falt";
 import { forsokBorjaInskickning, useDubbelinskickRef } from "@/lib/dubbelinskick";
+import { losenordsfel } from "@/lib/losenord";
 import { slutforRegistrering, type RegistreringResultat } from "./actions";
 import { AdressFalt } from "./adress-falt";
 
@@ -78,7 +79,8 @@ export function RegistreraFlode({
   function validera(s: number): string | null {
     if (s === 1) {
       if (!EPOST.test(epost.trim())) return "Fyll i en giltig e-postadress.";
-      if (losenord.length < 8) return "Lösenordet måste vara minst 8 tecken.";
+      const svagt = losenordsfel(losenord);
+      if (svagt) return svagt;
     }
     if (s === 2) {
       if (upplatelseform !== "bostadsratt" && upplatelseform !== "fastighet") {

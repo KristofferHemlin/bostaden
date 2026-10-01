@@ -128,6 +128,15 @@ function LoginInnehall() {
             <Link href="/registrera" className={SANDKNAPP_KLASS}>
               Skapa konto
             </Link>
+            {/* Glomt losenord: en egen lank som sager just det, under de tva
+                knapparna (docs/design.md, Inloggningssidan). E-postlanken
+                loser problemet tekniskt men lases inte som svaret pa det. */}
+            <Link
+              href="/losenord/glomt"
+              className="text-center font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
+            >
+              Glömt lösenordet?
+            </Link>
             {/* E-postlank: dampad, centrerad textlank i --text-sekundar. */}
             <button
               type="button"

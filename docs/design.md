@@ -807,13 +807,15 @@ Texten är:
 
 > **Det du gjort med bostaden sänker skatten när du säljer. Om kvittot finns kvar.**
 >
-> Nytt kök, omdragen el, ett tak – sådant får dras av från vinsten den dag bostaden säljs. Men avdraget kräver att du kan visa vad du gjort, och försäljningen kan ligga tjugo år bort. De flesta betalar för mycket i vinstskatt av ett enda skäl: kvittona är borta.
+> Nytt kök, omdragen el, ett tak – sådant får dras av från vinsten den dag bostaden säljs. Men avdraget vilar på att du kan göra utgiften trolig, och försäljningen kan ligga tjugo år bort. Ett kvitto är det enklaste beviset som finns – och det är därför de flesta betalar för mycket i vinstskatt: kvittona är borta.
 >
 > **Fota kvittot när du har det i handen.** Appen läser av belopp, datum och leverantör. Det tar tio sekunder, och du behöver inte kunna en enda skatteregel för att göra det.
 >
 > **Frågorna ställs medan du minns svaren.** Var badrummet slitet innan? Höjde du standarden eller lagade du något? Det är omöjligt att svara på om åtta år och enkelt i dag.
 >
 > **Den dag du säljer är underlaget färdigt.** En sammanställning i Skatteverkets eget format, med talen du ska föra in i deklarationen. Kvittona ligger kvar om Skatteverket skulle fråga.
+
+**Meningen om beviset lovar inte för mycket.** Den tidigare lydelsen sa att avdraget *kräver* att du kan visa vad du gjort. Det motsägs av appens egen hållning: fri bevisning gäller, och ett kvitto som saknas är inget fel – det står under *Bilagor*. Att sälja in produkten med ett påstående man tillbakavisar inne i den är ett trovärdighetsfel, inte ett stavfel. Kvittot är det enklaste beviset, inte det enda.
 
 **Inget blankettnamn på den här sidan.** Varken K5 eller K6, och inte SKV 2197. Namnet beror på upplåtelseformen och hälften av läsarna skulle få fel – och ingen som inte redan sålt en bostad vet vad någotdera betyder. Appen säger rätt namn när det är dags, på exportvyn.
 
@@ -869,7 +871,15 @@ Kortet ligger vertikalt centrerat i sidan. Klistrat mot överkanten med en halv 
 
 Sekundärknappen har samma form och höjd som primärknappen. Att skapa konto är en väg in i produkten, inte en fotnot – men den är inte handlingen den här sidan finns för, och därför bär den inte orange.
 
-**Den som glömt sitt lösenord måste se en väg som säger det.** E-postlänken löser problemet tekniskt, men ingen som står och inte kommer ihåg sitt lösenord läser "Logga in med e-postlänk i stället" som lösningen på just det. Antingen heter raden något som nämner glömt lösenord, eller så finns en egen länk för det. En app man loggar in i två gånger om året är den app där lösenordet oftast är borta.
+**Den som glömt sitt lösenord måste se en väg som säger det.** E-postlänken löser problemet tekniskt, men ingen som står och inte kommer ihåg sitt lösenord läser "Logga in med e-postlänk i stället" som lösningen på just det. Det finns därför en egen länk som heter *Glömt lösenordet?*, under de två knapparna. En app man loggar in i två gånger om året är den app där lösenordet oftast är borta.
+
+**Återställningen säger aldrig om adressen finns.** Oavsett vad som skrivs in står samma besked: att om adressen finns hos oss är ett mejl på väg. Att svara olika vore att låta vem som helst ta reda på om en viss person använder tjänsten, och det är en uppgift om någon annan som vi inte har rätt att lämna ut.
+
+Beskedet säger också vad man ska göra om inget kommer – titta i skräpposten, och kontrollera att adressen stavades rätt – eftersom det är den vanligaste orsaken och den enda användaren kan åtgärda.
+
+**Länken i mejlet leder till en sida som bara sätter ett nytt lösenord**, och loggar in personen när det är gjort. Är länken använd eller för gammal säger sidan det i klartext och erbjuder att skicka en ny, i stället för att visa ett formulär som inte kan fungera.
+
+**Vägen tillbaka in i sitt konto är inte en bekvämlighet.** Ett arkiv man inte kommer in i är borta för sin ägare, oavsett att raderna finns kvar i databasen. Det är skälet att den här sidan måste vara byggd före release och inte efter.
 
 ### Emoji
 

@@ -31,6 +31,7 @@
 
 import { redirect } from "next/navigation";
 import { isoDatum, oreFranKronor } from "@/lib/format";
+import { losenordsfel } from "@/lib/losenord";
 import { prisma } from "@/lib/prisma";
 import { hamtaAnvandare, sakerstallAnvandarrad } from "@/lib/session";
 import { skapaServerklient } from "@/lib/supabase/server";
@@ -166,9 +167,8 @@ async function skapaKonto(formData: FormData): Promise<RegistreringResultat> {
   if (!EPOST.test(epost)) {
     return { fel: "Fyll i en giltig e-postadress." };
   }
-  if (losenord.length < 8) {
-    return { fel: "Lösenordet måste vara minst 8 tecken." };
-  }
+  const svagt = losenordsfel(losenord);
+  if (svagt) return { fel: svagt };
 
   const supabase = await skapaServerklient();
   const { data, error } = await supabase.auth.signUp({
