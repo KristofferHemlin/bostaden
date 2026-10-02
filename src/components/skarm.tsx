@@ -10,6 +10,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Installningslank, Toppnavigering } from "@/components/toppnavigering";
+import { privatAvgarRad, rotAvgarRad } from "@/lib/kvittolista";
 
 const LOGO_SRC = "/kajin-hem-logo.png";
 
@@ -82,6 +83,8 @@ export function Listrad({
   namn,
   status,
   underStatus,
+  rot,
+  privat,
   belopp,
   href,
   strackt,
@@ -96,8 +99,23 @@ export function Listrad({
    * for hopslagen med "·" – anvands for ett faktum om posten som inte hor
    * ihop med leverantor/datum, t.ex. att bilaga saknas (produktspec 4.7).
    * Inget eget varningsutseende: samma text-sekundar, ingen ikon, ingen farg.
+   * Flera fakta ger flera rader, t.ex. "varav ROT … kr, avgår" (docs/design.md,
+   * Listrader) pa ett kvitto som ocksa saknar bilaga.
    */
-  underStatus?: string;
+  underStatus?: string | string[];
+  /**
+   * ROT i oren som avgar fran radens belopp. Ger den dampade raden "varav ROT
+   * … kr, avgår" overst bland underraderna (docs/design.md, Listrader: "ROT-
+   * raden hor till kvittoraden, overallt den visas"). Under namnet, aldrig
+   * under beloppet. 0 eller null ger ingen rad. Bor i komponenten sa att ingen
+   * skarm kan visa en kvittorad utan den.
+   */
+  rot?: number | null;
+  /**
+   * Privat del i oren. Ger "varav … hörde inte till bostaden, avgår" direkt
+   * under ROT-raden (docs/design.md, Listrader). 0 eller null ger ingen rad.
+   */
+  privat?: number | null;
   belopp?: string;
   href?: string;
   /**
@@ -162,11 +180,17 @@ export function Listrad({
             {status}
           </p>
         ) : null}
-        {underStatus ? (
-          <p className="mt-0.5 font-granssnitt text-xs text-text-sekundar">
-            {underStatus}
-          </p>
-        ) : null}
+        {[
+          rotAvgarRad(rot ?? null),
+          privatAvgarRad(privat ?? null),
+          ...(Array.isArray(underStatus) ? underStatus : [underStatus]),
+        ]
+          .filter((rad): rad is string => !!rad)
+          .map((rad) => (
+            <p key={rad} className="mt-0.5 font-granssnitt text-xs text-text-sekundar">
+              {rad}
+            </p>
+          ))}
       </div>
       {belopp ? (
         <span className="shrink-0 font-rubrik text-base tabular-nums text-text-primar">

@@ -15,7 +15,9 @@ import {
   beloppForKostnad,
   bidragForKostnad,
   individuelltBelopp,
+  inlagtForKostnad,
   kalenderAr,
+  kostnadensAr,
 } from "./berakningar";
 import {
   avrundaReparationUppat,
@@ -74,6 +76,20 @@ export interface OklassificeradHog {
   belopp_brutto: number;
 }
 
+/** Ett kvitto, eller en del av ett, som inte star pa nagon sida och inte
+ *  ligger i en oklassificerad hog. "utan_hog": inlagt men inte (helt) kopplat
+ *  till en hog – det okopplade beloppet aterstar. "utan_betaldatum": hor inte
+ *  till nagot ar och kan darfor inte sta pa sidorna, hog eller inte. */
+export interface AterstaendeKvitto {
+  kostnad_id: string;
+  /** Betaldatumets ar; null for "utan_betaldatum". */
+  ar: number | null;
+  /** Oren, utan privat del och efter ROT/forsakring – samma matt som Totalt
+   *  inlagt (inlagtForKostnad). */
+  belopp_brutto: number;
+  orsak: "utan_hog" | "utan_betaldatum";
+}
+
 export interface K6aExport {
   /** Forsaljningsdatum ("YYYY-MM-DD"), eller null nar bostaden inte ar sald an. */
   genererad_for_datum: string | null;
@@ -89,6 +105,11 @@ export interface K6aExport {
   ruta5_individuellt: number;
   /** Hogar som fortfarande behover klassificeras (fas 2). Tom nar allt ar gjort. */
   oklassificerade_hogar: OklassificeradHog[];
+  /** Kvitton som inte star pa sidorna och inte ligger i en oklassificerad hog
+   *  (docs/design.md, Exportvyn: "redovisar varje krona som lagts in"). Sida 1,
+   *  sida 2, oklassificerade_hogar och den har listan tacker tillsammans hela
+   *  Totalt inlagt. */
+  aterstaende_kvitton: AterstaendeKvitto[];
   varningar: string[];
 }
 
@@ -182,8 +203,9 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
   //    reduktionsfaktorer, se buildCellSplit.
   const celler = new Map<string, Cell>();
   for (const kostnad of kostnader) {
-    if (kostnad.arkiverad || kostnad.betaldatum === null) continue;
-    const ar = kalenderAr(kostnad.betaldatum);
+    if (kostnad.arkiverad) continue;
+    const ar = kostnadensAr(kostnad);
+    if (ar === null) continue;
     for (const p of projekt) {
       const rabelopp = beloppForKostnad(kostnad, p.id);
       if (rabelopp === 0) continue;
@@ -379,6 +401,38 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
     (a, b) => a.ar - b.ar || a.namn.localeCompare(b.namn, "sv"),
   );
 
+  // Det som inte hamnade i nagon cell ovan (docs/design.md, Exportvyn:
+  // "redovisar varje krona som lagts in"). Varje kvitto raknas med
+  // inlagtForKostnad – samma tal som Totalt inlagt – och det som inte bidrog
+  // till nagon hog aterstar. Ett kvitto utan betaldatum aterstar helt: det hor
+  // inte till nagot ar och har darfor ingen plats pa sidorna.
+  const aterstaende: AterstaendeKvitto[] = [];
+  for (const kostnad of kostnader) {
+    const inlagt = inlagtForKostnad(kostnad);
+    if (inlagt <= 0) continue; // utkast, arkiverat, helt privat
+    const ar = kostnadensAr(kostnad);
+    if (ar === null) {
+      aterstaende.push({
+        kostnad_id: kostnad.id,
+        ar: null,
+        belopp_brutto: inlagt,
+        orsak: "utan_betaldatum",
+      });
+      continue;
+    }
+    let iHogar = 0;
+    for (const p of projekt) iHogar += bidragForKostnad(kostnad, p.id);
+    const okopplat = inlagt - iHogar;
+    if (okopplat > 0) {
+      aterstaende.push({
+        kostnad_id: kostnad.id,
+        ar,
+        belopp_brutto: okopplat,
+        orsak: "utan_hog",
+      });
+    }
+  }
+
   const summera = (tal: number[]) => tal.reduce((s, x) => s + x, 0);
   const s1b = summera(sida1.map((r) => r.belopp_brutto));
   const s1i = summera(sida1.map((r) => r.belopp_individuellt));
@@ -397,6 +451,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
     ruta5_brutto: s2b,
     ruta5_individuellt: s2i,
     oklassificerade_hogar: oklassificerade,
+    aterstaende_kvitton: aterstaende,
     varningar,
   };
 }
@@ -433,7 +488,10 @@ function buildCellSplit(
     rot_utnyttjat: cell.totalbelopp - cell.avdragsgrundande,
     forsakringsersattning: 0,
     arkiverad: false,
-    rader: [],
+    // En rad pa hela cellbeloppet: cellens belopp ar redan utan privat del
+    // (beloppForKostnad), sa hela beloppet ar bostadsdelen som reduktionen
+    // raknas mot (bostadensBelopp).
+    rader: [{ artikel: p.namn, belopp: cell.totalbelopp, fordelningar: [] }],
   };
   const raaUppdelning = delaIKategorier(syntetisk, svar);
 

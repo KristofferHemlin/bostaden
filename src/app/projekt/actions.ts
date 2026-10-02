@@ -93,7 +93,7 @@ export async function taBortProjekt(
   );
   if (blockerande.length > 0) {
     return {
-      fel: "Projektet har kopplade kostnader. Flytta eller koppla loss dem först.",
+      fel: "Projektet har kvitton kopplade. Flytta eller koppla loss dem först.",
     };
   }
 

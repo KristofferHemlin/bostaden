@@ -24,6 +24,7 @@ import { PRIMARKNAPP_KLASS, SEKUNDARKNAPP_KLASS } from "@/components/skarm";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { hogVisningsnamn } from "@/doman/genomgang";
 import { formateraKronorEllerStreck } from "@/lib/format";
+import { kvittoradText } from "@/lib/kvittolista";
 
 const START: GenomgangResultat = {};
 
@@ -54,13 +55,22 @@ interface Forslag {
   motiv: string;
 }
 
+/** Raknaren overst i fas 1: hogar som ar grupperade men inte har gatt igenom
+ *  fragorna. Aldrig ett totalvarde over alla projekt. */
+export function hogarText(antal: number): string {
+  if (antal === 0) return "Ingen hög väntar på frågorna";
+  return `${antal} hög${antal === 1 ? "" : "ar"} väntar på frågorna`;
+}
+
+// Samma regel som kvittolistan (kvittoradText): utan anteckning ar
+// leverantoren huvudtext och den dampade raden bara datumet.
 function kvittoRubrik(k: Kvitto): string {
-  return k.anteckning?.trim() || k.leverantor || "Utkast – komplettera uppgifterna";
+  return kvittoradText(k).namn ?? "Utkast – komplettera uppgifterna";
 }
 
 function kvittoUnderrad(k: Kvitto): string {
-  const delar = [k.leverantor, k.datum].filter((d): d is string => !!d);
-  return delar.length > 0 ? delar.join(" · ") : "Ännu inga uppgifter";
+  const { namn, underrad } = kvittoradText(k);
+  return underrad || (namn ? "" : "Ännu inga uppgifter");
 }
 
 export function Fas1({
@@ -139,8 +149,12 @@ export function Fas1({
             ? "Inga kvitton kvar att gå igenom"
             : `${kvarAttGa} kvitto${kvarAttGa === 1 ? "" : "n"} kvar att gå igenom`}
         </span>
+        {/* Raknar bara hogar som vantar pa fragorna – klassificerade hogar
+            (projekt) ar inte med. "0 högar hittills" lastes som ett totalvarde
+            medan projektlistan visade en hog (fynd 2026-10-02), sa texten
+            sager vad som raknas. */}
         <span className="shrink-0 tabular-nums text-text-sekundar">
-          {antalHogar} hög{antalHogar === 1 ? "" : "ar"} hittills
+          {hogarText(antalHogar)}
         </span>
       </div>
 

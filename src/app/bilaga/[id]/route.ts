@@ -12,6 +12,7 @@
 //                                          sidorna inte rastriseras pa servern.
 
 import { NextResponse, type NextRequest } from "next/server";
+import { arGiltigtId } from "@/lib/giltigt-id";
 import { signeradBilagelank, type Lankvariant } from "@/lib/lagring/bilagor";
 import { hamtaAnvandare } from "@/lib/session";
 
@@ -33,7 +34,11 @@ export async function GET(
       ? "original"
       : "visning";
 
-  const url = await signeradBilagelank(id, anvandare.id, variant);
+  // Ett id som inte ar en uuid finns inte (src/lib/giltigt-id.ts) – samma
+  // svar som en bilaga som saknas, aldrig ett databasfel.
+  const url = arGiltigtId(id)
+    ? await signeradBilagelank(id, anvandare.id, variant)
+    : null;
   if (!url) {
     return NextResponse.json(
       { fel: "Bilagan finns inte eller så saknar du åtkomst." },

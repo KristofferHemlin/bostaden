@@ -5,8 +5,9 @@
 //
 // Raderna visar anteckningen som huvudtext med leverantor och datum dampat
 // under – exakt samma presentation som pa startskarmen. Aret bestams av
-// betaldatum (dokumentdatum som reserv nar kvittot annu ar obetalt); kvitton
-// utan bada hamnar i en egen grupp overst.
+// betaldatum och ingenting annat; kvitton utan betaldatum hamnar i en egen
+// grupp "Utan betaldatum" overst och i ingen arssumma (docs/design.md,
+// Listrader).
 //
 // Entiteten heter fortfarande `kostnad` i kod och rutter (docs/design.md,
 // "Ordval i granssnittet") – bara det anvandaren moter byter till "kvitto".
@@ -28,11 +29,12 @@ import { UtkastRaderaKnapp } from "./utkast-radera";
 import { Listrad, PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import { arUtkast } from "@/doman/berakningar";
 import { arOklassificerad } from "@/doman/genomgang";
+import type { Kostnad } from "@/doman/typer";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
+import { avgarForKvitto, grupperaPerAr } from "@/lib/kvittolista";
 import { prisma } from "@/lib/prisma";
-import { sorteraPaDatumFallande } from "@/lib/sortering";
 import { kravBostad } from "@/lib/session";
 import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 
@@ -42,25 +44,26 @@ interface KvittoRad {
   id: string;
   namn: string;
   status: string;
-  /** Dampad tredje rad: "Inget kvitto bifogat" nar bilaga saknas (produktspec
-   * 4.7). Ett faktum om posten, som belopp och datum – ingen bedomning av
+  /** Dampad rad "Inget kvitto bifogat" nar bilaga saknas (produktspec 4.7).
+   * Ett faktum om posten, som belopp och datum – ingen bedomning av
    * underlagsstyrka (den togs bort ur produkten, se docs/design.md). */
   underStatus: string | undefined;
+  /** ROT som avgar fran radens belopp – Listrad visar "varav ROT … kr, avgår"
+   * (docs/design.md, Listrader). */
+  rot: number;
+  /** Privat del – Listrad visar "varav … hörde inte till bostaden, avgår". */
+  privat: number;
   atgard: boolean;
   utkast: boolean;
   belopp: string | undefined;
   href: string;
   bild: { src: string; alt: string } | undefined;
   /** Kvittots eget datum (betaldatum, dokumentdatum som reserv) – ANVANDS
-   * BARA for sorteringen inom arsgruppen, aldrig for visning direkt. */
+   * BARA for sorteringen inom arsgruppen, aldrig for aret. */
   datum: string | null;
-}
-
-interface Arsgrupp {
-  nyckel: string;
-  rubrik: string;
-  summaOre: number;
-  rader: KvittoRad[];
+  /** Domanens kostnad: avgor aret (kostnadensAr) och vad som raknas i
+   * arsrubriken (summeraInlagt), via grupperaPerAr. */
+  kostnad: Kostnad;
 }
 
 export default async function KvittolistaSida() {
@@ -91,11 +94,7 @@ export default async function KvittolistaSida() {
     arOklassificerad(tillDomanKostnad(k)),
   ).length;
 
-  // Gruppera i insattningsordning (nyast forst) och sortera sedan grupperna:
-  // kvitton utan datum overst, darefter aren fallande.
-  const grupper = new Map<string, Arsgrupp>();
-
-  for (const k of kostnadRader) {
+  const rader = kostnadRader.map((k): KvittoRad => {
     const utkast = arUtkast(k);
     const notering = k.anteckning?.trim();
     const leverantor = k.leverantor?.trim();
@@ -124,11 +123,16 @@ export default async function KvittolistaSida() {
     // raknas inte med oavsett bilaga – att papeka bilagan dar lagger till
     // brus utan att saga nagot nytt.
     const saknarBilaga = !k.arkiverad && !utkast && k.bilagor.length === 0;
-    const rad: KvittoRad = {
+    const kostnad = tillDomanKostnad(k);
+    return {
       id: k.id,
       namn: notering || leverantor || "Kvitto",
       status,
       underStatus: saknarBilaga ? "Inget kvitto bifogat" : undefined,
+      // Raden behaller fakturans totalbelopp – summan pa pappret – och visar
+      // ROT-avdraget under, sa att arsrubriken (efter ROT) gar att rakna ihop
+      // av raderna (docs/design.md, Listrader).
+      ...avgarForKvitto(kostnad),
       atgard,
       utkast,
       belopp: utkast ? undefined : formateraKronor(k.totalbelopp ?? 0),
@@ -138,38 +142,15 @@ export default async function KvittolistaSida() {
           ? { src: `/bilaga/${forstaBilaga.id}?variant=visning`, alt: "Kvittobild" }
           : undefined,
       datum,
+      kostnad,
     };
+  });
 
-    const nyckel = datum ? datum.slice(0, 4) : "";
-    let grupp = grupper.get(nyckel);
-    if (!grupp) {
-      grupp = {
-        nyckel,
-        rubrik: nyckel || "Utan datum",
-        summaOre: 0,
-        rader: [],
-      };
-      grupper.set(nyckel, grupp);
-    }
-    grupp.rader.push(rad);
-    // Arssumman raknar det som faktiskt raknas: varken utkast (inget belopp an)
-    // eller arkiverade kvitton bidrar.
-    if (!utkast && !k.arkiverad) grupp.summaOre += k.totalbelopp ?? 0;
-  }
-
-  const sorterade = [...grupper.values()]
-    .sort((a, b) => {
-      if (a.nyckel === b.nyckel) return 0;
-      if (a.nyckel === "") return -1;
-      if (b.nyckel === "") return 1;
-      return Number(b.nyckel) - Number(a.nyckel);
-    })
-    .map((grupp) => ({
-      ...grupp,
-      // Inom aret: kvittots eget datum, nyast forst – ALDRIG insattningsordning
-      // (docs/design.md, Kvittolistan).
-      rader: sorteraPaDatumFallande(grupp.rader, (r) => r.datum),
-    }));
+  // Aret ar betaldatumets (docs/design.md, Listrader): utan betaldatum hamnar
+  // kvittot under "Utan betaldatum" overst och i ingen arssumma. Inom gruppen
+  // sorteras pa kvittots eget datum, nyast forst – ALDRIG insattningsordning
+  // (docs/design.md, Kvittolistan).
+  const sorterade = grupperaPerAr(rader);
 
   return (
     <Skarm bostadsnamn={bostadsnamn} rubrik="Kvitton">
@@ -206,24 +187,29 @@ export default async function KvittolistaSida() {
           ) : null}
 
           {sorterade.map((grupp) => (
-            <div key={grupp.nyckel || "utan-datum"}>
+            <div key={grupp.ar ?? "utan-betaldatum"}>
               {/* Arsrubrik: egen rad pa --yta-nedsankt med artalet och arets
                   summa hogerstalld (docs/design.md, Kvittolistan). */}
               <div className="flex items-baseline justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2">
                 <span className="font-rubrik text-sm text-text-primar">
-                  {grupp.rubrik}
+                  {grupp.ar ?? "Utan betaldatum"}
                 </span>
                 <span className="font-rubrik text-sm tabular-nums text-text-primar">
-                  {formateraKronor(grupp.summaOre)}
+                  {/* Samma tal som "Inlagt {ar}" (docs/design.md,
+                      Listrader): utan privat del, efter ROT. Utkast och
+                      arkiverade bidrar inte. */}
+                  {formateraKronor(grupp.summa)}
                 </span>
               </div>
               <div className="divide-y divide-linje border-b border-linje">
-                {grupp.rader.map((r) => (
+                {grupp.poster.map((r) => (
                   <Listrad
                     key={r.id}
                     namn={r.namn}
                     status={r.status}
                     underStatus={r.underStatus}
+                    rot={r.rot}
+                    privat={r.privat}
                     atgard={r.atgard}
                     belopp={r.belopp}
                     href={r.href}

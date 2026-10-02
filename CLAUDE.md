@@ -217,7 +217,9 @@ Dessa fall måste finnas och passera. De sex första är verifierade mot Skattev
 **Avräkning, fördelning och andel**
 
 - ROT-reducerad del av arbetskostnad dras bort före allt annat
-- Kostnad på 10 000 kr med 3 000 kr ROT, rad fördelad 60 %, bidrar med 4 200 kr
+- Kostnad på 10 000 kr med 3 000 kr ROT, rad fördelad 60 % **mellan två åtgärder**, bidrar med 4 200 kr. ROT fördelas proportionellt mellan åtgärder, eftersom båda avser arbete på bostaden
+- **ROT fördelas aldrig på en privat del.** Kostnad på 10 000 kr med 3 000 kr ROT och 1 000 kr markerat som privat bidrar med **6 000 kr**, inte 6 300. Den privata delen fick ingen ROT – ROT ges på arbetskostnad för arbete på bostaden, aldrig på varor och aldrig på något som inte är bostaden – så hela avdraget hör till den del som räknas. Den privata delen räknas bort först, ROT därefter
+- Felet åt fel håll: den proportionella fördelningen gav 6 300 kr och **överskattade avdraget**. Rättat 2026-10-02
 - Vid ägarandel 50 % halveras beloppen i det individuella underlaget, men inte tröskelprövningen
 - Rad fördelad till 60 % på ett projekt bidrar med 60 % av beloppet, inte hela
 - Kvittorad markerad som privat ingår inte i något projekt

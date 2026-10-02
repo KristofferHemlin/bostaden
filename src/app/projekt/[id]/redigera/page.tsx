@@ -15,6 +15,7 @@ import {
   formateraKronor,
   orenTillFalt,
 } from "@/lib/format";
+import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
@@ -26,6 +27,9 @@ export default async function RedigeraProjektSida({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  // Ett id som inte ar en uuid finns inte – "finns inte", inte felgransen
+  // (src/lib/giltigt-id.ts).
+  if (!arGiltigtId(id)) notFound();
   const { bostadId } = await kravBostad();
 
   const [projekt, bostad, kostnadRader] = await Promise.all([

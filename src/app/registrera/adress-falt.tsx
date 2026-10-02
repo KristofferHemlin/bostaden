@@ -46,7 +46,11 @@ function nyToken(): string {
 
 export function AdressFalt({
   forval,
+  obligatoriskt,
 }: {
+  /** Markering vid etiketten, som Falt. Adressen ar obligatorisk sedan
+   *  2026-10-01 – i registreringen och i installningarnas kort Bostaden. */
+  obligatoriskt?: boolean;
   /** Startvarden – utelamnas i registreringen (dar faltet alltid borjar tomt);
    *  anvands av installningarnas kort Bostaden for att visa en redan sparad
    *  adress. */
@@ -240,6 +244,11 @@ export function AdressFalt({
           className="mb-1.5 block font-granssnitt text-sm text-text-sekundar"
         >
           Adress
+          {obligatoriskt ? (
+            <span aria-hidden className="ml-0.5 text-text-sekundar">
+              *
+            </span>
+          ) : null}
         </label>
         <div className="relative">
           <input

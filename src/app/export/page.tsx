@@ -63,7 +63,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ExportSida() {
   const { bostadId, agarandel } = await kravBostad();
-  const [{ bostad, projekt, kostnader, regelparametrar }, andelar] =
+  const [{ bostad, projekt, kostnader, kostnadRader, regelparametrar }, andelar] =
     await Promise.all([hamtaBostadsdata(bostadId), hamtaAndelar(bostadId)]);
   const medlemmar = andelar.medlemmar.length;
   const delad = arDeladBostad(medlemmar);
@@ -137,9 +137,22 @@ export default async function ExportSida() {
     const gemensam = ex.delagarvariant === "gemensam_med_andel";
     // Summorna dampas nar underlaget ar ofullstandigt (docs/design.md,
     // Exportvyn): tva stora tal pa en skarm som heter Deklarationsunderlag ser
-    // trasigt ut nar de anda inte galler. Full tyngd forst nar allt ar
-    // klassificerat, sa att blicken gar till listan over det som aterstar.
-    const harOklassificerade = ex.oklassificerade_hogar.length > 0;
+    // trasigt ut nar de anda inte galler. Full tyngd forst nar ingenting
+    // aterstar – varken en oklassificerad hog eller ett kvitto utanfor
+    // sidorna – sa att blicken gar till listan over det som aterstar.
+    const harAterstaende =
+      ex.oklassificerade_hogar.length > 0 || ex.aterstaende_kvitton.length > 0;
+    // Klassificeringen ar vagen framat for hogar och for kvitton utan hog. Ett
+    // kvitto utan betaldatum behover i stallet sitt datum, pa kvittots skarm.
+    const behoverKlassificering =
+      ex.oklassificerade_hogar.length > 0 ||
+      ex.aterstaende_kvitton.some((k) => k.orsak === "utan_hog");
+    const kvittoNamn = new Map(
+      kostnadRader.map((k) => [
+        k.id,
+        k.anteckning?.trim() || k.leverantor?.trim() || "Kvitto",
+      ]),
+    );
     // Fraga 7 (steg 4): atgarder med reparationsdel vars skick vid
     // forsaljningen annu inte ar bedomt. Samma urval som /forsaljning/skick
     // sjalv anvander (behoverSkickForsaljning) – bara en lank hit, inte en
@@ -203,7 +216,7 @@ export default async function ExportSida() {
             individuellt={ex.ruta4_individuellt}
             gemensam={gemensam}
             agarandel={ex.agarandel_procent}
-            dampad={harOklassificerade}
+            dampad={harAterstaende}
           />
         </Kort>
 
@@ -224,7 +237,7 @@ export default async function ExportSida() {
               individuellt={ex.ruta5_individuellt}
               gemensam={gemensam}
               agarandel={ex.agarandel_procent}
-              dampad={harOklassificerade}
+              dampad={harAterstaende}
             />
           ) : null}
         </Kort>
@@ -242,41 +255,52 @@ export default async function ExportSida() {
             </div>
           )}
 
-          {harOklassificerade ? (
+          {/* Det som aterstar (docs/design.md, Exportvyn: "redovisar varje
+              krona som lagts in"). En enda lista – hogar och kvitton – och
+              konsekvensen sagd en gang ovanfor. Sida 1, sida 2 och den har
+              listan ar tillsammans Totalt inlagt. */}
+          {harAterstaende ? (
             <section className="p-4">
               <p className="font-granssnitt text-sm font-medium text-text-primar">
-                Behöver klassificeras
+                Återstår
               </p>
               <p className="mt-1 font-granssnitt text-xs text-text-sekundar">
-                De här högarna är grupperade men har inte gått igenom frågorna,
-                så de ingår inte i talen ovan. Kör klassificeringsgenomgången
-                för att ta med dem.
+                Det här har du lagt in, men det ingår inte i talen ovan än.
               </p>
               <ul className="mt-2 divide-y divide-linje border-t border-linje">
                 {ex.oklassificerade_hogar.map((h) => (
-                  <li
-                    key={`${h.namn}-${h.ar}`}
-                    className="flex items-baseline justify-between gap-3 py-2 font-granssnitt text-sm"
-                  >
-                    <span className="flex items-center gap-1.5 text-text-primar">
-                      <span
-                        aria-hidden
-                        className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
-                      />
-                      {h.namn}
-                    </span>
-                    <span className="flex shrink-0 items-baseline gap-3 tabular-nums">
-                      <span className="text-text-sekundar">{h.ar}</span>
-                      <span className="text-text-primar">
-                        {formateraKronor(h.belopp_brutto)}
-                      </span>
-                    </span>
-                  </li>
+                  <AterstarRad
+                    key={`hog-${h.namn}-${h.ar}`}
+                    namn={h.namn}
+                    orsak="Har inte gått igenom frågorna"
+                    ar={h.ar}
+                    belopp={h.belopp_brutto}
+                  />
+                ))}
+                {ex.aterstaende_kvitton.map((k) => (
+                  <AterstarRad
+                    key={`kvitto-${k.kostnad_id}`}
+                    namn={kvittoNamn.get(k.kostnad_id) ?? "Kvitto"}
+                    orsak={
+                      k.orsak === "utan_betaldatum"
+                        ? "Saknar betaldatum"
+                        : "Ligger inte i någon hög"
+                    }
+                    ar={k.ar}
+                    belopp={k.belopp_brutto}
+                    href={
+                      k.orsak === "utan_betaldatum"
+                        ? `/kostnad/${k.kostnad_id}`
+                        : undefined
+                    }
+                  />
                 ))}
               </ul>
-              <Link href="/genomgang" className={`${SEKUNDARKNAPP_KLASS} mt-3`}>
-                Till klassificeringen
-              </Link>
+              {behoverKlassificering ? (
+                <Link href="/genomgang" className={`${SEKUNDARKNAPP_KLASS} mt-3`}>
+                  Till klassificeringen
+                </Link>
+              ) : null}
             </section>
           ) : null}
 
@@ -485,5 +509,49 @@ function RutaCallout({
         </p>
       ) : null}
     </section>
+  );
+}
+
+/**
+ * En rad i listan over det som aterstar: atgardsprick, namn och en dampad rad
+ * med varfor det inte ar med, ar och belopp hogerstallt. Ett kvitto utan
+ * betaldatum leder till kvittots skarm, dar datumet fylls i.
+ */
+function AterstarRad({
+  namn,
+  orsak,
+  ar,
+  belopp,
+  href,
+}: {
+  namn: string;
+  orsak: string;
+  ar: number | null;
+  belopp: number;
+  href?: string;
+}) {
+  return (
+    <li className="flex items-baseline justify-between gap-3 py-2 font-granssnitt text-sm">
+      <span className="min-w-0">
+        <span className="flex items-center gap-1.5 text-text-primar">
+          <span
+            aria-hidden
+            className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
+          />
+          {href ? (
+            <Link href={href} className="truncate underline hover:text-accent-mork">
+              {namn}
+            </Link>
+          ) : (
+            <span className="truncate">{namn}</span>
+          )}
+        </span>
+        <span className="mt-0.5 block text-xs text-text-sekundar">{orsak}</span>
+      </span>
+      <span className="flex shrink-0 items-baseline gap-3 tabular-nums">
+        {ar !== null ? <span className="text-text-sekundar">{ar}</span> : null}
+        <span className="text-text-primar">{formateraKronor(belopp)}</span>
+      </span>
+    </li>
   );
 }

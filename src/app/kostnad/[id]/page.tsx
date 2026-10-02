@@ -37,6 +37,7 @@ import {
   rotRadILaslage,
 } from "@/lib/format";
 import { kvittodatumNotis } from "@/lib/kvittodatum-notis";
+import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
 import { upphovsrad } from "@/lib/samagande";
 import { antalMedlemmar, kravBostad } from "@/lib/session";
@@ -49,6 +50,9 @@ export default async function KostnadSida({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  // Ett id som inte ar en uuid finns inte – "finns inte", inte felgransen
+  // (src/lib/giltigt-id.ts).
+  if (!arGiltigtId(id)) notFound();
   const { bostadId, anvandareId } = await kravBostad();
 
   const [kostnad, bostad, projekt, medlemmar] = await Promise.all([

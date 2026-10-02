@@ -17,3 +17,14 @@ export function arOskyddadSokvag(sokvag: string): boolean {
     (p) => sokvag === p || sokvag.startsWith(`${p}/`),
   );
 }
+
+/**
+ * Sidor som bara har en uppgift for den som INTE ar inloggad. En inloggad
+ * anvandare som nar dem skickas till oversikten (docs/design.md, "Sidan finns
+ * inte, och när något gick fel"): uppmatt 2026-10-02 renderade /login en helt
+ * tom sida for en inloggad anvandare, och en vit skarm sager varken vad som
+ * hant eller vad man kan gora.
+ */
+export function arBaraForUtloggade(sokvag: string): boolean {
+  return sokvag === "/login" || sokvag.startsWith("/login/");
+}

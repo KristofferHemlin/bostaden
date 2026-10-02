@@ -78,7 +78,7 @@ export function RedigeraProjektForm({
         {blockerande.length > 0 ? (
           <div className="flex flex-col gap-2">
             <p className="font-granssnitt text-sm text-text-primar">
-              Projektet går inte att ta bort så länge kostnader är kopplade hit.
+              Projektet går inte att ta bort så länge kvitton är kopplade hit.
               Flytta dem till ett annat projekt eller koppla loss dem först.
             </p>
             <ul className="divide-y divide-linje rounded-lg bg-yta-nedsankt">
@@ -103,7 +103,7 @@ export function RedigeraProjektForm({
           >
             <input type="hidden" name="projekt_id" value={projektId} />
             <p className="font-granssnitt text-sm text-text-primar">
-              Ta bort projektet? Det går inte att ångra. Kostnader påverkas inte
+              Ta bort projektet? Det går inte att ångra. Inga kvitton påverkas
               – projektet har inga kopplade.
             </p>
             {radera.fel ? (

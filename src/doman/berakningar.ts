@@ -20,26 +20,81 @@ export function arUtkast(kostnad: { totalbelopp: number | null }): boolean {
 }
 
 /**
- * Avdragsgrundande belopp for en kostnad: totalbelopp minus ROT och
- * forsakringsersattning. Fore agarandel och fore forslitning. Ordet "brutto"
- * undviks medvetet – det ar tvetydigt. Ett utkast (utan belopp) bidrar med 0.
+ * Den del av kvittot som hor till bostaden: summan av radernas belopp utan
+ * deras privata andel (bostadensAndel). Det ar basen ROT och
+ * forsakringsersattning raknas av fran – den privata delen raknas bort FORST
+ * (CLAUDE.md, "Avrakning, fordelning och andel": ROT fordelas aldrig pa en
+ * privat del). Ett utkast har ingen del.
+ */
+export function bostadensBelopp(kostnad: Kostnad): number {
+  if (kostnad.totalbelopp === null) return 0;
+  let summa = 0;
+  for (const rad of kostnad.rader) summa += rad.belopp * bostadensAndel(rad);
+  return summa;
+}
+
+/**
+ * Den privata delen av kvittot: totalbeloppet minus bostadensBelopp. Visas som
+ * "varav … hörde inte till bostaden, avgår" under en kvittorad. Avrundas till
+ * hela oren – en privat rad ar normalt hela oren redan.
+ */
+export function privatBelopp(kostnad: Kostnad): number {
+  if (kostnad.totalbelopp === null) return 0;
+  return avrunda(kostnad.totalbelopp - bostadensBelopp(kostnad));
+}
+
+/**
+ * Avdragsgrundande belopp for en kostnad: den del som hor till bostaden
+ * (bostadensBelopp) minus ROT och forsakringsersattning. Fore agarandel och
+ * fore forslitning. Ordet "brutto" undviks medvetet – det ar tvetydigt. Ett
+ * utkast (utan belopp) bidrar med 0. Aldrig under 0: en reduktion storre an
+ * bostadsdelen kan inte dra ner andra kvittons belopp.
  */
 export function avdragsgrundandeBelopp(kostnad: Kostnad): number {
   if (kostnad.totalbelopp === null) return 0;
-  return (
-    kostnad.totalbelopp -
-    kostnad.rot_utnyttjat -
-    kostnad.forsakringsersattning
+  return Math.max(
+    0,
+    bostadensBelopp(kostnad) -
+      kostnad.rot_utnyttjat -
+      kostnad.forsakringsersattning,
   );
 }
 
 /**
+ * Kostnadens ar: betaldatumets kalenderar, null utan betaldatum. Den ENDA
+ * platsen som avgor vilket ar en kostnad hor till – arssumma, "Inlagt {ar}",
+ * kvittolistans arsrubriker och exporten fragar alla har. Aldrig
+ * dokumentdatumets ar som reserv: den gissningen kan flytta ett belopp over en
+ * troskel som galler per kalenderar (docs/design.md, Listrader).
+ */
+export function kostnadensAr(kostnad: { betaldatum: string | null }): number | null {
+  return kostnad.betaldatum === null ? null : kalenderAr(kostnad.betaldatum);
+}
+
+/**
+ * ROT som avgar fran ett belopp ur kostnadens BOSTADSDEL – samma proportion
+ * som reduktionsfaktorn, sa att "varav ROT … kr, avgår" under en rad och den
+ * summa raden bidrar med alltid hor ihop. For hela bostadsdelen
+ * (bostadensBelopp) ar det kostnadens ROT rakt av, aven nar en del av kvittot
+ * ar privat: den privata delen bar ingen ROT.
+ */
+export function rotForBelopp(kostnad: Kostnad, belopp: number): number {
+  const bas = bostadensBelopp(kostnad);
+  if (bas <= 0) return 0;
+  if (belopp === bas) return kostnad.rot_utnyttjat;
+  return avrunda((belopp * kostnad.rot_utnyttjat) / bas);
+}
+
+/**
  * Reduktionsfaktorn fordelar ROT och forsakringsersattning proportionellt over
- * kostnadens rader: avdragsgrundande_belopp / totalbelopp.
+ * kostnadens BOSTADSDEL: avdragsgrundande_belopp / bostadensBelopp. Mellan
+ * atgarder ar fordelningen proportionell, eftersom alla avser arbete pa
+ * bostaden; den privata delen ar redan borta ur basen och bar ingenting.
  */
 export function reduktionsfaktor(kostnad: Kostnad): number {
-  if (kostnad.totalbelopp === null || kostnad.totalbelopp <= 0) return 0;
-  return avdragsgrundandeBelopp(kostnad) / kostnad.totalbelopp;
+  const bas = bostadensBelopp(kostnad);
+  if (bas <= 0) return 0;
+  return avdragsgrundandeBelopp(kostnad) / bas;
 }
 
 /** Summan av en rads fordelningsandelar till ett visst projekt (ej privat). */
@@ -72,6 +127,22 @@ export function bidragForKostnad(kostnad: Kostnad, projektId: string): number {
     (summa, rad) => summa + bidragForRad(rad, kostnad, projektId),
     0,
   );
+}
+
+/**
+ * Projektets summa: allt som kopplats hit, utan privat del och efter ROT
+ * (bidragForKostnad). Oavsett betaldatum – ett projekt ar inte ett
+ * kalenderar och har ingen anledning att utesluta ett kvitto som raderna under
+ * visar, precis som "Totalt inlagt". Arkiverade kvitton raknas inte. Den ENDA
+ * projektsumman: projektlistan och projektets egen sida visar samma tal.
+ */
+export function projektSumma(kostnader: Kostnad[], projektId: string): number {
+  let summa = 0;
+  for (const kostnad of kostnader) {
+    if (kostnad.arkiverad) continue;
+    summa += bidragForKostnad(kostnad, projektId);
+  }
+  return summa;
 }
 
 /**
@@ -111,8 +182,7 @@ export function arssummaForBostad(indata: ArssummeIndata, ar: number): number {
   for (const kostnad of indata.kostnader) {
     if (kostnad.arkiverad) continue;
     if (arUtkast(kostnad)) continue;
-    if (kostnad.betaldatum === null) continue;
-    if (kalenderAr(kostnad.betaldatum) !== ar) continue;
+    if (kostnadensAr(kostnad) !== ar) continue;
     for (const projektId of projektIder) {
       summa += bidragForKostnad(kostnad, projektId);
     }
@@ -136,10 +206,7 @@ export function inlagtArsbelopp(
   indata: { kostnader: Kostnad[] },
   ar: number,
 ): number {
-  return inlagtBelopp(
-    indata.kostnader,
-    (k) => k.betaldatum !== null && kalenderAr(k.betaldatum) === ar,
-  );
+  return inlagtBelopp(indata.kostnader, (k) => kostnadensAr(k) === ar);
 }
 
 /**
@@ -155,27 +222,46 @@ export function samlatBelopp(indata: { kostnader: Kostnad[] }): number {
   return inlagtBelopp(indata.kostnader, () => true);
 }
 
+/**
+ * Radens andel som hor till bostaden: 1 minus den privatmarkerade andelen. Den
+ * ENDA platsen som avgor privat del – ett belopp som "inte hörde till
+ * bostaden" hor inte till nagon summa i appen (docs/design.md, Listrader).
+ */
+export function bostadensAndel(rad: Kostnadsrad): number {
+  const privatAndel = rad.fordelningar.reduce(
+    (s, f) => (f.privat ? s + f.andel : s),
+    0,
+  );
+  return Math.max(0, 1 - privatAndel);
+}
+
+/**
+ * Vad som raknas av ett kvitto i appens summor, i oren: den del som hor till
+ * bostaden (bostadensBelopp), efter ROT och forsakringsersattning. Utkast och arkiverade kvitton raknas inte. Det ENDA
+ * svaret pa "vad raknas av det har kvittot" – "Inlagt {ar}", "Totalt inlagt"
+ * och kvittolistans arsrubriker summerar alla detta, och avrundar forst pa
+ * summan.
+ */
+export function inlagtForKostnad(kostnad: Kostnad): number {
+  if (kostnad.arkiverad) return 0;
+  if (arUtkast(kostnad)) return 0;
+  // Bostadsdelen minus ROT och forsakring – privat del bort forst, ROT
+  // darefter (avdragsgrundandeBelopp).
+  return avdragsgrundandeBelopp(kostnad);
+}
+
+/** Summan av inlagtForKostnad, avrundad till hela oren forst har. */
+export function summeraInlagt(kostnader: Kostnad[]): number {
+  return avrunda(kostnader.reduce((s, k) => s + inlagtForKostnad(k), 0));
+}
+
 /** Gemensam summering for "Inlagt {ar}" och "Totalt inlagt". `medtas` avgor
  *  vilka kostnader som hor till urvalet; resten ar lika for bada. */
 function inlagtBelopp(
   kostnader: Kostnad[],
   medtas: (kostnad: Kostnad) => boolean,
 ): number {
-  let summa = 0;
-  for (const kostnad of kostnader) {
-    if (kostnad.arkiverad) continue;
-    if (arUtkast(kostnad)) continue;
-    if (!medtas(kostnad)) continue;
-    const faktor = reduktionsfaktor(kostnad);
-    for (const rad of kostnad.rader) {
-      const privatAndel = rad.fordelningar.reduce(
-        (s, f) => (f.privat ? s + f.andel : s),
-        0,
-      );
-      summa += rad.belopp * Math.max(0, 1 - privatAndel) * faktor;
-    }
-  }
-  return avrunda(summa);
+  return summeraInlagt(kostnader.filter(medtas));
 }
 
 /** Nar arets summa minst nar troskeln. */

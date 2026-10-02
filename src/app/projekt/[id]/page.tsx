@@ -15,12 +15,13 @@ import {
   SEKUNDARKNAPP_KLASS,
   Skarm,
 } from "@/components/skarm";
-import { beloppForKostnad } from "@/doman/berakningar";
+import { beloppForKostnad, projektSumma, rotForBelopp } from "@/doman/berakningar";
 import { atgardKategoriText, SKICK_ORD } from "@/doman/fragetradet";
 import type { Atgardstyp } from "@/doman/typer";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { formateraKronor } from "@/lib/format";
+import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
 import { upphovsrad } from "@/lib/samagande";
 import { antalMedlemmar, kravBostad } from "@/lib/session";
@@ -41,6 +42,9 @@ export default async function ProjektSida({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  // Ett id som inte ar en uuid finns inte – "finns inte", inte felgransen
+  // (src/lib/giltigt-id.ts).
+  if (!arGiltigtId(id)) notFound();
   const { bostadId, anvandareId } = await kravBostad();
 
   const projekt = await prisma.projekt.findFirst({
@@ -89,7 +93,7 @@ export default async function ProjektSida({
     >
       <section className="space-y-2 border-b border-linje p-4 font-granssnitt text-sm">
         <Rad etikett="Kategori" varde={kategoriText} atgard={oklassificerad} />
-        <Rad etikett="År (etikett)" varde={String(projekt.ar)} />
+        <Rad etikett="År" varde={String(projekt.ar)} />
         {oklassificerad ? null : (
           <>
             <Rad etikett="Vad gjordes" varde={ATGARDSTYP_TEXT[projekt.atgardstyp!]} />
@@ -141,12 +145,23 @@ export default async function ProjektSida({
       </section>
 
       <section>
-        <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
-          Kopplade kostnader
-        </p>
+        {/* Rubriken bar projektets summa hogerstalld, som kvittolistans
+            arsrubrik: samma tal som projektlistan (projektSumma), och raderna
+            under gar att rakna ihop till den. "Kvitton", aldrig "kostnader"
+            (docs/design.md, Ordval i granssnittet). */}
+        <div className="flex items-baseline justify-between gap-3 px-4 pt-4">
+          <p className="font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
+            Kvitton
+          </p>
+          {kostnader.length > 0 ? (
+            <p className="font-rubrik text-sm tabular-nums text-text-primar">
+              {formateraKronor(projektSumma(kostnader, id))}
+            </p>
+          ) : null}
+        </div>
         {kostnader.length === 0 ? (
           <p className="px-4 py-3 font-granssnitt text-sm text-text-sekundar">
-            Inga kostnader kopplade än.
+            Inga kvitton i projektet än.
           </p>
         ) : (
           <div className="divide-y divide-linje">
@@ -159,7 +174,10 @@ export default async function ProjektSida({
                   status={
                     k.betaldatum
                       ? `Betald ${k.betaldatum}`
-                      : "Obetald – räknas inte in än"
+                      : // Projektets summa ovan raknar kvittot; det ar
+                        // underlaget (exporten, troskeln) som vantar pa
+                        // betaldatumet.
+                        "Obetald – räknas i underlaget när den är betald"
                   }
                   atgard={!k.betaldatum}
                   // Beloppet pa pappret, inte det ROT-reducerade bidraget
@@ -167,6 +185,10 @@ export default async function ProjektSida({
                   // overallt") – annars star samma kvitto med tva olika
                   // summor pa olika skarmar.
                   belopp={formateraKronor(beloppForKostnad(k, id))}
+                  // ROT som avgar fran just den har delen av kvittot
+                  // (docs/design.md, Listrader: "ROT-raden hor till
+                  // kvittoraden, overallt den visas").
+                  rot={rotForBelopp(k, beloppForKostnad(k, id))}
                 />
               );
             })}

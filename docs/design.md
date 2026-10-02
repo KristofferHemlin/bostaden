@@ -159,7 +159,7 @@ Ikoner sparsamt och tunna. Undantaget är flikraden på mobil, där varje flik b
 
 **På mobil ligger navigationen fast i skärmens nederkant.** Fyra flikar i lika breda fält, förankrade mot underkanten, alltid synliga. Toppmeny på mobil kräver att tummen sträcker sig över hela skärmen och ska inte användas.
 
-Ovanför innehållet står då bara en enkel rad med logotypen och bostadens namn.
+Ovanför innehållet står då bara en enkel rad med logotypen och bostadens adress.
 
 **En tillbakalänk visas bara när den leder någon annanstans än en flik gör.** "← Kvitton" på ett kvittos skärm är rätt – den har ingen egen flik. "← Översikt" är det inte, oavsett vilken sida den står på: Översikt är en flik, och flikraden ligger alltid inom räckhåll. Regeln gäller alltså också sidor som inte själva är flikar, som inställningarna och nytt kvitto.
 
@@ -167,9 +167,9 @@ Den kostar dessutom yta i överkanten, där den är som dyrast – uppmätt till
 
 **På skrivbord ligger logotyp, bostadsnamn och flikar på en och samma rad.** Inte logotyp på en våning och menyn på nästa – det ger tre horisontella band innan innehållet börjar och gör sidan tung i överkant.
 
-**Sidrubriken upprepar aldrig bostadens namn.** Det står redan i toppraden. Sidrubriken säger vad sidan visar: "Kvitton", "Projekt", "Deklarationsunderlag".
+**Sidrubriken upprepar aldrig bostadens adress.** Det står redan i toppraden. Sidrubriken säger vad sidan visar: "Kvitton", "Projekt", "Deklarationsunderlag".
 
-Startskärmen är undantaget: den har ingen sidrubrik alls, eftersom den aktiva fliken redan heter "Översikt". Se avsnittet Startskärmen med innehåll.
+Startskärmen är undantaget: den har ingen sidrubrik alls, eftersom den aktiva fliken redan heter "Översikt".
 
 Aktiv flik markeras med ytskillnad, aldrig med orange.
 
@@ -181,7 +181,7 @@ Kugghjulet hör aldrig hemma i bottenraden. Etiketten "Inställningar" är dubbe
 
 **Bottenraden har ikon och etikett på varje flik.** Det är den etablerade mobilkonventionen och den användare känner igen från alla andra appar. Ikonen gör att man hittar rätt utan att läsa; etiketten gör att man förstår vad man hittat.
 
-Ikonerna är tunna linjeikoner i samma vikt som kugghjulet, aldrig fyllda. Aktiv flik markeras med ytskillnad precis som förut, aldrig med orange – orange är fortfarande reserverat för en handling per skärm.
+Ikonerna är tunna linjeikoner i samma vikt som kugghjulet, aldrig fyllda.
 
 Raden blir högre med två våningar, och det är accepterat. Igenkänningen är värd ytan.
 
@@ -212,6 +212,10 @@ På skrivbord ökar basstorleken på text ett steg och kortets innerpadding blir
 Logotypen syns i toppraden på skrivbord och som en liten markering till vänster om bostadsnamnet i mobil.
 
 **Toppraden visar bara adressen.** Ingen andrarad med upplåtelseform och tillträdesår – de är uppgifter man sätter en gång och sedan aldrig behöver se. De hör hemma i inställningarna.
+
+Adressen är obligatorisk sedan 2026-10-01, just för att den här raden aldrig ska stå tom. **Kravet gäller överallt adressen sätts** – registreringen och inställningarna. Går den att tömma i inställningarna är hålet öppet igen, och då för någon som redan hade en adress. **Men bostäder som skapades före det kan sakna adress**, och ett nytt krav fyller inte i gamla rader. Är adressen tom står upplåtelseformen där i stället – *Lägenheten* eller *Huset*. Det är ett skyddsnät för de raderna, inte ett alternativ att designa för: toppraden får aldrig vara tom och får aldrig visa ett bindestreck.
+
+**Toppraden läser adressen, ingenting annat.** Kolumnen `bostad.namn` finns i schemat och ingenting skriver till den. Den får inte gå före adressen "i fall den fylls" – ett fält som är tomt i dag och tyst har företräde är en ändring som sker utan att någon beslutar den, den dag något börjar skriva till det. Ska bostaden kunna heta något annat än sin adress är det ett beslut som fattas då, och design.md ändras först.
 
 **Logotypen och adressen är en länk till översikten.** Standardkonvention och gratis.
 
@@ -258,7 +262,7 @@ Det finns inga designfiler, mockuper eller skärmbilder. Detta dokument är den 
 
 Varje skärm byggs uppifrån och ned i samma ordning: toppraden enligt avsnittet Navigation, sedan sidrubriken, sedan sidans innehåll. På mobil ligger flikraden fast i nederkanten; på skrivbord ligger flikarna i toppraden och skärmen har inget bottenfält.
 
-Toppraden bär bostadens namn och kugghjulet, ingenting mer – se Skrivbordsvyn.
+Toppraden bär bostadens adress och kugghjulet, ingenting mer – se Skrivbordsvyn.
 
 Innehållet ligger i kort på `--yta-upphojd` mot sidbakgrunden, med 1px `--linje` som avdelare mellan sektioner inuti. Inga kort inuti kort.
 
@@ -288,7 +292,7 @@ Exakta gränser går inte att ange, eftersom Fraunces siffror är proportionella
 
 En bostad man ägt i tjugo år har med marginal lagt in mer än en miljon. Det är alltså det förväntade läget för *Totalt inlagt*, inte ett kantfall.
 
-**Antalet är ett antal och bär ingen enhet.** Det formateras svenskt som alla andra tal – `1 000`, inte `1000` – med hårda mellanslag, och får därför aldrig brytas alls. Uppmätt till 60,6 px för `1 204 518` i rutans 88,9 px, så utrymmet är inget problem. Det ska inte gå genom beloppsformateringen: den tillåter brytning före "kr", och ett antal har inget "kr".
+**Antalet är ett antal och bär ingen enhet.** Det formateras svenskt som alla andra tal – `1 000`, inte `1000` – med hårda mellanslag, och får därför aldrig brytas alls. Uppmätt till 60,6 px för `1 204 518` i rutans 88,9 px, så utrymmet är inget problem. Det ska inte gå genom metrikrutornas beloppsformatering: den tillåter brytning före "kr", och ett antal har inget "kr". Den allmänna beloppsformateringen tillåter ingen brytning alls – se *Typografi*.
 
 **Valt bort:** att släppa ören i rutorna, eftersom det rundar ett belopp på en skärm men inte på en annan och appen bygger på att samma tal ser likadant ut överallt. Och att låta första rutan ta hela bredden när beloppet är långt, eftersom layouten då ändrar form när ett kvitto läggs in – en skärm som rör sig av sig själv är svårare att lita på än en som är trång.
 
@@ -328,13 +332,15 @@ På startskärmen finns ingen sådan sektion. Att möta en påminnelse varje gå
 
 **Inom varje år sorteras raderna på datum, nyast först** – aldrig på när posten lades in. En årsrubrik lovar tidsordning, och en lista som under rubriken 2026 visar april, april, mars, augusti ser ut som en bugg även när den inte är det. Ett kvitto läggs ofta in långt efter att det betalades, och ett kvitto från 2016 som fotograferas i dag ska hamna under 2016.
 
-**Startskärmens lista är undantaget: den sorteras på när kvittot lades in.** Den har inga årsrubriker och lovar ingen tidsordning. Dess jobb är att bekräfta att det du just sparade kom med – och ett gammalt kvitto som hamnar sist i en datumsorterad lista ser ut som om det aldrig sparades. Underrubriken "De sex senast tillagda" säger precis det.
+**Startskärmens lista är undantaget: den sorteras på när kvittot lades in.** Den har inga årsrubriker och lovar ingen tidsordning. Dess jobb är att bekräfta att det du just sparade kom med – och ett gammalt kvitto som hamnar sist i en datumsorterad lista ser ut som om det aldrig sparades. Underrubriken "De sex senast tillagda" säger precis det, och inte mer – att förklara att listan gäller oavsett år besvarar en fråga ingen ställt.
 
 ### Listrader
 
-Projekt och kostnader visas som rader avdelade med 1px linjer, inte som separata kort. Varje rad har namnet på första raden och en dämpad andra rad med kategori eller status, med beloppet högerställt på samma höjd som namnet. Rader vars status kräver åtgärd markeras med en liten fylld prick i `--accent` före den dämpade texten, inte genom att färga hela raden. Med flera rader i samma läge blir orange text en vägg av varningar, och färgen tappar sin betydelse.
+**Det här avsnittet gäller grupperingslistan och projektens rader, inte kvittolistan.** Kvittoradernas innehåll står under *Kvittolistan*.
 
-**Startskärmens underrubrik säger "De sex senast tillagda"** – inte mer. Att förklara att listan gäller oavsett år säger något användaren inte undrat över.
+**Det förbjudna på en kvittorad är kategorin, inte tillståndet.** Formuleringen "aldrig kategori eller status" var för grov och rättades 2026-10-01. Ett normalt kvitto har leverantör och datum på andra raden och ingenting annat. Men ett utkast har ofta varken leverantör eller datum, och ett kvitto som satts åt sidan behöver säga varför – för dem är tillståndet det enda som är värt att visa: *Utkast · komplettera uppgifterna* och *Hör inte till bostaden*. Det som aldrig får stå där är klassificeringen: *Underhåll*, *Grundförbättring* och deras släkt.
+
+Projekt och kostnader visas som rader avdelade med 1px linjer, inte som separata kort. Varje rad har namnet på första raden och en dämpad andra rad med kategori eller status, med beloppet högerställt på samma höjd som namnet. Rader vars status kräver åtgärd markeras med en liten fylld prick i `--accent` före den dämpade texten, inte genom att färga hela raden. Med flera rader i samma läge blir orange text en vägg av varningar, och färgen tappar sin betydelse.
 
 **"Räknas inte med" heter "Hör inte till bostaden".** Den första säger inte vad som inte räknas eller varför; den andra säger precis vad valet betyder. Det gäller matkassen som råkade fotograferas och möbler som flyttar med.
 
@@ -367,6 +373,34 @@ De visas direkt, inte bakom en utfällning. Utfällbara sektioner är till för 
 **Samma belopp ska se likadant ut överallt.** Kvittolistan visar en kostnad före ROT-avdrag, projektlistan efter. Samma kvitto står då som 34 425 kr på en skärm och 26 925 kr på en annan, utan att något säger vilket som är vilket.
 
 Visa beloppet före avräkning i listor över kvitton – det är summan på pappret, och det är den användaren känner igen. Där ett avräknat belopp visas ska skillnaden framgå, på samma sätt som PDF-paketets rad "varav ROT 7 500 kr, avgår".
+
+**Men varje summa räknar efter ROT.** Årsrubrikens summa, metrikrutornas tre tal, progressfältet mot tröskeln – alla netto. ROT är pengar som redan betalats tillbaka, och just det beloppet får inte dras av som förbättringsutgift. En summa som räknar in det överskattar både vad man lagt ut och vad som kan dras av, och det är det ena talet i appen som aldrig får vara för högt.
+
+**Därav följer att en rad som räknas med ett annat belopp måste visa avdraget.** Annars går rubriken inte att räkna ihop av raderna under den, och en lista vars summa inte stämmer är det snabbaste sättet att förlora användarens tillit. Raden behåller fakturans totalbelopp som sitt belopp och får en dämpad rad under: *varav ROT 11 587,50 kr, avgår*. Samma lydelse som i PDF-paketet – det är samma upplysning och ska inte ha två lydelser.
+
+**Är en del privat får den en rad av samma form:** *varav 1 000 kr hörde inte till bostaden, avgår*. Formuleringen är densamma som i valet, där alternativet heter *Hör inte till bostaden*.
+
+**Och de går ihop, exakt.** 10 000 kr med 3 000 kr i ROT och 1 000 kr privat räknas som 6 000 kr: båda raderna avgår rakt av. Att det inte stämde var ett beräkningsfel, inte ett presentationsproblem – den gamla regeln fördelade ROT proportionellt över hela kvittot och lade därmed 300 kr av avdraget på den privata delen, vilket gav 6 300 kr och överskattade avdraget. ROT ges på arbetskostnad för arbete på bostaden, aldrig på en privat vara, så den delen kan inte bära någon del av avdraget. Rättat i `CLAUDE.md` 2026-10-02.
+
+En kortare lydelse – *varav 49 225 kr räknas*, ett tal i stället för en förklaring – övervägdes medan beräkningen trodde sig behöva det. Den föll när beräkningen rättades: *avgår*-raderna går ihop, och de säger dessutom varför.
+
+**I praktiken möts de två sällan.** ROT står på en hantverkares faktura, och där finns nästan aldrig något privat. En privat del hör till ett butikskvitto – färg till huset och en trädgårdsslang till sig själv – och butikskvitton har ingen ROT. Kombinationen är inte något produkten optimeras för, bara något den räknar rätt på.
+
+Uppmätt i appen 2026-10-01, innan regeln fanns: kvittolistans årsrubrik stod på 1 060 812,50 kr och *Totalt inlagt* på 1 049 225 kr för exakt samma två kvitton. Skillnaden var ROT-beloppet på den ena fakturan, och ingenting på någon av skärmarna sade det.
+
+**ROT-raden hör till kvittoraden, överallt den visas.** Kvittolistan, startskärmens sex senaste, projektlistans rader, projektets egen sida, exportvyn, PDF-paketet. Inga undantag per skärm: samma komponent med två beteenden är två sätt att göra fel, och den skärm som utelämnar raden är den där talen inte går att räkna ihop.
+
+Att det inte finns någon summa på skärmen är inget skäl att utelämna den. Uppmätt samma dag på startskärmen: *Totalt inlagt* stod på 1 049 225 kr med två rader under sig på 1 000 000 kr och 60 812,50 kr, och ingenting förklarade de 11 587,50 kr som fattades. Det är den skärm användaren ser oftast.
+
+**Raden står under namnet, bland de övriga dämpade raderna** – samma plats och samma utseende som "Inget kvitto bifogat". Aldrig under beloppet: beloppskolumnen är högerställd, och ett andra högerställt tal under det första läses som ett andra belopp. Siffrorna i Fraunces är dessutom proportionella, så två staplade tal rättar inte ens in sig mot varandra – se *Typografi*.
+
+En rad kan bära flera dämpade rader. Ett kvitto kan sakna bilaga *och* ha ROT.
+
+**Årsrubriken och *Inlagt {år}* måste räkna samma sak.** De gjorde det inte, och att de råkade visa samma tal för två kvitton är ingen garanti. Tre skillnader fanns 2026-10-01:
+
+- **Den privata delen räknas aldrig med.** Metrikrutorna utesluter den, årsrubriken gjorde det inte. Ett belopp som "hörde inte till bostaden" hör inte till någon summa i appen.
+- **Året är betaldatumets år.** Saknas betaldatum hör kostnaden inte till något år – den hamnar under en egen rubrik *Utan betaldatum* i listan och räknas i ingen årssumma. Att placera den på dokumentdatumets år är en gissning appen gör tyst, och den gissningen flyttar ett belopp över en tröskel som gäller per kalenderår. Livstidssumman räknar den ändå, eftersom dess löfte är allt.
+- **Försäkringsersättning avgår på samma sätt som ROT**, den dagen den går att mata in. Den är inte inmatningsbar i dag, och det är därför ingen avvikelse ännu – men den blir det i samma stund fältet finns, och regeln ska stå skriven innan dess.
 
 **Ett tillstånd är inte en kategori.** Kategorin är grundförbättring eller reparation; att svaret saknas är något annat och hör inte hemma under rubriken Kategori. Utelämna fältet tills det har ett värde, och låt tillståndet stå för sig.
 
@@ -417,7 +451,9 @@ Förstaskärmen har fortfarande exakt en sak att göra. Text som förklarar är 
 
 ### Kvittots detaljvy
 
-**Bilagan ligger överst, i stor förhandsvisning.** Sedan sammanfattningen – anteckningen, belopp, datum och leverantör – och sist frågan om något var privat. Ingenting annat.
+**Bilagan ligger överst, i stor förhandsvisning.** Sedan sammanfattningen – anteckningen, belopp, datum och leverantör. Ingenting annat.
+
+Privatfrågan hör inte hit. Den är ett fält i ändringsläget – se *Ett kvitto är en skärm, inte två*, där skälet står.
 
 Skälet är att det är bilden man kommer för. Den som öppnar ett sparat kvitto vill se att det faktiskt ligger där och läsa av det, precis som i inmatningen, där bilagan redan ligger först.
 
@@ -469,7 +505,7 @@ I ändringsläget växer raden till sin fulla form: en ruta per bilaga med pappe
 
 ### Startskärmen med innehåll
 
-**Startskärmen har ingen sidrubrik.** Adressen står i toppraden precis som på alla andra sidor, och innehållet börjar direkt under den.
+**Startskärmen har ingen sidrubrik** – skälet står under *Navigation*. Adressen står i toppraden som på alla andra sidor, och innehållet börjar direkt under den.
 
 Skälet är att fliken "Översikt" redan står markerad i navigationen. En rubrik som upprepar den aktiva flikens namn tillför ingenting, och gör dessutom skärmen till en rapport i stället för till användarens egen. Adressen som stor rubrik löser det problemet men skapar ett nytt: den svävar, och toppraden blir tom när adressen lyfts ur den.
 
@@ -479,15 +515,11 @@ En hälsning med namn vore varmare än båda, men appen samlar inte in något na
 
 **Tre små nyckeltal på rad**, inte en stor siffra med en lång förklaring under. Ett block som ska bära både beloppet, tröskeln och en brasklapp blir tungt att läsa; tre korta kort går att uppfatta på en blick.
 
-| Kort | Innehåll | Länkar till |
-|---|---|---|
-| Inlagt i år | Årets summa | Alla kvitton |
-| Antal kvitton | Hur många som lagts in totalt | Alla kvitton |
-| Senast tillagt | Datum för det senaste | Det kvittot |
+**Vilka tre talen är, och vad de heter, står under *Metrikblock*.** Upprepa dem inte här.
 
 Alla tre korten är klickbara. Ett tal som visar något man vill se närmare på ska gå att trycka på.
 
-Etiketten är alltid **"Inlagt i år"**, aldrig "Totalt avdragsgillt". Det senare är ett påstående appen inte kan stå för innan klassificeringen är gjord, och att sätta det i grönt gör påståendet ännu starkare. Nyckeltalen bär inga statusfärger alls.
+Inget av talen heter "Totalt avdragsgillt" eller något i den stilen. Det är ett påstående appen inte kan stå för innan klassificeringen är gjord, och att sätta det i grönt gör påståendet ännu starkare. Nyckeltalen bär inga statusfärger alls.
 
 På mobil ligger de tre korten i en rad med mindre text, inte staplade – tre staplade kort tar över hela skärmen och skjuter ner kvittolistan.
 
@@ -495,13 +527,13 @@ På mobil ligger de tre korten i en rad med mindre text, inte staplade – tre s
 
 **Primärknappen ligger ovanför kvittolistan, inte under.** Att lägga till ett kvitto är skälet att appen finns och den handling som utförs oftast – den ska inte kräva att man scrollar förbi sex rader för att nås. Knappen ligger direkt under tröskelraden, i full bredd.
 
-**Kvittolistan är ett eget kort** med rubriken "Senaste kvitton" och en länk "Visa alla" högerställd i samma rad. De sex senast tillagda, senaste först. Varje rad visar anteckningen som huvudtext, med leverantör och datum dämpat under, och beloppet högerställt.
+**Kvittolistan är ett eget kort** med rubriken "Senaste kvitton" och en länk "Visa alla" högerställd i samma rad. De sex senast tillagda, senaste först. Raderna ser ut som i kvittolistan, med beloppet högerställt.
 
-Anteckningen som huvudtext är avsiktligt. "Målade om sovrummet" säger vad raden är; "BAUHAUS" gör det inte. Saknas anteckning används leverantören.
+Anteckningen som huvudtext är avsiktligt. "Målade om sovrummet" säger vad raden är; "BAUHAUS" gör det inte.
 
 **Inga kategorimärkningar på raderna.** Ett kvitto är oklassificerat i normalfallet, och en etikett som säger "Underhåll" antyder både att klassificering skett och att den är kvittots egenskap snarare än åtgärdens.
 
-**Ingen ingång till klassificeringen här.** Den ligger i kvittolistan, av skäl som står under Kvittolistan. Att en rad bland de sex senaste är oklassificerad får visas med en diskret prick på just den raden, inget mer.
+**Ingen ingång till klassificeringen här.** Den ligger i kvittolistan – skälet, och vad som ändå får visas på en enskild rad, står under *Kvittolistan*.
 
 ### Bilagor
 
@@ -537,7 +569,7 @@ En dämpad `2 / 3` i hörnet säger var man är. På dator finns pilar för för
 
 Gäller överallt där en bilaga visas stor: inmatningen, kvittots skärm och helskärmsvyn. Bädda inte in PDF:en i en `iframe` – Safari på iPhone visar då ofta bara första sidan, vilket är exakt det fel som ska lösas.
 
-**Bilagan är synlig medan man ändrar.** Den som rättar ett belopp eller ett datum gör det mot kvittot, inte mot sitt minne av det. Eftersom ändringen sker på plats ligger bilagan kvar ovanför formuläret utan att något behöver göras – det var det egentliga skälet till att den gamla redigeringsskärmen visade den.
+**Bilagan är synlig medan man ändrar.** Eftersom ändringen sker på plats ligger bilagan kvar ovanför formuläret utan att något behöver göras. Skälen står under *Ett kvitto är en skärm, inte två*.
 
 Har kostnaden flera bilagor visas den första, med miniatyrraden under så att man kan byta.
 
@@ -569,7 +601,7 @@ Vyn ligger över en mörk halvgenomskinlig yta som täcker hela skärmen, inklus
 
 Ett kryss ligger i övre högra hörnet. Klick utanför och Escape stänger också, men på telefon finns ingen Escape och ytan runt en stor bild är liten – krysset är det enda som fungerar med tummen.
 
-**Vid radering markeras den valda bilagan.** Bekräftelsetexten ligger under raden och kan inte visa vilken ruta den gäller. Med två kvitton från samma butik bredvid varandra är det omöjligt att se vilket som ska bort. Den valda rutan markeras tydligt medan de andra dämpas – markeringen får inte bäras av att göra papperskorgen orange, både för att det är för svagt och för att orange betyder handling och radering av bevisning inte är den handling produkten vill uppmuntra.
+**Vid radering markeras den valda bilagan.** Bekräftelsetexten ligger under raden och kan inte visa vilken ruta den gäller. Med två kvitton från samma butik bredvid varandra är det omöjligt att se vilket som ska bort. Den valda rutan markeras tydligt medan de andra dämpas – markeringen får inte bäras av att göra papperskorgen orange, både för att det är för svagt och av skälet ovan.
 
 **Miniatyren för en PDF är en dokumentikon med etiketten "PDF" under**, centrerat i rutan. Aldrig filnamnet – ett kassasystemsgenererat namn som `Invoice_IMRInstitu_539370_Aug-2026.pdf` bryts mitt i ett ord, fyller rutan med brus och ser ut som ett fel. Vilken fil det är framgår av förhandsvisningen, som ändå visar den markerade bilagan.
 
@@ -607,7 +639,7 @@ Rubriken över raden är "Kvitto eller faktura". Uppladdning sker via klick, int
 
 **Flera bilagor per kostnad.** En faktura och dess betalningsunderlag är två filer, och ett kvitto kan behöva fotograferas i flera delar. Miniatyrraden växer med en ruta per fil och en `+`-ruta sist. Varje miniatyr har ett kryss för att tas bort innan sparning.
 
-**Förhandsvisning direkt vid val, innan sparning.** Så snart en fil valts renderas dokumentet under miniatyrraden i en ram med tunn kant. Bilder visas som bild, PDF renderas som en bild av sin första sida – inte som en ikon.
+**Förhandsvisning direkt vid val, innan sparning.** Så snart en fil valts renderas dokumentet stort, ovanför miniatyrraden, i en ram med tunn kant – ordningen är densamma som på ett sparat kvitto, se *Ordningen är alltid stor bild först*. Bilder visas som bild, PDF renderas som en bild av sin första sida – inte som en ikon.
 
 **PDF renderas som bild, aldrig med webbläsarens inbyggda visare.** En inbäddad PDF-visare tar med sig mörk bakgrund, verktygsrad och nedladdningsknappar, och gör ett litet kvitto till en skärmhög svart ruta. Rendera första sidan till en bild och visa den i samma format som ett fotograferat kvitto.
 
@@ -857,7 +889,11 @@ Förloppet visas som prickar över rubriken, med den aktiva i `--accent` och den
 
 Varje steg har en egen rubrik, en rad förklaring, och en framåtknapp. Bakåt ska alltid gå. Det aktuella stegets obligatoriska fält valideras innan man kommer vidare.
 
-**Bostadssteget** har fem fält: upplåtelseform, tillträdesdatum, adress, ort och köpeskilling. Endast de två första är obligatoriska.
+**Bostadssteget** har fem fält: upplåtelseform, tillträdesdatum, adress, ort och köpeskilling. De tre första är obligatoriska, ort och köpeskilling valfria.
+
+**Adressen är obligatorisk sedan 2026-10-01.** Skälet är toppraden: den visar adressen på varenda skärm, och var fältet frivilligt satt den som hoppade över det en tom rad i appens mest synliga yta. Ett fält till i registreringen är ett billigare pris än det.
+
+Kravet är att något står där, inte att det är en riktig adress. Fritext duger – regeln om att fältet aldrig får kräva ett valt förslag gäller oförändrat, och *Skogsstigen, torpet* är ett giltigt svar.
 
 Köpeskillingen ligger här trots att den är valfri, eftersom den hör till beskrivningen av bostaden och behövs för vinstberäkningen. Hjälptexten säger var man hittar den – på köpekontraktet eller överlåtelseavtalet – så att den som inte minns beloppet vet att det går att hoppa över och fylla i senare.
 
@@ -958,7 +994,7 @@ Här ligger allt som beskriver bostaden men inte behövs för att komma igång. 
 
 **Gränsen mellan korten är vem uppgiften handlar om, inte vad den beskriver.** *Bostaden* beskriver objektet och är samma för alla som delar det. *Förvärvet* beskriver hur bostaden blev någons, och det är där två delägare i princip kan ha olika svar.
 
-**I princip, inte i praktiken – ännu.** Fyra av fälten under *Förvärvet* ligger på bostaden och delas av båda: tillträdesdatum, köpeskilling, köpkostnader och första ägaren. Bara ägarandelen ligger på medlemskapet och är personlig. Kortet heter därför *Förvärvet* och inte *Förvärvet*, och det säger i klartext att uppgifterna gäller bostaden och att var och en bekräftar sina egna när bostaden säljs.
+**I princip, inte i praktiken – ännu.** Fyra av fälten under *Förvärvet* ligger på bostaden och delas av båda: tillträdesdatum, köpeskilling, köpkostnader och första ägaren. Bara ägarandelen ligger på medlemskapet och är personlig. Kortet heter därför *Förvärvet* och inte *Ditt förvärv*, och det säger i klartext att uppgifterna gäller bostaden och att var och en bekräftar sina egna när bostaden säljs.
 
 Att flytta de fyra till medlemskapet är rätt på sikt men ändrar vad beräkningen läser – tillträdesdatum är baslinjen för hela skickbedömningen – och det hänger på den öppna rättsfrågan om delägare som tillträtt vid olika tidpunkter i `docs/regelkallor.md`. Det görs med försäljningssteget, inte före.
 
@@ -1026,7 +1062,7 @@ Det är en omläggning gjord 2026-09-29, efter att den första modellen visat si
 
 **Frågorna ställs när bostaden markeras som såld.** Då, och först då, frågar appen varje medlem om sin ägarandel, sitt anskaffningsdatum och sitt inköpspris. Det är också då de öppna rättsfrågorna i `docs/regelkallor.md` måste vara besvarade – inte innan någon bjuder in.
 
-**Så länge andelarna inte är satta är underlaget för hela bostaden.** Det står med de orden i exportvyn när bostaden har fler än en medlem. Utan den raden ser båda delägarna samma summa, tror att den är deras, och för in hela beloppet var – samma dubbelräkning som den första modellen skulle ha hindrat, bara flyttad till en skärm där den är billigare att hindra.
+**Så länge andelarna inte är satta är underlaget för hela bostaden.** Det står med de orden i exportvyn när bostaden har fler än en medlem. Vad raden hindrar, och varför den är den enda som gör det, står under *Samägande – medlemskapet*.
 
 En ensam ägare berörs inte. Den som äger halva sin bostad och använder appen själv anger sin andel i kortet Förvärvet, och får ett underlag för sin del.
 
@@ -1101,9 +1137,21 @@ Formuleringen följer Skatteverkets egen: *"Kostnaden för det året som åtgär
 
 **Nollraden får ingen orange prick.** Pricken betyder att något kräver åtgärd, och en rad som föll på en regel kräver ingenting – den är slutgiltig. Förklaringen under raden bär beskedet ensam. En prick här skulle lära användaren att pricken ibland betyder "titta" och ibland "gör något", och då slutar den betyda någonting.
 
+**Exportvyn redovisar varje krona som lagts in.** Det som inte står på sida 1 eller sida 2 ska synas som det som återstår – oavsett om det är en hög eller ett kvitto som ännu inte ligger i någon hög. Uppmätt 2026-10-02: startskärmen sade *Totalt inlagt 1 049 225 kr* medan exportvyns enda summa var 49 225 kr, och de miljoner som fattades syntes ingenstans på sidan. Ett underlag som tyst utelämnar det mesta av beloppet är värre än inget underlag, eftersom det ser färdigt ut.
+
 **Summorna dämpas när de är ofullständiga.** Två stora nollor på en skärm som heter Deklarationsunderlag ser trasigt ut. Finns oklassificerade högar sätts talen i `--text-sekundar` i stället för `--text-primar`, så att blicken går till listan över det som återstår. När allt är klassificerat får de full tyngd.
 
 **Friskrivningen står på den här sidan.** En dämpad rad om att appen inte ger skatterådgivning och att Skatteverkets upplysningstjänst svarar på gränsfall. Exportvyn är den enda skärm där användaren tar med sig siffror ut ur appen, och därmed den enda där påståendet behöver stå. Samma rad hör hemma i klassificeringsgenomgången, där bedömningarna faktiskt görs.
+
+### Sidan finns inte, och när något gick fel
+
+**404-sidan är appens egen och på svenska.** Uppmätt 2026-10-02 stod ramverkets standardsida där: *"404 – This page could not be found."* På engelska, i en svensk app, för en användare som klickat på en gammal länk eller skrivit fel.
+
+Sidan säger att sidan inte finns, att ingenting gått förlorat, och leder till översikten. Samma röst som felgränsen, som redan är rätt: *"Något gick fel. Ingenting du gjort har försvunnit – försök igen."* Den raden är mallen – att ingenting är borta är det första användaren behöver veta.
+
+**En sak som inte finns är inte ett fel.** Ett projekt eller kvitto med ett id som inte finns ska säga att det inte finns, inte att något gick fel. Ett fel får användaren att tro att appen är trasig; ett saknat objekt säger bara att länken är gammal.
+
+**En inloggad användare som når inloggningssidan skickas till översikten.** Uppmätt samma dag: `/login` renderade en helt tom sida för en inloggad användare. En vit skärm är det enda tillstånd en app aldrig får visa – den säger varken vad som hänt eller vad man kan göra.
 
 ### Meddelanderutor
 

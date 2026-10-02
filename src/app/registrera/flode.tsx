@@ -33,6 +33,7 @@ import { forsokBorjaInskickning, useDubbelinskickRef } from "@/lib/dubbelinskick
 import { losenordsfel } from "@/lib/losenord";
 import { slutforRegistrering, type RegistreringResultat } from "./actions";
 import { AdressFalt } from "./adress-falt";
+import { adressfel } from "./validering";
 
 const START: RegistreringResultat = {};
 const EPOST = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -76,7 +77,8 @@ export function RegistreraFlode({
     }
   }, [resultat]);
 
-  function validera(s: number): string | null {
+  // Adressfaltet ager sitt eget varde (AdressFalt), sa det lases ur formularet.
+  function validera(s: number, formular: HTMLFormElement): string | null {
     if (s === 1) {
       if (!EPOST.test(epost.trim())) return "Fyll i en giltig e-postadress.";
       const svagt = losenordsfel(losenord);
@@ -90,12 +92,14 @@ export function RegistreraFlode({
       if (tilltradesdatum < "1970-01-01") {
         return "Tillträdesdatum före 1970 stöds inte.";
       }
+      const felIAdress = adressfel(String(new FormData(formular).get("adress") ?? ""));
+      if (felIAdress) return felIAdress;
     }
     return null;
   }
 
   function hanteraSubmit(e: React.FormEvent<HTMLFormElement>) {
-    const fel = validera(steg);
+    const fel = validera(steg, e.currentTarget);
     if (fel) {
       e.preventDefault();
       setLokaltFel(fel);
@@ -235,7 +239,7 @@ export function RegistreraFlode({
           />
         </Falt>
 
-        <AdressFalt />
+        <AdressFalt obligatoriskt />
 
         <Falt
           etikett="Köpeskilling"

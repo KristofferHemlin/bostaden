@@ -147,8 +147,10 @@ export interface Inbjudningsvy {
   bostadsnamn: string;
 }
 
-function bostadsnamn(b: { namn: string | null; adress: string | null }): string {
-  return b.namn?.trim() || b.adress?.trim() || "en bostad";
+// Bostaden namnges med sin adress, som i toppraden – `bostad.namn` lases inte
+// (se src/lib/bostad-header.ts).
+function bostadsnamn(b: { adress: string | null }): string {
+  return b.adress?.trim() || "en bostad";
 }
 
 /**
@@ -164,7 +166,7 @@ export async function hamtaInbjudningsvy(inbjudanId: string): Promise<Inbjudning
       epost: true,
       status: true,
       inbjudare: { select: { epost: true } },
-      bostad: { select: { namn: true, adress: true } },
+      bostad: { select: { adress: true } },
     },
   });
   if (!rad) return null;
@@ -192,7 +194,7 @@ export async function utestaendeInbjudningar(epost: string): Promise<Inbjudnings
       epost: true,
       status: true,
       inbjudare: { select: { epost: true } },
-      bostad: { select: { namn: true, adress: true } },
+      bostad: { select: { adress: true } },
     },
   });
   return rader.map((r) => ({

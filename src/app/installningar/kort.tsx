@@ -372,6 +372,7 @@ function BostadenEditForm({
         className="flex flex-col gap-5 p-4"
       >
         <AdressFalt
+          obligatoriskt
           forval={{
             adress: data.adress,
             ort: data.ort,

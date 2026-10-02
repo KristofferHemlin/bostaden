@@ -4,6 +4,7 @@
 // src/lib, inte src/doman.
 
 import { formateraKronor } from "@/lib/format";
+import { rotAvgarRad } from "@/lib/kvittolista";
 
 // Samma otillatna-tecken-regel som arkivexportens filnamn
 // (src/lib/arkivexport/namngivning.ts): tecken Windows inte tillater i
@@ -72,9 +73,9 @@ export function bilagepaketAvdragsforklaring(params: {
   forsakringsersattning: number;
 }): string[] {
   const rader: string[] = [];
-  if (params.rotUtnyttjat > 0) {
-    rader.push(`varav ROT ${formateraKronor(params.rotUtnyttjat)}, avgår`);
-  }
+  // Samma lydelse som kvittolistans rad – en upplysning, en formulering.
+  const rot = rotAvgarRad(params.rotUtnyttjat);
+  if (rot) rader.push(rot);
   if (params.forsakringsersattning > 0) {
     rader.push(
       `varav försäkringsersättning ${formateraKronor(params.forsakringsersattning)}, avgår`,

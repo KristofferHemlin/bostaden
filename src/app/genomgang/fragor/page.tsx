@@ -10,6 +10,7 @@ import { PRIMARKNAPP_KLASS, SEKUNDARKNAPP_KLASS, Skarm } from "@/components/skar
 import { fragetradetNamnForslag } from "@/doman/genomgang";
 import { bostadHeader } from "@/lib/bostad-header";
 import { isoDatum } from "@/lib/format";
+import { kvittoradText } from "@/lib/kvittolista";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
@@ -73,10 +74,16 @@ export default async function FragorSida() {
         // Bara kopplade kostnader kommer hit – aldrig ett utkast (det har inga
         // rader). Falten ar alltsa satta; coalesce for typernas skull.
         const datum = k.betaldatum ?? k.dokumentdatum;
+        // Samma regel som kvittolistan: aldrig leverantoren tva ganger.
+        const text = kvittoradText({
+          anteckning: k.anteckning,
+          leverantor: k.leverantor,
+          datum: datum ? isoDatum(datum) : null,
+        });
         return {
           id: k.id,
-          rubrik: k.anteckning?.trim() || k.leverantor || "Kvitto",
-          underrad: `${k.leverantor ?? ""} · ${datum ? isoDatum(datum) : ""}`,
+          rubrik: text.namn ?? "Kvitto",
+          underrad: text.underrad,
           belopp: k.totalbelopp ?? 0,
         };
       }),

@@ -56,7 +56,8 @@
 // uppladdade bilagorna och analysen kors om pa den forsta om falten ar tomma.
 //
 // Forhandsvisningen (docs/design.md, "Bilagor") RENDERAR den forsta bilagan i
-// full bredd under miniatyrraden – bild som bild, PDF renderad till en bild av
+// full bredd OVANFOR miniatyrraden – samma ordning som pa ett sparat kvitto,
+// stor bild forst och raden under. Bild som bild, PDF renderad till en bild av
 // sin forsta sida med pdf.js, aldrig webblasarens inbyggda visare. En ikon ar
 // sista utvag nar renderingen misslyckas, inte utgangslaget.
 //
@@ -938,7 +939,7 @@ export function NyKostnadForm({
                   {b.sidantal != null ? (
                     // Flersidig PDF (docs/design.md, "Bilagor"): sida 1, ingen
                     // svepbar sidbladdrare i den har lilla rutan – bara den
-                    // stora forhandsvisningen langre ned svarar pa svep.
+                    // stora forhandsvisningen ovanfor svarar pa svep.
                     <PdfMiniatyrbild bilagaId={b.id} filnamn={b.filnamn} />
                   ) : b.arBild ? (
                     <img
@@ -1297,7 +1298,7 @@ function BilagaSaknasDialog({
           Inget kvitto bifogat
         </h2>
         <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
-          Kostnaden sparas ändå. Men om Skatteverket frågar är underlaget
+          Kvittot sparas ändå. Men om Skatteverket frågar är underlaget
           svagare utan något som styrker vad du köpte och när.
         </p>
         <p className="mt-2 font-granssnitt text-sm text-text-sekundar">

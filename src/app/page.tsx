@@ -30,7 +30,7 @@ import { UtkastRaderaKnapp } from "@/app/kostnad/utkast-radera";
 import {
   harledKostnadstillstand,
   inlagtArsbelopp,
-  kalenderAr,
+  kostnadensAr,
   samlatBelopp,
   troskelUppnadd,
 } from "@/doman/berakningar";
@@ -45,6 +45,7 @@ import {
   formateraKronorMetrikruta,
   isoDatum,
 } from "@/lib/format";
+import { avgarForKvitto } from "@/lib/kvittolista";
 import { prisma } from "@/lib/prisma";
 import { Landningssida } from "@/app/landningssida";
 import { hamtaAnvandare, kravBostad } from "@/lib/session";
@@ -101,8 +102,6 @@ export default async function Oversikt() {
   const senasteKvittonSorterade = senasteKvitton;
 
   const VISAT_AR = new Date().getUTCFullYear();
-  const inomVisatAr = (betaldatum: string | null) =>
-    betaldatum !== null && kalenderAr(betaldatum) === VISAT_AR;
 
   const troskelbelopp = slaUppRegelparameter(
     regelparametrar,
@@ -123,7 +122,7 @@ export default async function Oversikt() {
   const oklassificeratFinns = kostnader.some(
     (k) =>
       !k.arkiverad &&
-      inomVisatAr(k.betaldatum) &&
+      kostnadensAr(k) === VISAT_AR &&
       harledKostnadstillstand(k).okopplad,
   );
 
@@ -132,6 +131,7 @@ export default async function Oversikt() {
   // sig nar man sparar ett kvitto. Ingangen ligger i stallet i kvittolistan. Att
   // en av de sex senaste raderna ar oklassificerad far dock visas med en diskret
   // prick pa just den raden – inget mer.
+  const domanKostnadPerId = new Map(kostnader.map((k) => [k.id, k]));
   const oklassificeradeIder = new Set(
     kostnader.filter(arOklassificerad).map((k) => k.id),
   );
@@ -300,6 +300,7 @@ export default async function Oversikt() {
                 const notering = k.anteckning?.trim();
                 // Ett utkast: kvittot valt men uppgifterna inte ifyllda an.
                 const utkast = k.totalbelopp === null;
+                const domanKostnad = domanKostnadPerId.get(k.id);
                 const datumRad = k.betaldatum ?? k.dokumentdatum;
                 const datum = datumRad ? isoDatum(datumRad) : null;
                 return (
@@ -316,6 +317,10 @@ export default async function Oversikt() {
                     }
                     atgard={utkast || oklassificeradeIder.has(k.id)}
                     belopp={utkast ? undefined : formateraKronor(k.totalbelopp ?? 0)}
+                    // Hela kvittot visas: samma avgar-rader som i kvittolistan
+                    // (docs/design.md, Listrader: "ROT-raden hor till
+                    // kvittoraden, overallt den visas").
+                    {...(domanKostnad && !utkast ? avgarForKvitto(domanKostnad) : {})}
                     slutknapp={
                       utkast ? (
                         <UtkastRaderaKnapp kostnadId={k.id} lage="ikon" />

@@ -4,7 +4,7 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { arOskyddadSokvag } from "@/lib/oskyddade-sokvagar";
+import { arBaraForUtloggade, arOskyddadSokvag } from "@/lib/oskyddade-sokvagar";
 import { supabaseNyckel, supabaseUrl } from "./konfig";
 
 export async function uppdateraSession(
@@ -40,6 +40,18 @@ export async function uppdateraSession(
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Inloggad pa inloggningssidan: till oversikten, aldrig en tom sida
+  // (arBaraForUtloggade).
+  if (user && arBaraForUtloggade(request.nextUrl.pathname)) {
+    const omdirigering = request.nextUrl.clone();
+    omdirigering.pathname = "/";
+    omdirigering.search = "";
+    const till = NextResponse.redirect(omdirigering);
+    // En nyss fornyad session far inte tappas pa vagen.
+    for (const kaka of svar.cookies.getAll()) till.cookies.set(kaka);
+    return till;
+  }
 
   const oskyddad = arOskyddadSokvag(request.nextUrl.pathname);
 

@@ -38,6 +38,7 @@ import { isoDatum, oreFranKronor } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 import { tolkaGeokod } from "@/app/registrera/koordinater";
+import { adressfel } from "@/app/registrera/validering";
 
 export interface InstallningarResultat {
   fel?: string;
@@ -117,7 +118,14 @@ export async function sparaBostaden(
     };
   }
 
+  // Adressen ar obligatorisk overallt dar den satts (docs/design.md,
+  // Registreringsflodet och Skrivbordsvyn) – samma regel och meddelande som i
+  // registreringen. En aldre bostad utan adress moter kravet forsta gangen
+  // kortet sparas; ingenting annat blockeras, och den som inte ror kortet
+  // marker inget.
   const adress = las(formData, "adress");
+  const felIAdress = adressfel(adress);
+  if (felIAdress) return { fel: felIAdress };
   const ort = las(formData, "ort");
   const geokod = tolkaGeokod(
     las(formData, "place_id"),
@@ -139,7 +147,7 @@ export async function sparaBostaden(
   await prisma.bostad.update({
     where: { id: bostadId },
     data: {
-      adress: adress || null,
+      adress,
       ort: ort || null,
       place_id: geokod.place_id,
       latitud: geokod.latitud,

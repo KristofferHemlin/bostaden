@@ -86,7 +86,7 @@ export async function redigeraKostnad(
     where: { id, bostad_id: bostadId },
     include: { rader: { include: { fordelningar: true } } },
   });
-  if (!kostnad) return { fel: "Kostnaden hittades inte." };
+  if (!kostnad) return { fel: "Kvittot hittades inte." };
   if (kostnad.totalbelopp === null) {
     // Ett utkast kompletteras i inmatningsformularet, inte har.
     return { fel: "Kvittot är fortfarande ett utkast. Komplettera det först." };
@@ -284,7 +284,7 @@ export async function delaUppKostnad(
       forsakringsersattning: true,
     },
   });
-  if (!kostnad) return { fel: "Kostnaden hittades inte." };
+  if (!kostnad) return { fel: "Kvittot hittades inte." };
   if (kostnad.totalbelopp === null) {
     return { fel: "Kvittot är fortfarande ett utkast. Komplettera det först." };
   }
@@ -377,7 +377,7 @@ async function taBortKostnadIntern(
     where: { id, bostad_id: bostadId },
     select: { id: true },
   });
-  if (!kostnad) return { fel: "Kostnaden hittades inte." };
+  if (!kostnad) return { fel: "Kvittot hittades inte." };
 
   // Bilagorna tas bort med kostnaden – uttrycklig begaran fran anvandaren.
   // Storage rensas forst; kostnadsraderna, fordelningarna och kvarvarande

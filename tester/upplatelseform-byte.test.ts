@@ -44,7 +44,7 @@ function formulardata(over: Record<string, string> = {}): FormData {
   const varden: Record<string, string> = {
     upplatelseform: "bostadsratt",
     tilltradesdatum: "2018-06-01",
-    adress: "",
+    adress: "Ulriksborgsgatan 7",
     ort: "",
     place_id: "",
     latitud: "",

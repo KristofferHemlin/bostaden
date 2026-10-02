@@ -60,6 +60,14 @@ export function TillgangKort({ data }: { data: TillgangData }) {
     ...data.inbjudningar.map((i) => i.andel ?? ANDEL_UTAN_UPPGIFT),
   ]);
   const egen = data.medlemmar.find((m) => m.du)?.andel ?? ANDEL_UTAN_UPPGIFT;
+  const notis = andelssummaNotis(summa, [
+    ...data.medlemmar.map((m) => ({ vem: m.du ? "du" : m.epost, andel: m.andel })),
+    ...data.inbjudningar.map((i) => ({
+      vem: i.epost,
+      andel: i.andel ?? ANDEL_UTAN_UPPGIFT,
+      inbjudan: true,
+    })),
+  ]);
 
   return (
     <>
@@ -84,7 +92,7 @@ export function TillgangKort({ data }: { data: TillgangData }) {
               <span className="text-text-sekundar">Summa</span>
               <span className="tabular-nums text-text-primar">{formateraAndel(summa)}</span>
             </div>
-            {andelssummaNotis(summa) ? <p className={HJALPTEXT_KLASS}>{andelssummaNotis(summa)}</p> : null}
+            {notis ? <p className={HJALPTEXT_KLASS}>{notis}</p> : null}
           </div>
         ) : null}
 

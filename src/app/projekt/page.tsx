@@ -4,12 +4,17 @@
 import Link from "next/link";
 import { KategoriInfo } from "./kategori-info";
 import { Listrad, Skarm } from "@/components/skarm";
-import { beloppForKostnad, bidragForKostnad } from "@/doman/berakningar";
+import {
+  beloppForKostnad,
+  projektSumma,
+  rotForBelopp,
+} from "@/doman/berakningar";
 import { atgardKategoriText } from "@/doman/fragetradet";
 import { slaUppRegelparameter } from "@/doman/regelparameter";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
+import { rotAvgarRad } from "@/lib/kvittolista";
 import { kravBostad } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -37,11 +42,9 @@ export default async function ProjektlistaSida() {
   const domanKostnadPerId = new Map(kostnader.map((k) => [k.id, k]));
 
   const rader = projektRader.map((p) => {
-    let belopp = 0;
-    for (const k of kostnader) {
-      if (k.arkiverad || !k.betaldatum) continue;
-      belopp += bidragForKostnad(k, p.id);
-    }
+    // Allt som kopplats hit, aven utan betaldatum – samma tal som projektets
+    // egen sida (projektSumma).
+    const belopp = projektSumma(kostnader, p.id);
 
     // Projektlistan visar sina kvitton (docs/design.md, "Listrader"): direkt
     // under namnet, med leverantor, datum och belopp – annars ar raden ett
@@ -61,11 +64,17 @@ export default async function ProjektlistaSida() {
       .map((k) => {
         const domanKostnad = domanKostnadPerId.get(k.id)!;
         const datum = k.betaldatum ?? k.dokumentdatum;
+        const belopp = beloppForKostnad(domanKostnad, p.id);
         return {
           id: k.id,
           leverantor: k.leverantor,
           datum: datum ? isoDatum(datum) : null,
-          belopp: beloppForKostnad(domanKostnad, p.id),
+          belopp,
+          // ROT som avgar fran just den har delen av kvittot – raden minus
+          // ROT ar vad den bidrar med till projektets summa ovan
+          // (docs/design.md, Listrader: "ROT-raden hor till kvittoraden,
+          // overallt den visas").
+          rotRad: rotAvgarRad(rotForBelopp(domanKostnad, belopp)),
         };
       });
 
@@ -157,16 +166,23 @@ export default async function ProjektlistaSida() {
                         {r.kvitton.slice(0, MAX_KVITTON_VISADE).map((k) => (
                           <li
                             key={k.id}
-                            className="flex items-baseline justify-between gap-3 font-granssnitt text-sm text-text-sekundar"
+                            className="font-granssnitt text-sm text-text-sekundar"
                           >
-                            <span className="min-w-0 truncate">
-                              {[k.leverantor, k.datum]
-                                .filter((d): d is string => !!d)
-                                .join(" · ") || "Kvitto"}
-                            </span>
-                            <span className="shrink-0 tabular-nums">
-                              {formateraKronor(k.belopp)}
-                            </span>
+                            <div className="flex items-baseline justify-between gap-3">
+                              <span className="min-w-0 truncate">
+                                {[k.leverantor, k.datum]
+                                  .filter((d): d is string => !!d)
+                                  .join(" · ") || "Kvitto"}
+                              </span>
+                              <span className="shrink-0 tabular-nums">
+                                {formateraKronor(k.belopp)}
+                              </span>
+                            </div>
+                            {/* Under namnet, aldrig under beloppet
+                                (docs/design.md, Listrader). */}
+                            {k.rotRad ? (
+                              <p className="mt-0.5 text-xs">{k.rotRad}</p>
+                            ) : null}
                           </li>
                         ))}
                         {r.kvitton.length > MAX_KVITTON_VISADE ? (

@@ -108,18 +108,42 @@ export function kandEgenAndel({
   return summeraAndelar(medlemsandelar) <= HOGSTA_ANDELSSUMMA ? egenAndel : null;
 }
 
+/** En andel i kortet Tillgang, for notisen nar summan inte gar ihop. */
+export interface SattAndel {
+  /** "du", en e-postadress, eller en adress med en utestaende inbjudan. */
+  vem: string;
+  andel: number;
+  /** Utestaende inbjudan – andelen andrar den som bjod in, inte medlemmen. */
+  inbjudan?: boolean;
+}
+
 /**
  * Kortet Tillgangs rad under summan, eller null nar summan ar 100 %. En summa
  * under 100 ar tillaten och namns utan att kallas ett fel – det finns
  * delagare som inte anvander appen. En summa over 100 kan bara finnas i en
  * bostad som delades innan andelen fragades vid inbjudan.
+ *
+ * Over 100 pekar texten INTE ut vems andel som ar fel – appen vet inte det.
+ * Uppmatt 2026-10-02: "Ändra din egen under Förvärvet" stod hos den som hade
+ * 50 %, medan den andra stod pa kolumnens standardvarde 100 %. Texten sager
+ * att summan inte gar ihop, vad var och en ar satt till, och vem som kan
+ * andra vad: en medlem sin egen andel under Förvärvet, den som bjod in en
+ * utestaende inbjudans andel genom att bjuda in samma adress igen.
  */
-export function andelssummaNotis(summa: number): string | null {
+export function andelssummaNotis(summa: number, andelar: SattAndel[] = []): string | null {
   if (summa < HOGSTA_ANDELSSUMMA) {
     return `Tillsammans ${formateraAndel(summa)}. Resten ägs av någon som inte har tillgång till bostaden i appen, eller är inte angivet.`;
   }
   if (summa > HOGSTA_ANDELSSUMMA) {
-    return `Tillsammans ${formateraAndel(summa)} – andelarna går inte ihop. Ändra din egen under Förvärvet.`;
+    const satt = andelar.length
+      ? ` Satt nu: ${andelar
+          .map((a) => `${a.vem}${a.inbjudan ? " (inbjuden)" : ""} ${formateraAndel(a.andel)}`)
+          .join(", ")}.`
+      : "";
+    const inbjudan = andelar.some((a) => a.inbjudan)
+      ? " En inbjudans andel ändrar den som bjöd in, genom att bjuda in samma adress igen."
+      : "";
+    return `Tillsammans ${formateraAndel(summa)} – andelarna går inte ihop.${satt} Var och en ändrar sin egen andel under Förvärvet.${inbjudan}`;
   }
   return null;
 }

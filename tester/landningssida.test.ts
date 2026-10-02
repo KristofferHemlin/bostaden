@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { arOskyddadSokvag } from "@/lib/oskyddade-sokvagar";
+import { arBaraForUtloggade, arOskyddadSokvag } from "@/lib/oskyddade-sokvagar";
 import { Landningssida } from "@/app/landningssida";
 
 describe("oskyddade sokvagar", () => {
@@ -55,5 +55,20 @@ describe("landningssidan", () => {
 
   it("har ingen bild, ingen topprad och ingen flikrad", () => {
     expect(html).not.toMatch(/<img|<svg|<nav/);
+  });
+});
+
+describe("sidor bara for utloggade", () => {
+  // docs/design.md, "Sidan finns inte": en inloggad anvandare som nar
+  // inloggningssidan skickas till oversikten i stallet for en tom sida.
+  it("inloggningssidan, med eller utan parametrar i sokvagen", () => {
+    expect(arBaraForUtloggade("/login")).toBe(true);
+    expect(arBaraForUtloggade("/login/")).toBe(true);
+  });
+
+  it("inte registreringen, inbjudan eller appens sidor", () => {
+    for (const s of ["/", "/registrera", "/inbjudan/abc", "/losenord/nytt", "/loginx", "/kostnad"]) {
+      expect(arBaraForUtloggade(s)).toBe(false);
+    }
   });
 });

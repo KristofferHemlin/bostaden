@@ -73,4 +73,29 @@ describe("andelssummaNotis – kortet Tillgang", () => {
   it("sager till nar andelarna inte gar ihop", () => {
     expect(andelssummaNotis(200)).toContain("går inte ihop");
   });
+
+  // Uppmatt 2026-10-02: "Ändra din egen under Förvärvet" hos den som hade
+  // 50 %, medan den andras 100 % var kolumnens standardvarde. Appen vet inte
+  // vems andel som ar fel och far inte peka ut nagon.
+  it("pekar inte ut lasaren, utan sager vad var och en ar satt till", () => {
+    const text = andelssummaNotis(150, [
+      { vem: "du", andel: 50 },
+      { vem: "anna@exempel.se", andel: 100 },
+    ])!;
+    expect(text).toContain(`Tillsammans ${formateraAndel(150)}`);
+    expect(text).toContain("går inte ihop");
+    expect(text).toContain("du 50");
+    expect(text).toContain("anna@exempel.se 100");
+    expect(text).not.toContain("Ändra din egen");
+    expect(text).toContain("Var och en ändrar sin egen andel under Förvärvet");
+  });
+
+  it("sager att den som bjod in andrar en utestaende inbjudans andel", () => {
+    const text = andelssummaNotis(150, [
+      { vem: "du", andel: 50 },
+      { vem: "anna@exempel.se", andel: 100, inbjudan: true },
+    ])!;
+    expect(text).toContain("anna@exempel.se (inbjuden) 100");
+    expect(text).toContain("En inbjudans andel ändrar den som bjöd in");
+  });
 });

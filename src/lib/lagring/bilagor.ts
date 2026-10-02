@@ -79,7 +79,7 @@ export async function skapaSigneradUppladdning(params: {
     where: { id: kostnadId, bostad_id: bostadId },
     select: { id: true },
   });
-  if (!kostnad) return { ok: false, fel: "Kostnaden hittades inte." };
+  if (!kostnad) return { ok: false, fel: "Kvittot hittades inte." };
 
   // Grinden ar densamma som forr, men gors nu bade har och i webblasaren – och
   // bucketen har dessutom en egen fileSizeLimit pa 10 MB som sista sparr.
@@ -141,7 +141,7 @@ export async function bekraftaKostnadsbilaga(params: {
     where: { id: kostnadId, bostad_id: bostadId },
     select: { id: true },
   });
-  if (!kostnad) return { ok: false, fel: "Kostnaden hittades inte." };
+  if (!kostnad) return { ok: false, fel: "Kvittot hittades inte." };
 
   // Klienten rapporterar in nyckeln; den MASTE se ut precis som en nyckel
   // servern sjalv delat ut for den har bostaden och kostnaden.
@@ -436,13 +436,13 @@ export async function taBortAllaBilagorForKostnad(
       },
     },
   });
-  if (!kostnad) return { ok: false, fel: "Kostnaden hittades inte." };
+  if (!kostnad) return { ok: false, fel: "Kvittot hittades inte." };
 
   const medlem = await prisma.medlemskap.findFirst({
     where: { anvandare_id: anvandareId, bostad_id: kostnad.bostad_id },
     select: { id: true },
   });
-  if (!medlem) return { ok: false, fel: "Kostnaden hittades inte." };
+  if (!medlem) return { ok: false, fel: "Kvittot hittades inte." };
 
   if (kostnad.bilagor.length === 0) return { ok: true };
 

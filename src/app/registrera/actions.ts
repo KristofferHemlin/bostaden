@@ -18,8 +18,9 @@
 // authId ur i fas 2, sa den maste folja med formularet.
 //
 // Bostadssteget har fem falt: upplatelseform, tilltradesdatum, adress, ort och
-// kopeskilling. Endast de tva forsta ar obligatoriska. Kopeskillingen gar bra
-// att fylla i senare. Storlek hor hemma pa installningssidan (docs/design.md,
+// kopeskilling. De tre forsta ar obligatoriska – adressen sedan 2026-10-01,
+// for att toppraden aldrig ska sta tom. Kopeskillingen gar bra att fylla i
+// senare. Storlek hor hemma pa installningssidan (docs/design.md,
 // Registreringsflodet), inte har.
 //
 // Identifieringen (foreningens namn/fastighetsbeteckningen) frågas INTE har
@@ -35,6 +36,7 @@ import { losenordsfel } from "@/lib/losenord";
 import { prisma } from "@/lib/prisma";
 import { hamtaAnvandare, sakerstallAnvandarrad } from "@/lib/session";
 import { skapaServerklient } from "@/lib/supabase/server";
+import { adressfel } from "./validering";
 import { tolkaGeokod } from "./koordinater";
 
 export interface RegistreringResultat {
@@ -99,6 +101,8 @@ export async function slutforRegistrering(
   if (tilltradesdatum > isoDatum(new Date())) {
     return { fel: "Tillträdesdatum kan inte ligga i framtiden." };
   }
+  const felIAdress = adressfel(adress);
+  if (felIAdress) return { fel: felIAdress };
 
   // Kopeskilling ar valfri (docs/design.md, Registreringsflodet). Anges i kronor
   // i faltet, tolkas som heltal oren och lagras som BigInt – Int (Postgres int4)
@@ -142,7 +146,7 @@ export async function slutforRegistrering(
 
   await prisma.bostad.create({
     data: {
-      adress: adress || null,
+      adress,
       ort: ort || null,
       place_id: geokod.place_id,
       latitud: geokod.latitud,
