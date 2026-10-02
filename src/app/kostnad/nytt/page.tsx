@@ -26,7 +26,7 @@ export default async function NyKostnadSida({
   searchParams: Promise<{ utkast?: string }>;
 }) {
   const { utkast: utkastId } = await searchParams;
-  const { bostadId } = await kravBostad();
+  const { bostadId, antalBostader } = await kravBostad();
 
   const bostad = await prisma.bostad.findUniqueOrThrow({
     where: { id: bostadId },
@@ -63,6 +63,9 @@ export default async function NyKostnadSida({
     >
       <NyKostnadForm
         utkast={utkast}
+        // Formularet bar bostaden det visas for, och namnger den nar det
+        // finns fler an en (docs/design.md, "Att äga flera bostäder").
+        bostad={{ id: bostadId, namn: antalBostader > 1 ? bostadsnamn : null }}
         innehav={{
           tilltradesdatum: isoDatum(bostad.tilltradesdatum),
           forsaljningsdatum: bostad.forsaljningsdatum

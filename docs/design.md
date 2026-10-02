@@ -1110,7 +1110,19 @@ Utan den raden ser båda delägarna samma summa, tror att den är deras, och fö
 
 **Skickbedömningen vid försäljningen räknas som ett svar.** Den sätter *Besvarat av* på samma sätt som klassificeringen och projektets redigering. "Var badrummet slitet innan?" är en åsikt, och med två delägare är frågan om vem som tyckte det lika befogad som vid klassificeringen.
 
-**Kontoraderingen tar bara bort det som är ditt.** Är du sista medlemmen försvinner bostaden med allt som hänger på den, som i dag. Finns det fler medlemmar tas bara ditt medlemskap bort, och bostaden med sina kvitton och bilagor ligger kvar hos de andra. En separation får aldrig radera den andras arkiv.
+**Kontoradering sker inte i appen, utan på begäran.** Beslutat 2026-10-02. Inställningssidan har ingen raderingsknapp; den har i stället en rad om hur man begär radering och vad som händer sedan. Begäran uppfylls utan onödigt dröjsmål – det är rätten att bli raderad som ska vara uppfylld, inte en knapp som ska finnas.
+
+**Skälet är att det var produktens farligaste kodväg, och att den ska byggas om ändå.** Uppmätt i koden 2026-10-02: raderingen gick igenom *alla* användarens medlemskap och raderade varje bostad där hon var ensam medlem – medan beskedet och zip-knappen bara gällde den **aktiva** bostaden. En användare med sin egen lägenhet och tillgång till någon annans hus kunde läsa att kvittona ligger kvar hos de andra delägarna, ladda ner en zip som bara innehöll husets filer, radera kontot, och förlora hela lägenheten. Ingenting sa det, och bilagorna fanns ingen annanstans.
+
+Felet var inte nåbart så länge appen tillät en bostad per person, och blev nåbart i samma stund inbjudningsspärren skulle tas bort. Att ta bort vägen i stället för att rätta den tar bort hela felklassen – och sammanslagning av arkiv, säljläge och att lämna en bostad ändrar var och en vad en radering borde göra, så vägen skulle byggas om en gång till ändå.
+
+**Logiken stannar i koden, utan väg in i gränssnittet.** `raderaKonto` är riktig i sak: ensam medlem raderar bostaden med allt som hänger på den, fler medlemmar tar bara bort medlemskapet, och en separation får aldrig radera den andras arkiv. Den nås av ett kommando som **först skriver ut vad som kommer att raderas och kräver bekräftelse**. Uppräkningen är alltså inte borta – den har flyttat från användaren till den som svarar på mejlet, och logiken fortsätter täckas av tester i stället för att ruttna.
+
+**Policyn måste säga samma sak som appen.** Beskriver den en självbetjäning som inte finns är policyn ett falskt påstående, vilket är sämre än en klumpig knapp. Texten ändras i samma commit som knappen försvinner.
+
+**Zip-exporten blir viktigare av det här.** Den är det enda användaren själv kan göra direkt, och den ska därför inte ligga som en fotnot till en radering som inte längre finns. Den gäller en bostad i taget, och etiketten säger vilken.
+
+**Att ta bort knappen är inte att ta bort funktionen.** Det ska stå i klartext var den finns, och svaret ska komma från en människa inom rimlig tid. Ett löfte utan procedur är sämre än ingen knapp.
 
 **Tas en delägare bort stannar allt i bostaden.** Kvittona dokumenterar bostaden, inte personen, och ett underlag med hål i är farligt just för att hålen inte syns. Den som lämnar ska kunna ladda ner sitt zip-arkiv först.
 
@@ -1157,6 +1169,58 @@ Posten valdes framför en ren länk därför att den överlever ett glömt löse
 **Den som redan har en bostad kan inte ansluta ännu.** Inbjudan ligger kvar på startskärmen med ett ärligt besked: appen hanterar en bostad per person i dag, och den dag växlaren finns går den att acceptera. **Ingen bostad tas bort**, inte ens en tom. Den vanliga vägen berörs inte: en partner som aldrig använt appen registrerar sig och ansluts till den befintliga bostaden i stället för att skapa en egen.
 
 **Fel adress ger ett begripligt besked.** Försöker någon lösa in en inbjudan som inloggad med en annan adress ska det stå varför det inte går, inte ett generiskt fel.
+
+### Att äga flera bostäder
+
+**Appen kan hamna här utan att någon valt det.** Inbjudan ger medlemskap i en bostad, och den som redan äger sin egen lägenhet och bjuds in till sin partners hus har två medlemskap samma dag. Det är därför det här inte är en funktion som saknas utan ett tillstånd som måste hanteras – och det värsta utfallet är inte ett trasigt gränssnitt, utan att hennes egna kvitton tycks vara borta, eller att ett kvitto sparas på fel bostad.
+
+**En bostad är aktiv i taget. Ingen sammanslagen vy.** Tröskeln gäller per kalenderår **per bostad** och underlaget är per bostad, så en summa över flera bostäder är inte bara meningslös – den antyder att tröskeln räknas på summan, vilket är fel åt det farliga hållet.
+
+**Adressen i toppraden är växlaren.** Finns fler än en bostad blir den tryckbar och får en liten nedåtpil; finns bara en är den oförändrad. Växlaren bor alltså inuti adressen i stället för bredvid den, så att regeln under *Skrivbordsvyn* fortsätter gälla: toppraden bär adressen och kugghjulet, ingenting mer. Inget nytt orange – orange hör till primärknappen.
+
+**Listan visar adress och upplåtelseform, den aktiva markerad. Inga belopp.** Ett tal per bostad inbjuder till en jämförelse som inte betyder något och gör växlaren till en instrumentpanel.
+
+**Kontrollens mekanik.** Tryckytan är minst 44px som alla andra. Listan går att nå med tangentbord, stängs med Escape och med ett klick utanför, och den får aldrig öppna en webbläsardialog. Den fäller inte heller ihop toppraden eller flyttar innehållet under sig – den läggs ovanpå, som helskärmsvyn gör, så att sidan bakom står still.
+
+**Bytet skriver valet och laddar om.** Det är en serveråtgärd som sätter användarens aktiva bostad och leder till översikten. Eftersom valet ligger på användaren och inte på fliken följer en öppen flik med vid nästa sidladdning – det är avsiktligt, och skälet står under *Att äga flera bostäder*.
+
+**Valet sparas på användaren, inte i webbläsaren.** En app man öppnar två gånger om året är en app där webbläsaren hunnit rensas, och telefonen och datorn ska visa samma bostad. Är valet tomt, eller pekar på en bostad användaren inte längre är medlem i, faller appen tillbaka deterministiskt – det enda medlemskapet, annars det äldsta. Aldrig på "någon av dem".
+
+**Varje sida och serveråtgärd prövar medlemskap i den aktiva bostaden, inte medlemskap i allmänhet.** Det är omgångens risk, och den är känd: medlemskapsrundan gjorde samma genomgång. Skillnaden är att en användare nu kan vara medlem i två bostäder, så "är du medlem" räcker inte som villkor. Ett fel här visar en bostads kvitton under en annan bostads adress – och det ser riktigt ut.
+
+**Bilagornas vägar är undantaget, och det är avsiktligt.** De prövar medlemskap i **bilagans egen** bostad, inte i den aktiva. Det är tillräckligt: ingen kan nå en bostad hon inte är medlem i, vilket är det skyddet finns för. Att dessutom kräva att bilagan hör till den aktiva bostaden skulle göra en legitim begäran till ett fel – samma användare kan ha två flikar öppna på två bostäder, och eftersom det aktiva valet ligger på användaren och inte på fliken skulle den ena flikens bilder sluta laddas när hon växlar i den andra.
+
+Regeln som gäller är alltså: **sidor och åtgärder följer den aktiva bostaden, bilagor följer sitt eget medlemskap.** Formuleringen "varje väg prövar den aktiva bostaden" var för grov och rättades 2026-10-02.
+
+**Det farligaste felet är ett kvitto som sparas på fel bostad.** Har användaren fler än en bostad namnger därför inmatningsformuläret bostaden kvittot sparas till. En dämpad rad, inte en varning – den som fotograferar ett kvitto tittar på kvittot, inte på toppraden.
+
+**Utkastet bär sin bostad från den stund det skapas.** Byter man bostad mitt i en inmatning flyttar utkastet inte med. Ett halvfärdigt kvitto som byter bostad under handen är tyst datafel.
+
+**Ett byte landar alltid på översikten.** Står man på ett kvitto i den ena bostaden och byter till den andra finns kvittot inte där, och en sida som tappar sitt innehåll vid ett byte ser ut som ett fel. Översikten är den enda sidan som alltid är sann för varje bostad.
+
+**En accepterad inbjudan gör den nya bostaden aktiv**, och appen säger vilken bostad man nu tittar på. Annars accepterar man en inbjudan och ingenting syns hända.
+
+**Med en enda bostad ska ingenting vara annorlunda.** Det är den vanligaste användaren och hon ska inte märka någonting av det här.
+
+**Växlaren byggs utan "Lägg till bostad", och sålda bostäder behöver ingen särbehandling förrän någon sålt.** Att själv lägga till en bostad man äger kräver att registreringens spärr tas bort, och den ska inte tas bort förrän det finns en väg in i gränssnittet som leder dit – en halvöppen dörr, där `/registrera` går att nå men ingenting länkar till den, är sämre än en stängd.
+
+**Ordningen det byggs i, och skälet.** Först allt som inte syns: den aktiva bostaden, det deterministiska återfallet, och att varje sida och åtgärd går mot den aktiva bostaden. Spärrarna står kvar under den omgången, så ingen användare kan nå det nya läget och ingenting ändras för den som har en bostad – riktigheten bevisas av tester som skapar två medlemskap direkt i testdatabasen.
+
+Sedan allt som syns: växlaren, att inbjudningsspärren tas bort, och att en accepterad inbjudan gör den nya bostaden aktiv.
+
+Skälet till uppdelningen är inte försiktighet för sin egen skull. Den första omgången rör varje väg som läser eller skriver bostadens data, och det är där ett fel visar en bostads kvitton under en annan bostads adress. Ligger den i samma omgång som spärrarna tas bort dyker ett sådant fel upp i samma stund som läget blir nåbart, och då går det inte att säga vilken ändring som orsakade det. Samma uppdelning som samägandet gjordes i, två gånger – och andra gången hittades en lucka i den första delen som hade varit osynlig om allt kommit samtidigt.
+
+### Två personer, ett hus
+
+**Fallet:** båda delägarna får länken till tjänsten samma dag, båda registrerar sig, och båda skapar huset. Nu finns två bostäder för ett hus och kvittona hamnar i två arkiv.
+
+**Växlaren löser det inte.** Den visar samma adress två gånger, och vad paret vill är inte att växla mellan sina kopior – det är att ha en enda.
+
+**Beslutat 2026-10-02 att leva med det, med en känd väg ut.** Dubbletten är synlig, ingenting är förlorat och ingenting är fel – det är två arkiv där ett hade räckt. Tre funktioner löser det ordentligt när de finns: att slå ihop två arkiv, att sätta en bostad i säljläge, och att radera eller lämna en bostad man inte vill ha kvar. Ingen av dem är en nödåtgärd, och ingen av dem hör i samma omgång som växlaren.
+
+**Men flödet säger det i förväg.** Registreringen nämner, där bostaden skapas, att den som ska dela bostaden med någon låter en av dem skapa den och bjuda in den andra. En rad som förebygger är billigare än tre funktioner som botar.
+
+**Och det måste gå att lämna en bostad, inte bara radera sitt konto.** Den som bjudits in till ett hus hon flyttar ifrån ska kunna gå ur. Logiken finns redan i kontoraderingen, som skiljer på sista medlem och inte: är hon sista medlem försvinner bostaden med allt som hänger på den, annars tas bara medlemskapet bort. Det är den funktionen som gör dubbletten städbar, och den hör till samma senare omgång som de tre ovan.
 
 ### Exportvyn
 

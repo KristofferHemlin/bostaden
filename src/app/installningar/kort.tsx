@@ -51,13 +51,13 @@ import { formateraBeloppInmatning, formateraKronor } from "@/lib/format";
 import { useNarKlar } from "@/lib/nar-klar";
 import { formateraAndel } from "@/lib/samagande";
 import { ArkivexportKnapp } from "./arkivexport-knapp";
+import { KONTAKTADRESS } from "@/lib/kontakt";
 import {
   sparaBostaden,
   sparaForvarvet,
   type InstallningarResultat,
 } from "./actions";
 import { TillgangKort, type TillgangData } from "./dela-bostaden";
-import { KontoRadera } from "./konto-radera";
 
 type KortNamn = "bostaden" | "forvarvet";
 
@@ -97,16 +97,14 @@ export function InstallningarKort({
   bostaden,
   forvarvet,
   tillgang,
-  epost,
-  delad,
+  bostadsnamn,
 }: {
   bostaden: BostadenData;
   forvarvet: ForvarvetData;
-  epost: string;
   /** Vilka som har bostaden, deras andelar och utestaende inbjudningar. */
   tillgang: TillgangData;
-  /** Bostaden har fler an en medlem – kontoraderingen tar da bara bort medlemskapet. */
-  delad: boolean;
+  /** Toppradens namn pa bostaden – zip-exporten sager vilken bostad den galler. */
+  bostadsnamn: string;
 }) {
   const [oppetKort, setOppetKort] = useState<KortNamn | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -190,7 +188,7 @@ export function InstallningarKort({
       </Kort>
 
       <Kort>
-        <DittKontoKort epost={epost} delad={delad} />
+        <DittKontoKort bostadsnamn={bostadsnamn} />
       </Kort>
 
       {byteTill && oppetKort ? (
@@ -752,9 +750,15 @@ function ForvarvetEditForm({
 // ---------------------------------------------------------------------------
 // Ditt konto: inget lasläge – bara handlingar (docs/design.md,
 // "Installningssidan").
+//
+// Ingen raderingsknapp (docs/design.md, "Samägande – medlemskapet":
+// "Kontoradering sker inte i appen, utan på begäran"). Raden om hur man
+// begar radering star dar knappen stod – en sida som tyst tappar "Radera
+// konto" sager ingenting. Zip-exporten ar darmed det enda anvandaren sjalv
+// gor direkt med sina filer, och den ar ingen fotnot till en radering langre.
 // ---------------------------------------------------------------------------
 
-function DittKontoKort({ epost, delad }: { epost: string; delad: boolean }) {
+function DittKontoKort({ bostadsnamn }: { bostadsnamn: string }) {
   return (
     <>
       <div className="p-4 pb-0">
@@ -762,11 +766,10 @@ function DittKontoKort({ epost, delad }: { epost: string; delad: boolean }) {
       </div>
       <div className="flex flex-col gap-3 p-4">
         <p className="font-granssnitt text-sm text-text-sekundar">
-          Ladda ner alla dina kvitton och fakturor som ett zip-arkiv – till
-          exempel om du vill ta med dig dokumentationen om du slutar använda
-          tjänsten.
+          Alla kvitton och fakturor som ett zip-arkiv – ditt eget exemplar, att
+          spara var du vill eller ta med dig om du slutar använda tjänsten.
         </p>
-        <ArkivexportKnapp />
+        <ArkivexportKnapp bostadsnamn={bostadsnamn} />
 
         <form action={loggaUt}>
           <button type="submit" className={SEKUNDARKNAPP_KLASS}>
@@ -781,7 +784,17 @@ function DittKontoKort({ epost, delad }: { epost: string; delad: boolean }) {
           >
             Integritetspolicyn
           </Link>
-          <KontoRadera epost={epost} delad={delad} />
+          <p className="font-granssnitt text-sm text-text-sekundar">
+            Vill du att kontot raderas? Mejla{" "}
+            <a
+              href={`mailto:${KONTAKTADRESS}`}
+              className="underline underline-offset-2 hover:text-text-primar"
+            >
+              {KONTAKTADRESS}
+            </a>{" "}
+            från adressen du loggar in med. Du får svar av en människa inom
+            några dagar, och besked om vad som tas bort innan något försvinner.
+          </p>
         </div>
       </div>
     </>

@@ -11,7 +11,12 @@
 //   3. bekraftaBilagauppladdning -> bekrafta mot Storage, ev. HEIC-miniatyr, skapa raden
 //   4. analyseraBilaga          -> las filen fran Storage och kor dokumentavlasningen
 //
-// bostad_id kommer ALLTID fran kravBostad() har, aldrig fran klienten.
+// bostad_id kommer ALLTID fran servern, aldrig fran klienten: det ar
+// kostnadens egen bostad, och bara om den inloggade ar medlem dar. Bilagorna
+// foljer sitt eget medlemskap, inte den aktiva bostaden (docs/design.md, "Att
+// äga flera bostäder") – ett utkast bar sin bostad fran den stund det skapas,
+// och en uppladdning som paborjats i en bostad ska inte slas ut av att den
+// aktiva bostaden byts i en annan flik.
 
 import { serverfelMeddelande } from "@/lib/databas-fel";
 import {
@@ -21,9 +26,9 @@ import {
   type SigneradUppladdning,
   type Uppladdningsresultat,
 } from "@/lib/lagring/bilagor";
-import { analyseraKostnadsbilaga } from "@/lib/dokumentavlasning/lagring";
+import { analyseraKostnadsbilaga, KORDES_INTE } from "@/lib/dokumentavlasning/lagring";
 import type { Dokumentavlasning } from "@/lib/dokumentavlasning/analysera";
-import { kravBostad } from "@/lib/session";
+import { bostadForBilaga, bostadForKostnad, kravBostad } from "@/lib/session";
 
 // Bilageuppladdningen ar det viktigaste stallet i hela appen att aldrig tystna
 // pa (produktspec avsnitt 13, punkt 2: "en tyst misslyckad uppladdning ar det
@@ -41,8 +46,10 @@ interface Filuppgifter {
 export async function begarBilagauppladdning(
   indata: Filuppgifter & { kostnadId: string },
 ): Promise<SigneradUppladdning> {
-  const { bostadId, anvandareId } = await kravBostad();
+  const { anvandareId } = await kravBostad();
   try {
+    const bostadId = await bostadForKostnad(indata.kostnadId, anvandareId);
+    if (!bostadId) return { ok: false, fel: "Kvittot hittades inte." };
     return await skapaSigneradUppladdning({
       bostadId,
       kostnadId: indata.kostnadId,
@@ -65,8 +72,10 @@ export async function begarBilagauppladdning(
 export async function bekraftaBilagauppladdning(
   indata: Filuppgifter & { kostnadId: string; nyckel: string },
 ): Promise<Uppladdningsresultat> {
-  const { bostadId, anvandareId } = await kravBostad();
+  const { anvandareId } = await kravBostad();
   try {
+    const bostadId = await bostadForKostnad(indata.kostnadId, anvandareId);
+    if (!bostadId) return { ok: false, fel: "Kvittot hittades inte." };
     return await bekraftaKostnadsbilaga({
       bostadId,
       kostnadId: indata.kostnadId,
@@ -90,7 +99,9 @@ export async function bekraftaBilagauppladdning(
 export async function analyseraBilaga(indata: {
   bilagaId: string;
 }): Promise<Dokumentavlasning> {
-  const { bostadId } = await kravBostad();
+  const { anvandareId } = await kravBostad();
+  const bostadId = await bostadForBilaga(indata.bilagaId, anvandareId);
+  if (!bostadId) return KORDES_INTE;
   return analyseraKostnadsbilaga({ bostadId, bilagaId: indata.bilagaId });
 }
 

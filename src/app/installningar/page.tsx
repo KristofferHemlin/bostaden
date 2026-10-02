@@ -7,7 +7,6 @@ import { hamtaAndelar } from "@/lib/andelar";
 import { bostadHeader } from "@/lib/bostad-header";
 import { isoDatum } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
-import { arDeladBostad } from "@/lib/samagande";
 import { kravAnvandare, kravBostad } from "@/lib/session";
 import { Skarm } from "@/components/skarm";
 import { InstallningarKort } from "./kort";
@@ -58,8 +57,7 @@ export default async function InstallningarSida() {
             .sort((a, b) => Number(b.du) - Number(a.du)),
           inbjudningar: andelar.inbjudningar,
         }}
-        epost={anvandare.epost}
-        delad={arDeladBostad(andelar.medlemmar.length)}
+        bostadsnamn={bostadsnamn}
       />
     </Skarm>
   );

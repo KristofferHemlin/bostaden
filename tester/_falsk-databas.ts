@@ -35,6 +35,7 @@ const manga = (modell: Modell, fjarr: string): Relation => ({ modell, typ: "mang
 // Speglar prisma/schema.prisma.
 const RELATIONER: Record<Modell, Record<string, Relation>> = {
   anvandare: {
+    aktiv_bostad: en("bostad", "aktiv_bostad_id"),
     medlemskap: manga("medlemskap", "anvandare_id"),
     kostnader_skapade: manga("kostnad", "skapad_av"),
     projekt_klassificerade: manga("projekt", "klassificerad_av"),
@@ -45,6 +46,7 @@ const RELATIONER: Record<Modell, Record<string, Relation>> = {
     projekt: manga("projekt", "bostad_id"),
     kostnader: manga("kostnad", "bostad_id"),
     inbjudningar: manga("inbjudan", "bostad_id"),
+    aktiv_for: manga("anvandare", "aktiv_bostad_id"),
   },
   medlemskap: { anvandare: en("anvandare", "anvandare_id"), bostad: en("bostad", "bostad_id") },
   projekt: {
@@ -71,6 +73,7 @@ const VID_RADERING: { fran: Modell; till: Modell; falt: string; satt: "cascade" 
   { fran: "anvandare", till: "kostnad", falt: "skapad_av", satt: "null" },
   { fran: "anvandare", till: "projekt", falt: "klassificerad_av", satt: "null" },
   { fran: "anvandare", till: "inbjudan", falt: "inbjuden_av", satt: "null" },
+  { fran: "bostad", till: "anvandare", falt: "aktiv_bostad_id", satt: "null" },
   { fran: "bostad", till: "inbjudan", falt: "bostad_id", satt: "cascade" },
   { fran: "bostad", till: "medlemskap", falt: "bostad_id", satt: "cascade" },
   { fran: "bostad", till: "projekt", falt: "bostad_id", satt: "cascade" },
@@ -83,7 +86,7 @@ const VID_RADERING: { fran: Modell; till: Modell; falt: string; satt: "cascade" 
 
 // Standardvarden, sa att en rad skapad av appen har samma falt som i Postgres.
 const STANDARD: Record<Modell, () => Rad> = {
-  anvandare: () => ({}),
+  anvandare: () => ({ aktiv_bostad_id: null }),
   bostad: () => ({
     namn: null, adress: null, place_id: null, latitud: null, longitud: null, ort: null,
     storlek: null, identifiering: null, husform: null, nybyggd_vid_forvarv: false,
@@ -167,6 +170,9 @@ function skalarMatchar(varde: unknown, villkor: unknown): boolean {
 
 export function skapaFalskDatabas() {
   let t = tommaTabeller();
+  // Ser varje svar databasen ger – for test som provar att en sida inte LASER
+  // en annan bostads data, inte bara att den inte skriver i den.
+  let lyssnare: ((modell: Modell, svar: unknown) => void) | null = null;
 
   function relaterade(rel: Relation, rad: Rad): Rad[] {
     const nyckel = rad[rel.lokal];
@@ -190,6 +196,11 @@ export function skapaFalskDatabas() {
       if (k === "NOT") {
         const lista = Array.isArray(v) ? v : [v];
         if (lista.some((w) => matchar(modell, rad, w))) return false;
+        continue;
+      }
+      // Sammansatt unik nyckel, t.ex. anvandare_id_bostad_id: { anvandare_id, bostad_id }.
+      if (!(k in rad) && !RELATIONER[modell][k] && arVillkorsobjekt(v) && Object.keys(v).join("_") === k) {
+        if (!matchar(modell, rad, v)) return false;
         continue;
       }
       const rel = RELATIONER[modell][k];
@@ -328,7 +339,7 @@ export function skapaFalskDatabas() {
   }
 
   function delegat(modell: Modell) {
-    return {
+    const metoder = {
       findUnique: async (a: Rad) => { const [r] = sok(modell, a); return r ? projicera(modell, r, a) : null; },
       findFirst: async (a: Rad = {}) => { const [r] = sok(modell, a); return r ? projicera(modell, r, a) : null; },
       findUniqueOrThrow: async (a: Rad) => { const [r] = sok(modell, a); if (!r) throw new InteHittad(modell); return projicera(modell, r, a); },
@@ -342,6 +353,16 @@ export function skapaFalskDatabas() {
       delete: async (a: Rad) => { const [r] = sok(modell, { where: a.where }); if (!r) throw new InteHittad(modell); const kopia = projicera(modell, r, a); radera(modell, r); return kopia; },
       deleteMany: async (a: Rad = {}) => { const rader = sok(modell, { where: a.where }); rader.forEach((r) => radera(modell, r)); return { count: rader.length }; },
     };
+    return Object.fromEntries(
+      Object.entries(metoder).map(([namn, fn]) => [
+        namn,
+        async (a?: Rad) => {
+          const svar = await fn(a as Rad);
+          lyssnare?.(modell, svar);
+          return svar;
+        },
+      ]),
+    ) as typeof metoder;
   }
 
   const klient = {
@@ -373,6 +394,11 @@ export function skapaFalskDatabas() {
     /** Tomma tabeller infor nasta test. */
     nollstall() {
       t = tommaTabeller();
+      lyssnare = null;
+    },
+    /** Anropas med varje svar databasen ger, tills nollstall(). */
+    lyssna(fn: (modell: Modell, svar: unknown) => void) {
+      lyssnare = fn;
     },
     /** Lagger in rader rakt i tabellen, med samma standardvarden som Postgres. */
     lagg(modell: Modell, data: Rad): Rad {

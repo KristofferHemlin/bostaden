@@ -3,6 +3,8 @@
 // Arkivexport-knappen pa installningssidan (docs/produktspec.md avsnitt 12,
 // "Arkivexport tidigt"; docs/design.md "Installningssidan"). Laddar ner
 // SAMTLIGA bilagor for bostaden som ett zip-arkiv – ingen JSON, ingen CSV.
+// En bostad i taget, den aktiva, och etiketten sager vilken – annars ar det
+// otydligt sa fort nagon har tva (docs/design.md, "Samägande – medlemskapet").
 //
 // Servern levererar bara listan {sokvag, url}; webblasaren hamtar filerna och
 // packar zipen (client-zip), av samma skal som uppladdningen gar direkt mot
@@ -70,7 +72,7 @@ function laddaNerBlob(blob: Blob, filnamn: string) {
   URL.revokeObjectURL(url);
 }
 
-export function ArkivexportKnapp() {
+export function ArkivexportKnapp({ bostadsnamn }: { bostadsnamn: string }) {
   const [steg, setSteg] = useState<Steg>({ fas: "vilar" });
 
   async function korExport() {
@@ -139,7 +141,7 @@ export function ArkivexportKnapp() {
         disabled={pagar}
         className={SEKUNDARKNAPP_KLASS}
       >
-        {etikett(steg)}
+        {etikett(steg, bostadsnamn)}
       </button>
 
       {steg.fas === "tom" ? (
@@ -169,7 +171,7 @@ export function ArkivexportKnapp() {
   );
 }
 
-function etikett(steg: Steg): string {
+function etikett(steg: Steg, bostadsnamn: string): string {
   switch (steg.fas) {
     case "forbereder":
       return "Förbereder…";
@@ -178,6 +180,6 @@ function etikett(steg: Steg): string {
     case "packar":
       return "Packar arkivet…";
     default:
-      return "Ladda ner alla bilagor (zip)";
+      return `Ladda ner bilagorna för ${bostadsnamn} (zip)`;
   }
 }

@@ -49,6 +49,13 @@ model anvandare {
   skapad_at  DateTime     @default(now())
   medlemskap medlemskap[]
 
+  // Den aktiva bostaden (docs/design.md, "Att äga flera bostäder"). Ett val,
+  // aldrig en behorighet: atkomsten provas alltid mot medlemskapet, och ett
+  // tomt eller inaktuellt val faller tillbaka pa det aldsta medlemskapet
+  // (src/lib/aktiv-bostad.ts).
+  aktiv_bostad_id String? @db.Uuid
+  aktiv_bostad    bostad? @relation("aktiv_bostad", fields: [aktiv_bostad_id], references: [id], onDelete: SetNull)
+
   // Vem som lade in ett kvitto respektive besvarade en atgards fragor
   // (docs/design.md, "Samagande – medlemskapet"). Bara for visning.
   kostnader_skapade      kostnad[]  @relation("kostnad_skapad_av")
@@ -101,6 +108,7 @@ model bostad {
   projekt      projekt[]
   kostnader    kostnad[]
   inbjudningar inbjudan[]
+  aktiv_for    anvandare[]  @relation("aktiv_bostad")
 }
 
 // Kopplingen anvandare–bostad. Agarandelen tillhor relationen, inte bostaden.

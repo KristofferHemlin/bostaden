@@ -192,9 +192,12 @@ interface Filstatus {
 
 export function NyKostnadForm({
   utkast,
+  bostad,
   innehav,
 }: {
   utkast?: Utkast;
+  /** Bostaden kvittot sparas pa. `namn` ar null nar anvandaren bara har en. */
+  bostad: { id: string; namn: string | null };
   innehav: Innehavsgranser;
 }) {
   const router = useRouter();
@@ -445,7 +448,7 @@ export function NyKostnadForm({
   function sakerstallUtkast(): Promise<string> {
     if (utkastId) return Promise.resolve(utkastId);
     if (!utkastPromiseRef.current) {
-      utkastPromiseRef.current = skapaUtkast().then((r) => {
+      utkastPromiseRef.current = skapaUtkast(bostad.id).then((r) => {
         if (r.fel || !r.kostnadId) {
           utkastPromiseRef.current = null;
           throw new Error(r.fel ?? "Kvittot kunde inte förberedas.");
@@ -661,6 +664,7 @@ export function NyKostnadForm({
     setResultat(START);
 
     formData.set("utkast_id", utkastId ?? "");
+    formData.set("bostad_id", bostad.id);
 
     // sparaKostnad returnerar alltid ett resultat, aldrig ett kastat fel (se
     // actions.ts) – men natverket sjalvt kan strula pa vagen dit, och da far
@@ -752,6 +756,15 @@ export function NyKostnadForm({
       onSubmit={hanteraSubmit}
       className="flex flex-col gap-5 p-5"
     >
+      {/* Vilken bostad kvittot sparas pa, nar det finns fler an en
+          (docs/design.md, "Att äga flera bostäder"). En dampad rad, inte en
+          varning – den som fotograferar ett kvitto tittar inte pa toppraden. */}
+      {bostad.namn ? (
+        <p className="font-granssnitt text-sm text-text-sekundar">
+          Sparas på {bostad.namn}
+        </p>
+      ) : null}
+
       {/* Bilagan forst. Ingen filknapp – sista rutan i raden ar hela kontrollen. */}
       <div>
         {/* Etiketten sager vad man ska valja – nar valet ar gjort och syns

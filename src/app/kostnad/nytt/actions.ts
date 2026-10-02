@@ -19,14 +19,21 @@
 // alltid EN rad pa hela totalbeloppet, med leverantoren som artikelnamn
 // (produktspec 5: "En rad skapas alltid").
 //
+// BOSTADEN. Formularet bar bostaden det visades for (`bostad_id`), och ett
+// utkast bar sin egen fran den stund det skapas (docs/design.md, "Att äga
+// flera bostäder"). Byts den aktiva bostaden mitt i en inmatning – i en annan
+// flik, pa en annan enhet – sparas kvittot anda dar formularet sa att det
+// skulle sparas. Medlemskapet provas i just den bostaden (kravMedlemskapI).
+//
 // Aret bestams av betaldatum, aldrig av dokumentdatum. En kostnad utan
 // betaldatum sparas anda (obetald, raknas inte in) – inga floden far blockera.
 
 import { revalidatePath } from "next/cache";
 import { serverfelMeddelande } from "@/lib/databas-fel";
 import { oreFranKronor } from "@/lib/format";
+import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
-import { kravBostad } from "@/lib/session";
+import { kravMedlemskapI } from "@/lib/session";
 
 export interface KostnadResultat {
   fel?: string;
@@ -57,8 +64,12 @@ function revalideraKostnadsvyer(): void {
  * inget belopp, ingen leverantor och inget datum; det syns i listan och i
  * genomgangen men raknas inte in nagonstans och rensas aldrig automatiskt.
  */
-export async function skapaUtkast(): Promise<{ kostnadId?: string; fel?: string }> {
-  const { bostadId, anvandareId } = await kravBostad();
+export async function skapaUtkast(
+  formularetsBostadId?: string,
+): Promise<{ kostnadId?: string; fel?: string }> {
+  const medlemskap = await kravMedlemskapI(formularetsBostadId);
+  if (!medlemskap) return { fel: BOSTADEN_HITTADES_INTE };
+  const { bostadId, anvandareId } = medlemskap;
   try {
     const skapad = await prisma.kostnad.create({
       data: {
@@ -83,6 +94,8 @@ export async function skapaUtkast(): Promise<{ kostnadId?: string; fel?: string 
     };
   }
 }
+
+const BOSTADEN_HITTADES_INTE = "Bostaden kvittot skulle sparas på hittades inte.";
 
 type Tolkad =
   | { fel: string }
@@ -159,13 +172,17 @@ function enRadSkapa(leverantor: string, totalbelopp: number) {
 
 /**
  * Sparar kostnaden. Bar formularet ett `utkast_id` UPPDATERAS det utkastet
- * (kvittot valdes tidigare och laddades upp da); annars skapas en ny kostnad.
+ * (kvittot valdes tidigare och laddades upp da) i den bostad utkastet skapades
+ * i; annars skapas en ny kostnad i formularets bostad. Ingen av vagarna foljer
+ * en aktiv bostad som bytts sedan formularet visades.
  */
 export async function sparaKostnad(
   formData: FormData,
 ): Promise<KostnadResultat> {
-  const { bostadId, anvandareId } = await kravBostad();
   const utkastId = String(formData.get("utkast_id") ?? "").trim();
+  const medlemskap = await kravMedlemskapI(String(formData.get("bostad_id") ?? "").trim());
+  if (!medlemskap) return { fel: BOSTADEN_HITTADES_INTE };
+  const { anvandareId } = medlemskap;
 
   const tolkad = tolkaKostnadsformular(formData);
   if ("fel" in tolkad) return { fel: tolkad.fel };
@@ -176,10 +193,14 @@ export async function sparaKostnad(
   // formularet hangande utan besked (produktspec avsnitt 13, punkt 2).
   try {
     if (utkastId !== "") {
-      const utkast = await prisma.kostnad.findFirst({
-        where: { id: utkastId, bostad_id: bostadId },
-        select: { id: true, totalbelopp: true },
-      });
+      // Utkastet bar sin bostad: det slutfors dar det ligger, om den
+      // inloggade ar medlem dar – aldrig i den aktiva bostaden om den bytts.
+      const utkast = arGiltigtId(utkastId)
+        ? await prisma.kostnad.findUnique({
+            where: { id: utkastId, bostad: { medlemskap: { some: { anvandare_id: anvandareId } } } },
+            select: { id: true, totalbelopp: true },
+          })
+        : null;
       if (!utkast) return { fel: "Utkastet hittades inte." };
       if (utkast.totalbelopp !== null) {
         // Redan slutfort (t.ex. dubbelt inskick) – inget nytt skapas.
@@ -207,7 +228,7 @@ export async function sparaKostnad(
 
     const skapad = await prisma.kostnad.create({
       data: {
-        bostad_id: bostadId,
+        bostad_id: medlemskap.bostadId,
         skapad_av: anvandareId,
         leverantor,
         totalbelopp,

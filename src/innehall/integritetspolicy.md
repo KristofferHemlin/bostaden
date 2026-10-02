@@ -65,9 +65,9 @@ Uppgifterna lagras inom EU/EES. Leverantörerna i avsnitt 4 är i flera fall ame
 
 **Så länge du har ett konto.** Hela poängen med tjänsten är att dokumentationen ska finnas kvar den dag du säljer din bostad, och det kan dröja många år. Att radera efter en tids inaktivitet skulle förstöra det du använder tjänsten för.
 
-Raderar du ditt konto tas både databasuppgifter och uppladdade filer bort.
+Vill du att ditt konto raderas mejlar du kristofferhemlin@gmail.com. Då tas både databasuppgifter och uppladdade filer bort.
 
-Har du inte loggat in på mycket länge kan du få ett mejl som påminner om att kontot finns och vad som ligger i det, så att du kan ladda ner allt eller radera det.
+Har du inte loggat in på mycket länge kan du få ett mejl som påminner om att kontot finns och vad som ligger i det, så att du kan ladda ner allt eller be om att det raderas.
 
 Tekniska felrapporter sparas i högst 30 dagar.
 
@@ -91,7 +91,7 @@ Tjänsten använder en kaka för att hålla dig inloggad. Den är nödvändig f�
 
 ## 10. Om verksamheten överlåts
 
-Skulle tjänsten överlåtas till ett bolag eller till någon annan kan uppgifterna komma att föras över dit. Du informeras i så fall innan det sker, och kan välja att radera ditt konto först.
+Skulle tjänsten överlåtas till ett bolag eller till någon annan kan uppgifterna komma att föras över dit. Du informeras i så fall innan det sker, och kan välja att be om att ditt konto raderas först.
 
 ## 11. Ändringar
 

@@ -323,6 +323,13 @@ interface Vag {
   vag: string;
   anrop: () => Promise<unknown>;
   avslag: Avslag;
+  /**
+   * "egen": vagen foljer sitt eget medlemskap, inte den aktiva bostaden
+   * (docs/design.md, "Att äga flera bostäder") – bilagorna och utkastet. Den
+   * avvisar den som inte ar medlem i bostaden, men slapper in en medlem
+   * aven nar en annan bostad ar aktiv.
+   */
+  foljer?: "egen";
 }
 
 const VAGAR_MED_ID: Vag[] = [
@@ -338,8 +345,8 @@ const VAGAR_MED_ID: Vag[] = [
   { vag: "sida /projekt/[id]/redigera", anrop: () => RedigeraProjektSida(params(PX)), avslag: "sidan finns inte" },
 
   // Bilagornas adress – direkta anrop
-  { vag: "GET /bilaga/[id] (visning)", anrop: () => hamtaBilaga(BX), avslag: "404" },
-  { vag: "GET /bilaga/[id]?variant=original", anrop: () => hamtaBilaga(BX, "original"), avslag: "404" },
+  { vag: "GET /bilaga/[id] (visning)", anrop: () => hamtaBilaga(BX), avslag: "404", foljer: "egen" },
+  { vag: "GET /bilaga/[id]?variant=original", anrop: () => hamtaBilaga(BX, "original"), avslag: "404", foljer: "egen" },
 
   // Kvittot
   {
@@ -368,6 +375,7 @@ const VAGAR_MED_ID: Vag[] = [
         utkast_id: UX, leverantor: "Kapat", totalbelopp: "100", dokumentdatum: "2025-04-14",
       })),
     avslag: "fel",
+    foljer: "egen",
   },
 
   // Bilagorna via serveratgarder
@@ -375,6 +383,7 @@ const VAGAR_MED_ID: Vag[] = [
     vag: "begarBilagauppladdning",
     anrop: () => begarBilagauppladdning({ kostnadId: KX, filnamn: "k.jpg", mimetyp: "image/jpeg", storlek: 1000 }),
     avslag: "fel",
+    foljer: "egen",
   },
   {
     vag: "bekraftaBilagauppladdning (annans kostnad)",
@@ -383,6 +392,7 @@ const VAGAR_MED_ID: Vag[] = [
         kostnadId: KX, nyckel: `${X}/${KX}/ny.jpg`, filnamn: "k.jpg", mimetyp: "image/jpeg", storlek: 1000,
       }),
     avslag: "fel",
+    foljer: "egen",
   },
   {
     vag: "bekraftaBilagauppladdning (egen kostnad, annans sokvag)",
@@ -392,12 +402,13 @@ const VAGAR_MED_ID: Vag[] = [
       }),
     avslag: "fel",
   },
-  { vag: "analyseraBilaga", anrop: () => analyseraBilaga({ bilagaId: BX }), avslag: "fel" },
-  { vag: "taBortBilaga", anrop: () => taBortBilaga({ bilagaId: BX }), avslag: "fel" },
+  { vag: "analyseraBilaga", anrop: () => analyseraBilaga({ bilagaId: BX }), avslag: "fel", foljer: "egen" },
+  { vag: "taBortBilaga", anrop: () => taBortBilaga({ bilagaId: BX }), avslag: "fel", foljer: "egen" },
   {
     vag: "taBortBilagaAction",
     anrop: () => taBortBilagaAction(START, formular({ bilaga_id: BX, kostnad_id: KX })),
     avslag: "fel",
+    foljer: "egen",
   },
 
   // Klassificeringsgenomgangen
@@ -477,21 +488,25 @@ function forvantaAvslag(utfall: Utfall, avslag: Avslag) {
   }
 }
 
+async function provaAvslag(v: Vag) {
+  const fore = h.db.ogonblick();
+
+  const utfall = await kor(v.anrop);
+
+  forvantaAvslag(utfall, v.avslag);
+  expect(h.db.ogonblick()).toEqual(fore);
+  // Ingen signerad lank, ingen uppladdning, ingen radering, ingen avlasning.
+  expect(h.lager.createSignedUrl).not.toHaveBeenCalled();
+  expect(h.lager.createSignedUploadUrl).not.toHaveBeenCalled();
+  expect(h.lager.remove).not.toHaveBeenCalled();
+  expect(h.lager.download).not.toHaveBeenCalled();
+  expect(h.analysera).not.toHaveBeenCalled();
+}
+
 describe("en medlem i en annan bostad far avslag pa varje vag", () => {
   it.each(VAGAR_MED_ID.map((v) => [v.vag, v] as const))("%s", async (_namn, v) => {
     loggaIn(BERTIL);
-    const fore = h.db.ogonblick();
-
-    const utfall = await kor(v.anrop);
-
-    forvantaAvslag(utfall, v.avslag);
-    expect(h.db.ogonblick()).toEqual(fore);
-    // Ingen signerad lank, ingen uppladdning, ingen radering, ingen avlasning.
-    expect(h.lager.createSignedUrl).not.toHaveBeenCalled();
-    expect(h.lager.createSignedUploadUrl).not.toHaveBeenCalled();
-    expect(h.lager.remove).not.toHaveBeenCalled();
-    expect(h.lager.download).not.toHaveBeenCalled();
-    expect(h.analysera).not.toHaveBeenCalled();
+    await provaAvslag(v);
   });
 });
 
@@ -745,5 +760,268 @@ describe("kontoraderingen", () => {
     loggaIn(ANNA);
     expect((await kravBostad()).bostadId).toBe(X);
     expect(await hamtaArkivexportlista()).toEqual(arkiv);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Den aktiva bostaden (docs/design.md, "Att äga flera bostäder"). Bertil ar
+// nu medlem i BADE sin egen bostad Y och i Annas X, och Y ar aktiv. Att vara
+// medlem nagonstans – aven i just X – far inte ge en sida eller atgard
+// atkomst till X medan Y ar aktiv: villkoret ar "medlem i den har", inte
+// "medlem". Undantagen ar vagarna markerade foljer: "egen" – bilagorna och
+// utkastet foljer sitt eget medlemskap.
+//
+// Lagen gar inte att na i appen annu (spärrarna star kvar), sa medlemskapen
+// laggs direkt i testdatabasen.
+// ---------------------------------------------------------------------------
+
+const Z = "b0000000-0000-4000-8000-00000000000c"; // en bostad Bertil inte ar medlem i
+
+// Allt som bara finns i X. Ses nagot av det i ett svar fran databasen nar Y
+// ar aktiv har sidan last fran fel bostad. Bostadens id X sjalvt finns inte
+// med: det star legitimt i Bertils eget medlemskap.
+const BARA_I_X = [PX, HX, KX, K2X, K3X, AX, UX, BX, IX, BX_NYCKEL, "Storgatan 1", ANNA, EPOST[ANNA]];
+
+function strangar(varde: unknown, ut: string[] = []): string[] {
+  if (typeof varde === "string") ut.push(varde);
+  else if (Array.isArray(varde)) varde.forEach((v) => strangar(v, ut));
+  else if (varde && typeof varde === "object" && !(varde instanceof Date)) {
+    Object.values(varde).forEach((v) => strangar(v, ut));
+  }
+  return ut;
+}
+
+/** Varje rad som hor till X, for att jamfora fore och efter. */
+function xDelen(t: ReturnType<typeof h.db.ogonblick>) {
+  const kostnader = t.kostnad.filter((k) => k.bostad_id === X);
+  const kostnadsider = new Set(kostnader.map((k) => k.id));
+  const rader = t.kostnadsrad.filter((r) => kostnadsider.has(r.kostnad_id as string));
+  const radider = new Set(rader.map((r) => r.id));
+  return {
+    bostad: t.bostad.filter((b) => b.id === X),
+    medlemskap: t.medlemskap.filter((m) => m.bostad_id === X),
+    projekt: t.projekt.filter((p) => p.bostad_id === X),
+    kostnader,
+    rader,
+    fordelningar: t.radfordelning.filter((f) => radider.has(f.kostnadsrad_id as string)),
+    bilagor: t.bilaga.filter((b) => kostnadsider.has(b.kostnad_id as string)),
+    inbjudningar: t.inbjudan.filter((i) => i.bostad_id === X),
+  };
+}
+
+function medlemskap(anvandare: string, bostad: string) {
+  return h.db.tabell("medlemskap").find((m) => m.anvandare_id === anvandare && m.bostad_id === bostad)!;
+}
+
+function anvandarrad(id: string) {
+  return h.db.tabell("anvandare").find((a) => a.id === id)!;
+}
+
+/** Bertil: medlem i Y sedan 2024 och i X sedan 2025. */
+function bertilIBada() {
+  medlemskap(BERTIL, Y).skapad_at = datum("2024-01-01");
+  h.db.lagg("medlemskap", { anvandare_id: BERTIL, bostad_id: X, skapad_at: datum("2025-01-01") });
+}
+
+describe("det aktiva valet och aterfallet", () => {
+  beforeEach(() => {
+    bertilIBada();
+    h.db.lagg("bostad", { id: Z, adress: "Tredje gatan 3", upplatelseform: "fastighet", tilltradesdatum: datum("2020-01-01") });
+    loggaIn(BERTIL);
+  });
+
+  it("ett tomt val faller tillbaka pa det aldsta medlemskapet", async () => {
+    expect(anvandarrad(BERTIL).aktiv_bostad_id).toBeNull();
+    const bostad = await kravBostad();
+    expect(bostad.bostadId).toBe(Y);
+    expect(bostad.antalBostader).toBe(2);
+  });
+
+  it("ett val pa en bostad utan medlemskap faller tillbaka pa det aldsta – och ger ingen atkomst", async () => {
+    anvandarrad(BERTIL).aktiv_bostad_id = Z;
+    expect((await kravBostad()).bostadId).toBe(Y);
+  });
+
+  it("ett val pa en bostad han lamnat faller tillbaka pa det aldsta", async () => {
+    anvandarrad(BERTIL).aktiv_bostad_id = X;
+    expect((await kravBostad()).bostadId).toBe(X);
+    h.db.tabell("medlemskap").splice(h.db.tabell("medlemskap").indexOf(medlemskap(BERTIL, X)), 1);
+    expect((await kravBostad()).bostadId).toBe(Y);
+  });
+
+  it("ett giltigt val galler, med sitt eget medlemskaps andel", async () => {
+    medlemskap(BERTIL, X).agarandel = 50;
+    anvandarrad(BERTIL).aktiv_bostad_id = X;
+    const bostad = await kravBostad();
+    expect(bostad.bostadId).toBe(X);
+    expect(bostad.agarandel).toBe(50);
+  });
+
+  it("tva medlemskap med samma skapad_at avgors av id, inte av ordningen i tabellen", async () => {
+    medlemskap(BERTIL, X).skapad_at = datum("2024-01-01");
+    // Y-medlemskapet ligger forst i tabellen; id:t avgor anda.
+    const [forst] = [medlemskap(BERTIL, X), medlemskap(BERTIL, Y)].sort((a, b) =>
+      (a.id as string) < (b.id as string) ? -1 : 1,
+    );
+    expect((await kravBostad()).bostadId).toBe(forst.bostad_id);
+  });
+
+  it("raderas den valda bostaden nollas valet", async () => {
+    anvandarrad(BERTIL).aktiv_bostad_id = X;
+    await h.db.klient.bostad.delete({ where: { id: X } });
+    expect(anvandarrad(BERTIL).aktiv_bostad_id).toBeNull();
+    expect((await kravBostad()).bostadId).toBe(Y);
+  });
+});
+
+describe.each([
+  ["tomt val", null],
+  ["Y uttryckligen vald", Y],
+])("en medlem i bade X och Y, med Y aktiv (%s)", (_namn, val) => {
+  beforeEach(() => {
+    bertilIBada();
+    anvandarrad(BERTIL).aktiv_bostad_id = val;
+    loggaIn(BERTIL);
+  });
+
+  it.each(VAGAR_MED_ID.filter((v) => v.foljer !== "egen").map((v) => [v.vag, v] as const))(
+    "avvisas pa ett id ur X: %s",
+    async (_vag, v) => {
+      await provaAvslag(v);
+    },
+  );
+
+  it.each([...VAGAR_MED_ID.filter((v) => v.foljer !== "egen"), ...VAGAR_UTAN_ID].map((v) => [v.vag, v] as const))(
+    "laser ingenting ur X och skriver ingenting i X: %s",
+    async (_vag, v) => {
+      const sett: string[] = [];
+      h.db.lyssna((_modell, svar) => strangar(svar, sett));
+      const fore = xDelen(h.db.ogonblick());
+
+      await kor(v.anrop);
+
+      expect(xDelen(h.db.ogonblick())).toEqual(fore);
+      expect(sett.filter((s) => BARA_I_X.includes(s))).toEqual([]);
+      expect(h.lager.createSignedUrls).not.toHaveBeenCalled();
+    },
+  );
+
+  it("vagarna utan id arbetar pa Y", async () => {
+    const utkast = await skapaUtkast();
+    expect(h.db.tabell("kostnad").find((k) => k.id === utkast.kostnadId)?.bostad_id).toBe(Y);
+
+    await sparaKostnad(formular({ leverantor: "Byggmax", totalbelopp: "1 249,00", dokumentdatum: "2025-05-02" }));
+    expect(h.db.tabell("kostnad").find((k) => k.leverantor === "Byggmax" && k.id !== K2X)?.bostad_id).toBe(Y);
+
+    await kor(() => sparaForvarvet(START, formular({ tilltradesdatum: "2021-03-15", agarandel: "50" })));
+    expect(Number(medlemskap(BERTIL, Y).agarandel)).toBe(50);
+    expect(Number(medlemskap(BERTIL, X).agarandel)).toBe(100);
+
+    const sida = (await NyKostnadSida({ searchParams: Promise.resolve({}) })) as {
+      props: { bostadsnamn: string; children: { props: { bostad: { id: string; namn: string | null } } } };
+    };
+    expect(sida.props.bostadsnamn).toBe("Lillgatan 2");
+    expect(sida.props.children.props.bostad).toEqual({ id: Y, namn: "Lillgatan 2" });
+  });
+
+  it("bilagorna foljer sitt eget medlemskap: X-bilagan laddas aven nar Y ar aktiv", async () => {
+    const svar = await hamtaBilaga(BX);
+    expect(svar.status).toBe(307);
+    expect(svar.headers.get("location")).toContain(BX_NYCKEL);
+  });
+});
+
+describe("inmatningen namnger bostaden bara nar det finns fler an en", () => {
+  type Sida = { props: { children: { props: { bostad: { id: string; namn: string | null } } } } };
+  const bostadIFormularet = async () =>
+    ((await NyKostnadSida({ searchParams: Promise.resolve({}) })) as Sida).props.children.props.bostad;
+
+  it("en bostad: ingen rad", async () => {
+    loggaIn(ANNA);
+    expect(await bostadIFormularet()).toEqual({ id: X, namn: null });
+    expect((await kravBostad()).antalBostader).toBe(1);
+  });
+
+  it("en bostad delad med nagon: fortfarande ingen rad – det ar antalet bostader som raknas, inte medlemmar", async () => {
+    h.db.lagg("medlemskap", { anvandare_id: DORIS, bostad_id: X });
+    loggaIn(DORIS);
+    expect(await bostadIFormularet()).toEqual({ id: X, namn: null });
+  });
+
+  it("tva bostader: raden namnger den aktiva", async () => {
+    bertilIBada();
+    anvandarrad(BERTIL).aktiv_bostad_id = X;
+    loggaIn(BERTIL);
+    expect(await bostadIFormularet()).toEqual({ id: X, namn: "Storgatan 1" });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Utkastet bar sin bostad (docs/design.md, "Att äga flera bostäder"). Anna
+// borjar ett kvitto i X, och den aktiva bostaden byts till Y innan hon sparat
+// – i en annan flik, pa en annan enhet. Kvittot ska hamna i X.
+// ---------------------------------------------------------------------------
+
+describe("utkastet bar sin bostad", () => {
+  beforeEach(() => {
+    medlemskap(ANNA, X).skapad_at = datum("2024-01-01");
+    h.db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: Y, skapad_at: datum("2025-01-01") });
+    anvandarrad(ANNA).aktiv_bostad_id = X;
+    loggaIn(ANNA);
+  });
+
+  const byt = (till: string) => {
+    anvandarrad(ANNA).aktiv_bostad_id = till;
+  };
+
+  it("ett utkast skapat i X ligger kvar i X efter att Y blivit aktiv", async () => {
+    const { kostnadId } = await skapaUtkast(X);
+    expect(kostnadId).toBeDefined();
+    byt(Y);
+
+    // Bilagan laddas upp och lases av medan Y ar aktiv.
+    const uppladdning = await begarBilagauppladdning({
+      kostnadId: kostnadId!, filnamn: "k.jpg", mimetyp: "image/jpeg", storlek: 1000,
+    });
+    expect(uppladdning.ok).toBe(true);
+    expect(h.lager.createSignedUploadUrl).toHaveBeenCalledWith(expect.stringMatching(new RegExp(`^${X}/${kostnadId}/`)));
+
+    const sparad = await sparaKostnad(formular({
+      utkast_id: kostnadId!, bostad_id: X, leverantor: "BAUHAUS", totalbelopp: "1 997,05", dokumentdatum: "2025-04-14",
+    }));
+    expect(sparad).toEqual({ kostnadId });
+
+    const kvitto = h.db.tabell("kostnad").find((k) => k.id === kostnadId)!;
+    expect(kvitto.bostad_id).toBe(X);
+    expect(kvitto.totalbelopp).toBe(199_705);
+    expect(h.db.tabell("kostnad").filter((k) => k.bostad_id === Y && k.skapad_av === ANNA)).toEqual([]);
+  });
+
+  it("ett kvitto utan bilaga sparas i formularets bostad, inte i den som blivit aktiv", async () => {
+    byt(Y);
+    const sparad = await sparaKostnad(formular({
+      bostad_id: X, leverantor: "Byggmax", totalbelopp: "1 249,00", dokumentdatum: "2025-05-02",
+    }));
+    expect(h.db.tabell("kostnad").find((k) => k.id === sparad.kostnadId)?.bostad_id).toBe(X);
+  });
+
+  it("ett utkast flyttas aldrig, aven om formularet skulle saga en annan bostad", async () => {
+    const { kostnadId } = await skapaUtkast(X);
+    byt(Y);
+    await sparaKostnad(formular({
+      utkast_id: kostnadId!, bostad_id: Y, leverantor: "BAUHAUS", totalbelopp: "100", dokumentdatum: "2025-04-14",
+    }));
+    expect(h.db.tabell("kostnad").find((k) => k.id === kostnadId)?.bostad_id).toBe(X);
+  });
+
+  it("utan medlemskap i formularets bostad sparas ingenting", async () => {
+    loggaIn(BERTIL);
+    const fore = h.db.ogonblick();
+    expect(await skapaUtkast(X)).toHaveProperty("fel");
+    expect(
+      await sparaKostnad(formular({ bostad_id: X, leverantor: "Kapat", totalbelopp: "1", dokumentdatum: "2025-04-14" })),
+    ).toHaveProperty("fel");
+    expect(await skapaUtkast("inte-ett-id")).toHaveProperty("fel");
+    expect(h.db.ogonblick()).toEqual(fore);
   });
 });

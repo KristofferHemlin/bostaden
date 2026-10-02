@@ -15,7 +15,7 @@ import { prisma } from "@/lib/prisma";
 import { analyseraDokumentbuffert, type Dokumentavlasning } from "./analysera";
 import { TOMT_DOKUMENTFALT } from "./tolkning";
 
-const KORDES_INTE: Dokumentavlasning = { kord: false, falt: { ...TOMT_DOKUMENTFALT } };
+export const KORDES_INTE: Dokumentavlasning = { kord: false, falt: { ...TOMT_DOKUMENTFALT } };
 
 /**
  * Laser en (redan uppladdad) bilaga fran Storage och kor dokumentavlasningen pa
