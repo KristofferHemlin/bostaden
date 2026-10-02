@@ -22,9 +22,10 @@
 //      hade: ensam medlem raderar bostaden med allt, fler medlemmar tar bara
 //      bort medlemskapet. Den prövar det igen i sin egen transaktion.
 //
-// Kopian är det användaren kan få av sina filer. Kvittonas uppgifter –
-// belopp, datum, klassificering – ingår inte i den; vill hon ha dem tas de
-// med `npm run sakerhetskopiera` före raderingen.
+// Kopian innehåller bara bilagorna. Att kvittonas uppgifter inte följer med
+// skrivs ut av kommandot självt (PAMINNELSE_UPPGIFTER i
+// src/lib/konto/radera-kommando.ts) – den som kör det läser terminalen, inte
+// den här filen.
 //
 // Kör med --conditions=react-server: raderingen och lagringsklienten är
 // markerade "server-only".

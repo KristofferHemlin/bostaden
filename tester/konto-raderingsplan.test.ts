@@ -36,7 +36,7 @@ vi.mock("@/lib/lagring/klient", () => ({
 }));
 
 import { raderaKonto } from "@/lib/konto/radera";
-import { koraRaderingskommando, type Kommandomiljo } from "@/lib/konto/radera-kommando";
+import { koraRaderingskommando, PAMINNELSE_UPPGIFTER, type Kommandomiljo } from "@/lib/konto/radera-kommando";
 import { hamtaRaderingsplan } from "@/lib/konto/raderingsplan";
 
 const ANNA = "a0000000-0000-4000-8000-000000000001";
@@ -186,6 +186,21 @@ describe("utskriftslaget", () => {
     expect(plan?.bostader.find((b) => b.bostadId === X)?.bilagor.map((b) => b.lagringsnyckel)).toEqual([BX_NYCKEL]);
   });
 
+  it("paminner i utskriften om att kvittonas uppgifter inte foljer med kopian", async () => {
+    seeda({ annaIY: false });
+    await koraRaderingskommando(["anna@exempel.se"], miljo(null));
+    expect(utskrift).toEqual(expect.arrayContaining(PAMINNELSE_UPPGIFTER));
+    expect(utskrift.join("\n")).toContain("npm run sakerhetskopiera");
+  });
+
+  it("ingen paminnelse nar ingenting raderas – bara ett medlemskap tas bort", async () => {
+    seeda({ annaIY: false });
+    // Bertil ar inte ensam i Y om Anna ocksa ar medlem dar.
+    h.db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: Y });
+    await koraRaderingskommando(["bertil@exempel.se"], miljo(null));
+    expect(utskrift.join("\n")).not.toContain("sakerhetskopiera");
+  });
+
   it("en okand adress: ett besked, ingenting rors", async () => {
     seeda({ annaIY: false });
     expect(await koraRaderingskommando(["ingen@exempel.se"], miljo(null))).toBe(1);
@@ -194,6 +209,13 @@ describe("utskriftslaget", () => {
 });
 
 describe("med --radera", () => {
+  it("upprepar paminnelsen direkt fore fragan", async () => {
+    seeda({ annaIY: false });
+    await koraRaderingskommando(["anna@exempel.se", "--radera"], miljo(""));
+    const fore = utskrift.slice(utskrift.findIndex((r) => r.startsWith("Alla 1 bilagor kopierade")));
+    expect(fore.slice(1, 1 + PAMINNELSE_UPPGIFTER.length)).toEqual(PAMINNELSE_UPPGIFTER);
+  });
+
   it("kopierar bilagorna forst, fragar, och raderar sedan bara det planen sa", async () => {
     seeda({ annaIY: true });
     const plan = await hamtaRaderingsplan("anna@exempel.se");

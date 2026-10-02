@@ -1048,7 +1048,7 @@ Här ligger allt som beskriver bostaden men inte behövs för att komma igång. 
 | Bostaden | Adress, ort, upplåtelseform, föreningens namn eller fastighetsbeteckning, storlek, kapitaltillskott (bara bostadsrätt) |
 | Förvärvet | Tillträdesdatum, köpeskilling, köpkostnader, ägarandel, första ägaren, ombildning från hyresrätt |
 | Tillgång | Vilka som har bostaden, deras andelar och summan, bjud in någon |
-| Ditt konto | Ladda ner allt, logga ut, integritetspolicy, radera konto |
+| Ditt konto | Ladda ner bilagorna, logga ut, integritetspolicy, hur man begär radering |
 
 **Inget kort försvinner beroende på upplåtelseform.** Kapitaltillskott finns bara för bostadsrätt, men det är ett fält som uteblir – inte ett kort. Ett kort som finns för den ena formen och inte för den andra är en regel man måste minnas, och kapitaltillskottet är en uppgift om föreningen och alltså om objektet.
 
@@ -1068,7 +1068,7 @@ Att sätta första ägaren till nej nollställer inte ombildningen. Ett kvarläm
 
 Hjälptexterna syns bara i redigeringsläget. Det är där de behövs, och det är där sidans mesta text försvinner.
 
-**Ditt konto har inget läsläge** – det är handlingar, inte uppgifter. Zip-exporten och utloggningen som sekundärknappar. Sist, på en egen dämpad rad, integritetspolicyn som länk och raderingen som textlänk. Raderingen fäller ut sin bekräftelse på plats.
+**Ditt konto har inget läsläge** – det är handlingar, inte uppgifter. Zip-exporten och utloggningen som sekundärknappar. Sist, på en egen dämpad rad, integritetspolicyn som länk och under den en kort text om hur man begär att kontot raderas. Ingen raderingsknapp – skälet står under *Samägande – medlemskapet*.
 
 Mönstret är detsamma som för kvitton: först visas det, sedan ändras det. Sidan behöver ingen egen logik för det.
 

@@ -14,7 +14,6 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useActionState } from "react";
 import { hanteraAuth, type AuthResultat } from "./actions";
 import {
-  Bekraftelseruta,
   Falt,
   INPUT_KLASS,
   PRIMARKNAPP_KLASS,
@@ -41,9 +40,6 @@ function LoginInnehall() {
   // konto (docs/design.md, Registreringsflodet) – forifyll den da.
   const sokparametrar = useSearchParams();
   const forifyllEpost = sokparametrar.get("epost") ?? "";
-  // Kontoraderingen (produktspec avsnitt 14) skickar hit med ?kontoraderat=1 –
-  // ett kort besked om att kontot ar borttaget, inte bara en tom inloggningsvy.
-  const kontoRaderat = sokparametrar.get("kontoraderat") === "1";
   // /auth/callback skickar hit med ?fel=lank nar en lank inte gick att losa in.
   // Ett eget fel fran ett inloggningsforsok gar fore – det ar nyare.
   const lankfel = inloggningsfelFranLank(sokparametrar.get("fel"));
@@ -66,12 +62,6 @@ function LoginInnehall() {
             säljer.
           </p>
         </header>
-
-        {kontoRaderat ? (
-          <div className="mb-4">
-            <Bekraftelseruta>Kontot är borttaget.</Bekraftelseruta>
-          </div>
-        ) : null}
 
         <div className="rounded-xl border border-linje bg-yta-upphojd p-5">
           <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-4">

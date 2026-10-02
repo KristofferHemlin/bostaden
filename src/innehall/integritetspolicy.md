@@ -65,7 +65,7 @@ Uppgifterna lagras inom EU/EES. Leverantörerna i avsnitt 4 är i flera fall ame
 
 **Så länge du har ett konto.** Hela poängen med tjänsten är att dokumentationen ska finnas kvar den dag du säljer din bostad, och det kan dröja många år. Att radera efter en tids inaktivitet skulle förstöra det du använder tjänsten för.
 
-Vill du att ditt konto raderas mejlar du kristofferhemlin@gmail.com. Då tas både databasuppgifter och uppladdade filer bort.
+Vill du att ditt konto raderas mejlar du kristofferhemlin@gmail.com. Då tas ditt konto bort, och i en bostad bara du har tillgång till tas också alla uppgifter och uppladdade filer bort. Delar du bostaden med någon tas bara din tillgång bort – kvittona och filerna ligger kvar hos de andra, eftersom de dokumenterar bostaden och inte dig.
 
 Har du inte loggat in på mycket länge kan du få ett mejl som påminner om att kontot finns och vad som ligger i det, så att du kan ladda ner allt eller be om att det raderas.
 
@@ -97,4 +97,4 @@ Skulle tjänsten överlåtas till ett bolag eller till någon annan kan uppgifte
 
 Policyn kan uppdateras. Har en ändring betydelse för dig meddelas du innan den börjar gälla.
 
-Senast uppdaterad: 14 september 2026
+Senast uppdaterad: 2 oktober 2026

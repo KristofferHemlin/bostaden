@@ -763,19 +763,15 @@ Texten ligger i `src/innehall/integritetspolicy.md` och visas på en egen sida, 
 
 **Ingen kryssruta.** Behandlingen bygger på avtal, inte samtycke – kravet är att informera, inte att be om lov. En kryssruta signalerar ett samtycke som inte är den rättsliga grunden, och den gör registreringen ett steg längre utan att ge något.
 
-Länken finns också i inställningarna, nära kontoraderingen.
+Länken finns också i inställningarna, med raden om hur man begär radering under den.
 
 ### Kontoradering
 
-Policyn lovar att både databasuppgifter och uppladdade filer tas bort när kontot raderas. Utan en fungerande radering är det löftet osant.
+**Raderingen görs inte i appen. Den begärs.** Beslutat 2026-10-02. Inställningssidan har ingen raderingsknapp; den har i stället en kort text om vilken adress man mejlar och att svaret kommer från en människa. Skälen, och felet som avgjorde det, står i `docs/design.md` under *Samägande – medlemskapet*.
 
-**Placering:** längst ned på inställningssidan, under utloggningen, som en dämpad textlänk – inte en knapp. Radering är inte något användaren ska snubbla på.
+**Policyn måste säga samma sak.** Lovar den en självbetjäning som inte finns är löftet osant – och det var just det argumentet som gjorde att den här funktionen byggdes först. Policyn ändras i samma commit som gränssnittet.
 
-**Bekräftelsen säger vad som försvinner**, inte bara om man är säker: alla kvitton, alla bilagor, alla grupperingar och hela deklarationsunderlaget. Den påminner om att zip-arkivet går att ladda ner först, med en länk dit – den som lämnar ska kunna ta med sig sina filer.
-
-**Användaren skriver sin e-postadress för att bekräfta.** Det är appens enda oåterkalleliga åtgärd och den enda som kräver mer än ett klick.
-
-**Raderingen tar bort allt**, i den här ordningen:
+**Logiken finns kvar och ska inte ruttna.** `raderaKonto` nås av ett kommando, inte av en serveråtgärd, och är oförändrad i sak:
 
 1. Filerna i lagringen – original, visningsversion och miniatyr för varje bilaga
 2. Databasposterna – kostnadsrader, bilagor, kostnader, projekt, medlemskap, bostad
@@ -783,8 +779,8 @@ Policyn lovar att både databasuppgifter och uppladdade filer tas bort när kont
 
 Filerna först, eftersom en databaspost som raderats utan sin fil lämnar en föräldralös bilaga i lagringen som ingen längre vet om. Det är exakt det policyn säger inte ska hända.
 
-**Misslyckas något ska det synas.** Går lagringen igenom men databasen inte, eller tvärtom, får användaren veta det. Ingenting får vara halvraderat utan att någon vet om det.
+**Är användaren ensam medlem** i en bostad raderas bostaden med allt som hänger på den. **Finns fler medlemmar** tas bara medlemskapet bort, och arkivet ligger kvar hos de andra. En separation får aldrig radera den andras arkiv.
 
-Efter raderingen loggas användaren ut och hamnar på inloggningssidan med ett kort besked om att kontot är borttaget.
+**Kommandot skriver ut vad som kommer att raderas innan det frågar.** En rad per bostad, med antal kvitton. Det tar också en kopia av bilagorna i de bostäder som ska raderas och stannar innan frågan om en enda fil saknas. Uppräkningen som annars hade stått i gränssnittet har alltså flyttat till den som svarar på mejlet – den är inte borta.
 
-**Delar två personer en bostad** raderas bara den egna medlemskapet och det som bara den personen äger. Samägande finns inte ännu, men raderingen ska byggas så att den inte behöver skrivas om när det kommer.
+**Misslyckas något ska det synas** i utskriften. Ingenting får vara halvraderat utan att någon vet om det.

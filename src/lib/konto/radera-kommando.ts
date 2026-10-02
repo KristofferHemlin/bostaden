@@ -19,6 +19,17 @@ export interface Kommandomiljo {
   fraga: ((text: string) => Promise<string>) | null;
 }
 
+/**
+ * Skrivs ut nar nagon bostad raderas – i utskriftslaget och fore fragan.
+ * Kopian kommandot tar ar bara bilagorna; det ska den som kor kommandot se i
+ * terminalen, inte behova lasa i en kommentar.
+ */
+export const PAMINNELSE_UPPGIFTER = [
+  "OBS: Kopian innehåller bara bilagorna. Kvittonas belopp, datum och",
+  "klassificering följer inte med. Vill användaren ha dem: kör",
+  "`npm run sakerhetskopiera` innan du raderar.",
+];
+
 /** Hamtar varje bilaga i bostaderna som raderas. Returnerar det som saknas. */
 async function kopieraBilagor(plan: Raderingsplan, katalog: string): Promise<string[]> {
   const saknade: string[] = [];
@@ -64,6 +75,8 @@ export async function koraRaderingskommando(argument: string[], miljo: Kommandom
 
   skriv(radera ? "Det här kommer att raderas:" : "Utskrift – ingenting raderas:");
   for (const rad of raderingsplanText(plan)) skriv(rad);
+  const nagotRaderas = plan.bostader.some((b) => b.raderas);
+  if (nagotRaderas) for (const rad of PAMINNELSE_UPPGIFTER) skriv(rad);
   if (!radera) {
     skriv("Kör med --radera för att kopiera bilagorna och radera.");
     return 0;
@@ -86,6 +99,7 @@ export async function koraRaderingskommando(argument: string[], miljo: Kommandom
     skriv("Inga bilagor raderas – ingen kopia behövs.");
   }
 
+  if (nagotRaderas) for (const rad of PAMINNELSE_UPPGIFTER) skriv(rad);
   if (!miljo.fraga) {
     skrivFel("Bekräftelsen kräver en terminal. INGENTING RADERAT.");
     return 2;
