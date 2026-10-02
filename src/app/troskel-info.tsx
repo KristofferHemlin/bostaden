@@ -30,7 +30,7 @@ export function TroskelInfo() {
       {visa ? (
         <p className="mt-2 rounded-lg bg-sand px-3 py-2 font-granssnitt text-sm text-text-primar">
           Beloppet visar allt som lagts in, inte bara det som blir avdragsgillt.
-          Når året inte tröskeln faller hela årets belopp bort, inte bara
+          När året inte når tröskeln faller hela årets belopp bort, inte bara
           mellanskillnaden.
         </p>
       ) : null}

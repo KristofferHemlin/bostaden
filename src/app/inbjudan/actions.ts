@@ -123,6 +123,7 @@ export async function losInInbjudanAction(
     return { fel: inlosenFeltext(resultat.fel, vy?.epost) };
   }
 
+  // Den nya bostaden ar nu aktiv (losInInbjudan). Oversikten sager vilken.
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect("/?ansluten=1");
 }

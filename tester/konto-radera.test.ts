@@ -14,6 +14,8 @@ const h = vi.hoisted(() => ({
   bilagaFindMany: vi.fn(),
   bostadDeleteMany: vi.fn(),
   anvandareDelete: vi.fn(),
+  anvandareFindUnique: vi.fn(),
+  inbjudanDeleteMany: vi.fn(),
   transaktion: vi.fn(),
   remove: vi.fn(),
   deleteUser: vi.fn(),
@@ -25,7 +27,8 @@ vi.mock("@/lib/prisma", () => {
     medlemskap: { findMany: h.medlemskapFindMany, count: h.medlemskapCount },
     bilaga: { findMany: h.bilagaFindMany },
     bostad: { deleteMany: h.bostadDeleteMany },
-    anvandare: { delete: h.anvandareDelete },
+    anvandare: { delete: h.anvandareDelete, findUnique: h.anvandareFindUnique },
+    inbjudan: { deleteMany: h.inbjudanDeleteMany },
   };
   return {
     prisma: {
@@ -54,6 +57,8 @@ beforeEach(() => {
   h.deleteUser.mockResolvedValue({ error: null });
   h.bostadDeleteMany.mockResolvedValue({ count: 1 });
   h.anvandareDelete.mockResolvedValue({ id: ANVANDARE });
+  h.anvandareFindUnique.mockResolvedValue({ epost: "Doris@exempel.se" });
+  h.inbjudanDeleteMany.mockResolvedValue({ count: 0 });
 });
 
 describe("raderaKonto – ensam agare av bostaden", () => {
@@ -149,5 +154,32 @@ describe("raderaKonto – delad bostad", () => {
     expect(h.remove).not.toHaveBeenCalled();
     expect(h.anvandareDelete).toHaveBeenCalledWith({ where: { id: ANVANDARE } });
     expect(h.deleteUser).toHaveBeenCalledWith(ANVANDARE);
+  });
+
+  it("tar bort inbjudningarna till hennes adress – i samma transaktion, fore kontot", async () => {
+    h.medlemskapFindMany.mockResolvedValue([{ bostad_id: BOSTAD_DELAD }]);
+    h.medlemskapCount.mockResolvedValue(2);
+
+    await raderaKonto(ANVANDARE);
+
+    expect(h.inbjudanDeleteMany).toHaveBeenCalledWith({
+      where: { epost: { equals: "Doris@exempel.se", mode: "insensitive" } },
+    });
+    expect(h.inbjudanDeleteMany.mock.invocationCallOrder[0]).toBeLessThan(
+      h.anvandareDelete.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("faller borttagningen av inbjudningarna faller allt – inget konto, ingen fil", async () => {
+    h.medlemskapFindMany.mockResolvedValue([{ bostad_id: BOSTAD_DELAD }]);
+    h.medlemskapCount.mockResolvedValue(2);
+    h.inbjudanDeleteMany.mockRejectedValue(new Error("databasen sover"));
+
+    const resultat = await raderaKonto(ANVANDARE);
+
+    expect(resultat).toMatchObject({ ok: false, steg: "databas" });
+    expect(h.anvandareDelete).not.toHaveBeenCalled();
+    expect(h.remove).not.toHaveBeenCalled();
+    expect(h.deleteUser).not.toHaveBeenCalled();
   });
 });

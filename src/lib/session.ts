@@ -7,6 +7,7 @@ import { Prisma } from "@prisma/client";
 import * as Sentry from "@sentry/nextjs";
 import { redirect } from "next/navigation";
 import { valjAktivtMedlemskap } from "@/lib/aktiv-bostad";
+import { bostadHeader } from "@/lib/bostad-header";
 import { kastaVanligtDatabasfel } from "@/lib/databas-fel";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
@@ -113,6 +114,15 @@ export interface AktivBostad {
   agarandel: number;
   /** Hur manga bostader anvandaren ar medlem i. Inmatningen namnger bostaden nar de ar fler an en. */
   antalBostader: number;
+  /** Alla anvandarens bostader, aldsta medlemskapet forst – for vaxlaren. */
+  bostader: Bostadsval[];
+}
+
+/** En rad i vaxlaren (docs/design.md, "Att äga flera bostäder"): adress och upplatelseform, inga belopp. */
+export interface Bostadsval {
+  id: string;
+  namn: string;
+  upplatelseform: "bostadsratt" | "fastighet";
 }
 
 /**
@@ -135,7 +145,13 @@ export const hamtaAktivBostad = cache(async (): Promise<AktivBostad | null> => {
       select: {
         aktiv_bostad_id: true,
         medlemskap: {
-          select: { id: true, bostad_id: true, skapad_at: true, agarandel: true },
+          select: {
+            id: true,
+            bostad_id: true,
+            skapad_at: true,
+            agarandel: true,
+            bostad: { select: { adress: true, upplatelseform: true } },
+          },
           orderBy: [{ skapad_at: "asc" }, { id: "asc" }],
         },
       },
@@ -155,6 +171,11 @@ export const hamtaAktivBostad = cache(async (): Promise<AktivBostad | null> => {
     bostadId: medlemskap.bostad_id,
     agarandel: Number(medlemskap.agarandel),
     antalBostader: rad.medlemskap.length,
+    bostader: rad.medlemskap.map((m) => ({
+      id: m.bostad_id,
+      namn: bostadHeader(m.bostad).bostadsnamn,
+      upplatelseform: m.bostad.upplatelseform,
+    })),
   };
 });
 

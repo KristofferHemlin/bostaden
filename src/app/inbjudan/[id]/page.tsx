@@ -9,8 +9,11 @@
 //   utan session, adressen har konto -> Logga in for att ansluta
 //   utan session, inget konto         -> Skapa konto
 //   inloggad med fel adress           -> ett besked om varfor, och utloggning
-//   inloggad, har redan en bostad     -> en bostad per person i dag
-//   inloggad, ratt adress, ingen bostad -> Anslut till bostaden
+//   inloggad, redan medlem i bostaden -> ett besked, och vagen till startsidan
+//   inloggad, ratt adress             -> Anslut till bostaden
+//
+// Den som redan har andra bostader ansluts som alla andra – de ligger kvar och
+// nas i vaxlaren (docs/design.md, "Att äga flera bostäder").
 //
 // Id:t i adressen ar ingen nyckel. Att losa in kraver att man ar inloggad med
 // adressen inbjudan stallts till (src/lib/inbjudan.ts).
@@ -109,10 +112,11 @@ async function utgang(vy: Inbjudningsvy) {
     );
   }
 
-  if ((await hamtaAktivBostad()) !== null) {
+  const aktiv = await hamtaAktivBostad();
+  if (aktiv?.bostader.some((b) => b.id === vy.bostadId)) {
     return (
       <Inbjudningskort vy={vy}>
-        <Meddelanderuta>{inlosenFeltext("har_bostad")}</Meddelanderuta>
+        <Meddelanderuta>{inlosenFeltext("redan_medlem")}</Meddelanderuta>
         <Link href="/" className={SEKUNDARKNAPP_KLASS}>
           Till startsidan
         </Link>

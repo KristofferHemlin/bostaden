@@ -145,6 +145,8 @@ export interface Inbjudningsvy {
   status: "utestaende" | "accepterad" | "aterkallad";
   inbjudarEpost: string | null;
   bostadsnamn: string;
+  /** For serverns egen kontroll av om den inloggade redan ar medlem. Visas aldrig. */
+  bostadId: string;
 }
 
 // Bostaden namnges med sin adress, som i toppraden – `bostad.namn` lases inte
@@ -165,6 +167,7 @@ export async function hamtaInbjudningsvy(inbjudanId: string): Promise<Inbjudning
       id: true,
       epost: true,
       status: true,
+      bostad_id: true,
       inbjudare: { select: { epost: true } },
       bostad: { select: { adress: true } },
     },
@@ -176,6 +179,7 @@ export async function hamtaInbjudningsvy(inbjudanId: string): Promise<Inbjudning
     status: rad.status,
     inbjudarEpost: rad.inbjudare?.epost ?? null,
     bostadsnamn: bostadsnamn(rad.bostad),
+    bostadId: rad.bostad_id,
   };
 }
 
@@ -184,15 +188,29 @@ export async function inbjudenHarKonto(epost: string): Promise<boolean> {
   return harKonto(normaliseraEpost(epost));
 }
 
-/** Utestaende inbjudningar till en adress – for startskarmen och registreringen. */
-export async function utestaendeInbjudningar(epost: string): Promise<Inbjudningsvy[]> {
+/**
+ * Utestaende inbjudningar till en adress – for startskarmen och registreringen.
+ *
+ * Med `anvandareId` uteblir inbjudningar till en bostad hon redan ar medlem i.
+ * Ett skyddsnat, inte regeln: skapaInbjudan ersatter redan en utestaende
+ * inbjudan till samma adress och bostad, och vagrar en adress som redan har
+ * tillgang. Men inbjudningar som fanns i databasen innan dess, eller en adress
+ * som bytts efterat, ska inte ge ett kort med en knapp som bara kan svara
+ * "du har redan tillgang".
+ */
+export async function utestaendeInbjudningar(epost: string, anvandareId?: string): Promise<Inbjudningsvy[]> {
   const rader = await prisma.inbjudan.findMany({
-    where: { epost: normaliseraEpost(epost), status: "utestaende" },
+    where: {
+      epost: normaliseraEpost(epost),
+      status: "utestaende",
+      ...(anvandareId ? { bostad: { medlemskap: { none: { anvandare_id: anvandareId } } } } : {}),
+    },
     orderBy: { skapad_at: "asc" },
     select: {
       id: true,
       epost: true,
       status: true,
+      bostad_id: true,
       inbjudare: { select: { epost: true } },
       bostad: { select: { adress: true } },
     },
@@ -203,10 +221,11 @@ export async function utestaendeInbjudningar(epost: string): Promise<Inbjudnings
     status: r.status,
     inbjudarEpost: r.inbjudare?.epost ?? null,
     bostadsnamn: bostadsnamn(r.bostad),
+    bostadId: r.bostad_id,
   }));
 }
 
-export type InlosenFel = "finns_inte" | "aterkallad" | "redan_inlost" | "fel_adress" | "har_bostad";
+export type InlosenFel = "finns_inte" | "aterkallad" | "redan_inlost" | "fel_adress" | "redan_medlem";
 
 export type InlosenResultat = { ok: true; bostadId: string } | { ok: false; fel: InlosenFel };
 
@@ -217,12 +236,15 @@ class Avbruten extends Error {
 }
 
 /**
- * Loser in en inbjudan: ger den inloggade medlemskap i bostaden. Bara den som
- * ar inloggad med exakt adressen inbjudan stallts till kan gora det. Den som
- * redan har en bostad blockeras och inbjudan ligger kvar – ingen bostad tas
- * bort. Status och medlemskap andras i samma transaktion, och statusbytet
- * provar att inbjudan fortfarande ar utestaende: samma inbjudan kan inte
- * losas in tva ganger.
+ * Loser in en inbjudan: ger den inloggade medlemskap i bostaden och gor den
+ * till hennes aktiva (docs/design.md, "Att äga flera bostäder": "En accepterad
+ * inbjudan gör den nya bostaden aktiv"). Bara den som ar inloggad med exakt
+ * adressen inbjudan stallts till kan gora det. Den som redan har andra
+ * bostader behaller dem – ingenting tas bort, och de nas i vaxlaren. Den som
+ * redan ar medlem i JUST den har bostaden far ett besked i stallet for ett
+ * andra medlemskap. Status, medlemskap och valet andras i samma transaktion,
+ * och statusbytet provar att inbjudan fortfarande ar utestaende: samma
+ * inbjudan kan inte losas in tva ganger.
  */
 export async function losInInbjudan(params: {
   inbjudanId: string;
@@ -244,11 +266,16 @@ export async function losInInbjudan(params: {
           throw new Avbruten("fel_adress");
         }
 
-        const befintligt = await tx.medlemskap.findFirst({
-          where: { anvandare_id: params.anvandareId },
+        // Bara medlemskap i just den har bostaden – ett i en annan ar ingen
+        // spärr langre. Utan kontrollen blir en dubbel inlosen ett P2002 ur
+        // databasen (den unika nyckeln anvandare–bostad) i stallet for ett besked.
+        const befintligt = await tx.medlemskap.findUnique({
+          where: {
+            anvandare_id_bostad_id: { anvandare_id: params.anvandareId, bostad_id: inbjudan.bostad_id },
+          },
           select: { id: true },
         });
-        if (befintligt) throw new Avbruten("har_bostad");
+        if (befintligt) throw new Avbruten("redan_medlem");
 
         const { count } = await tx.inbjudan.updateMany({
           where: { id: params.inbjudanId, status: "utestaende" },
@@ -265,6 +292,13 @@ export async function losInInbjudan(params: {
             bostad_id: inbjudan.bostad_id,
             ...(inbjudan.agarandel !== null ? { agarandel: inbjudan.agarandel } : {}),
           },
+        });
+        // Den nya bostaden blir aktiv – annars accepterar man en inbjudan och
+        // ingenting syns handa. Raden ar den inloggades egen och finns alltid
+        // (hamtaAnvandare speglar den vid varje begaran).
+        await tx.anvandare.update({
+          where: { id: params.anvandareId },
+          data: { aktiv_bostad_id: inbjudan.bostad_id },
         });
         return inbjudan.bostad_id;
       },
@@ -290,7 +324,7 @@ export function inlosenFeltext(fel: InlosenFel, inbjudenEpost?: string): string 
       return inbjudenEpost
         ? `Inbjudan gäller ${inbjudenEpost}, men du är inloggad med en annan adress. Logga ut och logga in med ${inbjudenEpost}.`
         : "Inbjudan gäller en annan e-postadress än den du är inloggad med.";
-    case "har_bostad":
-      return "Du har redan en bostad i appen, och appen hanterar en bostad per person i dag. Inbjudan ligger kvar på startsidan och går att acceptera den dag det går att växla mellan bostäder.";
+    case "redan_medlem":
+      return "Du har redan tillgång till den här bostaden.";
   }
 }

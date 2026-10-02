@@ -324,6 +324,8 @@ Etiketten *Totalt inlagt* är sann för alla tre fallen, vilket var skälet att 
 
 **Ingen summa för det avdragsgilla.** Den går inte att veta före försäljningen – femårsfönstret, skicket och tröskeln hänger alla på försäljningsdatumet. Och ett tal för hur mycket som är beskrivet är samma påminnelse som regeln under *Kvittolistan* förbjuder på startskärmen: den som gör arkivet till en skuld man ådrar sig varje gång man sparar ett kvitto.
 
+**Tröskelrutans tre mått.** Informationsknappen har en tryckyta på minst 44px som alla andra – uppmätt till 20 × 20 px 2026-10-02. Raden under fältet är minst 14px, aldrig 12 – regeln står under *Färger* och kom till just för att hjälptexter var oläsbara på telefon. Och **rutan säger att tröskeln gäller per bostad**, vilket blev relevant samma dag som en användare kunde ha två.
+
 Väntar något på frågor står **en enda kort rad** under fältet: "Preliminärt tills du berättat om alla kvitton." Förklaringen av vad tröskeln innebär – att hela årets belopp faller bort, inte bara mellanskillnaden – ligger bakom en informationsknapp, samma mönster som projektfrågorna. Tre rader brödtext ovanför kvittolistan gör förklaringen till huvudsaken i stället för siffran.
 
 Progressfältet är 8px högt med helt rundade ändar, spår i `--yta-nedsankt` och fyllning i `--sand-mork`. Fyllningen byter aldrig färg – orange hör till primärknappen, som ligger på samma skärm.
@@ -947,6 +949,12 @@ Storlek hör hemma i inställningar, inte här. Den används inte i någon berä
 
 Tjänsten får inte heller blockera. Svarar den inte, eller saknas nyckel, fungerar fältet som vanlig fritext utan felmeddelande – förslagen är en hjälp, inte ett krav.
 
+**Inget förval på en uppgift som styr beräkningen och sätts en gång.** Upplåtelseformen var förvald som bostadsrätt. Den som äger ett hus och inte trycker på kortet registrerade alltså en bostadsrätt – och det styr den bakre tidsgränsen (1974 i stället för 1952), vilken blankett underlaget pekar mot, och om kapitaltillskott är relevant. Upptäckt 2026-10-02.
+
+Regeln är bredare än fältet: **ett förval är ett svar användaren inte gav.** Det är acceptabelt när valet är lätt att ändra och syns igen – men upplåtelseformen sätts en gång, i registreringen, och visas sedan bara i inställningarna. Felet är osynligt tills den dag underlaget är fel, vilket kan vara tjugo år senare. Då ska fältet inte ha något förval, och steget ska inte gå att passera utan ett val.
+
+Följden är att upplåtelseformen bär samma markering för obligatoriskt som de andra obligatoriska fälten. Att den saknade markeringen var en följd av förvalet, inte ett eget beslut.
+
 Upplåtelseform väljs med klickbara kort i rad, inte radioknappar. Korten är lättare att träffa på mobil och tydligare att avläsa. **Två kort: Bostadsrätt och Villa eller radhus.** Fritidshus är skattemässigt en fastighet och behöver inget eget val – ett tredje kort måste ändå mappa till samma värde och skapar en distinktion som modellen inte har.
 
 ### Inloggningssidan
@@ -1118,6 +1126,10 @@ Felet var inte nåbart så länge appen tillät en bostad per person, och blev n
 
 **Logiken stannar i koden, utan väg in i gränssnittet.** `raderaKonto` är riktig i sak: ensam medlem raderar bostaden med allt som hänger på den, fler medlemmar tar bara bort medlemskapet, och en separation får aldrig radera den andras arkiv. Den nås av ett kommando som **först skriver ut vad som kommer att raderas och kräver bekräftelse**. Uppräkningen är alltså inte borta – den har flyttat från användaren till den som svarar på mejlet, och logiken fortsätter täckas av tester i stället för att ruttna.
 
+**Raderingen lämnar ingen e-postadress kvar i en bostad hon lämnat.** Uppmätt 2026-10-02: främmande nycklar nollar `kostnad.skapad_av`, `projekt.klassificerad_av` och `inbjudan.inbjuden_av`, så raderna "Tillagt av" och "Besvarat av" försvinner av sig själva. Men den accepterade inbjudan står kvar i bostadens data med hennes adress i `inbjudan.epost`. Den visas ingenstans – inställningarna listar bara utestående inbjudningar – men den är lagrad, och policyn lovar att kontot tas bort. Accepterade inbjudningar med den raderade adressen ska därför tas bort med kontot.
+
+Fritext hon själv skrivit – anteckningen på ett kvitto, ett originalfilnamn – ligger kvar och ska göra det. Den följer kvittot, och kvittot dokumenterar bostaden och inte henne. Det är samma skäl som policyn anger för att arkivet ligger kvar hos de andra.
+
 **Policyn måste säga samma sak som appen.** Beskriver den en självbetjäning som inte finns är policyn ett falskt påstående, vilket är sämre än en klumpig knapp. Texten ändras i samma commit som knappen försvinner.
 
 **Zip-exporten blir viktigare av det här.** Den är det enda användaren själv kan göra direkt, och den ska därför inte ligga som en fotnot till en radering som inte längre finns. Den gäller en bostad i taget, och etiketten säger vilken.
@@ -1152,6 +1164,16 @@ Men andelen är ett **utgångsvärde, inte ett facit**. Den syns och går att ä
 
 **Raden finns oavsett ägarandel.** Den villkorades tidigare på att andelen var under 100 %, vilket var rimligt när inbjudan handlade om ägande. Nu handlar den om åtkomst till ett arkiv, och den som äger sin bostad helt kan mycket väl vilja dela det med någon som bor där. Appen ska inte ha en åsikt om vem som får se ens egna kvitton.
 
+**Högst en inbjudan ligger ute per adress och bostad.** Bjuds samma adress in igen till samma bostad **ersätter** den nya inbjudan den gamla i stället för att läggas till, och skriver då den nya andelen.
+
+Regeln har gällt sedan 2026-09-30 men stod inte skriven. Den skrevs in 2026-10-02 som om den var ny, efter att både agenten och jag trott att en andra inbjudan kunde skapas – agenten rättade det själv och regeln fick då sitt första test. Ett kvarliggande kort kan alltså bara komma från data som är äldre än regeln, eller från en adress som bytts.
+
+Skälen regeln vilar på: ligger två inbjudningar ute och den ena löses in blir den andra ett kort som pekar på en bostad man redan är medlem i – och att bjuda in samma adress igen är sättet att ändra andelen, så en blank vägran skulle ta bort den möjligheten medan en ersättning bevarar den.
+
+Att bli medlem i samma bostad två gånger är redan omöjligt – medlemskapet är unikt per person och bostad, och `skapaInbjudan` vägrar redan bjuda in någon som redan är medlem. Den här regeln stänger det som återstod.
+
+**Att samma hus läggs in två gånger är något annat och går inte att hindra här.** Två delägare som registrerar sig var för sig skapar två bostäder som råkar beskriva samma hus, och appen kan inte veta att de är samma. Det förebyggs av raden i registreringen, inte av en kontroll i inbjudan – se *Två personer, ett hus*.
+
 **Inbjudan är en post, inte en länk.** Den ställs till en e-postadress och ligger kvar tills den accepteras eller återkallas. Loggar någon in med den adressen visas den på startskärmen, oavsett hur hen kom dit. QR-koden och länken är genvägar till samma post.
 
 Posten valdes framför en ren länk därför att den överlever ett glömt lösenord, en stängd flik och ett byte från telefon till dator. Den som återställer sitt lösenord loggar in och hittar inbjudan där, utan att behöva leta rätt på koden igen.
@@ -1180,7 +1202,7 @@ Posten valdes framför en ren länk därför att den överlever ett glömt löse
 
 **Listan visar adress och upplåtelseform, den aktiva markerad. Inga belopp.** Ett tal per bostad inbjuder till en jämförelse som inte betyder något och gör växlaren till en instrumentpanel.
 
-**Kontrollens mekanik.** Tryckytan är minst 44px som alla andra. Listan går att nå med tangentbord, stängs med Escape och med ett klick utanför, och den får aldrig öppna en webbläsardialog. Den fäller inte heller ihop toppraden eller flyttar innehållet under sig – den läggs ovanpå, som helskärmsvyn gör, så att sidan bakom står still.
+**Kontrollens mekanik.** Tryckytan är minst 44px som alla andra, och varje rad i listan minst 56px. Listan är omkring 360px bred från adressens kant, läggs ovanpå med `absolute` och ärver alltså inte innehållets kolumn. Sidan bakom dämpas lätt, omkring 20 % – tillräckligt för att "klicka utanför" ska synas som en möjlighet, men inte så mycket att en liten lista känns som en helskärmsvy. Fokus hamnar på den aktiva raden när listan öppnas, piltangenterna flyttar mellan rader, och Escape stänger och lämnar tillbaka fokus. Listan går att nå med tangentbord, stängs med Escape och med ett klick utanför, och den får aldrig öppna en webbläsardialog. Den fäller inte heller ihop toppraden eller flyttar innehållet under sig – den läggs ovanpå, som helskärmsvyn gör, så att sidan bakom står still.
 
 **Bytet skriver valet och laddar om.** Det är en serveråtgärd som sätter användarens aktiva bostad och leder till översikten. Eftersom valet ligger på användaren och inte på fliken följer en öppen flik med vid nästa sidladdning – det är avsiktligt, och skälet står under *Att äga flera bostäder*.
 
@@ -1199,6 +1221,8 @@ Regeln som gäller är alltså: **sidor och åtgärder följer den aktiva bostad
 **Ett byte landar alltid på översikten.** Står man på ett kvitto i den ena bostaden och byter till den andra finns kvittot inte där, och en sida som tappar sitt innehåll vid ett byte ser ut som ett fel. Översikten är den enda sidan som alltid är sann för varje bostad.
 
 **En accepterad inbjudan gör den nya bostaden aktiv**, och appen säger vilken bostad man nu tittar på. Annars accepterar man en inbjudan och ingenting syns hända.
+
+**Knappen som ansluter är sekundär, inte orange.** Väntar en inbjudan står den på startskärmen tillsammans med "Lägg till kvitto", och bara en av dem får bära orange. Den som behåller den är den som alltid finns där: att lägga till ett kvitto är skälet att appen finns, och en skärm vars primärhandling byter plats beroende på tillstånd är svårare att lita på än en som står still. Inbjudningskortet har en egen rubrik och egen text och syns utan färg – och inbjudan går inte förlorad av att man väntar, den ligger kvar på startskärmen.
 
 **Med en enda bostad ska ingenting vara annorlunda.** Det är den vanligaste användaren och hon ska inte märka någonting av det här.
 
@@ -1220,7 +1244,17 @@ Skälet till uppdelningen är inte försiktighet för sin egen skull. Den först
 
 **Men flödet säger det i förväg.** Registreringen nämner, där bostaden skapas, att den som ska dela bostaden med någon låter en av dem skapa den och bjuda in den andra. En rad som förebygger är billigare än tre funktioner som botar.
 
-**Och det måste gå att lämna en bostad, inte bara radera sitt konto.** Den som bjudits in till ett hus hon flyttar ifrån ska kunna gå ur. Logiken finns redan i kontoraderingen, som skiljer på sista medlem och inte: är hon sista medlem försvinner bostaden med allt som hänger på den, annars tas bara medlemskapet bort. Det är den funktionen som gör dubbletten städbar, och den hör till samma senare omgång som de tre ovan.
+**Ett konto har alltid minst en bostad.** Beslutat 2026-10-02 som en avsiktlig regel, inte som en följd. Appen upprätthåller den redan: registreringen skapar alltid en bostad, och den som saknar medlemskap skickas till registreringen.
+
+Tre följder, och de gäller funktioner som inte finns än:
+
+**Att lämna en bostad avvisas om det är den enda.** Funktionen byggs senare – den som bjudits in till ett hus hon flyttar ifrån ska kunna gå ur – men den får aldrig lämna ett konto utan bostad. Vill man ut ur produkten är vägen radering av kontot, inte noll bostäder.
+
+**Detsamma gäller om en delägare någon gång kan tas bort av en annan.** Den vägen finns inte, och byggs den får den inte kunna nolla någon annans konto.
+
+**En såld bostad räknas.** Den ligger kvar, går att nå, och håller invarianten uppfylld för den som sålt och väntar på att deklarera året efter.
+
+Vinsten är att appen alltid har något att handla om. Det finns inget tomt tillstånd där produkten saknar ett ämne, och omdirigeringen till registreringen är ett skyddsnät som aldrig ska behöva fånga någon.
 
 ### Exportvyn
 

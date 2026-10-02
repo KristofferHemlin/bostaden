@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SentryAnvandare } from "@/components/sentry-anvandare";
-import { hamtaAnvandare } from "@/lib/session";
+import { BostadsvalProvider, type Bostadslista } from "@/components/bostadsvaxlare";
+import { hamtaAktivBostad, hamtaAnvandare } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Bostadsunderlag",
@@ -15,6 +16,12 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const anvandare = await hamtaAnvandare();
+  // Vaxlarens lista (docs/design.md, "Att äga flera bostäder"). Bara nar det
+  // finns fler an en bostad – annars ar toppraden oforandrad. hamtaAktivBostad
+  // ar cachad per begaran, sa sidan som foljer gor ingen fraga till for den.
+  const aktiv = anvandare ? await hamtaAktivBostad() : null;
+  const bostadslista: Bostadslista | null =
+    aktiv && aktiv.bostader.length > 1 ? { aktivId: aktiv.bostadId, bostader: aktiv.bostader } : null;
 
   return (
     <html lang="sv">
@@ -34,7 +41,7 @@ export default async function RootLayout({
       </head>
       <body className="font-granssnitt">
         <SentryAnvandare id={anvandare?.id ?? null} />
-        {children}
+        <BostadsvalProvider varde={bostadslista}>{children}</BostadsvalProvider>
       </body>
     </html>
   );

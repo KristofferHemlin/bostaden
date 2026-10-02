@@ -179,6 +179,19 @@ describe("utskriftslaget", () => {
     expect(h.download).not.toHaveBeenCalled();
   });
 
+  it("namner inbjudningarna till adressen, aven i bostader som ligger kvar", async () => {
+    seeda({ annaIY: true });
+    h.db.lagg("inbjudan", { bostad_id: Y, epost: "anna@exempel.se", inbjuden_av: BERTIL, status: "accepterad" });
+    await koraRaderingskommando(["anna@exempel.se"], miljo(null));
+    expect(utskrift).toContain("  INBJUDNINGAR 1 inbjudan till anna@exempel.se tas bort, även ur bostäder som ligger kvar");
+  });
+
+  it("utan inbjudningar till adressen: ingen sadan rad", async () => {
+    seeda({ annaIY: true });
+    await koraRaderingskommando(["anna@exempel.se"], miljo(null));
+    expect(utskrift.join("\n")).not.toContain("INBJUDNINGAR");
+  });
+
   it("den delade bostadens bilagor raknas inte till det som forsvinner", async () => {
     seeda({ annaIY: true });
     const plan = await hamtaRaderingsplan("ANNA@exempel.se");
@@ -233,6 +246,14 @@ describe("med --radera", () => {
     expect(h.db.tabell("medlemskap").map((m) => m.anvandare_id)).toEqual([BERTIL]);
     expect(h.db.tabell("kostnad").every((k) => k.bostad_id === Y)).toBe(true);
     expect(h.remove).toHaveBeenCalledWith([BX_NYCKEL]);
+  });
+
+  it("det utskriften lovar om inbjudningarna ar det raderingen gor", async () => {
+    seeda({ annaIY: true });
+    h.db.lagg("inbjudan", { bostad_id: Y, epost: "anna@exempel.se", inbjuden_av: BERTIL, status: "accepterad" });
+    expect(await koraRaderingskommando(["anna@exempel.se", "--radera"], miljo("anna@exempel.se"))).toBe(0);
+    expect(h.db.tabell("inbjudan")).toEqual([]);
+    expect(h.db.tabell("bostad").map((b) => b.id)).toEqual([Y]);
   });
 
   it("ett annat svar an adressen: kopian finns, men ingenting raderas", async () => {

@@ -20,6 +20,7 @@
 
 import Link from "next/link";
 import {
+  Bekraftelseruta,
   Kort,
   Listrad,
   PRIMARKNAPP_KLASS,
@@ -49,24 +50,33 @@ import { avgarForKvitto } from "@/lib/kvittolista";
 import { prisma } from "@/lib/prisma";
 import { Landningssida } from "@/app/landningssida";
 import { hamtaAnvandare, kravBostad } from "@/lib/session";
-import { inlosenFeltext, utestaendeInbjudningar } from "@/lib/inbjudan";
+import { utestaendeInbjudningar } from "@/lib/inbjudan";
+import { AnslutKnapp } from "@/app/inbjudan/anslut-knapp";
 import { Inbjudningskort } from "@/app/inbjudan/inbjudningskort";
 
 export const dynamic = "force-dynamic";
 
-export default async function Oversikt() {
+export default async function Oversikt({
+  searchParams,
+}: {
+  searchParams: Promise<{ ansluten?: string }>;
+}) {
   // hamtaAnvandare ar cachad per begaran (rot-layouten har redan kallat den)
   // och gor inga databasanrop utan session.
   const anvandare = await hamtaAnvandare();
   if (!anvandare) return <Landningssida />;
 
-  const { bostadId } = await kravBostad();
+  const { bostadId, antalBostader } = await kravBostad();
+  // Efter en accepterad inbjudan (src/app/inbjudan/actions.ts): appen sager
+  // vilken bostad man nu tittar pa, och var de andra finns (docs/design.md,
+  // "Att äga flera bostäder"). Annars accepterar man och ingenting syns handa.
+  const nyssAnsluten = (await searchParams)?.ansluten === "1";
   // Inbjudningar till den inloggades adress (docs/design.md, "Att bjuda in en
-  // delagare"): de visas har oavsett hur hen kom hit. Den som redan har en
-  // bostad kan inte ansluta annu – beskedet sager det arligt, och inbjudan
-  // ligger kvar. Ingen bostad tas bort. Utan bostad hamnar man i stallet i
-  // registreringen, som visar samma inbjudan med en knapp.
-  const inbjudningar = await utestaendeInbjudningar(anvandare.epost);
+  // delagare"): de visas har oavsett hur hen kom hit, med en knapp att
+  // ansluta. Den som redan har en bostad behaller den – den nya blir aktiv
+  // och den gamla nas i vaxlaren ("Att äga flera bostäder"). Inbjudningar
+  // till en bostad hen redan ar medlem i visas inte (se utestaendeInbjudningar).
+  const inbjudningar = await utestaendeInbjudningar(anvandare.epost, anvandare.id);
   const { bostad, kostnader, regelparametrar } = await hamtaBostadsdata(bostadId);
   const { bostadsnamn } = bostadHeader(bostad);
 
@@ -151,12 +161,21 @@ export default async function Oversikt() {
     // Ingen sidrubrik: den aktiva fliken heter redan "Oversikt". Innehallet
     // borjar direkt under toppraden, dar adressen star som pa alla andra sidor.
     <Skarm bostadsnamn={bostadsnamn} egnaKort>
+      {nyssAnsluten ? (
+        <Bekraftelseruta>
+          Du tittar nu på {bostadsnamn}.
+          {antalBostader > 1
+            ? antalBostader > 2
+              ? " Dina andra bostäder når du genom att trycka på adressen högst upp."
+              : " Din andra bostad når du genom att trycka på adressen högst upp."
+            : null}
+        </Bekraftelseruta>
+      ) : null}
       {inbjudningar.map((vy) => (
         <Kort key={vy.id} className="p-5">
           <Inbjudningskort vy={vy}>
-            <p className="font-granssnitt text-sm text-text-primar">
-              {inlosenFeltext("har_bostad")}
-            </p>
+            {/* Sekundar: "Lägg till kvitto" behaller orange pa startskarmen. */}
+            <AnslutKnapp inbjudanId={vy.id} sekundar />
           </Inbjudningskort>
         </Kort>
       ))}

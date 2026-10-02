@@ -15,7 +15,8 @@
 // den ande som gar att stada; en annans raderade arkiv gar det inte.
 //
 // Delar tva personer en bostad raderas bara den egna medlemskapsraden –
-// bostaden, dess kostnader och bilagor ror funktionen aldrig. Ar anvandaren
+// bostaden, dess kostnader och bilagor ror funktionen aldrig. Det enda den
+// tar bort ur en sadan bostad ar inbjudningarna till hennes adress. Ar anvandaren
 // ENDA medlemmen raderas hela bostaden: kostnad/kostnadsrad/radfordelning/
 // bilaga/projekt/medlemskap/inbjudan foljer med via ON DELETE CASCADE.
 
@@ -78,6 +79,24 @@ export async function raderaKonto(anvandareId: string): Promise<RaderaKontoResul
             },
           });
           if (count !== helaBostader.length) throw new SamtidigAndring();
+        }
+
+        // Inbjudningar till hennes adress, i alla bostader – ocksa de som
+        // ligger kvar hos andra (docs/design.md, "Samägande – medlemskapet":
+        // "Raderingen lämnar ingen e-postadress kvar i en bostad hon lämnat").
+        // Den accepterade bar hennes adress i inbjudan.epost, och inga
+        // framande nycklar nollar den – kolumnen ar text, inte en referens.
+        // Utestaende och aterkallade bar samma adress och gar samma vag. Det
+        // hon sjalv skrivit (anteckningar, filnamn) foljer kvittot och ligger
+        // kvar. Adressen jamfors utan hansyn till versaler, som vid inlosen.
+        const anvandare = await tx.anvandare.findUnique({
+          where: { id: anvandareId },
+          select: { epost: true },
+        });
+        if (anvandare) {
+          await tx.inbjudan.deleteMany({
+            where: { epost: { equals: anvandare.epost.trim(), mode: "insensitive" } },
+          });
         }
 
         await tx.anvandare.delete({ where: { id: anvandareId } });

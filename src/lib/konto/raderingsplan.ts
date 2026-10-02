@@ -37,6 +37,11 @@ export interface Raderingsplan {
   anvandareId: string;
   epost: string;
   bostader: Raderingspost[];
+  /**
+   * Inbjudningar till adressen, i alla bostader och med alla statusar.
+   * raderaKonto tar bort dem, ocksa ur bostader som ligger kvar hos andra.
+   */
+  inbjudningarTillAdressen: number;
 }
 
 /** Planen for adressen, eller null om ingen anvandare har den. Laser bara. */
@@ -80,7 +85,10 @@ export async function hamtaRaderingsplan(epost: string): Promise<Raderingsplan |
       bilagor,
     });
   }
-  return { anvandareId: anvandare.id, epost: anvandare.epost, bostader };
+  const inbjudningarTillAdressen = await prisma.inbjudan.count({
+    where: { epost: { equals: anvandare.epost.trim(), mode: "insensitive" } },
+  });
+  return { anvandareId: anvandare.id, epost: anvandare.epost, bostader, inbjudningarTillAdressen };
 }
 
 const FORM: Record<Raderingspost["upplatelseform"], string> = {
@@ -97,7 +105,6 @@ export function raderingsplanText(plan: Raderingsplan): string[] {
   const rader = [`Konto: ${plan.epost} (${plan.anvandareId})`];
   if (plan.bostader.length === 0) {
     rader.push("  Inga bostäder. Bara kontot raderas.");
-    return rader;
   }
   for (const b of plan.bostader) {
     const namn = `${b.bostadsnamn} (${FORM[b.upplatelseform]}, ${b.bostadId})`;
@@ -105,6 +112,14 @@ export function raderingsplanText(plan: Raderingsplan): string[] {
       b.raderas
         ? `  RADERAS     ${namn}: ${antal(b.antalKvitton, "kvitto", "kvitton")}, ${antal(b.bilagor.length, "bilaga", "bilagor")}`
         : `  LIGGER KVAR ${namn}: bara medlemskapet tas bort, arkivet ligger kvar hos ${antal(b.andraMedlemmar, "annan medlem", "andra medlemmar")}`,
+    );
+  }
+  if (plan.inbjudningarTillAdressen > 0) {
+    // Adressen ska inte ligga kvar nagonstans (docs/design.md, "Samägande –
+    // medlemskapet"). Den som kor kommandot ska veta att aven bostader som
+    // ligger kvar forlorar en rad.
+    rader.push(
+      `  INBJUDNINGAR ${antal(plan.inbjudningarTillAdressen, "inbjudan", "inbjudningar")} till ${plan.epost} tas bort, även ur bostäder som ligger kvar`,
     );
   }
   return rader;

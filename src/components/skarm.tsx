@@ -9,10 +9,9 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { ToppradAdress } from "@/components/bostadsvaxlare";
 import { Installningslank, Toppnavigering } from "@/components/toppnavigering";
 import { privatAvgarRad, rotAvgarRad } from "@/lib/kvittolista";
-
-const LOGO_SRC = "/kajin-hem-logo.png";
 
 export const INPUT_KLASS =
   "w-full rounded-lg border-0 bg-yta-nedsankt px-3 py-3 font-granssnitt text-base text-text-primar outline-none placeholder:text-text-dampad focus:ring-2 focus:ring-accent";
@@ -414,26 +413,10 @@ export function Skarm({
               utrymmet daremellan. Adressen (flex-1, min-w-0) tar den plats som
               blir over och kapas med ellips nar den ar for lang – aldrig av
               flikarna, som star med sin fulla bredd och aldrig krymper.
-              Logotypen och adressen ar samtidigt lanken till oversikten. */}
-          <Link
-            href="/"
-            aria-label="Till översikten"
-            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            <img
-              src={LOGO_SRC}
-              alt=""
-              aria-hidden
-              className="h-6 w-auto shrink-0 sm:h-7"
-            />
-            {/* Toppraden visar BARA adressen: ingen andrarad med upplatelseform
-                och tilltradesar. Raden ar ALLTID en rad – namnet far aldrig
-                radbryta, och kapas med ellips nar det inte ryms. Adressen star
-                har pa varenda skarm, startskarmen inrakn. */}
-            <p className="truncate font-rubrik text-base text-text-primar sm:text-lg">
-              {bostadsnamn}
-            </p>
-          </Link>
+              Adressen – och vaxlaren nar anvandaren har fler an en bostad
+              (src/components/bostadsvaxlare.tsx). Med en bostad ar den
+              oforandrad: logotyp och adress i en lank till oversikten. */}
+          <ToppradAdress bostadsnamn={bostadsnamn} />
           <Toppnavigering />
           {/* Kugghjulet ligger i toppraden pa bade mobil och skrivbord, langst
               till hoger (docs/design.md, Navigation). */}

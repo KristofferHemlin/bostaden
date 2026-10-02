@@ -24,6 +24,7 @@ import { BeloppFalt } from "@/components/belopp-falt";
 import {
   Bekraftelseruta,
   Falt,
+  HJALPTEXT_KLASS,
   INPUT_KLASS,
   PRIMARKNAPP_KLASS,
   SEKUNDARKNAPP_KLASS,
@@ -195,7 +196,11 @@ export function RegistreraFlode({
       <div className={steg === 2 ? synligKlass : "hidden"}>
         <StegRubrik
           rubrik="Bostaden"
-          text="Två uppgifter är obligatoriska. Resten kan du hoppa över och fylla i senare."
+          // Falten namns i stallet for att raknas: "Två uppgifter" blev fel
+          // nar adressen blev obligatorisk 2026-10-01, och upplatelseformen
+          // bar ingen markering (den har alltid ett val) – en siffra stammer
+          // inte med det man ser.
+          text="Upplåtelseform, tillträdesdatum och adress behövs. Resten kan du hoppa över och fylla i senare."
         />
 
         <div>
@@ -253,6 +258,15 @@ export function RegistreraFlode({
             placeholder="t.ex. 3 250 000"
           />
         </Falt>
+
+        {/* Forebygger tva arkiv for ett hus (docs/design.md, "Två personer,
+            ett hus"). En upplysning, inte en varning – en rad, sist i steget,
+            dar bostaden skapas. Den som registrerar sig via en inbjudan ser
+            aldrig det har steget. */}
+        <p className={HJALPTEXT_KLASS}>
+          Delar du bostaden med någon? Låt en av er lägga upp den och bjuda in
+          den andra från inställningarna.
+        </p>
       </div>
 
       {felText ? (

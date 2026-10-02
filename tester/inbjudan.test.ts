@@ -227,6 +227,20 @@ describe("att bjuda in", () => {
     expect(h.db.tabell("inbjudan")).toHaveLength(1);
   });
 
+  it("att bjuda in samma adress igen ersatter inbjudan – och andrar andelen", async () => {
+    const forsta = await bjudIn(EPOST[DORIS], "50", "50");
+    const andra = await bjudIn(EPOST[DORIS], "70", "30");
+    expect(andra).toBe(forsta);
+    expect(h.db.tabell("inbjudan").filter((i) => i.status === "utestaende")).toHaveLength(1);
+    expect(Number(inbjudan(forsta).agarandel)).toBe(30);
+
+    // Och den andelen blir medlemskapets.
+    loggaIn(DORIS);
+    await losIn(forsta);
+    const medlemskap = h.db.tabell("medlemskap").find((m) => m.anvandare_id === DORIS && m.bostad_id === X);
+    expect(Number(medlemskap?.agarandel)).toBe(30);
+  });
+
   it("avvisar den egna adressen och en adress som redan har tillgang", async () => {
     loggaIn(ANNA);
     expect(await skapaInbjudanAction({}, inbjudan_formular("ANNA@exempel.se"))).toEqual({ fel: "Det är din egen adress." });
@@ -260,11 +274,13 @@ describe("att losa in", () => {
     const utfall = await losIn(id);
 
     expect(utfall.kastat).toBeInstanceOf(h.Omdirigering);
-    expect((utfall.kastat as { url: string }).url).toBe("/");
+    // Till oversikten, som sager vilken bostad man nu tittar pa.
+    expect((utfall.kastat as { url: string }).url).toBe("/?ansluten=1");
     expect(medlemmarI(X).sort()).toEqual([ANNA, DORIS].sort());
     expect(inbjudan(id).status).toBe("accepterad");
     expect(inbjudan(id).besvarad_at).toBeInstanceOf(Date);
     expect((await kravBostad()).bostadId).toBe(X);
+    expect(h.db.tabell("anvandare").find((a) => a.id === DORIS)?.aktiv_bostad_id).toBe(X);
   });
 
   it("adressen jamfors utan hansyn till versaler", async () => {
@@ -311,21 +327,61 @@ describe("att losa in", () => {
     expect(inbjudan(id).status).toBe("utestaende");
   });
 
-  it("den som redan har en bostad blockeras; inbjudan och bada bostaderna finns kvar", async () => {
+  it("den som redan har en bostad ansluts: den gamla ligger kvar, den nya blir aktiv", async () => {
     const id = await bjudIn(EPOST[BERTIL]);
     loggaIn(BERTIL);
 
+    // Kortet pa startskarmen har en knapp, inget besked om en bostad per person.
+    const fore = await OversiktSida({ searchParams: Promise.resolve({}) });
+    // Sekundar: "Lägg till kvitto" behaller orange (docs/design.md).
+    expect(propsFor(fore, "AnslutKnapp")).toEqual([{ inbjudanId: id, sekundar: true }]);
+    expect(text(fore)).not.toContain("en bostad per person");
+
     const utfall = await losIn(id);
 
-    expect((utfall.varde as { fel: string }).fel).toContain("en bostad per person");
-    expect(inbjudan(id).status).toBe("utestaende");
-    expect(medlemmarI(X)).toEqual([ANNA]);
+    expect((utfall.kastat as { url: string }).url).toBe("/?ansluten=1");
+    expect(inbjudan(id).status).toBe("accepterad");
+    expect(medlemmarI(X).sort()).toEqual([ANNA, BERTIL].sort());
     expect(medlemmarI(Y)).toEqual([BERTIL]);
     expect(h.db.tabell("bostad").map((b) => b.id).sort()).toEqual([X, Y].sort());
+    expect((await kravBostad()).bostadId).toBe(X);
 
-    // Inbjudan ligger kvar pa startskarmen, med beskedet.
-    const oversikt = text(await OversiktSida());
-    expect(oversikt).toContain("en bostad per person");
+    // Appen sager vilken bostad han nu tittar pa, och var den andra finns.
+    const efter = text(await OversiktSida({ searchParams: Promise.resolve({ ansluten: "1" }) }));
+    expect(efter).toContain("Du tittar nu på Storgatan 1.");
+    expect(efter).toContain("Din andra bostad når du genom att trycka på adressen högst upp.");
+  });
+
+  it("redan medlem i just den bostaden: ett besked, inget andra medlemskap och inget databasfel", async () => {
+    const id = await bjudIn();
+    loggaIn(DORIS);
+    await losIn(id);
+    // En aldre utestaende inbjudan till samma adress och bostad – fran innan
+    // skapaInbjudan ersatte, eller fran en adress som bytts. Lagd direkt i
+    // databasen: appen skapar inte langre en sadan.
+    const gammal = h.db.lagg("inbjudan", { bostad_id: X, epost: EPOST[DORIS], inbjuden_av: ANNA }).id as string;
+
+    const utfall = await losIn(gammal);
+
+    expect(utfall.varde).toEqual({ fel: "Du har redan tillgång till den här bostaden." });
+    expect(medlemmarI(X).sort()).toEqual([ANNA, DORIS].sort());
+    expect(inbjudan(gammal).status).toBe("utestaende");
+
+    // Skyddsnatet: kortet visas inte pa startskarmen, och sidan bakom koden
+    // sager hur det ar i stallet for att visa en knapp.
+    const oversikt = await OversiktSida({ searchParams: Promise.resolve({}) });
+    expect(propsFor(oversikt, "AnslutKnapp")).toEqual([]);
+    const sida = text(await InbjudanSida({ params: Promise.resolve({ id: gammal }) }));
+    expect(sida).toContain("Du har redan tillgång till den här bostaden.");
+    expect(sida).not.toContain("Anslut till bostaden");
+  });
+
+  it("sidan bakom koden visar anslutningsknappen aven for den som redan har en bostad", async () => {
+    const id = await bjudIn(EPOST[BERTIL]);
+    loggaIn(BERTIL);
+    const sida = await InbjudanSida({ params: Promise.resolve({ id }) });
+    expect(propsFor(sida, "AnslutKnapp")).toEqual([{ inbjudanId: id }]);
+    expect(text(sida)).not.toContain("en bostad per person");
   });
 
   it("en okand eller trasig kod ger ett besked, inget fel", async () => {
@@ -633,5 +689,51 @@ describe("exportvyns rad namnger andelen", () => {
       }
     }
     expect(new Set(brutto)).toEqual(new Set([1_249_000]));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Det som inte andras nar spärren ar borta (docs/design.md, "Att äga flera
+// bostäder"). Provat pa Bertil, som redan har bostaden Y – det lage som forut
+// stoppades av spärren och nu ar natt.
+// ---------------------------------------------------------------------------
+
+describe("reglerna som star kvar, for den som redan har en bostad", () => {
+  it("inbjudan kan bara losas in med just den adressen", async () => {
+    const id = await bjudIn(EPOST[DORIS]);
+    loggaIn(BERTIL);
+    const utfall = await losIn(id);
+    expect((utfall.varde as { fel: string }).fel).toContain("Inbjudan gäller doris@exempel.se");
+    expect(medlemmarI(X)).toEqual([ANNA]);
+    expect(inbjudan(id).status).toBe("utestaende");
+    expect((await kravBostad()).bostadId).toBe(Y);
+  });
+
+  it("summan av andelarna far inte overstiga 100 %", async () => {
+    loggaIn(ANNA);
+    const res = await skapaInbjudanAction({}, inbjudan_formular(EPOST[BERTIL], "80", "30"));
+    expect(res).toHaveProperty("fel");
+    expect((res as { fel: string }).fel).toContain("Summan kan inte vara mer än 100 %");
+    expect(h.db.tabell("inbjudan")).toHaveLength(0);
+  });
+
+  it("inbjudan ar engangs", async () => {
+    const id = await bjudIn(EPOST[BERTIL]);
+    loggaIn(BERTIL);
+    await losIn(id);
+    const igen = await losIn(id);
+    expect(igen.varde).toEqual({ fel: "Inbjudan är redan använd." });
+    expect(medlemmarI(X).sort()).toEqual([ANNA, BERTIL].sort());
+  });
+
+  it("inbjudan gar att aterkalla, och en aterkallad kan inte losas in", async () => {
+    const id = await bjudIn(EPOST[BERTIL]);
+    loggaIn(ANNA);
+    expect(await aterkallaInbjudanAction({}, formular({ inbjudan_id: id }))).toEqual({});
+    loggaIn(BERTIL);
+    const utfall = await losIn(id);
+    expect(utfall.varde).toEqual({ fel: "Inbjudan är återkallad. Be den som bjöd in dig om en ny." });
+    expect(medlemmarI(X)).toEqual([ANNA]);
+    expect((await kravBostad()).bostadId).toBe(Y);
   });
 });

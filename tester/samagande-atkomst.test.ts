@@ -127,6 +127,8 @@ import { hamtaArkivexportlista } from "@/app/installningar/arkivexport-actions";
 import { skapaBilagepaket } from "@/app/export/paket/actions";
 import { aterkallaInbjudanAction, skapaInbjudanAction } from "@/app/inbjudan/actions";
 import { raderaKonto } from "@/lib/konto/radera";
+import { bytBostad, hamtaBostadsval } from "@/app/bostadsval/actions";
+import RootLayout from "@/app/layout";
 import { kravBostad } from "@/lib/session";
 import { BILAGEPAKET_SYNLIGT } from "@/lib/bilagepaket/flagga";
 
@@ -458,6 +460,15 @@ const VAGAR_MED_ID: Vag[] = [
     avslag: "fel",
   },
 
+  // Vaxlaren. Den foljer sitt eget medlemskap: att valja en bostad man ar
+  // medlem i ar hela poangen, att valja en annan avvisas.
+  {
+    vag: "bytBostad",
+    anrop: () => bytBostad({}, formular({ bostad_id: X })),
+    avslag: "fel",
+    foljer: "egen",
+  },
+
   // Inbjudan. Inlosen provas mot adressen i tester/inbjudan.test.ts.
   {
     vag: "aterkallaInbjudanAction",
@@ -513,7 +524,7 @@ describe("en medlem i en annan bostad far avslag pa varje vag", () => {
 // Vagarna som inte tar nagot id: de arbetar pa bostaden kravBostad() hittar
 // via medlemskapet. Utan medlemskap finns ingen bostad att arbeta pa.
 const VAGAR_UTAN_ID: Vag[] = [
-  { vag: "sida /", anrop: () => OversiktSida(), avslag: "fel" },
+  { vag: "sida /", anrop: () => OversiktSida({ searchParams: Promise.resolve({}) }), avslag: "fel" },
   { vag: "sida /kostnad", anrop: () => KvittolistaSida(), avslag: "fel" },
   { vag: "sida /kostnad/nytt", anrop: () => NyKostnadSida({ searchParams: Promise.resolve({}) }), avslag: "fel" },
   { vag: "sida /projekt", anrop: () => ProjektlistaSida(), avslag: "fel" },
@@ -730,6 +741,28 @@ describe("kontoraderingen", () => {
     expect(h.db.tabell("anvandare").some((a) => a.id === ANNA)).toBe(false);
   });
 
+  it("fler medlemmar: ingen rad med hennes adress ligger kvar i bostaden hon lamnat", async () => {
+    // Doris bjuds in och ansluter (accepterad inbjudan med hennes adress), och
+    // har dessutom en utestaende och en aterkallad till samma adress kvar.
+    h.db.lagg("medlemskap", { anvandare_id: DORIS, bostad_id: X });
+    h.db.lagg("inbjudan", { bostad_id: X, epost: EPOST[DORIS], inbjuden_av: ANNA, status: "accepterad" });
+    h.db.lagg("inbjudan", { bostad_id: X, epost: "DORIS@exempel.se", inbjuden_av: ANNA });
+    h.db.lagg("inbjudan", { bostad_id: Y, epost: EPOST[DORIS], inbjuden_av: BERTIL, status: "aterkallad" });
+    h.db.tabell("kostnad").find((k) => k.id === KX)!.skapad_av = DORIS;
+    h.db.tabell("kostnad").find((k) => k.id === KX)!.anteckning = "Doris malade om badrummet";
+
+    expect(await raderaKonto(DORIS)).toEqual({ ok: true });
+
+    const kvar = JSON.stringify(h.db.ogonblick()).toLowerCase();
+    expect(kvar).not.toContain(EPOST[DORIS]);
+    expect(kvar).not.toContain(DORIS);
+    // Bostaden, kvittot och den andra inbjudan (till Erik) ligger kvar – och
+    // det hon sjalv skrev foljer kvittot.
+    expect(h.db.tabell("bostad").map((b) => b.id).sort()).toEqual([X, Y].sort());
+    expect(h.db.tabell("kostnad").find((k) => k.id === KX)?.anteckning).toBe("Doris malade om badrummet");
+    expect(h.db.tabell("inbjudan").map((i) => i.id)).toEqual([IX]);
+  });
+
   it("fler medlemmar: zip-arkivet gar att ladda ner forst, sedan tas bara medlemskapet bort", async () => {
     h.db.lagg("medlemskap", { anvandare_id: DORIS, bostad_id: X });
     // Doris har lagt in ett eget kvitto i den gemensamma bostaden.
@@ -778,9 +811,11 @@ describe("kontoraderingen", () => {
 const Z = "b0000000-0000-4000-8000-00000000000c"; // en bostad Bertil inte ar medlem i
 
 // Allt som bara finns i X. Ses nagot av det i ett svar fran databasen nar Y
-// ar aktiv har sidan last fran fel bostad. Bostadens id X sjalvt finns inte
-// med: det star legitimt i Bertils eget medlemskap.
-const BARA_I_X = [PX, HX, KX, K2X, K3X, AX, UX, BX, IX, BX_NYCKEL, "Storgatan 1", ANNA, EPOST[ANNA]];
+// ar aktiv har sidan last fran fel bostad. Bostadens id X och dess adress
+// finns inte med: de star legitimt i Bertils egna medlemskap, och adressen
+// visas i vaxlarens lista over hans bostader. Allt INNEHALL i X – kvitton,
+// projekt, bilagor, inbjudningar, de andra medlemmarna – ar forbjudet.
+const BARA_I_X = [PX, HX, KX, K2X, K3X, AX, UX, BX, IX, BX_NYCKEL, ANNA, EPOST[ANNA]];
 
 function strangar(varde: unknown, ut: string[] = []): string[] {
   if (typeof varde === "string") ut.push(varde);
@@ -1023,5 +1058,101 @@ describe("utkastet bar sin bostad", () => {
     ).toHaveProperty("fel");
     expect(await skapaUtkast("inte-ett-id")).toHaveProperty("fel");
     expect(h.db.ogonblick()).toEqual(fore);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Vaxlaren (docs/design.md, "Att äga flera bostäder").
+// ---------------------------------------------------------------------------
+
+/** Forsta forekomsten av en prop i ett returnerat JSX-trad. */
+function hittaProp(nod: unknown, namn: string): unknown {
+  if (!nod || typeof nod !== "object") return undefined;
+  if (Array.isArray(nod)) {
+    for (const n of nod) {
+      const v = hittaProp(n, namn);
+      if (v !== undefined) return v;
+    }
+    return undefined;
+  }
+  const props = (nod as { props?: Record<string, unknown> }).props;
+  if (!props) return undefined;
+  if (namn in props) return props[namn];
+  return hittaProp(props.children, namn);
+}
+
+describe("vaxlaren", () => {
+  const layoutLista = async () =>
+    hittaProp(await RootLayout({ children: null }), "varde") as
+      | { aktivId: string; bostader: { id: string; namn: string; upplatelseform: string }[] }
+      | null;
+
+  it("en bostad: rot-layouten ger ingen lista – toppraden ar oforandrad", async () => {
+    loggaIn(ANNA);
+    expect(await layoutLista()).toBeNull();
+  });
+
+  it("en delad bostad raknas som en", async () => {
+    h.db.lagg("medlemskap", { anvandare_id: DORIS, bostad_id: X });
+    loggaIn(DORIS);
+    expect(await layoutLista()).toBeNull();
+  });
+
+  it("utan inloggning: ingen lista", async () => {
+    h.inloggad = null;
+    expect(await layoutLista()).toBeNull();
+  });
+
+  it("tva bostader: adress och upplatelseform, den aktiva markerad, inga belopp", async () => {
+    bertilIBada();
+    loggaIn(BERTIL);
+    expect(await layoutLista()).toEqual({
+      aktivId: Y,
+      bostader: [
+        { id: Y, namn: "Lillgatan 2", upplatelseform: "bostadsratt" },
+        { id: X, namn: "Storgatan 1", upplatelseform: "fastighet" },
+      ],
+    });
+  });
+
+  it("bytet skriver valet och leder till oversikten", async () => {
+    bertilIBada();
+    loggaIn(BERTIL);
+    const utfall = await kor(() => bytBostad({}, formular({ bostad_id: X })));
+
+    expect("kastat" in utfall && utfall.kastat).toBeInstanceOf(h.Omdirigering);
+    expect((utfall as { kastat: { url: string } }).kastat.url).toBe("/");
+    expect(anvandarrad(BERTIL).aktiv_bostad_id).toBe(X);
+    expect((await kravBostad()).bostadId).toBe(X);
+    expect(await hamtaBostadsval()).toMatchObject({ aktivId: X });
+
+    const sida = await OversiktSida({ searchParams: Promise.resolve({}) });
+    expect(hittaProp(sida, "bostadsnamn")).toBe("Storgatan 1");
+  });
+
+  it("en bostad man inte ar medlem i gar inte att valja – ingenting skrivs", async () => {
+    loggaIn(BERTIL);
+    const fore = h.db.ogonblick();
+    expect(await bytBostad({}, formular({ bostad_id: X }))).toHaveProperty("fel");
+    expect(await bytBostad({}, formular({ bostad_id: "inte-ett-id" }))).toHaveProperty("fel");
+    expect(h.db.ogonblick()).toEqual(fore);
+  });
+
+  it("den farska listan foljer ett byte som gjorts nagon annanstans", async () => {
+    bertilIBada();
+    loggaIn(BERTIL);
+    expect(await hamtaBostadsval()).toMatchObject({ aktivId: Y });
+    anvandarrad(BERTIL).aktiv_bostad_id = X; // en annan flik bytte
+    expect(await hamtaBostadsval()).toMatchObject({ aktivId: X });
+  });
+
+  it.each(
+    VAGAR_UTAN_ID.filter((v) => v.vag.startsWith("sida ") && !["sida /export/paket", "sida /forsaljning/skick"].includes(v.vag)).map((v) => [v.vag, v] as const),
+  )("toppraden visar den aktiva bostadens adress: %s", async (_vag, v) => {
+    bertilIBada();
+    loggaIn(BERTIL);
+    const utfall = await kor(v.anrop);
+    expect("varde" in utfall, "kastat" in utfall ? String((utfall.kastat as Error)?.stack ?? JSON.stringify(utfall.kastat)) : "").toBe(true);
+    expect(hittaProp((utfall as { varde: unknown }).varde, "bostadsnamn")).toBe("Lillgatan 2");
   });
 });

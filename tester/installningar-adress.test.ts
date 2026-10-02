@@ -129,7 +129,7 @@ describe("en bostad utan adress fungerar som forut", () => {
   });
 
   it("oversikten visas, med upplatelseformen i toppraden", async () => {
-    const sida = await OversiktSida();
+    const sida = await OversiktSida({ searchParams: Promise.resolve({}) });
     expect(propsFor(sida, "Skarm")[0].bostadsnamn).toBe("Huset");
   });
 
