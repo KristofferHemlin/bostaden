@@ -61,9 +61,9 @@ export default async function SkickForsaljningSida() {
             Inget mer att bedöma
           </p>
           <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
-            Alla åtgärder med en reparationsdel har fått sitt skick vid
-            försäljningen bedömt. Nya åtgärder du klassificerar dyker upp här
-            om de behöver samma bedömning.
+            Allt som behöver det har fått sitt skick vid försäljningen bedömt.
+            Projekt du svarar på frågorna om senare dyker upp här om de
+            behöver samma bedömning.
           </p>
           <Link href="/export" className={`${PRIMARKNAPP_KLASS} mt-4`}>
             Till deklarationsunderlaget

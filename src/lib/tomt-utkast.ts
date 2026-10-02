@@ -2,7 +2,7 @@
 // forst nar det finns nagot att spara – ett filval (src/app/kostnad/nytt/
 // form.tsx, sakerstallUtkast). Men ett filval kan avbrytas eller en uppladdning
 // misslyckas, och da ligger en rad kvar utan bade bilaga och falt. Den raden
-// raknas inte i "N kvitton att klassificera", visas inte i kvittolistan, inte
+// raknas inte i "Berätta om N kvitton", visas inte i kvittolistan, inte
 // bland de sex senaste pa startskarmen och inte i genomgangen. Har utkastet ett
 // paborjat varde ligger det kvar och syns – det ar arbete som annars gar
 // forlorat.

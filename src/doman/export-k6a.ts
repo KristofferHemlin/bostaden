@@ -239,7 +239,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
         belopp_brutto: avrunda(cell.avdragsgrundande),
       });
       varningar.push(
-        `Högen "${cell.projekt.namn}" (${cell.ar}) är grupperad men inte klassificerad än och ingår inte i underlaget. Gå igenom frågorna för att ta med den.`,
+        `Projektet "${cell.projekt.namn}" (${cell.ar}) väntar på frågor och ingår inte i underlaget än. Svara på frågorna för att ta med det.`,
       );
       continue;
     }

@@ -55,8 +55,7 @@ export function Fas2({ hogar }: { hogar: Hog[] }) {
           Du hoppade över resten
         </p>
         <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
-          De högar du hoppade över ligger kvar oklassificerade och dyker upp
-          nästa gång du startar genomgången.
+          Det du hoppade över ligger kvar och dyker upp nästa gång.
         </p>
         <Link href="/" className={`${PRIMARKNAPP_KLASS} mt-4`}>
           Till översikten
@@ -105,14 +104,14 @@ function HogFormular({
     <div className="flex flex-col">
       <div className="border-b border-linje px-4 py-3">
         <p className="font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
-          Hög {position} av {antal}
+          {position} av {antal}
         </p>
       </div>
 
       {/* Hogens kvitton – synliga bredvid fragorna. */}
       <section className="border-b border-linje">
         <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
-          Kvitton i högen
+          Kvittona
         </p>
         <ul className="divide-y divide-linje">
           {hog.kvitton.map((k) => (
@@ -177,14 +176,14 @@ function HogFormular({
           onClick={onHoppaOver}
           className="text-center font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
         >
-          Hoppa över den här högen
+          Hoppa över
         </button>
 
         <Link
           href="/"
           className="text-center font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
         >
-          Avbryt genomgången
+          Fortsätt senare
         </Link>
 
         {/* Avskild langst ned, inte direkt under fritextfaltets hjalptext –

@@ -51,7 +51,7 @@ export function KontoRadera({ epost, delad }: { epost: string; delad: boolean })
         <p className="font-granssnitt text-sm text-text-primar">
           {delad
             ? "Ditt konto och din tillgång till bostaden försvinner. Kvittona, bilagorna och underlaget ligger kvar hos de andra delägarna. Det går inte att ångra."
-            : "Alla kvitton, alla bilagor, alla grupperingar och hela deklarationsunderlaget försvinner. Det går inte att ångra."}
+            : "Alla kvitton, alla bilagor, alla projekt och hela deklarationsunderlaget försvinner. Det går inte att ångra."}
         </p>
         <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
           Ladda ner dina filer först om du vill ha kvar dem.

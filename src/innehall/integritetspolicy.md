@@ -35,7 +35,7 @@ Inga uppgifter hämtas om dig från andra källor. Tjänsten begär inte tillgå
 
 **Vårt berättigade intresse** för de tre sista består i att kunna driva en tjänst som fungerar, att upptäcka fel innan de drabbar dig, och att förstå hur tjänsten används så att den kan förbättras.
 
-**Aggregerad statistik innehåller inga uppgifter som kan kopplas till dig.** Det handlar om sådant som hur många kvitton som läggs in per år eller hur ofta klassificeringen används – aldrig om vad just du har renoverat.
+**Aggregerad statistik innehåller inga uppgifter som kan kopplas till dig.** Det handlar om sådant som hur många kvitton som läggs in per år eller hur ofta frågorna besvaras – aldrig om vad just du har renoverat.
 
 **Dina uppgifter säljs inte, och tjänsten visar inga annonser.** Skulle det någon gång bli aktuellt att behandla uppgifterna för något annat ändamål än de ovan kommer du att tillfrågas särskilt. Du kan svara nej och ändå fortsätta använda tjänsten.
 

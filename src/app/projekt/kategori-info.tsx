@@ -19,7 +19,7 @@ export function KategoriInfo({ fonsterAr }: { fonsterAr: number }) {
         <button
           type="button"
           aria-expanded={visa}
-          aria-label="Vad kategorierna betyder"
+          aria-label="Vad grundförbättring och reparation betyder"
           onClick={() => setVisa((v) => !v)}
           className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-text-sekundar font-granssnitt text-xs leading-none text-text-sekundar transition-colors hover:bg-yta-nedsankt"
         >

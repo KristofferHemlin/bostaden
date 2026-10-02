@@ -37,7 +37,7 @@ export function AterforKnapp({ kostnadId }: { kostnadId: string }) {
         disabled={pagar}
         className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
       >
-        {pagar ? "Tar tillbaka…" : "Ta tillbaka till genomgången"}
+        {pagar ? "Tar tillbaka…" : "Hör till bostaden ändå"}
       </button>
     </form>
   );

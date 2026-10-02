@@ -53,12 +53,12 @@ export async function sparaSkickForsaljning(
       where: { id: projektId, bostad_id: bostadId },
       select: { atgardstyp: true, skick_forsaljning: true },
     });
-    if (!projekt) return { fel: "Åtgärden hittades inte." };
+    if (!projekt) return { fel: "Projektet hittades inte." };
     if (projekt.atgardstyp !== "utbytt") {
-      return { fel: "Den här åtgärden har ingen reparationsdel att bedöma." };
+      return { fel: "Det här projektet har ingen reparationsdel att bedöma." };
     }
     if (projekt.skick_forsaljning !== null) {
-      return { fel: "Skicket vid försäljningen är redan bedömt för den här åtgärden." };
+      return { fel: "Skicket vid försäljningen är redan bedömt för det här projektet." };
     }
 
     await prisma.projekt.update({

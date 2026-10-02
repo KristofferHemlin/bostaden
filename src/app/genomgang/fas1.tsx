@@ -32,7 +32,7 @@ const START: GenomgangResultat = {};
 // orange ar reserverat for "Ga vidare till fragorna" langst ned
 // (docs/design.md, "Orange markerar att man gar framat, inte att nagot
 // hander"). Samma visuella sprak som SEKUNDARKNAPP_KLASS, men utan w-full sa
-// den far plats bredvid textlanken "Inte en hog".
+// den far plats bredvid textlanken "Nej".
 const SKAPA_HOG_INLINE_KLASS =
   "inline-flex min-h-[44px] items-center justify-center rounded-full border border-sand-mork px-5 py-3 font-granssnitt text-base text-text-primar transition-colors hover:bg-yta-nedsankt disabled:opacity-60";
 
@@ -58,8 +58,8 @@ interface Forslag {
 /** Raknaren overst i fas 1: hogar som ar grupperade men inte har gatt igenom
  *  fragorna. Aldrig ett totalvarde over alla projekt. */
 export function hogarText(antal: number): string {
-  if (antal === 0) return "Ingen hög väntar på frågorna";
-  return `${antal} hög${antal === 1 ? "" : "ar"} väntar på frågorna`;
+  if (antal === 0) return "Inget väntar på frågor";
+  return `${antal} projekt väntar på frågor`;
 }
 
 // Samma regel som kvittolistan (kvittoradText): utan anteckning ar
@@ -139,15 +139,37 @@ export function Fas1({
   const kvarAttGa = oklassificerade.length;
   const antalHogar = hogar.length;
 
+  // Ar allt berattat ar skarmen en enda mening plus vagen tillbaka
+  // (docs/design.md, "Att berätta vad du gjort"): ingen raknare som sager
+  // noll, ingen instruktion om hur man lagger ihop kvitton som inte finns,
+  // ingen tom listrubrik. Uppmatt 2026-10-02 stod "Inga kvitton kvar" tva
+  // ganger med instruktionen emellan. Kvitton som satts at sidan nas fran
+  // kvittolistan ("Hör till bostaden ändå").
+  if (kvarAttGa === 0 && antalHogar === 0) {
+    return (
+      <div className="p-5">
+        <p className="font-rubrik text-lg text-text-primar">
+          Du har berättat om allt du lagt in
+        </p>
+        <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
+          Kvitton du lägger in senare dyker upp här.
+        </p>
+        <Link href="/" className={`${PRIMARKNAPP_KLASS} mt-4`}>
+          Till översikten
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col">
-      {/* Overst: hur langt man kommit. "Hog 1 av 4" i frågesteget racker inte –
+      {/* Overst: hur langt man kommit. "1 av 4" i frågesteget racker inte –
           med hundra kvitton ar det har skillnaden mellan att fortsatta och sluta. */}
       <div className="flex items-baseline justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-3 font-granssnitt text-sm">
         <span className="text-text-primar">
           {kvarAttGa === 0
-            ? "Inga kvitton kvar att gå igenom"
-            : `${kvarAttGa} kvitto${kvarAttGa === 1 ? "" : "n"} kvar att gå igenom`}
+            ? "Inga kvitton kvar"
+            : `${kvarAttGa} kvitto${kvarAttGa === 1 ? "" : "n"} kvar`}
         </span>
         {/* Raknar bara hogar som vantar pa fragorna – klassificerade hogar
             (projekt) ar inte med. "0 högar hittills" lastes som ett totalvarde
@@ -160,9 +182,9 @@ export function Fas1({
 
       <div className="border-b border-linje p-4">
         <p className="rounded-lg bg-sand px-3 py-3 font-granssnitt text-sm text-text-primar">
-          Först grupperar du kvittona i högar – en hög per sak du gjort. En hög
-          kan bestå av ett enda kvitto. Sedan svarar du på frågorna per hög.
-          Du kan avbryta när som helst; det du grupperat sparas.
+          Först lägger du ihop kvitton som hör till samma sak. Sedan får du
+          några frågor om varje. Du kan avbryta när som helst – det du lagt
+          ihop ligger kvar.
         </p>
       </div>
 
@@ -176,7 +198,7 @@ export function Fas1({
       {kvarStarForslag.length > 0 ? (
         <section className="border-b border-linje">
           <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
-            Förslag på högar
+            Hör de här ihop?
           </p>
           <div className="divide-y divide-linje">
             {kvarStarForslag.map((f) => {
@@ -227,7 +249,7 @@ export function Fas1({
                         disabled={skapaPagar}
                         className={SKAPA_HOG_INLINE_KLASS}
                       >
-                        {skapaPagar ? "Skapar…" : "Skapa hög"}
+                        {skapaPagar ? "Sparar…" : "Ja, lägg ihop"}
                       </button>
                       <button
                         type="button"
@@ -236,7 +258,7 @@ export function Fas1({
                         }
                         className="shrink-0 font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
                       >
-                        Inte en hög
+                        Nej
                       </button>
                     </div>
                   </form>
@@ -251,7 +273,7 @@ export function Fas1({
       {hogar.length > 0 ? (
         <section className="border-b border-linje">
           <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
-            Dina högar
+            Väntar på frågor
           </p>
           <div className="divide-y divide-linje">
             {hogar.map((h) => (
@@ -303,7 +325,7 @@ export function Fas1({
                   ))}
                   {h.kvitton.length === 0 ? (
                     <li className="font-granssnitt text-sm text-text-sekundar">
-                      Inga kvitton i högen.
+                      Inga kvitton här.
                     </li>
                   ) : null}
                 </ul>
@@ -340,16 +362,14 @@ export function Fas1({
         </section>
       ) : null}
 
-      {/* Kvitton att ga igenom. */}
-      <section className="border-b border-linje">
-        <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
-          Kvitton att gå igenom
-        </p>
-        {oklassificerade.length === 0 ? (
-          <p className="px-4 py-3 font-granssnitt text-sm text-text-sekundar">
-            Inga oklassificerade kvitton kvar.
+      {/* Kvitton kvar. Ar listan tom faller hela sektionen bort – raknaren
+          overst sager redan "Inga kvitton kvar" (docs/design.md, "Att berätta
+          vad du gjort"). */}
+      {oklassificerade.length > 0 ? (
+        <section className="border-b border-linje">
+          <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
+            Kvitton kvar
           </p>
-        ) : (
           <ul className="divide-y divide-linje">
             {oklassificerade.map((k) => {
               const vald = valda.has(k.id);
@@ -378,74 +398,74 @@ export function Fas1({
               );
             })}
           </ul>
-        )}
 
-        {valda.size > 0 ? (
-          // Ytskillnad fore linje (docs/design.md, "Genomgaende struktur") for
-          // att skilja atgardspanelen fran listan ovanfor. `/40` pa tokenet
-          // hade varit osynlig CSS – Tailwinds opacitetsmodifierare genererar
-          // ingen regel mot dessa var()-baserade farger (docs/design.md,
-          // "Farger") – darfor color-mix() i stallet.
-          <div className="flex flex-col gap-3 border-t border-linje bg-[color-mix(in_srgb,var(--yta-nedsankt)_40%,transparent)] p-4">
-            <p className="font-granssnitt text-sm text-text-sekundar">
-              {valda.size === 1
-                ? "1 kvitto valt"
-                : `${valda.size} kvitton valda`}
-            </p>
-            <form
-              action={(fd) => {
-                skapaAction(fd);
-                nollaUrval();
-              }}
-              onSubmit={hanteraSkapaSubmit}
-              className="flex flex-col gap-2"
-            >
-              {[...valda].map((id) => (
-                <input
-                  key={id}
-                  type="hidden"
-                  name="kostnad_ider"
-                  value={id}
-                />
-              ))}
-              <button
-                type="submit"
-                disabled={skapaPagar}
-                className={SEKUNDARKNAPP_KLASS}
+          {valda.size > 0 ? (
+            // Ytskillnad fore linje (docs/design.md, "Genomgaende struktur") for
+            // att skilja atgardspanelen fran listan ovanfor. `/40` pa tokenet
+            // hade varit osynlig CSS – Tailwinds opacitetsmodifierare genererar
+            // ingen regel mot dessa var()-baserade farger (docs/design.md,
+            // "Farger") – darfor color-mix() i stallet.
+            <div className="flex flex-col gap-3 border-t border-linje bg-[color-mix(in_srgb,var(--yta-nedsankt)_40%,transparent)] p-4">
+              <p className="font-granssnitt text-sm text-text-sekundar">
+                {valda.size === 1
+                  ? "1 kvitto valt"
+                  : `${valda.size} kvitton valda`}
+              </p>
+              <form
+                action={(fd) => {
+                  skapaAction(fd);
+                  nollaUrval();
+                }}
+                onSubmit={hanteraSkapaSubmit}
+                className="flex flex-col gap-2"
               >
-                {skapaPagar
-                  ? "Skapar…"
-                  : valda.size === 1
-                    ? "Skapa hög av kvittot"
-                    : "Skapa ny hög av valda"}
-              </button>
-            </form>
-            <form
-              action={(fd) => {
-                raknasAction(fd);
-                nollaUrval();
-              }}
-              onSubmit={hanteraRaknasSubmit}
-            >
-              {[...valda].map((id) => (
-                <input
-                  key={id}
-                  type="hidden"
-                  name="kostnad_ider"
-                  value={id}
-                />
-              ))}
-              <button
-                type="submit"
-                disabled={raknasPagar}
-                className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
+                {[...valda].map((id) => (
+                  <input
+                    key={id}
+                    type="hidden"
+                    name="kostnad_ider"
+                    value={id}
+                  />
+                ))}
+                <button
+                  type="submit"
+                  disabled={skapaPagar}
+                  className={SEKUNDARKNAPP_KLASS}
+                >
+                  {skapaPagar
+                    ? "Sparar…"
+                    : valda.size === 1
+                      ? "Ta det här kvittot för sig"
+                      : "Lägg ihop de valda"}
+                </button>
+              </form>
+              <form
+                action={(fd) => {
+                  raknasAction(fd);
+                  nollaUrval();
+                }}
+                onSubmit={hanteraRaknasSubmit}
               >
-                {raknasPagar ? "Sparar…" : "Hör inte till bostaden"}
-              </button>
-            </form>
-          </div>
-        ) : null}
-      </section>
+                {[...valda].map((id) => (
+                  <input
+                    key={id}
+                    type="hidden"
+                    name="kostnad_ider"
+                    value={id}
+                  />
+                ))}
+                <button
+                  type="submit"
+                  disabled={raknasPagar}
+                  className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
+                >
+                  {raknasPagar ? "Sparar…" : "Hör inte till bostaden"}
+                </button>
+              </form>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       {/* Raknas inte med – hopfallt tills man vill se det. */}
       {raknasInteLista.length > 0 ? (
@@ -498,8 +518,7 @@ export function Fas1({
       <div className="flex flex-col gap-2 p-4">
         {hogar.length > 0 ? (
           <Link href="/genomgang/fragor" className={PRIMARKNAPP_KLASS}>
-            Gå vidare till frågorna ({hogar.length} hög
-            {hogar.length === 1 ? "" : "ar"})
+            Gå vidare till frågorna
           </Link>
         ) : null}
         <Link href="/" className={SEKUNDARKNAPP_KLASS}>

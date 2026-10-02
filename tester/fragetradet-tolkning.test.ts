@@ -191,8 +191,8 @@ describe("harledFragetradetSvar – motsatsen, for redigeringsformularet", () =>
 });
 
 describe("atgardKategoriText – en atgard kan bidra till bade kategorier samtidigt", () => {
-  it("null-atgardstyp: behover klassificeras", () => {
-    expect(atgardKategoriText(null, null)).toBe("Behöver klassificeras");
+  it("null-atgardstyp: vantar pa fragor", () => {
+    expect(atgardKategoriText(null, null)).toBe("Väntar på frågor");
   });
 
   it("nybyggnad/planlosning/nytt_tillagg: alltid grundforbattring", () => {

@@ -8,9 +8,12 @@
 // sandknappen, samma form och hojd. Hogst ett orange element: darfor inte heller
 // inloggningssidans orange logotypmarkering.
 //
-// Pa en 390px-telefon ska Skapa konto synas utan att man rullar, aven med
-// webblasarens verktygsrader: darfor tatare luft och radavstand pa mobil an pa
-// skrivbord (sm:). Texten andras inte.
+// Hela Skapa konto inom de forsta 700 px vid 390 px bredd, underkanten och
+// inte overkanten (docs/design.md, "Landningssidans luft"). Ingen vertikal
+// centrering: sidan ligger mot overkanten sa att knappens lage ar detsamma i
+// varje fonsterhojd. Tatare luft pa mobil an pa skrivbord (sm:). Uppmatt
+// 2026-10-02: underkanten 678 px, 22 px marginal. Texten andras inte –
+// utrymme hamtas ur luft, aldrig ur ord.
 //
 // Ren server-komponent utan anrop: sidan visas utan session och far inte fraga
 // efter nagot som kraver en inloggad anvandare. Ingen <Skarm> – topp- och
@@ -25,18 +28,18 @@ import {
 
 export function Landningssida() {
   return (
-    <div className="flex min-h-screen w-full items-center bg-yta-bas">
-      <main className={`${KOLUMN_KLASS} px-4 pb-12 pt-4 sm:py-12`}>
+    <div className="min-h-screen w-full bg-yta-bas">
+      <main className={`${KOLUMN_KLASS} px-4 pb-12 pt-2 sm:py-12`}>
         <p className="px-1 font-rubrik text-base text-text-sekundar">
           Bostadsunderlag
         </p>
 
-        <h1 className="mt-2 px-1 font-rubrik text-2xl text-text-primar">
+        <h1 className="mt-1 px-1 sm:mt-2 font-rubrik text-2xl text-text-primar">
           Det du gjort med bostaden sänker skatten när du säljer. Om kvittot
           finns kvar.
         </h1>
 
-        <p className="mt-3 px-1 font-granssnitt text-base leading-snug text-text-sekundar sm:leading-6">
+        <p className="mt-2 px-1 font-granssnitt sm:mt-3 text-base leading-snug text-text-sekundar sm:leading-6">
           Nytt kök, omdragen el, ett tak – sådant får dras av från vinsten den
           dag bostaden säljs. Men avdraget vilar på att du kan göra utgiften
           trolig, och försäljningen kan ligga tjugo år bort. Ett kvitto är det
@@ -44,7 +47,7 @@ export function Landningssida() {
           mycket i vinstskatt: kvittona är borta.
         </p>
 
-        <div className="mt-5 space-y-3 px-1 font-granssnitt text-base leading-snug text-text-sekundar sm:leading-6">
+        <div className="mt-4 space-y-2 px-1 sm:mt-5 sm:space-y-3 font-granssnitt text-base leading-snug text-text-sekundar sm:leading-6">
           <p>
             <strong className="font-medium text-text-primar">
               Fota kvittot när du har det i handen.
@@ -69,7 +72,7 @@ export function Landningssida() {
           </p>
         </div>
 
-        <div className="mt-5 flex flex-col gap-3 sm:mt-10 sm:flex-row">
+        <div className="mt-4 flex flex-col gap-3 sm:mt-10 sm:flex-row">
           <Link href="/registrera" className={PRIMARKNAPP_KLASS}>
             Skapa konto
           </Link>

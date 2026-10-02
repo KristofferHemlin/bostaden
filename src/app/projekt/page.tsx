@@ -119,12 +119,12 @@ export default async function ProjektlistaSida() {
               tillstånd": ingen knapp för att skapa en gruppering). */}
           <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
             Ett projekt samlar allt du gjort med en och samma sak – till exempel
-            att måla sovrummet. Grupperingar skapas när du{" "}
+            att måla sovrummet. Projekt blir till när du{" "}
             <Link
               href="/genomgang"
               className="underline hover:text-accent-mork"
             >
-              klassificerar dina kvitton
+              berättar vad du gjort
             </Link>
             .
           </p>

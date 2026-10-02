@@ -71,7 +71,7 @@ export default async function KvittolistaSida() {
 
   const [bostad, kostnadRader] = await Promise.all([
     prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } }),
-    // Tomma utkast visas inte och raknas inte som "att klassificera"
+    // Tomma utkast visas inte och raknas inte i "Berätta om N kvitton"
     // (src/lib/tomt-utkast.ts).
     prisma.kostnad.findMany({
       where: { bostad_id: bostadId, ...INTE_TOMT_UTKAST },
@@ -160,8 +160,8 @@ export default async function KvittolistaSida() {
             Lägg till ditt första kvitto
           </p>
           <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
-            Fånga kvittot medan det är färskt. Att koppla det till ett projekt kan
-            vänta – oklassificerade kvitton ligger kvar här tills du hinner.
+            Fånga kvittot medan det är färskt. Resten kan vänta – kvittot ligger
+            kvar här tills du hinner berätta vad du gjort.
           </p>
           <Link href="/kostnad/nytt" className={`${PRIMARKNAPP_KLASS} mt-4`}>
             Lägg till kvitto
@@ -181,8 +181,8 @@ export default async function KvittolistaSida() {
                 aria-hidden
                 className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
               />
-              {antalOklassificerade} kvitto
-              {antalOklassificerade === 1 ? "" : "n"} att klassificera
+              Berätta om {antalOklassificerade} kvitto
+              {antalOklassificerade === 1 ? "" : "n"}
             </Link>
           ) : null}
 

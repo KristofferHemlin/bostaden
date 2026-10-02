@@ -7,9 +7,9 @@ import { hogarText } from "@/app/genomgang/fas1";
 
 describe("hogarText", () => {
   it("sager vad som raknas", () => {
-    expect(hogarText(0)).toBe("Ingen hög väntar på frågorna");
-    expect(hogarText(1)).toBe("1 hög väntar på frågorna");
-    expect(hogarText(3)).toBe("3 högar väntar på frågorna");
+    expect(hogarText(0)).toBe("Inget väntar på frågor");
+    expect(hogarText(1)).toBe("1 projekt väntar på frågor");
+    expect(hogarText(3)).toBe("3 projekt väntar på frågor");
   });
 
   it("anvander aldrig ordet hittills", () => {

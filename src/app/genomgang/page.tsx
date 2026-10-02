@@ -35,7 +35,7 @@ export default async function GenomgangSida() {
   // Bostadsfragorna (produktspec 4.1) blockerar HELA genomgangen – inte bara
   // fragetradet i fas 2, utan aven grupperingen har i fas 1 – tills de ar
   // besvarade. Kontrollen upprepas i /genomgang/fragor/page.tsx eftersom den
-  // ocksa gar att na direkt (t.ex. "Klassificera hogen" fran en enskild
+  // ocksa gar att na direkt (t.ex. "Svara på frågorna" fran en enskild
   // projektsida), utan att passera den har sidan forst.
   if (!bostad.bostadsfragor_besvarade) {
     return (
@@ -50,7 +50,7 @@ export default async function GenomgangSida() {
   }
 
   const [kostnadRader, projektRader] = await Promise.all([
-    // Samma urval som kvittolistans "N kvitton att klassificera" – tomma
+    // Samma urval som kvittolistans "Berätta om N kvitton" – tomma
     // utkast ingar inte (src/lib/tomt-utkast.ts).
     prisma.kostnad.findMany({
       where: { bostad_id: bostadId, ...INTE_TOMT_UTKAST },
@@ -121,7 +121,7 @@ export default async function GenomgangSida() {
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      rubrik="Klassificera det du lagt in"
+      rubrik="Berätta vad du gjort"
       bakLank={{ href: "/", text: "Översikt" }}
     >
       <Fas1

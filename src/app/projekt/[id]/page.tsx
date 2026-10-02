@@ -92,7 +92,12 @@ export default async function ProjektSida({
       bakLank={{ href: "/projekt", text: "Projekt" }}
     >
       <section className="space-y-2 border-b border-linje p-4 font-granssnitt text-sm">
-        <Rad etikett="Kategori" varde={kategoriText} atgard={oklassificerad} />
+        {/* Utelamnas tills fragorna ar besvarade (docs/design.md,
+            "Projektlistan"): faltet rymmer en kategori, inte ett tillstand.
+            Att svaren saknas sags av meddelandet nedan. */}
+        {oklassificerad ? null : (
+          <Rad etikett="Räknas som" varde={kategoriText} />
+        )}
         <Rad etikett="År" varde={String(projekt.ar)} />
         {oklassificerad ? null : (
           <>
@@ -132,8 +137,8 @@ export default async function ProjektSida({
         )}
         {oklassificerad ? (
           <p className="pt-1 text-text-sekundar">
-            Den här högen är grupperad men har inte gått igenom frågorna. Den
-            räknas inte in i underlaget förrän den klassificerats.
+            Frågorna om det här är inte besvarade än. Det räknas in i
+            underlaget när du svarat på dem.
           </p>
         ) : null}
         {projekt.motivering ? (
@@ -197,7 +202,7 @@ export default async function ProjektSida({
         <div className="flex flex-col gap-2 p-4">
           {oklassificerad ? (
             <Link href="/genomgang/fragor" className={PRIMARKNAPP_KLASS}>
-              Klassificera högen
+              Svara på frågorna
             </Link>
           ) : null}
           {/* Inmatningen kopplar inte till en gruppering (docs/design.md,

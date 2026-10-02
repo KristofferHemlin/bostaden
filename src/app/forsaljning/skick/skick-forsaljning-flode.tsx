@@ -45,8 +45,8 @@ export function SkickForsaljningFlode({ atgarder }: { atgarder: Atgard[] }) {
           Du hoppade över resten
         </p>
         <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
-          De åtgärder du hoppade över ligger kvar obesvarade och dyker upp
-          nästa gång du öppnar den här sidan.
+          Det du hoppade över ligger kvar och dyker upp nästa gång du öppnar
+          den här sidan.
         </p>
         <Link href="/export" className={`${PRIMARKNAPP_KLASS} mt-4`}>
           Till deklarationsunderlaget
@@ -85,7 +85,7 @@ function AtgardFormular({
     <div className="flex flex-col">
       <div className="border-b border-linje px-4 py-3">
         <p className="font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
-          Åtgärd {position} av {antal}
+          {position} av {antal}
         </p>
       </div>
 
@@ -133,7 +133,7 @@ function AtgardFormular({
           onClick={onHoppaOver}
           className="text-center font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
         >
-          Hoppa över den här åtgärden
+          Hoppa över
         </button>
 
         <Link

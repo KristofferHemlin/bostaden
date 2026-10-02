@@ -105,7 +105,7 @@ export async function skapaHog(
   const kostnadIder = formData.getAll("kostnad_ider").map(String).filter(Boolean);
 
   if (kostnadIder.length === 0) {
-    return { fel: "Välj minst ett kvitto till högen." };
+    return { fel: "Välj minst ett kvitto." };
   }
 
   try {
@@ -138,7 +138,7 @@ export async function skapaHog(
       // Inget kvitto gick att koppla (alla redan grupperade/borttagna) – lamna
       // ingen tom hog kvar.
       await prisma.projekt.delete({ where: { id: projekt.id } });
-      return { fel: "Kvittona hann grupperas någon annanstans. Ladda om sidan." };
+      return { fel: "Kvittona hann läggas ihop någon annanstans. Ladda om sidan." };
     }
   } catch (fel) {
     return { fel: serverfelMeddelande(fel, { sida: "genomgang", anrop: "skapaHog", anvandareId }) };
@@ -162,10 +162,10 @@ export async function laggIHog(
       where: { id: projektId, bostad_id: bostadId },
       select: { id: true, atgardstyp: true },
     });
-    if (!projekt) return { fel: "Högen hittades inte." };
+    if (!projekt) return { fel: "Projektet hittades inte." };
     if (projekt.atgardstyp !== null) {
       return {
-        fel: "Den högen är redan klassificerad. Lägg kvittot i en hög som inte gått igenom frågorna än.",
+        fel: "Frågorna om det här projektet är redan besvarade. Lägg kvittot bland det som väntar på frågor.",
       };
     }
     if (kostnadIder.length === 0) return { fel: "Välj minst ett kvitto." };
@@ -192,9 +192,9 @@ export async function flyttaUturHog(
       where: { id: projektId, bostad_id: bostadId },
       select: { id: true, atgardstyp: true },
     });
-    if (!projekt) return { fel: "Högen hittades inte." };
+    if (!projekt) return { fel: "Projektet hittades inte." };
     if (projekt.atgardstyp !== null) {
-      return { fel: "Den högen är redan klassificerad och ändras via projektet." };
+      return { fel: "Frågorna om det här projektet är redan besvarade och ändras på projektets sida." };
     }
 
     await prisma.radfordelning.deleteMany({

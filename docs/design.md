@@ -246,6 +246,28 @@ Kamerainmatning använder `<input type="file" accept="image/*" capture="environm
 
 Entiteten heter fortfarande `kostnad` i kod, tabeller och rutter. Användarens språk och kodens språk behöver inte vara samma.
 
+**Saken användaren samlar kvitton under heter "projekt". Ett ord, inga synonymer.** Den hette 2026-10-02 fyra saker samtidigt: *projekt* i menyfliken och på sin egen sida, *hög* i genomgångens gränssnitt, *gruppering* i den här filen och i koden, och *åtgärd* i exportens kolumn. En användare tryckte alltså på fliken *Projekt*, blev ombedd att skapa *högar*, och fick ut ett papper där det stod *Åtgärd*. Det går inte att lära sig.
+
+*Projekt* valdes för att ordet redan står i navigationen, produktens mest synliga plats, och för att en bostadsägare säger det själv: "vi gjorde ett projekt i badrummet". Ingen säger "en hög". *Hög* bär dessutom precis den bild produkten vill bort från – att sortera papper i stället för att berätta vad man gjort. *Gruppering* är utvecklarens ord. *Åtgärd* står kvar i exporten, och bara där, eftersom kolumnen speglar Skatteverkets blankett och hela poängen är att den ska stämma med pappret.
+
+**Men ordet behöver nästan aldrig sägas.** Användaren får frågor, inte uppgifter att utföra på en datamodell. "Skapa en gruppering" kräver att hen förstår vad en gruppering är; "Hör dessa ihop?" kräver bara ett svar. Det är därför skatteorden kunde strykas utan att ersättas med något – de beskrev handlingar som inte behöver beskrivas.
+
+**Appen klassificerar inte, den frågar.** *Klassificera*, *genomgång* och *oklassificerad* är skatteord för något som i grunden är *berätta vad du gjorde*. Produkten ger ingen skatterådgivning, och språket var det enda som fick den att låta som en.
+
+| Nu | Blir |
+|---|---|
+| Klassificera det du lagt in | **Berätta vad du gjort** |
+| N kvitton att klassificera | **Berätta om N kvitton** |
+| N kvitton kvar att gå igenom | **N kvitton kvar** |
+| Ingen hög väntar på frågorna | **Inget väntar på frågor** |
+| N högar väntar på frågorna | **N projekt väntar på frågor** |
+| KVITTON ATT GÅ IGENOM | **KVITTON KVAR** |
+| Hög 1 av 4 | **1 av 4** |
+| Ligger inte i någon hög | **Hör inte till något projekt än** |
+| Kategori | **Räknas som** |
+
+Kategorinamnen *Grundförbättring* och *Reparation* står kvar. De är de rättsliga kategorierna och syns på blanketten; det är etiketten ovanför dem som ändras, så att den säger följden i stället för taxonomin.
+
 **Appen beskriver aldrig sin egen byggordning.** Formuleringar som "kommer i ett senare steg", "är inte byggt än" eller "steg 14" är utvecklarens språk och hör hemma i specen, inte på skärmen. En användare som läser att något kommer senare lär sig att produkten är ofärdig, vilket är sant för er och irrelevant för honom eller henne. Finns funktionen inte nämns den inte; behöver tillståndet förklaras beskrivs det i nutid och ur användarens perspektiv.
 
 ## Undvik
@@ -272,7 +294,7 @@ Innehållet ligger i kort på `--yta-upphojd` mot sidbakgrunden, med 1px `--linj
 
 Överst på översikten står årets summa. Etiketten "Inlagt 2026" i dämpad text till vänster, beloppet stort och höger om det på samma baslinje. Under dem ett progressfält, och under det två rader småtext: tröskelbeloppet till vänster, återstående belopp till höger.
 
-Etiketten säger "Inlagt", aldrig "Underlag" eller "Avdrag". Siffran är summan av allt som lagts in, klassificerat eller ej, och appen kan inte påstå mer än så innan klassificeringen är gjord.
+Etiketten säger "Inlagt", aldrig "Underlag" eller "Avdrag". Siffran är summan av allt som lagts in, berättat om eller inte, och appen kan inte påstå mer än så innan klassificeringen är gjord.
 
 **Raden visar tre tal, och alla tre växer.** *Totalt inlagt*, *Inlagt 2026* och *Antal kvitton*.
 
@@ -302,7 +324,7 @@ Etiketten *Totalt inlagt* är sann för alla tre fallen, vilket var skälet att 
 
 **Ingen summa för det avdragsgilla.** Den går inte att veta före försäljningen – femårsfönstret, skicket och tröskeln hänger alla på försäljningsdatumet. Och ett tal för hur mycket som är beskrivet är samma påminnelse som regeln under *Kvittolistan* förbjuder på startskärmen: den som gör arkivet till en skuld man ådrar sig varje gång man sparar ett kvitto.
 
-Finns oklassificerade kostnader står **en enda kort rad** under fältet: "Preliminärt tills kvittona klassificerats." Förklaringen av vad tröskeln innebär – att hela årets belopp faller bort, inte bara mellanskillnaden – ligger bakom en informationsknapp, samma mönster som projektfrågorna. Tre rader brödtext ovanför kvittolistan gör förklaringen till huvudsaken i stället för siffran.
+Väntar något på frågor står **en enda kort rad** under fältet: "Preliminärt tills du berättat om alla kvitton." Förklaringen av vad tröskeln innebär – att hela årets belopp faller bort, inte bara mellanskillnaden – ligger bakom en informationsknapp, samma mönster som projektfrågorna. Tre rader brödtext ovanför kvittolistan gör förklaringen till huvudsaken i stället för siffran.
 
 Progressfältet är 8px högt med helt rundade ändar, spår i `--yta-nedsankt` och fyllning i `--sand-mork`. Fyllningen byter aldrig färg – orange hör till primärknappen, som ligger på samma skärm.
 
@@ -318,15 +340,15 @@ Raderingen tar med bilagorna. Ett utkast utan sin bild är ingenting.
 
 **Ett tomt utkast finns inte.** Utkastet skapas först när det finns något att spara – en vald bilaga eller ett ifyllt fält. Den som öppnar nytt kvitto och går därifrån utan att röra något lämnar inget spår, varken i databasen eller i listorna. Har utkastet däremot ett påbörjat värde ligger det kvar och syns, eftersom det då är arbete som annars går förlorat.
 
-Ett utkast utan både bilaga och fält räknas inte heller i "N kvitton att klassificera", och visas inte bland de sex senaste. Uppmätt 2026-09-28 stod tre sådana rader i listan efter några avbrutna uppladdningar, två av dem helt tomma, grupperade under *Utan datum, 0 kr* – vilket är precis vad en testperson skapar de första minuterna.
+Ett utkast utan både bilaga och fält räknas inte heller i "Berätta om N kvitton", och visas inte bland de sex senaste. Uppmätt 2026-09-28 stod tre sådana rader i listan efter några avbrutna uppladdningar, två av dem helt tomma, grupperade under *Utan datum, 0 kr* – vilket är precis vad en testperson skapar de första minuterna.
 
 **Appen fäller inga omdömen om bevisvärde.** Ingen etikett som graderar hur väl en post är underbyggd. Det som bär bevisningen är motiveringen i frågeträdet, och den hör hemma på grupperingens detaljvy, inte som en märkning i en lista.
 
 **Att en bilaga saknas är däremot ett faktum**, i samma klass som belopp och datum, och det ska synas. En rad utan bilaga får en dämpad text – "Inget kvitto bifogat" – utan ikon och utan varningsfärg, skild från statusraden. Den som går igenom sitt arkiv om åtta år ska kunna se vilka poster som har något bakom sig.
 
-**Ingången till klassificeringen ligger här, inte på startskärmen.** En rad överst i listan – "N kvitton att klassificera" med åtgärdsprick – som leder till genomgången. Kvittolistan är där man går för att se sina kvitton, och det är där man märker att några saknar gruppering.
+**Ingången till frågorna ligger här, inte på startskärmen.** En rad överst i listan – "Berätta om N kvitton" med åtgärdsprick – som leder vidare. Kvittolistan är där man går för att se sina kvitton, och det är där man märker att några inte hör till något projekt.
 
-På startskärmen finns ingen sådan sektion. Att möta en påminnelse varje gång appen öppnas gör klassificeringen till en skuld man ådrar sig när man sparar ett kvitto, och det var precis vad tvåfasmodellen skulle undvika. Att en rad bland de sex senaste är oklassificerad får visas med en diskret prick på just den raden, inget mer.
+På startskärmen finns ingen sådan sektion. Att möta en påminnelse varje gång appen öppnas gör frågorna till en skuld man ådrar sig när man sparar ett kvitto, och det var precis vad tvåfasmodellen skulle undvika. Att en rad bland de sex senaste är oklassificerad får visas med en diskret prick på just den raden, inget mer.
 
 **Kvitton grupperas per år med tydlig avdelare.** Tröskeln gäller per kalenderår och åren är helt skilda åt i underlaget – en lista där 2025 och 2026 glöser samman döljer produktens viktigaste struktur. Årsrubriken är en egen rad på `--yta-nedsankt` med årtalet och årets summa högerställd.
 
@@ -336,7 +358,7 @@ På startskärmen finns ingen sådan sektion. Att möta en påminnelse varje gå
 
 ### Listrader
 
-**Det här avsnittet gäller grupperingslistan och projektens rader, inte kvittolistan.** Kvittoradernas innehåll står under *Kvittolistan*.
+**Det här avsnittet gäller projektlistan och projektens rader, inte kvittolistan.** Kvittoradernas innehåll står under *Kvittolistan*.
 
 **Det förbjudna på en kvittorad är kategorin, inte tillståndet.** Formuleringen "aldrig kategori eller status" var för grov och rättades 2026-10-01. Ett normalt kvitto har leverantör och datum på andra raden och ingenting annat. Men ett utkast har ofta varken leverantör eller datum, och ett kvitto som satts åt sidan behöver säga varför – för dem är tillståndet det enda som är värt att visa: *Utkast · komplettera uppgifterna* och *Hör inte till bostaden*. Det som aldrig får stå där är klassificeringen: *Underhåll*, *Grundförbättring* och deras släkt.
 
@@ -344,7 +366,7 @@ Projekt och kostnader visas som rader avdelade med 1px linjer, inte som separata
 
 **"Räknas inte med" heter "Hör inte till bostaden".** Den första säger inte vad som inte räknas eller varför; den andra säger precis vad valet betyder. Det gäller matkassen som råkade fotograferas och möbler som flyttar med.
 
-**Varje nytt steg i ett flerstegsflöde börjar överst.** Efter en besvarad hög står användaren längst ned på mobilen, och nästa hög öppnas där. Rulla till toppen när steget byts – annars ser det ut som om ingenting hände.
+**Varje nytt steg i ett flerstegsflöde börjar överst.** Efter ett besvarat projekt står användaren längst ned på mobilen, och nästa öppnas där. Rulla till toppen när steget byts – annars ser det ut som om ingenting hände.
 
 **Alla datum matas in i tre fält – aldrig med den infödda datumväljaren.** År, månad, dag, med automatiskt hopp framåt när ett fält är fullt och backsteg genom tomma fält. Numeriskt tangentbord. Gäller kvittodatum, betaldatum och tillträdesdatum, i registreringen, inmatningen, redigeringen och inställningarna.
 
@@ -404,13 +426,13 @@ En rad kan bära flera dämpade rader. Ett kvitto kan sakna bilaga *och* ha ROT.
 
 **Ett tillstånd är inte en kategori.** Kategorin är grundförbättring eller reparation; att svaret saknas är något annat och hör inte hemma under rubriken Kategori. Utelämna fältet tills det har ett värde, och låt tillståndet stå för sig.
 
-**Vägen in i genomgången får aldrig försvinna.** Raden som räknar oklassificerat ska visas så länge något är oklassificerat – även när kvittona redan är grupperade. En hög som saknar svar på frågeträdet räknas som oklassificerad, precis som ett kvitto utan hög.
+**Vägen in till frågorna får aldrig försvinna.** Raden ska visas så länge något saknar sitt svar – även när kvittona redan är grupperade. En hög som saknar svar på frågeträdet räknas som oklassificerad, precis som ett kvitto utan hög.
 
-Räknar villkoret bara kvitton utan gruppering försvinner raden så fort man grupperat allt men inte svarat på något, och då finns ingen väg tillbaka in i genomgången från kvittolistan.
+Räknar villkoret bara kvitton utan projekt försvinner raden så fort man lagt ihop allt men inte svarat på något, och då finns ingen väg tillbaka från kvittolistan.
 
-**Orange markerar att man går framåt, inte att något händer.** I klassificeringsgenomgången finns tre handlingar som lätt får samma vikt: skapa en hög, gå vidare till frågorna, klassificera en hög. Tre orange knappar på tre skärmar som gör helt olika saker gör flödet svårläst.
+**Orange markerar att man går framåt, inte att något händer.** I frågeflödet finns tre handlingar som lätt får samma vikt: skapa en hög, gå vidare till frågorna, klassificera en hög. Tre orange knappar på tre skärmar som gör helt olika saker gör flödet svårläst.
 
-Orange bärs av den knapp som tar användaren till nästa steg. Handlingar som ändrar något på samma skärm – skapa en hög, lägga till i en hög, flytta ut ett kvitto – är sekundära och bär inte orange. Regeln är densamma som på startskärmen: ett orange element per skärm.
+Orange bärs av den knapp som tar användaren till nästa steg. Handlingar som ändrar något på samma skärm – lägga ihop kvitton, lägga till i ett hög, flytta ut ett kvitto – är sekundära och bär inte orange. Regeln är densamma som på startskärmen: ett orange element per skärm.
 
 **En åtgärd på en rad byter aldrig sida.** Raderas ett utkast, arkiveras en kostnad eller ändras något direkt i listan, uppdateras den sida man står på – man hamnar inte på en annan vy. Två saker sker då på ett klick och bara det ena var efterfrågat, och dessutom tappar man sin plats i listan.
 
@@ -424,7 +446,7 @@ Ett tomt tillstånd säger aldrig bara att det är tomt. Det består av en rubri
 
 **Handlingen heter "Lägg till kvitto", inte kostnad eller utgift.** Kvitto är det konkreta – det man håller i handen och det appen läser av. Utgift och kostnad låter som bokföring, och bokföring är inte vad någon vill ägna sin söndag åt.
 
-**En enda primärknapp.** Ingen knapp för att skapa en gruppering – det är inte vägen in i produkten, och ordet *projekt* hör inte hemma på en landningsskärm. Två jämnstora knappar tvingar fram ett val innan användaren vet vad alternativen betyder.
+**En enda primärknapp.** Ingen knapp för att skapa ett projekt – det är inte vägen in i produkten, och ordet hör inte hemma på en landningsskärm. Två jämnstora knappar tvingar fram ett val innan användaren vet vad alternativen betyder.
 
 ### Förstaskärmen för en ny användare
 
@@ -471,9 +493,9 @@ Att läsa det finstilta är fortfarande helskärmsvyns uppgift – ett tryck på
 
 **Breddregeln gäller överallt, höjdtaket skiljer sig.** I inmatningen är taket omkring 50 % av skärmhöjden, här 60 %. Ramen följer dokumentets proportioner på båda skärmarna.
 
-**Ingen statusrad, ingen projektrad, ingen prick.** Oklassificerad är det normala tillståndet och kan vara det i åratal – att märka det som en brist motsäger hela produkten. Ord som "saknar", "oklassificerad" och "projekt" hör inte hemma på den här skärmen.
+**Ingen statusrad, ingen projektrad, ingen prick.** Att ännu inte ha berättat om ett kvitto är det normala tillståndet och kan vara det i åratal – att märka det som en brist motsäger hela produkten. Ord som "saknar", "oklassificerad" och "projekt" hör inte hemma på den här skärmen.
 
-Är kvittot kopplat till en gruppering visas den som en dämpad rad med namnet. Är det inte kopplat visas ingen rad alls, inte "Inget". Är ett belopp markerat som privat visas det på samma sätt, som en dämpad rad. Saknas det står ingenting.
+Är kvittot kopplat till ett projekt visas det som en dämpad rad med namnet. Är det inte kopplat visas ingen rad alls, inte "Inget". Är ett belopp markerat som privat visas det på samma sätt, som en dämpad rad. Saknas det står ingenting.
 
 ### Ett kvitto är en skärm, inte två
 
@@ -489,7 +511,7 @@ Det är samma mönster som inställningssidans kort, och `design.md` har hela ti
 
 **Projektkopplingen visas bara när bostaden har minst ett projekt.** En rullista vars enda alternativ är "– inget projekt –" är en kontroll man inte kan använda, och den står i vägen för den som just vill rätta ett belopp. Grupperingar uppstår ur klassificeringen, inte som en egen uppgift – finns inga ännu är kopplingen inte ett val som ska erbjudas.
 
-Finns det projekt står rutan där som vanligt, både för att se vilken gruppering kvittot hör till och för att flytta det.
+Finns det projekt står rutan där som vanligt, både för att se vilket projekt kvittot hör till och för att flytta det.
 
 **Privatfrågan är ett vanligt fält i formuläret, inte en utfällbar sektion.** Den har flyttat hit från läsläget, och blir den både flyttad och hopfälld är den osynlig. Den står bland de andra uppgifterna med sin hjälptext: *"Ange beloppet som inte hörde till bostaden. Resten räknas med."*
 
@@ -531,9 +553,9 @@ På mobil ligger de tre korten i en rad med mindre text, inte staplade – tre s
 
 Anteckningen som huvudtext är avsiktligt. "Målade om sovrummet" säger vad raden är; "BAUHAUS" gör det inte.
 
-**Inga kategorimärkningar på raderna.** Ett kvitto är oklassificerat i normalfallet, och en etikett som säger "Underhåll" antyder både att klassificering skett och att den är kvittots egenskap snarare än åtgärdens.
+**Inga kategorimärkningar på raderna.** Ett kvitto saknar sitt svar i normalfallet, och en etikett som säger "Underhåll" antyder både att klassificering skett och att den är kvittots egenskap snarare än åtgärdens.
 
-**Ingen ingång till klassificeringen här.** Den ligger i kvittolistan – skälet, och vad som ändå får visas på en enskild rad, står under *Kvittolistan*.
+**Ingen ingång till frågorna här.** Den ligger i kvittolistan – skälet, och vad som ändå får visas på en enskild rad, står under *Kvittolistan*.
 
 ### Bilagor
 
@@ -669,13 +691,13 @@ Varje extra rad – också en hopfälld – säger att det finns mer att göra h
 
 **Fritextfältet heter "Vad gällde det?"** och är det enda som bär betydelse framåt. Hjälptexten uppmuntrar en beskrivande mening, inte ett ord: "målade om sovrummet, väggarna var slitna sedan vi flyttade in" är vad som gör klassificeringen möjlig åtta år senare. "Färg" är det inte. Fältet är inte obligatoriskt – ett kvitto utan anteckning är bättre än inget kvitto.
 
-**Inga skattefrågor, ingen gruppering, inga kategorier.** Frågeträdet hör hemma i klassificeringsgenomgången, som användaren startar när hen själv vill. Ordet *projekt* förekommer inte i inmatningsflödet.
+**Inga skattefrågor, ingen projektkoppling, inga kategorier.** Frågeträdet hör hemma i frågeflödet, som användaren startar när hen själv vill. Ordet *projekt* förekommer inte i inmatningsflödet.
 
 **Detta hör hemma i kvittots ändringsläge, inte här:**
 
 - Betaldatum som skiljer sig från kvittots datum. Gäller nästan bara obetalda fakturor, och att tömma det gör kostnaden obetald så att den inte räknas in i årssumman.
 - Uppdelning när något var privat.
-- Koppling till en befintlig gruppering. Klassificeringen sker i genomgången; en genväg här motsäger den modellen.
+- Koppling till ett befintligt projekt. Frågorna ställs senare; en genväg här motsäger den modellen.
 
 Allt det görs i efterhand när man har tid, och inget av det är brådskande – till skillnad från att fånga kvittot medan det finns.
 
@@ -777,7 +799,7 @@ Det är det enda stället i formuläret där en hjälptext byter lydelse, och de
 
 Uppdelning görs i efterhand, i kvittots ändringsläge under fältet "Var något på kvittot privat?". Den finns inte i inmatningen.
 
-Förvalet är **två rader** – en till grupperingen och en privat. En "lägg till rad"-knapp finns för de sällsynta fall där ett kvitto rör två olika åtgärder, men den syns inte förrän man behöver den.
+Förvalet är **två rader** – en till projektet och en privat. En "lägg till rad"-knapp finns för de sällsynta fall där ett kvitto rör två olika åtgärder, men den syns inte förrän man behöver den.
 
 **Inga procenttal, ingen "fördelning", ingen "andel" i gränssnittet.** Användaren anger artikel och belopp, och markerar vad som är privat. Systemet räknar ut resten. Den som ska använda appen är en person som målat sitt sovrum, inte en bokförare.
 
@@ -787,7 +809,7 @@ Förvalet är **två rader** – en till grupperingen och en privat. En "lägg t
 
 **Bilagan ligger först, inte sist.** Den som just handlat vill fota kvittot och få resten ifyllt, inte skriva fem fält och sedan bifoga. Ordningen är: bilaga, sedan de fält avläsningen fyllt i, sedan anteckningen, sist ROT-raden.
 
-**Ingen projektkoppling i formuläret.** Klassificeringen hör till genomgången, och ordet *projekt* förekommer inte i inmatningsflödet – se Inmatningen har fem fält, inget mer.
+**Ingen projektkoppling i formuläret.** Frågorna ställs senare, och ordet *projekt* förekommer inte i inmatningsflödet – se Inmatningen har fem fält, inget mer.
 
 När en fil valts läses den av och belopp, datum och leverantör fylls i automatiskt. En bekräftelseruta i `--bg-klart` säger att fälten fyllts i och ska granskas. Rubriken över fälten blir "Granska uppgifterna" i stället för "Fyll i uppgifter" när analysen lyckats.
 
@@ -873,6 +895,28 @@ Texten är:
 
 **En skärm, ingen scrollsaga.** Inga sektioner att bläddra igenom, inga kundcitat, inga logotyper. Det finns inget att styrka ännu, och en tom marknadsföringsstruktur syns.
 
+### Landningssidans luft
+
+**Avsikten först, eftersom talet nedan är ett ombud för den:** läsaren ska aldrig möta en stopp-punkt som inte är knappen. Sidans ärende är förlusten först och enkelheten som svar – att knappen syns hjälper ingen som inte läst styckena. Det som förstör sidan är därför inte att man måste rulla, utan att den ser färdig ut innan den är slut.
+
+**Hela primärknappen ska ligga inom de första 700 px vid 390 px bredd.** Underkanten, inte överkanten. En knapp vars övre hälft syns och vars nedre är avskuren läser ändå som att det inte finns någon knapp.
+
+Skälet till just 700: på en telefon som är 844 px hög lämnar webbläsarens egna rader omkring så mycket synlig yta.
+
+**På kortare skärmar går kravet inte att uppfylla, och ska inte försökas.** Uppmätt 2026-10-02: innehållet är 678 px från toppen till knappens underkant, medan en iPhone SE visar omkring 550 px under webbläsarens rader. Att vinna de 130 pixlarna skulle kräva att text ströks, och texten är sidans ärende.
+
+Där gäller avsikten i stället: **vikningen ska falla mitt i ett stycke, aldrig efter det sista.** En sida som skärs mitt i en mening fortsätter uppenbart; en sida som skärs efter ett avslutat stycke ser ut att vara hela sidan, och då är knappen inte svår att nå – den finns inte.
+
+**Mätningarna, i ordning.** 2026-09-29: "Skapa konto" låg 756 px ner på en sida som var 912 px hög – ingen knapp syntes alls. Efter att luften drogs ihop, 2026-10-02: överkanten 672 px, underkanten 722 px. Överkanten klarar gränsen, underkanten missar med 10 px.
+
+**Sidan är vertikalt centrerad, och det är orsaken.** Knappens läge beror därför på fönstrets höjd – uppmätt 672 px i ett 844 px högt fönster och 660 px i ett 700 px högt. En sida vars enda uppgift är att få någon till knappen ska ligga mot överkanten med avsiktliga avstånd, så att geometrin är densamma på varje telefon. Den vertikala centreringen hör till inloggningssidan, där kortet är kort och ensamt; här gör den läget oförutsägbart.
+
+**Sikta på 680 px eller mindre, inte 699.** En regel som klaras med en pixel går sönder nästa gång ett ord läggs till i ett av styckena. Texten ändras inte för att vinna utrymme – den är sidans ärende.
+
+**Marginalen 2026-10-02 är 22 px, och en textrad är 22 px.** Det är alltså exakt en rad kvar. Läggs en mening till i något av de fyra styckena så att det växer med en rad, faller knappen utanför gränsen igen. Rör någon texten på den här sidan ska raden mätas om – det är den enda regeln i produkten som ett ord kan bryta.
+
+**Regeln hör hit, inte i en prompt.** Den mättes 2026-09-29 och specificerades bara i den omgångens prompt. Tre dagar senare hänvisade `vad-som-aterstar`-arbetet till ett avsnitt i den här filen som aldrig skrevs, och agenten stannade med rätta: den vägrade rätta mot ett krav som inte fanns dokumenterat. En uppmätt regel som bara står i en prompt upphör att finnas när omgången är klar.
+
 ### Registreringsflödet
 
 Att skapa konto är ett eget flöde, inte samma formulär som inloggningen med en extra knapp. Den som trycker "Skapa konto" ska veta vad som händer härnäst.
@@ -949,29 +993,45 @@ Ingen annanstans. Inte i rubriker, knappar, meddelanderutor, tomma tillstånd el
 
 Behövs symboler någon annanstans används tunna ikoner i `--text-sekundar`.
 
-### Klassificeringsgenomgången
+### Att berätta vad du gjort
 
-**Högen namnges inte i grupperingsvyn.** Namnet är svaret på frågeträdets första fråga och ställs en gång, i fas 2 – se `docs/produktspec.md` avsnitt 2b. Fram till dess visas högen som antal och leverantörer.
+Skärmens rubrik är **"Berätta vad du gjort"**, och den inleds med två meningar som säger vad som väntar: *"Först lägger du ihop kvitton som hör till samma sak. Sedan får du några frågor om varje."* Att avbryta går när som helst, och det som lagts ihop ligger kvar.
+
+**Projektet namnges inte när kvittona läggs ihop.** Namnet är svaret på frågeträdets första fråga och ställs en gång, i fas 2 – se `docs/produktspec.md` avsnitt 2b. Fram till dess visas projektet som antal och leverantörer.
 
 Skälet att namnet betyder något är att det hamnar i deklarationsunderlagets åtgärdskolumn. En rad som säger "K-Bygg Sverige AB" i stället för "Ny köksfläkt" är inte begriplig för någon som inte var där – och det är just därför frågan ska ställas där användaren tänker på vad hen gjorde, inte där hen sorterar papper.
 
-**Visa hur mycket som återstår.** Överst i grupperingsvyn en rad med antal kvitton kvar att gå igenom och antal högar hittills. I frågesteget räcker "Hög 1 av 4", men i fas 1 finns ingen känsla för hur långt man kommit – och med hundra kvitton är det skillnaden mellan att fortsätta och att sluta.
+**Visa hur mycket som återstår.** Överst en rad som säger **"N kvitton kvar"** och, när något väntar, **"N projekt väntar på frågor"** – annars **"Inget väntar på frågor"**. I frågesteget räcker **"1 av 4"**, utan ordet före, men i första steget finns ingen känsla för hur långt man kommit – och med hundra kvitton är det skillnaden mellan att fortsätta och att sluta.
 
-**En hög ska gå att skapa av ett enda kvitto.** Alla åtgärder består inte av flera inköp.
+**Är allt berättat är skärmen en enda mening.** Inte en räknare som säger noll, följd av en förklaring av hur man gör det som inte finns kvar, följd av en tom lista som säger noll igen. Uppmätt 2026-10-02 stod *"Inga kvitton kvar"* två gånger på samma skärm med instruktionen emellan.
 
-**Skickfrågan vid förvärvet måste dyka upp när svaret på fråga 4 är "Det fanns redan".** Den är villkorad, inte borttagen – utan den kan en reparations avdragsrätt inte avgöras, och det är hela skälet till att genomgången finns.
+Tomt läge här: en rad som säger att du berättat om allt du lagt in, en rad om att kvitton du lägger in senare dyker upp här, och vägen tillbaka. Ingen räknare, ingen instruktion, ingen listrubrik. Regeln under *Tomma tillstånd* gäller – ett tomt tillstånd säger aldrig bara att det är tomt – men den kräver inte att skärmen säger det tre gånger.
+
+**Tillbakalänken namnger handlingen när rubriken är densamma.** Bakåt heter annars destinationen – "← Kvitton", "← Projekt". Går länken till en skärm med samma rubrik som den man står på säger den i stället vad man går dit för att göra: **"Lägg ihop kvitton"**. En länk som säger samma ord som rubriken ovanför ser ut som ett fel. Det är ett undantag från namnregeln, inte en ny regel.
+
+**Flödets två steg bär samma rubrik: "Berätta vad du gjort".** Att låta frågesteget heta *Frågorna* gör att appen byter röst mitt i en uppgift – från samtal till formulär – och det är en uppgift, inte två funktioner. Hur långt man kommit bärs av *"1 av 4"*, inte av rubriken.
+
+**Ett projekt ska gå att skapa av ett enda kvitto.** Allt man gör består inte av flera inköp, och ordet får inte göra ett bytt blandare till något större än det var – i flödet sägs det därför nästan aldrig. Användaren svarar på frågor, hen ombeds inte skapa ett objekt.
+
+**Skickfrågan vid förvärvet måste dyka upp när svaret på fråga 4 är "Det fanns redan".** Den är villkorad, inte borttagen – utan den kan en reparations avdragsrätt inte avgöras, och det är hela skälet till att frågorna ställs.
 
 **ÅÄÖ i all text som användaren ser.** ASCII-translitterering gäller identifierare i koden, aldrig meddelanden. "battre skick vid forsaljningen ar inte bekraftat" ser ut som ett fel, för det är det.
 
-### Grupperingslistan
+### Projektlistan
 
-Varje rad visar grupperingens namn, belopp och kategori. Kategorin står som ren text – "Grundförbättring" eller "Reparation" – utan färg, prick eller etikett.
+Varje rad visar projektets namn, belopp och vad det räknas som. Etiketten heter **Räknas som**, inte *Kategori* – den säger följden i stället för taxonomin.
+
+**Raden utelämnas helt tills frågorna är besvarade.** *Räknas som: Väntar på frågor* fyller ett fält som rymmer en kategori med ett tillstånd. Att svaren saknas sägs redan av meddelandet på projektets sida; det behöver inte sägas en andra gång i ett fält som frågar efter något annat.
+
+**Men i listan får samma tillstånd stå.** Projektraden visar *Väntar på frågor* med åtgärdsprick, och det är rätt – det är så man ser vilka projekt som återstår.
+
+Skillnaden är etiketten, och den är värd att formulera eftersom den avgör fler fall än det här: **ett fält med etikett måste besvaras av sitt värde. En dämpad rad utan etikett får bära vad som helst som är sant om raden.** "Räknas som" är en fråga, och *Väntar på frågor* svarar inte på den. En dämpad andra rad ställer ingen fråga. Värdet står som ren text – "Grundförbättring" eller "Reparation" – utan färg, prick eller etikett.
 
 **En informationsknapp vid listans rubrik förklarar vad kategorierna betyder.** Grundförbättring: något tillfördes eller standarden höjdes, ingen tidsgräns bakåt. Reparation: något fräschades upp eller lagades, avdragsgill bara inom fem år före försäljningen och bara om bostaden är i bättre skick än vid tillträdet.
 
 Förklaringen ligger bakom knappen, inte som brödtext ovanför listan. Den som redan vet ska inte behöva läsa förbi den varje gång.
 
-**Ingen primärknapp i det tomma tillståndet.** Grupperingar uppstår ur klassificeringen, inte som en egen uppgift. Rubrik, en rad förklaring och en textlänk till genomgången räcker.
+**Ingen primärknapp i det tomma tillståndet.** Projekt uppstår ur frågorna, inte som en egen uppgift. Rubrik, en rad förklaring och en textlänk till genomgången räcker.
 
 Det är ett undantag från regeln att tomma tillstånd har en primärknapp. Regeln gäller skärmar där det finns en handling som är vägen framåt – finns ingen sådan handling är knappen en uppmaning att göra något som inte hör hemma där.
 
@@ -1034,7 +1094,7 @@ Sidan ska gå att lämna halvfylld. Ingen validering utöver att angivna belopp 
 
 Med två delägare är "vem la in de här 40 000?" en fråga som kommer att ställas, och utan raden är den obesvarbar. Samma sak för klassificeringssvaren, eftersom den som svarar först bestämmer och den andra ska kunna se vem det var. Raden visas bara när bostaden har fler än en medlem – ensam är den brus.
 
-**Klassificeringsfrågorna besvaras gemensamt.** Den som svarar först bestämmer. Skickbedömningen är subjektiv och två delägare kan tycka olika, men de deklarerar samma åtgärd på samma bostad – två olika underlag för samma renovering är svårare att försvara än ett.
+**Frågorna om vad som gjorts besvaras gemensamt.** Den som svarar först bestämmer. Skickbedömningen är subjektiv och två delägare kan tycka olika, men de deklarerar samma åtgärd på samma bostad – två olika underlag för samma renovering är svårare att försvara än ett.
 
 **Fördelningen efter ägarandel är inget val.** Avdragen hör till bostaden, inte till personen, och fördelas efter ägarandel oavsett vem som betalade fakturan. Appen erbjuder därför ingen möjlighet för en delägare att ta hela beloppet – ett sådant val vore en inbjudan till en position Skatteverkets huvudregel inte accepterar. Källan står i `docs/regelkallor.md`.
 
@@ -1106,15 +1166,15 @@ Utan försäljningsdatum visas:
 
 - **Sida 1 komplett.** Grundförbättringar saknar tidsgräns bakåt och påverkas inte av när bostaden säljs. Summan till ruta 4 är verklig.
 - **Sida 2 med sina rader men utan avdragsgill kolumn**, och en förklaring: femårsregeln och förslitningen utgår från försäljningsdatumet, så det går inte att räkna ut ännu.
-- **Oklassificerade högar** som vanligt.
+- **Projekt som väntar på frågor** som vanligt.
 
 "Markera som såld" ligger som en knapp längst ned på sidan, aldrig som en spärr framför den.
 
 Poängen är att sidan ska vara meningsfull under hela ägandet i stället för en tom skärm i tio år som plötsligt blir viktig.
 
-**Samma information står aldrig två gånger.** Oklassificerade högar redovisas i en enda lista med namn, år och belopp, en åtgärdsprick och en knapp till genomgången. Ingen andra lista som upprepar samma högar i längre meningar – konsekvensen sägs en gång, i en rad ovanför listan.
+**Samma information står aldrig två gånger.** Projekt som väntar på frågor redovisas i en enda lista med namn, år och belopp, en åtgärdsprick och en knapp till genomgången. Ingen andra lista som upprepar samma högar i längre meningar – konsekvensen sägs en gång, i en rad ovanför listan.
 
-En varning per hög som fyller fyra rader var gör skärmen till en vägg av text, och läsaren slutar läsa vid den andra punkten.
+En varning per projekt som fyller fyra rader var gör skärmen till en vägg av text, och läsaren slutar läsa vid den andra punkten.
 
 **En rad som ger 0 kr måste säga varför.** Tre olika regler ger noll, och de betyder helt olika saker för användaren:
 
@@ -1139,7 +1199,7 @@ Formuleringen följer Skatteverkets egen: *"Kostnaden för det året som åtgär
 
 **Exportvyn redovisar varje krona som lagts in.** Det som inte står på sida 1 eller sida 2 ska synas som det som återstår – oavsett om det är en hög eller ett kvitto som ännu inte ligger i någon hög. Uppmätt 2026-10-02: startskärmen sade *Totalt inlagt 1 049 225 kr* medan exportvyns enda summa var 49 225 kr, och de miljoner som fattades syntes ingenstans på sidan. Ett underlag som tyst utelämnar det mesta av beloppet är värre än inget underlag, eftersom det ser färdigt ut.
 
-**Summorna dämpas när de är ofullständiga.** Två stora nollor på en skärm som heter Deklarationsunderlag ser trasigt ut. Finns oklassificerade högar sätts talen i `--text-sekundar` i stället för `--text-primar`, så att blicken går till listan över det som återstår. När allt är klassificerat får de full tyngd.
+**Summorna dämpas när de är ofullständiga.** Två stora nollor på en skärm som heter Deklarationsunderlag ser trasigt ut. Väntar något på frågor sätts talen i `--text-sekundar` i stället för `--text-primar`, så att blicken går till listan över det som återstår. När allt är klassificerat får de full tyngd.
 
 **Friskrivningen står på den här sidan.** En dämpad rad om att appen inte ger skatterådgivning och att Skatteverkets upplysningstjänst svarar på gränsfall. Exportvyn är den enda skärm där användaren tar med sig siffror ut ur appen, och därmed den enda där påståendet behöver stå. Samma rad hör hemma i klassificeringsgenomgången, där bedömningarna faktiskt görs.
 

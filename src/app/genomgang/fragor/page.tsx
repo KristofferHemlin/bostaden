@@ -25,7 +25,7 @@ export default async function FragorSida() {
   // Bostadsfragorna (produktspec 4.1) blockerar hela fas 2 tills de ar
   // besvarade – reparationsdelen gar annars inte att rakna. Stalls forst,
   // fore forsta hogen, aven om det just nu inte finns nagon hog att visa.
-  // nasta="/genomgang/fragor": den har ingangen (t.ex. "Klassificera hogen"
+  // nasta="/genomgang/fragor": den har ingangen (t.ex. "Svara på frågorna"
   // fran ett enskilt projekt) har faktiskt nagot att klassificera, sa
   // sparaBostadsfragor ska fortsatta hit efterat i stallet for standardvalet
   // grupperingen (se bostadsfragor.tsx).
@@ -34,7 +34,7 @@ export default async function FragorSida() {
       <Skarm
         bostadsnamn={bostadsnamn}
         rubrik="Om bostaden"
-        bakLank={{ href: "/genomgang", text: "Grupperingen" }}
+        bakLank={{ href: "/genomgang", text: "Berätta vad du gjort" }}
       >
         <Bostadsfragor nasta="/genomgang/fragor" />
       </Skarm>
@@ -93,23 +93,23 @@ export default async function FragorSida() {
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      rubrik="Frågorna, en hög i taget"
-      bakLank={{ href: "/genomgang", text: "Grupperingen" }}
+      rubrik="Berätta vad du gjort"
+      bakLank={{ href: "/genomgang", text: "Lägg ihop kvitton" }}
     >
       {hogarMedKvitton.length === 0 ? (
         <div className="p-5">
           <p className="font-rubrik text-lg text-text-primar">
-            Inget mer att klassificera
+            Inget väntar på frågor
           </p>
           <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
-            Alla högar har gått igenom frågorna. Nya kvitton du lägger in dyker
-            upp här när du startar genomgången igen.
+            Du har svarat på frågorna om allt du lagt ihop. Kvitton du lägger
+            in senare dyker upp här när du kommer tillbaka.
           </p>
           <Link href="/" className={`${PRIMARKNAPP_KLASS} mt-4`}>
             Till översikten
           </Link>
           <Link href="/genomgang" className={`${SEKUNDARKNAPP_KLASS} mt-2`}>
-            Tillbaka till grupperingen
+            Lägg ihop fler kvitton
           </Link>
         </div>
       ) : (

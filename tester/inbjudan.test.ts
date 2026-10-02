@@ -78,6 +78,7 @@ import { sparaKostnad } from "@/app/kostnad/nytt/actions";
 import { hamtaArkivexportlista } from "@/app/installningar/arkivexport-actions";
 import { raderaKonto } from "@/lib/konto/radera";
 import { formateraKronor } from "@/lib/format";
+import { summeraAndelar } from "@/lib/samagande";
 import { kravBostad } from "@/lib/session";
 
 const ANNA = "a0000000-0000-4000-8000-000000000001"; // ager bostaden X
@@ -492,6 +493,24 @@ describe("agarandelen vid inbjudan", () => {
     await losIn(id);
 
     expect(andelFor(DORIS)).toBe(40);
+  });
+
+  // Medlemskapets agarandel har standardvardet 100 i schemat (och i den falska
+  // databasen). Skrevs den angivna andelen over av standardvardet vid
+  // inlosen skulle varje nytt par sta pa 150 % forsta dagen – en bugg, inte en
+  // text att formulera battre. Uppmatt hos det forsta paret 2026-10-02; dar
+  // var orsaken att inbjudan skapades innan andelen fragades (agarandel null).
+  it("inbjudan med 50 % angiven, accepterad: medlemskapets andel ar 50, inte 100", async () => {
+    const id = await bjudIn(EPOST[DORIS], "50", "50");
+    expect(Number(inbjudan(id).agarandel)).toBe(50);
+
+    loggaIn(DORIS);
+    await losIn(id);
+
+    expect(inbjudan(id).status).toBe("accepterad");
+    expect(andelFor(DORIS)).toBe(50);
+    expect(andelFor(ANNA)).toBe(50);
+    expect(summeraAndelar([andelFor(ANNA), andelFor(DORIS)])).toBe(100);
   });
 
   it("den som bjuder in kan sanka sin egen andel i samma steg, och den sparas", async () => {

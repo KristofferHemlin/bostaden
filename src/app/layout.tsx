@@ -6,7 +6,7 @@ import { hamtaAnvandare } from "@/lib/session";
 export const metadata: Metadata = {
   title: "Bostadsunderlag",
   description:
-    "Samlar och klassificerar kostnader nedlagda på den egna bostaden inför försäljning.",
+    "Samlar kvittona för det du lagt på bostaden, så att underlaget finns när du säljer.",
 };
 
 export default async function RootLayout({

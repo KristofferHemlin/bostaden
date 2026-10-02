@@ -38,9 +38,9 @@ export async function klassificeraHog(
       where: { id: projektId, bostad_id: bostadId },
       select: { id: true, atgardstyp: true, ar: true },
     });
-    if (!projekt) return { fel: "Högen hittades inte." };
+    if (!projekt) return { fel: "Projektet hittades inte." };
     if (projekt.atgardstyp !== null) {
-      return { fel: "Den högen är redan klassificerad." };
+      return { fel: "Frågorna om det här projektet är redan besvarade." };
     }
 
     // Ar-etiketten sätts om till tidigaste betaldatum bland hogens kvitton, sa att

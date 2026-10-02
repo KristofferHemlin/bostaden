@@ -2,8 +2,8 @@
 
 // Raden under progressfaltet pa oversikten (docs/design.md, Metrikblock).
 //
-// Finns oklassificerade kostnader star EN enda kort rad under faltet:
-// "Preliminart tills kvittona klassificerats." Forklaringen av vad troskeln
+// Vantar nagot pa fragor star EN enda kort rad under faltet:
+// "Preliminart tills du berattat om alla kvitton." Forklaringen av vad troskeln
 // innebar – att hela arets belopp faller bort, inte bara mellanskillnaden –
 // ligger bakom en informationsknapp som falls ut vid KLICK, samma monster som
 // projektfragorna (hover finns inte pa telefon). Tre rader brodtext ovanfor
@@ -16,7 +16,7 @@ export function TroskelInfo() {
   return (
     <div className="mt-2">
       <p className="flex items-center gap-2 font-granssnitt text-xs text-text-sekundar">
-        <span>Preliminärt tills kvittona klassificerats.</span>
+        <span>Preliminärt tills du berättat om alla kvitton.</span>
         <button
           type="button"
           aria-expanded={visa}

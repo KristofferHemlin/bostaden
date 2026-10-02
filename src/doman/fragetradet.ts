@@ -228,7 +228,7 @@ export function atgardKategoriText(
   atgardstyp: Atgardstyp | null,
   battre_kvalitet: boolean | null,
 ): string {
-  if (atgardstyp === null) return "Behöver klassificeras";
+  if (atgardstyp === null) return "Väntar på frågor";
   if (atgardstyp !== "utbytt") return "Grundförbättring";
   return battre_kvalitet ? "Grundförbättring och reparation" : "Reparation";
 }

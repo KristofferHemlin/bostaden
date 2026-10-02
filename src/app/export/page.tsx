@@ -272,7 +272,7 @@ export default async function ExportSida() {
                   <AterstarRad
                     key={`hog-${h.namn}-${h.ar}`}
                     namn={h.namn}
-                    orsak="Har inte gått igenom frågorna"
+                    orsak="Väntar på frågor"
                     ar={h.ar}
                     belopp={h.belopp_brutto}
                   />
@@ -284,7 +284,7 @@ export default async function ExportSida() {
                     orsak={
                       k.orsak === "utan_betaldatum"
                         ? "Saknar betaldatum"
-                        : "Ligger inte i någon hög"
+                        : "Hör inte till något projekt än"
                     }
                     ar={k.ar}
                     belopp={k.belopp_brutto}
@@ -298,7 +298,7 @@ export default async function ExportSida() {
               </ul>
               {behoverKlassificering ? (
                 <Link href="/genomgang" className={`${SEKUNDARKNAPP_KLASS} mt-3`}>
-                  Till klassificeringen
+                  Berätta vad du gjort
                 </Link>
               ) : null}
             </section>
@@ -310,10 +310,9 @@ export default async function ExportSida() {
                 Skick vid försäljningen
               </p>
               <p className="mt-1 font-granssnitt text-xs text-text-sekundar">
-                {atgarderUtanSkickForsaljning}{" "}
-                {atgarderUtanSkickForsaljning === 1 ? "åtgärd" : "åtgärder"} på
-                sida 2 saknar bedömningen av skicket vid försäljningen, så den
-                avdragsgilla delen är inte klar.
+                {atgarderUtanSkickForsaljning} projekt på sida 2 saknar
+                bedömningen av skicket vid försäljningen, så den avdragsgilla
+                delen är inte klar.
               </p>
               <Link
                 href="/forsaljning/skick"
@@ -482,7 +481,7 @@ function RutaCallout({
   individuellt: number;
   gemensam: boolean;
   agarandel: number;
-  /** Finns oklassificerade högar är talet ofullständigt och sätts i
+  /** Väntar något på frågor är talet ofullständigt och sätts i
    *  --text-sekundar i stället för --text-primar (docs/design.md, Exportvyn). */
   dampad: boolean;
 }) {
