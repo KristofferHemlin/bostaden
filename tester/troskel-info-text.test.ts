@@ -14,4 +14,9 @@ describe("troskelrutans text", () => {
     expect(text).toContain("När året inte når tröskeln faller hela årets belopp bort, inte bara mellanskillnaden.");
     expect(text).not.toContain("Når året");
   });
+
+  it("sager att troskeln galler per bostad", async () => {
+    const kalla = await readFile(path.resolve(import.meta.dirname, "../src/app/troskel-info.tsx"), "utf8");
+    expect(kalla.replace(/\s+/g, " ")).toContain("Tröskeln räknas för varje bostad för sig.");
+  });
 });

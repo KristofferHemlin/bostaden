@@ -36,7 +36,7 @@ import { losenordsfel } from "@/lib/losenord";
 import { prisma } from "@/lib/prisma";
 import { hamtaAnvandare, sakerstallAnvandarrad } from "@/lib/session";
 import { skapaServerklient } from "@/lib/supabase/server";
-import { adressfel } from "./validering";
+import { adressfel, upplatelseformfel } from "./validering";
 import { tolkaGeokod } from "./koordinater";
 
 export interface RegistreringResultat {
@@ -51,7 +51,6 @@ export interface RegistreringResultat {
   epost?: string;
 }
 
-const GILTIGA_FORMER = new Set(["bostadsratt", "fastighet"]);
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 // Undre grans: regelparametrarna seedas med giltig_fran 1970-01-01.
 const TIDIGASTE_TILLTRADE = "1970-01-01";
@@ -89,9 +88,8 @@ export async function slutforRegistrering(
     las(formData, "longitud"),
   );
 
-  if (!GILTIGA_FORMER.has(upplatelseform)) {
-    return { fel: "Välj bostadsrätt eller villa/radhus." };
-  }
+  const felIForm = upplatelseformfel(upplatelseform);
+  if (felIForm) return { fel: felIForm };
   if (!DATUM.test(tilltradesdatum)) {
     return { fel: "Fyll i tillträdesdatum." };
   }

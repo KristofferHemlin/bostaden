@@ -34,7 +34,7 @@ import { forsokBorjaInskickning, useDubbelinskickRef } from "@/lib/dubbelinskick
 import { losenordsfel } from "@/lib/losenord";
 import { slutforRegistrering, type RegistreringResultat } from "./actions";
 import { AdressFalt } from "./adress-falt";
-import { adressfel } from "./validering";
+import { adressfel, upplatelseformfel } from "./validering";
 
 const START: RegistreringResultat = {};
 const EPOST = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -64,7 +64,10 @@ export function RegistreraFlode({
 
   const [epost, setEpost] = useState(inbjudan?.epost ?? "");
   const [losenord, setLosenord] = useState("");
-  const [upplatelseform, setUpplatelseform] = useState("bostadsratt");
+  // Inget forval (docs/design.md, Registreringsflodet: "ett förval är ett
+  // svar användaren inte gav"). Ett hus som registrerades utan att nagon
+  // tryckte pa kortet blev forut en bostadsratt – och det syns aldrig mer.
+  const [upplatelseform, setUpplatelseform] = useState("");
   const [tilltradesdatum, setTilltradesdatum] = useState("");
   const [kopeskilling, setKopeskilling] = useState("");
   const [lokaltFel, setLokaltFel] = useState<string | null>(null);
@@ -86,9 +89,8 @@ export function RegistreraFlode({
       if (svagt) return svagt;
     }
     if (s === 2) {
-      if (upplatelseform !== "bostadsratt" && upplatelseform !== "fastighet") {
-        return "Välj bostadsrätt eller villa/radhus.";
-      }
+      const felIForm = upplatelseformfel(upplatelseform);
+      if (felIForm) return felIForm;
       if (!DATUM.test(tilltradesdatum)) return "Fyll i tillträdesdatum.";
       if (tilltradesdatum < "1970-01-01") {
         return "Tillträdesdatum före 1970 stöds inte.";
@@ -197,15 +199,21 @@ export function RegistreraFlode({
         <StegRubrik
           rubrik="Bostaden"
           // Falten namns i stallet for att raknas: "Två uppgifter" blev fel
-          // nar adressen blev obligatorisk 2026-10-01, och upplatelseformen
-          // bar ingen markering (den har alltid ett val) – en siffra stammer
-          // inte med det man ser.
+          // nar adressen blev obligatorisk 2026-10-01. En siffra i prosa
+          // maste hallas i synk med nagot den inte kan se.
           text="Upplåtelseform, tillträdesdatum och adress behövs. Resten kan du hoppa över och fylla i senare."
         />
 
-        <div>
-          <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
+        <div role="group" aria-labelledby="upplatelseform-etikett">
+          <span
+            id="upplatelseform-etikett"
+            className="mb-1.5 block font-granssnitt text-sm text-text-sekundar"
+          >
             Vad äger du?
+            {/* Samma markering som de andra obligatoriska falten (Falt). */}
+            <span aria-hidden className="ml-0.5 text-text-sekundar">
+              *
+            </span>
           </span>
           <div className="grid grid-cols-2 gap-2">
             {UPPLATELSEFORMER.map((o) => {

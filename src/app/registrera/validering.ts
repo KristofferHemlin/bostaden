@@ -10,3 +10,14 @@
 export function adressfel(adress: string): string | null {
   return adress.trim() === "" ? "Fyll i adressen." : null;
 }
+
+/**
+ * Upplatelseformen har inget forval (docs/design.md, Registreringsflodet:
+ * "ett förval är ett svar användaren inte gav"). Den styr den bakre
+ * tidsgransen, vilken blankett underlaget pekar mot och om kapitaltillskott
+ * ar relevant – och den satts en gang. Steget gar inte att passera utan ett
+ * val, och ett varde som inte ar ett av de tva avvisas lika.
+ */
+export function upplatelseformfel(varde: string): string | null {
+  return varde === "bostadsratt" || varde === "fastighet" ? null : "Välj vad du äger.";
+}
