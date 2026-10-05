@@ -34,6 +34,7 @@ import { forsokBorjaInskickning, useDubbelinskickRef } from "@/lib/dubbelinskick
 import { losenordsfel } from "@/lib/losenord";
 import { slutforRegistrering, type RegistreringResultat } from "./actions";
 import { AdressFalt } from "./adress-falt";
+import { Ram } from "./ram";
 import { adressfel, upplatelseformfel } from "./validering";
 
 const START: RegistreringResultat = {};
@@ -48,9 +49,11 @@ const UPPLATELSEFORMER = [
 export function RegistreraFlode({
   endastBostad = false,
   inbjudan,
+  underrad,
 }: {
   endastBostad?: boolean;
   inbjudan?: { id: string; epost: string };
+  underrad?: string;
 }) {
   const [resultat, action, pagar] = useActionState(slutforRegistrering, START);
   const pagarRef = useDubbelinskickRef(pagar);
@@ -137,7 +140,7 @@ export function RegistreraFlode({
   const felText = lokaltFel ?? resultat.fel;
   const synligKlass = "flex flex-col gap-5";
 
-  return (
+  const formular = (
     <form
       action={action}
       onSubmit={hanteraSubmit}
@@ -161,10 +164,7 @@ export function RegistreraFlode({
 
       {/* STEG 1 – KONTO */}
       <div className={steg === 1 ? synligKlass : "hidden"}>
-        <StegRubrik
-          rubrik="Konto"
-          text="E-post och lösenord. Kontot skapas när du går vidare."
-        />
+        <p className={HJALPTEXT_KLASS}>Kontot skapas när du går vidare.</p>
         <Falt etikett="E-post" obligatoriskt>
           <input
             type="email"
@@ -174,7 +174,6 @@ export function RegistreraFlode({
             onChange={(e) => setEpost(e.target.value)}
             readOnly={Boolean(inbjudan)}
             className={INPUT_KLASS}
-            placeholder="du@exempel.se"
           />
           {inbjudan ? (
             <p className="mt-1.5 font-granssnitt text-sm text-text-sekundar">
@@ -196,14 +195,6 @@ export function RegistreraFlode({
 
       {/* STEG 2 – BOSTADEN */}
       <div className={steg === 2 ? synligKlass : "hidden"}>
-        <StegRubrik
-          rubrik="Bostaden"
-          // Falten namns i stallet for att raknas: "Två uppgifter" blev fel
-          // nar adressen blev obligatorisk 2026-10-01. En siffra i prosa
-          // maste hallas i synk med nagot den inte kan se.
-          text="Upplåtelseform, tillträdesdatum och adress behövs. Resten kan du hoppa över och fylla i senare."
-        />
-
         <div role="group" aria-labelledby="upplatelseform-etikett">
           <span
             id="upplatelseform-etikett"
@@ -266,15 +257,6 @@ export function RegistreraFlode({
             placeholder="t.ex. 3 250 000"
           />
         </Falt>
-
-        {/* Forebygger tva arkiv for ett hus (docs/design.md, "Två personer,
-            ett hus"). En upplysning, inte en varning – en rad, sist i steget,
-            dar bostaden skapas. Den som registrerar sig via en inbjudan ser
-            aldrig det har steget. */}
-        <p className={HJALPTEXT_KLASS}>
-          Delar du bostaden med någon? Låt en av er lägga upp den och bjuda in
-          den andra från inställningarna.
-        </p>
       </div>
 
       {felText ? (
@@ -338,14 +320,15 @@ export function RegistreraFlode({
       </div>
     </form>
   );
-}
 
-function StegRubrik({ rubrik, text }: { rubrik: string; text: string }) {
+  // Sidrubriken foljer steget (docs/design.md, Registreringsflodet). Ingen
+  // rubrik under den – forloppet sager vilket steg man star i.
+  const rubrik = steg === 1 ? "Skapa konto" : "Lägg upp din bostad";
+
   return (
-    <div>
-      <h2 className="font-rubrik text-lg text-text-primar">{rubrik}</h2>
-      <p className="mt-0.5 font-granssnitt text-sm text-text-sekundar">{text}</p>
-    </div>
+    <Ram rubrik={rubrik} underrad={underrad}>
+      {formular}
+    </Ram>
   );
 }
 

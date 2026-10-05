@@ -314,7 +314,6 @@ export function AdressFalt({
           value={ort}
           onChange={(e) => setOrt(e.target.value)}
           className={INPUT_KLASS}
-          placeholder="t.ex. Göteborg"
         />
       </Falt>
 

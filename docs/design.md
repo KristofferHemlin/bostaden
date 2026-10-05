@@ -933,9 +933,19 @@ Vid upptaget konto visas ett tydligt meddelande och en knapp till inloggningen m
 
 Förloppet visas som prickar över rubriken, med den aktiva i `--accent` och den andra i `--sand`. Under prickarna en rad som säger "Steg 2 av 2". Inga numrerade noder med linjer emellan – det tar plats utan att säga mer.
 
-Varje steg har en egen rubrik, en rad förklaring, och en framåtknapp. Bakåt ska alltid gå. Det aktuella stegets obligatoriska fält valideras innan man kommer vidare.
+**Sidrubriken följer steget, och det finns ingen rubrik under den.** *Skapa konto* i steg 1, *Lägg upp din bostad* i steg 2 – samma rubrik som den som loggat in utan bostad möter, så att det bara finns ett namn på steget. En h1 som säger "Skapa konto" medan man står i steg 2 är inte bara brus, den är osann: kontot är redan skapat. Och en underrubrik som upprepar sidrubriken är två namn på samma sak på samma skärm.
+
+Förklaringsraden under rubriken är **valfri** och ritas inte som ett tomt stycke när den saknas. Bakåt ska alltid gå. Det aktuella stegets obligatoriska fält valideras innan man kommer vidare.
+
+**Förloppet står på ett ställe.** Prickarna och "Steg 1 av 2" är den enda text som ändras mellan stegen, och därför den enda som behöver säga hur långt man kommit. En mening som lovar "två korta steg" säger samma sak en andra gång och står dessutom kvar i steg 2, där löftet redan är halverat.
+
+**En platshållare som visar format förtjänar sin plats. En som upprepar etiketten gör det inte.** `ÅÅÅÅ / MM / DD` visar ordningen i tre rutor, *t.ex. Kvarnvägen 12 B* visar att fritext med nummer duger, och *t.ex. 3 250 000* visar storleksordning och tusentalsformat. *du@exempel.se* i ett fält som heter E-post gör ingetdera.
 
 **Bostadssteget** har fem fält: upplåtelseform, tillträdesdatum, adress, ort och köpeskilling. De tre första är obligatoriska, ort och köpeskilling valfria.
+
+**Steget räknar inte upp vilka fält som är obligatoriska.** Markeringen vid varje fält säger det redan, och regeln finns sedan tidigare under *Undvik*: är obligatoriska fält markerade behövs ingen text om de andra. En rad som listade dem – *"Upplåtelseform, tillträdesdatum och adress behövs"* – prövades och togs bort 2026-10-05, eftersom den sa samma sak en andra gång.
+
+Att något går att hoppa över står där det betyder något: i hjälptexten under fältet, som köpeskillingens *"Går att fylla i senare."* En rad som räknar upp fält måste dessutom hållas i synk med vilka som är märkta, och det är nu andra gången en sådan rad blivit osann när ett fält ändrades.
 
 **Adressen är obligatorisk sedan 2026-10-01.** Skälet är toppraden: den visar adressen på varenda skärm, och var fältet frivilligt satt den som hoppade över det en tom rad i appens mest synliga yta. Ett fält till i registreringen är ett billigare pris än det.
 
@@ -1242,7 +1252,13 @@ Skälet till uppdelningen är inte försiktighet för sin egen skull. Den först
 
 **Beslutat 2026-10-02 att leva med det, med en känd väg ut.** Dubbletten är synlig, ingenting är förlorat och ingenting är fel – det är två arkiv där ett hade räckt. Tre funktioner löser det ordentligt när de finns: att slå ihop två arkiv, att sätta en bostad i säljläge, och att radera eller lämna en bostad man inte vill ha kvar. Ingen av dem är en nödåtgärd, och ingen av dem hör i samma omgång som växlaren.
 
-**Men flödet säger det i förväg.** Registreringen nämner, där bostaden skapas, att den som ska dela bostaden med någon låter en av dem skapa den och bjuda in den andra. En rad som förebygger är billigare än tre funktioner som botar.
+**Registreringen nämner ingenting om att bjuda in.** Beslutat 2026-10-05. Onboardingens enda uppgift är att få användaren in i produkten, och en möjlighet hon inte kan använda än är brus. En rad om att dela bostaden prövades i bostadssteget och togs bort.
+
+Förebyggandet hör i stället till **meddelandet som delar tjänsten**: *"Äger ni bostaden tillsammans, låt en av er lägga upp den och bjuda in den andra."* Den som står i sista steget med adressen halvskriven pausar inte för att ringa sin partner – de som behöver veta det har inte börjat än.
+
+Det är en allmän regel värd att minnas: **en instruktion som kräver att någon pausar och pratar med en annan människa fungerar inte mitt i ett flöde.** Den måste komma före flödet börjat.
+
+**Det som däremot ska stå** är vilken bostad man ansluter till, för den som registrerar sig via en inbjudan. Det är inte en möjlighet som nämns, det är vad som händer.
 
 **Ett konto har alltid minst en bostad.** Beslutat 2026-10-02 som en avsiktlig regel, inte som en följd. Appen upprätthåller den redan: registreringen skapar alltid en bostad, och den som saknar medlemskap skickas till registreringen.
 

@@ -22,6 +22,7 @@ import { hamtaAktivBostad, hamtaAnvandare } from "@/lib/session";
 import { AnslutKnapp } from "@/app/inbjudan/anslut-knapp";
 import { Inbjudningskort } from "@/app/inbjudan/inbjudningskort";
 import { RegistreraFlode } from "./flode";
+import { Ram } from "./ram";
 
 export const dynamic = "force-dynamic";
 
@@ -68,50 +69,21 @@ export default async function RegistreraSida({
     const vy = await hamtaInbjudningsvy(inbjudanId);
     if (vy && vy.status === "utestaende") {
       return (
-        <Ram rubrik="Skapa konto" underrad={`Sedan ansluts du till ${vy.bostadsnamn}.`}>
-          <RegistreraFlode inbjudan={{ id: vy.id, epost: vy.epost }} />
-        </Ram>
+        <RegistreraFlode
+          inbjudan={{ id: vy.id, epost: vy.epost }}
+          underrad={`Sedan ansluts du till ${vy.bostadsnamn}.`}
+        />
       );
     }
   }
 
+  // Rubriken satts av flodet, efter steget. Utan forloppsindikator (inloggad
+  // utan bostad) ar det raden har som orienterar; i tvastegsflodet gor
+  // "Steg X av 2" det jobbet.
   return (
-    <Ram
-      rubrik={endastBostad ? "Lägg upp din bostad" : "Skapa konto"}
-      underrad={
-        endastBostad
-          ? "Sista steget innan du kommer igång."
-          : "Två korta steg: konto och din bostad."
-      }
-    >
-      <RegistreraFlode endastBostad={endastBostad} />
-    </Ram>
-  );
-}
-
-function Ram({
-  rubrik,
-  underrad,
-  children,
-}: {
-  rubrik: string;
-  underrad: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="min-h-screen w-full bg-yta-bas">
-      <main className="mx-auto w-full max-w-[430px] px-4 py-12">
-        <header className="mb-6 px-1">
-          {/* Ingen orange markor har – i registreringen bar den aktiva
-              forloppspricken och primarknappen den enda oranga betydelsen. */}
-          <h1 className="font-rubrik text-2xl text-text-primar">{rubrik}</h1>
-          <p className="mt-1 font-granssnitt text-sm text-text-sekundar">{underrad}</p>
-        </header>
-
-        <div className="overflow-hidden rounded-xl border border-linje bg-yta-upphojd">
-          {children}
-        </div>
-      </main>
-    </div>
+    <RegistreraFlode
+      endastBostad={endastBostad}
+      underrad={endastBostad ? "Sista steget innan du kommer igång." : undefined}
+    />
   );
 }
