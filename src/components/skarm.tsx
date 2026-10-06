@@ -45,7 +45,7 @@ export const SANDKNAPP_KLASS =
  */
 export function Friskrivning() {
   return (
-    <p className="font-granssnitt text-xs text-text-sekundar">
+    <p className="font-granssnitt text-sm text-text-sekundar">
       Appen ger ingen skatterådgivning. Vid gränsfall svarar Skatteverkets
       upplysningstjänst.
     </p>

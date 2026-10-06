@@ -34,6 +34,7 @@ import { createPortal } from "react-dom";
 import { useActionState, useRef, useState } from "react";
 import { loggaUt } from "@/app/login/actions";
 import { Kortval } from "@/app/projekt/fragetradet";
+import type { Bostadsfragesvar } from "@/doman/bostadsfragor";
 import { AdressFalt } from "@/app/registrera/adress-falt";
 import { AgarandelFalt } from "@/components/agarandel-falt";
 import { BeloppFalt } from "@/components/belopp-falt";
@@ -89,8 +90,10 @@ export interface ForvarvetData {
   /** Styr hjalptexten for kopkostnader. */
   arBostadsratt: boolean;
   agarandelProcent: number;
-  nybyggdVidForvarv: boolean;
-  ombildningFranHyresratt: boolean;
+  /** Las via src/doman/bostadsfragor.ts – null ar obesvarat och visas som
+   *  "Inte ifyllt", aldrig som ett "Nej" (docs/design.md: ett forval ar ett
+   *  svar anvandaren inte gav). */
+  bostadsfragor: Bostadsfragesvar;
 }
 
 export function InstallningarKort({
@@ -580,6 +583,14 @@ function ForvarvetIntro() {
   );
 }
 
+function jaNejText(varde: boolean | null): string | null {
+  return varde === null ? null : varde ? "Ja" : "Nej";
+}
+
+function tillJaNej(varde: boolean | null): "" | "ja" | "nej" {
+  return varde === null ? "" : varde ? "ja" : "nej";
+}
+
 function ForvarvetKort({ data, oppen, formRef, onAndra, onAvbryt, onDirty, onKlar }: KortProps<ForvarvetData>) {
   if (!oppen) {
     return (
@@ -591,11 +602,13 @@ function ForvarvetKort({ data, oppen, formRef, onAndra, onAvbryt, onDirty, onKla
           <Rad etikett="Köpeskilling" varde={orenTillKronsträng(data.kopeskillingOren)} />
           <Rad etikett="Köpkostnader" varde={orenTillKronsträng(data.kopkostnaderOren)} />
           <Rad etikett="Ägarandel" varde={formateraAndel(data.agarandelProcent)} />
-          <Rad etikett="Första ägaren" varde={data.nybyggdVidForvarv ? "Ja" : "Nej"} />
-          {data.nybyggdVidForvarv ? (
+          <Rad etikett="Första ägaren" varde={jaNejText(data.bostadsfragor.forstaAgare)} />
+          {/* null nar fragan inte stalls – en fastighet, eller forsta
+              agaren ar inte ja (src/doman/bostadsfragor.ts). */}
+          {data.bostadsfragor.ombildning !== null ? (
             <Rad
               etikett="Ombildning från hyresrätt"
-              varde={data.ombildningFranHyresratt ? "Ja" : "Nej"}
+              varde={jaNejText(data.bostadsfragor.ombildning)}
             />
           ) : null}
         </div>
@@ -624,12 +637,11 @@ function ForvarvetEditForm({
 
   const [kopeskilling, setKopeskilling] = useState(() => beloppTillFalt(data.kopeskillingOren));
   const [kopkostnader, setKopkostnader] = useState(() => beloppTillFalt(data.kopkostnaderOren));
-  const [forstaAgare, setForstaAgare] = useState<"ja" | "nej">(
-    data.nybyggdVidForvarv ? "ja" : "nej",
-  );
-  const [ombildning, setOmbildning] = useState<"ja" | "nej">(
-    data.ombildningFranHyresratt ? "ja" : "nej",
-  );
+  // Inget forval nar en fraga ar obesvarad – ett tomt forsta agaren sparas
+  // som tomt (sparaForvarvet skriver da inte falten alls), och ett ja kraver
+  // ett ombildningssvar.
+  const [forstaAgare, setForstaAgare] = useState(tillJaNej(data.bostadsfragor.forstaAgare));
+  const [ombildning, setOmbildning] = useState(tillJaNej(data.bostadsfragor.ombildning));
 
   return (
     <form
@@ -712,8 +724,9 @@ function ForvarvetEditForm({
       <input type="hidden" name="forsta_agare" value={forstaAgare} />
 
       {/* Ett nej nollstaller inte ombildningen (docs/design.md,
-          "Installningssidan") – ett kvarlamnat ja ar ofarligt. */}
-      {forstaAgare === "ja" ? (
+          "Installningssidan") – ett kvarlamnat ja ar ofarligt. Fragan stalls
+          aldrig for en fastighet (src/doman/bostadsfragor.ts). */}
+      {forstaAgare === "ja" && data.arBostadsratt ? (
         <div>
           <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
             Köptes bostaden i samband med ombildning från hyresrätt?

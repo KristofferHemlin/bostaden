@@ -6,6 +6,7 @@
 import { hamtaAndelar } from "@/lib/andelar";
 import { bostadHeader } from "@/lib/bostad-header";
 import { isoDatum } from "@/lib/format";
+import { lasBostadsfragor } from "@/doman/bostadsfragor";
 import { prisma } from "@/lib/prisma";
 import { kravAnvandare, kravBostad } from "@/lib/session";
 import { Skarm } from "@/components/skarm";
@@ -48,8 +49,7 @@ export default async function InstallningarSida() {
           kopkostnaderOren: bostad.kopkostnader,
           arBostadsratt,
           agarandelProcent: agarandel,
-          nybyggdVidForvarv: bostad.nybyggd_vid_forvarv,
-          ombildningFranHyresratt: bostad.ombildning_fran_hyresratt,
+          bostadsfragor: lasBostadsfragor(bostad),
         }}
         tillgang={{
           medlemmar: andelar.medlemmar

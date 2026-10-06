@@ -349,7 +349,7 @@ function Forlopp({ steg, av }: { steg: number; av: number }) {
           />
         ))}
       </ol>
-      <p className="font-granssnitt text-xs text-text-sekundar">
+      <p className="font-granssnitt text-sm text-text-sekundar">
         Steg {steg} av {av}
       </p>
     </div>

@@ -107,3 +107,26 @@ describe("byte av upplatelseform nekas efter forsaljning", () => {
     expect(h.bostadUpdate).toHaveBeenCalledOnce();
   });
 });
+
+// Ett byte av upplatelseform oppnar bostadsfragorna igen (src/doman/
+// bostadsfragor.ts): vilka fragor som stalls beror pa formen. Ett lagrat
+// false blir obesvarat, ett lagrat true star kvar som svar.
+describe("byte av upplatelseform nollstaller bostadsfragor_besvarade", () => {
+  it("fastighet till bostadsratt skriver flaggan som false", async () => {
+    h.bostadFindUniqueOrThrow.mockResolvedValue({ upplatelseform: "fastighet", forsaljningsdatum: null });
+    await sparaBostaden({}, formulardata({ upplatelseform: "bostadsratt" }));
+    expect(h.bostadUpdate.mock.calls[0][0].data.bostadsfragor_besvarade).toBe(false);
+  });
+
+  it("bostadsratt till fastighet skriver flaggan som false", async () => {
+    h.bostadFindUniqueOrThrow.mockResolvedValue({ upplatelseform: "bostadsratt", forsaljningsdatum: null });
+    await sparaBostaden({}, formulardata({ upplatelseform: "fastighet" }));
+    expect(h.bostadUpdate.mock.calls[0][0].data.bostadsfragor_besvarade).toBe(false);
+  });
+
+  it("utan byte rors flaggan inte", async () => {
+    h.bostadFindUniqueOrThrow.mockResolvedValue({ upplatelseform: "bostadsratt", forsaljningsdatum: null });
+    await sparaBostaden({}, formulardata({ upplatelseform: "bostadsratt" }));
+    expect(h.bostadUpdate.mock.calls[0][0].data).not.toHaveProperty("bostadsfragor_besvarade");
+  });
+});

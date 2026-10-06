@@ -39,6 +39,8 @@ import {
 import {
   byggK6aExport,
   type K6aExport,
+  VANTAR_PA_BOSTADSFRAGOR_TEXT,
+  VantarPaBostadsfragor,
   type K6aExportrad,
   type K6aIndata,
 } from "@/doman/export-k6a";
@@ -48,7 +50,7 @@ import { reparationsfonsterNamn } from "@/doman/regeltext";
 import { behoverSkickForsaljning } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { BILAGEPAKET_SYNLIGT } from "@/lib/bilagepaket/flagga";
-import { hamtaBostadsdata } from "@/lib/doman-fran-db";
+import { hamtaBostadsdata, tillDomanBostad } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
 import { hamtaAndelar } from "@/lib/andelar";
 import {
@@ -101,15 +103,7 @@ export default async function ExportSida() {
 
   function renderaInnehall() {
     const indata: K6aIndata = {
-      bostad: {
-        upplatelseform: bostad.upplatelseform,
-        tilltradesdatum: isoDatum(bostad.tilltradesdatum),
-        forsaljningsdatum: bostad.forsaljningsdatum
-          ? isoDatum(bostad.forsaljningsdatum)
-          : null,
-        nybyggd_vid_forvarv: bostad.nybyggd_vid_forvarv,
-        ombildning_fran_hyresratt: bostad.ombildning_fran_hyresratt,
-      },
+      bostad: tillDomanBostad(bostad),
       medlemskap: { agarandel: andel ?? 100 },
       projekt,
       kostnader,
@@ -120,6 +114,20 @@ export default async function ExportSida() {
     try {
       ex = byggK6aExport(indata);
     } catch (fel) {
+      // Obesvarade bostadsfragor med nagot klassificerat att rakna pa: hela
+      // underlaget vantar, varken sida 1 eller sida 2 (src/doman/export-k6a.ts).
+      if (fel instanceof VantarPaBostadsfragor) {
+        return (
+          <Kort>
+            <div className="p-5">
+              <Meddelanderuta>{VANTAR_PA_BOSTADSFRAGOR_TEXT}</Meddelanderuta>
+              <Link href="/genomgang" className={`${PRIMARKNAPP_KLASS} mt-4`}>
+                Svara på frågorna
+              </Link>
+            </div>
+          </Kort>
+        );
+      }
       return (
         <Kort>
           <div className="p-5">
@@ -382,7 +390,7 @@ function SidaBlock({
 }) {
   return (
     <section>
-      <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
+      <p className="px-4 pt-4 font-granssnitt text-sm uppercase tracking-wide text-text-sekundar">
         {etikett}
       </p>
       {rader.length === 0 ? (
@@ -499,7 +507,7 @@ function RutaCallout({
           {formateraKronor(gemensam ? individuellt : brutto)}
         </span>
       </div>
-      <p className="mt-1 font-granssnitt text-xs text-text-sekundar">
+      <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
         {underrad}
       </p>
       {gemensam ? (

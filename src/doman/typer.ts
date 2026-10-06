@@ -66,8 +66,12 @@ export interface Bostad {
   forsaljningsdatum: string | null; // YYYY-MM-DD, null tills markerad som sald
   /** Reparation och underhall raknas aldrig med om bostaden var nybyggd vid
    *  forvarvet (produktspec 4.6) – utom vid ombildning fran hyresratt, se
-   *  ombildning_fran_hyresratt nedan. */
-  nybyggd_vid_forvarv: boolean;
+   *  ombildning_fran_hyresratt nedan.
+   *
+   *  null = bostadsfragorna ar obesvarade. Satts ur databasen ENDAST via
+   *  bostadsfragorForBerakning (src/doman/bostadsfragor.ts) – aldrig ur den
+   *  rå kolumnen, som ger false for obesvarat. */
+  nybyggd_vid_forvarv: boolean | null;
   /** Upphaver nybyggd_vid_forvarv-undantaget (produktspec 4.6): kopte man sin
    *  hyresratt vid en ombildning fanns lagenheten redan och var anvand, aven
    *  om man formellt ar forsta agare av bostadsratten. Optional/default false

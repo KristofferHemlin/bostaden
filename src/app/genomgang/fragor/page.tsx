@@ -12,6 +12,7 @@ import { bostadHeader } from "@/lib/bostad-header";
 import { isoDatum } from "@/lib/format";
 import { kvittoradText } from "@/lib/kvittolista";
 import { prisma } from "@/lib/prisma";
+import { bostadsfragornaBesvarade, lasBostadsfragor } from "@/doman/bostadsfragor";
 import { kravBostad } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -29,14 +30,15 @@ export default async function FragorSida() {
   // fran ett enskilt projekt) har faktiskt nagot att klassificera, sa
   // sparaBostadsfragor ska fortsatta hit efterat i stallet for standardvalet
   // grupperingen (se bostadsfragor.tsx).
-  if (!bostad.bostadsfragor_besvarade) {
+  const bostadsfragor = lasBostadsfragor(bostad);
+  if (!bostadsfragornaBesvarade(bostadsfragor)) {
     return (
       <Skarm
         bostadsnamn={bostadsnamn}
         rubrik="Om bostaden"
         bakLank={{ href: "/genomgang", text: "Berätta vad du gjort" }}
       >
-        <Bostadsfragor nasta="/genomgang/fragor" />
+        <Bostadsfragor nasta="/genomgang/fragor" givna={bostadsfragor} />
       </Skarm>
     );
   }

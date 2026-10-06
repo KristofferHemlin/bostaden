@@ -14,9 +14,15 @@
 
 import "server-only";
 import { byggBilageforteckning, type BilagepaketKostnad } from "@/doman/bilagepaket";
-import { byggK6aExport, type K6aExport, type K6aIndata } from "@/doman/export-k6a";
+import {
+  byggK6aExport,
+  type K6aExport,
+  type K6aIndata,
+  VantarPaBostadsfragor,
+} from "@/doman/export-k6a";
 import { bostadHeader } from "@/lib/bostad-header";
 import {
+  tillDomanBostad,
   tillDomanKostnad,
   tillDomanProjekt,
   tillDomanRegelparameter,
@@ -107,13 +113,7 @@ export async function hamtaBilagepaketdata(
   ]);
 
   const indata: K6aIndata = {
-    bostad: {
-      upplatelseform: bostad.upplatelseform,
-      tilltradesdatum: isoDatum(bostad.tilltradesdatum),
-      forsaljningsdatum: isoDatum(bostad.forsaljningsdatum),
-      nybyggd_vid_forvarv: bostad.nybyggd_vid_forvarv,
-      ombildning_fran_hyresratt: bostad.ombildning_fran_hyresratt,
-    },
+    bostad: tillDomanBostad(bostad),
     medlemskap: { agarandel },
     projekt: projektRader.map(tillDomanProjekt),
     kostnader: kostnadRader.map(tillDomanKostnad),
@@ -124,6 +124,12 @@ export async function hamtaBilagepaketdata(
   try {
     ex = byggK6aExport(indata);
   } catch (fel) {
+    // Obesvarade bostadsfragor: ingen PDF, samma villkor som skarmen. En PDF
+    // lamnar appen och lases om aratal av nagon som inte vet vad som var
+    // obesvarat den dagen (src/doman/export-k6a.ts).
+    if (fel instanceof VantarPaBostadsfragor) {
+      return { ok: false, fel: fel.message };
+    }
     return {
       ok: false,
       fel: `Underlaget kunde inte beräknas: ${(fel as Error).message}`,

@@ -19,6 +19,7 @@ import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { isoDatum } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { bostadsfragornaBesvarade, lasBostadsfragor } from "@/doman/bostadsfragor";
 import { kravBostad } from "@/lib/session";
 import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 
@@ -37,14 +38,15 @@ export default async function GenomgangSida() {
   // besvarade. Kontrollen upprepas i /genomgang/fragor/page.tsx eftersom den
   // ocksa gar att na direkt (t.ex. "Svara på frågorna" fran en enskild
   // projektsida), utan att passera den har sidan forst.
-  if (!bostad.bostadsfragor_besvarade) {
+  const bostadsfragor = lasBostadsfragor(bostad);
+  if (!bostadsfragornaBesvarade(bostadsfragor)) {
     return (
       <Skarm
         bostadsnamn={bostadsnamn}
         rubrik="Om bostaden"
         bakLank={{ href: "/", text: "Översikt" }}
       >
-        <Bostadsfragor nasta="/genomgang" />
+        <Bostadsfragor nasta="/genomgang" givna={bostadsfragor} />
       </Skarm>
     );
   }

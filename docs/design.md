@@ -52,6 +52,18 @@ Att stegen är små är avsiktligt och ger det platta, tryckta uttrycket. Följd
 
 **Dämpning görs med storlek och vikt, inte med en tredje färg.** En hjälptext under ett fält är `--text-sekundar` i mindre grad, inte en blekare färg. Tre dämpade nivåer får inte plats på en ljus varm bakgrund utan att den understa faller under kravet.
 
+### Minsta textstorlek är 14 px
+
+**Ingen text användaren kan behöva läsa går under 14 px.** Inte hjälptexter, inte statusrader, inte versala avdelningsrubriker, inte summeringsetiketter, inte friskrivningen, inte underrader som förklarar varför ett belopp är noll. "Dämpning görs med storlek" betyder 14 px mot 16, inte 12 mot 16.
+
+Golvet gällde redan när hjälptexterna lyftes från `--text-dampad`, men det stod bara som en hänvisning på ett annat ställe och aldrig som en regel – och en regel som inte står skriven finns inte. 2026-10-06 räknades ungefär **fyrtiofem ställen under golvet**: nio versala avdelningsrubriker på 12 px, ett tiotal 10 px-texter i bilagevyn och i nytt kvitto, en på 11 px, och resten hjälptexter och förklaringar på 12 px. Fyra satt i deklarationsunderlaget, friskrivningen inräknad – den text som minst av alla ska vara svårläst.
+
+Skälet att golvet inte är en riktlinje: produkten används av bostadsägare i alla åldrar, på telefon, ofta med kvittot i andra handen. En förklaring på 12 px som ingen läser är samma sak som ingen förklaring, och då är det bättre att stryka meningen än att krympa den.
+
+**Ett undantag, och bara ett: en bokstav som används som ikon.** Tecknet "i" i en informationsknapp är en symbol, inte ett ord – det läses inte, det trycks på, och dess tryckyta följer 44 px-regeln som allt annat tryckbart. Allt som ser ut som ytterligare ett undantag är en mening som ska vara kortare, inte mindre.
+
+**Versala avdelningsrubriker är 14 px med spärrningen kvar.** Versaler och spärrning är idiomet som gör dem till rubriker. Storleken är inte en del av idiomet.
+
 ### Orange betyder handling, ingenting annat
 
 Högst ett orange element per skärm, och det är primärknappen.
@@ -324,7 +336,7 @@ Etiketten *Totalt inlagt* är sann för alla tre fallen, vilket var skälet att 
 
 **Ingen summa för det avdragsgilla.** Den går inte att veta före försäljningen – femårsfönstret, skicket och tröskeln hänger alla på försäljningsdatumet. Och ett tal för hur mycket som är beskrivet är samma påminnelse som regeln under *Kvittolistan* förbjuder på startskärmen: den som gör arkivet till en skuld man ådrar sig varje gång man sparar ett kvitto.
 
-**Tröskelrutans tre mått.** Informationsknappen har en tryckyta på minst 44px som alla andra – uppmätt till 20 × 20 px 2026-10-02. Raden under fältet är minst 14px, aldrig 12 – regeln står under *Färger* och kom till just för att hjälptexter var oläsbara på telefon. Och **rutan säger att tröskeln gäller per bostad**, vilket blev relevant samma dag som en användare kunde ha två.
+**Tröskelrutans tre mått.** Informationsknappen har en tryckyta på minst 44px som alla andra – uppmätt till 20 × 20 px 2026-10-02. Raden under fältet är minst 14px, aldrig 12 – regeln står under *Minsta textstorlek är 14 px* och kom till just för att hjälptexter var oläsbara på telefon. Och **rutan säger att tröskeln gäller per bostad**, vilket blev relevant samma dag som en användare kunde ha två.
 
 Väntar något på frågor står **en enda kort rad** under fältet: "Preliminärt tills du berättat om alla kvitton." Förklaringen av vad tröskeln innebär – att hela årets belopp faller bort, inte bara mellanskillnaden – ligger bakom en informationsknapp, samma mönster som projektfrågorna. Tre rader brödtext ovanför kvittolistan gör förklaringen till huvudsaken i stället för siffran.
 
@@ -944,6 +956,8 @@ Förloppet visas som prickar över rubriken, med den aktiva i `--accent` och den
 Förklaringsraden under rubriken är **valfri** och ritas inte som ett tomt stycke när den saknas. Bakåt ska alltid gå. Det aktuella stegets obligatoriska fält valideras innan man kommer vidare.
 
 **Förloppet står på ett ställe.** Prickarna och "Steg 1 av 2" är den enda text som ändras mellan stegen, och därför den enda som behöver säga hur långt man kommit. En mening som lovar "två korta steg" säger samma sak en andra gång och står dessutom kvar i steg 2, där löftet redan är halverat.
+
+**Appen räknar bara upp sådant den vet antalet på.** Registreringens två steg är alltid två, och får därför sägas. Bostadsfrågorna var länge "två frågor" i både genomgången och exporten, men den andra frågan – ombildningen – ställs bara till den som svarat ja på den första, och inte alls för en fastighet. För de flesta användare var "två" alltså fel redan innan någon tänkte på saken; felet syntes först när fastighetsfallet gjorde det omöjligt att blunda för. Ett antal som inte går att verifiera innan man svarat är ett löfte appen inte kan hålla, och då sägs inget antal alls. Skärmen visar ändå hur kort det är: en fråga och en knapp.
 
 **En platshållare som visar format förtjänar sin plats. En som upprepar etiketten gör det inte.** `ÅÅÅÅ / MM / DD` visar ordningen i tre rutor, *t.ex. Kvarnvägen 12 B* visar att fritext med nummer duger, och *t.ex. 3 250 000* visar storleksordning och tusentalsformat. *du@exempel.se* i ett fält som heter E-post gör ingetdera.
 

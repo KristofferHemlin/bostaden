@@ -14,12 +14,13 @@ const ANVANDARE = "22222222-2222-2222-2222-222222222222";
 
 const h = vi.hoisted(() => ({
   bostadUpdate: vi.fn(),
+  bostadFindUniqueOrThrow: vi.fn(),
   redirect: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    bostad: { update: h.bostadUpdate },
+    bostad: { update: h.bostadUpdate, findUniqueOrThrow: h.bostadFindUniqueOrThrow },
   },
 }));
 
@@ -57,6 +58,7 @@ function formulardata(over: Record<string, string> = {}): FormData {
 beforeEach(() => {
   vi.clearAllMocks();
   h.bostadUpdate.mockResolvedValue({});
+  h.bostadFindUniqueOrThrow.mockResolvedValue({ upplatelseform: "bostadsratt" });
 });
 
 describe("sparaBostadsfragor skickar till rätt nästa steg", () => {

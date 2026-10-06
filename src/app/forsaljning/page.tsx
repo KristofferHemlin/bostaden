@@ -35,7 +35,7 @@ export default async function ForsaljningSida() {
         <Meddelanderuta>
           {redanSald
             ? "Bostaden är markerad som såld. Här ändrar du datum, pris och bedömningen per reparation."
-            : "När bostaden är såld kan deklarationsunderlaget genereras. Datumet krävs."}
+            : "När bostaden är såld kan du hämta deklarationsunderlaget."}
         </Meddelanderuta>
       </div>
       <ForsaljningForm

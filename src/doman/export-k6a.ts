@@ -113,6 +113,28 @@ export interface K6aExport {
   varningar: string[];
 }
 
+/** Texten nar sammanstallningen vantar pa bostadsfragorna – samma pa skarmen
+ *  och som skal till att ingen PDF skapas. */
+export const VANTAR_PA_BOSTADSFRAGOR_TEXT =
+  "Frågorna om bostaden är obesvarade, och svaren avgör vilka utgifter som räknas. Sammanställningen går inte att göra förrän de är besvarade.";
+
+/**
+ * Kastas nar bostadsfragorna ar obesvarade och nagot klassificerat finns att
+ * rakna pa. Da sammanstalls INGENTING – varken sida 1 eller sida 2. Svaret
+ * avgor om reparationerna raknas, och darmed ocksa om ett ar passerar
+ * troskeln (CLAUDE.md, steg 3), sa aven sida 1 beror av det. En summa som gar
+ * att lasa ar ett lofte om att den ar komplett, aven nar den ar for lag.
+ *
+ * Ett fel och inte ett tomt resultat, sa att ingen anropare kan rakna med
+ * nollor av misstag: skarmen och PDF:en maste bada fanga det uttryckligen.
+ */
+export class VantarPaBostadsfragor extends Error {
+  constructor() {
+    super(VANTAR_PA_BOSTADSFRAGOR_TEXT);
+    this.name = "VantarPaBostadsfragor";
+  }
+}
+
 export interface K6aIndata {
   bostad: Bostad;
   medlemskap: Medlemskap;
@@ -246,11 +268,29 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
     klassificeradeCeller.push(cell);
   }
 
+  // Obesvarade bostadsfragor (src/doman/bostadsfragor.ts): med nagot
+  // klassificerat att rakna pa sammanstalls ingenting alls. Utan nagot
+  // klassificerat beror inget tal av svaret, och sidan ser ut som vanligt.
+  const nybyggdVidForvarv = bostad.nybyggd_vid_forvarv;
+  if (nybyggdVidForvarv === null && klassificeradeCeller.length > 0) {
+    throw new VantarPaBostadsfragor();
+  }
+
   // 3. Fragetradets steg 1-3 per cell: dela i grundforbattringsdel/
   //    reparationsunderlag, prova sedan tidsgranserna. INNAN troskeln
   //    (CLAUDE.md: "Tidsgransen raknas bort fore troskeln").
   const splits: CellSplit[] = klassificeradeCeller.map((cell) =>
-    buildCellSplit(cell, bostad, regelparametrar, sald, forsaljningsAr, fonsterAr),
+    buildCellSplit(
+      cell,
+      bostad,
+      // Bara nar inga celler finns kan svaret vara null – och da kors inte
+      // den har raden.
+      nybyggdVidForvarv ?? false,
+      regelparametrar,
+      sald,
+      forsaljningsAr,
+      fonsterAr,
+    ),
   );
 
   // 4. TROSKELN provas per kalenderar, pa summan av bada kategorierna for hela
@@ -465,6 +505,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
 function buildCellSplit(
   cell: Cell,
   bostad: Bostad,
+  nybyggdVidForvarv: boolean,
   regelparametrar: Regelparameter[],
   sald: boolean,
   forsaljningsAr: number | null,
@@ -503,7 +544,7 @@ function buildCellSplit(
         forsaljningsAr: forsaljningsAr!,
         femarsfonsterAr: fonsterAr!,
         upplatelseform: bostad.upplatelseform,
-        bostadenNybyggdVidForvarv: bostad.nybyggd_vid_forvarv,
+        bostadenNybyggdVidForvarv: nybyggdVidForvarv,
         bostadenOmbildningFranHyresratt: bostad.ombildning_fran_hyresratt,
         regelparametrar,
       }),
@@ -515,7 +556,7 @@ function buildCellSplit(
   // den granden. Bakre gransen och "nybyggd vid forvarv" beror inte av
   // forsaljningen och provas som vanligt.
   const nybyggdUtanOmbildning =
-    bostad.nybyggd_vid_forvarv && !(bostad.ombildning_fran_hyresratt ?? false);
+    nybyggdVidForvarv && !(bostad.ombildning_fran_hyresratt ?? false);
   return {
     cell,
     uppdelning: {

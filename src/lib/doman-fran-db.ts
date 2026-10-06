@@ -3,7 +3,9 @@
 // de ihop. Datum blir "YYYY-MM-DD"-strangar, ROT/forsakring coalescas till 0.
 
 import { Prisma } from "@prisma/client";
+import { bostadsfragorForBerakning } from "@/doman/bostadsfragor";
 import type {
+  Bostad as DomanBostad,
   Kostnad as DomanKostnad,
   Projekt as DomanProjekt,
   Regelparameter as DomanRegelparameter,
@@ -12,6 +14,7 @@ import { isoDatum } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 
+type PrismaBostad = Prisma.bostadGetPayload<Record<string, never>>;
 type PrismaProjekt = Prisma.projektGetPayload<Record<string, never>>;
 type PrismaRegelparameter = Prisma.regelparameterGetPayload<
   Record<string, never>
@@ -24,6 +27,18 @@ const kostnadMedRader = {
 type PrismaKostnadMedRader = Prisma.kostnadGetPayload<{
   include: typeof kostnadMedRader;
 }>;
+
+/** Det enda stallet en bostadsrad blir en domanbostad. Bostadsfragorna gar
+ *  genom src/doman/bostadsfragor.ts – aldrig de rå kolumnerna, som ger false
+ *  for obesvarat. */
+export function tillDomanBostad(b: PrismaBostad): DomanBostad {
+  return {
+    upplatelseform: b.upplatelseform,
+    tilltradesdatum: isoDatum(b.tilltradesdatum),
+    forsaljningsdatum: b.forsaljningsdatum ? isoDatum(b.forsaljningsdatum) : null,
+    ...bostadsfragorForBerakning(b),
+  };
+}
 
 export function tillDomanProjekt(p: PrismaProjekt): DomanProjekt {
   return {

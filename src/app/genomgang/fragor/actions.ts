@@ -14,6 +14,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { serverfelMeddelande } from "@/lib/databas-fel";
+import {
+  bostadsfragornaBesvarade,
+  FEL_FORSTA_AGARE,
+  lagringAvBostadsfragor,
+  tolkaBostadsfragesvar,
+} from "@/doman/bostadsfragor";
+import { kravBostadsfragorBesvarade } from "@/lib/bostadsfragor-sparr";
 import { tolkaFragetradetFormData } from "@/lib/fragetradet-formdata";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -27,6 +34,8 @@ export async function klassificeraHog(
   formData: FormData,
 ): Promise<FragorResultat> {
   const { bostadId, anvandareId } = await kravBostad();
+
+  await kravBostadsfragorBesvarade(bostadId);
 
   const projektId = String(formData.get("projekt_id") ?? "");
 
@@ -89,12 +98,15 @@ export async function klassificeraHog(
   redirect("/genomgang/fragor");
 }
 
-// De tva bostadsfragorna (produktspec 4.1, 4.6): stalls EN gang per bostad,
-// som ett steg innan forsta hogen klassificeras – aldrig per atgard. Blockerar
-// genomgangen tills de ar besvarade, eftersom reparationsdelen annars inte gar
-// att rakna. Gar att andra i installningarna efterat (se installningar/
-// actions.ts), som ocksa satter bostadsfragor_besvarade – darfor rors den
-// flaggan bara har och dar, aldrig i klassificeringen av en enskild hog.
+// Bostadsfragorna (produktspec 4.1, 4.6) – forsta agaren, och for en
+// bostadsratt med ja aven ombildningen (src/doman/bostadsfragor.ts). Stalls
+// EN gang per bostad, som ett steg innan forsta hogen klassificeras – aldrig
+// per atgard. Blockerar genomgangen tills de ar besvarade, eftersom
+// reparationsdelen annars inte gar att rakna. Gar att andra i
+// installningarna efterat (se installningar/actions.ts), som satter
+// bostadsfragor_besvarade efter samma villkor – och nollstaller den nar
+// upplatelseformen byts. Flaggan rors aldrig i klassificeringen av en
+// enskild hog.
 
 export interface BostadsfragorResultat {
   fel?: string;
@@ -106,34 +118,25 @@ export async function sparaBostadsfragor(
 ): Promise<BostadsfragorResultat> {
   const { bostadId, anvandareId } = await kravBostad();
 
-  const forstaAgare = String(formData.get("forsta_agare") ?? "");
-  if (forstaAgare !== "ja" && forstaAgare !== "nej") {
-    return { fel: "Svara på om du var första ägaren av bostaden." };
-  }
-  const nybyggdVidForvarv = forstaAgare === "ja";
-
-  // Fraga 2 stalls bara nar fraga 1 ar "ja" – ar den "nej" paverkar svaret
-  // inget (villkoret ar nybyggd_vid_forvarv OCH INTE ombildning), sa det
-  // lagras som false utan att fragas.
-  let ombildningFranHyresratt = false;
-  if (nybyggdVidForvarv) {
-    const ombildning = String(formData.get("ombildning") ?? "");
-    if (ombildning !== "ja" && ombildning !== "nej") {
-      return {
-        fel: "Svara på om du köpte bostaden i samband med en ombildning från hyresrätt.",
-      };
-    }
-    ombildningFranHyresratt = ombildning === "ja";
-  }
+  // Tolkning och villkor delas med installningarna (src/doman/bostadsfragor.ts).
+  // Upplatelseformen avgor om ombildningsfragan stalls, och lases fran
+  // bostaden – aldrig fran formularet.
+  const { upplatelseform } = await prisma.bostad.findUniqueOrThrow({
+    where: { id: bostadId },
+    select: { upplatelseform: true },
+  });
+  const tolkat = tolkaBostadsfragesvar(
+    String(formData.get("forsta_agare") ?? ""),
+    String(formData.get("ombildning") ?? ""),
+    upplatelseform,
+  );
+  if ("fel" in tolkat) return tolkat;
+  if (!bostadsfragornaBesvarade(tolkat.svar)) return { fel: FEL_FORSTA_AGARE };
 
   try {
     await prisma.bostad.update({
       where: { id: bostadId },
-      data: {
-        nybyggd_vid_forvarv: nybyggdVidForvarv,
-        ombildning_fran_hyresratt: ombildningFranHyresratt,
-        bostadsfragor_besvarade: true,
-      },
+      data: lagringAvBostadsfragor(tolkat.svar),
     });
   } catch (fel) {
     return {

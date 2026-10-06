@@ -13,6 +13,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { kostnaderKoppladeTillProjekt } from "@/doman/berakningar";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
+import { kravBostadsfragorBesvarade } from "@/lib/bostadsfragor-sparr";
 import { tolkaFragetradetFormData } from "@/lib/fragetradet-formdata";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -39,6 +40,7 @@ export async function redigeraProjekt(
   formData: FormData,
 ): Promise<ProjektResultat> {
   const { bostadId, anvandareId } = await kravBostad();
+  await kravBostadsfragorBesvarade(bostadId);
   const id = String(formData.get("projekt_id") ?? "");
 
   const projekt = await prisma.projekt.findFirst({

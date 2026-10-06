@@ -8,7 +8,8 @@
 // skickades med. Det har ar den viktigaste punkten i hela sidan: samma fel
 // har funnits forut, dar EN gemensam sparning for hela sidan tyst kunde satta
 // bostadsfragor_besvarade till sant nar vilken installning som helst
-// sparades. Losningen ar strukturell, inte en extra kontroll – varje action
+// sparades. (Undantaget ar ett byte av upplatelseform, som nollstaller
+// flaggan till false – se sparaBostaden.) Losningen ar strukturell, inte en extra kontroll – varje action
 // skriver ENDAST de falt som hor till dess eget kort i `data`-objektet, och
 // Prisma rör aldrig ett falt som inte star dar.
 //
@@ -31,6 +32,11 @@
 
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
+import {
+  lagringAvBostadsfragor,
+  lagringVidBytAvUpplatelseform,
+  tolkaBostadsfragesvar,
+} from "@/doman/bostadsfragor";
 import { agarandelFranText } from "@/lib/agarandel";
 import { allaAndelar, hamtaAndelar } from "@/lib/andelar";
 import { andelssummaVidAndring, summeraAndelar } from "@/lib/samagande";
@@ -156,6 +162,10 @@ export async function sparaBostaden(
       identifiering,
       storlek,
       kapitaltillskott,
+      // Ett byte av upplatelseform oppnar bostadsfragorna igen
+      // (src/doman/bostadsfragor.ts) – den enda gang det har kortet ror
+      // flaggan, och da alltid till false, aldrig till true.
+      ...lagringVidBytAvUpplatelseform(bostadNu.upplatelseform, upplatelseform as "bostadsratt" | "fastighet"),
     },
   });
 
@@ -166,16 +176,18 @@ export async function sparaBostaden(
 /**
  * Kortet Forvarvet: tilltradesdatum, kopeskilling, kopkostnader, forsta
  * agaren, ombildningen (bostad) och agarandelen (medlemskap). Skriver ENDAST
- * dessa – aldrig bostadsfragor_besvarade.
+ * dessa, plus bostadsfragor_besvarade nar forsta agaren besvaras (se nedan).
  *
  * Ombildningen har en enda uppgift: att upphava forsta agaren. Den fragas och
  * skrivs bara nar forsta agaren ar ja. Ett nej nollstaller den INTE
  * (docs/design.md, "Installningssidan") – ett kvarlamnat ja paverkar ingen
  * utrakning, eftersom villkoret bara provas nar bostaden var nybyggd.
  *
- * Forsta agaren fragas har med ett konkret forval, sa den har sparningen far
- * ALDRIG sjalv satta bostadsfragor_besvarade: ett forval ar inte ett svar
- * (produktspec 4.1). Flaggan satts bara fran genomgangens Bostadsfragor.
+ * Forsta agaren och ombildningen saknar forval nar de ar obesvarade, och ett
+ * tomt forsta agaren skrivs inte. Ett aktivt val ar ett svar, var det an gors:
+ * genomgangen lovar att svaren kan andras har, sa sparningen satter
+ * bostadsfragor_besvarade efter samma villkor som genomgangen
+ * (src/doman/bostadsfragor.ts).
  *
  * Agarandelen provas mot de andras pa servern: en andring som tar summan over
  * 100 % avvisas (src/lib/samagande.ts, andelssummaVidAndring). Utestaende
@@ -215,10 +227,21 @@ export async function sparaForvarvet(
     return { fel: "Ägarandel anges som ett tal mellan 0 och 100, t.ex. 50 eller 33,33." };
   }
 
-  const nybyggdVidForvarv = las(formData, "forsta_agare") === "ja";
-  const ombildning = nybyggdVidForvarv
-    ? { ombildning_fran_hyresratt: las(formData, "ombildning") === "ja" }
-    : {};
+  // Tomt betyder obesvarat – da skrivs ingenting. Ett svar tolkas och lagras
+  // som i genomgangen, och satter flaggan efter samma villkor
+  // (src/doman/bostadsfragor.ts).
+  // Upplatelseformen avgor om ombildningsfragan stalls, och lases fran
+  // bostaden – den andras i ett annat kort och skickas inte med har.
+  const { upplatelseform } = await prisma.bostad.findUniqueOrThrow({
+    where: { id: bostadId },
+    select: { upplatelseform: true },
+  });
+  const bostadsfragor = tolkaBostadsfragesvar(
+    las(formData, "forsta_agare"),
+    las(formData, "ombildning"),
+    upplatelseform,
+  );
+  if ("fel" in bostadsfragor) return bostadsfragor;
 
   // Provning och skrivning i samma transaktion, sa att tva samtidiga
   // andringar inte tillsammans kan ta summan over 100 %.
@@ -236,8 +259,7 @@ export async function sparaForvarvet(
           tilltradesdatum: new Date(`${tilltradesdatum}T00:00:00.000Z`),
           kopeskilling,
           kopkostnader,
-          nybyggd_vid_forvarv: nybyggdVidForvarv,
-          ...ombildning,
+          ...lagringAvBostadsfragor(bostadsfragor.svar),
         },
       });
 

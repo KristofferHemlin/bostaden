@@ -1,12 +1,13 @@
 "use client";
 
-// De tva bostadsfragorna (produktspec 4.1, 4.6): stalls EN gang per bostad,
-// som ett steg fore den forsta hogen i genomgangen – inte i registreringen,
-// och aldrig per atgard. Blockerar genomgangen tills de ar besvarade (bade
-// <GenomgangSida> och <FragorSida> renderar bara den har komponenten sa
-// lange bostad.bostadsfragor_besvarade ar false, oavsett vilken av de tva
-// som utlöste grinden – se `nasta` nedan), eftersom reparationsdelen annars
-// inte gar att rakna. Gar att andra i installningarna efterat.
+// Bostadsfragorna (produktspec 4.1, 4.6) – forsta agaren, och for en
+// bostadsratt med ja aven ombildningen (src/doman/bostadsfragor.ts). Stalls
+// EN gang per bostad, som ett steg fore den forsta hogen i genomgangen – inte
+// i registreringen, och aldrig per atgard. Blockerar genomgangen tills de ar
+// besvarade (bade <GenomgangSida> och <FragorSida> renderar bara den har
+// komponenten sa lange bostadsfragornaBesvarade ar falskt, oavsett vilken av
+// sidorna som utloste grinden – se `nasta` nedan), eftersom reparationsdelen
+// annars inte gar att rakna. Gar att andra i installningarna efterat.
 //
 // Aterananvander <Fraga> och <Kortval> fran fragetradet.tsx – samma monster
 // (rubrik, utfalld hjalpruta, klickbara kort utan underrubriker) som
@@ -14,6 +15,7 @@
 //
 // Inget forval (samma princip som skickskalan, docs/design.md): ett
 // obesvarat "Var du forsta agaren?" far aldrig visas som forifyllt "Nej".
+// Ett svar som redan givits visas daremot som valt (`givna`).
 //
 // `nasta` (produktspec 4.1, "Efter frågorna hamnar man i grupperingen"):
 // vart sparaBostadsfragor skickar anvandaren efter svaret. Standard ar
@@ -26,6 +28,7 @@
 
 import { useActionState, useState } from "react";
 import { sparaBostadsfragor, type BostadsfragorResultat } from "./actions";
+import type { Bostadsfragesvar } from "@/doman/bostadsfragor";
 import { Fraga, Kortval } from "@/app/projekt/fragetradet";
 import { PRIMARKNAPP_KLASS } from "@/components/skarm";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
@@ -41,22 +44,30 @@ const HJALP_OMBILDNING =
 
 type JaNej = "" | "ja" | "nej";
 
+function tillJaNej(varde: boolean | null): JaNej {
+  return varde === null ? "" : varde ? "ja" : "nej";
+}
+
 export function Bostadsfragor({
   nasta = "/genomgang",
+  givna,
 }: {
   nasta?: "/genomgang" | "/genomgang/fragor";
+  /** Svar som redan givits (t.ex. i installningarna) visas som valda, sa att
+   *  ingen moter en tom fraga och skriver over sitt eget svar utan att veta det. */
+  givna: Bostadsfragesvar;
 }) {
   const [resultat, action, pagar] = useActionState(sparaBostadsfragor, START);
-  const [forstaAgare, setForstaAgare] = useState<JaNej>("");
-  const [ombildning, setOmbildning] = useState<JaNej>("");
+  const [forstaAgare, setForstaAgare] = useState<JaNej>(tillJaNej(givna.forstaAgare));
+  const [ombildning, setOmbildning] = useState<JaNej>(tillJaNej(givna.ombildning));
   const hanteraSubmit = useForhindraDubbelinskick(pagar);
+  const arBostadsratt = givna.upplatelseform === "bostadsratt";
 
   return (
     <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-6 p-5">
       <p className="font-granssnitt text-sm text-text-sekundar">
-        Två frågor om bostaden, en gång för alla. Svaren avgör om reparationer
-        senare kan räknas som avdrag – du kan ändra dem i inställningarna om
-        du svarar fel.
+        Svaren avgör om reparationer senare kan räknas som avdrag – du kan
+        ändra dem i inställningarna om du svarar fel.
       </p>
 
       <Fraga rubrik="Var du första ägaren av bostaden?" hjalp={HJALP_FORSTA_AGARE}>
@@ -75,7 +86,9 @@ export function Bostadsfragor({
         />
       </Fraga>
 
-      {forstaAgare === "ja" ? (
+      {/* Ombildning ar ett bostadsrattsbegrepp (src/doman/bostadsfragor.ts) –
+          for en fastighet ar forsta agaren den enda fragan. */}
+      {forstaAgare === "ja" && arBostadsratt ? (
         <Fraga
           rubrik="Köpte du bostaden i samband med ombildning från hyresrätt?"
           hjalp={HJALP_OMBILDNING}
@@ -97,7 +110,7 @@ export function Bostadsfragor({
       <input
         type="hidden"
         name="ombildning"
-        value={forstaAgare === "ja" ? ombildning : ""}
+        value={forstaAgare === "ja" && arBostadsratt ? ombildning : ""}
       />
       <input type="hidden" name="nasta" value={nasta} />
 

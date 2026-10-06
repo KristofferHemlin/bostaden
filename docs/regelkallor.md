@@ -152,8 +152,11 @@ Domänlogiken behöver därför inte ändras för fastigheter.
 | Kapitaltillskott | Avdragsgillt | Finns inte |
 | Köpkostnader | Överlåtelseavgift | Lagfart, pantbrev, inköpsprovision |
 | Identifiering | Föreningens namn | Fastighetsbeteckning |
+| Ombildning från hyresrätt | Förekommer | Finns inte |
 
 Vinsten beskattas till 22/30 i båda fallen.
+
+**Ombildning är ett bostadsrättsbegrepp och frågan hör inte hemma för en fastighet.** En ombildning är när hyresgästernas förening köper fastigheten och hyresrätterna blir bostadsrätter; den som köper sin lägenhet då är formellt bostadsrättens första ägare trots att lägenheten är använd sedan tidigare. Det är hela skälet att följdfrågan finns. För ett småhus är "första ägaren" nybyggnation, och en nybyggd villa kan per definition inte ha kommit ur en ombildning. Frågan ska därför bara ställas för bostadsrätt – på samma grund som kapitaltillskott inte efterfrågas för en fastighet.
 
 **Ej kontrollerat i denna genomgång:** om tomt, trädgård och utvändiga anläggningar behandlas annorlunda än byggnaden. Inget i källorna tyder på det, men det är värt att verifiera innan appen används för en försäljning där sådana poster är stora.
 

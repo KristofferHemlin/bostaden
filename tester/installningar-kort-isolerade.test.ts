@@ -78,7 +78,8 @@ const BOSTADEN_FALT = [
 ];
 const OMBILDNING = "ombildning_fran_hyresratt";
 const FORVARVET_FALT = ["tilltradesdatum", "kopeskilling", "kopkostnader", "nybyggd_vid_forvarv"];
-const INGET_KORT = ["bostadsfragor_besvarade"];
+// Satts av Forvarvet nar forsta agaren besvaras, aldrig av Bostaden.
+const FLAGGAN = ["bostadsfragor_besvarade"];
 
 const BOSTADEN_FORMULAR = {
   upplatelseform: "bostadsratt",
@@ -113,7 +114,7 @@ describe("sparaBostaden ror bara Bostadens egna falt", () => {
     expect(Object.keys(data).sort()).toEqual([...BOSTADEN_FALT].sort());
     // Inget av Forvarvets falt far finnas med, inte ens som null/false – och
     // inte ombildningen, aven om formularet rakar skicka den.
-    for (const frammande of [...FORVARVET_FALT, ...INGET_KORT, OMBILDNING]) {
+    for (const frammande of [...FORVARVET_FALT, ...FLAGGAN, OMBILDNING]) {
       expect(data).not.toHaveProperty(frammande);
     }
     expect(h.medlemskapUpdateMany).not.toHaveBeenCalled();
@@ -138,7 +139,10 @@ describe("sparaForvarvet ror bara Forvarvets egna falt", () => {
     agarandel: "50",
   };
 
-  it("med forsta agaren ja: exakt Forvarvets falt och ombildningen, och bara agarandel till medlemskap", async () => {
+  // Ett aktivt svar pa forsta agaren ar ett svar, var det an ges – Forvarvet
+  // satter darfor bostadsfragor_besvarade nar svaret ar fullstandigt
+  // (src/doman/bostadsfragor.ts). Bostaden-kortet ror den fortfarande aldrig.
+  it("med forsta agaren ja: exakt Forvarvets falt, ombildningen och flaggan, och bara agarandel till medlemskap", async () => {
     const resultat = await sparaForvarvet(
       {},
       formulardata({ ...FORVARVET_FORMULAR, forsta_agare: "ja", ombildning: "ja" }),
@@ -146,8 +150,8 @@ describe("sparaForvarvet ror bara Forvarvets egna falt", () => {
 
     expect(resultat.fel).toBeUndefined();
     const data = h.bostadUpdate.mock.calls[0][0].data;
-    expect(Object.keys(data).sort()).toEqual([...FORVARVET_FALT, OMBILDNING].sort());
-    for (const frammande of [...BOSTADEN_FALT, ...INGET_KORT]) {
+    expect(Object.keys(data).sort()).toEqual([...FORVARVET_FALT, OMBILDNING, ...FLAGGAN].sort());
+    for (const frammande of BOSTADEN_FALT) {
       expect(data).not.toHaveProperty(frammande);
     }
     expect(data).toMatchObject({
@@ -155,6 +159,7 @@ describe("sparaForvarvet ror bara Forvarvets egna falt", () => {
       kopkostnader: 4_500_000n,
       nybyggd_vid_forvarv: true,
       [OMBILDNING]: true,
+      bostadsfragor_besvarade: true,
     });
 
     const medlemskapData = h.medlemskapUpdateMany.mock.calls[0][0].data;
@@ -169,9 +174,10 @@ describe("sparaForvarvet ror bara Forvarvets egna falt", () => {
 
     expect(resultat.fel).toBeUndefined();
     const data = h.bostadUpdate.mock.calls[0][0].data;
-    expect(Object.keys(data).sort()).toEqual([...FORVARVET_FALT].sort());
+    expect(Object.keys(data).sort()).toEqual([...FORVARVET_FALT, ...FLAGGAN].sort());
     expect(data).not.toHaveProperty(OMBILDNING);
     expect(data.nybyggd_vid_forvarv).toBe(false);
+    expect(data.bostadsfragor_besvarade).toBe(true);
   });
 
   it("tillträdesdatum ar fortfarande obligatoriskt", async () => {

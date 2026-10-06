@@ -63,6 +63,8 @@ function formulardata(over: Record<string, string> = {}): FormData {
 beforeEach(() => {
   vi.clearAllMocks();
   h.bostadUpdate.mockResolvedValue({});
+  // sparaForvarvet laser upplatelseformen – den avgor om ombildningen fragas.
+  h.bostadFindUniqueOrThrow.mockResolvedValue({ upplatelseform: "bostadsratt" });
   h.medlemskapUpdateMany.mockResolvedValue({ count: 1 });
   ensamAgare();
 });
