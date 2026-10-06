@@ -188,8 +188,8 @@ export default async function Oversikt({
           </p>
           <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
             Renoveringar och förbättringar sänker vinstskatten den dag bostaden
-            säljs – men bara om du kan visa vad de kostade. Kvitton bleknar och
-            mejl försvinner. Lägg in dem medan de finns kvar.
+            säljs, och ett kvitto är det enklaste beviset som finns. Kvitton
+            bleknar och mejl försvinner – lägg in dem medan de finns kvar.
           </p>
           <Link href="/kostnad/nytt" className={`${PRIMARKNAPP_KLASS} mt-5`}>
             Lägg till kvitto

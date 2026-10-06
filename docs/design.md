@@ -755,7 +755,7 @@ Tre exempel på texter som ska bort:
 - "Används som namn i toppen om inget annat anges." Det är vår interna logik. Ingen undrar det.
 - "Alla tidsberäkningar utgår härifrån." Sant men irrelevant för den som ska fylla i ett datum.
 
-Och en som ska vara kvar: "Står på köpekontraktet. Går att fylla i senare." Den säger var uppgiften finns och att man kan hoppa över – båda är verkliga frågor.
+Och en som ska vara kvar: "Står på köpekontraktet eller överlåtelseavtalet. Går att fylla i senare." Den säger var uppgiften finns och att man kan hoppa över – båda är verkliga frågor.
 
 **Obligatoriskt markeras på fältet, inte i en mening under.** En liten markering vid etiketten räcker.
 
@@ -887,6 +887,12 @@ Texten är:
 
 **Meningen om beviset lovar inte för mycket.** Den tidigare lydelsen sa att avdraget *kräver* att du kan visa vad du gjort. Det motsägs av appens egen hållning: fri bevisning gäller, och ett kvitto som saknas är inget fel – det står under *Bilagor*. Att sälja in produkten med ett påstående man tillbakavisar inne i den är ett trovärdighetsfel, inte ett stavfel. Kvittot är det enklaste beviset, inte det enda.
 
+**Och påståendet har en enda lydelsefamilj i hela produkten.** Uppmätt i den driftsatta appen 2026-10-06: förstaskärmen för en ny användare sa fortfarande *"men bara om du kan visa vad de kostade"* – den hårda lydelsen, kvar på den skärm som möts först av den som just skapat ett konto. Två skärmar i samma app svarade alltså olika på samma rättsfråga.
+
+Det som gäller, var det än står: **avdraget vilar på att du kan göra utgiften trolig, och ett kvitto är det enklaste beviset som finns.** Aldrig att det *krävs*, aldrig "bara om". Fri bevisning gäller och ett saknat kvitto är inget fel – det står under *Bilagor*, och en säljande text får inte motsäga en regel appen själv följer.
+
+Förstaskärmens lydelse är därför: *"Renoveringar och förbättringar sänker vinstskatten den dag bostaden säljs, och ett kvitto är det enklaste beviset som finns. Kvitton bleknar och mejl försvinner – lägg in dem medan de finns kvar."*
+
 **Inget blankettnamn på den här sidan.** Varken K5 eller K6, och inte SKV 2197. Namnet beror på upplåtelseformen och hälften av läsarna skulle få fel – och ingen som inte redan sålt en bostad vet vad någotdera betyder. Appen säger rätt namn när det är dags, på exportvyn.
 
 **Skapa konto är den orange knappen här**, tvärtemot inloggningssidan, med Logga in som sekundärknapp bredvid eller under. Det är den handling sidan finns för. Bär båda knapparna orange försvinner skillnaden och sidan tappar sitt ärende.
@@ -952,6 +958,8 @@ Att något går att hoppa över står där det betyder något: i hjälptexten un
 Kravet är att något står där, inte att det är en riktig adress. Fritext duger – regeln om att fältet aldrig får kräva ett valt förslag gäller oförändrat, och *Skogsstigen, torpet* är ett giltigt svar.
 
 Köpeskillingen ligger här trots att den är valfri, eftersom den hör till beskrivningen av bostaden och behövs för vinstberäkningen. Hjälptexten säger var man hittar den – på köpekontraktet eller överlåtelseavtalet – så att den som inte minns beloppet vet att det går att hoppa över och fylla i senare.
+
+**Att stryka även den prövades 2026-10-05 och valdes bort.** Steget hade då blivit etiketter, fält och en knapp utan en rad prosa. Skälet att behålla den: köpeskillingen är det enda fältet i steget vars svar ligger i ett papper användaren kanske inte har framme, och utan meningen kan hon stanna upp i stället för att hoppa över. Priset för att vara kvar är en rad text; priset för att försvinna är en avbruten registrering.
 
 Storlek hör hemma i inställningar, inte här. Den används inte i någon beräkning och behövs inte för att komma igång.
 
