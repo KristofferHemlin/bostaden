@@ -65,7 +65,7 @@ export function UtkastRaderaKnapp({
           <SoptunnaGlyf />
         </button>
         {resultat.fel ? (
-          <span className="mt-0.5 max-w-[8rem] text-right font-granssnitt text-xs text-accent">
+          <span className="mt-0.5 max-w-[8rem] text-right font-granssnitt text-sm text-accent">
             {resultat.fel}
           </span>
         ) : null}

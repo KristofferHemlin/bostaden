@@ -21,6 +21,7 @@ import {
   type FragetradetUIState,
 } from "@/app/projekt/fragetradet";
 import {
+  Avdelningsrubrik,
   Falt,
   Friskrivning,
   INPUT_KLASS,
@@ -103,16 +104,16 @@ function HogFormular({
   return (
     <div className="flex flex-col">
       <div className="border-b border-linje px-4 py-3">
-        <p className="font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
+        <Avdelningsrubrik>
           {position} av {antal}
-        </p>
+        </Avdelningsrubrik>
       </div>
 
       {/* Hogens kvitton – synliga bredvid fragorna. */}
       <section className="border-b border-linje">
-        <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
+        <Avdelningsrubrik className="px-4 pt-4">
           Kvittona
-        </p>
+        </Avdelningsrubrik>
         <ul className="divide-y divide-linje">
           {hog.kvitton.map((k) => (
             <li
@@ -123,7 +124,7 @@ function HogFormular({
                 <span className="block truncate font-granssnitt text-sm text-text-primar">
                   {k.rubrik}
                 </span>
-                <span className="block font-granssnitt text-xs text-text-sekundar">
+                <span className="block font-granssnitt text-sm text-text-sekundar">
                   {k.underrad}
                 </span>
               </span>

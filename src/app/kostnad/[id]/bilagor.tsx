@@ -74,7 +74,7 @@ import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { avvisningVidVal } from "@/lib/lagring/bilaga-regler";
 import { laddaUppKostnadsbilaga } from "@/lib/lagring/bilaga-klient";
 import type { Bilagevy } from "@/lib/lagring/bilagor";
-import { HJALPTEXT_KLASS, FALTFEL_KLASS } from "@/components/skarm";
+import { Avdelningsrubrik, FALTFEL_KLASS, HJALPTEXT_KLASS } from "@/components/skarm";
 
 const START: BilagaResultat = {};
 
@@ -251,9 +251,9 @@ export function Bilagor({
           andringslaget bara sa lange raden ar tom (docs/design.md, "Bilagor":
           "Etiketten över raden visas bara när ingen bilaga finns"). */}
       {!dolgUppladdningshjalp && bilagor.length === 0 ? (
-        <p className="mb-2 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
+        <Avdelningsrubrik className="mb-2">
           Kvitto eller faktura
-        </p>
+        </Avdelningsrubrik>
       ) : null}
 
       {/* Stor forhandsvisning, i bade lasläget och andringslaget
@@ -426,7 +426,7 @@ export function Bilagor({
               <span aria-hidden className="text-xl leading-none">
                 +
               </span>
-              <span className="mt-0.5 font-granssnitt text-[10px]">
+              <span className="mt-0.5 font-granssnitt text-sm">
                 Lägg till
               </span>
             </label>
@@ -453,7 +453,7 @@ export function Bilagor({
       {/* Samma statusrad som inmatningen under samma uppladdning. Inget
           andra steg foljer har – andringslaget har ingen avlasning. */}
       {sparar ? (
-        <p role="status" className="mt-2 font-granssnitt text-xs text-text-sekundar">
+        <p role="status" className="mt-2 font-granssnitt text-sm text-text-sekundar">
           Sparar kvittot
         </p>
       ) : null}
@@ -582,7 +582,7 @@ function Miniatyrinnehall({
     return (
       <>
         <DokumentIkon />
-        <span className="mt-1 line-clamp-2 px-1 font-granssnitt text-[10px] leading-tight text-text-sekundar">
+        <span className="mt-1 line-clamp-2 px-1 font-granssnitt text-sm leading-tight text-text-sekundar">
           PDF
         </span>
       </>
@@ -591,7 +591,7 @@ function Miniatyrinnehall({
   return (
     <>
       <FelIkon />
-      <span className="mt-1 px-1 font-granssnitt text-[10px] leading-tight text-text-dampad">
+      <span className="mt-1 px-1 font-granssnitt text-sm leading-tight text-text-dampad">
         Kunde inte visas
       </span>
     </>
@@ -654,7 +654,7 @@ function Miniatyrbild({
     return (
       <span className="flex flex-col items-center px-1">
         <FelIkon />
-        <span className="mt-1 font-granssnitt text-[10px] leading-tight text-text-dampad">
+        <span className="mt-1 font-granssnitt text-sm leading-tight text-text-dampad">
           Kunde inte visas
         </span>
       </span>

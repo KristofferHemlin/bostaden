@@ -217,7 +217,7 @@ function LasVy({
           <Rad etikett="Leverantör" varde={varden.leverantor} />
         </div>
         {varden.kvittodatumNotisText ? (
-          <p className="mt-2 font-granssnitt text-xs text-text-sekundar">
+          <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
             {varden.kvittodatumNotisText}
           </p>
         ) : null}

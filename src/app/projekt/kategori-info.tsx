@@ -14,7 +14,7 @@ export function KategoriInfo({ fonsterAr }: { fonsterAr: number }) {
   const [visa, setVisa] = useState(false);
   return (
     <div>
-      <p className="flex items-center gap-2 font-granssnitt text-xs text-text-sekundar">
+      <p className="flex items-center gap-2 font-granssnitt text-sm text-text-sekundar">
         <span>Vad betyder grundförbättring och reparation?</span>
         <button
           type="button"

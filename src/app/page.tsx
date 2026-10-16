@@ -244,7 +244,7 @@ export default async function Oversikt({
                 <h2 className="font-rubrik text-base text-text-primar">
                   Senaste kvitton
                 </h2>
-                <p className="mt-0.5 font-granssnitt text-xs text-text-sekundar">
+                <p className="mt-0.5 font-granssnitt text-sm text-text-sekundar">
                   De sex senast tillagda
                 </p>
               </div>
@@ -323,7 +323,7 @@ function Nyckeltal({
   return (
     <Link href={href} className="block h-full">
       <Kort className="flex h-full flex-col justify-between gap-1 p-3 transition-colors hover:bg-yta-nedsankt">
-        <p className="font-granssnitt text-[11px] leading-tight text-text-sekundar">
+        <p className="font-granssnitt text-sm leading-tight text-text-sekundar">
           {etikett}
         </p>
         <p className="font-rubrik text-sm tabular-nums text-text-primar sm:text-base">

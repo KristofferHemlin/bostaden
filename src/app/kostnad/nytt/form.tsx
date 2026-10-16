@@ -132,7 +132,7 @@ const RUTA =
   "relative flex h-[107px] w-[80px] flex-none flex-col items-center justify-center overflow-hidden rounded-lg bg-yta-nedsankt text-center";
 
 const LAGG_TILL_RUTA =
-  "flex h-[107px] w-[80px] flex-none flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-linje font-granssnitt text-[10px] leading-tight text-text-sekundar transition-colors hover:bg-yta-nedsankt";
+  "flex h-[107px] w-[80px] flex-none flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-linje font-granssnitt text-sm leading-tight text-text-sekundar transition-colors hover:bg-yta-nedsankt";
 
 interface Miniatyr {
   namn: string;
@@ -872,7 +872,7 @@ export function NyKostnadForm({
               {renderFel ? (
                 <DokumentIkon namn={forhandsFil.name} />
               ) : (
-                <p className="px-4 text-center font-granssnitt text-xs text-text-sekundar">
+                <p className="px-4 text-center font-granssnitt text-sm text-text-sekundar">
                   Läser PDF…
                 </p>
               )}
@@ -963,7 +963,7 @@ export function NyKostnadForm({
                   ) : (
                     <span className="flex flex-col items-center gap-0.5">
                       <DokumentGlyf />
-                      <span className="font-granssnitt text-[10px] font-medium leading-none text-text-sekundar">
+                      <span className="font-granssnitt text-sm font-medium leading-none text-text-sekundar">
                         {b.arPdf ? "PDF" : "FIL"}
                       </span>
                     </span>
@@ -1021,7 +1021,7 @@ export function NyKostnadForm({
                   ) : (
                     <span className="flex flex-col items-center gap-0.5">
                       <DokumentGlyf />
-                      <span className="font-granssnitt text-[10px] font-medium leading-none text-text-sekundar">
+                      <span className="font-granssnitt text-sm font-medium leading-none text-text-sekundar">
                         {m?.etikett ?? "FIL"}
                       </span>
                     </span>
@@ -1083,7 +1083,7 @@ export function NyKostnadForm({
           "Kostnadsformularets ordning") – gar att ignorera, falten ar
           redigerbara hela tiden, aven under uppladdningen. */}
       {vantesteg ? (
-        <p role="status" className="font-granssnitt text-xs text-text-sekundar">
+        <p role="status" className="font-granssnitt text-sm text-text-sekundar">
           {vantesteg === "laser"
             ? "Läser av belopp och datum"
             : "Sparar kvittot"}
@@ -1349,7 +1349,7 @@ function DokumentIkon({ namn }: { namn: string }) {
       <span className="break-words font-granssnitt text-sm text-text-sekundar">
         {namn}
       </span>
-      <span className="font-granssnitt text-xs text-text-sekundar">
+      <span className="font-granssnitt text-sm text-text-sekundar">
         Kan inte visas här – öppna filen för att kontrollera den.
       </span>
     </div>

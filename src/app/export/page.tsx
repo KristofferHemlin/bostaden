@@ -29,6 +29,7 @@
 
 import Link from "next/link";
 import {
+  Avdelningsrubrik,
   Friskrivning,
   Kort,
   Meddelanderuta,
@@ -272,7 +273,7 @@ export default async function ExportSida() {
               <p className="font-granssnitt text-sm font-medium text-text-primar">
                 Återstår
               </p>
-              <p className="mt-1 font-granssnitt text-xs text-text-sekundar">
+              <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
                 Det här har du lagt in, men det ingår inte i talen ovan än.
               </p>
               <ul className="mt-2 divide-y divide-linje border-t border-linje">
@@ -317,7 +318,7 @@ export default async function ExportSida() {
               <p className="font-granssnitt text-sm font-medium text-text-primar">
                 Skick vid försäljningen
               </p>
-              <p className="mt-1 font-granssnitt text-xs text-text-sekundar">
+              <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
                 {atgarderUtanSkickForsaljning} projekt på sida 2 saknar
                 bedömningen av skicket vid försäljningen, så den avdragsgilla
                 delen är inte klar.
@@ -351,7 +352,7 @@ export default async function ExportSida() {
                   >
                     Skapa bilagepaket (PDF)
                   </span>
-                  <p className="mt-1.5 font-granssnitt text-xs text-text-sekundar">
+                  <p className="mt-1.5 font-granssnitt text-sm text-text-sekundar">
                     Kräver att bostaden är markerad som såld.
                   </p>
                 </div>
@@ -390,9 +391,9 @@ function SidaBlock({
 }) {
   return (
     <section>
-      <p className="px-4 pt-4 font-granssnitt text-sm uppercase tracking-wide text-text-sekundar">
+      <Avdelningsrubrik className="px-4 pt-4">
         {etikett}
-      </p>
+      </Avdelningsrubrik>
       {rader.length === 0 ? (
         <p className="px-4 py-3 font-granssnitt text-sm text-text-sekundar">
           {tomtText}
@@ -438,13 +439,13 @@ function SidaBlock({
                       {r.varningar.map((v) => (
                         <span
                           key={v}
-                          className="mt-0.5 block text-xs text-text-sekundar"
+                          className="mt-0.5 block text-sm text-text-sekundar"
                         >
                           {v}
                         </span>
                       ))}
                       {r.forklaring ? (
-                        <span className="mt-0.5 block text-xs text-text-sekundar">
+                        <span className="mt-0.5 block text-sm text-text-sekundar">
                           {r.forklaring}
                         </span>
                       ) : null}
@@ -511,7 +512,7 @@ function RutaCallout({
         {underrad}
       </p>
       {gemensam ? (
-        <p className="mt-1 font-granssnitt text-xs tabular-nums text-text-sekundar">
+        <p className="mt-1 font-granssnitt text-sm tabular-nums text-text-sekundar">
           Hela bostaden {formateraKronor(brutto)} · din andel {agarandel} %
         </p>
       ) : null}
@@ -553,7 +554,7 @@ function AterstarRad({
             <span className="truncate">{namn}</span>
           )}
         </span>
-        <span className="mt-0.5 block text-xs text-text-sekundar">{orsak}</span>
+        <span className="mt-0.5 block text-sm text-text-sekundar">{orsak}</span>
       </span>
       <span className="flex shrink-0 items-baseline gap-3 tabular-nums">
         {ar !== null ? <span className="text-text-sekundar">{ar}</span> : null}

@@ -10,6 +10,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  Avdelningsrubrik,
   Listrad,
   PRIMARKNAPP_KLASS,
   SEKUNDARKNAPP_KLASS,
@@ -155,9 +156,9 @@ export default async function ProjektSida({
             under gar att rakna ihop till den. "Kvitton", aldrig "kostnader"
             (docs/design.md, Ordval i granssnittet). */}
         <div className="flex items-baseline justify-between gap-3 px-4 pt-4">
-          <p className="font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
+          <Avdelningsrubrik>
             Kvitton
-          </p>
+          </Avdelningsrubrik>
           {kostnader.length > 0 ? (
             <p className="font-rubrik text-sm tabular-nums text-text-primar">
               {formateraKronor(projektSumma(kostnader, id))}

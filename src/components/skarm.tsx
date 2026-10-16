@@ -186,7 +186,7 @@ export function Listrad({
         ]
           .filter((rad): rad is string => !!rad)
           .map((rad) => (
-            <p key={rad} className="mt-0.5 font-granssnitt text-xs text-text-sekundar">
+            <p key={rad} className="mt-0.5 font-granssnitt text-sm text-text-sekundar">
               {rad}
             </p>
           ))}
@@ -360,6 +360,34 @@ export function Kort({
     >
       {children}
     </div>
+  );
+}
+
+/**
+ * Versal avdelningsrubrik (docs/design.md, "Minsta textstorlek är 14 px"):
+ * 14 px, versaler och sparrning. Versaler och sparrning ar idiomet som gor
+ * den till en rubrik; storleken ar inte en del av idiomet. En komponent och
+ * inte en klassrad per sida – elva kopior av samma idiom var skalet att de
+ * kunde glida ifran varandra. `className` bar bara avstandet runt den.
+ */
+export function Avdelningsrubrik({
+  children,
+  className,
+  som = "p",
+}: {
+  children: ReactNode;
+  className?: string;
+  som?: "p" | "span";
+}) {
+  const Tagg = som;
+  return (
+    <Tagg
+      className={`font-granssnitt text-sm uppercase tracking-wide text-text-sekundar${
+        className ? ` ${className}` : ""
+      }`}
+    >
+      {children}
+    </Tagg>
   );
 }
 

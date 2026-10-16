@@ -94,7 +94,7 @@ export function Toppnavigering() {
             aria-current={aktiv ? "page" : undefined}
             className={[
               // Mobil: ikon ovanpa etikett, tva vaningar.
-              "flex min-h-[56px] flex-col items-center justify-center gap-1 whitespace-nowrap px-1 py-1.5 text-center font-granssnitt text-xs transition-colors",
+              "flex min-h-[56px] flex-col items-center justify-center gap-1 whitespace-nowrap px-1 py-1.5 text-center font-granssnitt text-sm transition-colors",
               // Skrivbord: ren text, ingen ikon, en rad.
               "sm:min-h-[44px] sm:flex-row sm:gap-0 sm:rounded-full sm:px-3 sm:py-0 sm:text-sm",
               aktiv

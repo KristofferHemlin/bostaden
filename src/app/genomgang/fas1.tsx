@@ -20,7 +20,7 @@ import {
   skapaHog,
   type GenomgangResultat,
 } from "./actions";
-import { PRIMARKNAPP_KLASS, SEKUNDARKNAPP_KLASS } from "@/components/skarm";
+import { Avdelningsrubrik, PRIMARKNAPP_KLASS, SEKUNDARKNAPP_KLASS } from "@/components/skarm";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { hogVisningsnamn } from "@/doman/genomgang";
 import { formateraKronorEllerStreck } from "@/lib/format";
@@ -197,9 +197,9 @@ export function Fas1({
       {/* Forslag – bekraftas ett i taget, tillampas aldrig automatiskt. */}
       {kvarStarForslag.length > 0 ? (
         <section className="border-b border-linje">
-          <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
+          <Avdelningsrubrik className="px-4 pt-4">
             Hör de här ihop?
-          </p>
+          </Avdelningsrubrik>
           <div className="divide-y divide-linje">
             {kvarStarForslag.map((f) => {
               const nyckel = f.kvitto_ider.join(",");
@@ -272,9 +272,9 @@ export function Fas1({
       {/* Dina hogar – null-kategori-projekt som annu inte gatt igenom fas 2. */}
       {hogar.length > 0 ? (
         <section className="border-b border-linje">
-          <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
+          <Avdelningsrubrik className="px-4 pt-4">
             Väntar på frågor
-          </p>
+          </Avdelningsrubrik>
           <div className="divide-y divide-linje">
             {hogar.map((h) => (
               <div key={h.id} className="p-4">
@@ -315,7 +315,7 @@ export function Fas1({
                           <button
                             type="submit"
                             disabled={flyttaPagar}
-                            className="font-granssnitt text-xs text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
+                            className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
                           >
                             Flytta ut
                           </button>
@@ -367,9 +367,9 @@ export function Fas1({
           vad du gjort"). */}
       {oklassificerade.length > 0 ? (
         <section className="border-b border-linje">
-          <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
+          <Avdelningsrubrik className="px-4 pt-4">
             Kvitton kvar
-          </p>
+          </Avdelningsrubrik>
           <ul className="divide-y divide-linje">
             {oklassificerade.map((k) => {
               const vald = valda.has(k.id);
@@ -489,7 +489,7 @@ export function Fas1({
                     <span className="block truncate font-granssnitt text-sm text-text-primar">
                       {kvittoRubrik(k)}
                     </span>
-                    <span className="block font-granssnitt text-xs text-text-sekundar">
+                    <span className="block font-granssnitt text-sm text-text-sekundar">
                       {kvittoUnderrad(k)}
                     </span>
                   </span>
@@ -502,7 +502,7 @@ export function Fas1({
                       <button
                         type="submit"
                         disabled={aterforPagar}
-                        className="font-granssnitt text-xs text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
+                        className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
                       >
                         {aterforPagar ? "Tar tillbaka…" : "Ta tillbaka"}
                       </button>

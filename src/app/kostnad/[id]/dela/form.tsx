@@ -17,6 +17,7 @@ import { useActionState, useState } from "react";
 import { delaUppKostnad, type KostnadRedigeraResultat } from "../actions";
 import { BeloppFalt } from "@/components/belopp-falt";
 import {
+  Avdelningsrubrik,
   Bekraftelseruta,
   Falt,
   HJALPTEXT_KLASS,
@@ -135,9 +136,9 @@ export function DelaUppForm({
           return (
             <div key={r.nyckel} className="flex flex-col gap-4 p-5">
               <div className="flex items-center justify-between">
-                <span className="font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
+                <Avdelningsrubrik som="span">
                   Rad {index + 1}
-                </span>
+                </Avdelningsrubrik>
                 {rader.length > 2 ? (
                   <button
                     type="button"

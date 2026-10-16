@@ -15,7 +15,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { sparaSkickForsaljning, type SkickForsaljningResultat } from "./actions";
 import { Fraga, Kortval } from "@/app/projekt/fragetradet";
-import { Friskrivning, PRIMARKNAPP_KLASS } from "@/components/skarm";
+import { Avdelningsrubrik, Friskrivning, PRIMARKNAPP_KLASS } from "@/components/skarm";
 import { SKICK_ORD } from "@/doman/fragetradet";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 
@@ -84,9 +84,9 @@ function AtgardFormular({
   return (
     <div className="flex flex-col">
       <div className="border-b border-linje px-4 py-3">
-        <p className="font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
+        <Avdelningsrubrik>
           {position} av {antal}
-        </p>
+        </Avdelningsrubrik>
       </div>
 
       <div className="border-b border-linje px-4 py-3">

@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { KategoriInfo } from "./kategori-info";
-import { Listrad, Skarm } from "@/components/skarm";
+import { Avdelningsrubrik, Listrad, Skarm } from "@/components/skarm";
 import {
   beloppForKostnad,
   projektSumma,
@@ -133,9 +133,9 @@ export default async function ProjektlistaSida() {
         <>
           {arSorterade.map((ar) => (
             <div key={ar} className="border-b border-linje last:border-b-0">
-              <p className="px-4 pt-4 font-granssnitt text-xs uppercase tracking-wide text-text-sekundar">
+              <Avdelningsrubrik className="px-4 pt-4">
                 {ar}
-              </p>
+              </Avdelningsrubrik>
               <div className="divide-y divide-linje">
                 {perAr.get(ar)!.map((r) => (
                   // Utstrackt lank (docs/design.md, "Listrader"): kortet – rad
@@ -181,12 +181,12 @@ export default async function ProjektlistaSida() {
                             {/* Under namnet, aldrig under beloppet
                                 (docs/design.md, Listrader). */}
                             {k.rotRad ? (
-                              <p className="mt-0.5 text-xs">{k.rotRad}</p>
+                              <p className="mt-0.5 text-sm">{k.rotRad}</p>
                             ) : null}
                           </li>
                         ))}
                         {r.kvitton.length > MAX_KVITTON_VISADE ? (
-                          <li className="font-granssnitt text-xs text-text-sekundar">
+                          <li className="font-granssnitt text-sm text-text-sekundar">
                             +{r.kvitton.length - MAX_KVITTON_VISADE} till
                           </li>
                         ) : null}

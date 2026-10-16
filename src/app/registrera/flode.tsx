@@ -304,7 +304,7 @@ export function RegistreraFlode({
             inte samtycke. Lanken oppnas i en ny flik sa att det pabörjade
             formularet inte forsvinner. */}
         {steg === 1 ? (
-          <p className="text-center font-granssnitt text-xs text-text-sekundar">
+          <p className="text-center font-granssnitt text-sm text-text-sekundar">
             Genom att skapa ett konto godkänner du villkoren. Läs hur vi
             hanterar dina uppgifter i{" "}
             <Link

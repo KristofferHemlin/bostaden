@@ -43,7 +43,7 @@ function parseInline(text: string, keyPrefix: string): ReactNode[] {
         return (
           <code
             key={key}
-            className="rounded bg-yta-nedsankt px-1 py-0.5 text-[0.85em] text-text-primar"
+            className="rounded bg-yta-nedsankt px-1 py-0.5 text-text-primar"
           >
             {del.slice(1, -1)}
           </code>

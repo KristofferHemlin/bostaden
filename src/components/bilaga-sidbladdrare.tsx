@@ -274,7 +274,7 @@ export function BilagaSidbladdrare({
 
       {sidantal > 1 ? (
         <>
-          <span className="pointer-events-none absolute bottom-2 right-2 rounded-full bg-yta-upphojd px-2 py-0.5 font-granssnitt text-xs tabular-nums text-text-dampad">
+          <span className="pointer-events-none absolute bottom-2 right-2 rounded-full bg-yta-upphojd px-2 py-0.5 font-granssnitt text-sm tabular-nums text-text-dampad">
             {aktivSida} / {sidantal}
           </span>
 
@@ -319,7 +319,7 @@ function SidBildInnehall({
   onClick?: () => void;
 }) {
   const innehall = fel ? (
-    <span className="absolute inset-0 flex items-center justify-center px-2 text-center font-granssnitt text-xs text-text-sekundar">
+    <span className="absolute inset-0 flex items-center justify-center px-2 text-center font-granssnitt text-sm text-text-sekundar">
       Sida {sida} kunde inte visas
     </span>
   ) : url ? (
@@ -404,7 +404,7 @@ export function PdfMiniatyrbild({
     return (
       <span className="absolute inset-0 flex flex-col items-center justify-center px-1">
         <FelIkon />
-        <span className="mt-1 font-granssnitt text-[10px] leading-tight text-text-dampad">
+        <span className="mt-1 font-granssnitt text-sm leading-tight text-text-dampad">
           Kunde inte visas
         </span>
       </span>
