@@ -34,7 +34,7 @@ import { createPortal } from "react-dom";
 import { useActionState, useRef, useState } from "react";
 import { loggaUt } from "@/app/login/actions";
 import { Kortval } from "@/app/projekt/fragetradet";
-import type { Bostadsfragesvar } from "@/doman/bostadsfragor";
+import { ombildningStalls, type Bostadsfragesvar } from "@/doman/bostadsfragor";
 import { AdressFalt } from "@/app/registrera/adress-falt";
 import { AgarandelFalt } from "@/components/agarandel-falt";
 import { BeloppFalt } from "@/components/belopp-falt";
@@ -265,10 +265,13 @@ function identifieringEtikett(arBostadsratt: boolean): string {
   return arBostadsratt ? "Föreningens namn" : "Fastighetsbeteckning";
 }
 
-function bytestext(mal: "bostadsratt" | "fastighet"): string {
+// Bytet har tva foljder, och rutan namner bada: identifieringen, och att
+// bostadsfragorna oppnas igen (sparaBostaden nollstaller flaggan,
+// src/doman/bostadsfragor.ts). Andra meningen ar samma i bada riktningarna.
+export function bytestext(mal: "bostadsratt" | "fastighet"): string {
   const nyEtikett = identifieringEtikett(mal === "bostadsratt");
   const gammalEtikett = identifieringEtikett(mal !== "bostadsratt").toLowerCase();
-  return `Identifieringen behöver skrivas om – fältet blir "${nyEtikett}", och ${gammalEtikett} hör inte hemma där längre.`;
+  return `Identifieringen behöver skrivas om – fältet blir "${nyEtikett}", och ${gammalEtikett} hör inte hemma där längre. Du får också svara på frågorna om bostaden igen, eftersom svaren beror på vad du äger.`;
 }
 
 // Tunn vaxlare: monterar ANTINGEN lasläget ELLER redigeringsformularet – ALDRIG
@@ -591,7 +594,7 @@ function tillJaNej(varde: boolean | null): "" | "ja" | "nej" {
   return varde === null ? "" : varde ? "ja" : "nej";
 }
 
-function ForvarvetKort({ data, oppen, formRef, onAndra, onAvbryt, onDirty, onKlar }: KortProps<ForvarvetData>) {
+export function ForvarvetKort({ data, oppen, formRef, onAndra, onAvbryt, onDirty, onKlar }: KortProps<ForvarvetData>) {
   if (!oppen) {
     return (
       <>
@@ -603,9 +606,11 @@ function ForvarvetKort({ data, oppen, formRef, onAndra, onAvbryt, onDirty, onKla
           <Rad etikett="Köpkostnader" varde={orenTillKronsträng(data.kopkostnaderOren)} />
           <Rad etikett="Ägarandel" varde={formateraAndel(data.agarandelProcent)} />
           <Rad etikett="Första ägaren" varde={jaNejText(data.bostadsfragor.forstaAgare)} />
-          {/* null nar fragan inte stalls – en fastighet, eller forsta
-              agaren ar inte ja (src/doman/bostadsfragor.ts). */}
-          {data.bostadsfragor.ombildning !== null ? (
+          {/* Raden finns nar fragan stalls – en bostadsratt dar forsta
+              agaren ar ja – och sager "Inte ifyllt" nar den ar obesvarad,
+              som varje annan tom uppgift. Annars syns kortet komplett medan
+              underlaget vantar pa just den har fragan. */}
+          {ombildningStalls(data.bostadsfragor.upplatelseform, data.bostadsfragor.forstaAgare) ? (
             <Rad
               etikett="Ombildning från hyresrätt"
               varde={jaNejText(data.bostadsfragor.ombildning)}

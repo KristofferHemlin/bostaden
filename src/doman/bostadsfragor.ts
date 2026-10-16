@@ -69,8 +69,9 @@ export function forstaAgaren(b: LagradeBostadsfragor): boolean | null {
   return lagratSvar(b.nybyggd_vid_forvarv, b.bostadsfragor_besvarade);
 }
 
-/** Stalls ombildningsfragan for den har bostaden, givet forsta agaren? */
-function ombildningStalls(upplatelseform: Upplatelseform, forstaAgare: boolean | null): boolean {
+/** Stalls ombildningsfragan for den har bostaden, givet forsta agaren? Samma
+ *  villkor styr var fragan visas – i genomgangen och i installningarnas kort. */
+export function ombildningStalls(upplatelseform: Upplatelseform, forstaAgare: boolean | null): boolean {
   return upplatelseform === "bostadsratt" && forstaAgare === true;
 }
 

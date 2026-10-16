@@ -336,13 +336,17 @@ Etiketten *Totalt inlagt* är sann för alla tre fallen, vilket var skälet att 
 
 **Ingen summa för det avdragsgilla.** Den går inte att veta före försäljningen – femårsfönstret, skicket och tröskeln hänger alla på försäljningsdatumet. Och ett tal för hur mycket som är beskrivet är samma påminnelse som regeln under *Kvittolistan* förbjuder på startskärmen: den som gör arkivet till en skuld man ådrar sig varje gång man sparar ett kvitto.
 
-**Tröskelrutans tre mått.** Informationsknappen har en tryckyta på minst 44px som alla andra – uppmätt till 20 × 20 px 2026-10-02. Raden under fältet är minst 14px, aldrig 12 – regeln står under *Minsta textstorlek är 14 px* och kom till just för att hjälptexter var oläsbara på telefon. Och **rutan säger att tröskeln gäller per bostad**, vilket blev relevant samma dag som en användare kunde ha två.
+**Tröskelrutan är borttagen från startskärmen, och tröskeln räknas som förut.**
 
-Väntar något på frågor står **en enda kort rad** under fältet: "Preliminärt tills du berättat om alla kvitton." Förklaringen av vad tröskeln innebär – att hela årets belopp faller bort, inte bara mellanskillnaden – ligger bakom en informationsknapp, samma mönster som projektfrågorna. Tre rader brödtext ovanför kvittolistan gör förklaringen till huvudsaken i stället för siffran.
+Rutan visade hur årets inlagda belopp låg till mot gränsen på 5 000 kr. Den togs bort 2026-10-16, efter en vecka då varje rättelse av den avslöjade nästa.
 
-Progressfältet är 8px högt med helt rundade ändar, spår i `--yta-nedsankt` och fyllning i `--sand-mork`. Fyllningen byter aldrig färg – orange hör till primärknappen, som ligger på samma skärm.
+Ordningen var: två tal som var samma tal, en ruta som sade "5 000 kr kvar" på ett tomt år och därmed gjorde arkivet till en skuld, ett årtal som saknades, en informationsknapp som bara gick att nå av den som hade oordning på sitt konto, en förklaring som lovade att allt inlagt räknas – och till sist att **rutan mätte något annat än den tröskel den talade om**. Den jämförde hela årets inlagda belopp mot gränsen, medan underlaget räknar bort det som aldrig kan dras av. En nybyggd bostad med 6 000 kr i reparationer fick veta att tröskeln var passerad medan underlaget fällde året, och felet överskattade avdraget.
 
-Fyllningen måste ha tydlig kontrast mot spåret. `--sand` mot `--yta-nedsankt` är för svagt och ska aldrig användas här.
+**Skälet att ta bort i stället för att rätta:** rutan kan aldrig bli exakt före försäljningen. Femårsfönstret beror på ett försäljningsår som inte finns än, så varje version av rutan är en gissning klädd som ett besked. En gissning hör inte på den skärm vars uppgift är att visa att kvittot kom fram och hur nästa läggs in.
+
+**Tröskelregeln är oförändrad.** Den prövas i beräkningen som förut, den står i `CLAUDE.md` steg 4, och underlaget förklarar varje år som fallit på den. Det är där den biter, och det är där den hör hemma: bredvid följden, inte som en mätare man ska gå och hålla ögonen på.
+
+Vad som eventuellt ska finnas i stället är obestämt och ligger i `vad-som-aterstar.md`. Mätningarna av den borttagna rutan – raden 324 px vid 390 px skärm, radhöjd 20 px för en rad vid 14 px – gäller fortfarande för vilken ensam rad som helst i ett kort på startskärmen och är därför kvar under *Minsta textstorlek är 14 px*.
 
 ### Kvittolistan
 

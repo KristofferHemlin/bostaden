@@ -137,7 +137,7 @@ export default async function ProjektSida({
         )}
         {oklassificerad ? (
           <p className="pt-1 text-text-sekundar">
-            Frågorna om det här är inte besvarade än. Det räknas in i
+            Frågorna om det här är inte besvarade än. Det tas med i
             underlaget när du svarat på dem.
           </p>
         ) : null}

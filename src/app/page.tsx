@@ -5,8 +5,8 @@
 //     sparas, och en primarknapp "Lagg till kvitto". Ingen rundtur, inga
 //     pahittade siffror.
 //   * Med innehall: tre sma nyckeltal pa rad (totalt inlagt, arets summa,
-//     antal kvitton), troskelraden i full bredd, primarknappen, och till sist
-//     kvittolistan som eget kort.
+//     antal kvitton), primarknappen, och till sist kvittolistan som eget kort.
+//     Ingen troskelruta (docs/design.md: borttagen 2026-10-16).
 //
 // Startskarmen har ingen sidrubrik alls (docs/design.md, "Startskarmen med
 // innehall"): den aktiva fliken heter redan "Oversikt", och en rubrik som
@@ -26,17 +26,12 @@ import {
   PRIMARKNAPP_KLASS,
   Skarm,
 } from "@/components/skarm";
-import { TroskelInfo } from "@/app/troskel-info";
 import { UtkastRaderaKnapp } from "@/app/kostnad/utkast-radera";
 import {
-  harledKostnadstillstand,
   inlagtArsbelopp,
-  kostnadensAr,
   samlatBelopp,
-  troskelUppnadd,
 } from "@/doman/berakningar";
 import { arOklassificerad } from "@/doman/genomgang";
-import { slaUppRegelparameter } from "@/doman/regelparameter";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
 import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
@@ -77,7 +72,7 @@ export default async function Oversikt({
   // och den gamla nas i vaxlaren ("Att äga flera bostäder"). Inbjudningar
   // till en bostad hen redan ar medlem i visas inte (se utestaendeInbjudningar).
   const inbjudningar = await utestaendeInbjudningar(anvandare.epost, anvandare.id);
-  const { bostad, kostnader, regelparametrar } = await hamtaBostadsdata(bostadId);
+  const { bostad, kostnader } = await hamtaBostadsdata(bostadId);
   const { bostadsnamn } = bostadHeader(bostad);
 
   // De sex senast tillagda kvittona for listan – egen lasning eftersom domanens
@@ -113,28 +108,10 @@ export default async function Oversikt({
 
   const VISAT_AR = new Date().getUTCFullYear();
 
-  const troskelbelopp = slaUppRegelparameter(
-    regelparametrar,
-    "troskelbelopp",
-    `${VISAT_AR}-12-31`,
-  );
-
   // "Inlagt {ar}" ar summan av allt som lagts in i ar, klassificerat eller ej
-  // (produktspec 2b, 7). Talet ar preliminart: progressfaltet visar det mot
-  // troskeln medan aret gar att paverka, men det ar inte samma sak som ett avdrag.
+  // (produktspec 2b, 7) – det som lagts in, inte ett avdrag. Ingen troskel
+  // visas bredvid (docs/design.md: troskelrutan ar borttagen).
   const inlagt = inlagtArsbelopp({ kostnader }, VISAT_AR);
-  const naddTroskel = troskelUppnadd(inlagt, troskelbelopp);
-  const aterstaende = Math.max(0, troskelbelopp - inlagt);
-  const fyllnadsgrad = Math.min(100, (inlagt / troskelbelopp) * 100);
-
-  // Finns det kostnader i ar som annu inte klassificerats (kopplats till en
-  // gruppering)? Da ar "Inlagt" preliminart och raden under progressfaltet visas.
-  const oklassificeratFinns = kostnader.some(
-    (k) =>
-      !k.arkiverad &&
-      kostnadensAr(k) === VISAT_AR &&
-      harledKostnadstillstand(k).okopplad,
-  );
 
   // Ingen klassificeringssektion pa startskarmen (docs/design.md, Kvittolistan):
   // en paminnelse vid varje oppning gor klassificeringen till en skuld man adrar
@@ -155,7 +132,7 @@ export default async function Oversikt({
   const tomt = kostnader.length === 0;
 
   return (
-    // egnaKort: pa oversikten hor nyckeltal, troskelrad och kvittolista hemma i
+    // egnaKort: pa oversikten hor nyckeltal och kvittolista hemma i
     // OLIKA kort med luft emellan (docs/design.md, "Genomgaende struktur" och
     // "Startskarmen med innehall").
     // Ingen sidrubrik: den aktiva fliken heter redan "Oversikt". Innehallet
@@ -250,39 +227,7 @@ export default async function Oversikt({
             />
           </div>
 
-          {/* Troskelraden i full bredd: progressfalt, troskelbelopp och den korta
-              preliminarraden med informationsknappen. Etiketten "Inlagt" bor pa
-              nyckeltalet ovan, inte har. */}
-          <Kort>
-            <section className="p-4">
-              {/* Fyllningen ar ALLTID --sand-mork, oavsett hur fullt faltet ar
-                  (docs/design.md, "Progressfaltet mot troskeln"). Orange hor
-                  till primarknappen, som ligger pa samma skarm – texten under
-                  bar beskedet, inte fargen. */}
-              <div className="h-2 w-full overflow-hidden rounded-full bg-yta-nedsankt">
-                <div
-                  className="h-full rounded-full bg-sand-mork"
-                  style={{ width: `${fyllnadsgrad.toFixed(2)}%` }}
-                />
-              </div>
-              {naddTroskel ? (
-                // Den enda gangen pa aret appen har goda nyheter – en hel mening,
-                // inte tva ord i smatext.
-                <p className="mt-2 font-granssnitt text-xs text-text-sekundar">
-                  Tröskeln för {VISAT_AR} är passerad – allt du lägger in i år
-                  räknas
-                </p>
-              ) : (
-                <div className="mt-2 flex items-baseline justify-between gap-3 font-granssnitt text-xs tabular-nums text-text-sekundar">
-                  <span>Tröskel {formateraKronor(troskelbelopp)}</span>
-                  <span>{formateraKronor(aterstaende)} kvar</span>
-                </div>
-              )}
-              {oklassificeratFinns ? <TroskelInfo /> : null}
-            </section>
-          </Kort>
-
-          {/* Primaratgarden – direkt under troskelraden, ovanfor kvittolistan
+          {/* Primaratgarden – direkt under nyckeltalen, ovanfor kvittolistan
               (docs/design.md, "Startskarmen med innehall"). */}
           <Link href="/kostnad/nytt" className={PRIMARKNAPP_KLASS}>
             Lägg till kvitto
