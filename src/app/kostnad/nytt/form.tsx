@@ -84,6 +84,7 @@ import { createPortal } from "react-dom";
 import { skapaUtkast, sparaKostnad, type KostnadResultat } from "./actions";
 import { analyseraBilaga, taBortBilaga } from "@/app/kostnad/bilaga-actions";
 import { UtkastRaderaKnapp } from "@/app/kostnad/utkast-radera";
+import { BekraftaBorttagning } from "@/components/bekrafta-borttagning";
 import { BeloppFalt } from "@/components/belopp-falt";
 import {
   BilagaSidbladdrare,
@@ -119,6 +120,14 @@ import { laddaUppKostnadsbilaga } from "@/lib/lagring/bilaga-klient";
 import { avvisningVidVal, kannIgenFormat } from "@/lib/lagring/bilaga-regler";
 import type { Bilagevy } from "@/lib/lagring/bilagor";
 import { oppnaPdf } from "@/lib/pdfjs-klient";
+import {
+  avbryt as avbrytBorttagning,
+  BEKRAFTA_BILAGEBORTTAGNING,
+  bekrafta as bekraftaBorttagning,
+  tryckPaKryss,
+  type Bilageborttagning,
+  type Borttagningsutfall,
+} from "@/lib/bilageborttagning";
 
 const START: KostnadResultat = {};
 
@@ -130,6 +139,19 @@ const BILAGA_ACCEPT =
 // synlig (object-contain), aldrig en beskarning.
 const RUTA =
   "relative flex h-[107px] w-[80px] flex-none flex-col items-center justify-center overflow-hidden rounded-lg bg-yta-nedsankt text-center";
+
+// Krysset "Ta bort" i hornet av en miniatyr (docs/design.md, "Vad 44 px-regeln
+// galler"): en ikonkontroll har alltid 44 × 44 px. Ett missat tryck gor fel
+// sak – rutan under ar sjalv tryckbar – och borttagningen sker utan
+// bekraftelse. Ytan ligger INATT i rutan, inte utanfor med negativ marginal:
+// RUTA har overflow-hidden och skulle klippa en yta som sticker ut, och
+// grannrutans kryss far da aldrig overlappa. Cirkeln sitter kvar 2 px fran
+// hornet, som forut. Kvar att oppna med blir rutan minus hornet, med en
+// sammanhangande del pa 80 × 63 px under krysset.
+const KRYSS_YTA =
+  "absolute right-0 top-0 z-10 flex h-11 w-11 items-start justify-end p-0.5";
+const KRYSS_CIRKEL =
+  "flex h-5 w-5 items-center justify-center rounded-full bg-yta-upphojd text-text-primar";
 
 const LAGG_TILL_RUTA =
   "flex h-[107px] w-[80px] flex-none flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-linje font-granssnitt text-sm leading-tight text-text-sekundar transition-colors hover:bg-yta-nedsankt";
@@ -238,6 +260,12 @@ export function NyKostnadForm({
   // andras efterat.
   const bilagaBekraftadRef = useRef(false);
   const [visaBilagaDialog, setVisaBilagaDialog] = useState(false);
+  // En sparad bilaga som vantar pa bekraftelse innan den raderas
+  // (src/lib/bilageborttagning.ts). En nyss vald fil tas bort direkt.
+  const [vantandeBorttagning, setVantandeBorttagning] =
+    useState<Bilageborttagning | null>(null);
+  const [borttagningPagar, setBorttagningPagar] = useState(false);
+  const [borttagningFel, setBorttagningFel] = useState<string | undefined>();
 
   // Skydd mot dubbel inskickning (CLAUDE.md, "Ingen knapp får skickas två
   // gånger") – se src/lib/dubbelinskick.ts. En ref, inte bara `disabled` på
@@ -608,11 +636,48 @@ export function NyKostnadForm({
     setValdIndex((v) => (posterIndex < v ? v - 1 : v));
   }
 
-  function taBortBefintlig(id: string) {
+  // Alla kryss gar genom bilageborttagning: den avgor om borttagningen kraver
+  // bekraftelse, och bara det som kommer tillbaka i `utfor` verkstalls har.
+  //
+  // En sparad bilaga tas bort ur vyn forst nar servern svarat ja. Gar det
+  // inte star dialogen kvar med felet och bilagan ligger kvar – den som just
+  // svarat "Ta bort" ska inte tro att det ar gjort nar det inte ar det. Samma
+  // monster som bilageborttagningen i kvittots detaljvy.
+  async function hanteraBorttagning({ vantar, utfor }: Borttagningsutfall) {
+    setBorttagningFel(undefined);
+    if (!utfor) {
+      setVantandeBorttagning(vantar);
+      return;
+    }
+    if (utfor.kalla === "nyvald") {
+      setVantandeBorttagning(null);
+      taBortFil(utfor.index);
+      return;
+    }
+    setBorttagningPagar(true);
+    const fel = await taBortBefintlig(utfor.bilagaId);
+    setBorttagningPagar(false);
+    if (fel) {
+      setBorttagningFel(fel);
+      return;
+    }
+    setVantandeBorttagning(null);
+  }
+
+  /** Raderar pa servern och tar bort ur vyn bara om det gick. Lamnar
+   *  tillbaka felet, eller null. */
+  async function taBortBefintlig(id: string): Promise<string | null> {
+    let svar: { ok: boolean; fel?: string };
+    try {
+      svar = await taBortBilaga({ bilagaId: id });
+    } catch {
+      return "Kunde inte ta bort bilagan.";
+    }
+    if (!svar.ok) return svar.fel ?? "Kunde inte ta bort bilagan.";
     const index = befintliga.findIndex((b) => b.id === id);
-    void taBortBilaga({ bilagaId: id }).catch(() => {});
     setBefintliga((prev) => prev.filter((b) => b.id !== id));
     setValdIndex((v) => (index >= 0 && index < v ? v - 1 : v));
+    return null;
   }
 
   // Enda vagen in till skicka() – formularet har medvetet INGEN action-propp
@@ -971,11 +1036,17 @@ export function NyKostnadForm({
                 </button>
                 <button
                   type="button"
-                  onClick={() => taBortBefintlig(b.id)}
+                  onClick={() =>
+                    void hanteraBorttagning(
+                      tryckPaKryss({ kalla: "sparad", bilagaId: b.id, filnamn: b.filnamn }),
+                    )
+                  }
                   aria-label={`Ta bort ${b.filnamn}`}
-                  className="absolute right-0.5 top-0.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-yta-upphojd text-text-primar"
+                  className={KRYSS_YTA}
                 >
-                  <KryssGlyf />
+                  <span className={KRYSS_CIRKEL}>
+                    <KryssGlyf />
+                  </span>
                 </button>
               </div>
             );
@@ -1029,11 +1100,17 @@ export function NyKostnadForm({
                 </button>
                 <button
                   type="button"
-                  onClick={() => taBortFil(j)}
+                  onClick={() =>
+                    void hanteraBorttagning(
+                      tryckPaKryss({ kalla: "nyvald", index: j, filnamn: fil.name }),
+                    )
+                  }
                   aria-label={`Ta bort ${fil.name}`}
-                  className="absolute right-0.5 top-0.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-yta-upphojd text-text-primar"
+                  className={KRYSS_YTA}
                 >
-                  <KryssGlyf />
+                  <span className={KRYSS_CIRKEL}>
+                    <KryssGlyf />
+                  </span>
                 </button>
               </div>
             );
@@ -1268,8 +1345,27 @@ export function NyKostnadForm({
         utkast faktiskt aterupptas. */}
     {utkast ? (
       <div className="border-t border-linje p-5">
-        <UtkastRaderaKnapp kostnadId={utkast.id} lage="knapp" />
+        <UtkastRaderaKnapp
+          kostnadId={utkast.id}
+          lage="knapp"
+          // Allt som ligger sparat pa utkastet raderas med det: bilagorna fran
+          // ett ateruppatt utkast och nyss valda filer som hunnit laddas upp.
+          antalBilagor={
+            befintliga.length +
+            filer.filter((f) => filstatus[filnyckel(f)]?.bilagaId).length
+          }
+        />
       </div>
+    ) : null}
+
+    {vantandeBorttagning ? (
+      <BekraftaBorttagning
+        text={BEKRAFTA_BILAGEBORTTAGNING}
+        pagar={borttagningPagar}
+        fel={borttagningFel}
+        onTaBort={() => void hanteraBorttagning(bekraftaBorttagning(vantandeBorttagning))}
+        onAvbryt={() => void hanteraBorttagning(avbrytBorttagning())}
+      />
     ) : null}
 
     {visaBilagaDialog ? (

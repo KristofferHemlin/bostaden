@@ -55,6 +55,8 @@ interface KvittoRad {
   privat: number;
   atgard: boolean;
   utkast: boolean;
+  /** Bilagor sparade pa kostnaden – avgor om utkastets soptunna fragar. */
+  antalBilagor: number;
   belopp: string | undefined;
   href: string;
   bild: { src: string; alt: string } | undefined;
@@ -82,6 +84,9 @@ export default async function KvittolistaSida() {
           take: 1,
         },
         rader: { include: { fordelningar: true } },
+        // Soptunnan pa ett utkast fragar nar det har bilagor
+        // (src/lib/bilageborttagning.ts). `bilagor` ovan ar kapad till en.
+        _count: { select: { bilagor: true } },
       },
       orderBy: [{ skapad_at: "desc" }],
     }),
@@ -135,6 +140,7 @@ export default async function KvittolistaSida() {
       ...avgarForKvitto(kostnad),
       atgard,
       utkast,
+      antalBilagor: k._count.bilagor,
       belopp: utkast ? undefined : formateraKronor(k.totalbelopp ?? 0),
       href: utkast ? `/kostnad/nytt?utkast=${k.id}` : `/kostnad/${k.id}`,
       bild:
@@ -216,7 +222,11 @@ export default async function KvittolistaSida() {
                     bild={r.bild}
                     slutknapp={
                       r.utkast ? (
-                        <UtkastRaderaKnapp kostnadId={r.id} lage="ikon" />
+                        <UtkastRaderaKnapp
+                          kostnadId={r.id}
+                          lage="ikon"
+                          antalBilagor={r.antalBilagor}
+                        />
                       ) : undefined
                     }
                   />

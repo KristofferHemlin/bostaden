@@ -69,6 +69,7 @@ import {
   PdfMiniatyrbild,
   Vantemarkering,
 } from "@/components/bilaga-sidbladdrare";
+import { BEKRAFTA_BILAGEBORTTAGNING_KVITTO } from "@/lib/bilageborttagning";
 import { bildAspekt, forhandsramStil } from "@/lib/bildaspekt";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { avvisningVidVal } from "@/lib/lagring/bilaga-regler";
@@ -491,9 +492,10 @@ export function Bilagor({
         >
           <input type="hidden" name="bilaga_id" value={bekraftaBilaga.id} />
           <input type="hidden" name="kostnad_id" value={kostnadId} />
+          {/* Samma mening som krysset i nytt kvitto, ordagrant, plus det som
+              bara ar sant har (src/lib/bilageborttagning.ts). */}
           <p className="font-granssnitt text-sm text-text-primar">
-            Ta bort bilagan? Bilden raderas och går inte att återskapa.
-            Kvittots uppgifter ligger kvar.
+            {BEKRAFTA_BILAGEBORTTAGNING_KVITTO}
           </p>
           {radera.fel ? (
             <p className="font-granssnitt text-sm text-accent">

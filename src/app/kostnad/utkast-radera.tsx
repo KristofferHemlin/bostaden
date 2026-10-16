@@ -1,9 +1,12 @@
 "use client";
 
-// Radering av ett utkast (docs/design.md, "Kvittolistan": "Utkast gar att ta
-// bort direkt"). INGEN bekraftelse – ett utkast har inget belopp och inget
-// varde, och en dialog ar bara i vagen. Bekraftelsesteget galler fortsatt for
-// sparade kvitton och ligger kvar i redigeringsformularet.
+// Radering av ett utkast (docs/design.md, "Kvittolistan"). Ett TOMT utkast tas
+// bort direkt – det har inget belopp och inget varde, och en dialog ar bara i
+// vagen. Ett utkast med bilaga AR bilagan: raderingen tar filerna i lagringen
+// med sig, sa da fragas det forst. Beslutet och texten kommer fran
+// src/lib/bilageborttagning.ts (utkastetsBekraftelse), samma stalle som
+// krysset pa en bilaga – inte ett eget villkor har. Komponenten ar den enda
+// soptunnan for utkast, i alla tre lagen den anvands.
 //
 // Bade actionerna gar samma vag i botten: Storage rensas forst, sedan sjalva
 // kostnaden (raderna, fordelningarna och bilaga-raderna tar cascaden).
@@ -27,12 +30,14 @@
 //               /kostnad, samma diskreta stil som "Ta bort kvittot" i
 //               redigeringsvyn.
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState, type FormEvent } from "react";
 import {
   taBortKostnad,
   taBortUtkastRad,
   type KostnadRedigeraResultat,
 } from "./[id]/actions";
+import { BekraftaBorttagning } from "@/components/bekrafta-borttagning";
+import { utkastetsBekraftelse } from "@/lib/bilageborttagning";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 
 const START: KostnadRedigeraResultat = {};
@@ -40,21 +45,58 @@ const START: KostnadRedigeraResultat = {};
 export function UtkastRaderaKnapp({
   kostnadId,
   lage,
+  antalBilagor,
 }: {
   kostnadId: string;
   lage: "ikon" | "knapp";
+  /** Bilagor som ligger sparade pa utkastet – raderas med det. */
+  antalBilagor: number;
 }) {
   const action = lage === "ikon" ? taBortUtkastRad : taBortKostnad;
   const [resultat, raderaAction, raderar] = useActionState(action, START);
-  const hanteraSubmit = useForhindraDubbelinskick(raderar);
+  const hanteraDubbelinskick = useForhindraDubbelinskick(raderar);
+
+  // Fragan stalls fore inskickningen; "Ta bort" skickar sedan om formularet
+  // med fragan passerad. Samma flode som "Inget kvitto bifogat" i nytt kvitto.
+  const bekraftelse = utkastetsBekraftelse(antalBilagor);
+  const formRef = useRef<HTMLFormElement>(null);
+  const passeradRef = useRef(false);
+  const [fragar, setFragar] = useState(false);
+
+  function hanteraSubmit(e: FormEvent<HTMLFormElement>) {
+    if (bekraftelse && !passeradRef.current) {
+      e.preventDefault();
+      setFragar(true);
+      return;
+    }
+    passeradRef.current = false;
+    hanteraDubbelinskick(e);
+  }
+
+  function taBort() {
+    passeradRef.current = true;
+    setFragar(false);
+    formRef.current?.requestSubmit();
+  }
+
+  const dialog =
+    fragar && bekraftelse ? (
+      <BekraftaBorttagning
+        text={bekraftelse}
+        onTaBort={taBort}
+        onAvbryt={() => setFragar(false)}
+      />
+    ) : null;
 
   if (lage === "ikon") {
     return (
       <form
+        ref={formRef}
         action={raderaAction}
         onSubmit={hanteraSubmit}
         className="flex shrink-0 flex-col items-center justify-center pl-2 pr-3"
       >
+        {dialog}
         <input type="hidden" name="kostnad_id" value={kostnadId} />
         <button
           type="submit"
@@ -74,7 +116,8 @@ export function UtkastRaderaKnapp({
   }
 
   return (
-    <form action={raderaAction} onSubmit={hanteraSubmit} className="flex flex-col gap-2">
+    <form ref={formRef} action={raderaAction} onSubmit={hanteraSubmit} className="flex flex-col gap-2">
+      {dialog}
       <input type="hidden" name="kostnad_id" value={kostnadId} />
       {resultat.fel ? (
         <p className="font-granssnitt text-sm text-accent">{resultat.fel}</p>

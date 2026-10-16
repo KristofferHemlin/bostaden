@@ -270,17 +270,35 @@ export function skapaFalskDatabas() {
       if (typeof underArgs?.take === "number") lista = lista.slice(0, underArgs.take);
       return lista.map((r) => projicera(rel.modell, r, underArgs));
     };
+    // `_count: { select: { relation: true } }` – som Prisma: antalet rader i
+    // varje namngiven en-till-manga-relation.
+    const antal = (v: unknown): Rad => {
+      const urval = ((v as Rad | undefined)?.select ?? {}) as Rad;
+      const ut: Rad = {};
+      for (const [rk, rv] of Object.entries(urval)) {
+        if (!rv) continue;
+        const rel = RELATIONER[modell][rk];
+        const villkor = rv === true ? undefined : (rv as Rad).where;
+        ut[rk] = relaterade(rel, rad).filter((r) => matchar(rel.modell, r, villkor)).length;
+      }
+      return ut;
+    };
     if (select) {
       const ut: Rad = {};
       for (const [k, v] of Object.entries(select)) {
-        if (!v || k === "_count") continue;
+        if (!v) continue;
+        if (k === "_count") {
+          ut[k] = antal(v);
+          continue;
+        }
         ut[k] = RELATIONER[modell][k] ? relationsvarde(k, v) : rad[k];
       }
       return ut;
     }
     const ut: Rad = { ...rad };
     for (const [k, v] of Object.entries(include ?? {})) {
-      if (v && k !== "_count") ut[k] = relationsvarde(k, v);
+      if (!v) continue;
+      ut[k] = k === "_count" ? antal(v) : relationsvarde(k, v);
     }
     return ut;
   }

@@ -16,14 +16,23 @@ export function KategoriInfo({ fonsterAr }: { fonsterAr: number }) {
     <div>
       <p className="flex items-center gap-2 font-granssnitt text-sm text-text-sekundar">
         <span>Vad betyder grundförbättring och reparation?</span>
+        {/* Tryckytan ar 44 × 44 px som allt annat i appen (docs/design.md);
+            cirkeln som syns ar 20 px. Den negativa marginalen (44 − 20 = 24,
+            12 px per sida) later ytan vaxa utan att raden blir hogre eller
+            cirkeln flyttar sig. */}
         <button
           type="button"
           aria-expanded={visa}
           aria-label="Vad grundförbättring och reparation betyder"
           onClick={() => setVisa((v) => !v)}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-text-sekundar font-granssnitt text-xs leading-none text-text-sekundar transition-colors hover:bg-yta-nedsankt"
+          className="group -m-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-full outline-none"
         >
-          i
+          <span
+            aria-hidden
+            className="flex h-5 w-5 items-center justify-center rounded-full border border-text-sekundar font-granssnitt text-xs leading-none text-text-sekundar transition-colors group-hover:bg-yta-nedsankt group-focus-visible:ring-2 group-focus-visible:ring-accent"
+          >
+            i
+          </span>
         </button>
       </p>
       {visa ? (

@@ -62,7 +62,11 @@ Skälet att golvet inte är en riktlinje: produkten används av bostadsägare i 
 
 **Ett undantag, och bara ett: en bokstav som används som ikon.** Tecknet "i" i en informationsknapp är en symbol, inte ett ord – det läses inte, det trycks på, och dess tryckyta följer 44 px-regeln som allt annat tryckbart. Allt som ser ut som ytterligare ett undantag är en mening som ska vara kortare, inte mindre.
 
-**Versala avdelningsrubriker är 14 px med spärrningen kvar.** Versaler och spärrning är idiomet som gör dem till rubriker. Storleken är inte en del av idiomet.
+**Versala avdelningsrubriker är 14 px med spärrningen kvar.** Versaler och spärrning är idiomet som gör dem till rubriker. Storleken är inte en del av idiomet. De låg på elva ställen som kopior av samma klassrad och bor sedan 2026-10-17 i `Avdelningsrubrik`; ett idiom upprepat elva gånger var skälet att tio av dem kunde ligga kvar på 12 px medan exportens höjdes.
+
+**Ett ställe är kvar under golvet, med flit: sidräknaren under en PDF-miniatyr, på 9 px.** Den sitter i en remsa med fast höjd på 15 px och `overflow-hidden`, så 14 px kan klippa glyferna – bredden räcker, höjden är frågan. Att höja remsan krymper miniatyren, och ingen av oss har kunnat se komponenten: det krävs en flersidig PDF, och ingen finns i testdatan.
+
+Här korsar två regler i den här filen varandra, och det är värt att se innan någon löser det snabbt. Stycket om `--text-dampad` räknar uttryckligen upp *"sidräknaren på en flersidig PDF"* som text ingen behöver läsa. Är det sant hör den inte under golvet alls; är det inte sant ska den vara 14 px och remsan växa. **Avgörs med en riktig PDF på en telefon, inte i en diskussion** – den dagen går det att se om siffran bär något eller bara upprepar vad bladdraren redan visar.
 
 ### Orange betyder handling, ingenting annat
 
@@ -243,10 +247,24 @@ Men det får inte radbrytas. Toppraden är en rad, alltid – namnet ska ligga p
 
 Designa mot 390px bredd. Allt annat är anpassning.
 
-- Tryckytor minst 44px
+- Tryckytor minst 44px – se regeln nedan om vad som räknas
 - En primär åtgärd per skärm
 - Primärknappar förankrade i nederkant på inmatningsskärmar, inom tummens räckvidd
 - Inmatning ska gå att slutföra med en hand
+
+### Vad 44 px-regeln gäller
+
+Regeln stod länge som tre ord och lämnade varje gränsfall öppet. En genomsökning 2026-10-17 hittade ett tjugotal tryckytor under 44 px, de flesta textknappar och textlänkar på 20–24 px höjd, och frågan blev vilka av dem som är fel. Det här är svaret.
+
+**Ordningen avgörs av vad det kostar att missa.** Trycker man fel på *Ändra* öppnas ett formulär med en avbrytknapp. Trycker man fel på krysset i hörnet av en bilaga försvinner bilagan, eller också öppnas den när man ville ta bort den. Samma mått, olika allvar, och det är allvaret som sätter turordningen.
+
+**En ikonkontroll – ett tecken utan ord – har alltid 44 × 44 px.** Den är liten, den är tolkad och inte läst, och den sitter nästan alltid intill något annat tryckbart. Inga undantag. Ytan läggs utanför det synliga tecknet, med negativ marginal, så att tecknet behåller sin storlek i layouten; tekniken finns i `kategori-info.tsx`.
+
+**En fristående textkontroll får 44 px höjd.** *Ändra*, *Visa alla*, *Lägg till rad*, en tillbakalänk, en kvittolänk i ett projektkort. Bredden ger texten redan; det är höjden som fattas, och 20 px är en halv fingertopp. Höjden läggs som padding med negativ marginal så att raden inte växer – **men bara där ytan inte börjar överlappa en annan kontroll.** Två staplade länkar som båda sträcks till 44 px tar varandras tryckningar, och det är värre än en liten yta. Går det inte utan överlapp är det radens avstånd som ska ändras, och det är en layoutfråga som tas för sig.
+
+**En länk mitt i en mening är undantagen.** *"…godkänner du integritetspolicyn"* kan inte bli 44 px hög utan att täcka raderna över och under. Meningen är målet, läsaren siktar efter att ha läst, och WCAG undantar uttryckligen länkar i löpande text. Regeln gäller fristående kontroller, inte ord i en mening.
+
+**En liten kontroll inuti en stor klickyta räknas som ytan.** Kryssrutan i genomgången är 16 × 16 px men ligger i en etikett på 356 × 79 px, och hela etiketten växlar den. Det är inte en liten tryckyta, det är en stor med en liten markör.
 
 Kamerainmatning använder `<input type="file" accept="image/*" capture="environment">`. Ingen egen kameravy.
 
@@ -353,6 +371,30 @@ Vad som eventuellt ska finnas i stället är obestämt och ligger i `vad-som-ate
 Raderna visar **anteckningen som huvudtext**, med leverantör och datum dämpat under – samma presentation som på startskärmen. Saknas anteckning används leverantören. Att samma data presenteras olika på två skärmar får listan att se ut som en annan sorts innehåll än den är.
 
 **Utkast går att ta bort direkt.** En soptunna längst till höger i listraden, med egen tryckyta på minst 44px och luft från radens klickyta så den inte träffas av misstag. Ingen bekräftelse – ett utkast har inget belopp och inget värde, och en dialog är bara i vägen. Bekräftelse gäller fortsatt för sparade kvitton.
+
+**Att ta bort en bilaga är två olika handlingar, och bara den ena ska bekräftas.** Skillnaden är om filen går att lägga tillbaka.
+
+En fil som just valts ligger kvar i telefonen. Trycker man bort den av misstag väljer man den igen, och en dialog i det läget är i vägen i precis det flöde som ska vara snabbast av alla – att fota ett kvitto medan det ligger på diskbänken. **Ingen bekräftelse.**
+
+En bilaga som redan sparats på utkastet eller kvittot raderas på servern i samma ögonblick, och det är kvittots exemplar. Pappret är ofta borta sedan länge; det är hela skälet att produkten finns. **Bekräftelse**, med en text som säger följden och inte bara ställer frågan:
+
+> "Ta bort bilagan? Den går inte att få tillbaka."
+
+Regeln är densamma som för utkastet, tillämpad åt andra hållet: **bekräftelsens tyngd följer vad som går förlorat.** Ett utkast har inget värde. En bilaga är beviset.
+
+**Och därför frågar soptunnan också, när utkastet har en bilaga.** Regeln ovanför sade att ett utkast får raderas direkt eftersom det inte har något belopp och inget värde. Det stämmer för det fall den skrevs för – ett tomt utkast som ligger och skräpar i listan. Men ett utkast med ett foto *är* fotot, och soptunnan raderar filerna i lagringen med det. Utan den här raden gjorde ett tryck på soptunnan, utan fråga, exakt det som krysset bredvid frågar om.
+
+Tomt utkast: ingen fråga, som förut. Utkast med bilaga:
+
+> "Ta bort utkastet? Bilagan försvinner med det och går inte att få tillbaka."
+
+I plural: *"Bilagorna försvinner med det och går inte att få tillbaka."*
+
+**Kvittots detaljvy frågar redan, men säger fel ord.** Lydelsen *"Bilden raderas och går inte att återskapa"* stämmer inte när bilagan är en PDF. Den delar nu inledning med de andra och behåller den enda upplysning som är sann just där – att kvittot självt blir kvar:
+
+> "Ta bort bilagan? Den går inte att få tillbaka. Kvittots uppgifter ligger kvar."
+
+De tre texterna ska inte vara identiska, men **den delen som är gemensam ska vara ordagrant densamma.** Skillnaden mellan dem är bara det som faktiskt skiljer lägena åt.
 
 Raderingen tar med bilagorna. Ett utkast utan sin bild är ingenting.
 

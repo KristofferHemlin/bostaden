@@ -92,6 +92,9 @@ export default async function Oversikt({
         betaldatum: true,
         dokumentdatum: true,
         skapad_at: true,
+        // Soptunnan pa ett utkast fragar nar det har bilagor
+        // (src/lib/bilageborttagning.ts).
+        _count: { select: { bilagor: true } },
       },
     }),
     prisma.kostnad.count({
@@ -287,7 +290,11 @@ export default async function Oversikt({
                     {...(domanKostnad && !utkast ? avgarForKvitto(domanKostnad) : {})}
                     slutknapp={
                       utkast ? (
-                        <UtkastRaderaKnapp kostnadId={k.id} lage="ikon" />
+                        <UtkastRaderaKnapp
+                          kostnadId={k.id}
+                          lage="ikon"
+                          antalBilagor={k._count.bilagor}
+                        />
                       ) : undefined
                     }
                   />
