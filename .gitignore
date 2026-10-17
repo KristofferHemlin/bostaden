@@ -13,5 +13,6 @@ next-env.d.ts
 # Säkerhetskopior (scripts/sakerhetskopiera.ts) – personuppgifter och fakturor.
 # Skriptet skriver utanför repot och vägrar skriva inuti det; det här är ett
 # andra lager om en kopia ändå flyttas hit.
-sakerhetskopior/
+/sakerhetskopior/
+/Säkerhetskopior/
 bostadsunderlag-*/
