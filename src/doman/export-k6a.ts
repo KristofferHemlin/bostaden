@@ -11,6 +11,7 @@
 // ganger for samma atgard).
 
 import {
+  arUtkast,
   avrunda,
   beloppForKostnad,
   bidragForKostnad,
@@ -79,16 +80,28 @@ export interface OklassificeradHog {
 /** Ett kvitto, eller en del av ett, som inte star pa nagon sida och inte
  *  ligger i en oklassificerad hog. "utan_hog": inlagt men inte (helt) kopplat
  *  till en hog – det okopplade beloppet aterstar. "utan_betaldatum": hor inte
- *  till nagot ar och kan darfor inte sta pa sidorna, hog eller inte. */
-export interface AterstaendeKvitto {
-  kostnad_id: string;
-  /** Betaldatumets ar; null for "utan_betaldatum". */
-  ar: number | null;
-  /** Oren, utan privat del och efter ROT/forsakring – samma matt som Totalt
-   *  inlagt (inlagtForKostnad). */
-  belopp_brutto: number;
-  orsak: "utan_hog" | "utan_betaldatum";
-}
+ *  till nagot ar och kan darfor inte sta pa sidorna, hog eller inte.
+ *  "utan_belopp": ett utkast med bilaga – nagon har fotat ett kvitto men inte
+ *  fyllt i det (docs/design.md, Skarmuppbyggnad: "Ett utkast med en bilaga ar
+ *  pengar i arkivet och ska synas i Återstår"). */
+export type AterstaendeKvitto =
+  | {
+      kostnad_id: string;
+      /** Betaldatumets ar; null for "utan_betaldatum". */
+      ar: number | null;
+      /** Oren, utan privat del och efter ROT/forsakring – samma matt som
+       *  Totalt inlagt (inlagtForKostnad). */
+      belopp_brutto: number;
+      orsak: "utan_hog" | "utan_betaldatum";
+    }
+  | {
+      kostnad_id: string;
+      ar: null;
+      /** Inget belopp finns. null och aldrig 0: en summa over listan ska
+       *  behova ta stallning till raden, inte rakna den som noll. */
+      belopp_brutto: null;
+      orsak: "utan_belopp";
+    };
 
 export interface K6aExport {
   /** Forsaljningsdatum ("YYYY-MM-DD"), eller null nar bostaden inte ar sald an. */
@@ -140,6 +153,10 @@ export interface K6aIndata {
   medlemskap: Medlemskap;
   projekt: Projekt[];
   kostnader: Kostnad[];
+  /** Id for kostnaderna som har minst en bekraftad bilaga. Avgor vilka utkast
+   *  som star i Återstår – ett utkast utan bilaga ar ingenting. Obligatoriskt,
+   *  sa att ingen anropare kan glomma det och tappa utkasten i tysthet. */
+  kostnader_med_bilaga: readonly string[];
   regelparametrar: Regelparameter[];
 }
 
@@ -447,9 +464,24 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
   // till nagon hog aterstar. Ett kvitto utan betaldatum aterstar helt: det hor
   // inte till nagot ar och har darfor ingen plats pa sidorna.
   const aterstaende: AterstaendeKvitto[] = [];
+  const medBilaga = new Set(indata.kostnader_med_bilaga);
   for (const kostnad of kostnader) {
+    // Ett utkast har inget belopp och faller darfor igenom filtret nedan. Med
+    // en bilaga ar det ett fotat kvitto och ska synas – utan tal, eftersom
+    // det inte finns nagot (docs/design.md, Skarmuppbyggnad).
+    if (arUtkast(kostnad)) {
+      if (!kostnad.arkiverad && medBilaga.has(kostnad.id)) {
+        aterstaende.push({
+          kostnad_id: kostnad.id,
+          ar: null,
+          belopp_brutto: null,
+          orsak: "utan_belopp",
+        });
+      }
+      continue;
+    }
     const inlagt = inlagtForKostnad(kostnad);
-    if (inlagt <= 0) continue; // utkast, arkiverat, helt privat
+    if (inlagt <= 0) continue; // arkiverat, helt privat
     const ar = kostnadensAr(kostnad);
     if (ar === null) {
       aterstaende.push({

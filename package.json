@@ -23,6 +23,7 @@
     "pdf-sidor:fyll-pa": "node --conditions=react-server --env-file-if-exists=.env --import tsx scripts/fyll-pa-pdf-sidantal.ts",
     "bilaga-matt:fyll-pa": "node --conditions=react-server --env-file-if-exists=.env --import tsx scripts/fyll-pa-bilaga-matt.ts",
     "sakerhetskopiera": "node --env-file-if-exists=.env --import tsx scripts/sakerhetskopiera.ts",
+    "sakerhetskopior:rensa": "node --env-file-if-exists=.env --import tsx scripts/rensa-sakerhetskopior.ts",
     "konto:radera": "node --conditions=react-server --env-file-if-exists=.env --import tsx scripts/radera-konto.ts"
   },
   "prisma": {

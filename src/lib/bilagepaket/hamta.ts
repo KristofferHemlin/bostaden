@@ -22,6 +22,7 @@ import {
 } from "@/doman/export-k6a";
 import { bostadHeader } from "@/lib/bostad-header";
 import {
+  hamtaKostnaderMedBilaga,
   tillDomanBostad,
   tillDomanKostnad,
   tillDomanProjekt,
@@ -99,7 +100,7 @@ export async function hamtaBilagepaketdata(
     return { ok: false, fel: "Bostaden är inte markerad som såld." };
   }
 
-  const [projektRader, kostnadRader, regelparameterRader] = await Promise.all([
+  const [projektRader, kostnadRader, regelparameterRader, kostnaderMedBilaga] = await Promise.all([
     prisma.projekt.findMany({
       where: { bostad_id: bostadId },
       orderBy: [{ ar: "desc" }, { skapad_at: "asc" }],
@@ -110,6 +111,7 @@ export async function hamtaBilagepaketdata(
       orderBy: { skapad_at: "asc" },
     }),
     prisma.regelparameter.findMany(),
+    hamtaKostnaderMedBilaga(bostadId),
   ]);
 
   const indata: K6aIndata = {
@@ -117,6 +119,7 @@ export async function hamtaBilagepaketdata(
     medlemskap: { agarandel },
     projekt: projektRader.map(tillDomanProjekt),
     kostnader: kostnadRader.map(tillDomanKostnad),
+    kostnader_med_bilaga: kostnaderMedBilaga,
     regelparametrar: regelparameterRader.map(tillDomanRegelparameter),
   };
 

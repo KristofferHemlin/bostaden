@@ -103,3 +103,72 @@ describe("byggArkivsokvagar", () => {
     expect(namndel.length).toBeLessThanOrEqual(200);
   });
 });
+
+// docs/design.md, Skarmuppbyggnad: "Filnamnen i zip-arkivet hittar inte pa det
+// som saknas." Ett utkast har inget belopp. Det fick heta "0 kr.jpg" – en
+// pahittad nolla i den fil anvandaren sparar sjalv och oppnar om tio ar.
+describe("ett utkast utan belopp", () => {
+  const utkast = (over: Partial<ArkivfilIndata> = {}) =>
+    fil({ betaldatum: null, leverantor: null, anteckning: null, belopp: null, ...over });
+
+  it("far aldrig ett belopp i filnamnet, och aldrig '0 kr'", () => {
+    const resultat = byggArkivsokvagar([
+      utkast({ bilagaId: "a" }),
+      utkast({ bilagaId: "b", leverantor: "BAUHAUS" }),
+      utkast({ bilagaId: "c", betaldatum: new Date("2026-04-14"), anteckning: "Altan" }),
+    ]);
+    for (const { sokvag } of resultat) {
+      expect(sokvag).not.toMatch(/\bkr\b/);
+      expect(sokvag).not.toMatch(/(^|[\s/])0(\s|$)/);
+    }
+    expect(resultat.map((r) => r.sokvag)).toEqual([
+      "utan-datum/Utkast.jpg",
+      "utan-datum/BAUHAUS.jpg",
+      "2026/2026-04-14 Altan.jpg",
+    ]);
+  });
+
+  it("det tommaste fallet far ett namn – aldrig en dold fil som '.jpg'", () => {
+    const [resultat] = byggArkivsokvagar([utkast()]);
+    expect(resultat.sokvag).toBe("utan-datum/Utkast.jpg");
+    expect(resultat.sokvag.split("/").pop()?.startsWith(".")).toBe(false);
+  });
+
+  it("flera namnlosa utkast utan datum kolliderar inte", () => {
+    const resultat = byggArkivsokvagar([
+      utkast({ bilagaId: "a" }),
+      utkast({ bilagaId: "b" }),
+      utkast({ bilagaId: "c" }),
+    ]);
+    expect(resultat.map((r) => r.sokvag)).toEqual([
+      "utan-datum/Utkast.jpg",
+      "utan-datum/Utkast-2.jpg",
+      "utan-datum/Utkast-3.jpg",
+    ]);
+  });
+});
+
+// Arkivet packas upp pa macOS och Windows, dar filsystemet inte skiljer pa
+// versaler och gemener. Med kortare grundnamn blir krockar latare att fa.
+describe("unika namn efter uppackning", () => {
+  it("tva namn som bara skiljer i versaler numreras", () => {
+    const resultat = byggArkivsokvagar([
+      fil({ bilagaId: "a", betaldatum: null, belopp: null, leverantor: "Bauhaus" }),
+      fil({ bilagaId: "b", betaldatum: null, belopp: null, leverantor: "BAUHAUS" }),
+    ]);
+    expect(resultat.map((r) => r.sokvag)).toEqual([
+      "utan-datum/Bauhaus.jpg",
+      "utan-datum/BAUHAUS-2.jpg",
+    ]);
+  });
+
+  it("ett numrerat namn krockar aldrig med ett namn som redan heter sa", () => {
+    const resultat = byggArkivsokvagar([
+      fil({ bilagaId: "a", betaldatum: null, belopp: null, leverantor: "Utkast-2" }),
+      fil({ bilagaId: "b", betaldatum: null, belopp: null, leverantor: null }),
+      fil({ bilagaId: "c", betaldatum: null, belopp: null, leverantor: null }),
+    ]);
+    const sokvagar = resultat.map((r) => r.sokvag.toLowerCase());
+    expect(new Set(sokvagar).size).toBe(sokvagar.length);
+  });
+});

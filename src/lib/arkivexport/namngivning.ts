@@ -7,9 +7,14 @@
 // - Filnamn: "AAAA-MM-DD Leverantor Belopp.ext". Saknas leverantor anvands
 //   anteckningen; saknas bada star bara datum och belopp.
 // - Belopp formateras med formateraKronor – jamna belopp far inga oren.
+//   Saknas beloppet (ett utkast) utelamnas delen, precis som datum och
+//   leverantor: filnamnet hittar inte pa det som saknas (docs/design.md,
+//   Skarmuppbyggnad). Ett namn utan nagon del alls blir "Utkast" – bara ett
+//   utkast kan sakna allt, och ett tomt namn vore en dold fil (".jpg").
 // - Tecken otillatna i Windows-filnamn ersatts med bindestreck.
 // - Kolliderande sokvagar numreras -2, -3, ... direkt efter beloppet, fore
-//   filandelsen. Detta ar samma mekanism som "flera bilagor pa samma kostnad"
+//   filandelsen. Kollisioner provas utan hansyn till versaler: arkivet packas
+//   upp pa macOS och Windows, dar "Bauhaus.jpg" och "BAUHAUS.jpg" ar samma fil. Detta ar samma mekanism som "flera bilagor pa samma kostnad"
 //   i produktspecen anvander: tva bilagor pa samma kostnad far identiskt
 //   grundnamn och kolliderar darfor automatiskt.
 
@@ -45,12 +50,12 @@ function grundnamn(params: {
   betaldatum: Date | null;
   leverantor: string | null;
   anteckning: string | null;
-  belopp: number;
+  belopp: number | null;
 }): string {
   const { betaldatum, leverantor, anteckning, belopp } = params;
 
   const datumDel = betaldatum ? isoDatum(betaldatum) : "";
-  const beloppDel = formateraKronor(belopp);
+  const beloppDel = belopp === null ? "" : formateraKronor(belopp);
   const vemRa = sanera(leverantor?.trim() || anteckning?.trim() || "");
 
   const fastaDelar = [datumDel, beloppDel].filter(Boolean);
@@ -63,22 +68,29 @@ function grundnamn(params: {
   );
   const vem = vemRa.slice(0, kvarForVem).replace(/[.\s]+$/, "");
 
-  return [datumDel, vem, beloppDel].filter(Boolean).join(" ");
+  return [datumDel, vem, beloppDel].filter(Boolean).join(" ") || TOMT_NAMN;
 }
+
+/** Namnet nar inget finns att namnge efter – bara ett utkast kan sakna allt. */
+const TOMT_NAMN = "Utkast";
 
 /**
  * Gor en onskad sokvag unik genom att numrera -2, -3, ... direkt fore
- * filandelsen nar sokvagen redan ar anvand. Muterar `anvanda`.
+ * filandelsen nar sokvagen redan ar anvand. Jamfor utan hansyn till versaler,
+ * och provar nasta nummer om ett numrerat namn redan ar taget (en leverantor
+ * kan heta "Utkast-2"). Muterar `anvanda`.
  */
-function unikSokvag(onskadSokvag: string, anvanda: Map<string, number>): string {
-  const antalTidigare = anvanda.get(onskadSokvag) ?? 0;
-  anvanda.set(onskadSokvag, antalTidigare + 1);
-  if (antalTidigare === 0) return onskadSokvag;
-
+function unikSokvag(onskadSokvag: string, anvanda: Set<string>): string {
   const punkt = onskadSokvag.lastIndexOf(".");
   const utanAndelse = punkt === -1 ? onskadSokvag : onskadSokvag.slice(0, punkt);
   const andelse = punkt === -1 ? "" : onskadSokvag.slice(punkt);
-  return `${utanAndelse}-${antalTidigare + 1}${andelse}`;
+
+  let kandidat = onskadSokvag;
+  for (let n = 2; anvanda.has(kandidat.toLowerCase()); n++) {
+    kandidat = `${utanAndelse}-${n}${andelse}`;
+  }
+  anvanda.add(kandidat.toLowerCase());
+  return kandidat;
 }
 
 export interface ArkivfilIndata {
@@ -87,8 +99,8 @@ export interface ArkivfilIndata {
   betaldatum: Date | null;
   leverantor: string | null;
   anteckning: string | null;
-  /** Kostnadens totalbelopp i oren. */
-  belopp: number;
+  /** Kostnadens totalbelopp i oren. null for ett utkast – utelamnas ur namnet. */
+  belopp: number | null;
   /** Filandelse utan punkt, gemener, t.ex. "jpg". */
   andelse: string;
 }
@@ -105,7 +117,7 @@ export interface Arkivfil {
  * ska numreras (kostnadens betaldatum, sedan bilagans uppladdningsordning).
  */
 export function byggArkivsokvagar(filer: ArkivfilIndata[]): Arkivfil[] {
-  const anvanda = new Map<string, number>();
+  const anvanda = new Set<string>();
   return filer.map((fil) => {
     const mapp = arkivmapp(fil.betaldatum);
     const namn = grundnamn(fil);

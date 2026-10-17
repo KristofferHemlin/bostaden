@@ -21,6 +21,7 @@ function bygg(over: Partial<K6aIndata>): K6aIndata {
     medlemskap: { agarandel: 100 },
     projekt: [],
     kostnader: [],
+    kostnader_med_bilaga: [],
     regelparametrar: REGELPARAMETRAR,
     ...over,
   };
@@ -32,7 +33,13 @@ function allaVisadeKronor(ex: K6aExport): number {
   const sida1 = ex.sida1.rader.reduce((s, r) => s + r.belopp_brutto, 0);
   const sida2 = ex.sida2.rader.reduce((s, r) => s + r.belopp_brutto, 0);
   const hogar = ex.oklassificerade_hogar.reduce((s, h) => s + h.belopp_brutto, 0);
-  const kvitton = ex.aterstaende_kvitton.reduce((s, k) => s + k.belopp_brutto, 0);
+  // Ett utkast med bilaga star i listan utan belopp (orsak "utan_belopp") –
+  // det finns inget tal att lagga till, och det hoppas over i stallet for att
+  // raknas som noll.
+  const kvitton = ex.aterstaende_kvitton.reduce(
+    (s, k) => (k.belopp_brutto === null ? s : s + k.belopp_brutto),
+    0,
+  );
   return sida1 + sida2 + hogar + kvitton;
 }
 

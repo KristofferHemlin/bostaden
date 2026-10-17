@@ -16,7 +16,9 @@
 //      SAKERHETSKOPIA_KATALOG. Varje fil jämförs mot den storlek Storage
 //      angav vid uppladdningen. Saknas en enda fil raderas ingenting – den
 //      som kör kommandot får veta vilka och kan skicka det som finns till
-//      användaren innan något försvinner.
+//      användaren innan något försvinner. Kopian rensas med veckokopiorna
+//      (RENSNINGSGRANS_DAGAR i src/lib/sakerhetskopior/rensning.ts) – skicka
+//      filerna till användaren innan dess.
 //   3. Du skriver adressen igen. Bara i en terminal; utan en avbryts det.
 //   4. raderaKonto (src/lib/konto/radera.ts) – samma logik som knappen
 //      hade: ensam medlem raderar bostaden med allt, fler medlemmar tar bara
@@ -33,11 +35,11 @@
 // Slutkoder: 0 klart (eller utskrift), 1 något gick fel, ingenting raderat
 // om inte annat sägs, 2 avbrutet av den som kör.
 
-import { homedir } from "node:os";
 import path from "node:path";
 import { createInterface } from "node:readline/promises";
 import { koraRaderingskommando } from "@/lib/konto/radera-kommando";
 import { prisma } from "@/lib/prisma";
+import { sakerhetskopiekatalog } from "@/lib/sakerhetskopior/katalog";
 
 const REPOTS_ROT = path.resolve(import.meta.dirname, "..");
 
@@ -46,12 +48,10 @@ function tidsstampel(d: Date): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
 }
 
+// Samma katalog som veckokopiorna, sa att rensningen hittar
+// den har kopian ocksa (src/lib/sakerhetskopior/rensning.ts).
 function kopiekatalog(anvandareId: string): string {
-  const vald = process.env.SAKERHETSKOPIA_KATALOG?.trim();
-  const rot = path.resolve(vald || path.join(homedir(), "Säkerhetskopior", "bostadsunderlag"));
-  if (rot === REPOTS_ROT || rot.startsWith(REPOTS_ROT + path.sep)) {
-    throw new Error(`Kopian får inte ligga i repot (${rot}). Den innehåller fakturor.`);
-  }
+  const rot = sakerhetskopiekatalog(REPOTS_ROT);
   return path.join(rot, `radering-${tidsstampel(new Date())}-${anvandareId.slice(0, 8)}`);
 }
 

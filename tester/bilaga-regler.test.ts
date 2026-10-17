@@ -34,7 +34,7 @@ describe("valideraBilaga", () => {
       storlek: 1024,
       filnamn: "bild.gif",
     });
-    expect(r).toEqual({ ok: false, fel: expect.stringContaining("stöds inte") });
+    expect(r).toEqual({ ok: false, fel: expect.stringContaining("går inte att läsa") });
   });
 
   it("avvisar en fil over 10 MB", () => {

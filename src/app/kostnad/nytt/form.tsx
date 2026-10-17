@@ -118,6 +118,7 @@ import {
 } from "@/lib/kvittodatum-notis";
 import { laddaUppKostnadsbilaga } from "@/lib/lagring/bilaga-klient";
 import { avvisningVidVal, kannIgenFormat } from "@/lib/lagring/bilaga-regler";
+import { AVLASNINGEN_KORDES_INTE } from "@/lib/avlasningsbesked";
 import type { Bilagevy } from "@/lib/lagring/bilagor";
 import { oppnaPdf } from "@/lib/pdfjs-klient";
 import {
@@ -1185,12 +1186,10 @@ export function NyKostnadForm({
       {/* Tredje laget: avlasningen kordes aldrig alls – nyckel saknas,
           natverksfel, timeout, slut kvot. ETT meddelande over hela
           faltgruppen i stallet for tre tomma falt utan forklaring
-          (produktspec, "Dokumentavlasning"). Aldrig ett tekniskt felmeddelande. */}
+          (produktspec, "Dokumentavlasning"). Aldrig ett tekniskt felmeddelande.
+          Bara bilagan ar sparad har – aldrig "kvittot" (src/lib/avlasningsbesked.ts). */}
       {avlasningKord === false && !avlasningPagar ? (
-        <Meddelanderuta>
-          Kvittot är sparat. Vi kunde inte läsa av det automatiskt – fyll i
-          uppgifterna nedan själv.
-        </Meddelanderuta>
+        <Meddelanderuta>{AVLASNINGEN_KORDES_INTE}</Meddelanderuta>
       ) : null}
 
       <h2 className="font-rubrik text-base text-text-primar">

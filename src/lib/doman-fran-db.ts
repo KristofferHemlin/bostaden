@@ -84,6 +84,21 @@ export function tillDomanRegelparameter(
   };
 }
 
+/**
+ * Id for bostadens kostnader som har minst en bekraftad bilaga – K6aIndata.
+ * kostnader_med_bilaga. Avgor vilka utkast som star i Återstår: ett utkast
+ * med bilaga ar ett fotat kvitto, ett utan ar ingenting. Bara bekraftade
+ * uppladdningar raknas, samma villkor som arkivexporten.
+ */
+export async function hamtaKostnaderMedBilaga(bostadId: string): Promise<string[]> {
+  const bilagor = await prisma.bilaga.findMany({
+    where: { uppladdning_bekraftad: true, kostnad: { bostad_id: bostadId } },
+    select: { kostnad_id: true },
+    distinct: ["kostnad_id"],
+  });
+  return bilagor.flatMap((b) => (b.kostnad_id ? [b.kostnad_id] : []));
+}
+
 /** Alla data oversikten och exportvyn behover for en bostad. */
 export async function hamtaBostadsdata(bostadId: string) {
   const [bostad, projektRader, kostnadRader, regelparameterRader] =

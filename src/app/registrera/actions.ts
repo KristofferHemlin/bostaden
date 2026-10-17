@@ -32,6 +32,7 @@
 
 import { redirect } from "next/navigation";
 import { isoDatum, oreFranKronor } from "@/lib/format";
+import { INGEN_KONTAKT_MED_INLOGGNINGEN } from "@/lib/inloggning";
 import { losenordsfel } from "@/lib/losenord";
 import { prisma } from "@/lib/prisma";
 import { hamtaAnvandare, sakerstallAnvandarrad } from "@/lib/session";
@@ -235,7 +236,8 @@ function oversattFel(meddelande: string): string {
     return "E-postadressen ser inte giltig ut.";
   }
   if (m.includes("supabase") || m.includes("fetch")) {
-    return "Ingen kontakt med inloggningstjänsten. Kontrollera att NEXT_PUBLIC_SUPABASE_* är ifyllda.";
+    console.error(`Inloggningstjänsten gick inte att nå: ${meddelande}`);
+    return INGEN_KONTAKT_MED_INLOGGNINGEN;
   }
   return meddelande;
 }

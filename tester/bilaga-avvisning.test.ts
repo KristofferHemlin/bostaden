@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_BILAGA_BYTES, avvisningVidVal } from "@/lib/lagring/bilaga-regler";
+import { MAX_BILAGA_BYTES, avvisningVidVal, valideraBilaga } from "@/lib/lagring/bilaga-regler";
 
 // docs/design.md, "Bilagor": avvisas filen tar felet formathjalpens plats och
 // sager ORSAKEN – med filens verkliga storlek och den faktiska gransen, eller
@@ -41,18 +41,32 @@ describe("avvisningVidVal", () => {
   it("sager vad som gar att valja nar formatet ar fel", () => {
     expect(
       avvisningVidVal({ mimetyp: "image/gif", storlek: 1024, filnamn: "b.gif" }),
-    ).toBe("Det formatet går inte att läsa – välj jpg, png eller pdf");
+    ).toBe("Det formatet går inte att läsa – välj JPG, PNG, HEIC eller PDF.");
   });
 
   it("fel format vager tyngre an storleken", () => {
     expect(
       avvisningVidVal({ mimetyp: "video/mp4", storlek: 40 * MB, filnamn: "v.mp4" }),
-    ).toBe("Det formatet går inte att läsa – välj jpg, png eller pdf");
+    ).toBe("Det formatet går inte att läsa – välj JPG, PNG, HEIC eller PDF.");
   });
 
   it("avvisar en tom fil", () => {
     expect(
       avvisningVidVal({ mimetyp: "image/jpeg", storlek: 0, filnamn: "t.jpg" }),
     ).toBe("Filen är tom.");
+  });
+});
+
+// Tva vagar till samma besked: avvisningVidVal nar filen valjs, valideraBilaga
+// fore uppladdningen. De ska saga samma sak – och HEIC ska alltid sta med, sa
+// att en iPhone-anvandare aldrig far intrycket att kamerans format inte duger.
+describe("formatfelet ar detsamma vid valet och vid uppladdningen", () => {
+  it("bada namner HEIC och slutar med punkt", () => {
+    const fil = { mimetyp: "image/gif", storlek: 1024, filnamn: "b.gif" };
+    const vidVal = avvisningVidVal(fil);
+    const vidUppladdning = valideraBilaga(fil);
+    expect(vidUppladdning).toEqual({ ok: false, fel: vidVal });
+    expect(vidVal).toContain("HEIC");
+    expect(vidVal?.endsWith(".")).toBe(true);
   });
 });

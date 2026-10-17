@@ -39,6 +39,7 @@ import {
 } from "@/components/skarm";
 import {
   byggK6aExport,
+  type AterstaendeKvitto,
   type K6aExport,
   VANTAR_PA_BOSTADSFRAGOR_TEXT,
   VantarPaBostadsfragor,
@@ -51,7 +52,7 @@ import { reparationsfonsterNamn } from "@/doman/regeltext";
 import { behoverSkickForsaljning } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { BILAGEPAKET_SYNLIGT } from "@/lib/bilagepaket/flagga";
-import { hamtaBostadsdata, tillDomanBostad } from "@/lib/doman-fran-db";
+import { hamtaBostadsdata, hamtaKostnaderMedBilaga, tillDomanBostad } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
 import { hamtaAndelar } from "@/lib/andelar";
 import {
@@ -66,8 +67,12 @@ export const dynamic = "force-dynamic";
 
 export default async function ExportSida() {
   const { bostadId, agarandel } = await kravBostad();
-  const [{ bostad, projekt, kostnader, kostnadRader, regelparametrar }, andelar] =
-    await Promise.all([hamtaBostadsdata(bostadId), hamtaAndelar(bostadId)]);
+  const [{ bostad, projekt, kostnader, kostnadRader, regelparametrar }, andelar, kostnaderMedBilaga] =
+    await Promise.all([
+      hamtaBostadsdata(bostadId),
+      hamtaAndelar(bostadId),
+      hamtaKostnaderMedBilaga(bostadId),
+    ]);
   const medlemmar = andelar.medlemmar.length;
   const delad = arDeladBostad(medlemmar);
   const andel = andelForUnderlag(agarandel, medlemmar);
@@ -108,6 +113,7 @@ export default async function ExportSida() {
       medlemskap: { agarandel: andel ?? 100 },
       projekt,
       kostnader,
+      kostnader_med_bilaga: kostnaderMedBilaga,
       regelparametrar,
     };
 
@@ -290,17 +296,15 @@ export default async function ExportSida() {
                   <AterstarRad
                     key={`kvitto-${k.kostnad_id}`}
                     namn={kvittoNamn.get(k.kostnad_id) ?? "Kvitto"}
-                    orsak={
-                      k.orsak === "utan_betaldatum"
-                        ? "Saknar betaldatum"
-                        : "Hör inte till något projekt än"
-                    }
+                    orsak={ATERSTAR_ORSAK[k.orsak]}
                     ar={k.ar}
                     belopp={k.belopp_brutto}
                     href={
                       k.orsak === "utan_betaldatum"
                         ? `/kostnad/${k.kostnad_id}`
-                        : undefined
+                        : k.orsak === "utan_belopp"
+                          ? `/kostnad/nytt?utkast=${k.kostnad_id}`
+                          : undefined
                     }
                   />
                 ))}
@@ -520,10 +524,18 @@ function RutaCallout({
   );
 }
 
+const ATERSTAR_ORSAK: Record<AterstaendeKvitto["orsak"], string> = {
+  utan_hog: "Hör inte till något projekt än",
+  utan_betaldatum: "Saknar betaldatum",
+  utan_belopp: "Saknar belopp",
+};
+
 /**
  * En rad i listan over det som aterstar: atgardsprick, namn och en dampad rad
  * med varfor det inte ar med, ar och belopp hogerstallt. Ett kvitto utan
- * betaldatum leder till kvittots skarm, dar datumet fylls i.
+ * betaldatum leder till kvittots skarm, dar datumet fylls i. Ett utkast med
+ * bilaga leder till kompletteringen och visar INGET belopp – det finns inget,
+ * och en nolla vore ett pahittat tal (docs/design.md, Skarmuppbyggnad).
  */
 function AterstarRad({
   namn,
@@ -535,7 +547,7 @@ function AterstarRad({
   namn: string;
   orsak: string;
   ar: number | null;
-  belopp: number;
+  belopp: number | null;
   href?: string;
 }) {
   return (
@@ -558,7 +570,9 @@ function AterstarRad({
       </span>
       <span className="flex shrink-0 items-baseline gap-3 tabular-nums">
         {ar !== null ? <span className="text-text-sekundar">{ar}</span> : null}
-        <span className="text-text-primar">{formateraKronor(belopp)}</span>
+        {belopp !== null ? (
+          <span className="text-text-primar">{formateraKronor(belopp)}</span>
+        ) : null}
       </span>
     </li>
   );

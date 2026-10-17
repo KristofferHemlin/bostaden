@@ -757,7 +757,9 @@ Texten ligger i `src/innehall/integritetspolicy.md` och visas på en egen sida, 
 
 **Registreringens steg 1 har en undertext** under knappen:
 
-> Genom att skapa ett konto godkänner du villkoren. Läs hur vi hanterar dina uppgifter i integritetspolicyn.
+> Läs hur vi hanterar dina uppgifter i integritetspolicyn.
+
+Meningen om villkor ströks 2026-10-17: det finns inga villkor i tjänsten, bara integritetspolicyn, och en text som hänvisar till ett dokument som inte existerar är ett löfte appen inte kan hålla.
 
 "Integritetspolicyn" är en länk som öppnar sidan i en ny flik, så att det påbörjade formuläret inte försvinner.
 

@@ -21,6 +21,7 @@ function bygg(over: Partial<K6aIndata>): K6aIndata {
     medlemskap: { agarandel: 100 },
     projekt: [],
     kostnader: [],
+    kostnader_med_bilaga: [],
     regelparametrar: REGELPARAMETRAR,
     ...over,
   };

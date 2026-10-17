@@ -1,6 +1,7 @@
 // Säkerhetskopia av produktionen: databasen och alla bilagor.
 //
-//   npm run sakerhetskopiera
+//   npm run sakerhetskopiera                    kopierar, listar vad som skulle rensas
+//   npm run sakerhetskopiera -- --radera-gamla  kopierar, rensar gamla kopior (se Rensning)
 //
 // Supabases gratisnivå har inga automatiska säkerhetskopior. Den 2026-09-29
 // tömdes databasen av misstag och ingenting gick att återställa. Det här
@@ -11,6 +12,8 @@
 // READ ONLY-transaktion, uppslagen mot databasen görs i en READ ONLY-
 // transaktion, och Storage anropas bara med download. Lägg aldrig till något
 // som skriver, ändrar eller skapar – varken i databasen eller i Storage.
+// Det enda skriptet raderar är gamla kopior på den här datorn (se Rensning
+// nedan) – aldrig något i produktionen.
 //
 // ─── Vad kopian innehåller ──────────────────────────────────────────────────
 //
@@ -40,66 +43,47 @@
 //   1  kopian misslyckades – något gick inte att läsa eller hämta
 //   2  kopian är tagen, men bilagor som databasen pekar på saknas i Storage.
 //      Kopian är så fullständig den kan bli; felet ligger i produktionen.
+//   3  kopian är tagen, men rensningen av gamla kopior misslyckades. De
+//      ligger kvar längre än integritetspolicyn lovar – läs felet ovanför.
 //
-// ─── Schemaläggning på Mac, varje vecka ────────────────────────────────────
+// ─── Körning: för hand, varje söndag ───────────────────────────────────────
 //
-// 1. Kör skriptet en gång för hand och kontrollera att det lyckas.
+// Kopieringen körs för hand varje söndag, av en människa som ser utfallet i
+// terminalen. Inget launchd-jobb eller annat schemalagt jobb finns, och inget
+// ska installeras – det gäller tills projektet flyttas till Supabase Pro, som
+// tar egna kopior. (En tidigare version av den här kommentaren beskrev ett
+// launchd-jobb som om det vore installerat. Det var det aldrig, och meningen
+// fick både en granskning och en arbetsbeskrivning att utgå från en körning
+// som inte fanns.)
 //
-// 2. Skapa ~/Library/LaunchAgents/se.bostadsunderlag.sakerhetskopia.plist.
-//    Byt sökvägarna mot dina egna (`which npm` ger rätt npm). Nedan: söndagar
-//    kl 03:00. En Mac som sover då kör jobbet när den vaknar.
+//   npm run sakerhetskopiera -- --radera-gamla
 //
-//    <?xml version="1.0" encoding="UTF-8"?>
-//    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-//    <plist version="1.0">
-//    <dict>
-//      <key>Label</key><string>se.bostadsunderlag.sakerhetskopia</string>
-//      <key>WorkingDirectory</key>
-//      <string>/Users/DITTNAMN/Desktop/projekt/Privata/bostaden</string>
-//      <key>ProgramArguments</key>
-//      <array>
-//        <string>/opt/homebrew/bin/npm</string>
-//        <string>run</string>
-//        <string>sakerhetskopiera</string>
-//      </array>
-//      <key>EnvironmentVariables</key>
-//      <dict>
-//        <key>PATH</key><string>/opt/homebrew/bin:/usr/bin:/bin</string>
-//      </dict>
-//      <key>StartCalendarInterval</key>
-//      <dict>
-//        <key>Weekday</key><integer>0</integer>
-//        <key>Hour</key><integer>3</integer>
-//        <key>Minute</key><integer>0</integer>
-//      </dict>
-//      <key>StandardOutPath</key>
-//      <string>/Users/DITTNAMN/Säkerhetskopior/bostadsunderlag/senaste.log</string>
-//      <key>StandardErrorPath</key>
-//      <string>/Users/DITTNAMN/Säkerhetskopior/bostadsunderlag/senaste.log</string>
-//    </dict>
-//    </plist>
+// Slutkoden står sist i utskriften: allt annat än 0 betyder att något ska
+// läsas. Söndagen hör ihop med rensningen: gränsen i
+// src/lib/sakerhetskopior/rensning.ts räknas fram ur löftet i
+// integritetspolicyn och KOPIERINGSINTERVALL_DAGAR. Körs kopieringen mer
+// sällan än så håller policyns löfte inte längre – ändra då intervallet där.
 //
-// 3. Ladda in och provkör direkt:
+// Första gången: kör utan --radera-gamla och läs listan över vad som skulle
+// tas bort innan något raderas.
 //
-//      launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/se.bostadsunderlag.sakerhetskopia.plist
-//      launchctl kickstart gui/$(id -u)/se.bostadsunderlag.sakerhetskopia
-//      launchctl print gui/$(id -u)/se.bostadsunderlag.sakerhetskopia | grep "last exit"
+// ─── Rensning ───────────────────────────────────────────────────────────────
 //
-//    "last exit code = 0" betyder lyckad kopia. Läs senaste.log vid annat.
+// Kopior äldre än RENSNINGSGRANS_DAGAR rensas efter varje lyckad kopia – både
+// de här veckokopiorna och raderingskommandots radering-<tid>-<id>/. Tidigare
+// rensades ingenting, med skälet att ett skript som raderar kopior kan radera
+// den enda som var hel. Det valet gäller inte längre: en obegränsad kopia kan
+// inte samexistera med ett löfte om radering, och integritetspolicyn lovar
+// att uppgifterna försvinner ur kopiorna inom LOFTE_DAGAR efter att ett konto
+// raderats. Risken att radera den enda hela kopian hanteras i stället så här:
 //
-// 4. Repot ligger under ~/Desktop, som macOS skyddar mot bakgrundsjobb. Får
-//    loggen "Operation not permitted" behöver node Full Disk Access:
-//    Systeminställningar → Integritet och säkerhet → Full diskåtkomst → lägg
-//    till /opt/homebrew/bin/node. Alternativet är att flytta repot ut ur
-//    ~/Desktop, ~/Documents och ~/Downloads.
+//   - Rensningen körs bara efter att en ny kopia blivit hel, så det finns
+//     alltid en färsk kopia när de gamla tas bort.
+//   - Den sista hela veckokopian raderas aldrig, inte heller av
+//     `npm run sakerhetskopior:rensa` (src/lib/sakerhetskopior/rensning.ts).
 //
-// 5. Titta i katalogen ibland. Ett schemalagt jobb som slutat fungera märks
-//    inte förrän kopian behövs.
-//
-// Stänga av: launchctl bootout gui/$(id -u)/se.bostadsunderlag.sakerhetskopia
-//
-// Gamla kopior rensas inte automatiskt. Det är ett medvetet val: ett skript
-// som raderar kopior kan radera den enda som var hel.
+// Utan --radera-gamla är rensningen en torrkörning: listan skrivs ut, med
+// antal och storlek, och ingenting raderas.
 //
 // ─── Förutsättningar ────────────────────────────────────────────────────────
 //
@@ -111,9 +95,10 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import { sakerhetskopiekatalog } from "@/lib/sakerhetskopior/katalog";
+import { rensaSakerhetskopior } from "@/lib/sakerhetskopior/rensning";
 
 const BUCKET = "bilagor";
 const SAMTIDIGA_NEDLADDNINGAR = 4;
@@ -330,19 +315,22 @@ function storlekText(bytes: number): string {
 }
 
 function valjRotkatalog(): string {
-  const vald = process.env.SAKERHETSKOPIA_KATALOG?.trim();
-  const rot = path.resolve(
-    vald || path.join(homedir(), "Säkerhetskopior", "bostadsunderlag"),
-  );
-  if (rot === REPOTS_ROT || rot.startsWith(REPOTS_ROT + path.sep)) {
-    throw new KopieringsFel(
-      `Kopian får inte ligga i repot (${rot}). Den innehåller personuppgifter och fakturor.`,
-    );
+  try {
+    return sakerhetskopiekatalog(REPOTS_ROT);
+  } catch (e) {
+    throw new KopieringsFel((e as Error).message);
   }
-  return rot;
 }
 
 async function main(): Promise<number> {
+  const argument = process.argv.slice(2);
+  const okanda = argument.filter((a) => a !== "--radera-gamla");
+  if (okanda.length > 0) {
+    throw new KopieringsFel(
+      `Okänt argument: ${okanda.join(" ")}. Använd --radera-gamla för att rensa, inget för att bara lista.`,
+    );
+  }
+  const raderaGamla = argument.includes("--radera-gamla");
   const start = Date.now();
   const db = anslutning();
   const pgDump = hittaPgDump();
@@ -471,6 +459,17 @@ async function main(): Promise<number> {
     await rename(pagaende, klar);
     skriv();
     skriv(`Sparad i ${klar}`);
+
+    // Rensningen kors forst nu, nar en ny hel kopia finns. Misslyckas den ar
+    // kopian anda tagen – men gamla kopior ligger kvar langre an policyn
+    // lovar, och det ska synas i slutkoden.
+    skriv();
+    try {
+      await rensaSakerhetskopior(rot, { radera: raderaGamla, skriv });
+    } catch (e) {
+      skriv(`RENSNINGEN MISSLYCKADES: ${(e as Error).message}`);
+      return 3;
+    }
 
     return saknade.length > 0 ? 2 : 0;
   } catch (e) {

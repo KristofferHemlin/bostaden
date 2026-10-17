@@ -305,8 +305,7 @@ export function RegistreraFlode({
             formularet inte forsvinner. */}
         {steg === 1 ? (
           <p className="text-center font-granssnitt text-sm text-text-sekundar">
-            Genom att skapa ett konto godkänner du villkoren. Läs hur vi
-            hanterar dina uppgifter i{" "}
+            Läs hur vi hanterar dina uppgifter i{" "}
             <Link
               href="/integritetspolicy"
               target="_blank"

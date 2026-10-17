@@ -59,9 +59,9 @@ export async function hamtaArkivlista(bostadId: string): Promise<Arkivlista> {
     betaldatum: b.kostnad?.betaldatum ?? null,
     leverantor: b.kostnad?.leverantor ?? null,
     anteckning: b.kostnad?.anteckning ?? null,
-    // Utkast utan totalbelopp forekommer i teorin (bilagan laddades upp innan
-    // beloppet fylldes i) – da star bara datum och namn i filnamnet.
-    belopp: b.kostnad?.totalbelopp ?? 0,
+    // Ett utkast har inget totalbelopp (bilagan laddades upp innan beloppet
+    // fylldes i). null, aldrig 0 – namngivningen utelamnar da beloppsdelen.
+    belopp: b.kostnad?.totalbelopp ?? null,
     andelse:
       kannIgenFormat(b.mimetyp, b.filnamn)?.andelse ||
       filandelse(b.filnamn) ||

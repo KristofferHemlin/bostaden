@@ -11,6 +11,7 @@
 // dar. Ska e-postlanken tillbaka finns den i git-historiken.
 
 import { redirect } from "next/navigation";
+import { INGEN_KONTAKT_MED_INLOGGNINGEN } from "@/lib/inloggning";
 import { skapaServerklient } from "@/lib/supabase/server";
 
 export interface AuthResultat {
@@ -56,7 +57,8 @@ function oversattFel(meddelande: string): string {
     return "E-postadressen är inte bekräftad än. Kolla mejlen.";
   }
   if (m.includes("supabase") || m.includes("fetch")) {
-    return "Ingen kontakt med inloggningstjänsten. Kontrollera att NEXT_PUBLIC_SUPABASE_* är ifyllda.";
+    console.error(`Inloggningstjänsten gick inte att nå: ${meddelande}`);
+    return INGEN_KONTAKT_MED_INLOGGNINGEN;
   }
   return meddelande;
 }

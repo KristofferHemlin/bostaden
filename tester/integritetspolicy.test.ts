@@ -34,3 +34,24 @@ describe("integritetspolicyn", () => {
     }
   });
 });
+
+describe("registreringens hanvisning", () => {
+  // Det finns inga villkor i appen, bara integritetspolicyn. En mening som
+  // hanvisar till ett dokument som inte finns far inte sta pa skarmen alla passerar.
+  it("hanvisar till integritetspolicyn och inte till villkor", async () => {
+    const flode = await readFile(path.join(__dirname, "../src/app/registrera/flode.tsx"), "utf8");
+    expect(flode).not.toMatch(/villkoren/);
+    expect(flode).toMatch(/href="\/integritetspolicy"/);
+  });
+});
+
+describe("sakerhetskopiorna", () => {
+  // Policyn binds till LOFTET, inte till genomforandet: rensningens grans ar
+  // kortare och raknas fram ur loftet (src/lib/sakerhetskopior/rensning.ts,
+  // sambandet provas i tester/sakerhetskopior-rensning.test.ts).
+  it("lovar det loftet rensningen ar byggd for att halla", async () => {
+    const { LOFTE_DAGAR } = await import("@/lib/sakerhetskopior/rensning");
+    const text = await lasPolicy();
+    expect(text).toContain(`senast ${LOFTE_DAGAR} dagar efter raderingen`);
+  });
+});

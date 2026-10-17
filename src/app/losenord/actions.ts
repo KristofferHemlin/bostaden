@@ -19,6 +19,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { rapporteraFel } from "@/lib/feltrapportering";
+import { INGEN_KONTAKT_MED_INLOGGNINGEN } from "@/lib/inloggning";
 import { LOSENORD_MINSTA_LANGD, losenordsfel } from "@/lib/losenord";
 import { skapaServerklient } from "@/lib/supabase/server";
 
@@ -41,7 +42,7 @@ interface AuthFel {
   message?: string;
 }
 
-const INGEN_KONTAKT = "Ingen kontakt med inloggningstjänsten. Försök igen om en stund.";
+const INGEN_KONTAKT = INGEN_KONTAKT_MED_INLOGGNINGEN;
 
 // AuthRetryableFetchError (status 0) ar natverksfel – begaran nadde aldrig fram.
 function arNatverksfel(fel: AuthFel): boolean {

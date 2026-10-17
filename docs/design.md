@@ -352,6 +352,18 @@ En bostad man ägt i tjugo år har med marginal lagt in mer än en miljon. Det �
 
 Etiketten *Totalt inlagt* är sann för alla tre fallen, vilket var skälet att årtalet ströks.
 
+**Ett utkast med en bilaga är pengar i arkivet och ska synas i *Återstår*.** Listan i deklarationsunderlaget finns för att varje krona som lagts in ska gå att se, också den som ännu inte räknas. Den hoppade över utkast, eftersom den filtrerar på belopp och ett utkast inte har något – så ett kvitto utan betaldatum syntes där, men ett kvitto utan belopp gjorde det inte.
+
+Felet är samma som exportvyn hade innan: **pengar som utelämnas i tysthet.** Den som fotat en faktura, fått avläsningen att falla och lagt undan telefonen ser utkastet i kvittolistan i några veckor och sedan aldrig mer – och på den skärm hon öppnar den dag hon säljer finns det inte alls.
+
+Raden visar beskrivningen, orsaken **"Saknar belopp"** och en väg till kompletteringen, på samma sätt som *"Saknar betaldatum"*. Den visar **inget tal**, eftersom det inte finns något. Ett utkast *utan* bilaga är ingenting och ska inte synas – skillnaden är att någon har fotat ett kvitto.
+
+**Filnamnen i zip-arkivet hittar inte på det som saknas.** Namngivningen hoppar redan över datum och leverantör när de inte finns, och beloppet ska följa samma mönster. Ett utkast utan belopp fick 2026-10-17 heta `0 kr.jpg`, eftersom namnet räknade ett saknat belopp som noll – samma påhittade nolla som regeln ovan förbjuder, i den fil användaren sparar själv och öppnar om tio år. Arkivet är den ärligaste delen av löftet; ett filnamn som påstår att kvittot var värt noll är sämre än ett filnamn utan belopp.
+
+**Ett namn som blir tomt får ett ord, inte ingenting.** Ett utkast utan anteckning, leverantör, datum och belopp skulle med ren utelämning heta `.jpg` – en dold fil på macOS och Linux. Kvittot hade funnits i arkivet utan att synas, vilket är värre än ett trubbigt namn. Det heter därför `Utkast.jpg`. Ordet är sant, eftersom bara ett utkast kan sakna allt, och det är samma ord kvittolistan använder. Att samma rad heter *Kvitto* på skärmen och *Utkast* i arkivet är avsiktligt: på skärmen står statusen bredvid, i ett filnamn måste ordet bära hela beskedet.
+
+**Filnamn jämförs utan hänsyn till versaler.** `Bauhaus.jpg` och `BAUHAUS.jpg` är olika namn i arkivet men samma fil när det packas upp på macOS eller Windows, och den ena skrev över den andra. Hittat 2026-10-17 vid en kontroll av att kortare namn inte krockar; felet fanns långt tidigare och gällde ett kvitto som försvann ur användarens egen kopia. Numreringen prövar dessutom nästa lediga nummer, eftersom en leverantör kan heta något som krockar med ett numrerat namn.
+
 **Ingen summa för det avdragsgilla.** Den går inte att veta före försäljningen – femårsfönstret, skicket och tröskeln hänger alla på försäljningsdatumet. Och ett tal för hur mycket som är beskrivet är samma påminnelse som regeln under *Kvittolistan* förbjuder på startskärmen: den som gör arkivet till en skuld man ådrar sig varje gång man sparar ett kvitto.
 
 **Tröskelrutan är borttagen från startskärmen, och tröskeln räknas som förut.**
@@ -707,7 +719,9 @@ I stället är sista rutan i miniatyrraden en streckad ruta i samma storlek som 
 
 **Formathjälpen hör till uppladdningen, inte till visningen** – och bara till det ögonblick då valet görs. Raden med tillåtna format och storleksgräns står under den tomma rutan, i inmatningen och i kvittots ändringsläge. Så snart en bilaga finns försvinner den: valet är gjort och syns på skärmen, och en regel för vad som hade gått att välja är då samma brus som "Kvitto eller faktura" över en ifylld rad. I läsläget, dit man går för att titta, finns den aldrig.
 
-**Avvisas filen tar felet radens plats, och säger orsaken i stället för listan.** "Bilden är 14 MB, gränsen går vid 10" och "Det formatet går inte att läsa – välj jpg, png eller pdf" är två olika problem med två olika åtgärder. En upprepad uppräkning av tillåtna format lämnar användaren att själv lista ut vilken av reglerna som brast.
+**Samma formattext på båda ställena, och HEIC står med.** De två vägarna – formuläret för nytt kvitto och bilagevyn – hade olika lydelser, och den ena räknade inte upp HEIC. En iPhone-användares foton är HEIC, och en text som utelämnar formatet får henne att tro att kameran inte duger. Formatnamnen skrivs med versaler, som i hjälpraden under fältet.
+
+**Avvisas filen tar felet radens plats, och säger orsaken i stället för listan.** "Bilden är 14 MB, gränsen går vid 10" och "Det formatet går inte att läsa – välj JPG, PNG, HEIC eller PDF." är två olika problem med två olika åtgärder. En upprepad uppräkning av tillåtna format lämnar användaren att själv lista ut vilken av reglerna som brast.
 
 **Men när ingen bilaga valts än ser rutan inte ut som en knapp.** En tom streckad kvadrat bland formulärets fält lästes inte som appens viktigaste handling när någon annan än den som byggt appen provade – hen letade i flera sekunder efter var man lägger till bilden.
 

@@ -104,6 +104,9 @@ export function kannIgenFormat(
   return null;
 }
 
+/** Samma besked vid valet och vid uppladdningen – HEIC star alltid med. */
+const FORMATFEL = "Det formatet går inte att läsa – välj JPG, PNG, HEIC eller PDF.";
+
 export type Bilagevalidering =
   | { ok: true; format: Bilageformat }
   | { ok: false; fel: string };
@@ -127,7 +130,7 @@ export function valideraBilaga(fil: {
   if (!format) {
     return {
       ok: false,
-      fel: "Formatet stöds inte. Tillåtna format: JPG, PNG, HEIC och PDF.",
+      fel: FORMATFEL,
     };
   }
   return { ok: true, format };
@@ -148,7 +151,7 @@ export function avvisningVidVal(fil: {
   filnamn: string;
 }): string | null {
   const format = kannIgenFormat(fil.mimetyp, fil.filnamn);
-  if (!format) return "Det formatet går inte att läsa – välj jpg, png eller pdf";
+  if (!format) return FORMATFEL;
   if (!Number.isFinite(fil.storlek) || fil.storlek <= 0) return "Filen är tom.";
   if (fil.storlek > MAX_BILAGA_BYTES) {
     const grans = MAX_BILAGA_BYTES / MEGABYTE;

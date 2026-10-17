@@ -20,6 +20,7 @@ vi.mock("@/lib/prisma", () => ({
     projekt: { findMany: h.projektFindMany },
     kostnad: { findMany: h.kostnadFindMany },
     regelparameter: { findMany: h.regelparameterFindMany },
+    bilaga: { findMany: async () => [] },
   },
 }));
 
