@@ -1,4 +1,4 @@
-# Bostadsunderlag
+# Kvittobo
 
 App som samlar och klassificerar kostnader nedlagda på den egna bostaden, så att avdragsgilla förbättringsutgifter finns dokumenterade när bostaden säljs.
 
