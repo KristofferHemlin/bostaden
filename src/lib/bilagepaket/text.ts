@@ -85,13 +85,14 @@ export function bilagepaketAvdragsforklaring(params: {
 }
 
 /**
- * Paketets filnamn: "Bostadsunderlag <adress> <forsaljningsar>.pdf" – sokbart
- * i en nedladdningsmapp aven ar senare (produktspec 8).
+ * Paketets filnamn: "Deklarationsunderlag <adress> <forsaljningsar>.pdf" –
+ * sokbart i en nedladdningsmapp aven ar senare. Filen heter vad den ar, inte
+ * var den kom ifran (produktspec 8).
  */
 export function bilagepaketFilnamn(
   bostadsnamn: string,
   forsaljningsAr: number,
 ): string {
   const sanerad = bostadsnamn.replace(OTILLATNA_TECKEN, "-").trim();
-  return `Bostadsunderlag ${sanerad} ${forsaljningsAr}.pdf`;
+  return `Deklarationsunderlag ${sanerad} ${forsaljningsAr}.pdf`;
 }

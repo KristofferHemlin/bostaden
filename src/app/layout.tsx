@@ -3,9 +3,10 @@ import "./globals.css";
 import { SentryAnvandare } from "@/components/sentry-anvandare";
 import { BostadsvalProvider, type Bostadslista } from "@/components/bostadsvaxlare";
 import { hamtaAktivBostad, hamtaAnvandare } from "@/lib/session";
+import { TJANSTENS_NAMN } from "@/lib/kontakt";
 
 export const metadata: Metadata = {
-  title: "Bostadsunderlag",
+  title: TJANSTENS_NAMN,
   description:
     "Samlar kvittona för det du lagt på bostaden, så att underlaget finns när du säljer.",
 };

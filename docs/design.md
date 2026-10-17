@@ -1039,7 +1039,7 @@ Upplåtelseform väljs med klickbara kort i rad, inte radioknappar. Korten är l
 
 Kortet ligger vertikalt centrerat i sidan. Klistrat mot överkanten med en halv skärm tomhet under ser sidan ut som en tom vy som inte hunnit ladda klart.
 
-**Raden under logotypen säger vad appen är**, inte "Logga in för att fortsätta". Den som landar här utan konto ska förstå vad Bostadsunderlag gör innan hen bestämmer sig – en mening räcker: spara kvittona på det du gör med bostaden, dra av dem den dag du säljer.
+**Raden under logotypen säger vad appen är**, inte "Logga in för att fortsätta". Den som landar här utan konto ska förstå vad Kvittobo gör innan hen bestämmer sig – en mening räcker: spara kvittona på det du gör med bostaden, dra av dem den dag du säljer.
 
 **De två vägarna in har olika tyngd, och hjälplänken en tredje.** Att ge dem samma utseende gör att den som ska skapa konto inte hittar dit.
 

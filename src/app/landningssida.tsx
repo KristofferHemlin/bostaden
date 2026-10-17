@@ -25,13 +25,14 @@ import {
   PRIMARKNAPP_KLASS,
   SANDKNAPP_KLASS,
 } from "@/components/skarm";
+import { TJANSTENS_NAMN } from "@/lib/kontakt";
 
 export function Landningssida() {
   return (
     <div className="min-h-screen w-full bg-yta-bas">
       <main className={`${KOLUMN_KLASS} px-4 pb-12 pt-2 sm:py-12`}>
         <p className="px-1 font-rubrik text-base text-text-sekundar">
-          Bostadsunderlag
+          {TJANSTENS_NAMN}
         </p>
 
         <h1 className="mt-1 px-1 sm:mt-2 font-rubrik text-2xl text-text-primar">

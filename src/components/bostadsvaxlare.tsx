@@ -34,6 +34,7 @@ import {
 } from "react";
 import { bytBostad, hamtaBostadsval, type BytBostadResultat } from "@/app/bostadsval/actions";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
+import { LOGOTYP_SOKVAG } from "@/lib/kontakt";
 import type { Bostadsval } from "@/lib/session";
 
 export interface Bostadslista {
@@ -59,10 +60,8 @@ const UPPLATELSEFORM: Record<Bostadsval["upplatelseform"], string> = {
   fastighet: "Villa eller radhus",
 };
 
-const LOGO_SRC = "/kajin-hem-logo.png";
-
 function Logotyp() {
-  return <img src={LOGO_SRC} alt="" aria-hidden className="h-6 w-auto shrink-0 sm:h-7" />;
+  return <img src={LOGOTYP_SOKVAG} alt="" aria-hidden className="h-6 w-auto shrink-0 sm:h-7" />;
 }
 
 function Adresstext({ children }: { children: ReactNode }) {

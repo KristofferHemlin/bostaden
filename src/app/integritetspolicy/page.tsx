@@ -14,9 +14,10 @@ import path from "node:path";
 import Link from "next/link";
 import { EnkelMarkdown } from "@/lib/enkel-markdown";
 import { KOLUMN_KLASS } from "@/components/skarm";
+import { LOGOTYP_SOKVAG, TJANSTENS_NAMN } from "@/lib/kontakt";
 
 export const metadata = {
-  title: "Integritetspolicy – Bostadsunderlag",
+  title: `Integritetspolicy – ${TJANSTENS_NAMN}`,
 };
 
 export default async function IntegritetspolicySida() {
@@ -32,13 +33,13 @@ export default async function IntegritetspolicySida() {
         <div className={`${KOLUMN_KLASS} flex items-center gap-2.5 px-4 py-3`}>
           <Link href="/" className="flex items-center gap-2.5">
             <img
-              src="/kajin-hem-logo.png"
+              src={LOGOTYP_SOKVAG}
               alt=""
               aria-hidden
               className="h-6 w-auto shrink-0 sm:h-7"
             />
             <span className="font-rubrik text-base text-text-primar sm:text-lg">
-              Bostadsunderlag
+              {TJANSTENS_NAMN}
             </span>
           </Link>
         </div>

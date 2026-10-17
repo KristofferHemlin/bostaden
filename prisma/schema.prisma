@@ -1,4 +1,4 @@
-// Datamodell for Bostadsunderlag. Foljer av docs/k6a-faltlista.md.
+// Datamodell for Kvittobo. Foljer av docs/k6a-faltlista.md.
 // Svenska genomgaende, ASCII-translittererat i identifierare. Belopp lagras som
 // heltal i oren. Datum lagras som date, aldrig timestamp.
 

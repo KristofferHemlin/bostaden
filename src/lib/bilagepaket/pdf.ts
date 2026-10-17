@@ -28,6 +28,7 @@ import { PageSizes, PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage 
 import { blankettTexter } from "@/doman/blankett";
 import type { K6aExportrad } from "@/doman/export-k6a";
 import { formateraKronor } from "@/lib/format";
+import { TJANSTENS_NAMN } from "@/lib/kontakt";
 import type { BilagepaketBilagesida, BilagepaketData, BilagepaketRadavdrag } from "./hamta";
 import { radnyckel } from "./radnyckel";
 import { bilagepaketAvdragsforklaring } from "./text";
@@ -128,7 +129,7 @@ function ritaForsattssida(
   const sida = doc.addPage([A4_BREDD, A4_HOJD]);
   let y = A4_HOJD - MARGIN;
 
-  y = rita(sida, fontFet, "Bostadsunderlag", { x: MARGIN, y, storlek: 24, farg: TEXT });
+  y = rita(sida, fontFet, "Deklarationsunderlag", { x: MARGIN, y, storlek: 24, farg: TEXT });
   y -= 6;
   y = rita(sida, font, data.forsattsdata.bostadsnamn, {
     x: MARGIN,
@@ -152,7 +153,8 @@ function ritaForsattssida(
   rader.push(["Försäljningsdatum", f.forsaljningsdatum]);
   rader.push(["Ägarandel", `${f.agarandelProcent} %`]);
   rader.push(["Beloppen förs till", `Hjälpblankett SKV 2197 (${blankett})`]);
-  rader.push(["Paketet skapat", f.skapadDatum]);
+  // Tjanstens namn star har och inte i rubriken – dokumentet heter vad det ar.
+  rader.push([`Skapat i ${TJANSTENS_NAMN}`, f.skapadDatum]);
 
   for (const [etikett, varde] of rader) {
     rita(sida, font, etikett, { x: MARGIN, y, storlek: 11, farg: DAMPAD });

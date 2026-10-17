@@ -15,9 +15,9 @@ import {
 import { formateraKronor } from "@/lib/format";
 
 describe("bilagepaketFilnamn", () => {
-  it("bygger 'Bostadsunderlag <adress> <forsaljningsar>.pdf'", () => {
+  it("bygger 'Deklarationsunderlag <adress> <forsaljningsar>.pdf'", () => {
     expect(bilagepaketFilnamn("Ulriksborgsgatan 7", 2026)).toBe(
-      "Bostadsunderlag Ulriksborgsgatan 7 2026.pdf",
+      "Deklarationsunderlag Ulriksborgsgatan 7 2026.pdf",
     );
   });
 

@@ -10,6 +10,7 @@
 // en vy som inte hunnit ladda klart.
 
 import Link from "next/link";
+import { TJANSTENS_NAMN } from "@/lib/kontakt";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useActionState } from "react";
 import { hanteraAuth, type AuthResultat } from "./actions";
@@ -54,7 +55,7 @@ function LoginInnehall() {
               className="inline-block h-3.5 w-3.5 rounded-[4px] bg-accent-ljus"
             />
             <h1 className="font-rubrik text-2xl text-text-primar">
-              Bostadsunderlag
+              {TJANSTENS_NAMN}
             </h1>
           </div>
           <p className="mt-1 pl-6 font-granssnitt text-sm text-text-sekundar">

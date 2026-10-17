@@ -1,4 +1,4 @@
-# Bostadsunderlag – produktspecifikation
+# Kvittobo – produktspecifikation
 
 En app som samlar och klassificerar kostnader nedlagda på den egna bostaden, så att avdragsgilla förbättringsutgifter finns dokumenterade och sammanställda den dag bostaden säljs.
 
@@ -506,7 +506,7 @@ Det är den enda punkten i appen där det är rätt att kräva något. Regeln om
 
 **Öppet: upplösningen på HEIC-bilagor.** Se avsnittet Visningsversion nedan – frågan är löst, men versionen måste finnas innan paketet kan byggas.
 
-**Filnamn:** `Bostadsunderlag Ulriksborgsgatan 7 2026.pdf` – adress och försäljningsår, så att dokumentet går att hitta i en nedladdningsmapp åtta år senare.
+**Filnamn:** `Deklarationsunderlag Ulriksborgsgatan 7 2026.pdf` – adress och försäljningsår, så att dokumentet går att hitta i en nedladdningsmapp åtta år senare. **Filen heter vad den är, inte var den kom ifrån.** Den som öppnar den 2034 letar efter sitt deklarationsunderlag och minns kanske inte vilken app som gjorde det; tjänstens namn hör hemma på försättssidan, där det går att läsa i sitt sammanhang.
 
 Levereras som nedladdning. Ingen integration behövs.
 

@@ -3,6 +3,7 @@
 // kort, logomarket och namnet ovanfor.
 
 import type { ReactNode } from "react";
+import { TJANSTENS_NAMN } from "@/lib/kontakt";
 
 export function AterstallningsRam({
   rubrik,
@@ -21,7 +22,7 @@ export function AterstallningsRam({
               className="inline-block h-3.5 w-3.5 rounded-[4px] bg-accent-ljus"
             />
             <p className="font-rubrik text-2xl text-text-primar">
-              Bostadsunderlag
+              {TJANSTENS_NAMN}
             </p>
           </div>
         </header>
