@@ -40,18 +40,34 @@ export function talSomOrd(n: number): string {
     : String(n);
 }
 
-/** Belopp i oren som "5 000 kronor" – Skatteverkets ordalydelse, inte "kr". */
-function kronorIText(oren: number): string {
+/** Belopp i oren som "5 000 kr", med hart mellanslag – appens egen form. */
+function kronorKort(oren: number): string {
   const format = oren % 100 === 0 ? heltal : medOren;
-  return `${format.format(oren / 100)}${HART_MELLANSLAG}kronor`;
+  return `${format.format(oren / 100)}${HART_MELLANSLAG}kr`;
 }
 
 /**
- * Forklaringen till en rad som foll pa troskeln. Skatteverkets egen
- * formulering, med beloppet ur regelparametern for radens ar.
+ * Forklaringen till en rad som foll pa troskeln, med beloppet ur
+ * regelparametern for radens ar. Subjektet ar aret, inte atgarden: troskeln
+ * provas pa arets summa for hela bostaden, och den som tittar pa ett kvitto
+ * pa 3 200 kr ska inte tro att det ar den summan som provats.
  */
 export function troskelForklaring(troskelbeloppOren: number): string {
-  return `Kostnaden för det året som åtgärden utfördes behöver sammanlagt uppgå till minst ${kronorIText(troskelbeloppOren)}.`;
+  return `Årets kostnader blev sammanlagt mindre än ${kronorKort(troskelbeloppOren)}.`;
+}
+
+/**
+ * Forklaringen till en grundforbattring som foll pa den bakre tidsgransen.
+ * Arstalet ur regelparametern for upplatelseformen – det ar det enda som gor
+ * nollan begriplig – och formen med gransnittets egna ord.
+ */
+export function bakreGransForklaring(
+  gransAr: number,
+  upplatelseform: "bostadsratt" | "fastighet",
+): string {
+  const vilka =
+    upplatelseform === "fastighet" ? "villor och radhus" : "bostadsrätter";
+  return `Åtgärden utfördes före ${gransAr} – för ${vilka} räknas inget tidigare.`;
 }
 
 /** Forklaringen till en reparation som foll ur tidsfonstret fore forsaljningen. */

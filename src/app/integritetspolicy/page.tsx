@@ -17,7 +17,7 @@ import { KOLUMN_KLASS } from "@/components/skarm";
 import { LOGOTYP_SOKVAG, TJANSTENS_NAMN } from "@/lib/kontakt";
 
 export const metadata = {
-  title: `Integritetspolicy – ${TJANSTENS_NAMN}`,
+  title: "Integritetspolicy",
 };
 
 export default async function IntegritetspolicySida() {

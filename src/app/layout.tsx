@@ -5,8 +5,12 @@ import { BostadsvalProvider, type Bostadslista } from "@/components/bostadsvaxla
 import { hamtaAktivBostad, hamtaAnvandare } from "@/lib/session";
 import { TJANSTENS_NAMN } from "@/lib/kontakt";
 
+// Varje sida har sin egen titel, "<Sidans namn> – Kvittobo": utan den gar
+// flikar inte att skilja at, och en skarmlasare meddelar samma titel vid
+// varje sidbyte. Sidan anger bara sitt namn; mallen lagger till resten.
+// Landningssidan behaller standardtiteln.
 export const metadata: Metadata = {
-  title: TJANSTENS_NAMN,
+  title: { default: TJANSTENS_NAMN, template: `%s – ${TJANSTENS_NAMN}` },
   description:
     "Samlar kvittona för det du lagt på bostaden, så att underlaget finns när du säljer.",
 };

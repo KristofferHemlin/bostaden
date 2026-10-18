@@ -37,12 +37,31 @@ import {
   rotRadILaslage,
 } from "@/lib/format";
 import { kvittodatumNotis } from "@/lib/kvittodatum-notis";
+import type { Metadata } from "next";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
 import { upphovsrad } from "@/lib/samagande";
 import { antalMedlemmar, kravBostad } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
+
+// Sidans titel ar kvittots namn – samma som rubriken i lasläget
+// (anteckningen, annars leverantoren), sa att tva oppna kvitton gar att skilja
+// at. Samma uppslag som sidan: bara i den aktiva bostaden.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  if (!arGiltigtId(id)) return { title: "Kvitto" };
+  const { bostadId } = await kravBostad();
+  const k = await prisma.kostnad.findFirst({
+    where: { id, bostad_id: bostadId },
+    select: { anteckning: true, leverantor: true },
+  });
+  return { title: k?.anteckning?.trim() || k?.leverantor?.trim() || "Kvitto" };
+}
 
 export default async function KostnadSida({
   params,

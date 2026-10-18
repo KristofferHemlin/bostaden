@@ -22,12 +22,30 @@ import type { Atgardstyp } from "@/doman/typer";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { formateraKronor } from "@/lib/format";
+import type { Metadata } from "next";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
 import { upphovsrad } from "@/lib/samagande";
 import { antalMedlemmar, kravBostad } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
+
+// Sidans titel ar projektets namn – samma som rubriken. Samma uppslag som
+// sidan: bara i den aktiva bostaden.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  if (!arGiltigtId(id)) return { title: "Projekt" };
+  const { bostadId } = await kravBostad();
+  const p = await prisma.projekt.findFirst({
+    where: { id, bostad_id: bostadId },
+    select: { namn: true },
+  });
+  return { title: p?.namn?.trim() || "Projekt" };
+}
 
 // Fraga 2-4:s svar, sammanfattat till en rad (produktspec 4.1).
 const ATGARDSTYP_TEXT: Record<Atgardstyp, string> = {

@@ -18,6 +18,7 @@
 // Utan session visas i stallet landningssidan (docs/design.md, Landningssidan).
 // Ingen inloggad ser den nagonsin; ingen utloggad nar startskarmen.
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Bekraftelseruta,
@@ -50,6 +51,12 @@ import { AnslutKnapp } from "@/app/inbjudan/anslut-knapp";
 import { Inbjudningskort } from "@/app/inbjudan/inbjudningskort";
 
 export const dynamic = "force-dynamic";
+
+// Inloggad heter sidan "Översikt", som fliken. Landningssidan behaller
+// standardtiteln (src/app/layout.tsx). hamtaAnvandare ar cachad per begaran.
+export async function generateMetadata(): Promise<Metadata> {
+  return (await hamtaAnvandare()) ? { title: "Översikt" } : {};
+}
 
 export default async function Oversikt({
   searchParams,
@@ -141,6 +148,10 @@ export default async function Oversikt({
     // Ingen sidrubrik: den aktiva fliken heter redan "Oversikt". Innehallet
     // borjar direkt under toppraden, dar adressen star som pa alla andra sidor.
     <Skarm bostadsnamn={bostadsnamn} egnaKort>
+      {/* Ingen synlig sidrubrik (se ovan), men sidan har en: utan den har en
+          skarmlasare ingen titel att meddela nar sidan oppnas. Forstaskarmen
+          har en synlig rubrik i stallet. */}
+      {!tomt ? <h1 className="sr-only">Översikt</h1> : null}
       {nyssAnsluten ? (
         <Bekraftelseruta>
           Du tittar nu på {bostadsnamn}.
@@ -163,9 +174,11 @@ export default async function Oversikt({
         // Forstaskarmen: den som just skapat kontot vet inte varfor kvitton ska
         // sparas. Skarmen ska saga det, inte forutsatta det.
         <Kort className="p-5">
-          <p className="font-rubrik text-lg text-text-primar">
+          {/* Sidans rubrik for en ny anvandare – det en skarmlasare meddelar
+              nar sidan oppnas. Samma utseende som forut. */}
+          <h1 className="font-rubrik text-lg text-text-primar">
             Spara kvittona nu, dra av dem när du säljer
-          </p>
+          </h1>
           <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
             Renoveringar och förbättringar sänker vinstskatten den dag bostaden
             säljs, och ett kvitto är det enklaste beviset som finns. Kvitton
@@ -186,9 +199,9 @@ export default async function Oversikt({
               underrubrik, tatt mellan de tre raderna sa de lases som steg i en
               ordning i stallet for fristaende paastaenden. */}
           <div className="mt-8">
-            <p className="font-granssnitt text-sm font-medium text-text-sekundar">
+            <h2 className="font-granssnitt text-sm font-medium text-text-sekundar">
               Så fungerar det
-            </p>
+            </h2>
             <div className="mt-2 space-y-1.5">
               <p className="font-granssnitt text-sm text-text-sekundar">
                 Fota kvittot eller ladda upp fakturan. Appen läser av belopp,

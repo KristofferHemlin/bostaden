@@ -22,6 +22,7 @@ import {
 } from "./berakningar";
 import {
   avrundaReparationUppat,
+  bakreGransAr,
   dateratForeTilltradet,
   delaIKategorier,
   innanforBakreGrans,
@@ -33,7 +34,11 @@ import {
   type NollOrsak,
 } from "./atgardsberakning";
 import { slaUppRegelparameter } from "./regelparameter";
-import { reparationsfonsterForklaring, troskelForklaring } from "./regeltext";
+import {
+  bakreGransForklaring,
+  reparationsfonsterForklaring,
+  troskelForklaring,
+} from "./regeltext";
 import type {
   Bostad,
   Kostnad,
@@ -47,10 +52,19 @@ export interface K6aExportrad {
   atgard: string;
   ar: number;
   /** Oren, efter ROT/forsakring, tidsgranser och troskel – fore agarandel,
-   *  fore skickfaktor pa sida 2. 0 om nagon grind faller. */
+   *  fore skickfaktor pa sida 2. 0 om nagon grind faller. Radens BIDRAG: det
+   *  ar detta som avgor om raden far bilagor i bilagepaketet och vad sida 1
+   *  summerar till. Det ar inte vad atgarden kostade – se kostnad_brutto. */
   belopp_brutto: number;
+  /** Oren, efter ROT/forsakring men FORE tidsgranser och troskel: vad
+   *  atgarden kostade (sida 1: grundforbattringsdelen, sida 2:
+   *  reparationsunderlaget). Star kvar nar en grind faller (docs/design.md,
+   *  Skarmuppbyggnad: "En kolumn visar vad den heter") – nollan hor till
+   *  den avdragsgilla delen, aldrig till beloppet. */
+  kostnad_brutto: number;
   belopp_individuellt: number;
-  /** Sida 2: efter skickfaktorn, avrundad uppat. Sida 1: null. */
+  /** Sida 2: efter skickfaktorn, avrundad uppat; null fore forsaljningen.
+   *  Sida 1: bidraget – en grundforbattring raknas helt eller inte alls. */
   avdragsgill_del_brutto: number | null;
   avdragsgill_del_individuellt: number | null;
   /** Kostnader som bidrog, for bilage-PDF:ns ordning. */
@@ -60,6 +74,19 @@ export interface K6aExportrad {
    *  eller null nar raden har ett belopp. Fyra olika regler ger noll och de
    *  betyder helt olika saker – aldrig bara en tom nolla. */
   forklaring: string | null;
+}
+
+/**
+ * Talet i kolumnen "Belopp" – samma pa skarmen och i PDF:en, och samma pa
+ * bada sidorna, sa att de aldrig sager olika. Det ar vad atgarden kostade,
+ * aven nar den fallit bort: nollan hor till "Avdragsgill del" (docs/design.md,
+ * Skarmuppbyggnad: "En kolumn visar vad den heter", "Båda sidorna har samma
+ * två kolumner").
+ */
+export function beloppIKolumnen(
+  rad: Pick<K6aExportrad, "kostnad_brutto">,
+): number {
+  return rad.kostnad_brutto;
 }
 
 export interface K6aSida {
@@ -177,7 +204,11 @@ interface Cell {
 
 interface CellSplit {
   cell: Cell;
+  /** Efter tidsgranserna (steg 3) och, nar steg 4 kort, troskeln. */
   uppdelning: KategoriUppdelning;
+  /** Fragetradets uppdelning fore varje grind (steg 2) – vad atgarden
+   *  kostade, oavsett om den sedan faller bort. */
+  foreBortfall: KategoriUppdelning;
 }
 
 /** Forklaringstexterna till en 0-kr-rad (docs/design.md, Exportvyn). Tva av
@@ -229,6 +260,11 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
         }
         return troskelForklaring(belopp);
       }
+      case "bakre_grans":
+        return bakreGransForklaring(
+          bakreGransAr(regelparametrar, bostad.upplatelseform, `${ar}-12-31`),
+          bostad.upplatelseform,
+        );
       case "femarsfonster":
         if (fonsterAr === null) {
           throw new Error("Tidsfönstret saknas utan försäljningsdatum.");
@@ -356,7 +392,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
   const sida1: K6aExportrad[] = [];
   const sida2: K6aExportrad[] = [];
 
-  for (const { cell, uppdelning } of splits) {
+  for (const { cell, uppdelning, foreBortfall } of splits) {
     const p = cell.projekt;
     const { ar } = cell;
     const visarSida1 = p.atgardstyp !== "utbytt" || p.battre_kvalitet === true;
@@ -379,12 +415,20 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
         atgard: p.namn,
         ar,
         belopp_brutto: beloppBrutto,
+        kostnad_brutto: avrunda(foreBortfall.grundforbattringsdel),
         belopp_individuellt: individuelltBelopp(
           beloppBrutto,
           medlemskap.agarandel,
         ),
-        avdragsgill_del_brutto: null,
-        avdragsgill_del_individuellt: null,
+        // En grundforbattring reduceras aldrig delvis – den raknas helt eller
+        // inte alls – sa den avdragsgilla delen ar bidraget. Kolumnen heter
+        // anda samma sak som pa sida 2 (docs/design.md, Skarmuppbyggnad:
+        // "Båda sidorna har samma två kolumner").
+        avdragsgill_del_brutto: beloppBrutto,
+        avdragsgill_del_individuellt: individuelltBelopp(
+          beloppBrutto,
+          medlemskap.agarandel,
+        ),
         kostnad_ider: [...cell.kostnadIder].sort(),
         varningar: [],
         forklaring:
@@ -449,6 +493,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
         atgard: p.namn,
         ar,
         belopp_brutto: beloppBrutto,
+        kostnad_brutto: avrunda(foreBortfall.reparationsunderlag),
         belopp_individuellt: individuelltBelopp(
           beloppBrutto,
           medlemskap.agarandel,
@@ -599,6 +644,7 @@ function buildCellSplit(
   if (sald) {
     return {
       cell,
+      foreBortfall: raaUppdelning,
       uppdelning: tillampaTidsgranser(raaUppdelning, {
         betaldatum,
         forsaljningsAr: forsaljningsAr!,
@@ -617,16 +663,22 @@ function buildCellSplit(
   // forsaljningen och provas som vanligt.
   const nybyggdUtanOmbildning =
     nybyggdVidForvarv && !(bostad.ombildning_fran_hyresratt ?? false);
+  const grundforbattringTillaten = innanforBakreGrans(
+    regelparametrar,
+    bostad.upplatelseform,
+    betaldatum,
+  );
   return {
     cell,
+    foreBortfall: raaUppdelning,
     uppdelning: {
-      grundforbattringsdel: innanforBakreGrans(
-        regelparametrar,
-        bostad.upplatelseform,
-        betaldatum,
-      )
+      grundforbattringsdel: grundforbattringTillaten
         ? raaUppdelning.grundforbattringsdel
         : 0,
+      grundforbattring_orsak:
+        !grundforbattringTillaten && raaUppdelning.grundforbattringsdel > 0
+          ? "bakre_grans"
+          : undefined,
       reparationsunderlag: nybyggdUtanOmbildning
         ? 0
         : raaUppdelning.reparationsunderlag,

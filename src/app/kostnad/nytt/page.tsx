@@ -9,6 +9,7 @@
 // visar dem och sparningen uppdaterar utkastet. Ar id:t inte ett utkast (redan
 // slutfort) eller inte den har bostadens skickas anvandaren till kostnaden.
 
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { NyKostnadForm } from "./form";
 import { Skarm } from "@/components/skarm";
@@ -19,6 +20,16 @@ import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
+
+// Sidans titel ar rubriken: "Komplettera kvittot" for ett aterupptaget utkast.
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ utkast?: string }>;
+}): Promise<Metadata> {
+  const { utkast } = await searchParams;
+  return { title: utkast ? "Komplettera kvittot" : "Nytt kvitto" };
+}
 
 export default async function NyKostnadSida({
   searchParams,

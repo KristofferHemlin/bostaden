@@ -38,6 +38,7 @@ import {
   Skarm,
 } from "@/components/skarm";
 import {
+  beloppIKolumnen,
   byggK6aExport,
   type AterstaendeKvitto,
   type K6aExport,
@@ -62,6 +63,8 @@ import {
   kandEgenAndel,
 } from "@/lib/samagande";
 import { kravBostad } from "@/lib/session";
+
+export const metadata = { title: "Deklarationsunderlag" };
 
 export const dynamic = "force-dynamic";
 
@@ -220,7 +223,10 @@ export default async function ExportSida() {
             etikett="Sida 1 · Grundförbättringar"
             rader={ex.sida1.rader}
             gemensam={gemensam}
-            visaAvdragsgill={false}
+            // Samma tva kolumner som sida 2 (docs/design.md, Skarmuppbyggnad).
+            // Sida 1 ar komplett aven fore forsaljningen – en grundforbattring
+            // har ingen skickfaktor att vanta pa.
+            visaAvdragsgill
             tomtText="Inga grundförbättringar registrerade."
           />
 
@@ -459,7 +465,7 @@ function SidaBlock({
                     </td>
                     <td className="px-4 py-3 text-text-sekundar">{r.ar}</td>
                     <td className="px-4 py-3 text-right text-text-primar">
-                      {formateraKronor(r.belopp_brutto)}
+                      {formateraKronor(beloppIKolumnen(r))}
                     </td>
                     {visaAvdragsgill ? (
                       <td className="px-4 py-3 text-right text-text-primar">

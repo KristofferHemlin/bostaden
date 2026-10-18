@@ -364,6 +364,18 @@ Raden visar beskrivningen, orsaken **"Saknar belopp"** och en väg till komplett
 
 **Raden bär skälet, rubriken bär bara fakta.** Det är därför rubriken inte ska kompensera med en andra mening om att det mesta går att rätta: *"Hör inte till något projekt än"* och *"Daterat före tillträdet"* säger redan vilket slag varje rad är, och en rubrik som sammanfattar två olika slag blir sann om inget av dem.
 
+**En kolumn visar vad den heter.** *Belopp* är vad kvittot kostade. *Avdragsgill del* är vad som går till deklarationen. Faller en åtgärd bort — femårsregeln, tröskeln — är den avdragsgilla delen noll, men **beloppet är oförändrat och ska stå kvar**.
+
+Uppmätt 2026-10-18: en reparation på 42 000 kr som låg utanför femårsfönstret redovisades som `0 kr | 0 kr`. Nollan var rätt i den andra kolumnen och osann i den första, och på det dokument användaren sparar åt Skatteverket stod det att arbetet kostade noll kronor.
+
+Det är samma påhittade nolla som regeln om utkast förbjuder, fast åt andra hållet: **där hittade appen på ett tal som inte fanns, här gömmer den ett som finns.** Båda gör underlaget mindre sant än arkivet bakom det, och det är arkivet som ska bära försäljningen.
+
+**Båda sidorna har samma två kolumner.** Sida 1 hade länge bara en, eftersom en grundförbättring sällan faller bort — men tröskeln träffar den precis som den träffar en reparation, och ett år med en enda liten förbättring under 5 000 kr är inget udda fall. Stod då `0 kr` i den enda kolumnen var beloppet borta igen.
+
+En kolumnrubrik är ett löfte. Betyder *Belopp* "vad det kostade" på sida 2 och "vad som räknas" på sida 1, lär dokumentet läsaren en sak och motsäger den på nästa sida. Samma rubriker, samma innebörd, på båda.
+
+**Och varje nolla har ett skäl intill sig.** Faller en grundförbättring på den bakre tidsgränsen stod det 2026-10-18 bara `0 kr`, utan en bokstav om varför — en tom nolla är sämre än inget tal alls, eftersom läsaren inte kan skilja den från ett fel.
+
 **Filnamnen i zip-arkivet hittar inte på det som saknas.** Namngivningen hoppar redan över datum och leverantör när de inte finns, och beloppet ska följa samma mönster. Ett utkast utan belopp fick 2026-10-17 heta `0 kr.jpg`, eftersom namnet räknade ett saknat belopp som noll – samma påhittade nolla som regeln ovan förbjuder, i den fil användaren sparar själv och öppnar om tio år. Arkivet är den ärligaste delen av löftet; ett filnamn som påstår att kvittot var värt noll är sämre än ett filnamn utan belopp.
 
 **Ett namn som blir tomt får ett ord, inte ingenting.** Ett utkast utan anteckning, leverantör, datum och belopp skulle med ren utelämning heta `.jpg` – en dold fil på macOS och Linux. Kvittot hade funnits i arkivet utan att synas, vilket är värre än ett trubbigt namn. Det heter därför `Utkast.jpg`. Ordet är sant, eftersom bara ett utkast kan sakna allt, och det är samma ord kvittolistan använder. Att samma rad heter *Kvitto* på skärmen och *Utkast* i arkivet är avsiktligt: på skärmen står statusen bredvid, i ett filnamn måste ordet bära hela beskedet.

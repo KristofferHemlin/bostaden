@@ -12,6 +12,8 @@ import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
+export const metadata = { title: "Dela upp kvittot" };
+
 export const dynamic = "force-dynamic";
 
 /** Oren -> ren kronsträng for inmatningsfaltet, t.ex. `102095` -> `"1020,95"`. */

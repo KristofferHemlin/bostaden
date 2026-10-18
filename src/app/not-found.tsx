@@ -12,13 +12,21 @@ import {
   PRIMARKNAPP_KLASS,
 } from "@/components/skarm";
 
-const SIDAN_FINNS_INTE =
-  "Sidan finns inte. Ingenting du gjort har försvunnit – länken är kanske gammal eller felskriven.";
+export const metadata = { title: "Sidan finns inte" };
 
 export default function SidanFinnsInte() {
   return (
     <div className={`${KOLUMN_KLASS} flex min-h-dvh flex-col justify-center gap-4 p-5`}>
-      <Meddelanderuta>{SIDAN_FINNS_INTE}</Meddelanderuta>
+      {/* Meningens forsta led ar sidans rubrik – det en skarmlasare meddelar
+          nar sidan oppnas, utan att sidan ser annorlunda ut: Tailwinds
+          grundstil ger h1 samma storlek och vikt som texten runt, och inline
+          haller den pa samma rad. Meddelanderuta ar en div, sa h1 far ligga
+          dar. En dold rubrik bredvid hade lett till att "Sidan finns inte"
+          lastes upp tva ganger. */}
+      <Meddelanderuta>
+        <h1 className="inline">Sidan finns inte.</h1> Ingenting du gjort har
+        försvunnit – länken är kanske gammal eller felskriven.
+      </Meddelanderuta>
       <Link href="/" className={PRIMARKNAPP_KLASS}>
         Till översikten
       </Link>

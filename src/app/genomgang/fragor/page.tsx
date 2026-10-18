@@ -15,6 +15,8 @@ import { prisma } from "@/lib/prisma";
 import { bostadsfragornaBesvarade, lasBostadsfragor } from "@/doman/bostadsfragor";
 import { kravBostad } from "@/lib/session";
 
+export const metadata = { title: "Berätta vad du gjort" };
+
 export const dynamic = "force-dynamic";
 
 export default async function FragorSida() {

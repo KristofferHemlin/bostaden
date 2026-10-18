@@ -28,7 +28,7 @@ function bygg(over: Partial<K6aIndata>): K6aIndata {
 }
 
 describe("forklaringen till en 0-kr-rad i K6A-exporten", () => {
-  it("aret nadde inte troskeln: sida 1-raden far Skatteverkets egen formulering", () => {
+  it("aret nadde inte troskeln: sida 1-raden far arets summa som skal, i appens ton", () => {
     const p = projekt({ id: "p1", atgardstyp: "nybyggnad", namn: "Liten atgard" });
     const k = kostnad({
       id: "k1",
@@ -40,7 +40,7 @@ describe("forklaringen till en 0-kr-rad i K6A-exporten", () => {
     const rad = ex.sida1.rader.find((r) => r.atgard === "Liten atgard");
     expect(rad?.belopp_brutto).toBe(0);
     expect(rad?.forklaring).toBe(
-      "Kostnaden för det året som åtgärden utfördes behöver sammanlagt uppgå till minst 5\u00a0000\u00a0kronor.",
+      "Årets kostnader blev sammanlagt mindre än 5\u00a0000\u00a0kr.",
     );
   });
 
@@ -216,9 +216,9 @@ describe("förklaringen följer regelparametern", () => {
     const rad2029 = ex.sida1.rader.find((r) => r.atgard === "Altan 2029");
     const rad2030 = ex.sida1.rader.find((r) => r.atgard === "Altan 2030");
     expect(rad2029?.belopp_brutto).toBe(0);
-    expect(rad2029?.forklaring).toContain("minst 5\u00a0000\u00a0kronor");
+    expect(rad2029?.forklaring).toContain("mindre än 5\u00a0000\u00a0kr");
     expect(rad2030?.belopp_brutto).toBe(0);
-    expect(rad2030?.forklaring).toContain("minst 6\u00a0000\u00a0kronor");
+    expect(rad2030?.forklaring).toContain("mindre än 6\u00a0000\u00a0kr");
     expect(rad2030?.forklaring).not.toContain("5\u00a0000");
   });
 

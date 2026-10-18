@@ -38,6 +38,8 @@ import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 
+export const metadata = { title: "Kvitton" };
+
 export const dynamic = "force-dynamic";
 
 interface KvittoRad {

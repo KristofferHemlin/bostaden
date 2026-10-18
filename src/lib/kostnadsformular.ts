@@ -76,13 +76,16 @@ export function tolkaKostnadsformular(
     });
   }
 
+  // Inmatningen har ETT datumfalt, "Datum", som satter bade dokumentdatum och
+  // betaldatum (docs/design.md, "Datum i kostnadsformularet"). Meddelandena
+  // namnger darfor faltet som det heter pa skarmen, inte kolumnen de provar.
   if (!DATUM.test(dokumentdatum)) {
     felen.push({ falt: "dokumentdatum", fel: "Fyll i kvittots datum." });
   } else if (betaldatum !== "") {
     if (!DATUM.test(betaldatum)) {
-      felen.push({ falt: "betaldatum", fel: "Betaldatum har fel format." });
+      felen.push({ falt: "betaldatum", fel: "Datumet har fel format." });
     } else if (betaldatum < TIDIGASTE_BETALDATUM) {
-      felen.push({ falt: "betaldatum", fel: "Betaldatum före 1970 stöds inte." });
+      felen.push({ falt: "betaldatum", fel: "Datum före 1970 stöds inte." });
     }
   }
 

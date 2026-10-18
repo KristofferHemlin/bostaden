@@ -16,6 +16,8 @@ import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 import { BilagepaketFlode } from "./flode";
 
+export const metadata = { title: "Bilagepaket" };
+
 export const dynamic = "force-dynamic";
 
 export default async function BilagepaketSida() {

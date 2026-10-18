@@ -32,6 +32,8 @@ import { hamtaAktivBostad, hamtaAnvandare } from "@/lib/session";
 import { AnslutKnapp } from "../anslut-knapp";
 import { Inbjudningskort } from "../inbjudningskort";
 
+export const metadata = { title: "Inbjudan" };
+
 export const dynamic = "force-dynamic";
 
 export default async function InbjudanSida({

@@ -328,3 +328,32 @@ describe("bekräftelsen vid sparandet – före tillträdet", () => {
     ).toEqual({ steg: "visa-fel" });
   });
 });
+
+describe("inmatningens meddelanden namnger fältet som det heter på skärmen", () => {
+  // Inmatningen har ett fält, "Datum", som sätter både dokumentdatum och
+  // betaldatum. Ett meddelande om "Betaldatum" pekar på ett fält som inte
+  // finns där.
+  it("ett datum före 1970 säger 'Datum', inte 'Betaldatum'", () => {
+    const fel = felen(
+      inmatning({
+        totalbelopp: "1 000",
+        dokumentdatum: "1965-06-01",
+        betaldatum: "1965-06-01",
+        leverantor: "X",
+      }),
+    );
+    expect(fel).toEqual([
+      { falt: "betaldatum", fel: "Datum före 1970 stöds inte." },
+    ]);
+  });
+
+  it("inget meddelande från inmatningen nämner Betaldatum", () => {
+    for (const fd of [
+      inmatning({}),
+      inmatning({ totalbelopp: "1", dokumentdatum: "1965-06-01", betaldatum: "1965-06-01", leverantor: "X" }),
+      inmatning({ totalbelopp: "1", dokumentdatum: "2026-01-01", betaldatum: "fel", leverantor: "X" }),
+    ]) {
+      for (const f of felen(fd)) expect(f.fel).not.toMatch(/betaldatum/i);
+    }
+  });
+});

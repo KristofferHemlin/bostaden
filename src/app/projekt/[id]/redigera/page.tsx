@@ -19,6 +19,8 @@ import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
+export const metadata = { title: "Ändra projekt" };
+
 export const dynamic = "force-dynamic";
 
 export default async function RedigeraProjektSida({

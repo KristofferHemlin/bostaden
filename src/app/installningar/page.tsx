@@ -12,6 +12,8 @@ import { kravAnvandare, kravBostad } from "@/lib/session";
 import { Skarm } from "@/components/skarm";
 import { InstallningarKort } from "./kort";
 
+export const metadata = { title: "Inställningar" };
+
 export const dynamic = "force-dynamic";
 
 export default async function InstallningarSida() {

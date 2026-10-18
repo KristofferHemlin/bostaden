@@ -6,6 +6,7 @@
 // till /forsaljning/skick, som staller fragan for varje atgard som behover
 // den (produktspec 4.1, CLAUDE.md "Vid markering som sald").
 
+import type { Metadata } from "next";
 import { ForsaljningForm } from "./form";
 import { Meddelanderuta, Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
@@ -14,6 +15,21 @@ import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
+
+// Sidans titel ar rubriken, som beror pa om bostaden redan ar sald.
+export async function generateMetadata(): Promise<Metadata> {
+  const { bostadId } = await kravBostad();
+  const bostad = await prisma.bostad.findUniqueOrThrow({
+    where: { id: bostadId },
+    select: { forsaljningsdatum: true },
+  });
+  return {
+    title:
+      bostad.forsaljningsdatum !== null
+        ? "Försäljningsuppgifter"
+        : "Markera som såld",
+  };
+}
 
 export default async function ForsaljningSida() {
   const { bostadId } = await kravBostad();

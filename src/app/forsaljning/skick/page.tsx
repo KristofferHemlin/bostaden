@@ -22,6 +22,8 @@ import { bostadHeader } from "@/lib/bostad-header";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
+export const metadata = { title: "Skick vid försäljningen" };
+
 export const dynamic = "force-dynamic";
 
 export default async function SkickForsaljningSida() {

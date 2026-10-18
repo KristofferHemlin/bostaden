@@ -17,6 +17,8 @@ import { formateraKronor, isoDatum } from "@/lib/format";
 import { rotAvgarRad } from "@/lib/kvittolista";
 import { kravBostad } from "@/lib/session";
 
+export const metadata = { title: "Projekt" };
+
 export const dynamic = "force-dynamic";
 
 // Fler an fem kvitton under ett projekt klipps, med en dampad rad om hur

@@ -42,6 +42,7 @@ export interface Fragetradssvar {
 export type NollOrsak =
   | "troskel"
   | "femarsfonster"
+  | "bakre_grans"
   | "skicket_forbattrades_inte"
   | "nybyggd_vid_forvarv";
 
@@ -89,6 +90,19 @@ function bakreGransNyckel(upplatelseform: Upplatelseform): string {
     : "bakre_grans_bostadsratt";
 }
 
+/** Den bakre gransens ar for upplatelseformen, for datumet. */
+export function bakreGransAr(
+  regelparametrar: Regelparameter[],
+  upplatelseform: Upplatelseform,
+  datum: string,
+): number {
+  return slaUppRegelparameter(
+    regelparametrar,
+    bakreGransNyckel(upplatelseform),
+    datum,
+  );
+}
+
 /**
  * Ar betaldatumet pa eller efter den bakre gransen for grundforbattringar i
  * denna upplatelseform (1952 for smahus, 1974 for bostadsratt)? Gransen lagras
@@ -99,12 +113,10 @@ export function innanforBakreGrans(
   upplatelseform: Upplatelseform,
   betaldatum: string,
 ): boolean {
-  const gransAr = slaUppRegelparameter(
-    regelparametrar,
-    bakreGransNyckel(upplatelseform),
-    betaldatum,
+  return (
+    kalenderAr(betaldatum) >=
+    bakreGransAr(regelparametrar, upplatelseform, betaldatum)
   );
-  return kalenderAr(betaldatum) >= gransAr;
 }
 
 /**
@@ -174,6 +186,12 @@ export function tillampaTidsgranser(
       ? uppdelning.grundforbattringsdel
       : 0,
     reparationsunderlag: reparationTillaten ? uppdelning.reparationsunderlag : 0,
+    // Samma princip: ett skal bara nar gransen faktiskt nollade nagot – en
+    // tom nolla ar samre an inget tal (docs/design.md, Skarmuppbyggnad).
+    grundforbattring_orsak:
+      !grundforbattringTillaten && uppdelning.grundforbattringsdel > 0
+        ? "bakre_grans"
+        : undefined,
     // Orsaken satts bara nar tidsgransen faktiskt nollade nagot (reparationen
     // var > 0 innan) – annars var faltet redan 0 av fragetradets egen
     // uppdelning, och den nollningen behover ingen forklaring.

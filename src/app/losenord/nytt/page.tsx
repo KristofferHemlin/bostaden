@@ -8,6 +8,8 @@ import { AterstallningsRam } from "../ram";
 import { NyttLosenordFormular } from "./formular";
 import { OgiltigLank } from "./ogiltig-lank";
 
+export const metadata = { title: "Nytt lösenord" };
+
 export const dynamic = "force-dynamic";
 
 export default async function NyttLosenordSida({

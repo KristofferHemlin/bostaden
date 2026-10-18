@@ -24,6 +24,8 @@ import { Inbjudningskort } from "@/app/inbjudan/inbjudningskort";
 import { RegistreraFlode } from "./flode";
 import { Ram } from "./ram";
 
+export const metadata = { title: "Skapa konto" };
+
 export const dynamic = "force-dynamic";
 
 export default async function RegistreraSida({

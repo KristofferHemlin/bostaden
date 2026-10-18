@@ -7,15 +7,25 @@ import {
   reparationsfonsterForklaring,
   reparationsfonsterNamn,
   talSomOrd,
+  bakreGransForklaring,
   troskelForklaring,
 } from "@/doman/regeltext";
 
 describe("regeltexter", () => {
-  it("tröskelbeloppet skrivs med hårt mellanslag och i Skatteverkets ordalydelse", () => {
+  it("tröskelbeloppet skrivs med hårt mellanslag, i appens ton, med året som subjekt", () => {
     expect(troskelForklaring(500_000)).toBe(
-      "Kostnaden för det året som åtgärden utfördes behöver sammanlagt uppgå till minst 5 000 kronor.",
+      "Årets kostnader blev sammanlagt mindre än 5\u00a0000\u00a0kr.",
     );
-    expect(troskelForklaring(750_050)).toContain("minst 7 500,50 kronor");
+    expect(troskelForklaring(750_050)).toContain("mindre än 7\u00a0500,50\u00a0kr");
+  });
+
+  it("den bakre gränsen nämner årtalet och upplåtelseformen", () => {
+    expect(bakreGransForklaring(1952, "fastighet")).toBe(
+      "Åtgärden utfördes före 1952 – för villor och radhus räknas inget tidigare.",
+    );
+    expect(bakreGransForklaring(1974, "bostadsratt")).toBe(
+      "Åtgärden utfördes före 1974 – för bostadsrätter räknas inget tidigare.",
+    );
   });
 
   it("tidsfönstret skrivs som ord och följer värdet", () => {

@@ -23,6 +23,8 @@ import { bostadsfragornaBesvarade, lasBostadsfragor } from "@/doman/bostadsfrago
 import { kravBostad } from "@/lib/session";
 import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 
+export const metadata = { title: "Berätta vad du gjort" };
+
 export const dynamic = "force-dynamic";
 
 export default async function GenomgangSida() {

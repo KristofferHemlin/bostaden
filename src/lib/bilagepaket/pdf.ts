@@ -26,7 +26,7 @@
 
 import { PageSizes, PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { blankettTexter } from "@/doman/blankett";
-import type { K6aExportrad } from "@/doman/export-k6a";
+import { beloppIKolumnen, type K6aExportrad } from "@/doman/export-k6a";
 import { formateraKronor } from "@/lib/format";
 import { TJANSTENS_NAMN } from "@/lib/kontakt";
 import type { BilagepaketBilagesida, BilagepaketData, BilagepaketRadavdrag } from "./hamta";
@@ -77,7 +77,8 @@ export async function byggBilagepaketPdf(
   ritaSammanstallningssida(rv, {
     titel: "Sida 1 · Grundförbättringar",
     rader: data.ex.sida1.rader,
-    visaAvdragsgill: false,
+    // Samma tva kolumner som sida 2 (docs/design.md, Skarmuppbyggnad).
+    visaAvdragsgill: true,
     gemensam: data.ex.delagarvariant === "gemensam_med_andel",
     rutaText: texter.ruta4,
     summaBrutto: data.ex.ruta4_brutto,
@@ -244,7 +245,7 @@ function ritaSammanstallningssida(rv: Ritverktyg, indata: SammanstallningsIndata
 
     rita(sida, font, rad.atgard, { x: kolX.atgard, y, storlek: 10, farg: TEXT, maxBredd: 220 });
     rita(sida, font, String(rad.ar), { x: kolX.ar, y, storlek: 10, farg: TEXT });
-    rita(sida, font, formateraKronor(rad.belopp_brutto), { x: kolX.belopp, y, storlek: 10, farg: TEXT });
+    rita(sida, font, formateraKronor(beloppIKolumnen(rad)), { x: kolX.belopp, y, storlek: 10, farg: TEXT });
     if (indata.visaAvdragsgill) {
       rita(sida, font, formateraKronor(rad.avdragsgill_del_brutto ?? 0), {
         x: kolX.avdragsgill,

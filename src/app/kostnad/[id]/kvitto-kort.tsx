@@ -148,6 +148,11 @@ export function KvittoKort({
         redigerbar={redigerar}
       />
 
+      {/* I andringslaget syns inte lasvyns rubrik, men sidan behaller sitt
+          namn for den som inte ser skarmen. */}
+      {redigerar ? (
+        <h1 className="sr-only">{lasVarden.sammanfattningsnamn}</h1>
+      ) : null}
       {redigerar ? (
         <RedigeraVy
           kostnadId={kostnadId}
@@ -200,9 +205,11 @@ function LasVy({
     <>
       <section className="border-t border-linje p-4">
         <div className="flex items-start justify-between gap-3">
-          <p className="font-rubrik text-lg text-text-primar">
+          {/* Kvittots namn ar sidans rubrik – det en skarmlasare meddelar
+              nar sidan oppnas. */}
+          <h1 className="font-rubrik text-lg text-text-primar">
             {varden.sammanfattningsnamn}
-          </p>
+          </h1>
           <button
             type="button"
             onClick={onAndra}
