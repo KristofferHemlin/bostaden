@@ -809,13 +809,17 @@ Ett kvitto daterat före tillträdet eller efter försäljningen får en dämpad
 
 **Två fall, två texter.** De betyder olika saker och får inte dela formulering.
 
-> Före tillträdet: **Datumet ligger före tillträdet 2020-05-14. Kontrollera året – ett sådant kvitto räknas inte med i underlaget.**
+> Före tillträdet: **Före tillträdet 2020-05-14. Kontrollera året.**
 >
 > Efter försäljningen: **Datumet ligger efter försäljningen 2026-09-01. Det kan stämma – en faktura för arbete du gjorde innan räknas ändå.**
 
 Den första är kort och uppmanar, eftersom ett datum före tillträdet nästan alltid är ett feltypat årtal eller ett kvitto som inte är ditt. Ett fel årtal är dessutom dyrare än det ser ut: beloppet hamnar i fel kalenderår, kan fälla hela det årets avdrag under tröskeln, och faller nu dessutom ur underlaget helt.
 
-**Andra ledet är inte en varning utan följden.** Utan det läser användaren "kontrollera året", tänker att årtalet stämmer, och får aldrig veta att pengarna står utanför avdraget. Notisen ska säga vad som händer, inte bara att något är ovanligt.
+**Följden står i rutan, inte i notisen.** Lydelsen var en kort stund längre — *"…Kontrollera året – ett sådant kvitto räknas inte med i underlaget."* — för att användaren annars kunde konstatera att årtalet stämde och aldrig få veta att pengarna står utanför avdraget. Den meningen hör hemma i upplysningen; den fick bara inte plats. **Uppmätt 2026-10-18 i den riktiga sidan:** 109 tecken blev tre rader vid 390 px mot en reserv på en, och allt under datumfältet flyttades ner 40 px i samma ögonblick som dagsiffran skrevs.
+
+Den kortade lydelsen är **45 tecken och ryms på en rad från 360 px och uppåt** (mätt vid 320, 360, 375, 390 och 430 px; vid 320 blir den två). Inledningen *"Datumet ligger"* föll bort före uppmaningen, eftersom raden sitter direkt under datumfältet och ämnet redan är givet, medan *"Kontrollera året"* är det enda som ber om något.
+
+Följden går inte förlorad: **rutan vid sparandet säger den, och den går inte att gå förbi.** Ett kvitto daterat före tillträdet kan inte sparas utan att frågan ställs, och där finns plats för hela meningen. Informationen kommer alltså i det ögonblick beslutet fattas i stället för medan datumet skrivs.
 
 #### Bekräftelsen vid sparandet
 
@@ -843,7 +847,23 @@ Den andra säger uttryckligen att det kan stämma. Utan den meningen rättar anv
 
 **Notisen utvärderas först när datumet är komplett.** Fälten är tre, med automatiskt hopp framåt, och ett halvskrivet årtal är inte ett datum. Utvärderas det löpande blinkar notisen till medan användaren skriver, vilket är värre än att den kommer en sekund senare.
 
-**Och den får inte flytta något när den dyker upp.** Ytan reserveras, så att fälten under ligger stilla. En rad som skjuter ner resten mitt i inmatningen gör att man trycker på fel sak.
+**Och den får inte flytta något när den dyker upp.** Ytan reserveras, så att fälten under ligger stilla. En rad som skjuter ner resten mitt i inmatningen gör att man trycker på fel sak – och det som ligger närmast under datumfältet är *Leverantör*, alltså precis det fingret är på väg mot.
+
+**Reserven är en rad, och lydelsen ska rymmas i den.** Ändras texten ska den mätas om vid 360 px innan den går in. Att skriva en mening som är ett tecken för lång kostar inget att upptäcka och mycket att missa.
+
+**Marginalen är 4,4 px.** Raden är 286 px vid 360 px bredd; lydelsen tar 276 px med `2022-02-02`, och det bredaste verkliga datumet, `2000-09-30`, tar 281,6 px. Alla 7 776 datum mellan 1950 och 2030 har prövats och inget bryter raden. Siffrorna i typsnittet är olika breda, så marginalen beror på vilket datum som står där — det är skälet att gränsen prövas mot flera datum och inte mot ett.
+
+Mindre än ett tecken alltså, och det är avsiktligt knappt: alternativet var en permanent tom rad på varje kvittoformulär. **Går lydelsen sönder är priset 20 px**, inte en trasig sida, och det kan hända om typsnittet inte hinner laddas eller om användaren har förstorad text. Vid 320 px blir den två rader, vilket också ger 20 px. Acceptabelt i båda fallen.
+
+**Efter-försäljningen-notisen spränger reserven, och det är accepterat.** Den är tre rader vid varje bredd och fyra vid 320 px – den har aldrig rymts, sedan regeln skrevs, och ingen har sett det eftersom en osåld bostad aldrig visar den. Den får stå kvar som den är: den finns bara för en bostad som är markerad som såld, och då matar ingen in kvitton stående i en byggvaruhandel. Före-tillträdet-notisen tänds för var och en som slinter på ett årtal, och det är därför bara den som måste rymmas.
+
+### Vad som får plats reserverad
+
+**Plats reserveras för det som dyker upp medan användaren skriver. Inte för det som dyker upp när hon trycker på en knapp.**
+
+Datumnotisen tänds i samma ögonblick som sista siffran skrivs, mitt i en rörelse mot nästa fält – den måste ha sin yta. Valideringsmeddelandena tänds när *Spara* trycks, och då har användaren redan stannat upp och tittar på resultatet; de får skjuta ner sidan. Att reservera plats för tre meddelanden som nästan alltid är frånvarande skulle dessutom sätta tre tomma hål i varje formulär.
+
+Regeln gäller alla framtida meddelanden, inte bara de här två: avgör efter **om användaren är mitt i något när texten dyker upp**, inte efter om texten är viktig.
 
 ### Hjälptexter under fält
 

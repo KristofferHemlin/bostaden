@@ -32,10 +32,13 @@ export function kvittodatumNotis(
 ): string | null {
   if (dokumentdatum === "") return null;
 
-  // Samma grans som berakningen (CLAUDE.md, steg 3) – och notisen sager
-  // foljden, inte bara att datumet ar ovanligt (docs/design.md).
+  // Samma grans som berakningen (CLAUDE.md, steg 3). Foljden – att kvittot
+  // inte raknas med – star i rutan vid sparandet, som inte gar att ga forbi.
+  // Har ryms bara en rad: notisen tands medan anvandaren skriver, och den
+  // reserverade ytan ar en rad hog (docs/design.md, "Följden står i rutan,
+  // inte i notisen" och "Vad som får plats reserverad").
   if (dateratForeTilltradet(dokumentdatum, granser.tilltradesdatum)) {
-    return `Datumet ligger före tillträdet ${granser.tilltradesdatum}. Kontrollera året – ett sådant kvitto räknas inte med i underlaget.`;
+    return `Före tillträdet ${granser.tilltradesdatum}. Kontrollera året.`;
   }
 
   if (
