@@ -48,12 +48,21 @@ import {
   type NyttEllerBigtSvar,
 } from "@/doman/fragetradet";
 import { BeloppFalt } from "@/components/belopp-falt";
-import { Falt, FALTFEL_KLASS, INPUT_KLASS } from "@/components/skarm";
+import {
+  Falt,
+  FALTFEL_KLASS,
+  HJALPTEXT_KLASS,
+  INPUT_KLASS,
+} from "@/components/skarm";
 import {
   forsokBorjaInskickning,
   useDubbelinskickRef,
 } from "@/lib/dubbelinskick";
-import { formateraBeloppInmatning, oreFranKronor } from "@/lib/format";
+import {
+  formateraBeloppInmatning,
+  formateraKronor,
+  oreFranKronor,
+} from "@/lib/format";
 import { FALTFEL_ATTRIBUT, fokuseraForstaFel } from "@/lib/formularfel";
 import {
   tolkaFragetradetFormData,
@@ -163,6 +172,11 @@ export function Fraga({
   );
 }
 
+/** Raden under ett svar som gor hela beloppet till grundforbattring. */
+export function helaBeloppetText(belopp: number): string {
+  return `Hela beloppet, ${formateraKronor(belopp)}, räknas då som grundförbättring.`;
+}
+
 const HJALP_BYGGDE_NYTT =
   "Nytt betyder att det inte fanns något liknande förut – ett nytt uterum, en tillbyggnad, ett förråd som inte fanns, en inglasad balkong. Räknas som grundförbättring utan tidsgräns bakåt.";
 
@@ -187,14 +201,26 @@ export function Fragetradet({
   varden,
   onChange,
   fel,
+  helaBeloppet,
 }: {
   varden: FragetradetUIState;
   onChange: (delvis: Partial<FragetradetUIState>) => void;
   /** Ett avvisat svar – visas vid den fraga det galler. */
   fel?: FragetradetFormFel | null;
+  /** Projektets summa i oren, efter ROT – det som blir grundforbattring om
+   *  svaret gor hela beloppet till det. Visas under det valda svaret. */
+  helaBeloppet: number;
 }) {
   const felFor = (falt: FragetradetFaltnamn) =>
     fel?.falt === falt ? fel.fel : undefined;
+  // Raden under ett svar som gor HELA beloppet till grundforbattring – fraga
+  // 2 och 3 "ja", fraga 4 "nytt". Den syns nar svaret smittar hela beloppet,
+  // med beloppet, sa att den som har luckor med pa samma faktura ser vad som
+  // hander. Ingen hanvisning till att dela upp kvittot: den vagen finns inte
+  // an, och en hanvisning till en utvag som inte finns ar varre an ingen.
+  const helaBeloppetRad = (
+    <p className={HJALPTEXT_KLASS}>{helaBeloppetText(helaBeloppet)}</p>
+  );
   return (
     <div className="flex flex-col gap-6">
       {/* Fraga 2. */}
@@ -218,6 +244,7 @@ export function Fragetradet({
             })
           }
         />
+        {varden.byggdeNytt === "ja" ? helaBeloppetRad : null}
         <Kortval
           vald={varden.byggdeNytt === "nej"}
           text="Nej"
@@ -246,6 +273,7 @@ export function Fragetradet({
               })
             }
           />
+          {varden.andradePlanlosning === "ja" ? helaBeloppetRad : null}
           <Kortval
             vald={varden.andradePlanlosning === "nej"}
             text="Nej"
@@ -274,6 +302,7 @@ export function Fragetradet({
               })
             }
           />
+          {varden.nyttEllerBytt === "nytt" ? helaBeloppetRad : null}
           <Kortval
             vald={varden.nyttEllerBytt === "bytt"}
             text="Jag bytte ut något som fanns"
@@ -428,8 +457,11 @@ export function FragetradetFalt({
   initial,
   fel,
   onAndring,
+  helaBeloppet,
 }: {
   initial?: FragetradetVarden;
+  /** Projektets summa efter ROT – se <Fragetradet>. */
+  helaBeloppet: number;
   /** Ett avvisat svar – visas vid den fraga det galler. */
   fel?: FragetradetFormFel | null;
   /** Anropas vid varje andring, sa att ett visat fel kan forsvinna. */
@@ -462,6 +494,7 @@ export function FragetradetFalt({
       <Fragetradet
         varden={svar}
         fel={fel}
+        helaBeloppet={helaBeloppet}
         onChange={(delvis) => {
           setSvar((s) => ({ ...s, ...delvis }));
           onAndring?.();
@@ -521,9 +554,13 @@ export function NamnFalt({
 export function useFragetradetFormular({
   pagar,
   resultat,
+  projektetsBelopp,
 }: {
   pagar: boolean;
   resultat: { fel?: string; falt?: FragetradetFaltnamn };
+  /** Projektets belopp i oren, fore ROT – merkostnaden maste vara mindre
+   *  (CLAUDE.md, steg 2). Servern provar samma sak med sitt eget uppslag. */
+  projektetsBelopp: number;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const pagarRef = useDubbelinskickRef(pagar);
@@ -545,7 +582,9 @@ export function useFragetradetFormular({
   }, [resultat]);
 
   function hanteraSubmit(e: FormEvent<HTMLFormElement>) {
-    const tolkat = tolkaFragetradetFormData(new FormData(e.currentTarget));
+    const tolkat = tolkaFragetradetFormData(new FormData(e.currentTarget), {
+      belopp: projektetsBelopp,
+    });
     if ("fel" in tolkat) {
       e.preventDefault();
       setFel(tolkat);

@@ -6,10 +6,18 @@
 import { notFound } from "next/navigation";
 import { RedigeraProjektForm } from "./form";
 import { Skarm } from "@/components/skarm";
-import { kostnaderKoppladeTillProjekt } from "@/doman/berakningar";
+import {
+  merkostnadBehoverBekraftas,
+  projektetsBelopp,
+} from "@/doman/atgardsberakning";
+import { kostnaderKoppladeTillProjekt, projektSumma } from "@/doman/berakningar";
+import {
+  MERKOSTNAD_ANDRAD_FRAGA,
+  merkostnadOverBeloppetText,
+} from "@/doman/regeltext";
 import { harledFragetradetSvar } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
-import { tillDomanKostnad } from "@/lib/doman-fran-db";
+import { tillDomanKostnad, tillDomanProjekt } from "@/lib/doman-fran-db";
 import {
   formateraBeloppInmatning,
   formateraKronor,
@@ -45,11 +53,22 @@ export default async function RedigeraProjektSida({
   if (!projekt) notFound();
 
   const { bostadsnamn } = bostadHeader(bostad);
+  const kostnader = kostnadRader.map(tillDomanKostnad);
 
-  const blockerande = kostnaderKoppladeTillProjekt(
-    kostnadRader.map(tillDomanKostnad),
-    id,
-  ).map((k) => {
+  // Projektets belopp (fore ROT) for spärren pa merkostnaden, och summan
+  // (efter ROT) for raden under ett svar som gor hela beloppet till
+  // grundforbattring. Har projektet andrats sedan merkostnaden besvarades
+  // stalls fragan igen ovanfor formularet (CLAUDE.md, steg 2).
+  const belopp = projektetsBelopp(kostnader, id);
+  const besked = merkostnadBehoverBekraftas(tillDomanProjekt(projekt), belopp);
+  const merkostnadAndrad =
+    besked === "projektet_andrat"
+      ? MERKOSTNAD_ANDRAD_FRAGA
+      : besked === "inte_mindre_an_beloppet"
+        ? merkostnadOverBeloppetText(projekt.namn, projekt.merkostnad!, belopp)
+        : null;
+
+  const blockerande = kostnaderKoppladeTillProjekt(kostnader, id).map((k) => {
     const original = kostnadRader.find((x) => x.id === k.id)!;
     return {
       id: k.id,
@@ -68,6 +87,9 @@ export default async function RedigeraProjektSida({
       <RedigeraProjektForm
         projektId={id}
         blockerande={blockerande}
+        projektetsBelopp={belopp}
+        projektetsSumma={projektSumma(kostnader, id)}
+        merkostnadAndrad={merkostnadAndrad}
         varden={{
           namn: projekt.namn,
           ...harledFragetradetSvar(projekt.atgardstyp, projekt.battre_kvalitet),

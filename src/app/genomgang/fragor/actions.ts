@@ -21,6 +21,8 @@ import {
   tolkaBostadsfragesvar,
 } from "@/doman/bostadsfragor";
 import { kravBostadsfragorBesvarade } from "@/lib/bostadsfragor-sparr";
+import { hamtaProjektetsBelopp } from "@/lib/doman-fran-db";
+import { arGiltigtId } from "@/lib/giltigt-id";
 import {
   tolkaFragetradetFormData,
   type FragetradetFaltnamn,
@@ -45,7 +47,12 @@ export async function klassificeraHog(
 
   const projektId = String(formData.get("projekt_id") ?? "");
 
-  const tolkat = tolkaFragetradetFormData(formData);
+  if (!arGiltigtId(projektId)) return { fel: "Projektet hittades inte." };
+
+  // Projektets belopp: merkostnaden maste vara mindre (CLAUDE.md, steg 2),
+  // och beloppet sparas sa att en senare andring av projektet syns.
+  const belopp = await hamtaProjektetsBelopp(bostadId, projektId);
+  const tolkat = tolkaFragetradetFormData(formData, { belopp });
   if ("fel" in tolkat) return tolkat;
 
   try {
@@ -83,6 +90,7 @@ export async function klassificeraHog(
         atgardstyp: tolkat.atgardstyp,
         battre_kvalitet: tolkat.battre_kvalitet,
         merkostnad: tolkat.merkostnad,
+        merkostnad_bas: tolkat.merkostnad !== null ? belopp : null,
         skick_forvarv: tolkat.skick_forvarv,
         motivering: tolkat.motivering,
         klassificerad_av: anvandareId,

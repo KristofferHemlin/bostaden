@@ -909,6 +909,12 @@ Ett tomt obligatoriskt fält flyttade bara fokus och sa ingenting. Ett ogiltigt 
 
 **Dialoger som ställer en fråga om sparandet körs efter valideringen, inte före.** Frågan *"Inget kvitto bifogat"* handlar om ett kvitto som är på väg att sparas. Är formuläret ogiltigt sparas ingenting, och då är frågan ställd i onödan – användaren svarar på den, trycker *Spara ändå*, och får först då veta att datumet var fel.
 
+**En avvisning som rör ett tal ska innehålla talet.** Merkostnadsfältet är exemplet, byggt 2026-10-18:
+
+> **Ange en merkostnad mindre än 10 000 kr – det är vad "Bytte fönster" kostade.**
+
+Både ett för högt belopp och ett som är exakt lika med projektets får samma mening, eftersom felet är detsamma. Jämför med Skatteverkets egen lydelse, *"Beloppet måste vara mindre än kostnaden för hela renoveringen"* – korrekt, men den lämnar användaren att själv leta reda på vad renoveringen kostade. Vår säger vilket projekt och vilket tal det gäller, och då behöver hon inte lämna fältet för att rätta sig.
+
 ### Utfällbara sektioner
 
 Mönstret gäller de valfria delarna där de förekommer: ROT-raden i inmatningen, och betaldatum i kvittots ändringsläge.

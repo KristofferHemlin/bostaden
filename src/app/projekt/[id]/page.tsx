@@ -17,10 +17,18 @@ import {
   Skarm,
 } from "@/components/skarm";
 import { beloppForKostnad, projektSumma, rotForBelopp } from "@/doman/berakningar";
+import {
+  merkostnadBehoverBekraftas,
+  projektetsBelopp,
+} from "@/doman/atgardsberakning";
 import { atgardKategoriText, SKICK_ORD } from "@/doman/fragetradet";
+import {
+  MERKOSTNAD_ANDRAD_FRAGA,
+  merkostnadOverBeloppetText,
+} from "@/doman/regeltext";
 import type { Atgardstyp } from "@/doman/typer";
 import { bostadHeader } from "@/lib/bostad-header";
-import { tillDomanKostnad } from "@/lib/doman-fran-db";
+import { tillDomanKostnad, tillDomanProjekt } from "@/lib/doman-fran-db";
 import { formateraKronor } from "@/lib/format";
 import type { Metadata } from "next";
 import { arGiltigtId } from "@/lib/giltigt-id";
@@ -95,6 +103,17 @@ export default async function ProjektSida({
   // Reparationsdelen (och darmed skickfragorna) finns bara vid ett utbyte
   // (produktspec 4.1: en ren grundforbattring har inget "fore" att jamfora mot).
   const harReparationsdel = projekt.atgardstyp === "utbytt";
+  // Merkostnaden som behover bekraftas igen (CLAUDE.md, steg 2) – fragan
+  // stalls har, dar projektet visas, och svaret ges i redigeringen dar det
+  // gamla svaret star forifyllt.
+  const belopp = projektetsBelopp(kostnader, id);
+  const besked = merkostnadBehoverBekraftas(tillDomanProjekt(projekt), belopp);
+  const merkostnadFraga =
+    besked === "projektet_andrat"
+      ? MERKOSTNAD_ANDRAD_FRAGA
+      : besked === "inte_mindre_an_beloppet"
+        ? merkostnadOverBeloppetText(projekt.namn, projekt.merkostnad!, belopp)
+        : null;
   const besvaratAv = oklassificerad
     ? null
     : upphovsrad(
@@ -129,7 +148,19 @@ export default async function ProjektSida({
                     ? `Bättre – merkostnad ${formateraKronor(projekt.merkostnad ?? 0)}`
                     : "Liknande som tidigare"
                 }
+                atgard={merkostnadFraga !== null}
               />
+            ) : null}
+            {merkostnadFraga ? (
+              <p className="pt-1 text-text-sekundar">
+                {merkostnadFraga}{" "}
+                <Link
+                  href={`/projekt/${id}/redigera`}
+                  className="underline underline-offset-2 hover:text-text-primar"
+                >
+                  Svara igen
+                </Link>
+              </p>
             ) : null}
             {harReparationsdel ? (
               <Rad

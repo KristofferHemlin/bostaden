@@ -4,11 +4,14 @@
 //
 // Beraknar via fragetradet (produktspec 4.1-4.2, CLAUDE.md, src/doman/
 // atgardsberakning.ts). En atgard (projekt) grupperas per kalenderar (ur
-// betaldatum) till en "cell". Har flera kostnader/rader bidragit till samma
-// cell byggs en syntetisk kostnad ihop av dem – se buildCellSplit nedan – sa
-// att fragetradets merkostnad-uppdelning kors EN gang per (projekt, ar), inte
-// en gang per bidragande kostnad (annars skulle merkostnaden rakas av flera
-// ganger for samma atgard).
+// betaldatum) till en "cell" – en rad i exporten.
+//
+// Fragetradets uppdelning (steg 2) gors INTE per cell utan per kostnad, over
+// hela projektet: merkostnaden ar ett tal for projektet och fordelas
+// proportionellt over projektets kostnader (CLAUDE.md, steg 2). Uppmatt
+// 2026-10-18: nar uppdelningen kordes per cell drogs hela merkostnaden av en
+// gang per ar, och ett fonsterbyte med kvitton i tva ar fick 24 000 kr till
+// ruta 4 dar anvandaren angett 12 000.
 
 import {
   arUtkast,
@@ -19,23 +22,27 @@ import {
   inlagtForKostnad,
   kalenderAr,
   kostnadensAr,
+  reduktionsfaktor,
 } from "./berakningar";
 import {
   avrundaReparationUppat,
   bakreGransAr,
+  merkostnadBehoverBekraftas,
+  projektetsBelopp,
   dateratForeTilltradet,
-  delaIKategorier,
+  delaProjektetIKategorier,
   innanforBakreGrans,
   tillampaSkickfaktor,
   tillampaTidsgranser,
   troskelprovaArspostar,
-  type Fragetradssvar,
   type KategoriUppdelning,
   type NollOrsak,
 } from "./atgardsberakning";
 import { slaUppRegelparameter } from "./regelparameter";
 import {
   bakreGransForklaring,
+  merkostnadAndratText,
+  merkostnadOverBeloppetText,
   reparationsfonsterForklaring,
   troskelForklaring,
 } from "./regeltext";
@@ -191,7 +198,20 @@ export interface K6aIndata {
   regelparametrar: Regelparameter[];
 }
 
-/** Ett (projekt, kalenderar)-bidrag, innan fragetradets uppdelning korts. */
+/** En kostnads bidrag till ett projekt – enheten som steg 2 delar upp. */
+interface Bidrag {
+  kostnad: Kostnad;
+  projekt: Projekt;
+  ar: number;
+  /** rad.belopp * andel, FORE ROT/forsakring. */
+  rabelopp: number;
+  /** Efter ROT/forsakring (bidragForKostnad). */
+  avdragsgrundande: number;
+  /** Steg 3: kvittot ar daterat fore tilltradet. */
+  foreTilltradet: boolean;
+}
+
+/** Ett (projekt, kalenderar) – en rad i exporten. */
 interface Cell {
   projekt: Projekt;
   ar: number;
@@ -199,6 +219,9 @@ interface Cell {
   totalbelopp: number;
   /** Summan efter ROT/forsakring (bidragForKostnad). */
   avdragsgrundande: number;
+  /** Summan av kostnadernas uppdelning i steg 2. Nollor for en hog som
+   *  annu inte klassificerats. */
+  uppdelning: KategoriUppdelning;
   kostnadIder: Set<string>;
 }
 
@@ -275,45 +298,94 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
     }
   };
 
-  // 1. Alla bidrag per (projekt, kalenderar ur betaldatum). Bade rart
-  //    (oreducerat) och avdragsgrundande (efter ROT/forsakring) belopp
-  //    behovs: fragetradets reduktionsfaktor for en cell med flera bidragande
-  //    kostnader ar det viktade snittet av deras individuella
-  //    reduktionsfaktorer, se buildCellSplit.
-  //
-  //    Tilltradesgransen (CLAUDE.md, steg 3) provas har, per kvitto: ett kvitto
-  //    daterat fore tilltradet far BADA delarna 0, och att det aldrig bidrar
-  //    till en cell ar exakt det – innan uppdelningen, innan tidsgranserna och
-  //    framfor allt innan troskeln i steg 4. Ett belopp som aldrig var
-  //    avdragsgillt far inte lyfta aret over troskeln. Det gar inte att gora
-  //    per cell: en cell kan blanda kvitton fran fore och efter tilltradet,
-  //    och gransen galler kvittot. Kvittot redovisas i Återstår nedan.
-  const celler = new Map<string, Cell>();
+  // 1. Varje kostnads bidrag till varje projekt, med kalenderaret ur
+  //    betaldatum. Bade rart (oreducerat) och avdragsgrundande (efter
+  //    ROT/forsakring) belopp – reduktionsfaktorn tillampas per kostnad.
+  const bidrag: Bidrag[] = [];
   for (const kostnad of kostnader) {
     if (kostnad.arkiverad) continue;
-    if (dateratForeTilltradet(kostnad.dokumentdatum, bostad.tilltradesdatum)) {
-      continue;
-    }
     const ar = kostnadensAr(kostnad);
     if (ar === null) continue;
+    const foreTilltradet = dateratForeTilltradet(
+      kostnad.dokumentdatum,
+      bostad.tilltradesdatum,
+    );
     for (const p of projekt) {
       const rabelopp = beloppForKostnad(kostnad, p.id);
       if (rabelopp === 0) continue;
-      const nyckel = `${p.id}|${ar}`;
-      const cell =
-        celler.get(nyckel) ??
-        ({
-          projekt: p,
-          ar,
-          totalbelopp: 0,
-          avdragsgrundande: 0,
-          kostnadIder: new Set(),
-        } satisfies Cell);
-      cell.totalbelopp += rabelopp;
-      cell.avdragsgrundande += bidragForKostnad(kostnad, p.id);
-      cell.kostnadIder.add(kostnad.id);
-      celler.set(nyckel, cell);
+      bidrag.push({
+        kostnad,
+        projekt: p,
+        ar,
+        rabelopp,
+        avdragsgrundande: bidragForKostnad(kostnad, p.id),
+        foreTilltradet,
+      });
     }
+  }
+
+  //    Steg 2 per projekt, over ALLA projektets kostnader och ar: merkostnaden
+  //    fordelas proportionellt mot bruttot och summerar till exakt det
+  //    anvandaren svarat (CLAUDE.md, steg 2). Kvitton fore tilltradet ar med i fordelningen –
+  //    steg 2 gar fore steg 3 – och far sin del nollad nedan.
+  const uppdelningPer = new Map<Bidrag, KategoriUppdelning>();
+  for (const p of projekt) {
+    if (p.atgardstyp === null) continue;
+    const poster = bidrag
+      .filter((b) => b.projekt === p)
+      .map((b) => ({
+        id: b,
+        // Bruttot till just det har projektet: utan privat del och utan en
+        // annan atgards del av raden, men fore ROT (CLAUDE.md, steg 2).
+        bas: b.rabelopp,
+        avdragsgrundande: b.avdragsgrundande,
+        reduktionsfaktor: reduktionsfaktor(b.kostnad),
+      }));
+    const delat = delaProjektetIKategorier(
+      {
+        atgardstyp: p.atgardstyp,
+        battre_kvalitet: p.battre_kvalitet,
+        merkostnad: p.merkostnad,
+      },
+      poster,
+    );
+    for (const [b, u] of delat) uppdelningPer.set(b, u);
+  }
+
+  //    Celler: en per (projekt, ar). Tilltradesgransen (CLAUDE.md, steg 3)
+  //    provas har, per kvitto: ett kvitto daterat fore tilltradet far BADA
+  //    delarna 0, och att det aldrig bidrar till en cell ar exakt det – innan
+  //    tidsgranserna och framfor allt innan troskeln i steg 4. Ett belopp som
+  //    aldrig var avdragsgillt far inte lyfta aret over troskeln. Det gar inte
+  //    att gora per cell: en cell kan blanda kvitton fran fore och efter
+  //    tilltradet, och gransen galler kvittot. Kvittot redovisas i Återstår.
+  const celler = new Map<string, Cell>();
+  for (const b of bidrag) {
+    if (b.foreTilltradet) continue;
+    const nyckel = `${b.projekt.id}|${b.ar}`;
+    const cell =
+      celler.get(nyckel) ??
+      ({
+        projekt: b.projekt,
+        ar: b.ar,
+        totalbelopp: 0,
+        avdragsgrundande: 0,
+        uppdelning: { grundforbattringsdel: 0, reparationsunderlag: 0 },
+        kostnadIder: new Set(),
+      } satisfies Cell);
+    cell.totalbelopp += b.rabelopp;
+    cell.avdragsgrundande += b.avdragsgrundande;
+    const u = uppdelningPer.get(b);
+    if (u) {
+      cell.uppdelning = {
+        grundforbattringsdel:
+          cell.uppdelning.grundforbattringsdel + u.grundforbattringsdel,
+        reparationsunderlag:
+          cell.uppdelning.reparationsunderlag + u.reparationsunderlag,
+      };
+    }
+    cell.kostnadIder.add(b.kostnad.id);
+    celler.set(nyckel, cell);
   }
 
   // 2. Ogrupperad -> klassificerad kommer forst i genomgangen. En hog utan
@@ -391,6 +463,8 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
   //    reparation samtidigt") – utbytt+battre_kvalitet ar det enda fallet.
   const sida1: K6aExportrad[] = [];
   const sida2: K6aExportrad[] = [];
+  // Projektets rader pa sida 1, for upplysningen om merkostnaden nedan.
+  const sida1PerProjekt = new Map<string, K6aExportrad[]>();
 
   for (const { cell, uppdelning, foreBortfall } of splits) {
     const p = cell.projekt;
@@ -403,14 +477,15 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
       p.battre_kvalitet === true &&
       (p.merkostnad === null || p.merkostnad <= 0)
     ) {
-      varningar.push(
-        `Projekt "${p.namn}" (${ar}): merkostnaden är inte ifylld.`,
-      );
+      // Merkostnaden ar ett svar for hela projektet – varningen star en gang
+      // per projekt, inte en gang per ar.
+      const varning = `Projekt "${p.namn}": merkostnaden är inte ifylld.`;
+      if (!varningar.includes(varning)) varningar.push(varning);
     }
 
     if (visarSida1) {
       const beloppBrutto = avrunda(uppdelning.grundforbattringsdel);
-      sida1.push({
+      const rad1: K6aExportrad = {
         sida: 1,
         atgard: p.namn,
         ar,
@@ -435,7 +510,9 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
           beloppBrutto === 0 && uppdelning.grundforbattring_orsak
             ? nollforklaring(uppdelning.grundforbattring_orsak, ar)
             : null,
-      });
+      };
+      sida1.push(rad1);
+      sida1PerProjekt.set(p.id, [...(sida1PerProjekt.get(p.id) ?? []), rad1]);
     }
 
     if (visarSida2) {
@@ -508,6 +585,23 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
         forklaring,
       });
     }
+  }
+
+  // Merkostnaden som behover bekraftas igen (CLAUDE.md, steg 2): en
+  // upplysning per projekt, pa dess forsta rad pa sida 1 – dar den syns bade
+  // pa skarmen och i PDF:en. Taket i berakningen galler redan; har sags det.
+  for (const p of projekt) {
+    const rader = sida1PerProjekt.get(p.id);
+    if (!rader || rader.length === 0) continue;
+    const belopp = projektetsBelopp(kostnader, p.id);
+    const besked = merkostnadBehoverBekraftas(p, belopp);
+    if (!besked) continue;
+    const forsta = rader.reduce((a, b) => (b.ar < a.ar ? b : a));
+    forsta.varningar.push(
+      besked === "projektet_andrat"
+        ? merkostnadAndratText(p.namn)
+        : merkostnadOverBeloppetText(p.namn, p.merkostnad!, belopp),
+    );
   }
 
   const sortera = (a: K6aExportrad, b: K6aExportrad) =>
@@ -600,10 +694,8 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
 }
 
 /**
- * Fragetradets steg 1-3 for en cell: bygger en syntetisk kostnad av cellens
- * aggregerade rara/avdragsgrundande belopp (sa att merkostnaden bara delas ut
- * EN gang per atgard-ar, aven nar flera kostnader/rader bidragit), kor
- * delaIKategorier, och provar sedan tidsgranserna.
+ * Steg 3 for en cell: tidsgranserna pa cellens uppdelning fran steg 2 (som
+ * redan ar gjord per kostnad, over hela projektet – se steg 1 ovan).
  */
 function buildCellSplit(
   cell: Cell,
@@ -614,32 +706,8 @@ function buildCellSplit(
   forsaljningsAr: number | null,
   fonsterAr: number | null,
 ): CellSplit {
-  const p = cell.projekt;
   const betaldatum = `${cell.ar}-12-31`;
-  const svar: Fragetradssvar = {
-    atgardstyp: p.atgardstyp!,
-    battre_kvalitet: p.battre_kvalitet,
-    merkostnad: p.merkostnad,
-  };
-  // Syntetisk kostnad: totalbelopp ar cellens rara summa, och hela reduktionen
-  // (ROT + forsakring over cellens bidragande kostnader) laggs i rot_utnyttjat
-  // – delaIKategorier bryr sig bara om differensen (avdragsgrundandeBelopp),
-  // inte vilket av de tva falten som bar den.
-  const syntetisk: Kostnad = {
-    id: `${p.id}|${cell.ar}`,
-    totalbelopp: cell.totalbelopp,
-    betaldatum,
-    // Tilltradesgransen ar redan provad per kvitto nar cellen byggdes.
-    dokumentdatum: null,
-    rot_utnyttjat: cell.totalbelopp - cell.avdragsgrundande,
-    forsakringsersattning: 0,
-    arkiverad: false,
-    // En rad pa hela cellbeloppet: cellens belopp ar redan utan privat del
-    // (beloppForKostnad), sa hela beloppet ar bostadsdelen som reduktionen
-    // raknas mot (bostadensBelopp).
-    rader: [{ artikel: p.namn, belopp: cell.totalbelopp, fordelningar: [] }],
-  };
-  const raaUppdelning = delaIKategorier(syntetisk, svar);
+  const raaUppdelning = cell.uppdelning;
 
   if (sald) {
     return {

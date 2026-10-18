@@ -25,7 +25,6 @@
 import { notFound, redirect } from "next/navigation";
 import { KvittoKort } from "./kvitto-kort";
 import { Skarm } from "@/components/skarm";
-import { arEnkelKostnad } from "@/doman/berakningar";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { listaKostnadsbilagor } from "@/lib/lagring/bilagor";
@@ -127,12 +126,8 @@ export default async function KostnadSida({
   const sammanfattningsnamn = anteckning || kostnad.leverantor || "Kvitto";
 
   const domanKostnad = tillDomanKostnad(kostnad);
-  // Styr vilka falt andringslaget slapper fram: hela belopp-/ROT-/
-  // projektgruppen (arEnkelKostnad) respektive privatfaltet (enkelPrivatUppdelning)
-  // ar tva OLIKA, delvis overlappande villkor – en kostnad kan vara den
-  // kanoniska tva-radiga privata uppdelningen (privatDel finns) utan att vara
-  // "enkel" (en enda rad). Se kommentaren i kvitto-kort.tsx.
-  const enkel = arEnkelKostnad(domanKostnad);
+  // Styr vilka falt andringslaget slapper fram – samma villkor som
+  // redigeraKostnad. Se kommentaren i kvitto-kort.tsx.
   const privatDel = enkelPrivatUppdelning(domanKostnad);
 
   const kopplatProjektId =
@@ -149,7 +144,6 @@ export default async function KostnadSida({
         kostnadId={kostnad.id}
         bilagor={bilagor}
         arkiverad={kostnad.arkiverad}
-        enkel={enkel}
         projekt={projekt}
         lasVarden={{
           sammanfattningsnamn,

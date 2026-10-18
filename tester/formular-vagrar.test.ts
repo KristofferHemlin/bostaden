@@ -187,6 +187,10 @@ describe("dialoger om sparandet körs efter valideringen", () => {
 });
 
 describe("frågeträdet – felet står vid frågan det gäller", () => {
+  // Projektets belopp spelar ingen roll for de har fallen – stort nog att
+  // taket for merkostnaden aldrig slar till.
+  const STORT_PROJEKT = { belopp: 100_000_000 };
+
   function fd(falt: Record<string, string>): FormData {
     const f = new FormData();
     for (const [k, v] of Object.entries(falt)) f.set(k, v);
@@ -194,22 +198,21 @@ describe("frågeträdet – felet står vid frågan det gäller", () => {
   }
 
   it("tomt namn pekar ut fråga 1", () => {
-    expect(tolkaFragetradetFormData(fd({}))).toEqual({
+    expect(tolkaFragetradetFormData(fd({}), STORT_PROJEKT)).toEqual({
       fel: "Skriv vad du gjorde.",
       falt: "namn",
     });
   });
 
   it("obesvarad fråga 2 pekar ut den", () => {
-    expect(tolkaFragetradetFormData(fd({ namn: "Golv" }))).toEqual({
+    expect(tolkaFragetradetFormData(fd({ namn: "Golv" }), STORT_PROJEKT)).toEqual({
       fel: "Svara på om du byggde något nytt.",
       falt: "byggde_nytt",
     });
   });
 
   it("bättre kvalitet utan merkostnad pekar ut merkostnaden", () => {
-    const t = tolkaFragetradetFormData(
-      fd({
+    const t = tolkaFragetradetFormData(fd({
         namn: "Golv",
         byggde_nytt: "nej",
         andrade_planlosning: "nej",
@@ -217,19 +220,20 @@ describe("frågeträdet – felet står vid frågan det gäller", () => {
         battre_eller_liknande: "battre",
         merkostnad: "",
       }),
+      STORT_PROJEKT,
     );
     expect(t).toMatchObject({ falt: "merkostnad" });
   });
 
   it("saknat skick vid förvärvet pekar ut fråga 6", () => {
-    const t = tolkaFragetradetFormData(
-      fd({
+    const t = tolkaFragetradetFormData(fd({
         namn: "Golv",
         byggde_nytt: "nej",
         andrade_planlosning: "nej",
         nytt_eller_bytt: "bytt",
         battre_eller_liknande: "liknande",
       }),
+      STORT_PROJEKT,
     );
     expect(t).toMatchObject({ falt: "skick_forvarv" });
   });

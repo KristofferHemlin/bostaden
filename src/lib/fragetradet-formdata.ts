@@ -18,7 +18,7 @@ import {
   type NyttEllerBigtSvar,
 } from "@/doman/fragetradet";
 import type { Atgardstyp } from "@/doman/typer";
-import { oreFranKronor } from "@/lib/format";
+import { formateraKronor, oreFranKronor } from "@/lib/format";
 
 export interface FragetradetFormResultat {
   namn: string;
@@ -71,6 +71,12 @@ function asBattreEllerLiknande(
  */
 export function tolkaFragetradetFormData(
   formData: FormData,
+  projekt: {
+    /** Projektets belopp i oren (projektetsBelopp, src/doman/
+     *  atgardsberakning.ts). Merkostnaden maste vara mindre (CLAUDE.md,
+     *  steg 2). Obligatoriskt, sa att ingen anropare kan glomma taket. */
+    belopp: number;
+  },
 ): FragetradetFormResultat | FragetradetFormFel {
   const namn = String(formData.get("namn") ?? "").trim();
   if (!namn) return { fel: "Skriv vad du gjorde.", falt: "namn" };
@@ -114,6 +120,15 @@ export function tolkaFragetradetFormData(
       falt: "merkostnad",
     };
   }
+  // Och mindre an vad projektet kostade (CLAUDE.md, steg 2). Strangt: lika
+  // med beloppet avvisas ocksa – da hade det likvardiga bytet varit gratis.
+  // Samma grans som Skatteverkets e-tjanst, avlast 2026-10-18.
+  if (resultat.merkostnad !== null && resultat.merkostnad >= projekt.belopp) {
+    return {
+      fel: merkostnadOverBeloppetFel(namn, projekt.belopp),
+      falt: "merkostnad",
+    };
+  }
 
   const skick_forvarv = tolkaSkickForvarv(
     String(formData.get("skick_forvarv") ?? ""),
@@ -132,4 +147,10 @@ export function tolkaFragetradetFormData(
     skick_forvarv: harReparationsdel(svar) ? skick_forvarv : null,
     motivering: motivering || null,
   };
+}
+
+/** Meddelandet nar merkostnaden inte ar mindre an projektets belopp – vilket
+ *  projekt och vilket belopp det galler. */
+export function merkostnadOverBeloppetFel(projektnamn: string, beloppOren: number): string {
+  return `Ange en merkostnad mindre än ${formateraKronor(beloppOren)} – det är vad ”${projektnamn}” kostade.`;
 }

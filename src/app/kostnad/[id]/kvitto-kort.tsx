@@ -108,7 +108,6 @@ export function KvittoKort({
   kostnadId,
   bilagor,
   arkiverad,
-  enkel,
   projekt,
   lasVarden,
   redigeraVarden,
@@ -118,21 +117,21 @@ export function KvittoKort({
   kostnadId: string;
   bilagor: Bilagevy[];
   arkiverad: boolean;
-  /**
-   * Styr belopp-/ROT-/projektfaltet (arEnkelKostnad pa servern): en enda rad
-   * pa hela totalbeloppet, hogst en fordelning. En uppdelad kostnad andras
-   * per rad via /dela istallet.
-   */
-  enkel: boolean;
   projekt: Projektval[];
   lasVarden: LasVarden;
   redigeraVarden: RedigeraVarden;
   innehav: Innehavsgranser;
   /**
-   * Den kanoniska privata uppdelningen (enkelPrivatUppdelning pa servern) –
-   * ETT ANNAT villkor an `enkel`: den kanner ocksa igen den tva-radiga
-   * privat+ovrigt-formen, dar `enkel` ar false. Null betyder ett genuint
-   * flerprojektfall som bara gar att andra via /dela.
+   * Den kanoniska privata uppdelningen (enkelPrivatUppdelning pa servern):
+   * en enda rad, eller tva – Privat plus resten. Styr HELA gruppen belopp,
+   * projektkoppling och privatbelopp i andringslaget, med EXAKT samma villkor
+   * som redigeraKostnad anvander. Null betyder ett genuint flerprojektfall som
+   * bara gar att andra via /dela.
+   *
+   * Gruppen styrdes tidigare av ett annat villkor (en enda rad) an servern
+   * anvande. Ett kvitto med privat del gick da inte att spara alls – servern
+   * kravde beloppet som granssnittet doljde – och hade det gatt hade
+   * projektkopplingen forsvunnit, eftersom projektlistan ocksa doldes.
    */
   privatDel: { forvalt: string } | null;
 }) {
@@ -156,7 +155,6 @@ export function KvittoKort({
       {redigerar ? (
         <RedigeraVy
           kostnadId={kostnadId}
-          enkel={enkel}
           projekt={projekt}
           varden={redigeraVarden}
           innehav={innehav}
@@ -268,9 +266,8 @@ function LasVy({
 // bade lasläget och andringslaget).
 // ---------------------------------------------------------------------------
 
-function RedigeraVy({
+export function RedigeraVy({
   kostnadId,
-  enkel,
   projekt,
   varden,
   innehav,
@@ -279,7 +276,6 @@ function RedigeraVy({
   onSparat,
 }: {
   kostnadId: string;
-  enkel: boolean;
   projekt: Projektval[];
   varden: RedigeraVarden;
   innehav: Innehavsgranser;
@@ -289,6 +285,10 @@ function RedigeraVy({
 }) {
   const [resultat, spara, sparar] = useActionState(redigeraKostnad, START);
   const hanteraSparaSubmit = useForhindraDubbelinskick(sparar);
+  // Belopp, projektkoppling och privatbelopp hor ihop som EN grupp som
+  // antingen ar hela redigerbar har eller hela last – samma villkor som
+  // redigeraKostnad (se privatDel ovan).
+  const beloppsgruppRedigerbar = privatDel !== null;
   useNarKlar(sparar, Boolean(resultat.fel), (fel) => {
     if (!fel) onSparat();
   });
@@ -333,7 +333,7 @@ function RedigeraVy({
       >
         <input type="hidden" name="kostnad_id" value={kostnadId} />
 
-        {enkel ? (
+        {beloppsgruppRedigerbar ? (
           <Falt
             etikett="Totalbelopp"
             obligatoriskt
@@ -434,7 +434,7 @@ function RedigeraVy({
             och star bara i vagen for den som vill ratta ett belopp. Finns
             inga projekt visas INGEN rullista alls – inte ens ett meddelande
             i dess stalle. */}
-        {enkel && projekt.length > 0 ? (
+        {beloppsgruppRedigerbar && projekt.length > 0 ? (
           <Falt etikett="Koppla till projekt">
             <select
               name="projekt_id"
@@ -451,7 +451,7 @@ function RedigeraVy({
           </Falt>
         ) : null}
 
-        {!enkel ? (
+        {!beloppsgruppRedigerbar ? (
           <Meddelanderuta>
             Det här kvittot är uppdelat på flera rader. Leverantör och datum
             ändrar du här. Belopp och projektkoppling ligger på raderna –{" "}

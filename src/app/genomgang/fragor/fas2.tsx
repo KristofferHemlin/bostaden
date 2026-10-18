@@ -44,6 +44,11 @@ interface Hog {
   id: string;
   namnforslag: string;
   kvitton: HogKvitto[];
+  /** Hogens belopp i oren, fore ROT – merkostnaden maste vara mindre. */
+  belopp: number;
+  /** Hogens summa i oren, efter ROT – det som blir grundforbattring om ett
+   *  svar gor hela beloppet till det. */
+  summa: number;
 }
 
 export function Fas2({ hogar }: { hogar: Hog[] }) {
@@ -92,7 +97,11 @@ function HogFormular({
   const [namn, setNamn] = useState(hog.namnforslag);
   const [svar, setSvar] = useState<FragetradetUIState>(TOMMA_SVAR);
   const { formRef, hanteraSubmit, faltfel, formularfel, rensaFel } =
-    useFragetradetFormular({ pagar, resultat });
+    useFragetradetFormular({
+      pagar,
+      resultat,
+      projektetsBelopp: hog.belopp,
+    });
 
   // Nasta hog oppnas overst (docs/design.md, "Varje nytt steg i ett
   // flerstegsflode borjar overst") – utan detta star anvandaren langst ned pa
@@ -159,6 +168,7 @@ function HogFormular({
         <Fragetradet
           varden={svar}
           fel={faltfel}
+          helaBeloppet={hog.summa}
           onChange={(delvis) => {
             setSvar((s) => ({ ...s, ...delvis }));
             rensaFel();

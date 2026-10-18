@@ -224,6 +224,14 @@ Ett paritetstest låser fast att samma indata ger samma resultat för båda form
 
 **Arv, gåva och bodelning.** Skatteverket frågar om detta och säger att den tidigare ägarens utgifter ska läggas till. Appen hanterar det inte. Hur tröskeln och femårsfönstret då räknas är en obesvarad fråga – se `docs/regelkallor.md`.
 
+**Men tystnaden är struken 2026-10-18.** Att inte hantera ett fall är ett val; att inte berätta det är ett fel, och det här fallet är inte sällsynt – många ärver ett föräldrahem. Felet går dessutom åt det låga hållet, så den som drabbas märker aldrig att något saknas.
+
+**Vid registreringen av bostaden ställs därför frågan, och svaret ger en upplysning i stället för en beräkning.** Lydelsen får utformas mot `design.md`, men innehållet är bestämt: fick användaren bostaden i arv, gåva eller bodelning ska även den tidigare ägarens förbättringsutgifter med i deklarationen, och dem kan appen inte räkna – de får läggas till för hand. Upplysningen hör hemma både vid registreringen och på deklarationsunderlaget, eftersom underlaget är det som lämnar appen.
+
+**Frågan ställs bara när användaren inte var första ägaren**, på samma grund som Skatteverkets egen ordning: man ärver inte ett hus man själv byggt.
+
+**Kartlagt, inte gissat.** Skatteverkets modell för fallet är kontinuitet, och deras enda följdfråga är *"Var den tidigare ägaren den första ägaren av bostaden?"* – nybyggd-testet flyttas alltså bakåt i arvsledet. Det är den form en framtida implementation ska ha. Se ändringsloggen i `docs/regelkallor.md` 2026-10-18.
+
 ---
 
 ## 5. Datamodell
@@ -272,7 +280,8 @@ En åtgärd. Klassificeringen sitter här, inte på kostnaden.
 | ar | int | etikett för gruppering; auktoritativt år kommer från betaldatum |
 | atgardstyp | enum | `nybyggnad` \| `planlosning` \| `nytt_tillagg` \| `utbytt` – resultatet av frågeträdets steg 2–4 |
 | battre_kvalitet | bool? | endast när `atgardstyp` är `utbytt`; svaret på fråga 5 |
-| merkostnad | int? | ören, obligatorisk och > 0 när `battre_kvalitet` är true |
+| merkostnad | int? | ören, obligatorisk när `battre_kvalitet` är true; gränserna står i `CLAUDE.md` |
+| merkostnad_bas | int? | ören, projektets belopp när merkostnaden besvarades; tom för svar från före 2026-10-18 |
 | skick_forvarv | int? | skickskalan, se `CLAUDE.md`; ställs i klassificeringen |
 | skick_forsaljning | int? | skickskalan, se `CLAUDE.md`; null fram till försäljningen |
 | motivering | text? | svaret på fråga 8 |
@@ -314,7 +323,11 @@ Betalning och projektkoppling är oberoende av varandra. En entreprenörsfaktura
 
 Räknas in i årssumman gör en kostnad först när den har både betaldatum och projektkoppling och inte är arkiverad.
 
-**Begränsning för ROT och försäkringsersättning.** Båda ligger på kostnadsnivå medan fördelningen sker på radnivå. En kostnad som har `rot_utnyttjat` eller `forsakringsersattning` satt får därför bara fördelas till ett enda projekt – valideras vid sparande. Behöver en faktura delas mellan två projekt och bara den ena delen har ROT, registreras den som två kostnader. Detta är en medveten förenkling; alternativet vore att fördela avdragsposterna per rad, vilket komplicerar modellen kraftigt för ett sällsynt fall.
+**Begränsningen för ROT och försäkringsersättning är struken 2026-10-18.** Den löd att en kostnad med `rot_utnyttjat` eller `forsakringsersattning` bara fick fördelas till ett enda projekt, och kallade det en medveten förenkling "för ett sällsynt fall".
+
+**Båda premisserna visade sig falska.** Fallet är inte sällsynt: en entreprenörsfaktura som täcker flera sorters arbete – en flyttad vägg, utbytta luckor, en diskmaskin där ingen fanns – är den vanligaste formen en renovering har, och en faktura från en firma har nästan alltid ROT. Begränsningen stoppade alltså precis det fall uppdelningen finns till för. Och den komplicerar inte modellen: beräkningen fördelar redan ROT proportionellt över kostnadens rader, och det är testat.
+
+`CLAUDE.md` har hela tiden utgått från att ROT fördelas mellan åtgärder – testfallet *"10 000 kr med 3 000 kr ROT, rad fördelad 60 % mellan två åtgärder, bidrar med 4 200 kr"* bygger på det. De två dokumenten sa emot varandra, och `CLAUDE.md` gäller.
 
 ### Kostnadsrad
 Möjliggör att ett kvitto delas mellan projekt eller mellan projekt och privat.

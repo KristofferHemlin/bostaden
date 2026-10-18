@@ -7,7 +7,10 @@ import Link from "next/link";
 import { Bostadsfragor } from "./bostadsfragor";
 import { Fas2 } from "./fas2";
 import { PRIMARKNAPP_KLASS, SEKUNDARKNAPP_KLASS, Skarm } from "@/components/skarm";
+import { projektetsBelopp } from "@/doman/atgardsberakning";
+import { projektSumma } from "@/doman/berakningar";
 import { fragetradetNamnForslag } from "@/doman/genomgang";
+import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { bostadHeader } from "@/lib/bostad-header";
 import { isoDatum } from "@/lib/format";
 import { kvittoradText } from "@/lib/kvittolista";
@@ -71,8 +74,11 @@ export default async function FragorSida() {
     const hogensKvitton = kostnadRader.filter((k) =>
       k.rader.some((r) => r.fordelningar.some((f) => f.projekt_id === h.id)),
     );
+    const domanKvitton = hogensKvitton.map(tillDomanKostnad);
     return {
       id: h.id,
+      belopp: projektetsBelopp(domanKvitton, h.id),
+      summa: projektSumma(domanKvitton, h.id),
       namnforslag: fragetradetNamnForslag(hogensKvitton),
       kvitton: hogensKvitton.map((k) => {
         // Bara kopplade kostnader kommer hit – aldrig ett utkast (det har inga

@@ -3,6 +3,7 @@
 // de ihop. Datum blir "YYYY-MM-DD"-strangar, ROT/forsakring coalescas till 0.
 
 import { Prisma } from "@prisma/client";
+import { projektetsBelopp } from "@/doman/atgardsberakning";
 import { bostadsfragorForBerakning } from "@/doman/bostadsfragor";
 import type {
   Bostad as DomanBostad,
@@ -47,6 +48,7 @@ export function tillDomanProjekt(p: PrismaProjekt): DomanProjekt {
     atgardstyp: p.atgardstyp,
     battre_kvalitet: p.battre_kvalitet,
     merkostnad: p.merkostnad,
+    merkostnad_bas: p.merkostnad_bas,
     skick_forvarv: p.skick_forvarv,
     skick_forsaljning: p.skick_forsaljning,
   };
@@ -98,6 +100,26 @@ export async function hamtaKostnaderMedBilaga(bostadId: string): Promise<string[
     distinct: ["kostnad_id"],
   });
   return bilagor.flatMap((b) => (b.kostnad_id ? [b.kostnad_id] : []));
+}
+
+/**
+ * Projektets belopp (projektetsBelopp, src/doman/atgardsberakning.ts), last ur
+ * databasen: allt bostadens kostnader bidrar med till projektet, fore ROT.
+ * Det tal merkostnaden maste vara mindre an, och det som sparas som
+ * merkostnad_bas nar fragan besvaras.
+ */
+export async function hamtaProjektetsBelopp(
+  bostadId: string,
+  projektId: string,
+): Promise<number> {
+  const rader = await prisma.kostnad.findMany({
+    where: {
+      bostad_id: bostadId,
+      rader: { some: { fordelningar: { some: { projekt_id: projektId } } } },
+    },
+    include: kostnadMedRader,
+  });
+  return projektetsBelopp(rader.map(tillDomanKostnad), projektId);
 }
 
 /** Alla data oversikten och exportvyn behover for en bostad. */

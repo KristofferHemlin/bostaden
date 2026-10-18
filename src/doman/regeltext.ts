@@ -80,3 +80,28 @@ export function reparationsfonsterNamn(fonsterAr: number): string {
   const ord = talSomOrd(fonsterAr);
   return /^\d/.test(ord) ? `${ord}-årsregeln` : `${ord}årsregeln`;
 }
+
+/** Fragan ovanfor projektets fragor nar projektet andrats sedan merkostnaden
+ *  besvarades – CLAUDE.md:s lydelse, ordagrant. */
+export const MERKOSTNAD_ANDRAD_FRAGA =
+  "Projektet har ändrats sedan du svarade. Stämmer merkostnaden fortfarande?";
+
+/**
+ * Upplysningen nar projektet andrats sedan merkostnaden besvarades
+ * (CLAUDE.md, steg 2) – fragan stalls igen, ingenting raknas om.
+ */
+export function merkostnadAndratText(projektnamn: string): string {
+  return `”${projektnamn}” har ändrats sedan du svarade. Stämmer merkostnaden fortfarande?`;
+}
+
+/**
+ * Upplysningen nar merkostnaden inte langre ar mindre an projektets belopp
+ * (CLAUDE.md, steg 2): taket galler tills svaret andrats.
+ */
+export function merkostnadOverBeloppetText(
+  projektnamn: string,
+  merkostnadOren: number,
+  beloppOren: number,
+): string {
+  return `Merkostnaden för ”${projektnamn}”, ${kronorKort(merkostnadOren)}, är inte mindre än vad projektet kostade, ${kronorKort(beloppOren)}. Den räknas som högst ${kronorKort(beloppOren)} tills du ändrat svaret.`;
+}

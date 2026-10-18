@@ -57,8 +57,13 @@ export interface Projekt {
   atgardstyp: Atgardstyp | null;
   /** Fraga 5. Endast relevant nar atgardstyp ar "utbytt". */
   battre_kvalitet: boolean | null;
-  /** Oren. Obligatorisk och > 0 nar battre_kvalitet ar true, annars null. */
+  /** Oren. Obligatorisk nar battre_kvalitet ar true, och
+   *  0 < merkostnad < projektets belopp (CLAUDE.md, steg 2). Annars null. */
   merkostnad: number | null;
+  /** Oren. Projektets belopp nar merkostnaden besvarades – skiljer det sig
+   *  fran beloppet i dag stalls fragan igen. Null utan merkostnad, och for
+   *  svar fran innan det sparades. */
+  merkostnad_bas?: number | null;
   /** Fraga 6, heltal 0-5. Stalls bara nar atgarden har en reparationsdel. */
   skick_forvarv: number | null;
   /** Fraga 7, heltal 0-5. null fram till forsaljningen. */

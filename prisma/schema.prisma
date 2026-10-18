@@ -174,7 +174,11 @@ model projekt {
   ar                Int // etikett for gruppering; auktoritativt ar kommer fran betaldatum
   atgardstyp        atgardstyp? // fraga 2-4; null tills klassificeringsgenomgangens fas 2 svarat
   battre_kvalitet   Boolean? // fraga 5, endast relevant nar atgardstyp = utbytt
-  merkostnad        Int? // oren, obligatorisk och > 0 nar battre_kvalitet = true
+  merkostnad        Int? // oren, obligatorisk, 0 < merkostnad < projektets belopp, nar battre_kvalitet = true
+  // Projektets belopp (oren, fore ROT) nar merkostnaden besvarades. Ar det
+  // annorlunda i dag har projektet andrats sedan dess, och fragan stalls igen
+  // (CLAUDE.md, steg 2). Null utan merkostnad, och for svar fran fore kolumnen.
+  merkostnad_bas    Int?
   skick_forvarv     Int? // fraga 6, 0-5, stalls bara nar atgarden har en reparationsdel
   skick_forsaljning Int? // fraga 7, 0-5, null fram till forsaljningen
   motivering        String? // fraga 8, "hur vet du det?" – fritext, valfri, bar bevisningen

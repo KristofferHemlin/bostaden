@@ -14,13 +14,21 @@
 //   6. agarandel (aterananvander individuelltBelopp i berakningar.ts)
 
 import {
+  arUtkast,
   avdragsgrundandeBelopp,
+  beloppForKostnad,
   kalenderAr,
   reduktionsfaktor,
   reparationInomFemarsfonster,
 } from "./berakningar";
 import { slaUppRegelparameter } from "./regelparameter";
-import type { Atgardstyp, Kostnad, Regelparameter, Upplatelseform } from "./typer";
+import type {
+  Atgardstyp,
+  Kostnad,
+  Projekt,
+  Regelparameter,
+  Upplatelseform,
+} from "./typer";
 
 export interface Fragetradssvar {
   atgardstyp: Atgardstyp;
@@ -82,6 +90,149 @@ export function delaIKategorier(
     };
   }
   return { grundforbattringsdel: 0, reparationsunderlag: avdragsgrundande };
+}
+
+/**
+ * Merkostnaden ar ett tal for hela projektet och ska fordelas, inte upprepas
+ * (CLAUDE.md, steg 2). Fordelningen ar proportionell mot varje kostnads `bas`
+ * – bruttot, FORE ROT – och delarna summerar till EXAKT merkostnaden: varje
+ * del avrundas nedat till hela oren, och resten laggs pa den storsta
+ * kostnaden (vid lika storlek den forsta i listan). Ingen ore forsvinner
+ * eller tillkommer – summan ar det anvandaren svarat.
+ *
+ * Basen ar brutto just for att reduktionsfaktorn redan bar reduktionen:
+ * fordelas merkostnaden pa det avdragsgrundande beloppet och multipliceras
+ * sedan med faktorn dras ROT av tva ganger (CLAUDE.md, steg 2).
+ *
+ * Har projektet ingen bas alls finns ingenting att fordela pa, och alla
+ * delar ar 0.
+ */
+export function fordelaMerkostnad<Id>(
+  merkostnad: number,
+  poster: readonly { id: Id; bas: number }[],
+): Map<Id, number> {
+  const delar = new Map<Id, number>();
+  const total = poster.reduce((s, p) => s + Math.max(0, p.bas), 0);
+  if (total <= 0 || merkostnad <= 0) {
+    for (const p of poster) delar.set(p.id, 0);
+    return delar;
+  }
+  let fordelat = 0;
+  let storsta = poster[0];
+  for (const p of poster) {
+    const del = Math.floor((merkostnad * Math.max(0, p.bas)) / total);
+    delar.set(p.id, del);
+    fordelat += del;
+    if (p.bas > storsta.bas) storsta = p;
+  }
+  delar.set(storsta.id, delar.get(storsta.id)! + (merkostnad - fordelat));
+  return delar;
+}
+
+/**
+ * Projektets belopp: det kvittona bidrar med till projektet, fore ROT, utan
+ * privata rader och utan en annan atgards rader – samma mangd och samma matt
+ * som merkostnaden fordelas over (CLAUDE.md, steg 2). Arkiverade kostnader,
+ * utkast och kostnader utan betaldatum ar inte med, precis som i fordelningen.
+ *
+ * Det ar talet merkostnaden ska vara mindre an, och talet som sparas nar
+ * fragan besvaras for att se om projektet andrats sedan dess.
+ */
+export function projektetsBelopp(
+  kostnader: readonly Kostnad[],
+  projektId: string,
+): number {
+  let summa = 0;
+  for (const k of kostnader) {
+    if (k.arkiverad || arUtkast(k) || k.betaldatum === null) continue;
+    summa += beloppForKostnad(k, projektId);
+  }
+  return summa;
+}
+
+/**
+ * Varfor merkostnaden behover bekraftas igen, eller null (CLAUDE.md, steg 2):
+ *
+ *   * "inte_mindre_an_beloppet" – merkostnaden ar lika med eller storre an
+ *     projektets belopp. Taket galler tills svaret andrats.
+ *   * "projektet_andrat" – projektets belopp ar ett annat i dag an nar fragan
+ *     besvarades. Fragan stalls igen; ingenting skalas om eller nollas.
+ *
+ * Ett svar fran innan beloppet sparades (merkostnad_bas null) gar inte att
+ * jamfora och markeras inte – men taket galler for det ocksa.
+ */
+export function merkostnadBehoverBekraftas(
+  projekt: Pick<Projekt, "atgardstyp" | "battre_kvalitet" | "merkostnad" | "merkostnad_bas">,
+  belopp: number,
+): "inte_mindre_an_beloppet" | "projektet_andrat" | null {
+  if (projekt.atgardstyp !== "utbytt" || projekt.battre_kvalitet !== true) {
+    return null;
+  }
+  if (projekt.merkostnad === null) return null;
+  if (projekt.merkostnad >= belopp) return "inte_mindre_an_beloppet";
+  const bas = projekt.merkostnad_bas ?? null;
+  if (bas !== null && bas !== belopp) return "projektet_andrat";
+  return null;
+}
+
+/**
+ * Steg 2 for ett helt projekt: delar varje kostnads bidrag i grundforbattring
+ * och reparationsunderlag. For utbytt + battre kvalitet far varje kostnad sin
+ * del av merkostnaden (fordelaMerkostnad, pa bruttot), reducerad med
+ * kostnadens egen reduktionsfaktor – samma regel som delaIKategorier, men med
+ * merkostnaden delad i stallet for upprepad.
+ *
+ * `poster` ar ALLA projektets kostnader som ar med i berakningen, oavsett ar:
+ * fordelningen sker over projektet, inte over en rad i exporten.
+ */
+export function delaProjektetIKategorier<Id>(
+  svar: Fragetradssvar,
+  poster: readonly {
+    id: Id;
+    /** Bruttot, fore ROT/forsakring – fordelningens bas. */
+    bas: number;
+    /** Efter ROT/forsakring – det som delas i de tva kategorierna. */
+    avdragsgrundande: number;
+    reduktionsfaktor: number;
+  }[],
+): Map<Id, KategoriUppdelning> {
+  const ut = new Map<Id, KategoriUppdelning>();
+  if (svar.atgardstyp !== "utbytt") {
+    for (const p of poster) {
+      ut.set(p.id, {
+        grundforbattringsdel: p.avdragsgrundande,
+        reparationsunderlag: 0,
+      });
+    }
+    return ut;
+  }
+  if (!svar.battre_kvalitet) {
+    for (const p of poster) {
+      ut.set(p.id, {
+        grundforbattringsdel: 0,
+        reparationsunderlag: p.avdragsgrundande,
+      });
+    }
+    return ut;
+  }
+  // Taket (CLAUDE.md, steg 2): merkostnaden ska vara mindre an projektets
+  // belopp. Fragetradet vagrar ett sadant svar, men projektet kan krympa
+  // efterat – ett kvitto flyttas ut, ett belopp rattas – och da far inget
+  // negativt reparationsunderlag uppsta, och ingen grundforbattring storre an
+  // det som betalats. Merkostnaden raknas da som hogst hela beloppet, och
+  // exporten visar en upplysning tills svaret andrats. Ingen nedskalning,
+  // ingen nollning.
+  const helaBeloppet = poster.reduce((s, p) => s + Math.max(0, p.bas), 0);
+  const merkostnad = Math.min(svar.merkostnad ?? 0, helaBeloppet);
+  const delar = fordelaMerkostnad(merkostnad, poster);
+  for (const p of poster) {
+    const grundforbattringsdel = delar.get(p.id)! * p.reduktionsfaktor;
+    ut.set(p.id, {
+      grundforbattringsdel,
+      reparationsunderlag: p.avdragsgrundande - grundforbattringsdel,
+    });
+  }
+  return ut;
 }
 
 function bakreGransNyckel(upplatelseform: Upplatelseform): string {

@@ -170,7 +170,12 @@ export async function redigeraKostnad(
     return {};
   }
 
-  const totalbelopp = oreFranKronor(String(formData.get("totalbelopp") ?? ""));
+  // Saknas faltet helt i formularet (inte tomt – saknas) har granssnittet
+  // inte visat det, och da galler det sparade beloppet. Ett dolt falt far
+  // aldrig tolkas som "andrat till ingenting".
+  const totalbelopp = formData.has("totalbelopp")
+    ? oreFranKronor(String(formData.get("totalbelopp") ?? ""))
+    : kostnad.totalbelopp;
   if (totalbelopp === null || totalbelopp <= 0) {
     return { fel: "Fyll i ett belopp större än noll, t.ex. 1 020,95." };
   }
@@ -183,8 +188,14 @@ export async function redigeraKostnad(
     return { fel: "ROT-avdraget kan inte vara större än totalbeloppet." };
   }
 
-  let kopplatProjekt: string | null = null;
-  if (projektId !== "") {
+  // Projektkopplingen: "– inget projekt –" skickar en tom strang och kopplar
+  // loss med avsikt. Saknas faltet helt har granssnittet inte visat det, och
+  // da ligger den befintliga kopplingen kvar – annars kopplas kvittot tyst
+  // loss fran sitt projekt av en sparning som bara rattade datumet.
+  let kopplatProjekt: string | null = formData.has("projekt_id")
+    ? null
+    : privatDel.projektId;
+  if (formData.has("projekt_id") && projektId !== "") {
     const projekt = await prisma.projekt.findFirst({
       where: { id: projektId, bostad_id: bostadId },
       select: { id: true },

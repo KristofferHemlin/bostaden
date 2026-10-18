@@ -21,7 +21,11 @@ import {
   type FragetradetVarden,
 } from "../../fragetradet";
 import { Bekraftelsefraga } from "@/components/bekraftelsefraga";
-import { FALTFEL_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
+import {
+  FALTFEL_KLASS,
+  Meddelanderuta,
+  PRIMARKNAPP_KLASS,
+} from "@/components/skarm";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 
@@ -37,10 +41,21 @@ export function RedigeraProjektForm({
   projektId,
   blockerande,
   varden,
+  projektetsBelopp,
+  projektetsSumma,
+  merkostnadAndrad,
 }: {
   projektId: string;
   blockerande: Blockerande[];
   varden: FragetradetVarden;
+  /** Projektets belopp i oren, fore ROT – merkostnaden maste vara mindre. */
+  projektetsBelopp: number;
+  /** Projektets summa i oren, efter ROT – visas under ett svar som gor hela
+   *  beloppet till grundforbattring. */
+  projektetsSumma: number;
+  /** Fragan som stalls igen nar projektet andrats sedan merkostnaden
+   *  besvarades (CLAUDE.md, steg 2), eller null. */
+  merkostnadAndrad: string | null;
 }) {
   const [resultat, spara, sparar] = useActionState(redigeraProjekt, START);
   const [radera, raderaAction, raderar] = useActionState(taBortProjekt, START);
@@ -51,7 +66,11 @@ export function RedigeraProjektForm({
     faltfel,
     formularfel,
     rensaFel,
-  } = useFragetradetFormular({ pagar: sparar, resultat });
+  } = useFragetradetFormular({
+    pagar: sparar,
+    resultat,
+    projektetsBelopp,
+  });
   const hanteraRaderaSubmit = useForhindraDubbelinskick(raderar);
 
   return (
@@ -65,7 +84,18 @@ export function RedigeraProjektForm({
       >
         <input type="hidden" name="projekt_id" value={projektId} />
 
-        <FragetradetFalt initial={varden} fel={faltfel} onAndring={rensaFel} />
+        {/* Omfragningen (CLAUDE.md, steg 2): det gamla svaret star forifyllt
+            nedan, och att spara det – andrat eller inte – ar svaret. */}
+        {merkostnadAndrad ? (
+          <Meddelanderuta>{merkostnadAndrad}</Meddelanderuta>
+        ) : null}
+
+        <FragetradetFalt
+          initial={varden}
+          fel={faltfel}
+          onAndring={rensaFel}
+          helaBeloppet={projektetsSumma}
+        />
 
         {/* Bara fel som inte hor till nagon fraga star har – resten star vid
             sin fraga (docs/design.md, "Nar ett formular vagrar"). */}

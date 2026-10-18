@@ -12,7 +12,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { kostnaderKoppladeTillProjekt } from "@/doman/berakningar";
-import { tillDomanKostnad } from "@/lib/doman-fran-db";
+import { hamtaProjektetsBelopp, tillDomanKostnad } from "@/lib/doman-fran-db";
 import { kravBostadsfragorBesvarade } from "@/lib/bostadsfragor-sparr";
 import {
   tolkaFragetradetFormData,
@@ -55,7 +55,11 @@ export async function redigeraProjekt(
   });
   if (!projekt) return { fel: "Projektet hittades inte." };
 
-  const tolkat = tolkaFragetradetFormData(formData);
+  // Projektets belopp: merkostnaden maste vara mindre (CLAUDE.md, steg 2).
+  // Att spara svaret – aven oforandrat – ar att bekrafta det: beloppet sparas
+  // pa nytt, och en tidigare upplysning om att projektet andrats forsvinner.
+  const belopp = await hamtaProjektetsBelopp(bostadId, id);
+  const tolkat = tolkaFragetradetFormData(formData, { belopp });
   if ("fel" in tolkat) return tolkat;
 
   await prisma.projekt.update({
@@ -65,6 +69,7 @@ export async function redigeraProjekt(
       atgardstyp: tolkat.atgardstyp,
       battre_kvalitet: tolkat.battre_kvalitet,
       merkostnad: tolkat.merkostnad,
+      merkostnad_bas: tolkat.merkostnad !== null ? belopp : null,
       skick_forvarv: tolkat.skick_forvarv,
       motivering: tolkat.motivering,
       klassificerad_av: anvandareId,

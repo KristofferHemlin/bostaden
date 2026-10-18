@@ -69,7 +69,17 @@ Frågorna ställs en gång per åtgärd, aldrig per kvitto. Grenar som inte påv
 
 Fråga 6 och 7 ställs bara när åtgärden har en reparationsdel. En ren grundförbättring har ingen, och då är skicket utan betydelse.
 
-**Merkostnaden är obligatorisk och större än noll** när svaret på fråga 5 är att det nya är av bättre kvalitet. Säger man att det blev bättre måste det ha blivit dyrare, annars var bytet per definition likvärdigt. Skatteverkets verktyg avvisar noll här.
+**Merkostnaden är obligatorisk, större än noll och mindre än kostnaden** när svaret på fråga 5 är att det nya är av bättre kvalitet. Säger man att det blev bättre måste det ha blivit dyrare, annars var bytet per definition likvärdigt — och hade merkostnaden varit hela kostnaden hade det likvärdiga bytet varit gratis.
+
+**Detta är inte härlett, det är avläst.** Skatteverkets egen e-tjänst *Räkna ut avdrag för renoveringar och nybyggnation* kördes igenom 2026-10-18 och frågar exakt som vi: efter *"Ja, det nya är av bättre kvalitet"* kommer först **"Vad kostade det?"** och sedan **"Hur mycket dyrare uppskattar du att det blev på grund av att du valde det dyrare alternativet?"** — ett belopp i kronor, en uppskattning, inte en procentsats. Deras gräns är **sträng**: 10 000 kr i kostnad med 12 000 kr i merkostnad avvisas, och **10 000 mot 10 000 avvisas också**, båda med lydelsen *"Beloppet måste vara mindre än kostnaden för hela renoveringen."* Ingen nedskalning, ingen varning som går att klicka förbi — åtgärden läggs inte till.
+
+Därmed är frågan om tak eller ny fråga avgjord: **frågan är rätt ställd, det är spärren som saknas.**
+
+**Teknisk utveckling är inte bättre kvalitet.** Skatteverket skriver, under rubriken *Likvärdigt material eller byggnadsdel*, att en *"Standardförbättring av värmekälla eller vitvaror på grund av den tekniska utvecklingen"* — deras exempel är lägre energiförbrukning — *"räknas också som underhåll."* En ny kyl som är bättre bara för att kylskåp har blivit bättre är alltså ett **likvärdigt** byte, inte ett bättre, och har ingen merkostnad.
+
+Det ändrar vilket svar som är rätt på fråga 5, inte hur svaret räknas, så regeln hör hemma i frågans hjälpruta och inte i beräkningen. **Felet den rättar går åt det höga hållet:** den som byter kyl eller värmekälla svarar naturligt *bättre kvalitet* och får en grundförbättring som inte skulle finnas. Hittad 2026-10-18, se `docs/regelkallor.md`.
+
+**Merkostnaden är prisskillnaden mot ett likvärdigt byte.** Skatteverkets eget exempel på samma sida: ett parkettgolv kostar 8 000 kr där ett likvärdigt plastgolv hade kostat 3 000 kr, och **5 000 kr** är då grundförbättringen. Det är samma tal som deras e-tjänst frågar efter som *"hur mycket dyrare"*. Exemplet hör hemma i hjälprutan, eftersom det förklarar frågan bättre än någon definition.
 
 **Fråga 8 ställs bara när `skick_forvarv` är 0, 1 eller 2.** Är skicket vid förvärvet satt högre blir reparationsavdraget litet ändå, och då finns inget att försvara. Skälen till att fältet är villkorat står i `docs/produktspec.md` avsnitt 4.1.
 
@@ -86,6 +96,7 @@ Ordningen är bindande.
 2.  grundforbattringsdel:
       nybyggnad | planlosning | nytt_tillagg → hela avdragsgrundande
       utbytt + battre_kvalitet               → merkostnad * reduktionsfaktor
+        fördelad över projektets kostnader (se nedan)
       utbytt + liknande_kvalitet             → 0
     reparationsunderlag = avdragsgrundande - grundforbattringsdel
 
@@ -115,6 +126,34 @@ Ordningen är bindande.
 
 **Nybyggd-regeln ligger i steg 3 av samma skäl**, trots att den inte är en tidsgräns: var bostaden nybyggd vid förvärvet är reparationen inte en förbättringsutgift, och ett belopp som aldrig var avdragsgillt kan inte lyfta året över tröskeln. Den träffar bara reparationsdelen – en merkostnad för bättre kvalitet är en standardhöjning oavsett bostadens skick vid köpet.
 
+**Merkostnaden är ett tal för hela projektet och ska fördelas, inte upprepas.** Användaren anger den en gång, i frågeträdet, som svar på vad den högre kvaliteten kostade *utöver* ett likvärdigt byte. Ett projekt kan ha flera kostnader, och exporten ger en rad per kalenderår — då måste merkostnaden delas mellan raderna.
+
+**Fördelningen är proportionell mot varje kostnads andel av projektets `belopp` — det kvittot bidrar med till projektet, före ROT.** Privata rader och rader som hör till en annan åtgärd ingår inte i basen, eftersom de inte ingår i projektet; en vara man köpt privat har inget med den högre kvaliteten på bostadens arbete att göra. ROT däremot ingår i basen, eftersom `reduktionsfaktor` är det som bär den reduktionen. Ett projekt på 50 000 kr med 30 000 i det ena året och 20 000 i det andra, och en merkostnad på 12 000 kr, ger 7 200 kr respektive 4 800 kr.
+
+**Basen är brutto just för att `reduktionsfaktor` redan bär reduktionen.** Fördelas merkostnaden i stället på det avdragsgrundande beloppet, och varje del sedan multipliceras med sin faktor, dras ROT av två gånger. Räkneexemplet som visade det: 30 000 kr med 6 000 kr ROT och 20 000 kr utan, samma år, merkostnad 12 000 kr. Brutto som bas ger `12 000 × 30/50 × 0,8 + 12 000 × 20/50 × 1,0 = 10 560 kr`. Avdragsgrundande som bas ger 10 690,91 kr — 131 kr för mycket, och felet växer med ROT-beloppet. Saknas ROT och privat andel är baserna identiska, så skillnaden syns bara i blandade projekt.
+
+**Merkostnaden ska vara mindre än projektets belopp.** Taket gäller alltid, inte bara efter en ändring, och gränsen är sträng i båda ändar: `0 < merkostnad < belopp`. Utan det ger ett projekt med 10 000 kr kvar och 12 000 kr i merkostnad **12 000 kr på sida 1 — mer än som betalats — och −2 000 kr i beloppkolumnen på sida 2.** Ett negativt belopp i ett deklarationsunderlag är det värsta tal appen kan skriva, och frågeträdet kontrollerar i dag bara att merkostnaden är större än noll. Den stränga övre gränsen är Skatteverkets, avläst i deras e-tjänst (se steg 2 ovan); lika med kostnaden avvisas där med samma meddelande som ett för högt belopp.
+
+**Spärren och taket är två olika saker, och bara spärren är sträng.** Spärren prövar **svaret** när det ges: `0 < merkostnad < belopp`, och den är sträng för att det är Skatteverkets gräns. Taket prövar **beräkningen** när svaret hunnit bli inaktuellt, och där gäller `min(merkostnad, belopp)` — alltså inte sträng. Skälet är att de löser olika problem: spärren hindrar ett omöjligt svar, taket hindrar ett omöjligt *tal* i ett underlag när projektet krympt efter att frågan besvarades. Taket får därför ge hela beloppet som grundförbättring och noll i reparation. Det är den generösa riktningen, och den är avsiktlig: alternativet vore att nolla eller skala ner, vilket reglerna nedan förbjuder, eller att hålla projektet utanför underlaget, vilket gör ett transient tillstånd till ett saknat avdrag. Upplysningen är det som bär sanningen tills frågan besvarats igen.
+
+Skriven 2026-10-18 efter att agenten byggde taket och frågade vilket tal det skulle sätta. Frågan var rätt ställd: de två gränserna stod i samma stycke och såg ut som en.
+
+**Ändras projektets innehåll ska frågan ställas igen, inte räknas om.** Projektets belopp sparas när merkostnaden besvaras, i `projekt.merkostnad_bas`. Ändras det åt något håll — ett kvitto flyttas ut, ett läggs till, ett belopp rättas — markeras projektet: *"Projektet har ändrats sedan du svarade. Stämmer merkostnaden fortfarande?"*, med det gamla svaret förifyllt. Tills hon svarat visar exporten en upplysning och taket ovan gäller. Att spara redigeringen räknas som svaret, även om ingenting ändrades.
+
+**Känd lucka med ett utgångsdatum:** svar som gavs innan `merkostnad_bas` fanns saknar jämförelsetal, och för dem upptäcks ingen ändring. Taket gäller ändå. Luckan går att stänga en gång för alla innan lansering, genom att sätta `merkostnad_bas` till projektets nuvarande belopp för de projekt som har en merkostnad men inget bas. Antagandet — att projektet inte ändrats sedan svaret — kan vara fel, men bara i de fall som i dag ändå aldrig flaggas, så åtgärden kan inte göra något sämre.
+
+**Skala aldrig ner automatiskt.** Det antar att premien fördelade sig jämnt över kvittona, och det gör den sällan: var det utflyttade kvittot installationen medan premien satt i fönstren, är premien oförändrad. **Och nolla aldrig.** Då faller hela projektet ur underlaget för en detalj användaren inte bett om att ändra.
+
+**ROT fördelas proportionellt mellan åtgärder på samma kvitto.** En entreprenörsfaktura som täcker flera sorters arbete bär en skattereduktion som gäller arbetet i alla delarna. Fördelningen efter radernas andel är en **approximation** — den verkliga arbetskostnaden kan ligga annorlunda — men den är en bättre approximation än att vägra dela fakturan alls, vilket var den gamla regeln. `produktspec.md` sa länge motsatsen; den motsägelsen är struken och den här regeln gäller.
+
+**Kostnader som faller bort senare får ändå sin del.** Steg 2 går före steg 3, så ett kvitto daterat före tillträdet tilldelas sin andel av merkostnaden och den andelen nollas sedan med resten av kostnaden. Det är avsiktligt: premien hänger på utgiften, och en utgift som inte var din bär en premie som inte heller var din. Att koncentrera merkostnaden på de kostnader som överlever vore att yrka avdrag på pengar användaren inte lagt ut som ägare.
+
+**Arkiverade kostnader och kostnader utan betaldatum deltar inte i fördelningen.** De har ingen rad i exporten, så deras del skulle försvinna utan att summan stämde.
+
+**Delarna måste summera till exakt merkostnaden.** Går fördelningen inte jämnt upp läggs resten på den största kostnaden, så att ingen öre försvinner eller tillkommer. Summan är det användaren svarat, och den får inte ändras av att den delas.
+
+Skriven 2026-10-18, efter att en genomklickning visade motsatsen: merkostnaden räknades **en gång per rad**. Ett fönsterbyte med 12 000 kr i merkostnad och kvitton i två år gav 12 000 kr på båda raderna, alltså 24 000 kr till ruta 4 — dubbelt mot vad användaren angett, och åt det håll som ger för lågt skatteuttag. Formeln ovan var skriven som om ett projekt har en enda kostnad, och koden följde den bokstavligt.
+
 **Tillträdesgränsen ligger i steg 3 av samma skäl som nybyggd-regeln.** En utgift som betalades innan bostaden var din är inte din förbättringsutgift, och ett belopp som aldrig var avdragsgillt kan inte lyfta året över tröskeln. Till skillnad från nybyggd-regeln träffar den **båda** delarna: varken grundförbättring eller reparation var din.
 
 Skriven 2026-10-18, efter att en genomklickning visade att ingen beräkning läste `tilltradesdatum` trots att den här filen redan kallade det *"gränsen för vilka utgifter som är dina"*. Ett kvitto på 45 250 kr daterat 2019 mot ett tillträde 2022 hamnade i sin helhet på sida 1. Meningen fanns; koden gjorde det inte.
@@ -122,6 +161,10 @@ Skriven 2026-10-18, efter att en genomklickning visade att ingen beräkning läs
 **Gränsen prövar kvittots datum, inte betaldatumet.** Det avviker från resten av beräkningen och är samma val som notisen gör, av samma skäl: det är inköpsögonblicket som avgör om utgiften var din. Konsekvensen måste vara densamma som det notisen lovar, annars säger appen en sak och räknar en annan.
 
 **Känd lucka, medvetet olöst:** material som köps dagarna före tillträdet och hör till bostaden faller ut med den här regeln. Fallet är ovanligt, och kvittot försvinner inte – det ligger i arkivet och redovisas under *Återstår* med sitt skäl, där användaren ser det. Att lösa det kräver en branch på betaldatum eller ett bekräftat undantag, och ingen av dem är genomtänkt. Det står här för att ingen senare ska tro att fallet var avgjort.
+
+**Känd lucka, ännu obeslutad: samma byggnadsdel reparerad två gånger.** Skatteverket skriver, under *Detta räknas som reparation eller underhåll*, att har man reparerat eller bytt ut samma byggnadsdel flera gånger **är det bara den senaste utgiften som får dras av**. Regeln träffar bara reparationsdelen, och den biter bara när båda utgifterna ligger inne i femårsfönstret — måla om fasaden 2022 och igen 2025 inför en försäljning 2026, och bara 2025 räknas.
+
+Appen känner inte till byggnadsdelar. Den har projekt, och två projekt som rör samma sak får i dag båda sin reparationsdel. **Felet går åt det farliga hållet: för högt avdrag.** Att lösa det kräver ett nytt begrepp — vilken del av bostaden en åtgärd rör — och det är ett designbeslut, inte en rättning. Hittad på skatteverket.se 2026-10-18, skriven hit samma dag så att ingen senare tror att fallet var avgjort.
 
 **Avrundning sker uppåt, och först vid utskrift.**
 
@@ -147,9 +190,17 @@ Bekräftat av Skatteverkets upplysningstjänst 2026-09-15.
 
 ### Skickskalan
 
-Ett heltal 0–5 där 0 är mycket dåligt skick och 5 är nytt skick. Skalan är Skatteverkets egen konstruktion, inte en lagregel, men appen använder den för att siffrorna ska stämma med vad användaren senare möter i deklarationen.
+Ett heltal 0–5. Skalan är Skatteverkets egen konstruktion, inte en lagregel, men appen använder den för att siffrorna ska stämma med vad användaren senare möter i deklarationen. **Deras etiketter, ordagrant:**
+
+| 0 | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|
+| Mycket dåligt skick | Dåligt skick | Ganska bra skick | Bra skick | Nästan nytt skick | Nytt skick |
+
+Skicket frågas **per åtgärd, inte per bostad** – deras lydelse är *"hur var skicket på **det du har bytt ut eller renoverat**"*, med hjälptexten *"Välj en siffra mellan 0 till 5."*
 
 Faktorn är skillnaden delat med fem. Är skicket lika eller sämre vid försäljningen blir avdraget noll – åtgärden har då inte förbättrat bostaden jämfört med förvärvet.
+
+**Båda delarna är mätta mot Skatteverkets e-tjänst 2026-10-18, inte härledda.** En reparation på 10 000 kr med skick 1 vid köpet och 4 vid försäljningen gav där **6 000 kr**, alltså exakt `(4 − 1) / 5`. Samma post med skick 4 → 1 gav **0 kr**, med skälet *"Det du har bytt ut var av sämre eller i liknande skick när du sålde bostaden, jämfört med när du köpte den"* – vilket bekräftar att även lika skick ger noll. Skickfrågorna ställs bara när bostaden inte var nybyggd vid förvärvet; är den det släcks hela reparationsgrenen och frågan ställs aldrig.
 
 `skick_forsaljning` är null fram till försäljningen. Null blockerar aldrig inmatning eller översikt, bara exporten – som ändå inte kan tas fram innan försäljningen är registrerad.
 
