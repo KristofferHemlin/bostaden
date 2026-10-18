@@ -17,18 +17,19 @@ import { klassificeraHog, type FragorResultat } from "./actions";
 import {
   Fragetradet,
   FragetradetDoldaFalt,
+  NamnFalt,
   TOMMA_SVAR,
+  useFragetradetFormular,
   type FragetradetUIState,
 } from "@/app/projekt/fragetradet";
 import {
   Avdelningsrubrik,
-  Falt,
+  FALTFEL_KLASS,
   Friskrivning,
-  INPUT_KLASS,
   PRIMARKNAPP_KLASS,
 } from "@/components/skarm";
-import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { formateraKronor } from "@/lib/format";
+import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 
 const START: FragorResultat = {};
 
@@ -90,7 +91,8 @@ function HogFormular({
   const [resultat, action, pagar] = useActionState(klassificeraHog, START);
   const [namn, setNamn] = useState(hog.namnforslag);
   const [svar, setSvar] = useState<FragetradetUIState>(TOMMA_SVAR);
-  const hanteraSubmit = useForhindraDubbelinskick(pagar);
+  const { formRef, hanteraSubmit, faltfel, formularfel, rensaFel } =
+    useFragetradetFormular({ pagar, resultat });
 
   // Nasta hog oppnas overst (docs/design.md, "Varje nytt steg i ett
   // flerstegsflode borjar overst") – utan detta star anvandaren langst ned pa
@@ -136,35 +138,46 @@ function HogFormular({
         </ul>
       </section>
 
-      <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-6 p-5">
+      <form
+        ref={formRef}
+        action={action}
+        onSubmit={hanteraSubmit}
+        noValidate
+        className="flex flex-col gap-6 p-5"
+      >
         <input type="hidden" name="projekt_id" value={hog.id} />
 
-        <Falt
-          etikett="Vad gjorde du?"
-          obligatoriskt
-          hjalp="Namnet hamnar i ditt deklarationsunderlag – skriv så att någon annan förstår."
-        >
-          <input
-            type="text"
-            value={namn}
-            onChange={(e) => setNamn(e.target.value)}
-            required
-            className={INPUT_KLASS}
-            placeholder="t.ex. måla sovrum"
-          />
-        </Falt>
+        <NamnFalt
+          varde={namn}
+          fel={faltfel?.falt === "namn" ? faltfel.fel : undefined}
+          onChange={(v) => {
+            setNamn(v);
+            rensaFel();
+          }}
+        />
 
         <Fragetradet
           varden={svar}
-          onChange={(delvis) => setSvar((s) => ({ ...s, ...delvis }))}
+          fel={faltfel}
+          onChange={(delvis) => {
+            setSvar((s) => ({ ...s, ...delvis }));
+            rensaFel();
+          }}
         />
 
         <input type="hidden" name="namn" value={namn} />
         <FragetradetDoldaFalt svar={svar} />
 
-        {resultat.fel ? (
-          <p className="font-granssnitt text-sm text-accent">
-            {resultat.fel}
+        {/* Bara fel som inte hor till nagon fraga star har – resten star vid
+            sin fraga (docs/design.md, "Nar ett formular vagrar"). */}
+        {formularfel ? (
+          <p
+            role="alert"
+            tabIndex={-1}
+            {...{ [FORMULARFEL_ATTRIBUT]: "" }}
+            className={`${FALTFEL_KLASS} outline-none`}
+          >
+            {formularfel}
           </p>
         ) : null}
 

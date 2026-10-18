@@ -18,12 +18,23 @@
 // eller 6 – skicket saknar da betydelse. Byter man svar pa en tidigare fraga
 // nollas allt som byggde pa den, sa ett gammalt svar aldrig ligger kvar dolt.
 //
+// Ett avvisat svar visas vid den fraga det galler, med role="alert", och
+// fokus flyttas dit (docs/design.md, "Nar ett formular vagrar"). Formularen
+// provar samma tolkning som servern (src/lib/fragetradet-formdata.ts) innan
+// de skickar – useFragetradetFormular nedan ar det delade monstret.
+//
 // Varje fraga far en hjalpruta med konkreta exempel, UTFALLD SOM STANDARD och
 // mojlig att stanga (CLAUDE.md) – i motsats till en informationsknapp som
 // maste klickas fram. Svarsalternativ ar klickbara kort med kort text, inga
 // underrubriker (docs/design.md).
 
-import { useState, type ReactNode } from "react";
+import {
+  type FormEvent,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   fraga3Relevant,
   fraga4Relevant,
@@ -37,8 +48,18 @@ import {
   type NyttEllerBigtSvar,
 } from "@/doman/fragetradet";
 import { BeloppFalt } from "@/components/belopp-falt";
-import { Falt, INPUT_KLASS } from "@/components/skarm";
+import { Falt, FALTFEL_KLASS, INPUT_KLASS } from "@/components/skarm";
+import {
+  forsokBorjaInskickning,
+  useDubbelinskickRef,
+} from "@/lib/dubbelinskick";
 import { formateraBeloppInmatning, oreFranKronor } from "@/lib/format";
+import { FALTFEL_ATTRIBUT, fokuseraForstaFel } from "@/lib/formularfel";
+import {
+  tolkaFragetradetFormData,
+  type FragetradetFaltnamn,
+  type FragetradetFormFel,
+} from "@/lib/fragetradet-formdata";
 
 /** UI-tillstandet: fragetradets svar (fraga 2-5) plus fraga 6 och 8, som
  *  lagras rakt av utan tolkning. merkostnad och skick_forvarv ar textfalt har
@@ -102,16 +123,20 @@ export function Kortval({
 export function Fraga({
   rubrik,
   hjalp,
+  fel,
   children,
 }: {
   rubrik: string;
   /** Konkret exempel pa vad svaret betyder – Skatteverkets egen stil. */
   hjalp: string;
+  /** Varfor svaret avvisades. Star under alternativen, och gruppens forsta
+   *  alternativ far fokus. */
+  fel?: string;
   children: ReactNode;
 }) {
   const [visaHjalp, setVisaHjalp] = useState(true);
   return (
-    <fieldset>
+    <fieldset {...(fel ? { [FALTFEL_ATTRIBUT]: "" } : {})}>
       <legend className="mb-1.5 font-granssnitt text-sm text-text-sekundar">
         {rubrik}
       </legend>
@@ -129,6 +154,11 @@ export function Fraga({
         </div>
       ) : null}
       <div className="flex flex-col gap-2">{children}</div>
+      {fel ? (
+        <p role="alert" className={`mt-1.5 ${FALTFEL_KLASS}`}>
+          {fel}
+        </p>
+      ) : null}
     </fieldset>
   );
 }
@@ -156,16 +186,22 @@ const HJALP_SKICK_FORVARV =
 export function Fragetradet({
   varden,
   onChange,
+  fel,
 }: {
   varden: FragetradetUIState;
   onChange: (delvis: Partial<FragetradetUIState>) => void;
+  /** Ett avvisat svar – visas vid den fraga det galler. */
+  fel?: FragetradetFormFel | null;
 }) {
+  const felFor = (falt: FragetradetFaltnamn) =>
+    fel?.falt === falt ? fel.fel : undefined;
   return (
     <div className="flex flex-col gap-6">
       {/* Fraga 2. */}
       <Fraga
         rubrik="Byggde du något nytt som inte fanns tidigare?"
         hjalp={HJALP_BYGGDE_NYTT}
+        fel={felFor("byggde_nytt")}
       >
         <Kortval
           vald={varden.byggdeNytt === "ja"}
@@ -194,6 +230,7 @@ export function Fragetradet({
         <Fraga
           rubrik="Ändrade du planlösningen?"
           hjalp={HJALP_PLANLOSNING}
+          fel={felFor("andrade_planlosning")}
         >
           <Kortval
             vald={varden.andradePlanlosning === "ja"}
@@ -222,6 +259,7 @@ export function Fragetradet({
         <Fraga
           rubrik="Satte du in något nytt, eller bytte du ut något som fanns?"
           hjalp={HJALP_NYTT_ELLER_BYTT}
+          fel={felFor("nytt_eller_bytt")}
         >
           <Kortval
             vald={varden.nyttEllerBytt === "nytt"}
@@ -249,6 +287,7 @@ export function Fragetradet({
         <Fraga
           rubrik="Är det nya av bättre kvalitet, eller liknande som tidigare?"
           hjalp={HJALP_BATTRE_ELLER_LIKNANDE}
+          fel={felFor("battre_eller_liknande")}
         >
           <Kortval
             vald={varden.battreEllerLiknande === "battre"}
@@ -271,8 +310,15 @@ export function Fragetradet({
 
       {/* Fraga 5:s foljd – merkostnaden, obligatorisk och > 0 nar "battre". */}
       {varden.battreEllerLiknande === "battre" ? (
-        <Falt etikett="Merkostnaden för den högre kvaliteten" obligatoriskt hjalp={HJALP_MERKOSTNAD}>
+        <Falt
+          etikett="Merkostnaden för den högre kvaliteten"
+          obligatoriskt
+          hjalp={HJALP_MERKOSTNAD}
+          fel={felFor("merkostnad")}
+        >
           <BeloppFalt
+            aria-invalid={felFor("merkostnad") ? true : undefined}
+            {...(felFor("merkostnad") ? { [FALTFEL_ATTRIBUT]: "" } : {})}
             value={varden.merkostnadText}
             onValueChange={(text) => {
               const formaterat = formateraBeloppInmatning(text);
@@ -289,7 +335,11 @@ export function Fragetradet({
 
       {/* Fraga 6 – bara nar atgarden har en reparationsdel. */}
       {harReparationsdel(varden) ? (
-        <Fraga rubrik="Hur var skicket vid förvärvet?" hjalp={HJALP_SKICK_FORVARV}>
+        <Fraga
+          rubrik="Hur var skicket vid förvärvet?"
+          hjalp={HJALP_SKICK_FORVARV}
+          fel={felFor("skick_forvarv")}
+        >
           {SKICK_ORD.map((ord, siffra) => (
             <Kortval
               key={siffra}
@@ -376,8 +426,14 @@ const TOMT: FragetradetVarden = { namn: "", ...TOMMA_SVAR };
  */
 export function FragetradetFalt({
   initial,
+  fel,
+  onAndring,
 }: {
   initial?: FragetradetVarden;
+  /** Ett avvisat svar – visas vid den fraga det galler. */
+  fel?: FragetradetFormFel | null;
+  /** Anropas vid varje andring, sa att ett visat fel kan forsvinna. */
+  onAndring?: () => void;
 }) {
   const start = initial ?? TOMT;
   const [namn, setNamn] = useState(start.namn);
@@ -394,30 +450,121 @@ export function FragetradetFalt({
 
   return (
     <div className="flex flex-col gap-6">
-      <Falt
-        etikett="Vad gjorde du?"
-        obligatoriskt
-        hjalp="Namnet hamnar i ditt deklarationsunderlag – skriv så att någon annan förstår."
-      >
-        <input
-          type="text"
-          value={namn}
-          onChange={(e) => setNamn(e.target.value)}
-          required
-          className={INPUT_KLASS}
-          placeholder="t.ex. måla sovrum"
-        />
-      </Falt>
+      <NamnFalt
+        varde={namn}
+        fel={fel?.falt === "namn" ? fel.fel : undefined}
+        onChange={(v) => {
+          setNamn(v);
+          onAndring?.();
+        }}
+      />
 
       <Fragetradet
         varden={svar}
-        onChange={(delvis) => setSvar((s) => ({ ...s, ...delvis }))}
+        fel={fel}
+        onChange={(delvis) => {
+          setSvar((s) => ({ ...s, ...delvis }));
+          onAndring?.();
+        }}
       />
 
       <input type="hidden" name="namn" value={namn} />
       <FragetradetDoldaFalt svar={svar} />
     </div>
   );
+}
+
+/** Fraga 1, "Vad gjorde du?" – delad av genomgangens fas 2 och redigeringen. */
+export function NamnFalt({
+  varde,
+  fel,
+  onChange,
+}: {
+  varde: string;
+  fel?: string;
+  onChange: (varde: string) => void;
+}) {
+  return (
+    <Falt
+      etikett="Vad gjorde du?"
+      obligatoriskt
+      fel={fel}
+      hjalp="Namnet hamnar i ditt deklarationsunderlag – skriv så att någon annan förstår."
+    >
+      <input
+        type="text"
+        value={varde}
+        onChange={(e) => onChange(e.target.value)}
+        required
+        aria-invalid={fel ? true : undefined}
+        {...(fel ? { [FALTFEL_ATTRIBUT]: "" } : {})}
+        className={INPUT_KLASS}
+        placeholder="t.ex. måla sovrum"
+      />
+    </Falt>
+  );
+}
+
+/**
+ * Det delade monstret for formular som skickar fragetradet (docs/design.md,
+ * "Nar ett formular vagrar"). Provar serverns tolkning innan nagot skickas;
+ * ett fel visas vid fragan det galler och fokus flyttas dit. Avvisar servern
+ * nagot anda visas det pa samma satt – vid fragan om det galler en, annars
+ * som `formularfel` ovanfor knappen. Skyddet mot dubbel inskickning ligger
+ * har ocksa (src/lib/dubbelinskick.ts), efter valideringen: ett avvisat
+ * formular har inte borjat sparas.
+ *
+ * Formularet satter `ref={formRef}`, `onSubmit={hanteraSubmit}` och
+ * `noValidate` – webblasarens egen kontroll av `required` flyttar bara fokus,
+ * utan ett ord.
+ */
+export function useFragetradetFormular({
+  pagar,
+  resultat,
+}: {
+  pagar: boolean;
+  resultat: { fel?: string; falt?: FragetradetFaltnamn };
+}) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const pagarRef = useDubbelinskickRef(pagar);
+  const [fel, setFel] = useState<{ fel: string; falt?: FragetradetFaltnamn } | null>(
+    null,
+  );
+  const [fokusBegaran, setFokusBegaran] = useState(0);
+
+  useEffect(() => {
+    if (fokusBegaran > 0) fokuseraForstaFel(formRef.current);
+  }, [fokusBegaran]);
+
+  // Varje svar fran servern ar ett nytt objekt – ett fel i det visas och tar
+  // fokus, aldrig <body>.
+  useEffect(() => {
+    if (!resultat.fel) return;
+    setFel({ fel: resultat.fel, falt: resultat.falt });
+    setFokusBegaran((n) => n + 1);
+  }, [resultat]);
+
+  function hanteraSubmit(e: FormEvent<HTMLFormElement>) {
+    const tolkat = tolkaFragetradetFormData(new FormData(e.currentTarget));
+    if ("fel" in tolkat) {
+      e.preventDefault();
+      setFel(tolkat);
+      setFokusBegaran((n) => n + 1);
+      return;
+    }
+    setFel(null);
+    if (!forsokBorjaInskickning(pagarRef)) e.preventDefault();
+  }
+
+  return {
+    formRef,
+    hanteraSubmit,
+    /** Felet som hor till en fraga – skickas till <Fragetradet>/<FragetradetFalt>. */
+    faltfel: fel?.falt ? (fel as FragetradetFormFel) : null,
+    /** Ett fel som inte hor till nagon fraga, t.ex. "Projektet hittades inte." */
+    formularfel: fel && !fel.falt ? fel.fel : null,
+    rensaFel: () => setFel(null),
+  };
 }
 
 export type {

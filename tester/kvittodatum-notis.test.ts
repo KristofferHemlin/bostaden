@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { KvittodatumNotis } from "@/components/kvittodatum-notis";
 import { kvittodatumNotis } from "@/lib/kvittodatum-notis";
 
 // Kvittodatum utanfor innehavet (docs/design.md). Notisen provar
@@ -27,7 +30,7 @@ describe("kvittodatumNotis", () => {
 
   it("varnar for ett datum fore tilltradet", () => {
     expect(kvittodatumNotis("2019-12-31", GRANSER_UTAN_FORSALJNING)).toBe(
-      "Datumet ligger före tillträdet 2020-05-14. Kontrollera året.",
+      "Datumet ligger före tillträdet 2020-05-14. Kontrollera året – ett sådant kvitto räknas inte med i underlaget.",
     );
   });
 
@@ -61,6 +64,34 @@ describe("kvittodatumNotis", () => {
         tilltradesdatum: "2020-05-14",
         forsaljningsdatum: "2018-01-01",
       }),
-    ).toBe("Datumet ligger före tillträdet 2020-05-14. Kontrollera året.");
+    ).toBe("Datumet ligger före tillträdet 2020-05-14. Kontrollera året – ett sådant kvitto räknas inte med i underlaget.");
+  });
+});
+
+// Fallet som matts i produktionen 2026-10-18: ett kvitto daterat 2019-05-08
+// mot en bostad tilltradd 2022-02-02. Lydelsen ar docs/design.md:s, ordagrant,
+// med bostadens datum i stallet for exemplets.
+describe("kvittodatumNotis – uppmatt fall", () => {
+  const TILLTRADD_2022 = { tilltradesdatum: "2022-02-02", forsaljningsdatum: null };
+
+  it("tander notisen for 2019-05-08 mot ett tilltrade 2022-02-02", () => {
+    expect(kvittodatumNotis("2019-05-08", TILLTRADD_2022)).toBe(
+      "Datumet ligger före tillträdet 2022-02-02. Kontrollera året – ett sådant kvitto räknas inte med i underlaget.",
+    );
+  });
+
+  it("texten hamnar i den reserverade raden, dampad och utan roll", () => {
+    const html = renderToStaticMarkup(
+      createElement(KvittodatumNotis, {
+        notis: kvittodatumNotis("2019-05-08", TILLTRADD_2022),
+      }),
+    );
+    expect(html).toContain(
+      "Datumet ligger före tillträdet 2022-02-02. Kontrollera året – ett sådant kvitto räknas inte med i underlaget.",
+    );
+    expect(html).toContain("min-h-[1.25rem]");
+    expect(html).toContain("text-text-sekundar");
+    // En upplysning, inte en varning – aldrig en spärr, aldrig en dialog.
+    expect(html).not.toContain("role=");
   });
 });

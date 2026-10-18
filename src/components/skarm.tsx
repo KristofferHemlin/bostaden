@@ -37,6 +37,23 @@ export const SEKUNDARKNAPP_KLASS =
 export const SANDKNAPP_KLASS =
   "flex min-h-[44px] w-full items-center justify-center rounded-full border border-sand-mork bg-sand px-5 py-3 font-granssnitt text-base font-medium text-text-primar transition-colors hover:bg-sand-mork disabled:opacity-60";
 
+// Svaren i en bekraftelse eller en fraga (docs/design.md, "Vad 44 px-regeln
+// galler"): fristaende textkontroller, 44 px hoga. En dialog finns for att
+// handlingen kostar nagot att missa – da far dess svar inte vara de minsta
+// kontrollerna pa skarmen. Aldrig orange: att radera bevisning ar inte den
+// handling produkten vill uppmuntra (docs/design.md, "Bilagor").
+//
+// Tva svar bredvid varandra delar raden lika (flex-1) med luft emellan, sa att
+// ingen av ytorna kan ta den andras tryck.
+export const DIALOGSVAR_RAD_KLASS = "flex gap-4";
+export const DIALOGSVAR_KLASS =
+  "flex min-h-[44px] flex-1 items-center justify-center rounded-full px-4 font-granssnitt text-sm transition-colors hover:bg-yta-nedsankt disabled:opacity-60";
+// Den dampade vagen ut ur en dialog dar en annan vag ar primarknappen ("Spara
+// ändå" under "Bifoga något"): textlank till utseendet, men hela radens bredd
+// och 44 px hojd som tryckyta.
+export const DAMPAD_DIALOGVAG_KLASS =
+  "flex min-h-[44px] w-full items-center justify-center rounded-full font-granssnitt text-sm text-text-sekundar underline transition-colors hover:bg-yta-nedsankt disabled:opacity-60";
+
 /**
  * Friskrivningen (docs/design.md, Exportvyn): en dampad rad, inte en
  * Meddelanderuta – bara tva skarmar star for pastaendet, exportvyn dar
@@ -234,11 +251,19 @@ export function Falt({
   etikett,
   children,
   hjalp,
+  fel,
   obligatoriskt,
 }: {
   etikett: string;
   children: ReactNode;
   hjalp?: string;
+  /**
+   * Varfor faltet avvisades (docs/design.md, "Nar ett formular vagrar"). Tar
+   * hjalptextens plats – samma storlek, samma rad – och bar role="alert" sa
+   * att det nar den som inte ser skarmen. Anroparen satter `aria-invalid`
+   * och FALTFEL_ATTRIBUT pa sjalva inputen.
+   */
+  fel?: string;
   /**
    * Liten markering vid etiketten for obligatoriska falt (docs/design.md,
    * "Hjalptexter under falt"). Ersatter hjalptexter som bara sa "Obligatoriskt"
@@ -258,7 +283,11 @@ export function Falt({
         ) : null}
       </span>
       {children}
-      {hjalp ? (
+      {fel ? (
+        <span role="alert" className={`mt-1 block ${FALTFEL_KLASS}`}>
+          {fel}
+        </span>
+      ) : hjalp ? (
         <span className={`mt-1 block ${HJALPTEXT_KLASS}`}>
           {hjalp}
         </span>

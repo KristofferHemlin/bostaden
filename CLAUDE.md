@@ -96,6 +96,8 @@ Ordningen är bindande.
         inte köptes vid ombildning från hyresrätt (se nedan)
       grundforbattringsdel = 0 om betaldatum ligger före den bakre
         gränsen för upplåtelseformen (se nedan)
+      båda delarna = 0 om kvittots datum ligger före bostadens
+        tilltradesdatum (se nedan)
       Grundförbättringar har i övrigt ingen tidsgräns
 
 4.  TRÖSKELN prövas här, per kalenderår, på summan av
@@ -112,6 +114,14 @@ Ordningen är bindande.
 **Tidsgränsen räknas bort före tröskeln, skickbedömningen efter.** Det är den enda ordningen som stämmer med Skatteverkets verktyg, och den är lätt att få fel. En reparation som fallit ur femårsfönstret kan inte lyfta året över tröskeln. En reparation vars skick knappt förbättrats räknas däremot med hela sitt underlag i tröskelprövningen, även om avdraget blir nästan noll.
 
 **Nybyggd-regeln ligger i steg 3 av samma skäl**, trots att den inte är en tidsgräns: var bostaden nybyggd vid förvärvet är reparationen inte en förbättringsutgift, och ett belopp som aldrig var avdragsgillt kan inte lyfta året över tröskeln. Den träffar bara reparationsdelen – en merkostnad för bättre kvalitet är en standardhöjning oavsett bostadens skick vid köpet.
+
+**Tillträdesgränsen ligger i steg 3 av samma skäl som nybyggd-regeln.** En utgift som betalades innan bostaden var din är inte din förbättringsutgift, och ett belopp som aldrig var avdragsgillt kan inte lyfta året över tröskeln. Till skillnad från nybyggd-regeln träffar den **båda** delarna: varken grundförbättring eller reparation var din.
+
+Skriven 2026-10-18, efter att en genomklickning visade att ingen beräkning läste `tilltradesdatum` trots att den här filen redan kallade det *"gränsen för vilka utgifter som är dina"*. Ett kvitto på 45 250 kr daterat 2019 mot ett tillträde 2022 hamnade i sin helhet på sida 1. Meningen fanns; koden gjorde det inte.
+
+**Gränsen prövar kvittots datum, inte betaldatumet.** Det avviker från resten av beräkningen och är samma val som notisen gör, av samma skäl: det är inköpsögonblicket som avgör om utgiften var din. Konsekvensen måste vara densamma som det notisen lovar, annars säger appen en sak och räknar en annan.
+
+**Känd lucka, medvetet olöst:** material som köps dagarna före tillträdet och hör till bostaden faller ut med den här regeln. Fallet är ovanligt, och kvittot försvinner inte – det ligger i arkivet och redovisas under *Återstår* med sitt skäl, där användaren ser det. Att lösa det kräver en branch på betaldatum eller ett bekräftat undantag, och ingen av dem är genomtänkt. Det står här för att ingen senare ska tro att fallet var avgjort.
 
 **Avrundning sker uppåt, och först vid utskrift.**
 

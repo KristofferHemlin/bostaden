@@ -34,7 +34,7 @@
 // anrop – se kommentaren dar for varfor.
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { type FormEvent, useActionState, useState } from "react";
 import {
   redigeraKostnad,
   taBortKostnad,
@@ -43,6 +43,7 @@ import {
 import { AterforKnapp } from "./aterfor-knapp";
 import { Bilagor } from "./bilagor";
 import { BeloppFalt } from "@/components/belopp-falt";
+import { Bekraftelsefraga } from "@/components/bekraftelsefraga";
 import { DatumFalt } from "@/components/datum-falt";
 import { KvittodatumNotis } from "@/components/kvittodatum-notis";
 import {
@@ -521,37 +522,14 @@ function RedigeraVy({
           spara-knappen och bakom ett bekraftelsesteg. */}
       <div className="border-t border-linje p-5">
         {bekraftaRadera ? (
-          <form
+          <RaderaKvittoFraga
+            kostnadId={kostnadId}
             action={raderaAction}
             onSubmit={hanteraRaderaSubmit}
-            className="flex flex-col gap-3"
-          >
-            <input type="hidden" name="kostnad_id" value={kostnadId} />
-            <p className="font-granssnitt text-sm text-text-primar">
-              Ta bort kvittot och alla dess bilagor? Det går inte att ångra.
-            </p>
-            {radera.fel ? (
-              <p className="font-granssnitt text-sm text-accent">
-                {radera.fel}
-              </p>
-            ) : null}
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                disabled={raderar}
-                className="font-granssnitt text-sm font-medium text-text-primar underline disabled:opacity-60"
-              >
-                {raderar ? "Tar bort…" : "Ja, ta bort kvittot"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setBekraftaRadera(false)}
-                className="font-granssnitt text-sm text-text-sekundar"
-              >
-                Avbryt
-              </button>
-            </div>
-          </form>
+            raderar={raderar}
+            fel={radera.fel}
+            onAvbryt={() => setBekraftaRadera(false)}
+          />
         ) : (
           <button
             type="button"
@@ -563,5 +541,46 @@ function RedigeraVy({
         )}
       </div>
     </>
+  );
+}
+
+/**
+ * Fragan innan kvittot raderas, med alla sina bilagor – den mest forstorande
+ * handlingen i appen. Appens enda form for en bekraftelse (src/components/
+ * bekraftelsefraga.tsx). Exporterad sa att den gar att rendera i tester
+ * (tester/bekraftelserutor.test.ts).
+ */
+export function RaderaKvittoFraga({
+  kostnadId,
+  action,
+  onSubmit,
+  raderar,
+  fel,
+  onAvbryt,
+}: {
+  kostnadId: string;
+  action: (formData: FormData) => void;
+  onSubmit?: (e: FormEvent<HTMLFormElement>) => void;
+  raderar: boolean;
+  fel?: string;
+  onAvbryt: () => void;
+}) {
+  return (
+    <Bekraftelsefraga
+      id="bekrafta-kvitto-text"
+      fraga="Ta bort kvittot och alla dess bilagor? Det går inte att ångra."
+      fel={fel}
+      form={{
+        action,
+        onSubmit,
+        dolda: <input type="hidden" name="kostnad_id" value={kostnadId} />,
+      }}
+      bekrafta={{
+        text: raderar ? "Tar bort…" : "Ja, ta bort kvittot",
+        submit: true,
+        disabled: raderar,
+      }}
+      avbryt={{ text: "Avbryt", onClick: onAvbryt }}
+    />
   );
 }

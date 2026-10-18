@@ -29,8 +29,21 @@ export interface FragetradetFormResultat {
   motivering: string | null;
 }
 
+/** Faltens namn i FormData – fraga 1 ("namn") och fragetradets dolda falt. */
+export type FragetradetFaltnamn =
+  | "namn"
+  | "byggde_nytt"
+  | "andrade_planlosning"
+  | "nytt_eller_bytt"
+  | "battre_eller_liknande"
+  | "merkostnad"
+  | "skick_forvarv";
+
+/** Ett fel och fragan det galler, sa att formularet kan visa det dar
+ *  (docs/design.md, "Nar ett formular vagrar"). */
 export interface FragetradetFormFel {
   fel: string;
+  falt: FragetradetFaltnamn;
 }
 
 function asJaNej(v: FormDataEntryValue | null): JaNejSvar {
@@ -60,7 +73,7 @@ export function tolkaFragetradetFormData(
   formData: FormData,
 ): FragetradetFormResultat | FragetradetFormFel {
   const namn = String(formData.get("namn") ?? "").trim();
-  if (!namn) return { fel: "Skriv vad du gjorde." };
+  if (!namn) return { fel: "Skriv vad du gjorde.", falt: "namn" };
 
   const svar: FragetradetSvar = {
     byggdeNytt: asJaNej(formData.get("byggde_nytt")),
@@ -73,17 +86,24 @@ export function tolkaFragetradetFormData(
   };
 
   if (svar.byggdeNytt === "") {
-    return { fel: "Svara på om du byggde något nytt." };
+    return { fel: "Svara på om du byggde något nytt.", falt: "byggde_nytt" };
   }
   if (fraga3Relevant(svar) && svar.andradePlanlosning === "") {
-    return { fel: "Svara på om du ändrade planlösningen." };
+    return {
+      fel: "Svara på om du ändrade planlösningen.",
+      falt: "andrade_planlosning",
+    };
   }
   if (fraga4Relevant(svar) && svar.nyttEllerBytt === "") {
-    return { fel: "Svara på om du satte in något nytt eller bytte ut något." };
+    return {
+      fel: "Svara på om du satte in något nytt eller bytte ut något.",
+      falt: "nytt_eller_bytt",
+    };
   }
   if (fraga5Relevant(svar) && svar.battreEllerLiknande === "") {
     return {
       fel: "Svara på om det nya är av bättre kvalitet eller liknande som tidigare.",
+      falt: "battre_eller_liknande",
     };
   }
 
@@ -91,6 +111,7 @@ export function tolkaFragetradetFormData(
   if (!resultat) {
     return {
       fel: "Ange en merkostnad större än 0 kr – bättre kvalitet innebär att bytet kostade mer.",
+      falt: "merkostnad",
     };
   }
 
@@ -98,7 +119,7 @@ export function tolkaFragetradetFormData(
     String(formData.get("skick_forvarv") ?? ""),
   );
   if (harReparationsdel(svar) && skick_forvarv === null) {
-    return { fel: "Ange skicket vid förvärvet, 0–5." };
+    return { fel: "Ange skicket vid förvärvet, 0–5.", falt: "skick_forvarv" };
   }
 
   const motivering = String(formData.get("motivering") ?? "").trim();

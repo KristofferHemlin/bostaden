@@ -22,6 +22,7 @@ import {
 } from "./berakningar";
 import {
   avrundaReparationUppat,
+  dateratForeTilltradet,
   delaIKategorier,
   innanforBakreGrans,
   tillampaSkickfaktor,
@@ -83,16 +84,19 @@ export interface OklassificeradHog {
  *  till nagot ar och kan darfor inte sta pa sidorna, hog eller inte.
  *  "utan_belopp": ett utkast med bilaga – nagon har fotat ett kvitto men inte
  *  fyllt i det (docs/design.md, Skarmuppbyggnad: "Ett utkast med en bilaga ar
- *  pengar i arkivet och ska synas i Återstår"). */
+ *  pengar i arkivet och ska synas i Återstår"). "fore_tilltradet": kvittot ar
+ *  daterat fore tilltradet och raknas aldrig med (CLAUDE.md, steg 3) – hela
+ *  beloppet star har, oavsett hog, sa att det aldrig utelamnas tyst. */
 export type AterstaendeKvitto =
   | {
       kostnad_id: string;
-      /** Betaldatumets ar; null for "utan_betaldatum". */
+      /** Betaldatumets ar; null for "utan_betaldatum" (och for ett kvitto
+       *  fore tilltradet som saknar betaldatum). */
       ar: number | null;
       /** Oren, utan privat del och efter ROT/forsakring – samma matt som
        *  Totalt inlagt (inlagtForKostnad). */
       belopp_brutto: number;
-      orsak: "utan_hog" | "utan_betaldatum";
+      orsak: "utan_hog" | "utan_betaldatum" | "fore_tilltradet";
     }
   | {
       kostnad_id: string;
@@ -240,9 +244,20 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
   //    behovs: fragetradets reduktionsfaktor for en cell med flera bidragande
   //    kostnader ar det viktade snittet av deras individuella
   //    reduktionsfaktorer, se buildCellSplit.
+  //
+  //    Tilltradesgransen (CLAUDE.md, steg 3) provas har, per kvitto: ett kvitto
+  //    daterat fore tilltradet far BADA delarna 0, och att det aldrig bidrar
+  //    till en cell ar exakt det – innan uppdelningen, innan tidsgranserna och
+  //    framfor allt innan troskeln i steg 4. Ett belopp som aldrig var
+  //    avdragsgillt far inte lyfta aret over troskeln. Det gar inte att gora
+  //    per cell: en cell kan blanda kvitton fran fore och efter tilltradet,
+  //    och gransen galler kvittot. Kvittot redovisas i Återstår nedan.
   const celler = new Map<string, Cell>();
   for (const kostnad of kostnader) {
     if (kostnad.arkiverad) continue;
+    if (dateratForeTilltradet(kostnad.dokumentdatum, bostad.tilltradesdatum)) {
+      continue;
+    }
     const ar = kostnadensAr(kostnad);
     if (ar === null) continue;
     for (const p of projekt) {
@@ -483,6 +498,17 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
     const inlagt = inlagtForKostnad(kostnad);
     if (inlagt <= 0) continue; // arkiverat, helt privat
     const ar = kostnadensAr(kostnad);
+    // Fore tilltradet galler hela beloppet, oavsett hog och betaldatum – det
+    // kommer aldrig att ingå, och skalet ar ett annat an att nagot saknas.
+    if (dateratForeTilltradet(kostnad.dokumentdatum, bostad.tilltradesdatum)) {
+      aterstaende.push({
+        kostnad_id: kostnad.id,
+        ar,
+        belopp_brutto: inlagt,
+        orsak: "fore_tilltradet",
+      });
+      continue;
+    }
     if (ar === null) {
       aterstaende.push({
         kostnad_id: kostnad.id,
@@ -558,6 +584,8 @@ function buildCellSplit(
     id: `${p.id}|${cell.ar}`,
     totalbelopp: cell.totalbelopp,
     betaldatum,
+    // Tilltradesgransen ar redan provad per kvitto nar cellen byggdes.
+    dokumentdatum: null,
     rot_utnyttjat: cell.totalbelopp - cell.avdragsgrundande,
     forsakringsersattning: 0,
     arkiverad: false,

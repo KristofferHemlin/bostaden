@@ -16,6 +16,7 @@ function kostnad(rader: Kostnad["rader"], totalbelopp = 100_000): Kostnad {
     id: "k1",
     totalbelopp,
     betaldatum: "2026-05-01",
+    dokumentdatum: "2026-05-01",
     rot_utnyttjat: 0,
     forsakringsersattning: 0,
     arkiverad: false,

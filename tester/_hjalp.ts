@@ -55,10 +55,16 @@ interface KostnadOver extends Partial<Kostnad> {
 export function kostnad(over: KostnadOver = {}): Kostnad {
   const totalbelopp = over.totalbelopp ?? 100_000;
   const pid = over.projekt_id === undefined ? "p1" : over.projekt_id;
+  const betaldatum =
+    over.betaldatum === undefined ? "2026-05-01" : over.betaldatum;
   return {
     id: over.id ?? "k1",
     totalbelopp,
-    betaldatum: over.betaldatum === undefined ? "2026-05-01" : over.betaldatum,
+    betaldatum,
+    // Kvittots datum ar betaldagen om inget annat sags – inmatningen satter
+    // dem lika (docs/design.md, "Datum i kostnadsformularet").
+    dokumentdatum:
+      over.dokumentdatum === undefined ? betaldatum : over.dokumentdatum,
     rot_utnyttjat: over.rot_utnyttjat ?? 0,
     forsakringsersattning: over.forsakringsersattning ?? 0,
     arkiverad: over.arkiverad ?? false,

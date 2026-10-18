@@ -15,58 +15,46 @@
 // ska inte tro att det ar gjort nar det inte ar det.
 
 import { createPortal } from "react-dom";
+import { Bekraftelsefraga } from "@/components/bekraftelsefraga";
 
-export function BekraftaBorttagning({
-  text,
-  onTaBort,
-  onAvbryt,
-  pagar = false,
-  fel,
-}: {
+export interface BekraftaBorttagningProps {
   text: string;
   onTaBort: () => void;
   onAvbryt: () => void;
   pagar?: boolean;
   fel?: string;
-}) {
+}
+
+/** Sjalva rutan, utan portalen – exporterad sa att den gar att rendera i
+ *  tester (tester/bekraftelserutor.test.ts). */
+export function BekraftaBorttagningRuta({
+  text,
+  onTaBort,
+  onAvbryt,
+  pagar = false,
+  fel,
+}: BekraftaBorttagningProps) {
+  return (
+    <Bekraftelsefraga
+      id="bekrafta-borttagning-text"
+      modal
+      fraga={text}
+      fel={fel}
+      bekrafta={{
+        text: pagar ? "Tar bort…" : "Ta bort",
+        onClick: onTaBort,
+        disabled: pagar,
+      }}
+      avbryt={{ text: "Avbryt", onClick: onAvbryt, disabled: pagar }}
+      className="w-full max-w-sm rounded-lg bg-yta-upphojd p-5"
+    />
+  );
+}
+
+export function BekraftaBorttagning(props: BekraftaBorttagningProps) {
   return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="bekrafta-borttagning-text"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--text-primar)_90%,transparent)] p-4"
-    >
-      <div className="w-full max-w-sm rounded-lg bg-yta-upphojd p-5">
-        <p
-          id="bekrafta-borttagning-text"
-          className="font-granssnitt text-sm text-text-primar"
-        >
-          {text}
-        </p>
-        {fel ? (
-          <p role="alert" className="mt-2 font-granssnitt text-sm text-accent">
-            {fel}
-          </p>
-        ) : null}
-        <div className="mt-4 flex gap-4">
-          <button
-            type="button"
-            onClick={onTaBort}
-            disabled={pagar}
-            className="font-granssnitt text-sm font-medium text-text-primar underline disabled:opacity-60"
-          >
-            {pagar ? "Tar bort…" : "Ta bort"}
-          </button>
-          <button
-            type="button"
-            onClick={onAvbryt}
-            disabled={pagar}
-            className="font-granssnitt text-sm text-text-sekundar disabled:opacity-60"
-          >
-            Avbryt
-          </button>
-        </div>
-      </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--text-primar)_90%,transparent)] p-4">
+      <BekraftaBorttagningRuta {...props} />
     </div>,
     document.body,
   );

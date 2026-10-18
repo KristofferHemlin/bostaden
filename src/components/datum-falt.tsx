@@ -27,6 +27,11 @@
 // skriva ror avlasningen aldrig faltet, samma regel som ovriga autoifyllda
 // falt i inmatningen.
 //
+// `fel` ar formularets meddelande for faltet ("Fyll i kvittots datum.").
+// Faltet visar ALDRIG tva: har det ett eget fel ("Ogiltig dag.") ar datumet
+// ifyllt, och da ar formularets pastaende falskt (docs/design.md, "Nar ett
+// formular vagrar"). Meddelandet bar role="alert" och inputen aria-invalid.
+//
 // En dold input med `name`, nar den anges, haller formularinlamningen
 // oforandrad for bade kontrollerade flerstegsformular (registreringen) och
 // vanliga serverformular (installningar, redigering).
@@ -35,6 +40,7 @@ import { useEffect, useRef, useState } from "react";
 import { isoDatum } from "@/lib/format";
 import { datumfel } from "@/lib/datum";
 import { FALTFEL_KLASS } from "@/components/skarm";
+import { datumfaltetsMeddelande, FALTFEL_ATTRIBUT } from "@/lib/formularfel";
 
 const FALT_BAS =
   "rounded-lg border-0 bg-yta-nedsankt px-2 py-3 text-center font-granssnitt text-base tabular-nums text-text-primar outline-none placeholder:text-text-dampad focus:ring-2 focus:ring-accent";
@@ -48,6 +54,7 @@ export function DatumFalt({
   defaultValue = "",
   onChange,
   framtidsFelmeddelande,
+  fel: formularetsFel,
 }: {
   /** Namnet pa den dolda input som haller ISO-vardet vid formularinlamning. Utelamnas nar det anropande formularet redan hanterar submit-vardet sjalv (t.ex. via egna dolda falt). */
   name?: string;
@@ -57,6 +64,8 @@ export function DatumFalt({
   onChange?: (iso: string) => void;
   /** Avvisar datum efter dagens med detta meddelande. Utelamnad ar framtida datum tillatna. */
   framtidsFelmeddelande?: string;
+  /** Formularets meddelande, t.ex. "Fyll i kvittots datum." – visas bara nar faltet inte har ett eget fel. */
+  fel?: string;
 }) {
   const [ar, setAr] = useState(() => defaultValue.slice(0, 4));
   const [manad, setManad] = useState(() => defaultValue.slice(5, 7));
@@ -134,9 +143,15 @@ export function DatumFalt({
       ? `${ar}-${manad}-${dag}`
       : "";
 
+  const meddelande = datumfaltetsMeddelande(fel, formularetsFel);
+  const ogiltigt = meddelande !== null;
+
   return (
     <div>
-      <div className="flex items-center gap-2">
+      <div
+        className="flex items-center gap-2"
+        {...(ogiltigt ? { [FALTFEL_ATTRIBUT]: "" } : {})}
+      >
         <input
           ref={arRef}
           type="text"
@@ -144,6 +159,7 @@ export function DatumFalt({
           pattern="[0-9]*"
           autoComplete="off"
           aria-label="År"
+          aria-invalid={ogiltigt || undefined}
           placeholder="ÅÅÅÅ"
           value={ar}
           onChange={hanteraAr}
@@ -159,6 +175,7 @@ export function DatumFalt({
           pattern="[0-9]*"
           autoComplete="off"
           aria-label="Månad"
+          aria-invalid={ogiltigt || undefined}
           placeholder="MM"
           value={manad}
           onChange={hanteraManad}
@@ -175,6 +192,7 @@ export function DatumFalt({
           pattern="[0-9]*"
           autoComplete="off"
           aria-label="Dag"
+          aria-invalid={ogiltigt || undefined}
           placeholder="DD"
           value={dag}
           onChange={hanteraDag}
@@ -183,9 +201,9 @@ export function DatumFalt({
         />
       </div>
       {name ? <input type="hidden" name={name} value={iso} /> : null}
-      {fel ? (
-        <p className={`mt-1.5 ${FALTFEL_KLASS}`}>
-          {fel}
+      {meddelande ? (
+        <p role="alert" className={`mt-1.5 ${FALTFEL_KLASS}`}>
+          {meddelande}
         </p>
       ) : null}
     </div>

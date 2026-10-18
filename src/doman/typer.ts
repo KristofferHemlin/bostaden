@@ -38,6 +38,11 @@ export interface Kostnad {
    *  export) och rensas aldrig automatiskt. */
   totalbelopp: number | null;
   betaldatum: string | null; // YYYY-MM-DD, null = obetald
+  /** Kvittots eget datum, YYYY-MM-DD. Provas mot tillträdet (CLAUDE.md, steg
+   *  3) – det enda stallet i berakningen dar det inte ar betaldatum som
+   *  styr. null bara for utkast, och for kostnader inlagda innan faltet
+   *  kravdes; da gar gransen inte att prova och kostnaden raknas som forut. */
+  dokumentdatum: string | null;
   rot_utnyttjat: number; // oren, 0 om inget
   forsakringsersattning: number; // oren, 0 om inget
   arkiverad: boolean;

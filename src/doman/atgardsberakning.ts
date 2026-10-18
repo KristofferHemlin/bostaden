@@ -107,6 +107,25 @@ export function innanforBakreGrans(
   return kalenderAr(betaldatum) >= gransAr;
 }
 
+/**
+ * Steg 3, tilltradesgransen (CLAUDE.md): ar kvittot daterat fore tilltradet
+ * var utgiften aldrig din, och BADA delarna ar 0 – grundforbattring som
+ * reparation. Gransen provar kvittots datum, inte betaldatumet: det ar
+ * inkopsogonblicket som avgor om utgiften var din.
+ *
+ * Samma jamforelse som notisen i inmatningen (src/lib/kvittodatum-notis.ts)
+ * anvander, sa att appen aldrig sager en sak och raknar en annan.
+ *
+ * Kand lucka, medvetet olost (CLAUDE.md): material kopt dagarna fore
+ * tilltradet faller ocksa ut. Kvittot redovisas da under Återstår.
+ */
+export function dateratForeTilltradet(
+  dokumentdatum: string | null,
+  tilltradesdatum: string,
+): boolean {
+  return dokumentdatum !== null && dokumentdatum < tilltradesdatum;
+}
+
 export interface TidsgransIndata {
   betaldatum: string;
   forsaljningsAr: number;

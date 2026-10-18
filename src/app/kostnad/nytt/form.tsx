@@ -80,7 +80,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { skapaUtkast, sparaKostnad, type KostnadResultat } from "./actions";
 import { analyseraBilaga, taBortBilaga } from "@/app/kostnad/bilaga-actions";
 import { UtkastRaderaKnapp } from "@/app/kostnad/utkast-radera";
@@ -93,6 +92,7 @@ import {
   Vantemarkering,
 } from "@/components/bilaga-sidbladdrare";
 import { DatumFalt } from "@/components/datum-falt";
+import { Sparfraga, SPARFRAGA_TEXT } from "@/components/sparfraga";
 import { KvittodatumNotis } from "@/components/kvittodatum-notis";
 import {
   bildAspekt,
@@ -112,6 +112,18 @@ import {
   UtfallbarSektion,
 } from "@/components/skarm";
 import { formateraBeloppInmatning, totalbeloppHjalptext } from "@/lib/format";
+import {
+  FALTFEL_ATTRIBUT,
+  FORMULARFEL_ATTRIBUT,
+  fokuseraForstaFel,
+  nastaStegVidSparande,
+  type Faltfel,
+} from "@/lib/formularfel";
+import {
+  sparfragor,
+  tolkaKostnadsformular,
+  type Kostnadsfalt,
+} from "@/lib/kostnadsformular";
 import {
   kvittodatumNotis,
   type Innehavsgranser,
@@ -261,6 +273,14 @@ export function NyKostnadForm({
   // andras efterat.
   const bilagaBekraftadRef = useRef(false);
   const [visaBilagaDialog, setVisaBilagaDialog] = useState(false);
+  // Bekraftelsen vid sparandet (docs/design.md, "Kvittodatum utanför
+  // innehavet"): ett kvitto daterat fore tilltradet raknas inte med i
+  // underlaget, och en fraga fangar det feltypade arstalet. Bekraftelsen
+  // galler det DATUM som bekraftades – andras datumet till ett annat fore
+  // tilltradet stalls fragan igen. En ref av samma skal som ovan.
+  const tilltradeBekraftatDatumRef = useRef<string | null>(null);
+  const [visaTilltradeDialog, setVisaTilltradeDialog] = useState(false);
+  const datumfaltRef = useRef<HTMLDivElement | null>(null);
   // En sparad bilaga som vantar pa bekraftelse innan den raderas
   // (src/lib/bilageborttagning.ts). En nyss vald fil tas bort direkt.
   const [vantandeBorttagning, setVantandeBorttagning] =
@@ -273,6 +293,38 @@ export function NyKostnadForm({
   // knappen: den läses och skrivs synkront i hanteraSubmit, sa ett snabbt
   // dubbelklick fangas aven om `pagar` inte hunnit rendera om annu.
   const pagarRef = useDubbelinskickRef(pagar);
+
+  // Varfor formularet inte sparade, per falt (docs/design.md, "Nar ett
+  // formular vagrar"). Samma regler som servern (src/lib/kostnadsformular.ts),
+  // provade innan nagot skickas eller nagon fraga stalls. Ett falts fel
+  // forsvinner nar faltet andras.
+  const [faltfel, setFaltfel] = useState<Partial<Record<Kostnadsfalt, string>>>(
+    {},
+  );
+  // Raknas upp varje gang fokus ska flyttas till det forsta felet – efter
+  // renderingen som visar felen, sa att faltet som ska fa fokus finns.
+  const [fokusBegaran, setFokusBegaran] = useState(0);
+  useEffect(() => {
+    if (fokusBegaran > 0) fokuseraForstaFel(formRef.current);
+  }, [fokusBegaran]);
+
+  function visaFaltfel(felen: Faltfel<Kostnadsfalt>[]) {
+    const perFalt: Partial<Record<Kostnadsfalt, string>> = {};
+    for (const { falt, fel } of felen) perFalt[falt] ??= fel;
+    setFaltfel(perFalt);
+    // ROT-faltet bor i en hopfallbar sektion – ett fel dar maste synas.
+    if (perFalt.rot_utnyttjat) setRotOppen(true);
+    setFokusBegaran((n) => n + 1);
+  }
+
+  function rensaFaltfel(...falt: Kostnadsfalt[]) {
+    setFaltfel((f) => {
+      if (!falt.some((k) => f[k])) return f;
+      const nasta = { ...f };
+      for (const k of falt) delete nasta[k];
+      return nasta;
+    });
+  }
 
   // Forhandsvisning direkt vid val, innan sparning – ett filnamn i gra text ar
   // inte en bekraftelse pa att ratt fil valts (docs/design.md, "Bilagor").
@@ -688,21 +740,45 @@ export function NyKostnadForm({
   // e.preventDefault() har hinner stoppa den – ordningen ar inte nagot att
   // bygga en pengablockerande dialog eller ett dubbelklicksskydd pa.
   // hanteraSubmit ager darfor HELA flodet sjalv, i tur och ordning:
-  //   1. Bilagan saknas och anvandaren har inte redan bekraftat "Spara ändå"
-  //      (produktspec avsnitt 4.7) – visa dialogen i stallet, vanta pa svar.
-  //      Ingen sparning har paborjats an, sa dubbelinskicksspärren far INTE
-  //      lasas har – annars skulle ett andra klick medan dialogen star oppen
-  //      bara tyst ignoreras i stallet for att oppna den pa nytt.
-  //   2. Dubbelinskick (pagarRef, synkron – se src/lib/dubbelinskick.ts).
-  //   3. Annars: bygg FormData fran formularet och kor skicka().
+  //   1. Valideringen (src/lib/kostnadsformular.ts) – ett ogiltigt formular
+  //      sager varfor vid varje falt och sparar ingenting. Den gar FORE
+  //      dialogen: ar formularet ogiltigt ar fragan om bilagan stalld i
+  //      onodan (docs/design.md, "Nar ett formular vagrar").
+  //   2. Fragorna om sparandet, en i taget (sparfragor, src/lib/
+  //      kostnadsformular.ts): forst tilltradet, sedan bilagan. Ingen sparning
+  //      har paborjats an, sa dubbelinskicksspärren far INTE lasas har –
+  //      annars skulle ett andra klick medan en dialog star oppen bara tyst
+  //      ignoreras i stallet for att oppna den pa nytt.
+  //   3. Dubbelinskick (pagarRef, synkron – se src/lib/dubbelinskick.ts).
+  //   4. Annars: kor skicka() med formularets FormData.
   function hanteraSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (poster.length === 0 && !bilagaBekraftadRef.current) {
-      setVisaBilagaDialog(true);
+    const formData = new FormData(e.currentTarget);
+    const tolkad = tolkaKostnadsformular(formData);
+    const felen = "felen" in tolkad ? tolkad.felen : [];
+    const nasta = nastaStegVidSparande({
+      antalFel: felen.length,
+      obesvaradeFragor: sparfragor({
+        kvittodatum: falt.datum,
+        tilltradesdatum: innehav.tilltradesdatum,
+        bekraftatKvittodatum: tilltradeBekraftatDatumRef.current,
+        harBilaga: poster.length > 0,
+        bilagaBekraftad: bilagaBekraftadRef.current,
+      }),
+    });
+    if (nasta.steg === "visa-fel") {
+      setResultat(START);
+      visaFaltfel(felen);
+      return;
+    }
+    setFaltfel({});
+    if (nasta.steg === "stall-fragan") {
+      if (nasta.fraga === "tilltrade") setVisaTilltradeDialog(true);
+      else setVisaBilagaDialog(true);
       return;
     }
     if (!forsokBorjaInskickning(pagarRef)) return;
-    void skicka(new FormData(e.currentTarget));
+    void skicka(formData);
   }
 
   // "Bifoga något": stanger dialogen och oppnar filvaljaren direkt – anvandaren
@@ -719,6 +795,21 @@ export function NyKostnadForm({
   function bilagaDialogSparaAnda() {
     bilagaBekraftadRef.current = true;
     setVisaBilagaDialog(false);
+    formRef.current?.requestSubmit();
+  }
+
+  // "Ändra datumet": stanger fragan och stalls i datumfaltet, dar felet
+  // sannolikt sitter. Ingenting sparas.
+  function tilltradeDialogAndra() {
+    setVisaTilltradeDialog(false);
+    datumfaltRef.current?.querySelector<HTMLInputElement>("input")?.focus();
+  }
+
+  // "Datumet stämmer": bekraftar just det har datumet och sparar. Rutan ar
+  // ingen sparr – den stanger aldrig utan att spara (docs/design.md).
+  function tilltradeDialogStammer() {
+    tilltradeBekraftatDatumRef.current = falt.datum;
+    setVisaTilltradeDialog(false);
     formRef.current?.requestSubmit();
   }
 
@@ -747,11 +838,22 @@ export function NyKostnadForm({
         kostnadId: utkastId ?? undefined,
       });
       setPagar(false);
+      setFokusBegaran((n) => n + 1);
+      return;
+    }
+    // Servern provar samma regler igen. Avvisar den ett falt visas felet vid
+    // faltet, precis som om formularet sjalvt hade sagt det.
+    if (sparad.fel && sparad.falt) {
+      visaFaltfel([{ falt: sparad.falt, fel: sparad.fel }]);
+      setPagar(false);
       return;
     }
     if (sparad.fel || !sparad.kostnadId) {
       setResultat(sparad.fel ? sparad : { fel: "Kvittot kunde inte sparas." });
       setPagar(false);
+      // Knappen var otillganglig under sparandet och tappade fokus – utan
+      // detta hamnar fokus pa <body>.
+      setFokusBegaran((n) => n + 1);
       return;
     }
 
@@ -772,6 +874,7 @@ export function NyKostnadForm({
           kostnadId: sparad.kostnadId,
         });
         setPagar(false);
+        setFokusBegaran((n) => n + 1);
         return;
       }
       setFilstatus((s) => ({
@@ -817,9 +920,13 @@ export function NyKostnadForm({
 
   return (
     <>
+    {/* noValidate: webblasarens egen kontroll av `required` flyttar bara
+        fokus till faltet, utan ett ord pa de flesta telefoner. Formularet
+        sager sjalvt varfor (docs/design.md, "Nar ett formular vagrar"). */}
     <form
       ref={formRef}
       onSubmit={hanteraSubmit}
+      noValidate
       className="flex flex-col gap-5 p-5"
     >
       {/* Vilken bostad kvittot sparas pa, nar det finns fler an en
@@ -1201,6 +1308,7 @@ export function NyKostnadForm({
       <Falt
         etikett="Totalbelopp"
         obligatoriskt
+        fel={faltfel.totalbelopp}
         hjalp={
           faltStatus(falt.belopp.trim() === "") ??
           totalbeloppHjalptext(rotUtnyttjat)
@@ -1209,8 +1317,13 @@ export function NyKostnadForm({
         <BeloppFalt
           name="totalbelopp"
           required
+          aria-invalid={faltfel.totalbelopp ? true : undefined}
+          {...(faltfel.totalbelopp ? { [FALTFEL_ATTRIBUT]: "" } : {})}
           value={falt.belopp}
-          onValueChange={(v) => setFalt((f) => ({ ...f, belopp: v }))}
+          onValueChange={(v) => {
+            setFalt((f) => ({ ...f, belopp: v }));
+            rensaFaltfel("totalbelopp", "rot_utnyttjat");
+          }}
           className={INPUT_KLASS}
           placeholder="0,00"
         />
@@ -1226,12 +1339,18 @@ export function NyKostnadForm({
       >
         <Falt
           etikett="ROT-avdrag"
+          fel={faltfel.rot_utnyttjat}
           hjalp="Beloppet står på fakturan som det avdrag som redan dragits av. Anges i kronor, inte procent."
         >
           <BeloppFalt
             name="rot_utnyttjat"
+            aria-invalid={faltfel.rot_utnyttjat ? true : undefined}
+            {...(faltfel.rot_utnyttjat ? { [FALTFEL_ATTRIBUT]: "" } : {})}
             value={rotUtnyttjat}
-            onValueChange={setRotUtnyttjat}
+            onValueChange={(v) => {
+              setRotUtnyttjat(v);
+              rensaFaltfel("rot_utnyttjat");
+            }}
             className={INPUT_KLASS}
             placeholder="0,00"
           />
@@ -1246,10 +1365,20 @@ export function NyKostnadForm({
         obligatoriskt
         hjalp={faltStatus(falt.datum.trim() === "")}
       >
+        {/* Formularets meddelande gar till faltet, som sjalv avgor att
+            bara ett visas – har faltet ett eget ("Ogiltig dag.") vinner det.
+            Omslaget finns for att "Ändra datumet" ska kunna stalla
+            markoren har. */}
+        <div ref={datumfaltRef}>
         <DatumFalt
           defaultValue={falt.datum}
-          onChange={(iso) => setFalt((f) => ({ ...f, datum: iso }))}
+          fel={faltfel.dokumentdatum ?? faltfel.betaldatum}
+          onChange={(iso) => {
+            setFalt((f) => ({ ...f, datum: iso }));
+            rensaFaltfel("dokumentdatum", "betaldatum");
+          }}
         />
+        </div>
       </Falt>
 
       {/* Kvittodatum utanfor innehavet (docs/design.md): dokumentdatumet ar
@@ -1260,6 +1389,7 @@ export function NyKostnadForm({
       <Falt
         etikett="Leverantör"
         obligatoriskt
+        fel={faltfel.leverantor}
         hjalp={
           faltStatus(falt.leverantor.trim() === "")
         }
@@ -1268,10 +1398,13 @@ export function NyKostnadForm({
           type="text"
           name="leverantor"
           required
+          aria-invalid={faltfel.leverantor ? true : undefined}
+          {...(faltfel.leverantor ? { [FALTFEL_ATTRIBUT]: "" } : {})}
           value={falt.leverantor}
-          onChange={(e) =>
-            setFalt((f) => ({ ...f, leverantor: e.target.value }))
-          }
+          onChange={(e) => {
+            setFalt((f) => ({ ...f, leverantor: e.target.value }));
+            rensaFaltfel("leverantor");
+          }}
           className={INPUT_KLASS}
           placeholder="t.ex. Bauhaus Bromma"
         />
@@ -1312,8 +1445,16 @@ export function NyKostnadForm({
         </p>
       ) : null}
 
+      {/* Ett fel som inte hor till nagot falt – natverket, servern, en bilaga
+          efter sparandet. Meddelas och tar fokus, sa att den som tryckte pa
+          knappen far veta varfor ingenting hande. */}
       {resultat.fel ? (
-        <div className="font-granssnitt text-sm text-accent">
+        <div
+          role="alert"
+          tabIndex={-1}
+          {...{ [FORMULARFEL_ATTRIBUT]: "" }}
+          className="font-granssnitt text-sm text-accent outline-none"
+        >
           <p>{resultat.fel}</p>
           {resultat.kostnadId ? (
             <Link
@@ -1367,6 +1508,15 @@ export function NyKostnadForm({
       />
     ) : null}
 
+    {visaTilltradeDialog ? (
+      <TilltradeDialog
+        tilltradesdatum={innehav.tilltradesdatum}
+        kvittodatum={falt.datum}
+        onAndra={tilltradeDialogAndra}
+        onStammer={tilltradeDialogStammer}
+      />
+    ) : null}
+
     {visaBilagaDialog ? (
       <BilagaSaknasDialog
         onBifoga={bilagaDialogBifoga}
@@ -1378,11 +1528,52 @@ export function NyKostnadForm({
 }
 
 /**
+ * Bekraftelsen vid sparandet (docs/design.md, "Kvittodatum utanför
+ * innehavet"), ordagrant. Bada datumen star i texten, sa att den som typat
+ * fel ser felet i samma mening som fragan. "Ändra datumet" ar den tunga
+ * knappen – ett feltypat arstal ar det vanliga fallet. "Datumet stämmer"
+ * sparar alltid; rutan ar ingen sparr, och att bekrafta datumet gor inte
+ * utgiften avdragsgill. Bara den undre gransen – efter forsaljningen ar det
+ * vanliga fallet det korrekta.
+ */
+function TilltradeDialog({
+  tilltradesdatum,
+  kvittodatum,
+  onAndra,
+  onStammer,
+}: {
+  tilltradesdatum: string;
+  kvittodatum: string;
+  onAndra: () => void;
+  onStammer: () => void;
+}) {
+  return (
+    <Sparfraga
+      id="tilltrade-rubrik"
+      rubrik="Datumet ligger före tillträdet"
+      primar={{ text: "Ändra datumet", onClick: onAndra }}
+      dampade={[{ text: "Datumet stämmer", onClick: onStammer }]}
+    >
+      <p className={SPARFRAGA_TEXT}>
+        Du tillträdde bostaden {tilltradesdatum}, och kvittot är daterat{" "}
+        {kvittodatum}. Stämmer det?
+      </p>
+      <p className={SPARFRAGA_TEXT}>
+        Utgifter från innan du ägde bostaden räknas inte med i
+        deklarationsunderlaget. Kvittot sparas ändå och syns under{" "}
+        <em>Återstår</em>.
+      </p>
+    </Sparfraga>
+  );
+}
+
+/**
  * "Inget kvitto bifogat" (produktspec avsnitt 4.7): visas nar formularet
  * skickas helt utan bilagor, sa att den som glomt bifoga upptacker det innan
  * kostnaden sparas i stallet for aldrig. Hindrar aldrig – bara tva vagar ut.
- * "Bifoga något" ar primarknappen, "Spara ändå" en dampad textlank bredvid,
- * inte lika lockande att trycka pa av misstag men fullt mojlig att valja.
+ * "Bifoga något" ar primarknappen, "Spara ändå" en dampad textlank under,
+ * inte lika lockande att trycka pa av misstag men lika latt att traffa – det
+ * ar vagen ut for den som inte kan fota sitt kvitto.
  */
 function BilagaSaknasDialog({
   onBifoga,
@@ -1391,48 +1582,23 @@ function BilagaSaknasDialog({
   onBifoga: () => void;
   onSparaAnda: () => void;
 }) {
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="bilaga-saknas-rubrik"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--text-primar)_90%,transparent)] p-4"
+  return (
+    <Sparfraga
+      id="bilaga-saknas-rubrik"
+      rubrik="Inget kvitto bifogat"
+      primar={{ text: "Bifoga något", onClick: onBifoga }}
+      dampade={[{ text: "Spara ändå", onClick: onSparaAnda }]}
     >
-      <div className="w-full max-w-sm rounded-lg bg-yta-upphojd p-5">
-        <h2
-          id="bilaga-saknas-rubrik"
-          className="font-rubrik text-base text-text-primar"
-        >
-          Inget kvitto bifogat
-        </h2>
-        <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
-          Kvittot sparas ändå. Men om Skatteverket frågar är underlaget
-          svagare utan något som styrker vad du köpte och när.
-        </p>
-        <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
-          Foton före och efter, bygglov, kontoutdrag eller lånehandlingar
-          räknas också. Har du inget av det blir din beskrivning i &quot;Vad
-          gällde det?&quot; viktigare – skriv vad som gjordes och när.
-        </p>
-        <div className="mt-4 flex flex-col items-center gap-3">
-          <button
-            type="button"
-            onClick={onBifoga}
-            className={PRIMARKNAPP_KLASS}
-          >
-            Bifoga något
-          </button>
-          <button
-            type="button"
-            onClick={onSparaAnda}
-            className="font-granssnitt text-sm text-text-sekundar underline"
-          >
-            Spara ändå
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body,
+      <p className={SPARFRAGA_TEXT}>
+        Kvittot sparas ändå. Men om Skatteverket frågar är underlaget
+        svagare utan något som styrker vad du köpte och när.
+      </p>
+      <p className={SPARFRAGA_TEXT}>
+        Foton före och efter, bygglov, kontoutdrag eller lånehandlingar
+        räknas också. Har du inget av det blir din beskrivning i &quot;Vad
+        gällde det?&quot; viktigare – skriv vad som gjordes och när.
+      </p>
+    </Sparfraga>
   );
 }
 

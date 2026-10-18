@@ -38,7 +38,9 @@ import { ombildningStalls, type Bostadsfragesvar } from "@/doman/bostadsfragor";
 import { AdressFalt } from "@/app/registrera/adress-falt";
 import { AgarandelFalt } from "@/components/agarandel-falt";
 import { BeloppFalt } from "@/components/belopp-falt";
+import { Bekraftelsefraga } from "@/components/bekraftelsefraga";
 import { DatumFalt } from "@/components/datum-falt";
+import { SparfragaRuta, SPARFRAGA_TEXT } from "@/components/sparfraga";
 import {
   Falt,
   HJALPTEXT_KLASS,
@@ -430,31 +432,15 @@ function BostadenEditForm({
           ) : null}
 
           {bytesforslag ? (
-            <div className="mt-2 flex flex-col gap-2 rounded-lg bg-yta-nedsankt p-3">
-              <p className="font-granssnitt text-sm text-text-primar">
-                {bytestext(bytesforslag)}
-              </p>
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUpplatelseformVal(bytesforslag);
-                    setBytesforslag(null);
-                    onDirty();
-                  }}
-                  className="font-granssnitt text-sm font-medium text-text-primar underline"
-                >
-                  Byt
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBytesforslag(null)}
-                  className="font-granssnitt text-sm text-text-sekundar"
-                >
-                  Avbryt
-                </button>
-              </div>
-            </div>
+            <BytUpplatelseformFraga
+              text={bytestext(bytesforslag)}
+              onByt={() => {
+                setUpplatelseformVal(bytesforslag);
+                setBytesforslag(null);
+                onDirty();
+              }}
+              onAvbryt={() => setBytesforslag(null)}
+            />
           ) : null}
         </div>
 
@@ -824,62 +810,73 @@ function DittKontoKort({ bostadsnamn }: { bostadsnamn: string }) {
 // andringar (docs/design.md, "Installningssidan").
 // ---------------------------------------------------------------------------
 
-function BytKortDialog({
-  franKort,
-  pagar,
-  onSpara,
-  onKasta,
-  onAvbryt,
-}: {
+export interface BytKortProps {
   franKort: string;
   pagar: boolean;
   onSpara: () => void;
   onKasta: () => void;
   onAvbryt: () => void;
-}) {
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="byt-kort-rubrik"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--text-primar)_90%,transparent)] p-4"
+}
+
+/** Sjalva rutan, utan portalen – exporterad sa att den gar att rendera i
+ *  tester (tester/bekraftelserutor.test.ts). Samma form som "Inget kvitto
+ *  bifogat" (src/components/sparfraga.tsx). */
+export function BytKortRuta({
+  franKort,
+  pagar,
+  onSpara,
+  onKasta,
+  onAvbryt,
+}: BytKortProps) {
+  return (
+    <SparfragaRuta
+      id="byt-kort-rubrik"
+      rubrik="Osparade ändringar"
+      primar={{
+        text: pagar ? "Sparar…" : "Spara ändringarna",
+        onClick: onSpara,
+        disabled: pagar,
+      }}
+      dampade={[
+        { text: "Kasta ändringarna", onClick: onKasta, disabled: pagar },
+        { text: "Fortsätt redigera", onClick: onAvbryt, disabled: pagar },
+      ]}
     >
-      <div className="w-full max-w-sm rounded-lg bg-yta-upphojd p-5">
-        <h2 id="byt-kort-rubrik" className="font-rubrik text-base text-text-primar">
-          Osparade ändringar
-        </h2>
-        <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
-          Du har osparade ändringar i {franKort}. Vill du spara dem innan du
-          fortsätter?
-        </p>
-        <div className="mt-4 flex flex-col items-center gap-3">
-          <button
-            type="button"
-            onClick={onSpara}
-            disabled={pagar}
-            className={PRIMARKNAPP_KLASS}
-          >
-            {pagar ? "Sparar…" : "Spara ändringarna"}
-          </button>
-          <button
-            type="button"
-            onClick={onKasta}
-            disabled={pagar}
-            className="font-granssnitt text-sm text-text-sekundar underline disabled:opacity-60"
-          >
-            Kasta ändringarna
-          </button>
-          <button
-            type="button"
-            onClick={onAvbryt}
-            disabled={pagar}
-            className="font-granssnitt text-sm text-text-sekundar disabled:opacity-60"
-          >
-            Fortsätt redigera
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body,
+      <p className={SPARFRAGA_TEXT}>
+        Du har osparade ändringar i {franKort}. Vill du spara dem innan du
+        fortsätter?
+      </p>
+    </SparfragaRuta>
+  );
+}
+
+function BytKortDialog(props: BytKortProps) {
+  return createPortal(<BytKortRuta {...props} />, document.body);
+}
+
+/**
+ * Bekraftelsen innan upplatelseformen byts (produktspec 4.8). Ofarlig i sig –
+ * inget sparas forran "Spara" – men den ser ut och beter sig som appens
+ * ovriga bekraftelser (src/components/bekraftelsefraga.tsx). Ett <div>, inte
+ * ett <form>: rutan ligger inuti kortets formular. Exporterad sa att den gar
+ * att rendera i tester (tester/bekraftelserutor.test.ts).
+ */
+export function BytUpplatelseformFraga({
+  text,
+  onByt,
+  onAvbryt,
+}: {
+  text: string;
+  onByt: () => void;
+  onAvbryt: () => void;
+}) {
+  return (
+    <Bekraftelsefraga
+      id="byt-upplatelseform-text"
+      fraga={text}
+      bekrafta={{ text: "Byt", onClick: onByt }}
+      avbryt={{ text: "Avbryt", onClick: onAvbryt }}
+      className="mt-2 rounded-lg bg-yta-nedsankt p-3"
+    />
   );
 }

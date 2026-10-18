@@ -54,6 +54,7 @@
 
 import { useRouter } from "next/navigation";
 import {
+  type FormEvent,
   useActionState,
   useEffect,
   useRef,
@@ -75,7 +76,12 @@ import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { avvisningVidVal } from "@/lib/lagring/bilaga-regler";
 import { laddaUppKostnadsbilaga } from "@/lib/lagring/bilaga-klient";
 import type { Bilagevy } from "@/lib/lagring/bilagor";
-import { Avdelningsrubrik, FALTFEL_KLASS, HJALPTEXT_KLASS } from "@/components/skarm";
+import { Bekraftelsefraga } from "@/components/bekraftelsefraga";
+import {
+  Avdelningsrubrik,
+  FALTFEL_KLASS,
+  HJALPTEXT_KLASS,
+} from "@/components/skarm";
 
 const START: BilagaResultat = {};
 
@@ -484,49 +490,78 @@ export function Bilagor({
       {/* Bekraftelsen som ett eget block under raden – texten ar for lang for
           att fa plats i en 100px-ruta. Samma icke-orange knappmonster som "Ta
           bort kvittot" i redigeringsvyn (docs/design.md, "Bilagor"). */}
+      {/* Rutan ligger kvar i flodet under raden, inte ovanpa – den
+          markerade rutan ovanfor ar det som visar vilken bilaga fragan galler
+          (docs/design.md, "Bilagor"). Formen ar appens enda for en
+          bekraftelse (src/components/bekraftelsefraga.tsx). */}
       {bekraftaBilaga ? (
-        <form
+        // key: byts bilagan medan fragan star oppen ar det en ny fraga, och
+        // fokus flyttas in i den igen.
+        <RaderaBilagaFraga
+          key={bekraftaBilaga.id}
+          bilagaId={bekraftaBilaga.id}
+          kostnadId={kostnadId}
           action={raderaAction}
           onSubmit={hanteraRaderaSubmit}
-          className="mt-3 flex flex-col gap-2 rounded-lg bg-yta-nedsankt p-3"
-        >
-          <input type="hidden" name="bilaga_id" value={bekraftaBilaga.id} />
-          <input type="hidden" name="kostnad_id" value={kostnadId} />
-          {/* Samma mening som krysset i nytt kvitto, ordagrant, plus det som
-              bara ar sant har (src/lib/bilageborttagning.ts). */}
-          <p className="font-granssnitt text-sm text-text-primar">
-            {BEKRAFTA_BILAGEBORTTAGNING_KVITTO}
-          </p>
-          {radera.fel ? (
-            <p className="font-granssnitt text-sm text-accent">
-              {radera.fel}
-            </p>
-          ) : null}
-          <div className="flex gap-4">
-            {/* Aldrig orange – radering av bevisning ar inte handlingen
-                produkten vill uppmuntra (docs/design.md, "Bilagor"). */}
-            <button
-              type="submit"
-              disabled={raderar}
-              className="font-granssnitt text-sm font-medium text-text-primar underline disabled:opacity-60"
-            >
-              {raderar ? "Tar bort…" : "Ta bort"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setBekraftaBilaga(null)}
-              className="font-granssnitt text-sm text-text-sekundar"
-            >
-              Avbryt
-            </button>
-          </div>
-        </form>
+          raderar={raderar}
+          fel={radera.fel}
+          onAvbryt={() => setBekraftaBilaga(null)}
+        />
       ) : null}
 
       {oppen ? (
         <Helskarmsvy bilaga={oppen} onStang={() => setOppen(null)} />
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Fragan innan en sparad bilaga raderas. Samma mening som krysset i nytt
+ * kvitto, ordagrant, plus det som bara ar sant har (src/lib/
+ * bilageborttagning.ts). Exporterad sa att den gar att rendera i tester
+ * (tester/bekraftelserutor.test.ts).
+ */
+export function RaderaBilagaFraga({
+  bilagaId,
+  kostnadId,
+  action,
+  onSubmit,
+  raderar,
+  fel,
+  onAvbryt,
+}: {
+  bilagaId: string;
+  kostnadId: string;
+  action: (formData: FormData) => void;
+  onSubmit?: (e: FormEvent<HTMLFormElement>) => void;
+  raderar: boolean;
+  fel?: string;
+  onAvbryt: () => void;
+}) {
+  return (
+    <Bekraftelsefraga
+      id="bekrafta-bilaga-text"
+      fraga={BEKRAFTA_BILAGEBORTTAGNING_KVITTO}
+      fel={fel}
+      form={{
+        action,
+        onSubmit,
+        dolda: (
+          <>
+            <input type="hidden" name="bilaga_id" value={bilagaId} />
+            <input type="hidden" name="kostnad_id" value={kostnadId} />
+          </>
+        ),
+      }}
+      bekrafta={{
+        text: raderar ? "Tar bort…" : "Ta bort",
+        submit: true,
+        disabled: raderar,
+      }}
+      avbryt={{ text: "Avbryt", onClick: onAvbryt }}
+      className="mt-3 rounded-lg bg-yta-nedsankt p-3"
+    />
   );
 }
 

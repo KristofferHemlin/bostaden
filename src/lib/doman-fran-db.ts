@@ -57,6 +57,7 @@ export function tillDomanKostnad(k: PrismaKostnadMedRader): DomanKostnad {
     id: k.id,
     totalbelopp: k.totalbelopp,
     betaldatum: k.betaldatum ? isoDatum(k.betaldatum) : null,
+    dokumentdatum: k.dokumentdatum ? isoDatum(k.dokumentdatum) : null,
     rot_utnyttjat: k.rot_utnyttjat ?? 0,
     forsakringsersattning: k.forsakringsersattning ?? 0,
     arkiverad: k.arkiverad,

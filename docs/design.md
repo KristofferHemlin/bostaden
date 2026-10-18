@@ -358,6 +358,12 @@ Felet är samma som exportvyn hade innan: **pengar som utelämnas i tysthet.** D
 
 Raden visar beskrivningen, orsaken **"Saknar belopp"** och en väg till kompletteringen, på samma sätt som *"Saknar betaldatum"*. Den visar **inget tal**, eftersom det inte finns något. Ett utkast *utan* bilaga är ingenting och ska inte synas – skillnaden är att någon har fotat ett kvitto.
 
+**Mellanrubriken lovar ingenting om framtiden.** Den löd *"Det här har du lagt in, men det ingår inte i talen ovan än"* fram till 2026-10-18. Ordet **än** var sant så länge varje rad bara saknade en uppgift: lägg till projektet, fyll i beloppet, och den flyttar upp. Med tillträdesgränsen rymmer listan också rader som **aldrig** kommer att ingå, och då ljuger ordet för just den användare som behöver läsa det noggrannast.
+
+> **Det här har du lagt in, men det ingår inte i talen ovan.**
+
+**Raden bär skälet, rubriken bär bara fakta.** Det är därför rubriken inte ska kompensera med en andra mening om att det mesta går att rätta: *"Hör inte till något projekt än"* och *"Daterat före tillträdet"* säger redan vilket slag varje rad är, och en rubrik som sammanfattar två olika slag blir sann om inget av dem.
+
 **Filnamnen i zip-arkivet hittar inte på det som saknas.** Namngivningen hoppar redan över datum och leverantör när de inte finns, och beloppet ska följa samma mönster. Ett utkast utan belopp fick 2026-10-17 heta `0 kr.jpg`, eftersom namnet räknade ett saknat belopp som noll – samma påhittade nolla som regeln ovan förbjuder, i den fil användaren sparar själv och öppnar om tio år. Arkivet är den ärligaste delen av löftet; ett filnamn som påstår att kvittot var värt noll är sämre än ett filnamn utan belopp.
 
 **Ett namn som blir tomt får ett ord, inte ingenting.** Ett utkast utan anteckning, leverantör, datum och belopp skulle med ren utelämning heta `.jpg` – en dold fil på macOS och Linux. Kvittot hade funnits i arkivet utan att synas, vilket är värre än ett trubbigt namn. Det heter därför `Utkast.jpg`. Ordet är sant, eftersom bara ett utkast kan sakna allt, och det är samma ord kvittolistan använder. Att samma rad heter *Kvitto* på skärmen och *Utkast* i arkivet är avsiktligt: på skärmen står statusen bredvid, i ett filnamn måste ordet bära hela beskedet.
@@ -791,7 +797,11 @@ Att dölja raden helt när ingenting lästs av vore värre. Då blir fältet on�
 
 ### Kvittodatum utanför innehavet
 
-Ett kvitto daterat före tillträdet eller efter försäljningen får en dämpad upplysning. **Aldrig en spärr, aldrig en dialog, aldrig ett extra klick.** Användaren äger bedömningen; appen påpekar bara att datumet ligger utanför den tid hen ägde bostaden.
+Ett kvitto daterat före tillträdet eller efter försäljningen får en dämpad upplysning. **Aldrig en spärr.** Användaren äger bedömningen; appen påpekar bara att datumet ligger utanför den tid hen ägde bostaden.
+
+**Regeln sa tidigare också "aldrig en dialog, aldrig ett extra klick". Det ändrades 2026-10-18, och bara för den undre gränsen.** Skälet är att notisens konsekvens ändrades i samma veva. När regeln skrevs hände ingenting alls om användaren läste förbi notisen — den var ren upplysning, och då är en dialog ett övergrepp mot någon som står upp i en byggvaruhandel. Nu räknas ett kvitto daterat före tillträdet **inte med i underlaget**. Då är tystnad dyrare än ett klick: ett feltypat årtal tar inte bara pengarna till fel kalenderår, det tar dem ur avdraget. En regel skriven för ett läge där notisen saknade följder styr inte ett läge där den har dem.
+
+**Dialogen gäller bara före tillträdet.** Efter försäljningen är det vanliga fallet det korrekta — en faktura för arbete utfört innan, betald efter — och en dialog där stoppar den som har rätt. Den gränsen behåller enbart sin dämpade rad, och beloppet räknas med som vanligt.
 
 **Gränserna är bostadens två datum.** `tilltradesdatum` är obligatoriskt och finns alltid. `forsaljningsdatum` är null fram till att bostaden markeras som såld – då gäller bara den undre gränsen, och den övre kontrollen finns helt enkelt inte.
 
@@ -799,11 +809,31 @@ Ett kvitto daterat före tillträdet eller efter försäljningen får en dämpad
 
 **Två fall, två texter.** De betyder olika saker och får inte dela formulering.
 
-> Före tillträdet: **Datumet ligger före tillträdet 2020-05-14. Kontrollera året.**
+> Före tillträdet: **Datumet ligger före tillträdet 2020-05-14. Kontrollera året – ett sådant kvitto räknas inte med i underlaget.**
 >
 > Efter försäljningen: **Datumet ligger efter försäljningen 2026-09-01. Det kan stämma – en faktura för arbete du gjorde innan räknas ändå.**
 
-Den första är kort och uppmanar, eftersom ett datum före tillträdet nästan alltid är ett feltypat årtal eller ett kvitto som inte är ditt. Ett fel årtal är dessutom dyrare än det ser ut: beloppet hamnar i fel kalenderår och kan fälla hela det årets avdrag under tröskeln.
+Den första är kort och uppmanar, eftersom ett datum före tillträdet nästan alltid är ett feltypat årtal eller ett kvitto som inte är ditt. Ett fel årtal är dessutom dyrare än det ser ut: beloppet hamnar i fel kalenderår, kan fälla hela det årets avdrag under tröskeln, och faller nu dessutom ur underlaget helt.
+
+**Andra ledet är inte en varning utan följden.** Utan det läser användaren "kontrollera året", tänker att årtalet stämmer, och får aldrig veta att pengarna står utanför avdraget. Notisen ska säga vad som händer, inte bara att något är ovanligt.
+
+#### Bekräftelsen vid sparandet
+
+Sparas ett kvitto daterat före tillträdet ställs en fråga. En enda, med båda talen i:
+
+> **Datumet ligger före tillträdet**
+>
+> Du tillträdde bostaden 2022-02-02, och kvittot är daterat 2019-05-08. Stämmer det?
+>
+> Utgifter från innan du ägde bostaden räknas inte med i deklarationsunderlaget. Kvittot sparas ändå och syns under *Återstår*.
+>
+> [ **Ändra datumet** ] [ Datumet stämmer ]
+
+**Båda datumen står i texten.** Den som typat fel ser felet i samma mening som frågan, utan att behöva leta tillbaka i formuläret.
+
+***Ändra datumet* är den tunga knappen**, eftersom ett feltypat årtal är det vanliga fallet. Samma viktning som i *Inget kvitto bifogat*: appens gissning får tyngden, användarens egen väg står kvar bredvid och är lika lätt att träffa. **Den stänger aldrig utan att spara** – svarar hon *Datumet stämmer* sparas kvittot, precis som *Spara ändå* sparar.
+
+**Att bekräfta datumet gör inte utgiften avdragsgill.** Frågan fångar feltypningen; den ändrar ingen skatteregel. Svarar hon att datumet stämmer ligger kvittot kvar i arkivet, utanför underlaget, synligt i *Återstår*.
 
 Den andra säger uttryckligen att det kan stämma. Utan den meningen rättar användaren ett korrekt datum, och då har notisen orsakat felet den skulle fånga.
 
@@ -832,6 +862,20 @@ Och en som ska vara kvar: "Står på köpekontraktet eller överlåtelseavtalet.
 **Obligatoriskt markeras på fältet, inte i en mening under.** En liten markering vid etiketten räcker.
 
 Håll texten till en rad. Behövs mer förklaring hör den hemma bakom en informationsknapp.
+
+### När ett formulär vägrar
+
+**Ett formulär som inte sparar ska säga varför, varje gång, på samma sätt.** Skriven 2026-10-18, efter att en mätning i produktionen visade tre olika beteenden i samma app.
+
+Ett tomt obligatoriskt fält flyttade bara fokus och sa ingenting. Ett ogiltigt datum gav två meddelanden för samma fel, varav det ena var osant. Frågeträdet skrev en hel mening. Samma produkt, tre svar på samma fråga: *varför hände ingenting när jag tryckte?*
+
+**Varje avvisning har en mening.** Den säger vad som saknas eller är fel, i appens vanliga ton, och den står vid det fält den gäller. *"Fyll i kvittots datum."* när fältet är tomt; *"Ogiltig dag."* när det är ifyllt men omöjligt. Aldrig bara en flyttad markör, aldrig bara en ram som byter färg – en synlig markering utan ord lämnar användaren med att gissa.
+
+**Ett fel ger ett meddelande.** Står det redan *"Ogiltig dag."* vid fältet får det inte också stå *"Fyll i kvittots datum."* längre ner. Det andra är dessutom falskt – datumet *är* ifyllt – och ett falskt felmeddelande är värre än inget, eftersom användaren letar efter ett problem som inte finns.
+
+**Meddelandet meddelas, inte bara visas.** Det bär `role="alert"`, så att det når den som inte ser skärmen. Fokus flyttas till det första fältet som är fel, aldrig till `<body>`.
+
+**Dialoger som ställer en fråga om sparandet körs efter valideringen, inte före.** Frågan *"Inget kvitto bifogat"* handlar om ett kvitto som är på väg att sparas. Är formuläret ogiltigt sparas ingenting, och då är frågan ställd i onödan – användaren svarar på den, trycker *Spara ändå*, och får först då veta att datumet var fel.
 
 ### Utfällbara sektioner
 

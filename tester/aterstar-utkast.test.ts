@@ -32,6 +32,7 @@ function utkast(id: string, over: Partial<Kostnad> = {}): Kostnad {
     id,
     totalbelopp: null,
     betaldatum: null,
+    dokumentdatum: null,
     rot_utnyttjat: 0,
     forsakringsersattning: 0,
     arkiverad: false,

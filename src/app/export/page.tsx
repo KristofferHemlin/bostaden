@@ -280,7 +280,7 @@ export default async function ExportSida() {
                 Återstår
               </p>
               <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
-                Det här har du lagt in, men det ingår inte i talen ovan än.
+                Det här har du lagt in, men det ingår inte i talen ovan.
               </p>
               <ul className="mt-2 divide-y divide-linje border-t border-linje">
                 {ex.oklassificerade_hogar.map((h) => (
@@ -300,7 +300,10 @@ export default async function ExportSida() {
                     ar={k.ar}
                     belopp={k.belopp_brutto}
                     href={
-                      k.orsak === "utan_betaldatum"
+                      // Ett datum som saknas eller kan vara feltypat
+                      // rattas pa kvittots skarm.
+                      k.orsak === "utan_betaldatum" ||
+                      k.orsak === "fore_tilltradet"
                         ? `/kostnad/${k.kostnad_id}`
                         : k.orsak === "utan_belopp"
                           ? `/kostnad/nytt?utkast=${k.kostnad_id}`
@@ -528,6 +531,7 @@ const ATERSTAR_ORSAK: Record<AterstaendeKvitto["orsak"], string> = {
   utan_hog: "Hör inte till något projekt än",
   utan_betaldatum: "Saknar betaldatum",
   utan_belopp: "Saknar belopp",
+  fore_tilltradet: "Daterat före tillträdet",
 };
 
 /**

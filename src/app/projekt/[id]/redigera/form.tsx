@@ -9,7 +9,7 @@
 // bekraftelsesteg.
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { type FormEvent, useActionState, useState } from "react";
 import {
   redigeraProjekt,
   taBortProjekt,
@@ -17,10 +17,13 @@ import {
 } from "../../actions";
 import {
   FragetradetFalt,
+  useFragetradetFormular,
   type FragetradetVarden,
 } from "../../fragetradet";
-import { PRIMARKNAPP_KLASS } from "@/components/skarm";
+import { Bekraftelsefraga } from "@/components/bekraftelsefraga";
+import { FALTFEL_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
+import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 
 const START: ProjektResultat = {};
 
@@ -42,23 +45,38 @@ export function RedigeraProjektForm({
   const [resultat, spara, sparar] = useActionState(redigeraProjekt, START);
   const [radera, raderaAction, raderar] = useActionState(taBortProjekt, START);
   const [bekraftaRadera, setBekraftaRadera] = useState(false);
-  const hanteraSparaSubmit = useForhindraDubbelinskick(sparar);
+  const {
+    formRef,
+    hanteraSubmit: hanteraSparaSubmit,
+    faltfel,
+    formularfel,
+    rensaFel,
+  } = useFragetradetFormular({ pagar: sparar, resultat });
   const hanteraRaderaSubmit = useForhindraDubbelinskick(raderar);
 
   return (
     <>
       <form
+        ref={formRef}
         action={spara}
         onSubmit={hanteraSparaSubmit}
+        noValidate
         className="flex flex-col gap-6 p-5"
       >
         <input type="hidden" name="projekt_id" value={projektId} />
 
-        <FragetradetFalt initial={varden} />
+        <FragetradetFalt initial={varden} fel={faltfel} onAndring={rensaFel} />
 
-        {resultat.fel ? (
-          <p className="font-granssnitt text-sm text-accent">
-            {resultat.fel}
+        {/* Bara fel som inte hor till nagon fraga star har – resten star vid
+            sin fraga (docs/design.md, "Nar ett formular vagrar"). */}
+        {formularfel ? (
+          <p
+            role="alert"
+            tabIndex={-1}
+            {...{ [FORMULARFEL_ATTRIBUT]: "" }}
+            className={`${FALTFEL_KLASS} outline-none`}
+          >
+            {formularfel}
           </p>
         ) : null}
 
@@ -96,38 +114,14 @@ export function RedigeraProjektForm({
             </ul>
           </div>
         ) : bekraftaRadera ? (
-          <form
+          <RaderaProjektFraga
+            projektId={projektId}
             action={raderaAction}
             onSubmit={hanteraRaderaSubmit}
-            className="flex flex-col gap-3"
-          >
-            <input type="hidden" name="projekt_id" value={projektId} />
-            <p className="font-granssnitt text-sm text-text-primar">
-              Ta bort projektet? Det går inte att ångra. Inga kvitton påverkas
-              – projektet har inga kopplade.
-            </p>
-            {radera.fel ? (
-              <p className="font-granssnitt text-sm text-accent">
-                {radera.fel}
-              </p>
-            ) : null}
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                disabled={raderar}
-                className="font-granssnitt text-sm font-medium text-text-primar underline disabled:opacity-60"
-              >
-                {raderar ? "Tar bort…" : "Ja, ta bort projektet"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setBekraftaRadera(false)}
-                className="font-granssnitt text-sm text-text-sekundar"
-              >
-                Avbryt
-              </button>
-            </div>
-          </form>
+            raderar={raderar}
+            fel={radera.fel}
+            onAvbryt={() => setBekraftaRadera(false)}
+          />
         ) : (
           <button
             type="button"
@@ -139,5 +133,45 @@ export function RedigeraProjektForm({
         )}
       </div>
     </>
+  );
+}
+
+/**
+ * Fragan innan projektet raderas – appens enda form for en bekraftelse
+ * (src/components/bekraftelsefraga.tsx). Exporterad sa att den gar att
+ * rendera i tester (tester/bekraftelserutor.test.ts).
+ */
+export function RaderaProjektFraga({
+  projektId,
+  action,
+  onSubmit,
+  raderar,
+  fel,
+  onAvbryt,
+}: {
+  projektId: string;
+  action: (formData: FormData) => void;
+  onSubmit?: (e: FormEvent<HTMLFormElement>) => void;
+  raderar: boolean;
+  fel?: string;
+  onAvbryt: () => void;
+}) {
+  return (
+    <Bekraftelsefraga
+      id="bekrafta-projekt-text"
+      fraga="Ta bort projektet? Det går inte att ångra. Inga kvitton påverkas – projektet har inga kopplade."
+      fel={fel}
+      form={{
+        action,
+        onSubmit,
+        dolda: <input type="hidden" name="projekt_id" value={projektId} />,
+      }}
+      bekrafta={{
+        text: raderar ? "Tar bort…" : "Ja, ta bort projektet",
+        submit: true,
+        disabled: raderar,
+      }}
+      avbryt={{ text: "Avbryt", onClick: onAvbryt }}
+    />
   );
 }

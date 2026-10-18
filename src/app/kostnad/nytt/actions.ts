@@ -30,23 +30,22 @@
 
 import { revalidatePath } from "next/cache";
 import { serverfelMeddelande } from "@/lib/databas-fel";
-import { oreFranKronor } from "@/lib/format";
 import { arGiltigtId } from "@/lib/giltigt-id";
+import { tolkaKostnadsformular, type Kostnadsfalt } from "@/lib/kostnadsformular";
 import { prisma } from "@/lib/prisma";
 import { kravMedlemskapI } from "@/lib/session";
 
 export interface KostnadResultat {
   fel?: string;
+  /** Faltet felet galler, nar det galler ett falt – formularet visar det
+   *  vid faltet i stallet for ovanfor knappen (docs/design.md, "Nar ett
+   *  formular vagrar"). */
+  falt?: Kostnadsfalt;
   /** Satt nar kostnaden sparats. Formularet gar da vidare till startskarmen.
    *  Blir ocksa vagen tillbaka till kostnaden om en bilaga inte gick att ladda
    *  upp. */
   kostnadId?: string;
 }
-
-const DATUM = /^\d{4}-\d{2}-\d{2}$/;
-// Undre grans: regelparametrarna seedas med giltig_fran 1970-01-01. En kostnad
-// med betaldatum fore dess avvisas har i stallet for att berakningen kastar fel.
-const TIDIGASTE_BETALDATUM = "1970-01-01";
 
 function revalideraKostnadsvyer(): void {
   revalidatePath("/");
@@ -97,71 +96,6 @@ export async function skapaUtkast(
 
 const BOSTADEN_HITTADES_INTE = "Bostaden kvittot skulle sparas på hittades inte.";
 
-type Tolkad =
-  | { fel: string }
-  | {
-      leverantor: string;
-      totalbelopp: number;
-      dok: Date;
-      bet: Date | null;
-      anteckning: string | null;
-      rotUtnyttjat: number | null;
-    };
-
-/** Ett belopp som anvandaren kan ha lamnat tomt eller pa noll blir null. */
-function positivtEllerNull(varde: number | null): number | null {
-  return varde !== null && varde > 0 ? varde : null;
-}
-
-/** Delad falttolkning for bade "skapa ny" och "slutfor utkast". */
-function tolkaKostnadsformular(formData: FormData): Tolkad {
-  const leverantor = String(formData.get("leverantor") ?? "").trim();
-  const beloppText = String(formData.get("totalbelopp") ?? "");
-  const dokumentdatum = String(formData.get("dokumentdatum") ?? "");
-  const betaldatum = String(formData.get("betaldatum") ?? "").trim();
-  const anteckning = String(formData.get("anteckning") ?? "").trim();
-
-  // ROT-avdraget (docs/design.md, "ROT-avdrag"). Ett enda falt, far lamnas tomt,
-  // anges i kronor. Det ar det enda som paverkar underlaget av det en
-  // entreprenorsfaktura bar – arbets- och materialuppdelning efterfragas inte.
-  const rotUtnyttjat = positivtEllerNull(
-    oreFranKronor(String(formData.get("rot_utnyttjat") ?? "")),
-  );
-
-  if (!leverantor) return { fel: "Fyll i leverantör." };
-
-  const totalbelopp = oreFranKronor(beloppText);
-  if (totalbelopp === null || totalbelopp <= 0) {
-    return { fel: "Fyll i ett belopp större än noll, t.ex. 1 020,95." };
-  }
-
-  // ROT-beloppet ar en del av totalbeloppet – ett varde over det ar en
-  // felskrivning. Blockerar inte flodet, anvandaren rattar bara talet.
-  if (rotUtnyttjat !== null && rotUtnyttjat > totalbelopp) {
-    return {
-      fel: "ROT-avdraget kan inte vara större än totalbeloppet.",
-    };
-  }
-  if (!DATUM.test(dokumentdatum)) {
-    return { fel: "Fyll i kvittots datum." };
-  }
-  if (betaldatum !== "") {
-    if (!DATUM.test(betaldatum)) return { fel: "Betaldatum har fel format." };
-    if (betaldatum < TIDIGASTE_BETALDATUM) {
-      return { fel: "Betaldatum före 1970 stöds inte." };
-    }
-  }
-
-  return {
-    leverantor,
-    totalbelopp,
-    dok: new Date(`${dokumentdatum}T00:00:00.000Z`),
-    bet: betaldatum ? new Date(`${betaldatum}T00:00:00.000Z`) : null,
-    anteckning: anteckning || null,
-    rotUtnyttjat,
-  };
-}
-
 // En kostnad fran inmatningen far alltid EXAKT en rad pa hela totalbeloppet, med
 // leverantoren som artikelnamn (produktspec 5: "En rad skapas alltid"). Ingen
 // fordelning – kopplingen till en gruppering gors i genomgangen och
@@ -185,7 +119,7 @@ export async function sparaKostnad(
   const { anvandareId } = medlemskap;
 
   const tolkad = tolkaKostnadsformular(formData);
-  if ("fel" in tolkad) return { fel: tolkad.fel };
+  if ("felen" in tolkad) return tolkad.felen[0];
   const { leverantor, totalbelopp, dok, bet, anteckning, rotUtnyttjat } = tolkad;
 
   // Sparningen far ALDRIG kasta okontrollerat har: kvittots bilaga ligger redan

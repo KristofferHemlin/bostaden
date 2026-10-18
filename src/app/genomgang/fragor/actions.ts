@@ -21,12 +21,18 @@ import {
   tolkaBostadsfragesvar,
 } from "@/doman/bostadsfragor";
 import { kravBostadsfragorBesvarade } from "@/lib/bostadsfragor-sparr";
-import { tolkaFragetradetFormData } from "@/lib/fragetradet-formdata";
+import {
+  tolkaFragetradetFormData,
+  type FragetradetFaltnamn,
+} from "@/lib/fragetradet-formdata";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
 export interface FragorResultat {
   fel?: string;
+  /** Fragan felet galler, nar det galler en – visas dar i stallet for
+   *  ovanfor knappen (docs/design.md, "Nar ett formular vagrar"). */
+  falt?: FragetradetFaltnamn;
 }
 
 export async function klassificeraHog(

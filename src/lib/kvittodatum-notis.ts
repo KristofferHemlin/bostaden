@@ -13,6 +13,8 @@
  * undre gransen.
  */
 
+import { dateratForeTilltradet } from "@/doman/atgardsberakning";
+
 export interface Innehavsgranser {
   /** ISO-datum ("YYYY-MM-DD"). */
   tilltradesdatum: string;
@@ -30,8 +32,10 @@ export function kvittodatumNotis(
 ): string | null {
   if (dokumentdatum === "") return null;
 
-  if (dokumentdatum < granser.tilltradesdatum) {
-    return `Datumet ligger före tillträdet ${granser.tilltradesdatum}. Kontrollera året.`;
+  // Samma grans som berakningen (CLAUDE.md, steg 3) – och notisen sager
+  // foljden, inte bara att datumet ar ovanligt (docs/design.md).
+  if (dateratForeTilltradet(dokumentdatum, granser.tilltradesdatum)) {
+    return `Datumet ligger före tillträdet ${granser.tilltradesdatum}. Kontrollera året – ett sådant kvitto räknas inte med i underlaget.`;
   }
 
   if (
