@@ -108,7 +108,9 @@ describe("bostadssteget pa servern", () => {
     ["okant varde", "villa"],
   ])("ingen bostad skapas %s", async (_namn, varde) => {
     const svar = await skicka({ upplatelseform: varde });
-    expect(svar).toEqual({ fel: "Välj vad du äger." });
+    // Svaret pekar ut faltet, sa att meningen kan sta vid det (docs/design.md,
+    // "När ett formulär vägrar").
+    expect(svar).toEqual({ fel: "Välj vad du äger.", falt: "upplatelseform" });
     expect(await h.db.klient.bostad.count()).toBe(0);
   });
 

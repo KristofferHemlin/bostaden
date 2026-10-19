@@ -13,9 +13,10 @@
 // sa att bada sidor provar exakt samma regel, precis som for datumfalten
 // (`@/components/datum-falt`).
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { FALTFEL_KLASS, INPUT_KLASS } from "@/components/skarm";
 import { agarandelFel } from "@/lib/agarandel";
+import { FALTFEL_ATTRIBUT } from "@/lib/formularfel";
 
 // Bara siffror och EN decimalavgransare (komma eller punkt) kommer igenom –
 // allt annat (bokstaver, procenttecken, ett andra kommatecken) stryks lopande
@@ -34,7 +35,11 @@ export function AgarandelFalt({
   name,
   defaultValue = "",
   onVarde,
+  fel: formularetsFel,
 }: {
+  /** Formularets mening fran servern. Faltets eget fel, som raknas medan man
+   *  skriver, vinner – ett fel ger ett meddelande (docs/design.md). */
+  fel?: string;
   name: string;
   /** Startvarde som text, t.ex. "50" eller "33,33". Tomt betyder hela bostaden. */
   defaultValue?: string;
@@ -51,19 +56,28 @@ export function AgarandelFalt({
     onVarde?.(nytt);
   }
 
+  // Meningen bar role="alert", faltet aria-invalid och aria-describedby –
+  // samma bindning som Falt ger (docs/design.md, "När ett formulär vägrar").
+  const meddelande = fel ?? formularetsFel ?? null;
+  const meddelandeId = useId();
   return (
     <div>
       <input
         type="text"
         inputMode="decimal"
         name={name}
+        aria-invalid={meddelande ? true : undefined}
+        aria-describedby={meddelande ? meddelandeId : undefined}
+        {...(meddelande ? { [FALTFEL_ATTRIBUT]: "" } : {})}
         value={varde}
         onChange={hanteraAndring}
         className={INPUT_KLASS}
         placeholder="t.ex. 50"
       />
-      {fel ? (
-        <p className={`mt-1.5 ${FALTFEL_KLASS}`}>{fel}</p>
+      {meddelande ? (
+        <p id={meddelandeId} role="alert" className={`mt-1.5 ${FALTFEL_KLASS}`}>
+          {meddelande}
+        </p>
       ) : null}
     </div>
   );

@@ -77,7 +77,7 @@ export function tolkaKostnadsformular(
       rot: rotUtnyttjat,
       forsakring: 0,
     });
-    if (fel) felen.push({ falt: "rot_utnyttjat", fel });
+    if (fel) felen.push({ falt: "rot_utnyttjat", fel: fel.fel });
   }
 
   // Inmatningen har ETT datumfalt, "Datum", som satter bade dokumentdatum och
@@ -186,18 +186,30 @@ export function avdragensFel({
   harPrivatDel: boolean;
   rot: number;
   forsakring: number;
-}): string | null {
+}): { fel: string; falt: "rot_utnyttjat" | "forsakringsersattning" } | null {
   const vad = harPrivatDel
     ? "det är vad kvittot kostade utan den privata delen"
     : "det är vad kvittot kostade";
+  // Faltet meningen hor till: ROT och summan star vid ROT-faltet – det ar
+  // det tal anvandaren har framfor sig och kan andra. Forsakringsersattningen
+  // har inget eget falt i dag; anroparen visar den dar basen andrades.
   if (rot > 0 && rot >= bas) {
-    return `Ange ett ROT-avdrag mindre än ${formateraKronor(bas)} – ${vad}.`;
+    return {
+      fel: `Ange ett ROT-avdrag mindre än ${formateraKronor(bas)} – ${vad}.`,
+      falt: "rot_utnyttjat",
+    };
   }
   if (forsakring > bas) {
-    return `Försäkringsersättningen kan vara högst ${formateraKronor(bas)} – ${vad}.`;
+    return {
+      fel: `Försäkringsersättningen kan vara högst ${formateraKronor(bas)} – ${vad}.`,
+      falt: "forsakringsersattning",
+    };
   }
   if (rot + forsakring > bas) {
-    return `ROT-avdraget och försäkringsersättningen blir tillsammans ${formateraKronor(rot + forsakring)}, men kvittot kostade ${formateraKronor(bas)}${harPrivatDel ? " utan den privata delen" : ""}.`;
+    return {
+      fel: `ROT-avdraget och försäkringsersättningen blir tillsammans ${formateraKronor(rot + forsakring)}, men kvittot kostade ${formateraKronor(bas)}${harPrivatDel ? " utan den privata delen" : ""}.`,
+      falt: "rot_utnyttjat",
+    };
   }
   return null;
 }

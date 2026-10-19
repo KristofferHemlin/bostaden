@@ -181,7 +181,7 @@ function SkapaInbjudan({
       <p className={HJALPTEXT_KLASS}>
         Andelarna är ett utgångsvärde. Var och en bekräftar sin när bostaden markeras som såld.
       </p>
-      {resultat.fel ? <p className={FALTFEL_KLASS}>{resultat.fel}</p> : null}
+      {resultat.fel ? <p role="alert" className={FALTFEL_KLASS}>{resultat.fel}</p> : null}
       <button type="submit" disabled={pagar} className={SEKUNDARKNAPP_KLASS}>
         {pagar ? "Skapar…" : "Skapa inbjudan"}
       </button>
@@ -264,7 +264,7 @@ function UtestaendeInbjudan({ id, epost, andel }: { id: string; epost: string; a
       <button type="submit" disabled={pagar} className={`${TEXTLANK_KLASS} self-start`}>
         {pagar ? "Återkallar…" : "Återkalla"}
       </button>
-      {resultat.fel ? <p className={FALTFEL_KLASS}>{resultat.fel}</p> : null}
+      {resultat.fel ? <p role="alert" className={FALTFEL_KLASS}>{resultat.fel}</p> : null}
     </form>
   );
 }

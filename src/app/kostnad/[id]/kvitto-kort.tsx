@@ -56,6 +56,8 @@ import {
   UtfallbarSektion,
 } from "@/components/skarm";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
+import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
+import { useFormularfel } from "@/lib/formularfel-klient";
 import {
   formateraBeloppInmatning,
   formateraKronor,
@@ -284,13 +286,31 @@ export function RedigeraVy({
   onSparat: () => void;
 }) {
   const [resultat, spara, sparar] = useActionState(redigeraKostnad, START);
-  const hanteraSparaSubmit = useForhindraDubbelinskick(sparar);
   // Belopp, projektkoppling och privatbelopp hor ihop som EN grupp som
   // antingen ar hela redigerbar har eller hela last – samma villkor som
   // redigeraKostnad (se privatDel ovan).
   const beloppsgruppRedigerbar = privatDel !== null;
   useNarKlar(sparar, Boolean(resultat.fel), (fel) => {
     if (!fel) onSparat();
+  });
+
+  // En avvisning som galler ett falt star vid faltet, med role="alert",
+  // aria-invalid och aria-describedby, och fokus flyttas dit (docs/design.md,
+  // "När ett formulär vägrar"). Tidigare stod ROT-meningen ovanfor
+  // Spara-knappen, nara tusen pixlar fran faltet, och faltet visade bara en
+  // ram utan ord. Den gemensamma useFormularfel (src/lib/formularfel-klient.ts)
+  // – inga falt provas i forvag, servern sager vilket falt felet galler.
+  // Meningen doljs nar anvandaren andrar faltet; nasta svar visar den igen.
+  const {
+    formRef,
+    hanteraSubmit: hanteraSparaSubmit,
+    felFor,
+    markering,
+    formularfel,
+    rensa,
+  } = useFormularfel<NonNullable<KostnadRedigeraResultat["falt"]>>({
+    pagar: sparar,
+    resultat,
   });
 
   const [radera, raderaAction, raderar] = useActionState(taBortKostnad, START);
@@ -327,6 +347,7 @@ export function RedigeraVy({
   return (
     <>
       <form
+        ref={formRef}
         action={spara}
         onSubmit={hanteraSparaSubmit}
         className="flex flex-col gap-5 border-t border-linje p-5"
@@ -338,12 +359,17 @@ export function RedigeraVy({
             etikett="Totalbelopp"
             obligatoriskt
             hjalp={totalbeloppHjalptext(rotUtnyttjat)}
+            fel={felFor("totalbelopp")}
           >
             <BeloppFalt
               name="totalbelopp"
               required
+              {...markering("totalbelopp")}
               value={totalbelopp}
-              onValueChange={setTotalbelopp}
+              onValueChange={(v) => {
+                setTotalbelopp(v);
+                rensa();
+              }}
               className={INPUT_KLASS}
               placeholder="0,00"
             />
@@ -365,17 +391,22 @@ export function RedigeraVy({
             värde. */}
         <UtfallbarSektion
           etikett="Drogs ROT av på fakturan?"
-          oppen={rotOppen}
+          oppen={rotOppen || felFor("rot_utnyttjat") !== undefined}
           onToggle={() => setRotOppen((v) => !v)}
         >
           <Falt
             etikett="ROT-avdrag"
             hjalp="Beloppet står på fakturan som det avdrag som redan dragits av. Anges i kronor, inte procent."
+            fel={felFor("rot_utnyttjat")}
           >
             <BeloppFalt
               name="rot_utnyttjat"
+              {...markering("rot_utnyttjat")}
               value={rotUtnyttjat}
-              onValueChange={setRotUtnyttjat}
+              onValueChange={(v) => {
+                setRotUtnyttjat(v);
+                rensa();
+              }}
               className={INPUT_KLASS}
               placeholder="0,00"
             />
@@ -386,16 +417,22 @@ export function RedigeraVy({
           <DatumFalt
             name="dokumentdatum"
             defaultValue={varden.dokumentdatum}
-            onChange={setDokumentdatum}
+            fel={felFor("dokumentdatum")}
+            onChange={(iso) => {
+              setDokumentdatum(iso);
+              rensa();
+            }}
           />
         </Falt>
         <KvittodatumNotis notis={kvittodatumNotis(dokumentdatum, innehav)} />
 
-        <Falt etikett="Leverantör" obligatoriskt>
+        <Falt etikett="Leverantör" obligatoriskt fel={felFor("leverantor")}>
           <input
             type="text"
             name="leverantor"
             required
+            {...markering("leverantor")}
+            onChange={rensa}
             defaultValue={varden.leverantor}
             className={INPUT_KLASS}
             placeholder="t.ex. Bauhaus Bromma"
@@ -421,7 +458,12 @@ export function RedigeraVy({
 
         <div>
           <Falt etikett="Betaldatum">
-            <DatumFalt name="betaldatum" defaultValue={varden.betaldatum} />
+            <DatumFalt
+              name="betaldatum"
+              defaultValue={varden.betaldatum}
+              fel={felFor("betaldatum")}
+              onChange={rensa}
+            />
           </Falt>
           <p className={`mt-1 ${HJALPTEXT_KLASS}`}>
             Lämna tomt om fakturan inte är betald än.
@@ -435,9 +477,11 @@ export function RedigeraVy({
             inga projekt visas INGEN rullista alls – inte ens ett meddelande
             i dess stalle. */}
         {beloppsgruppRedigerbar && projekt.length > 0 ? (
-          <Falt etikett="Koppla till projekt">
+          <Falt etikett="Koppla till projekt" fel={felFor("projekt_id")}>
             <select
               name="projekt_id"
+              {...markering("projekt_id")}
+              onChange={rensa}
               defaultValue={varden.projektId}
               className={INPUT_KLASS}
             >
@@ -478,20 +522,32 @@ export function RedigeraVy({
           <Falt
             etikett="Var något på kvittot privat?"
             hjalp="Ange beloppet som inte hörde till bostaden. Resten räknas med."
+            fel={felFor("privatbelopp")}
           >
             <BeloppFalt
               name="privatbelopp"
+              {...markering("privatbelopp")}
               value={privatbelopp}
-              onValueChange={setPrivatbelopp}
+              onValueChange={(v) => {
+                setPrivatbelopp(v);
+                rensa();
+              }}
               className={INPUT_KLASS}
               placeholder="t.ex. 400"
             />
           </Falt>
         ) : null}
 
-        {resultat.fel ? (
-          <p className="font-granssnitt text-sm text-accent">
-            {resultat.fel}
+        {/* Bara ett fel som inte hor till nagot falt star har – ovriga star
+            vid sitt falt. */}
+        {formularfel ? (
+          <p
+            role="alert"
+            tabIndex={-1}
+            {...{ [FORMULARFEL_ATTRIBUT]: "" }}
+            className="font-granssnitt text-sm text-accent outline-none"
+          >
+            {formularfel}
           </p>
         ) : null}
 

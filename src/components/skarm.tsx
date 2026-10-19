@@ -8,7 +8,14 @@
 // alls: den aktiva fliken heter redan "Oversikt".
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  useId,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { ToppradAdress } from "@/components/bostadsvaxlare";
 import { Installningslank, Toppnavigering } from "@/components/toppnavigering";
 import { privatAvgarRad, rotAvgarRad } from "@/lib/kvittolista";
@@ -260,8 +267,10 @@ export function Falt({
   /**
    * Varfor faltet avvisades (docs/design.md, "Nar ett formular vagrar"). Tar
    * hjalptextens plats – samma storlek, samma rad – och bar role="alert" sa
-   * att det nar den som inte ser skarmen. Anroparen satter `aria-invalid`
-   * och FALTFEL_ATTRIBUT pa sjalva inputen.
+   * att det nar den som inte ser skarmen. Faltet far `aria-invalid` och
+   * `aria-describedby` som pekar pa meningen, sa att den som anvander
+   * skarmlasare vet vilket falt felet galler. Anroparen satter
+   * FALTFEL_ATTRIBUT pa inputen, sa att fokus kan flyttas dit.
    */
   fel?: string;
   /**
@@ -272,6 +281,23 @@ export function Falt({
    */
   obligatoriskt?: boolean;
 }) {
+  const felId = useId();
+  // Det forsta elementet bland barnen ar faltet och far bindningen till
+  // meningen. Ett falt kan ha en rad efter sig (t.ex. "Inbjudan gäller den
+  // här adressen."), sa det ar det forsta elementet som rakna – inte bara ett
+  // ensamt barn. Uppmatt 2026-10-19: registreringens e-postfalt hade tva barn
+  // och fick ingen bindning alls.
+  let bundet = false;
+  const falt = fel
+    ? Children.map(children, (barn) => {
+        if (bundet || !isValidElement(barn)) return barn;
+        bundet = true;
+        return cloneElement(barn as ReactElement<Record<string, unknown>>, {
+          "aria-invalid": true,
+          "aria-describedby": felId,
+        });
+      })
+    : children;
   return (
     <label className="block">
       <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
@@ -282,9 +308,9 @@ export function Falt({
           </span>
         ) : null}
       </span>
-      {children}
+      {falt}
       {fel ? (
-        <span role="alert" className={`mt-1 block ${FALTFEL_KLASS}`}>
+        <span id={felId} role="alert" className={`mt-1 block ${FALTFEL_KLASS}`}>
           {fel}
         </span>
       ) : hjalp ? (

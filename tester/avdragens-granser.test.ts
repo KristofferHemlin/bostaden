@@ -52,7 +52,7 @@ describe("gränserna, var för sig", () => {
   const BAS = { bas: 1_000_000, harPrivatDel: false };
 
   it("ROT lika med beloppet avvisas – gränsen är sträng", () => {
-    expect(avdragensFel({ ...BAS, rot: 1_000_000, forsakring: 0 })).toBe(
+    expect(avdragensFel({ ...BAS, rot: 1_000_000, forsakring: 0 })?.fel).toBe(
       `Ange ett ROT-avdrag mindre än ${kr(1_000_000)} – det är vad kvittot kostade.`,
     );
   });
@@ -66,20 +66,20 @@ describe("gränserna, var för sig", () => {
   });
 
   it("försäkringsersättning över beloppet avvisas", () => {
-    expect(avdragensFel({ ...BAS, rot: 0, forsakring: 1_000_001 })).toBe(
+    expect(avdragensFel({ ...BAS, rot: 0, forsakring: 1_000_001 })?.fel).toBe(
       `Försäkringsersättningen kan vara högst ${kr(1_000_000)} – det är vad kvittot kostade.`,
     );
   });
 
   it("var för sig rimliga, tillsammans för mycket: summan avvisas", () => {
-    expect(avdragensFel({ ...BAS, rot: 600_000, forsakring: 500_000 })).toBe(
+    expect(avdragensFel({ ...BAS, rot: 600_000, forsakring: 500_000 })?.fel).toBe(
       `ROT-avdraget och försäkringsersättningen blir tillsammans ${kr(1_100_000)}, men kvittot kostade ${kr(1_000_000)}.`,
     );
   });
 
   it("med en privat del säger meddelandet det", () => {
     expect(
-      avdragensFel({ bas: 400_000, harPrivatDel: true, rot: 500_000, forsakring: 0 }),
+      avdragensFel({ bas: 400_000, harPrivatDel: true, rot: 500_000, forsakring: 0 })?.fel,
     ).toBe(
       `Ange ett ROT-avdrag mindre än ${kr(400_000)} – det är vad kvittot kostade utan den privata delen.`,
     );
@@ -152,6 +152,8 @@ describe("ändringsläget: basen är kvittots del som hör till bostaden", () =>
     expect(r.fel).toBe(
       `Ange ett ROT-avdrag mindre än ${kr(400_000)} – det är vad kvittot kostade utan den privata delen.`,
     );
+    // Meningen hor till ROT-faltet och visas dar (docs/design.md).
+    expect(r.falt).toBe("rot_utnyttjat");
     expect(h.transaction).not.toHaveBeenCalled();
   });
 

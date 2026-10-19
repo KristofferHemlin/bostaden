@@ -20,8 +20,10 @@ import {
   PRIMARKNAPP_KLASS,
   SANDKNAPP_KLASS,
 } from "@/components/skarm";
-import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
+import { useFormularfel } from "@/lib/formularfel-klient";
+import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 import { inloggningsfelFranLank } from "@/lib/inloggning";
+import { inloggningensFel } from "@/lib/inloggningsfalt";
 
 const START: AuthResultat = {};
 
@@ -36,7 +38,12 @@ export default function LoginSida() {
 
 function LoginInnehall() {
   const [resultat, action, pagar] = useActionState(hanteraAuth, START);
-  const hanteraSubmit = useForhindraDubbelinskick(pagar);
+  // Varje avvisning har en mening vid sitt falt (docs/design.md, "När ett
+  // formulär vägrar") – inte webblasarens `required`, som pa manga telefoner
+  // bara flyttar fokus utan ett ord. Kommer man inte in spelar resten ingen
+  // roll.
+  const { formRef, hanteraSubmit, felFor, markering, formularfel, rensa } =
+    useFormularfel({ pagar, resultat, validera: inloggningensFel });
   // Registreringsflodet skickar hit med ?epost=... nar adressen redan har ett
   // konto (docs/design.md, Registreringsflodet) – forifyll den da.
   const sokparametrar = useSearchParams();
@@ -65,31 +72,50 @@ function LoginInnehall() {
         </header>
 
         <div className="rounded-xl border border-linje bg-yta-upphojd p-5">
-          <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-4">
-            <Falt etikett="E-post">
+          <form
+            ref={formRef}
+            action={action}
+            onSubmit={hanteraSubmit}
+            noValidate
+            className="flex flex-col gap-4"
+          >
+            <Falt etikett="E-post" fel={felFor("epost")}>
               <input
                 type="email"
                 name="epost"
                 autoComplete="email"
                 required
+                {...markering("epost")}
+                onChange={rensa}
                 defaultValue={forifyllEpost}
                 className={INPUT_KLASS}
                 placeholder="du@exempel.se"
               />
             </Falt>
 
-            <Falt etikett="Lösenord">
+            <Falt etikett="Lösenord" fel={felFor("losenord")}>
               <input
                 type="password"
                 name="losenord"
                 autoComplete="current-password"
+                required
+                {...markering("losenord")}
+                onChange={rensa}
                 className={INPUT_KLASS}
               />
             </Falt>
 
-            {resultat.fel || lankfel ? (
-              <p className="font-granssnitt text-sm text-accent">
-                {resultat.fel ?? lankfel}
+            {/* Fel som inte hor till ett falt – fel e-post eller losenord
+                (vilket sags medvetet inte), en lank som inte gick att losa in,
+                eller ingen kontakt med inloggningen. */}
+            {formularfel || lankfel ? (
+              <p
+                role="alert"
+                tabIndex={-1}
+                {...{ [FORMULARFEL_ATTRIBUT]: "" }}
+                className="font-granssnitt text-sm text-accent outline-none"
+              >
+                {formularfel ?? lankfel}
               </p>
             ) : null}
 

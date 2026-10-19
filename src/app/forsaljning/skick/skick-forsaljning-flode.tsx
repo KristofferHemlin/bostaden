@@ -119,7 +119,7 @@ function AtgardFormular({
         <input type="hidden" name="skick_forsaljning" value={skick} />
 
         {resultat.fel ? (
-          <p className="font-granssnitt text-sm text-accent">
+          <p role="alert" className="font-granssnitt text-sm text-accent">
             {resultat.fel}
           </p>
         ) : null}

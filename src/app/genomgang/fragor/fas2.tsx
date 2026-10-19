@@ -19,9 +19,11 @@ import {
   FragetradetDoldaFalt,
   NamnFalt,
   TOMMA_SVAR,
-  useFragetradetFormular,
+  fragetradetsValidering,
   type FragetradetUIState,
 } from "@/app/projekt/fragetradet";
+import { useFormularfel } from "@/lib/formularfel-klient";
+import type { FragetradetFaltnamn } from "@/lib/fragetradet-formdata";
 import {
   Avdelningsrubrik,
   FALTFEL_KLASS,
@@ -96,11 +98,11 @@ function HogFormular({
   const [resultat, action, pagar] = useActionState(klassificeraHog, START);
   const [namn, setNamn] = useState(hog.namnforslag);
   const [svar, setSvar] = useState<FragetradetUIState>(TOMMA_SVAR);
-  const { formRef, hanteraSubmit, faltfel, formularfel, rensaFel } =
-    useFragetradetFormular({
+  const { formRef, hanteraSubmit, faltfel, formularfel, rensa: rensaFel } =
+    useFormularfel<FragetradetFaltnamn>({
       pagar,
       resultat,
-      projektetsBelopp: hog.belopp,
+      validera: fragetradetsValidering(hog.belopp),
     });
 
   // Nasta hog oppnas overst (docs/design.md, "Varje nytt steg i ett

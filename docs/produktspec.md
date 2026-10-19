@@ -224,6 +224,12 @@ Ett paritetstest låser fast att samma indata ger samma resultat för båda form
 
 ### 4.10 Utanför modellen
 
+**Försäkringsersättning har inget inmatningsfält.** Fältet finns i datamodellen, beräkningen drar av det, och sedan 2026-10-19 har det en gräns och ett skäl till den nolla full ersättning ger. Men ingen väg i appen skriver värdet, så hela grenen är i dag onåbar för en användare.
+
+Det ska byggas, och skälet är att alternativet är sämre: en vattenskada där försäkringen betalade 80 000 av 100 000 lämnar användaren att antingen skriva 100 000, vilket ger ett för högt avdrag, eller skriva 20 000, vilket gör att beloppet inte stämmer med bilagan – och regeln längre ned säger att den skillnaden måste förklaras i dokumentet, vilket kräver att talet finns. **Ett fält som saknas tvingar fram ett av två felaktiga tal, på samma sätt som en spärr som inte går att lyda.**
+
+Det är inte brådskande för en lansering till vänner och familj, men det ska stå här så att ingen tror att grenen är prövad bara för att den är dokumenterad.
+
 **Arv, gåva och bodelning.** Skatteverket frågar om detta och säger att den tidigare ägarens utgifter ska läggas till. Appen hanterar det inte. Hur tröskeln och femårsfönstret då räknas är en obesvarad fråga – se `docs/regelkallor.md`.
 
 **Men tystnaden är struken 2026-10-18.** Att inte hantera ett fall är ett val; att inte berätta det är ett fel, och det här fallet är inte sällsynt – många ärver ett föräldrahem. Felet går dessutom åt det låga hållet, så den som drabbas märker aldrig att något saknas.
@@ -311,7 +317,7 @@ Ett kvitto eller en faktura.
 | dokumentdatum | date | |
 | betaldatum | date? | null = obetald, räknas inte in |
 | rot_utnyttjat | int? | dras bort från underlaget; anges i kronor, aldrig i procent. Gränserna står i `CLAUDE.md` |
-| forsakringsersattning | int? | dras bort från underlaget. Får vara lika med beloppet, till skillnad från de andra två – se `CLAUDE.md` |
+| forsakringsersattning | int? | dras bort från underlaget. Får vara lika med bostadens del, till skillnad från de andra två – se `CLAUDE.md`. **Inget inmatningsfält finns än**, se 4.10 |
 | arkiverad | bool | användarens val, default false |
 | anteckning | text? | "Vad gällde det?" – bär minnet till klassificeringen
 
@@ -474,6 +480,8 @@ Rader grupperas per åtgärd och år, aldrig per kvitto. Kvittona ligger under s
 
 **Dolt i gränssnittet tills vidare.** Funktionen är byggd och testad, men knappen visas inte. Skälet är att den behövs först om Skatteverket begär in en redogörelse, och det gör de sällan – medan varje knapp som inte fungerar perfekt kostar förtroende för allt annat.
 
+**Så här är det dolt, uppmätt 2026-10-19:** flaggan `BILAGEPAKET_SYNLIGT` är `false`, och `/export/paket` skickar vidare till `/export`. **Ingenting i paketet är alltså ett fel för någon användare förrän flaggan slås på.** Det står här med flaggans namn eftersom jag två gånger drivit arbete i paketet som brådskande – en gång kompletteringsflödet, en gång *Återstår* i PDF:en – fast det redan stod en rad ovanför att knappen inte visas.
+
 **Koden ligger kvar och testerna fortsätter köras.** Att ta bort den vore att kasta det största enskilda byggsteget i projektet, och att återinföra det skulle bli en vecka i stället för en rad. Testerna gör dessutom att en framtida ändring i beräkningen säger till om paketet slutar stämma.
 
 **Deklarationsvyn säger vad som gäller i stället för ingenting.** Den som fått sina två tal undrar rimligen vad hen visar om Skatteverket frågar. En dämpad rad om att kvittona finns sparade och går att ladda ner som zip-arkiv svarar på det. Det är ett undantag från regeln om att appen aldrig beskriver sin egen byggordning: den regeln finns för att slippa berätta om sådant användaren inte efterfrågat, och här står hen inför en verklig fråga.
@@ -488,7 +496,7 @@ Rader grupperas per åtgärd och år, aldrig per kvitto. Kvittona ligger under s
 
 **Ordningen i dokumentet:**
 
-1. **Försättssida.** Bostadens identifiering – adress och ort, upplåtelseform, föreningens namn för bostadsrätt eller fastighetsbeteckning för fastighet. Tillträdesdatum, försäljningsdatum, ägarandel. Vilken blankett beloppen förs till, K5 eller K6. Datum då paketet skapades. **Avsnittet *Att se över*** med varningslistan och de högar som väntar på frågor. Friskrivningen, i sin helhet.
+1. **Försättssida.** Bostadens identifiering – adress och ort, upplåtelseform, föreningens namn för bostadsrätt eller fastighetsbeteckning för fastighet. Tillträdesdatum, försäljningsdatum, ägarandel. Vilken blankett beloppen förs till, K5 eller K6. Datum då paketet skapades. **Avsnittet *Att se över*** med varningslistan, och – när något återstår – en mening som pekar vidare dit det står. Friskrivningen, i sin helhet.
 2. **Sammanställningen, sida 1 – grundförbättringar.** Åtgärd, år, belopp. Summan utpekad: detta förs till punkt 4.
 3. **Sammanställningen, sida 2 – förbättrande reparationer.** Åtgärd, år, hel utgift, avdragsgill del efter förslitning. Summan utpekad: detta förs till punkt 5.
 4. **Bilageförteckning.** En numrerad lista som kopplar varje bilaga till sin rad. Den som får paketet ska kunna gå från ett belopp i sammanställningen till rätt kvitto utan att bläddra.
@@ -498,9 +506,13 @@ Rader grupperas per åtgärd och år, aldrig per kvitto. Kvittona ligger under s
 
 **Vad som ingår.** Bara det som ingår i underlaget. Arkiverade och privatmarkerade kvitton följer inte med – det är skillnaden mot zip-exporten, som tar allt användaren laddat upp. Bilagorna följer de kostnader som bidrar med ett belopp större än noll. En rad som redovisas med 0 kr står kvar i sammanställningen med sin förklaring, men har ingen bevisbörda och därmed inga bilagor.
 
-**Känd lucka, nästa omgång: PDF:en har ingen *Återstår*.** Exportvyn redovisar varje krona som lagts in — kvitton utan projekt, kvitton daterade före tillträdet, kvitton utan betaldatum, utkast med bilaga — men PDF:en gör det inte. Det är alltså **det dokument som sparas i åtta år** som tiger om det som inte räknats med, medan skärmen man tittar på en gång berättar det. Funnen 2026-10-19, av agenten, under arbetet med varningslistan.
+**PDF:en har en egen *Återstår*, byggd 2026-10-19.** Den saknades helt fram till dess: exportvyn redovisade varje krona som lagts in — kvitton utan projekt, kvitton daterade före tillträdet, kvitton utan betaldatum, utkast med bilaga — medan PDF:en teg om allt det. Det var alltså **det dokument som sparas i åtta år** som utelämnade det som inte räknats med, medan skärmen man tittar på en gång berättade det. Hittat av agenten, i förbigående, under arbetet med varningslistan.
 
-Regeln finns redan längre ned om bilagepaketets hål, och den gäller här: *ett paket med ett tyst hål är värre än ett paket som säger var hålet finns.* Ett underlag som ser komplett ut är dessutom farligare än ett som är synligt ofullständigt, eftersom ingen går tillbaka för att leta efter det som inte syns saknas.
+Regeln som gäller står längre ned om bilagepaketets hål: *ett paket med ett tyst hål är värre än ett paket som säger var hålet finns.* Ett underlag som ser komplett ut är dessutom farligare än ett som är synligt ofullständigt, eftersom ingen går tillbaka för att leta efter det som inte syns saknas.
+
+**Den ligger på en egen sida efter sammanställningen, inte på försättssidan.** Då står PDF:en i samma ordning som exportvyn – varningar, sida 1, sida 2, *Återstår* – och den som läst det ena känner igen det andra. De högar som väntar på frågor flyttade dit från försättssidan och står därmed på ett enda ställe i dokumentet.
+
+**Raderna, rubriken, inledningen och skälen kommer från en gemensam modul** som både exportvyn och PDF:en använder. Samma upplysning kan alltså inte få två lydelser – samma skäl som ROT-raden har en lydelse och inte två.
 
 **Skillnaden mellan raden och bilagan måste förklaras i dokumentet.** Har ROT-avdrag eller försäkringsersättning dragits av står beloppet i sammanställningen lägre än summan på kvittot, och en granskare som jämför ser ett glapp utan förklaring. Under beloppet står därför en dämpad rad: *"varav ROT 7 500 kr, avgår"*. Att fakturan ofta skriver ut skattereduktionen själv räcker inte – det gör inte alla, och dokumentet ska vara självförklarande.
 

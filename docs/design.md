@@ -920,7 +920,21 @@ Ett tomt obligatoriskt fält flyttade bara fokus och sa ingenting. Ett ogiltigt 
 
 **Ett fel ger ett meddelande.** Står det redan *"Ogiltig dag."* vid fältet får det inte också stå *"Fyll i kvittots datum."* längre ner. Det andra är dessutom falskt – datumet *är* ifyllt – och ett falskt felmeddelande är värre än inget, eftersom användaren letar efter ett problem som inte finns.
 
-**Meddelandet meddelas, inte bara visas.** Det bär `role="alert"`, så att det når den som inte ser skärmen. Fokus flyttas till det första fältet som är fel, aldrig till `<body>`.
+**Meddelandet meddelas, inte bara visas.** Det bär `role="alert"`, så att det når den som inte ser skärmen. Fokus flyttas till det första fältet som är fel, aldrig till `<body>`. Fältet får `aria-invalid`, och `aria-describedby` binder det till meningen — annars hör den som använder skärmläsare ett fel utan att veta vilket fält det gäller.
+
+**Bindningen ligger i den gemensamma fältkomponenten, inte i varje formulär.** Ett fält som visar ett fel genom `Falt` får `aria-invalid` och `aria-describedby` automatiskt. Det är där regeln ska bo: en regel som varje formulär måste komma ihåg att följa blir följd av ungefär hälften.
+
+**Så står det, och så är det inte riktigt.** Uppmätt 2026-10-19: fälten går genom `Falt` i 11 av 13 filer, men datumfältet, adressfältet och ägarandelsfältet är egna komponenter och har var sin kopia av samma bindning. Regeln följs alltså på fyra ställen i stället för ett. Det är inte ett fel i appen — fyra kopior som gör rätt är bättre än tretton formulär som gör olika — men det är fyra ställen att glömma nästa gång något ändras. **Den som rör bindningen ska röra alla fyra, och den som kan slå ihop dem till en gör regeln sann i stället för nästan sann.**
+
+Två fall faller utanför av skäl som inte går att bygga bort: upplåtelseformen är två knappar, inte ett fält, och `aria-invalid` hör till inmatning; skickfrågan är en egen komponent med sex steg.
+
+**Ett serversvar som ska peka ut ett fält måste säga vilket.** Fem formulär – markera som såld, registreringen, bjud in en delägare, dela upp kvittot, skick vid försäljningen – får sin mening från servern som en ensam text utan fältnamn. Den kan bära `role="alert"`, så den läses upp, men `aria-invalid` och bindningen kräver att svaret namnger fältet. Beslutet 2026-10-19: **registreringen ska namnge sitt fält, de andra fyra får vänta.** Registreringen är det första en ny användare möter, och att fastna där är samma sak som att inte komma in – det är enda posten av de fem som klarar testet *hindrar det här en vän från att använda appen på riktigt*. De fyra andra möter man efter att man redan är inne, med en mening som läses upp, och då är det en förbättring snarare än en spärr.
+
+**Och meningen ska synas utan att användaren behöver leta.** Hamnar fokus på fältet ska meningen rymmas på samma skärm. På ett formulär med två fält spelar det ingen roll om den står under knappen; på kvittots ändringsläge är det nära tusen pixlar och då är den borta. **Det är avståndet som är regeln, inte den exakta positionen** — men den som placerar meningen direkt under fältet behöver aldrig fundera på det.
+
+**En varning om den här filens egna påståenden.** Här stod 2026-10-19 att merkostnadsfältet var referensimplementationen och "gör allt ovan". Det var inte sant när det skrevs: ingenting i appen hade `aria-describedby`, och merkostnadsfältets mening låg inuti fältets `<label>`, så den lästes som en del av fältets namn i stället för som en beskrivning av felet. Påståendet stämmer sedan bindningen flyttade in i `Falt`.
+
+Lärdomen är inte om just det fältet. **Ett påstående om hur koden fungerar hör hemma i den här filen först när någon läst koden** — en prompt är en engångsinstruktion som agenten kan säga emot, men `docs/` är minnet, och ett fel här blir sant i allas ögon tills någon råkar kontrollera det.
 
 **Dialoger som ställer en fråga om sparandet körs efter valideringen, inte före.** Frågan *"Inget kvitto bifogat"* handlar om ett kvitto som är på väg att sparas. Är formuläret ogiltigt sparas ingenting, och då är frågan ställd i onödan – användaren svarar på den, trycker *Spara ändå*, och får först då veta att datumet var fel.
 
@@ -1187,6 +1201,12 @@ Beskedet säger också vad man ska göra om inget kommer – titta i skräpposte
 **Länken i mejlet leder till en sida som bara sätter ett nytt lösenord**, och loggar in personen när det är gjort. Är länken använd eller för gammal säger sidan det i klartext och erbjuder att skicka en ny, i stället för att visa ett formulär som inte kan fungera.
 
 **Kommer en oanvändbar länk in mot inloggningssidan** står det på samma plats som inloggningens övriga fel: *"Länken gick inte att använda – den kan redan vara använd eller för gammal. Logga in med ditt lösenord, eller välj Glömt lösenordet? för att få en ny."* Ett nyare inloggningsfel tar över platsen. Beskedet nämner båda vägarna vidare, eftersom den som klickat på en död länk inte vet vilken av dem som gäller för just hen.
+
+**De tre sidorna på vägen in avvisar med egna meningar, inte med webbläsarens.** Byggt 2026-10-19: inloggningen, *Glömt lösenordet* och *Nytt lösenord* validerar själva, med samma regler för alla tre, och följer *När ett formulär vägrar* – mening vid fältet, `role="alert"`, `aria-invalid`, bindning, fokus på första felet. Innan dess lät de webbläsaren sköta `required`, och den flyttar ibland bara fokus utan ett ord. Det är sämre här än någon annanstans i appen: den som inte kommer in kan inte be om hjälp inifrån produkten.
+
+**Ett lösenord återges aldrig.** Inte i ett felmeddelande, inte i ett tomt-fält-besked, inte i felrapporteringen. Meningen säger att fältet saknas eller är för kort, aldrig vad som står i det.
+
+**Och ett fel som gäller själva inloggningen pekar inte ut ett fält.** *"Fel e-post eller lösenord."* är med flit obunden: att lägga den vid e-postfältet vore att säga att adressen är fel, alltså att en adress finns eller inte finns hos oss. Det är samma uppgift om någon annan som återställningen vägrar lämna ut två stycken upp.
 
 **Vägen tillbaka in i sitt konto är inte en bekvämlighet.** Ett arkiv man inte kommer in i är borta för sin ägare, oavsett att raderna finns kvar i databasen. Det är skälet att den här sidan måste vara byggd före release och inte efter.
 

@@ -16,7 +16,8 @@
 // avbryts nar en ny tangent trycks.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Falt, INPUT_KLASS } from "@/components/skarm";
+import { Falt, FALTFEL_KLASS, INPUT_KLASS } from "@/components/skarm";
+import { FALTFEL_ATTRIBUT } from "@/lib/formularfel";
 
 // Statisk access sa att Next kan inlina vardet i klientbunten.
 const NYCKEL = process.env.NEXT_PUBLIC_GOOGLE_PLACES_KEY?.trim() || undefined;
@@ -47,7 +48,12 @@ function nyToken(): string {
 export function AdressFalt({
   forval,
   obligatoriskt,
+  fel,
 }: {
+  /** Formularets mening om adressen, t.ex. nar den saknas (docs/design.md,
+   *  "När ett formulär vägrar"): star direkt under faltet med role="alert",
+   *  och faltet far aria-invalid och aria-describedby. */
+  fel?: string;
   /** Markering vid etiketten, som Falt. Adressen ar obligatorisk sedan
    *  2026-10-01 – i registreringen och i installningarnas kort Bostaden. */
   obligatoriskt?: boolean;
@@ -260,6 +266,9 @@ export function AdressFalt({
             aria-expanded={oppen}
             aria-autocomplete="list"
             aria-controls="adress-forslag"
+            aria-invalid={fel ? true : undefined}
+            aria-describedby={fel ? "adress-fel" : undefined}
+            {...(fel ? { [FALTFEL_ATTRIBUT]: "" } : {})}
             value={adress}
             onChange={(e) => vidAndring(e.target.value)}
             onKeyDown={vidTangent}
@@ -304,6 +313,11 @@ export function AdressFalt({
             </ul>
           ) : null}
         </div>
+        {fel ? (
+          <p id="adress-fel" role="alert" className={`mt-1 ${FALTFEL_KLASS}`}>
+            {fel}
+          </p>
+        ) : null}
       </div>
 
       <Falt etikett="Ort">

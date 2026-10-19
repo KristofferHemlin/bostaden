@@ -21,20 +21,15 @@
 // Ett avvisat svar visas vid den fraga det galler, med role="alert", och
 // fokus flyttas dit (docs/design.md, "Nar ett formular vagrar"). Formularen
 // provar samma tolkning som servern (src/lib/fragetradet-formdata.ts) innan
-// de skickar – useFragetradetFormular nedan ar det delade monstret.
+// de skickar – via den gemensamma useFormularfel (src/lib/formularfel-klient.ts)
+// med fragetradetsValidering nedan.
 //
 // Varje fraga far en hjalpruta med konkreta exempel, UTFALLD SOM STANDARD och
 // mojlig att stanga (CLAUDE.md) – i motsats till en informationsknapp som
 // maste klickas fram. Svarsalternativ ar klickbara kort med kort text, inga
 // underrubriker (docs/design.md).
 
-import {
-  type FormEvent,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useState, type ReactNode } from "react";
 import {
   fraga3Relevant,
   fraga4Relevant,
@@ -55,15 +50,11 @@ import {
   INPUT_KLASS,
 } from "@/components/skarm";
 import {
-  forsokBorjaInskickning,
-  useDubbelinskickRef,
-} from "@/lib/dubbelinskick";
-import {
   formateraBeloppInmatning,
   formateraKronor,
   oreFranKronor,
 } from "@/lib/format";
-import { FALTFEL_ATTRIBUT, fokuseraForstaFel } from "@/lib/formularfel";
+import { FALTFEL_ATTRIBUT } from "@/lib/formularfel";
 import {
   tolkaFragetradetFormData,
   type FragetradetFaltnamn,
@@ -539,70 +530,19 @@ export function NamnFalt({
 }
 
 /**
- * Det delade monstret for formular som skickar fragetradet (docs/design.md,
- * "Nar ett formular vagrar"). Provar serverns tolkning innan nagot skickas;
- * ett fel visas vid fragan det galler och fokus flyttas dit. Avvisar servern
- * nagot anda visas det pa samma satt – vid fragan om det galler en, annars
- * som `formularfel` ovanfor knappen. Skyddet mot dubbel inskickning ligger
- * har ocksa (src/lib/dubbelinskick.ts), efter valideringen: ett avvisat
- * formular har inte borjat sparas.
+ * Fragetradets provning fore inskickning, for den gemensamma hooken
+ * useFormularfel (src/lib/formularfel-klient.ts): samma tolkning som servern,
+ * med projektets belopp for merkostnadens tak (CLAUDE.md, steg 2). Ett fel
+ * visas vid fragan det galler och fokus flyttas dit.
  *
- * Formularet satter `ref={formRef}`, `onSubmit={hanteraSubmit}` och
- * `noValidate` – webblasarens egen kontroll av `required` flyttar bara fokus,
- * utan ett ord.
+ * Fragetradet hade fram till 2026-10-19 en egen hook for detta,
+ * useFragetradetFormular, som gjorde samma sak som useFormularfel. Nu finns
+ * monstret pa ett stalle.
  */
-export function useFragetradetFormular({
-  pagar,
-  resultat,
-  projektetsBelopp,
-}: {
-  pagar: boolean;
-  resultat: { fel?: string; falt?: FragetradetFaltnamn };
-  /** Projektets belopp i oren, fore ROT – merkostnaden maste vara mindre
-   *  (CLAUDE.md, steg 2). Servern provar samma sak med sitt eget uppslag. */
-  projektetsBelopp: number;
-}) {
-  const formRef = useRef<HTMLFormElement>(null);
-  const pagarRef = useDubbelinskickRef(pagar);
-  const [fel, setFel] = useState<{ fel: string; falt?: FragetradetFaltnamn } | null>(
-    null,
-  );
-  const [fokusBegaran, setFokusBegaran] = useState(0);
-
-  useEffect(() => {
-    if (fokusBegaran > 0) fokuseraForstaFel(formRef.current);
-  }, [fokusBegaran]);
-
-  // Varje svar fran servern ar ett nytt objekt – ett fel i det visas och tar
-  // fokus, aldrig <body>.
-  useEffect(() => {
-    if (!resultat.fel) return;
-    setFel({ fel: resultat.fel, falt: resultat.falt });
-    setFokusBegaran((n) => n + 1);
-  }, [resultat]);
-
-  function hanteraSubmit(e: FormEvent<HTMLFormElement>) {
-    const tolkat = tolkaFragetradetFormData(new FormData(e.currentTarget), {
-      belopp: projektetsBelopp,
-    });
-    if ("fel" in tolkat) {
-      e.preventDefault();
-      setFel(tolkat);
-      setFokusBegaran((n) => n + 1);
-      return;
-    }
-    setFel(null);
-    if (!forsokBorjaInskickning(pagarRef)) e.preventDefault();
-  }
-
-  return {
-    formRef,
-    hanteraSubmit,
-    /** Felet som hor till en fraga – skickas till <Fragetradet>/<FragetradetFalt>. */
-    faltfel: fel?.falt ? (fel as FragetradetFormFel) : null,
-    /** Ett fel som inte hor till nagon fraga, t.ex. "Projektet hittades inte." */
-    formularfel: fel && !fel.falt ? fel.fel : null,
-    rensaFel: () => setFel(null),
+export function fragetradetsValidering(projektetsBelopp: number) {
+  return (formData: FormData): FragetradetFormFel | null => {
+    const tolkat = tolkaFragetradetFormData(formData, { belopp: projektetsBelopp });
+    return "fel" in tolkat ? tolkat : null;
   };
 }
 

@@ -48,6 +48,17 @@ import { adressfel } from "@/app/registrera/validering";
 
 export interface InstallningarResultat {
   fel?: string;
+  /** Faltet felet galler – kortet visar meningen vid faltet och inte langst
+   *  ned (docs/design.md, "När ett formulär vägrar"). */
+  falt?:
+    | "upplatelseform"
+    | "storlek"
+    | "adress"
+    | "kapitaltillskott"
+    | "tilltradesdatum"
+    | "kopeskilling"
+    | "kopkostnader"
+    | "agarandel";
 }
 
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
@@ -101,12 +112,12 @@ export async function sparaBostaden(
 
   const upplatelseform = las(formData, "upplatelseform");
   if (upplatelseform !== "bostadsratt" && upplatelseform !== "fastighet") {
-    return { fel: "Välj bostadsrätt eller villa/radhus." };
+    return { fel: "Välj bostadsrätt eller villa/radhus.", falt: "upplatelseform" };
   }
 
   const storlek = storlekFranText(las(formData, "storlek"));
   if (storlek === undefined) {
-    return { fel: "Storlek anges i kvadratmeter, t.ex. 72." };
+    return { fel: "Storlek anges i kvadratmeter, t.ex. 72.", falt: "storlek" };
   }
 
   // Upplatelseformen ar last efter forsaljning (produktspec 4.8): ett byte da
@@ -121,6 +132,7 @@ export async function sparaBostaden(
   if (bostadNu.forsaljningsdatum && upplatelseform !== bostadNu.upplatelseform) {
     return {
       fel: "Upplåtelseformen går inte att ändra efter försäljningen – underlaget är framtaget och blanketten vald.",
+      falt: "upplatelseform",
     };
   }
 
@@ -131,7 +143,7 @@ export async function sparaBostaden(
   // marker inget.
   const adress = las(formData, "adress");
   const felIAdress = adressfel(adress);
-  if (felIAdress) return { fel: felIAdress };
+  if (felIAdress) return { fel: felIAdress, falt: "adress" };
   const ort = las(formData, "ort");
   const geokod = tolkaGeokod(
     las(formData, "place_id"),
@@ -146,7 +158,10 @@ export async function sparaBostaden(
   if (upplatelseform === "bostadsratt") {
     kapitaltillskott = beloppFranText(las(formData, "kapitaltillskott"));
     if (kapitaltillskott === undefined) {
-      return { fel: "Kapitaltillskott anges som ett belopp, t.ex. 60 000." };
+      return {
+        fel: "Kapitaltillskott anges som ett belopp, t.ex. 60 000.",
+        falt: "kapitaltillskott",
+      };
     }
   }
 
@@ -203,28 +218,38 @@ export async function sparaForvarvet(
   if (!DATUM.test(tilltradesdatum)) {
     return {
       fel: "Tillträdesdatum behövs som baslinje för skickbedömningen och gränsen för vilka utgifter som är dina.",
+      falt: "tilltradesdatum",
     };
   }
   if (tilltradesdatum < "1970-01-01") {
-    return { fel: "Tillträdesdatum före 1970 stöds inte." };
+    return { fel: "Tillträdesdatum före 1970 stöds inte.", falt: "tilltradesdatum" };
   }
   if (tilltradesdatum > isoDatum(new Date())) {
-    return { fel: "Tillträdesdatum kan inte ligga i framtiden." };
+    return { fel: "Tillträdesdatum kan inte ligga i framtiden.", falt: "tilltradesdatum" };
   }
 
   const kopeskilling = beloppFranText(las(formData, "kopeskilling"));
   if (kopeskilling === undefined) {
-    return { fel: "Köpeskilling anges som ett belopp, t.ex. 3 250 000." };
+    return {
+      fel: "Köpeskilling anges som ett belopp, t.ex. 3 250 000.",
+      falt: "kopeskilling",
+    };
   }
 
   const kopkostnader = beloppFranText(las(formData, "kopkostnader"));
   if (kopkostnader === undefined) {
-    return { fel: "Köpkostnader anges som ett belopp, t.ex. 45 000." };
+    return {
+      fel: "Köpkostnader anges som ett belopp, t.ex. 45 000.",
+      falt: "kopkostnader",
+    };
   }
 
   const agarandel = agarandelFranText(las(formData, "agarandel"));
   if (agarandel === undefined) {
-    return { fel: "Ägarandel anges som ett tal mellan 0 och 100, t.ex. 50 eller 33,33." };
+    return {
+      fel: "Ägarandel anges som ett tal mellan 0 och 100, t.ex. 50 eller 33,33.",
+      falt: "agarandel",
+    };
   }
 
   // Tomt betyder obesvarat – da skrivs ingenting. Ett svar tolkas och lagras
@@ -272,7 +297,7 @@ export async function sparaForvarvet(
     },
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
   );
-  if (andelsfel) return { fel: andelsfel };
+  if (andelsfel) return { fel: andelsfel, falt: "agarandel" };
 
   revalideraBostadssidor();
   return {};

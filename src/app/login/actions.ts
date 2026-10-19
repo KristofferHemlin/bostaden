@@ -12,10 +12,15 @@
 
 import { redirect } from "next/navigation";
 import { INGEN_KONTAKT_MED_INLOGGNINGEN } from "@/lib/inloggning";
+import { inloggningensFel } from "@/lib/inloggningsfalt";
 import { skapaServerklient } from "@/lib/supabase/server";
 
 export interface AuthResultat {
   fel?: string;
+  /** Faltet felet galler – meningen star da vid det (docs/design.md). Fel
+   *  e-post eller losenord galler inget enskilt falt: vilket det ar sags
+   *  medvetet inte. */
+  falt?: "epost" | "losenord";
 }
 
 function las(formData: FormData, nyckel: string): string {
@@ -28,11 +33,12 @@ export async function hanteraAuth(
 ): Promise<AuthResultat> {
   const epost = las(formData, "epost");
   const losenord = String(formData.get("losenord") ?? "");
-  const supabase = await skapaServerklient();
 
-  if (!epost || !losenord) {
-    return { fel: "Fyll i både e-post och lösenord." };
-  }
+  // Samma regler och samma meningar som formularet (src/lib/inloggningsfalt.ts).
+  const faltfel = inloggningensFel(formData);
+  if (faltfel) return faltfel;
+
+  const supabase = await skapaServerklient();
   const { error } = await supabase.auth.signInWithPassword({
     email: epost,
     password: losenord,

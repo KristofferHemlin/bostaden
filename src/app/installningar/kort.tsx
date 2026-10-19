@@ -43,13 +43,15 @@ import { DatumFalt } from "@/components/datum-falt";
 import { SparfragaRuta, SPARFRAGA_TEXT } from "@/components/sparfraga";
 import {
   Falt,
+  FALTFEL_KLASS,
   HJALPTEXT_KLASS,
   INPUT_KLASS,
   Kort,
   PRIMARKNAPP_KLASS,
   SEKUNDARKNAPP_KLASS,
 } from "@/components/skarm";
-import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
+import { useFormularfel } from "@/lib/formularfel-klient";
+import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 import { formateraBeloppInmatning, formateraKronor } from "@/lib/format";
 import { useNarKlar } from "@/lib/nar-klar";
 import { formateraAndel } from "@/lib/samagande";
@@ -356,7 +358,10 @@ function BostadenEditForm({
   onKlar: (fel: boolean) => void;
 }) {
   const [resultat, action, pagar] = useActionState(sparaBostaden, START);
-  const hanteraSubmit = useForhindraDubbelinskick(pagar);
+  // Meningen vid sitt falt, inte langst ned i kortet (docs/design.md, "När
+  // ett formulär vägrar": ett langt formular tappar meningen utanfor skarmen).
+  const { hanteraSubmit, felFor, markering, formularfel, rensa } =
+    useFormularfel({ pagar, resultat, validera: ingenForhandskontroll, formRef });
   useNarKlar(pagar, Boolean(resultat.fel), onKlar);
 
   const [upplatelseformVal, setUpplatelseformVal] = useState(data.upplatelseform);
@@ -374,11 +379,15 @@ function BostadenEditForm({
         ref={formRef}
         action={action}
         onSubmit={hanteraSubmit}
-        onChange={onDirty}
+        onChange={() => {
+          onDirty();
+          rensa();
+        }}
         className="flex flex-col gap-5 p-4"
       >
         <AdressFalt
           obligatoriskt
+          fel={felFor("adress")}
           forval={{
             adress: data.adress,
             ort: data.ort,
@@ -388,7 +397,7 @@ function BostadenEditForm({
           }}
         />
 
-        <div>
+        <div {...markering("upplatelseform")}>
           <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">
             Vad äger du?
           </span>
@@ -423,6 +432,11 @@ function BostadenEditForm({
             })}
           </div>
           <input type="hidden" name="upplatelseform" value={upplatelseformVal} />
+          {felFor("upplatelseform") ? (
+            <p role="alert" className={`mt-1.5 ${FALTFEL_KLASS}`}>
+              {felFor("upplatelseform")}
+            </p>
+          ) : null}
 
           {data.sald ? (
             <p className={`mt-1.5 ${HJALPTEXT_KLASS}`}>
@@ -463,10 +477,11 @@ function BostadenEditForm({
           />
         </Falt>
 
-        <Falt etikett="Storlek" hjalp="Boarea i kvadratmeter.">
+        <Falt etikett="Storlek" hjalp="Boarea i kvadratmeter." fel={felFor("storlek")}>
           <input
             type="text"
             name="storlek"
+            {...markering("storlek")}
             inputMode="numeric"
             defaultValue={data.storlek}
             className={INPUT_KLASS}
@@ -481,9 +496,11 @@ function BostadenEditForm({
           <Falt
             etikett="Kapitaltillskott"
             hjalp="Föreningens amorteringar under din innehavstid – står i uppgiften från föreningen."
+            fel={felFor("kapitaltillskott")}
           >
             <BeloppFalt
               name="kapitaltillskott"
+              {...markering("kapitaltillskott")}
               value={kapitaltillskott}
               onValueChange={setKapitaltillskott}
               className={INPUT_KLASS}
@@ -492,9 +509,7 @@ function BostadenEditForm({
           </Falt>
         ) : null}
 
-        {resultat.fel ? (
-          <p className="font-granssnitt text-sm text-accent">{resultat.fel}</p>
-        ) : null}
+        <Formularfel fel={formularfel} />
 
         <div className="flex flex-col gap-2">
           <button type="submit" disabled={pagar} className={PRIMARKNAPP_KLASS}>
@@ -623,7 +638,9 @@ function ForvarvetEditForm({
   onKlar,
 }: Omit<KortProps<ForvarvetData>, "oppen" | "onAndra">) {
   const [resultat, action, pagar] = useActionState(sparaForvarvet, START);
-  const hanteraSubmit = useForhindraDubbelinskick(pagar);
+  // Meningen vid sitt falt, inte langst ned i kortet (docs/design.md).
+  const { hanteraSubmit, felFor, markering, formularfel, rensa } =
+    useFormularfel({ pagar, resultat, validera: ingenForhandskontroll, formRef });
   useNarKlar(pagar, Boolean(resultat.fel), onKlar);
 
   const [kopeskilling, setKopeskilling] = useState(() => beloppTillFalt(data.kopeskillingOren));
@@ -639,7 +656,10 @@ function ForvarvetEditForm({
       ref={formRef}
       action={action}
       onSubmit={hanteraSubmit}
-      onChange={onDirty}
+      onChange={() => {
+        onDirty();
+        rensa();
+      }}
       className="flex flex-col gap-5 p-4"
     >
       <Falt
@@ -651,12 +671,18 @@ function ForvarvetEditForm({
           name="tilltradesdatum"
           defaultValue={data.tilltradesdatum}
           framtidsFelmeddelande="Tillträdesdatum kan inte ligga i framtiden."
+          fel={felFor("tilltradesdatum")}
         />
       </Falt>
 
-      <Falt etikett="Köpeskilling" hjalp="Står på köpekontraktet eller överlåtelseavtalet.">
+      <Falt
+        etikett="Köpeskilling"
+        hjalp="Står på köpekontraktet eller överlåtelseavtalet."
+        fel={felFor("kopeskilling")}
+      >
         <BeloppFalt
           name="kopeskilling"
+          {...markering("kopeskilling")}
           value={kopeskilling}
           onValueChange={setKopeskilling}
           className={INPUT_KLASS}
@@ -671,9 +697,11 @@ function ForvarvetEditForm({
             ? "Överlåtelseavgiften du betalade när du köpte bostadsrätten."
             : "Lagfart, pantbrev och inköpsprovision vid köpet."
         }
+        fel={felFor("kopkostnader")}
       >
         <BeloppFalt
           name="kopkostnader"
+          {...markering("kopkostnader")}
           value={kopkostnader}
           onValueChange={setKopkostnader}
           className={INPUT_KLASS}
@@ -685,6 +713,7 @@ function ForvarvetEditForm({
         <AgarandelFalt
           name="agarandel"
           defaultValue={data.agarandelProcent === 100 ? "" : String(data.agarandelProcent)}
+          fel={felFor("agarandel")}
         />
       </Falt>
 
@@ -745,7 +774,7 @@ function ForvarvetEditForm({
         </div>
       ) : null}
 
-      {resultat.fel ? <p className="font-granssnitt text-sm text-accent">{resultat.fel}</p> : null}
+      <Formularfel fel={formularfel} />
       <Spara pagar={pagar} onAvbryt={onAvbryt} />
     </form>
   );
@@ -878,5 +907,27 @@ export function BytUpplatelseformFraga({
       avbryt={{ text: "Avbryt", onClick: onAvbryt }}
       className="mt-2 rounded-lg bg-yta-nedsankt p-3"
     />
+  );
+}
+
+/** Korten provar inga falt i forvag – servern sager vilket falt felet galler,
+ *  och meningen visas dar (useFormularfel). */
+function ingenForhandskontroll(): null {
+  return null;
+}
+
+/** Ett fel som inte hor till nagot falt, ovanfor knapparna – med role="alert"
+ *  och fokus (docs/design.md, "När ett formulär vägrar"). */
+function Formularfel({ fel }: { fel: string | null }) {
+  if (!fel) return null;
+  return (
+    <p
+      role="alert"
+      tabIndex={-1}
+      {...{ [FORMULARFEL_ATTRIBUT]: "" }}
+      className="font-granssnitt text-sm text-accent outline-none"
+    >
+      {fel}
+    </p>
   );
 }

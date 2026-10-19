@@ -20,17 +20,22 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { rapporteraFel } from "@/lib/feltrapportering";
 import { INGEN_KONTAKT_MED_INLOGGNINGEN } from "@/lib/inloggning";
-import { LOSENORD_MINSTA_LANGD, losenordsfel } from "@/lib/losenord";
+import { glomtLosenordFel, nyttLosenordFel } from "@/lib/inloggningsfalt";
+import { LOSENORD_MINSTA_LANGD } from "@/lib/losenord";
 import { skapaServerklient } from "@/lib/supabase/server";
 
 export interface GlomtResultat {
   fel?: string;
+  /** Faltet felet galler – meningen star da vid det (docs/design.md). */
+  falt?: "epost";
   /** Satt nar begaran ar besvarad – beskedet ar detsamma vad adressen an ar. */
   skickatTill?: string;
 }
 
 export interface NyttLosenordResultat {
   fel?: string;
+  /** Faltet felet galler – meningen star da vid det (docs/design.md). */
+  falt?: "losenord";
   /** Ingen session att satta losenordet pa – lanken ar anvand eller for gammal. */
   lankOgiltig?: boolean;
 }
@@ -54,7 +59,9 @@ export async function begarAterstallning(
   formData: FormData,
 ): Promise<GlomtResultat> {
   const epost = String(formData.get("epost") ?? "").trim();
-  if (!epost) return { fel: "Fyll i din e-postadress." };
+  // Samma regel och samma mening som formularet (src/lib/inloggningsfalt.ts).
+  const faltfel = glomtLosenordFel(formData);
+  if (faltfel) return faltfel;
 
   const origin = (await headers()).get("origin") ?? "";
   const supabase = await skapaServerklient();
@@ -80,8 +87,9 @@ export async function sattNyttLosenord(
   formData: FormData,
 ): Promise<NyttLosenordResultat> {
   const losenord = String(formData.get("losenord") ?? "");
-  const svagt = losenordsfel(losenord);
-  if (svagt) return { fel: svagt };
+  // Samma regel och samma mening som formularet (src/lib/inloggningsfalt.ts).
+  const faltfel = nyttLosenordFel(formData);
+  if (faltfel) return faltfel;
 
   const supabase = await skapaServerklient();
   const {
@@ -94,10 +102,16 @@ export async function sattNyttLosenord(
     const fel = error as AuthFel;
     if (arNatverksfel(fel)) return { fel: INGEN_KONTAKT };
     if (fel.code === "same_password") {
-      return { fel: "Det nya lösenordet måste vara ett annat än det gamla." };
+      return {
+        fel: "Det nya lösenordet måste vara ett annat än det gamla.",
+        falt: "losenord",
+      };
     }
     if (fel.code === "weak_password") {
-      return { fel: `Lösenordet godtogs inte. Välj ett annat, minst ${LOSENORD_MINSTA_LANGD} tecken.` };
+      return {
+        fel: `Lösenordet godtogs inte. Välj ett annat, minst ${LOSENORD_MINSTA_LANGD} tecken.`,
+        falt: "losenord",
+      };
     }
     if (fel.code === "session_not_found" || fel.code === "session_expired" || fel.status === 401) {
       return { lankOgiltig: true };

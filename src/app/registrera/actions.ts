@@ -33,15 +33,21 @@
 import { redirect } from "next/navigation";
 import { isoDatum, oreFranKronor } from "@/lib/format";
 import { INGEN_KONTAKT_MED_INLOGGNINGEN } from "@/lib/inloggning";
-import { losenordsfel } from "@/lib/losenord";
 import { prisma } from "@/lib/prisma";
 import { hamtaAnvandare, sakerstallAnvandarrad } from "@/lib/session";
 import { skapaServerklient } from "@/lib/supabase/server";
-import { adressfel, upplatelseformfel } from "./validering";
+import {
+  bostadsstegetsFel,
+  kontostegetsFel,
+  type Registreringsfalt,
+} from "./validering";
 import { tolkaGeokod } from "./koordinater";
 
 export interface RegistreringResultat {
   fel?: string;
+  /** Faltet felet galler – meningen star da vid det, med aria-invalid och
+   *  bindning (docs/design.md, "När ett formulär vägrar"). */
+  falt?: Registreringsfalt;
   meddelande?: string;
   // Fas 1 lyckades – klienten gar vidare till steg 2 och bar med authId.
   kontoSkapat?: boolean;
@@ -52,10 +58,6 @@ export interface RegistreringResultat {
   epost?: string;
 }
 
-const DATUM = /^\d{4}-\d{2}-\d{2}$/;
-// Undre grans: regelparametrarna seedas med giltig_fran 1970-01-01.
-const TIDIGASTE_TILLTRADE = "1970-01-01";
-const EPOST = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -89,19 +91,9 @@ export async function slutforRegistrering(
     las(formData, "longitud"),
   );
 
-  const felIForm = upplatelseformfel(upplatelseform);
-  if (felIForm) return { fel: felIForm };
-  if (!DATUM.test(tilltradesdatum)) {
-    return { fel: "Fyll i tillträdesdatum." };
-  }
-  if (tilltradesdatum < TIDIGASTE_TILLTRADE) {
-    return { fel: "Tillträdesdatum före 1970 stöds inte." };
-  }
-  if (tilltradesdatum > isoDatum(new Date())) {
-    return { fel: "Tillträdesdatum kan inte ligga i framtiden." };
-  }
-  const felIAdress = adressfel(adress);
-  if (felIAdress) return { fel: felIAdress };
+  // Samma regler och samma meningar som formularet (./validering.ts).
+  const faltfel = bostadsstegetsFel(formData, isoDatum(new Date()));
+  if (faltfel) return faltfel;
 
   // Kopeskilling ar valfri (docs/design.md, Registreringsflodet). Anges i kronor
   // i faltet, tolkas som heltal oren och lagras som BigInt – Int (Postgres int4)
@@ -109,8 +101,12 @@ export async function slutforRegistrering(
   let kopeskillingOren: number | null = null;
   if (kopeskillingText !== "") {
     kopeskillingOren = oreFranKronor(kopeskillingText);
+    // Redan provat i bostadsstegetsFel – kvar for typernas skull.
     if (kopeskillingOren === null || kopeskillingOren <= 0) {
-      return { fel: "Köpeskilling anges som ett belopp, t.ex. 3 250 000." };
+      return {
+        fel: "Köpeskilling anges som ett belopp, t.ex. 3 250 000.",
+        falt: "kopeskilling",
+      };
     }
   }
   const kopeskilling =
@@ -167,11 +163,9 @@ export async function slutforRegistrering(
 async function skapaKonto(formData: FormData): Promise<RegistreringResultat> {
   const epost = las(formData, "epost");
   const losenord = String(formData.get("losenord") ?? "");
-  if (!EPOST.test(epost)) {
-    return { fel: "Fyll i en giltig e-postadress." };
-  }
-  const svagt = losenordsfel(losenord);
-  if (svagt) return { fel: svagt };
+  // Samma regler och samma meningar som formularet (./validering.ts).
+  const faltfel = kontostegetsFel(formData);
+  if (faltfel) return faltfel;
 
   const supabase = await skapaServerklient();
   const { data, error } = await supabase.auth.signUp({
@@ -179,9 +173,13 @@ async function skapaKonto(formData: FormData): Promise<RegistreringResultat> {
     password: losenord,
   });
   if (error) {
+    const upptagen = arUpptagen(error.message);
     return {
       fel: oversattFel(error.message),
-      epostUpptagen: arUpptagen(error.message),
+      // En upptagen adress galler e-postfaltet; ovriga fel fran
+      // inloggningstjansten galler inget enskilt falt.
+      falt: upptagen ? "epost" : undefined,
+      epostUpptagen: upptagen,
       epost,
     };
   }
@@ -191,6 +189,7 @@ async function skapaKonto(formData: FormData): Promise<RegistreringResultat> {
   if (!data.user || (data.user.identities?.length ?? 0) === 0) {
     return {
       fel: "E-postadressen har redan ett konto. Logga in i stället.",
+      falt: "epost",
       epostUpptagen: true,
       epost,
     };

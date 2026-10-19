@@ -17,9 +17,11 @@ import {
 } from "../../actions";
 import {
   FragetradetFalt,
-  useFragetradetFormular,
+  fragetradetsValidering,
   type FragetradetVarden,
 } from "../../fragetradet";
+import { useFormularfel } from "@/lib/formularfel-klient";
+import type { FragetradetFaltnamn } from "@/lib/fragetradet-formdata";
 import { Bekraftelsefraga } from "@/components/bekraftelsefraga";
 import {
   FALTFEL_KLASS,
@@ -65,11 +67,11 @@ export function RedigeraProjektForm({
     hanteraSubmit: hanteraSparaSubmit,
     faltfel,
     formularfel,
-    rensaFel,
-  } = useFragetradetFormular({
+    rensa: rensaFel,
+  } = useFormularfel<FragetradetFaltnamn>({
     pagar: sparar,
     resultat,
-    projektetsBelopp,
+    validera: fragetradetsValidering(projektetsBelopp),
   });
   const hanteraRaderaSubmit = useForhindraDubbelinskick(raderar);
 

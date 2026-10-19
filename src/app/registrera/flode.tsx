@@ -24,6 +24,7 @@ import { BeloppFalt } from "@/components/belopp-falt";
 import {
   Bekraftelseruta,
   Falt,
+  FALTFEL_KLASS,
   HJALPTEXT_KLASS,
   INPUT_KLASS,
   PRIMARKNAPP_KLASS,
@@ -31,15 +32,19 @@ import {
 } from "@/components/skarm";
 import { DatumFalt } from "@/components/datum-falt";
 import { forsokBorjaInskickning, useDubbelinskickRef } from "@/lib/dubbelinskick";
-import { losenordsfel } from "@/lib/losenord";
+import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
+import { useFormularfel } from "@/lib/formularfel-klient";
+import { isoDatum } from "@/lib/format";
 import { slutforRegistrering, type RegistreringResultat } from "./actions";
 import { AdressFalt } from "./adress-falt";
 import { Ram } from "./ram";
-import { adressfel, upplatelseformfel } from "./validering";
+import {
+  bostadsstegetsFel,
+  kontostegetsFel,
+  type Registreringsfalt,
+} from "./validering";
 
 const START: RegistreringResultat = {};
-const EPOST = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 
 const UPPLATELSEFORMER = [
   { varde: "bostadsratt", etikett: "Bostadsrätt", emoji: "🏢" },
@@ -71,50 +76,48 @@ export function RegistreraFlode({
   // svar användaren inte gav"). Ett hus som registrerades utan att nagon
   // tryckte pa kortet blev forut en bostadsratt – och det syns aldrig mer.
   const [upplatelseform, setUpplatelseform] = useState("");
-  const [tilltradesdatum, setTilltradesdatum] = useState("");
   const [kopeskilling, setKopeskilling] = useState("");
-  const [lokaltFel, setLokaltFel] = useState<string | null>(null);
+
+  // Varje avvisning har en mening vid sitt falt, med aria-invalid och
+  // bindning, och fokus flyttas dit (docs/design.md, "När ett formulär
+  // vägrar"). Registreringen ar det forsta en ny anvandare moter – att fastna
+  // dar ar samma sak som att inte komma in. Samma regler och meningar som
+  // servern (./validering.ts), och servern sager vilket falt ett fel galler.
+  // Flodet har tva steg och skickar sjalv, sa det provar sjalv och anropar
+  // visaFel i stallet for att anvanda hookens hanteraSubmit.
+  const { formRef, visaFel, felFor, markering, formularfel, rensa } =
+    useFormularfel<Registreringsfalt>({ pagar, resultat });
 
   // Steg 1 skickades och kontot skapades pa servern – ga till bostadssteget.
   useEffect(() => {
     if (resultat.kontoSkapat) {
       setKontoRedan(true);
       setSteg(2);
-      setLokaltFel(null);
+      rensa();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resultat]);
 
-  // Adressfaltet ager sitt eget varde (AdressFalt), sa det lases ur formularet.
-  function validera(s: number, formular: HTMLFormElement): string | null {
-    if (s === 1) {
-      if (!EPOST.test(epost.trim())) return "Fyll i en giltig e-postadress.";
-      const svagt = losenordsfel(losenord);
-      if (svagt) return svagt;
-    }
-    if (s === 2) {
-      const felIForm = upplatelseformfel(upplatelseform);
-      if (felIForm) return felIForm;
-      if (!DATUM.test(tilltradesdatum)) return "Fyll i tillträdesdatum.";
-      if (tilltradesdatum < "1970-01-01") {
-        return "Tillträdesdatum före 1970 stöds inte.";
-      }
-      const felIAdress = adressfel(String(new FormData(formular).get("adress") ?? ""));
-      if (felIAdress) return felIAdress;
-    }
-    return null;
+  // Hela formularet lases som FormData – aven stegets dolda falt och
+  // adressfaltet, som ager sitt eget varde.
+  function validera(s: number, formular: HTMLFormElement) {
+    const data = new FormData(formular);
+    return s === 1
+      ? kontostegetsFel(data)
+      : bostadsstegetsFel(data, isoDatum(new Date()));
   }
 
   function hanteraSubmit(e: React.FormEvent<HTMLFormElement>) {
     const fel = validera(steg, e.currentTarget);
     if (fel) {
       e.preventDefault();
-      setLokaltFel(fel);
+      visaFel(fel);
       return;
     }
     // Steg 1 nar kontot redan finns: bladdra vidare utan serveranrop.
     if (steg === 1 && kontoRedan) {
       e.preventDefault();
-      setLokaltFel(null);
+      rensa();
       setSteg(2);
       return;
     }
@@ -129,21 +132,23 @@ export function RegistreraFlode({
     // Ovriga fall lamnas till formularets action:
     //  steg 1 -> skapaKonto, effekten ovan byter till steg 2
     //  steg 2 -> spara bostaden
-    setLokaltFel(null);
+    rensa();
   }
 
   function gaBak() {
-    setLokaltFel(null);
+    rensa();
     setSteg((s) => Math.max(forstaSteg, s - 1));
   }
 
-  const felText = lokaltFel ?? resultat.fel;
   const synligKlass = "flex flex-col gap-5";
 
   const formular = (
     <form
+      ref={formRef}
       action={action}
       onSubmit={hanteraSubmit}
+      onChange={rensa}
+      noValidate
       className="flex flex-col gap-5 p-5"
     >
       {!endastBostad && !inbjudan ? <Forlopp steg={steg} av={2} /> : null}
@@ -165,11 +170,12 @@ export function RegistreraFlode({
       {/* STEG 1 – KONTO */}
       <div className={steg === 1 ? synligKlass : "hidden"}>
         <p className={HJALPTEXT_KLASS}>Kontot skapas när du går vidare.</p>
-        <Falt etikett="E-post" obligatoriskt>
+        <Falt etikett="E-post" obligatoriskt fel={felFor("epost")}>
           <input
             type="email"
             name="epost"
             autoComplete="email"
+            {...markering("epost")}
             value={epost}
             onChange={(e) => setEpost(e.target.value)}
             readOnly={Boolean(inbjudan)}
@@ -181,11 +187,26 @@ export function RegistreraFlode({
             </p>
           ) : null}
         </Falt>
-        <Falt etikett="Lösenord" obligatoriskt hjalp="Minst 8 tecken.">
+        {/* En upptagen adress: vagen vidare star vid faltet, intill meningen. */}
+        {resultat.epostUpptagen && felFor("epost") ? (
+          <Link
+            href={`/login?epost=${encodeURIComponent(resultat.epost ?? epost)}`}
+            className={SEKUNDARKNAPP_KLASS}
+          >
+            Logga in i stället
+          </Link>
+        ) : null}
+        <Falt
+          etikett="Lösenord"
+          obligatoriskt
+          hjalp="Minst 8 tecken."
+          fel={felFor("losenord")}
+        >
           <input
             type="password"
             name="losenord"
             autoComplete="new-password"
+            {...markering("losenord")}
             value={losenord}
             onChange={(e) => setLosenord(e.target.value)}
             className={INPUT_KLASS}
@@ -195,7 +216,11 @@ export function RegistreraFlode({
 
       {/* STEG 2 – BOSTADEN */}
       <div className={steg === 2 ? synligKlass : "hidden"}>
-        <div role="group" aria-labelledby="upplatelseform-etikett">
+        <div
+          role="group"
+          aria-labelledby="upplatelseform-etikett"
+          {...markering("upplatelseform")}
+        >
           <span
             id="upplatelseform-etikett"
             className="mb-1.5 block font-granssnitt text-sm text-text-sekundar"
@@ -214,7 +239,10 @@ export function RegistreraFlode({
                   key={o.varde}
                   type="button"
                   aria-pressed={vald}
-                  onClick={() => setUpplatelseform(o.varde)}
+                  onClick={() => {
+                    setUpplatelseform(o.varde);
+                    rensa();
+                  }}
                   className={[
                     "flex flex-col items-center gap-1.5 rounded-lg border-2 px-3 py-4 text-center transition-colors",
                     vald
@@ -233,24 +261,33 @@ export function RegistreraFlode({
             })}
           </div>
           <input type="hidden" name="upplatelseform" value={upplatelseform} />
+          {/* Tva knappar, inte ett falt – meningen meddelas och fokus gar
+              till forsta knappen, men aria-invalid hor till inmatning. */}
+          {felFor("upplatelseform") ? (
+            <p role="alert" className={`mt-1.5 ${FALTFEL_KLASS}`}>
+              {felFor("upplatelseform")}
+            </p>
+          ) : null}
         </div>
 
         <Falt etikett="Tillträdesdatum" obligatoriskt>
           <DatumFalt
             name="tilltradesdatum"
-            onChange={setTilltradesdatum}
+            fel={felFor("tilltradesdatum")}
             framtidsFelmeddelande="Tillträdesdatum kan inte ligga i framtiden."
           />
         </Falt>
 
-        <AdressFalt obligatoriskt />
+        <AdressFalt obligatoriskt fel={felFor("adress")} />
 
         <Falt
           etikett="Köpeskilling"
           hjalp="Står på köpekontraktet eller överlåtelseavtalet. Går att fylla i senare."
+          fel={felFor("kopeskilling")}
         >
           <BeloppFalt
             name="kopeskilling"
+            {...markering("kopeskilling")}
             value={kopeskilling}
             onValueChange={setKopeskilling}
             className={INPUT_KLASS}
@@ -259,18 +296,17 @@ export function RegistreraFlode({
         </Falt>
       </div>
 
-      {felText ? (
-        <div className="flex flex-col gap-2">
-          <p className="font-granssnitt text-sm text-accent">{felText}</p>
-          {steg === 1 && resultat.epostUpptagen ? (
-            <Link
-              href={`/login?epost=${encodeURIComponent(resultat.epost ?? epost)}`}
-              className={SEKUNDARKNAPP_KLASS}
-            >
-              Logga in i stället
-            </Link>
-          ) : null}
-        </div>
+      {/* Ett fel som inte hor till nagot falt – t.ex. ingen kontakt med
+          inloggningstjansten. Ovriga star vid sitt falt. */}
+      {formularfel ? (
+        <p
+          role="alert"
+          tabIndex={-1}
+          {...{ [FORMULARFEL_ATTRIBUT]: "" }}
+          className="font-granssnitt text-sm text-accent outline-none"
+        >
+          {formularfel}
+        </p>
       ) : null}
       {resultat.meddelande ? (
         <Bekraftelseruta>{resultat.meddelande}</Bekraftelseruta>

@@ -52,6 +52,17 @@ export interface BilagaResultat {
 
 export interface KostnadRedigeraResultat {
   fel?: string;
+  /** Faltet felet galler, nar det galler ett falt i andringslaget – meningen
+   *  star da vid faltet och inte ovanfor knappen (docs/design.md, "När ett
+   *  formulär vägrar"). */
+  falt?:
+    | "rot_utnyttjat"
+    | "totalbelopp"
+    | "privatbelopp"
+    | "leverantor"
+    | "dokumentdatum"
+    | "betaldatum"
+    | "projekt_id";
 }
 
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
@@ -108,12 +119,18 @@ export async function redigeraKostnad(
     oreFranKronor(String(formData.get("rot_utnyttjat") ?? "")),
   );
 
-  if (!leverantor) return { fel: "Fyll i leverantör." };
-  if (!DATUM.test(dokumentdatum)) return { fel: "Fyll i kvittots datum." };
+  // Varje fel som hor till ett falt sager vilket – formularet visar meningen
+  // vid faltet (docs/design.md, "När ett formulär vägrar").
+  if (!leverantor) return { fel: "Fyll i leverantör.", falt: "leverantor" };
+  if (!DATUM.test(dokumentdatum)) {
+    return { fel: "Fyll i kvittots datum.", falt: "dokumentdatum" };
+  }
   if (betaldatum !== "") {
-    if (!DATUM.test(betaldatum)) return { fel: "Betaldatum har fel format." };
+    if (!DATUM.test(betaldatum)) {
+      return { fel: "Betaldatum har fel format.", falt: "betaldatum" };
+    }
     if (betaldatum < TIDIGASTE_BETALDATUM) {
-      return { fel: "Betaldatum före 1970 stöds inte." };
+      return { fel: "Betaldatum före 1970 stöds inte.", falt: "betaldatum" };
     }
   }
 
@@ -129,7 +146,7 @@ export async function redigeraKostnad(
   const harAvdragspost =
     rotUtnyttjat !== null || (kostnad.forsakringsersattning ?? 0) > 0;
   if (harAvdragspost && antalProjekt > 1) {
-    return { fel: SEK5_FEL };
+    return { fel: SEK5_FEL, falt: "rot_utnyttjat" };
   }
 
   const dok = new Date(`${dokumentdatum}T00:00:00.000Z`);
@@ -162,7 +179,14 @@ export async function redigeraKostnad(
       rot: rotUtnyttjat ?? 0,
       forsakring: kostnad.forsakringsersattning ?? 0,
     });
-    if (avdragsfel) return { fel: avdragsfel };
+    // Har visas bara ROT-faltet av beloppsgruppen; ett fel som galler
+    // forsakringsersattningen ensam har inget falt att sta vid.
+    if (avdragsfel) {
+      return {
+        fel: avdragsfel.fel,
+        falt: avdragsfel.falt === "rot_utnyttjat" ? "rot_utnyttjat" : undefined,
+      };
+    }
     await prisma.kostnad.update({
       where: { id },
       data: {
@@ -187,7 +211,10 @@ export async function redigeraKostnad(
     ? oreFranKronor(String(formData.get("totalbelopp") ?? ""))
     : kostnad.totalbelopp;
   if (totalbelopp === null || totalbelopp <= 0) {
-    return { fel: "Fyll i ett belopp större än noll, t.ex. 1 020,95." };
+    return {
+      fel: "Fyll i ett belopp större än noll, t.ex. 1 020,95.",
+      falt: "totalbelopp",
+    };
   }
   // Projektkopplingen: "– inget projekt –" skickar en tom strang och kopplar
   // loss med avsikt. Saknas faltet helt har granssnittet inte visat det, och
@@ -201,7 +228,9 @@ export async function redigeraKostnad(
       where: { id: projektId, bostad_id: bostadId },
       select: { id: true },
     });
-    if (!projekt) return { fel: "Det valda projektet finns inte." };
+    if (!projekt) {
+      return { fel: "Det valda projektet finns inte.", falt: "projekt_id" };
+    }
     kopplatProjekt = projekt.id;
   }
 
@@ -212,7 +241,10 @@ export async function redigeraKostnad(
   if (privatText !== "") {
     const parsat = oreFranKronor(privatText);
     if (parsat === null || parsat <= 0) {
-      return { fel: "Ange ett privatbelopp större än noll, t.ex. 400." };
+      return {
+        fel: "Ange ett privatbelopp större än noll, t.ex. 400.",
+        falt: "privatbelopp",
+      };
     }
     privatbelopp = parsat;
   }
@@ -233,7 +265,8 @@ export async function redigeraKostnad(
     projektId: kopplatProjekt,
     privatbelopp,
   });
-  if ("fel" in nyaRader) return { fel: nyaRader.fel };
+  // Raderna kan bara avvisas for privatbeloppets skull (byggRedigeradeRader).
+  if ("fel" in nyaRader) return { fel: nyaRader.fel, falt: "privatbelopp" };
 
   // ROT och forsakringsersattning mot kvittots del som hor till bostaden,
   // med de NYSS INSKRIVNA beloppen: totalbeloppet minus den privata delen
@@ -248,7 +281,19 @@ export async function redigeraKostnad(
     rot: rotUtnyttjat ?? 0,
     forsakring: kostnad.forsakringsersattning ?? 0,
   });
-  if (avdragsfel) return { fel: avdragsfel };
+  // ROT och summan star vid ROT-faltet. Forsakringsersattningen har inget
+  // eget falt – den star vid det tal som krympte basen.
+  if (avdragsfel) {
+    return {
+      fel: avdragsfel.fel,
+      falt:
+        avdragsfel.falt === "rot_utnyttjat"
+          ? "rot_utnyttjat"
+          : privatbelopp > 0
+            ? "privatbelopp"
+            : "totalbelopp",
+    };
+  }
 
   await prisma.$transaction([
     prisma.kostnad.update({
@@ -354,7 +399,7 @@ export async function delaUppKostnad(
     rot: kostnad.rot_utnyttjat ?? 0,
     forsakring: kostnad.forsakringsersattning ?? 0,
   });
-  if (avdragsfel) return { fel: avdragsfel };
+  if (avdragsfel) return { fel: avdragsfel.fel };
 
   if (tolkad.projektIder.length > 0) {
     const funna = await prisma.projekt.findMany({

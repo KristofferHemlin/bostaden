@@ -36,7 +36,7 @@
 // oforandrad for bade kontrollerade flerstegsformular (registreringen) och
 // vanliga serverformular (installningar, redigering).
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { isoDatum } from "@/lib/format";
 import { datumfel } from "@/lib/datum";
 import { FALTFEL_KLASS } from "@/components/skarm";
@@ -145,6 +145,11 @@ export function DatumFalt({
 
   const meddelande = datumfaltetsMeddelande(fel, formularetsFel);
   const ogiltigt = meddelande !== null;
+  // Samma bindning som Falt ger (docs/design.md, "När ett formulär vägrar"):
+  // varje delfalt pekar pa meningen, sa att den som anvander skarmlasare vet
+  // vilket falt felet galler.
+  const meddelandeId = useId();
+  const beskrivning = ogiltigt ? meddelandeId : undefined;
 
   return (
     <div>
@@ -160,6 +165,7 @@ export function DatumFalt({
           autoComplete="off"
           aria-label="År"
           aria-invalid={ogiltigt || undefined}
+          aria-describedby={beskrivning}
           placeholder="ÅÅÅÅ"
           value={ar}
           onChange={hanteraAr}
@@ -176,6 +182,7 @@ export function DatumFalt({
           autoComplete="off"
           aria-label="Månad"
           aria-invalid={ogiltigt || undefined}
+          aria-describedby={beskrivning}
           placeholder="MM"
           value={manad}
           onChange={hanteraManad}
@@ -193,6 +200,7 @@ export function DatumFalt({
           autoComplete="off"
           aria-label="Dag"
           aria-invalid={ogiltigt || undefined}
+          aria-describedby={beskrivning}
           placeholder="DD"
           value={dag}
           onChange={hanteraDag}
@@ -202,7 +210,7 @@ export function DatumFalt({
       </div>
       {name ? <input type="hidden" name={name} value={iso} /> : null}
       {meddelande ? (
-        <p role="alert" className={`mt-1.5 ${FALTFEL_KLASS}`}>
+        <p id={meddelandeId} role="alert" className={`mt-1.5 ${FALTFEL_KLASS}`}>
           {meddelande}
         </p>
       ) : null}

@@ -138,19 +138,30 @@ Ordningen är bindande.
 
 **Tre tal dras från en kostnad, och alla tre behöver en övre gräns — men inte samma.** Skriven 2026-10-19, efter frågan om merkostnadsspärren borde gälla även ROT och försäkringsersättning. Svaret är ja, och att gränserna skiljer sig åt av sakliga skäl:
 
+**`bostadens_del` nedan betyder kvittots totalbelopp minus de privata raderna**, och är samma tal som totalbeloppet när ingen del är privat. Ordet `belopp` betyder totalbeloppet på andra ställen i den här filen, och de två får inte blandas ihop — därför skrivs det ut.
+
 | Tal | Gräns | Varför |
 |---|---|---|
-| `merkostnad` | `0 < merkostnad < belopp` | Är premien hela kostnaden var det likvärdiga bytet gratis. Skatteverkets egen gräns, avläst i deras e-tjänst |
-| `rot_utnyttjat` | `0 ≤ rot < belopp` | ROT är en skattereduktion på **arbetsdelen** av en faktura och kan aldrig vara hela den. Ett ROT-belopp lika med eller större än totalbeloppet är alltid ett inmatningsfel |
-| `forsakringsersattning` | `0 ≤ ersättning ≤ belopp` | **Lika med är tillåtet här**, till skillnad från de andra: en försäkring kan faktiskt ha betalat hela skadan, och då finns ingen egen utgift att dra av. Större än kostnaden är däremot alltid fel — ersättning som täcker mer än det här kvittot hör till de andra kvittona den också täcker |
-
-**Och summan av avdragen har en egen gräns:** `rot_utnyttjat + forsakringsersattning ≤ belopp`. Var för sig kan båda vara rimliga och tillsammans ändå äta upp hela kostnaden.
+| `merkostnad` | `0 < merkostnad < belopp` | Är premien hela kostnaden var det likvärdiga bytet gratis. Skatteverkets egen gräns, avläst i deras e-tjänst. Gäller projektets belopp, inte ett enskilt kvittos |
+| `rot_utnyttjat` | `0 ≤ rot < bostadens_del` | ROT är en skattereduktion på **arbetsdelen** av en faktura och kan aldrig vara hela den. En hantverkare ställer aldrig ut en faktura där avdraget är lika stort som eller större än det fakturan går på |
+| `forsakringsersattning` | `0 ≤ ersättning ≤ bostadens_del` | **Lika med är tillåtet här**, till skillnad från de andra: en försäkring kan faktiskt ha betalat hela skadan, och då finns ingen egen utgift att dra av. Större än så är däremot alltid fel — ersättning som täcker mer än det här kvittot hör till de andra kvittona den också täcker |
+| summan | `rot + ersättning ≤ bostadens_del` | Var för sig rimliga, tillsammans kan de äta upp hela kostnaden |
 
 **Basen är bostadens del av kvittot, inte kvittots totalbelopp.** Det följer av att steg 1 drar avdragen från just bostadens del — den privata delen räknas bort först, ROT därefter, enligt regeln under *Räknas inte med*. Ett kvitto på 10 000 kr med 6 000 kr privat har 4 000 kr som bas, och 5 000 kr i ROT ska avvisas även om det ryms i totalbeloppet.
 
 **Regeln bakom, som gäller varje gräns vi sätter: en gräns ska uttryckas i samma storhet som beräkningen drar ifrån, annars begränsar den ingenting.** Skriven 2026-10-19, efter att jag i en prompt gissade på kvittots totalbelopp och agenten läste koden i stället för att följa gissningen.
 
-**Vad gränsen skyddar mot är en tyst nolla, inte ett negativt tal.** `avdragsgrundande` klampas redan till noll, så minustalet kan inte nå underlaget. Följden utan gräns är i stället att ett feltypat ROT-belopp ger 0 kr i avdrag utan att någon säger till. Gränsen finns för att felet ska upptäckas vid fältet, medan användaren har fakturan framför sig, i stället för att bli en nolla hon ska tolka i ett underlag ett år senare. Klampningen står kvar som skyddsnät.
+**Klampningen står kvar som skyddsnät, men ska aldrig behöva slå till.** `avdragsgrundande` klampas till noll, så ett minustal kan inte nå underlaget även om ett sådant värde skulle finnas i databasen. Sedan gränserna ovan finns är det läget onåbart via appen; kvar är gamla rader och ändringar gjorda direkt i databasen. Gränsen finns för att felet ska upptäckas **vid fältet**, medan användaren har fakturan framför sig, i stället för att tyst bli en nolla hon ska tolka i ett underlag ett år senare.
+
+**Inmatningsfält saknas för `forsakringsersattning`.** Fältet finns i datamodellen, i beräkningen och nu i gränserna, men ingen väg i appen skriver det. Gränsen och skälet till en nolla för full ersättning gäller alltså ett tillstånd som i dag bara kan uppstå i databasen. Det är avsiktligt dokumenterat i förväg, inte en glömska — men ingen ska tro att fallet är nåbart. Se `docs/produktspec.md`.
+
+**Gränserna uttrycks lättast från fakturan och inåt:** avdragen och den privata delen kan tillsammans aldrig äta upp hela beloppet. `rot + privat < totalbelopp` är samma olikhet som `rot < bostadens_del`, bara skriven i tal användaren ser på pappret framför sig. Försäkringsersättningen är undantaget som får gå ända fram, eftersom en försäkring kan ha betalat allt som inte var privat.
+
+**Någon procentgräns för ROT finns inte, och ska inte finnas.** Frågan prövades 2026-10-19: `rot < bostadens_del` släpper igenom tal som ändå är omöjliga — på en bostadsdel om 12 000 kr passerar 11 999 kr, vilket skulle kräva en arbetskostnad på 40 000 kr. En gräns vid procentsatsen av beloppet skulle fånga mer.
+
+Den avfärdades av tre skäl. **Den är vår uppfinning, inte en skatteregel** — Skatteverket frågar aldrig efter ett ROT-belopp, utan efter kostnaden efter avdrag, så det finns inget rätt tal att kopiera. **Felet den fångar går åt det ofarliga hållet:** ROT dras av, så ett för högt ROT-belopp gör varje tal i kedjan mindre och kan aldrig blåsa upp ett yrkande. Och **en snäv gräns kan vägra ett sant tal**, vilket är den failure mode vi avvisat två gånger förut — spärren som inte går att lyda tvingar fram ett påhittat tal i stället för ett uteblivet.
+
+**Det som ska fånga resten är inte en spärr utan en siffra på skärmen.** Raden som visar vad som räknas med när avdrag dragits — se `docs/design.md` — gör att den som skrivit arbetskostnaden i ROT-fältet ser ett tal som inte stämmer med fakturan. Visa hellre resultatet än gissa en gräns.
 
 **Bara den första raden har ett mätt original.** Skatteverket frågar aldrig efter ett ROT-belopp — deras e-tjänst ber om kostnaden *efter* avdraget — så det fältet är vårt eget val, gjort för att den som håller i en faktura har bruttot och ROT-raden framför sig men inte differensen. Gränserna för ROT och försäkring är alltså härledda, inte avlästa, och ska märkas som sådana om någon senare letar efter källan.
 
@@ -417,6 +428,16 @@ När ett steg är klart: kör testerna, sammanfatta vad som byggts, stanna.
 Fråga hellre än gissa när specen är tyst. Ett felaktigt antagande om skattereglerna är dyrare än en fråga.
 
 Använd riktig testdata från början – ett faktiskt byggvarukvitto med både projektmaterial och en privat artikel. Påhittad data döljer friktionen appen finns för att ta bort.
+
+### Kan en användare komma hit?
+
+**Innan något byggs eller rättas på en sida: kontrollera att sidan går att nå från appen.** Finns ingen knapp, ingen länk och ingen flagga som är på, är sidan inte nåbar, och då är ingenting som står där ett fel för någon användare. Säg det i svaret i stället för att bygga.
+
+Skriven 2026-10-19, efter femte gången jag specificerat arbete på ett tillstånd ingen kan nå. Senaste var bilagepaketets komplettering, som jag satte i högsta prioritet med motiveringen *"det kan låsa ute någon"* — `BILAGEPAKET_SYNLIGT` är `false` och `/export/paket` går till `/export`. Tidigare: *Återstår* i PDF:en, som jag drev som brådskande innan jag kontrollerade att appen kan skapa en PDF (den kan inte, och ska inte förrän steg 13).
+
+Kontrollen hör till agenten, inte till den som skriver prompten. **Den som skriver prompten minns inte vilka flaggor som är av; den som läser koden ser det på en minut.** En rad i svaret räcker: *den här sidan nås från X*, eller *den nås inte, flaggan är av*.
+
+Samma kontroll gäller en gren i beräkningen. Försäkringsersättningen har ingen inmatning i appen — grenen finns i koden, den har tester, och ingen användare kan komma dit. Det är inte fel att den finns, men den ska inte beskrivas som om någon möter den.
 
 ---
 

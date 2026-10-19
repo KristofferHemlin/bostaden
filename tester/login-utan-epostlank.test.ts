@@ -53,7 +53,9 @@ describe("inloggningen skickar inga e-postlankar", () => {
       formular({ avsikt: "magisk-lank", epost: "a@exempel.se" }),
     );
     expect(h.signInWithOtp).not.toHaveBeenCalled();
-    expect(svar.fel).toBe("Fyll i både e-post och lösenord.");
+    // Lösenordet saknas – meningen står vid lösenordsfältet (docs/design.md,
+    // "När ett formulär vägrar"), inte som en gemensam mening för båda.
+    expect(svar).toEqual({ fel: "Fyll i ditt lösenord.", falt: "losenord" });
   });
 
   it("inloggning med losenord fungerar som forut", async () => {
