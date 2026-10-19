@@ -30,6 +30,7 @@ import {
 } from "@/lib/doman-fran-db";
 import { isoDatum } from "@/lib/format";
 import { bilagelager } from "@/lib/lagring/klient";
+import { aterstarRader, kvittonamn, type Aterstarrad } from "@/lib/aterstar";
 import { prisma } from "@/lib/prisma";
 import { radnyckel } from "./radnyckel";
 import { bilagepaketFilnamn, bilagepaketSidhuvud } from "./text";
@@ -77,6 +78,10 @@ export interface BilagepaketRadavdrag {
 export interface BilagepaketData {
   forsattsdata: BilagepaketForsattsdata;
   ex: K6aExport;
+  /** Återstår – samma rader och samma skal som i exportvyn
+   *  (src/lib/aterstar.ts). Namnen behover kvittonas leverantor och
+   *  anteckning, som bara finns har pa servern. */
+  aterstar: Aterstarrad[];
   /** Nyckel: radnyckel(rad) – se ./radnyckel.ts. En rad utan nagot avdraget
    *  saknas har helt (ingen dampad rad att rita). */
   radavdrag: Record<string, BilagepaketRadavdrag>;
@@ -288,6 +293,10 @@ export async function hamtaBilagepaketdata(
         skapadDatum: isoDatum(new Date()),
       },
       ex,
+      aterstar: aterstarRader(ex, (id) => {
+        const k = kostnadRader.find((r) => r.id === id);
+        return k ? kvittonamn(k) : "Kvitto";
+      }),
       radavdrag,
       bilagesidor,
       filnamn: bilagepaketFilnamn(bostadsnamn, forsaljningsAr),

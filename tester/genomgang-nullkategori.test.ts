@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { byggK6aExport, type K6aIndata } from "@/doman/export-k6a";
+import { aterstarRader } from "@/lib/aterstar";
 import { REGELPARAMETRAR, kostnad, projekt } from "./_hjalp";
 
 describe("hog utan atgardstyp (grupperad men inte klassificerad)", () => {
@@ -38,6 +39,9 @@ describe("hog utan atgardstyp (grupperad men inte klassificerad)", () => {
     expect(ex.oklassificerade_hogar).toEqual([
       { namn: "Bauhaus i augusti", ar: 2026, belopp_brutto: 800_000 },
     ]);
-    expect(ex.varningar.join(" ")).toContain("Bauhaus i augusti");
+    // Och i Återstår – i exportvyn och i PDF:en, med samma rad.
+    expect(aterstarRader(ex, () => "Kvitto")).toMatchObject([
+      { namn: "Bauhaus i augusti", orsak: "Väntar på frågor", ar: 2026, belopp: 800_000 },
+    ]);
   });
 });

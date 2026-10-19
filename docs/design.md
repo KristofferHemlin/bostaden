@@ -376,6 +376,17 @@ En kolumnrubrik är ett löfte. Betyder *Belopp* "vad det kostade" på sida 2 oc
 
 **Och varje nolla har ett skäl intill sig.** Faller en grundförbättring på den bakre tidsgränsen stod det 2026-10-18 bara `0 kr`, utan en bokstav om varför — en tom nolla är sämre än inget tal alls, eftersom läsaren inte kan skilja den från ett fel.
 
+**Regeln gäller per sida, inte per dokument.** Sidorna läses var för sig — en granskare som kontrollerar reparationerna bläddrar inte till grundförbättringarna för att hitta förklaringen till en nolla. Skrivet 2026-10-19 efter att ett takfall i produktionen gav en rad med `0 kr` på sida 2 medan skälet stod på sida 1. Talet var rätt; raden sa ingenting.
+
+**Två kända nollor saknar skäl i dag och ska få ett:**
+
+- **Taket har slagit till.** Merkostnaden är större än projektets belopp, hela kostnaden hamnar på sida 1, och sida 2 får en nolla. Skälet ska säga vart beloppet tog vägen och att det är tillfälligt: *"Hela kostnaden räknas som grundförbättring på sida 1 tills merkostnaden ändrats."*
+- **Försäkringsersättningen täcker hela kostnaden.** Då blir `belopp − rot_utnyttjat − forsakringsersattning` noll, och raden visar `0 kr` utan ett ord — på den sida projektet hör hemma, vilken det än är. Det är ett legitimt tillstånd: har försäkringen betalat allt finns ingen egen utgift att dra av, och raden ska säga just det.
+
+  **ROT kan däremot inte orsaka den här nollan**, sedan gränserna i `CLAUDE.md` satts: ROT är en reduktion på arbetsdelen och tillåts aldrig nå hela beloppet. Ett fall som var omöjligt behöver ingen förklaring — **spärra det som inte kan vara sant, förklara det som kan.** Den skillnaden är värd att göra varje gång en tom nolla dyker upp: är tillståndet verkligt ska det beskrivas, är det ett inmatningsfel ska det aldrig uppstå.
+
+**Raden tas inte bort, den får ett skäl.** En borttagen rad låter sidan byta form för ett tillstånd som är övergående, och raden kommer tillbaka när svaret ändras. En rad som står kvar och förklarar sig låter läsaren se att åtgärden finns, att den är bedömd, och varför den inte bidrar med något tal just nu.
+
 **Filnamnen i zip-arkivet hittar inte på det som saknas.** Namngivningen hoppar redan över datum och leverantör när de inte finns, och beloppet ska följa samma mönster. Ett utkast utan belopp fick 2026-10-17 heta `0 kr.jpg`, eftersom namnet räknade ett saknat belopp som noll – samma påhittade nolla som regeln ovan förbjuder, i den fil användaren sparar själv och öppnar om tio år. Arkivet är den ärligaste delen av löftet; ett filnamn som påstår att kvittot var värt noll är sämre än ett filnamn utan belopp.
 
 **Ett namn som blir tomt får ett ord, inte ingenting.** Ett utkast utan anteckning, leverantör, datum och belopp skulle med ren utelämning heta `.jpg` – en dold fil på macOS och Linux. Kvittot hade funnits i arkivet utan att synas, vilket är värre än ett trubbigt namn. Det heter därför `Utkast.jpg`. Ordet är sant, eftersom bara ett utkast kan sakna allt, och det är samma ord kvittolistan använder. Att samma rad heter *Kvitto* på skärmen och *Utkast* i arkivet är avsiktligt: på skärmen står statusen bredvid, i ett filnamn måste ordet bära hela beskedet.
@@ -491,6 +502,10 @@ Visa beloppet före avräkning i listor över kvitton – det är summan på pap
 **Därav följer att en rad som räknas med ett annat belopp måste visa avdraget.** Annars går rubriken inte att räkna ihop av raderna under den, och en lista vars summa inte stämmer är det snabbaste sättet att förlora användarens tillit. Raden behåller fakturans totalbelopp som sitt belopp och får en dämpad rad under: *varav ROT 11 587,50 kr, avgår*. Samma lydelse som i PDF-paketet – det är samma upplysning och ska inte ha två lydelser.
 
 **Är en del privat får den en rad av samma form:** *varav 1 000 kr hörde inte till bostaden, avgår*. Formuleringen är densamma som i valet, där alternativet heter *Hör inte till bostaden*.
+
+**Finns båda på samma kvitto ska resultatet stå utskrivet, inte räknas ut av läsaren.** Två avdragsrader under varandra är appens mest felbenägna inmatning, och ordningen mellan dem är inte självklar: den privata delen räknas bort först, ROT därefter, så ROT-avdraget hör bara till det som blev kvar. Den som ser *varav 1 000 kr hörde inte till bostaden* och *varav ROT 3 000 kr* under ett belopp på 10 000 kr har ingen rimlig chans att veta om svaret är 6 000 eller 6 300. Efter de två raderna står därför en tredje, i samma dämpade form, som säger talet: *6 000 kr räknas med*.
+
+Skrivet 2026-10-19, efter frågan om kombinationen ROT och privat del borde förbjudas helt. Den ska inte det — skälet står i `produktspec.md` — men frågan var ställd mot en verklig otydlighet, och den otydligheten löses av att visa resultatet.
 
 **Och de går ihop, exakt.** 10 000 kr med 3 000 kr i ROT och 1 000 kr privat räknas som 6 000 kr: båda raderna avgår rakt av. Att det inte stämde var ett beräkningsfel, inte ett presentationsproblem – den gamla regeln fördelade ROT proportionellt över hela kvittot och lade därmed 300 kr av avdraget på den privata delen, vilket gav 6 300 kr och överskattade avdraget. ROT ges på arbetskostnad för arbete på bostaden, aldrig på en privat vara, så den delen kan inte bära någon del av avdraget. Rättat i `CLAUDE.md` 2026-10-02.
 
@@ -911,9 +926,17 @@ Ett tomt obligatoriskt fält flyttade bara fokus och sa ingenting. Ett ogiltigt 
 
 **En avvisning som rör ett tal ska innehålla talet.** Merkostnadsfältet är exemplet, byggt 2026-10-18:
 
-> **Ange en merkostnad mindre än 10 000 kr – det är vad "Bytte fönster" kostade.**
+> **Ange en merkostnad mindre än 10 000 kr – det är vad ”Bytte fönster” kostade.**
 
 Både ett för högt belopp och ett som är exakt lika med projektets får samma mening, eftersom felet är detsamma. Jämför med Skatteverkets egen lydelse, *"Beloppet måste vara mindre än kostnaden för hela renoveringen"* – korrekt, men den lämnar användaren att själv leta reda på vad renoveringen kostade. Vår säger vilket projekt och vilket tal det gäller, och då behöver hon inte lämna fältet för att rätta sig.
+
+**Samma regel gäller en upplysning om ett tal appen räknat om åt användaren.** Upplysningen i exporten när taket slagit till, uppmätt i produktionen 2026-10-18 och värd att behålla ordagrant:
+
+> **Merkostnaden för ”Bytte fönster på framsidan till treglas”, 12 000 kr, är inte mindre än vad projektet kostade, 10 000 kr. Den räknas som högst 10 000 kr tills du ändrat svaret.**
+
+Tre tal och ett projektnamn i en mening, och sista satsen säger att det är tillfälligt och vad som avslutar det. Den som läser den vet vad som hände, varför, och vad hon ska göra – utan att öppna något.
+
+**Appen skriver svenska citattecken, ”så här”, och en sträng som återges i `docs/` återges ordagrant – citattecknen inräknade.** Skriven 2026-10-19, efter att agenten upptäckte att de två meningarna ovan stod med raka citattecken här medan koden skrev svenska. Den som bygger mot en sträng i den här filen ska kunna kopiera den rakt av; står det fel tecken här blir det fel i appen, eller så uppstår en fråga som kostar en runda. Löptext i `docs/` som inte citerar appen är fri.
 
 ### Utfällbara sektioner
 
@@ -1478,6 +1501,12 @@ Formuleringen följer Skatteverkets egen: *"Kostnaden för det året som åtgär
 **Exportvyn redovisar varje krona som lagts in.** Det som inte står på sida 1 eller sida 2 ska synas som det som återstår – oavsett om det är en hög eller ett kvitto som ännu inte ligger i någon hög. Uppmätt 2026-10-02: startskärmen sade *Totalt inlagt 1 049 225 kr* medan exportvyns enda summa var 49 225 kr, och de miljoner som fattades syntes ingenstans på sidan. Ett underlag som tyst utelämnar det mesta av beloppet är värre än inget underlag, eftersom det ser färdigt ut.
 
 **Summorna dämpas när de är ofullständiga.** Två stora nollor på en skärm som heter Deklarationsunderlag ser trasigt ut. Väntar något på frågor sätts talen i `--text-sekundar` i stället för `--text-primar`, så att blicken går till listan över det som återstår. När allt är klassificerat får de full tyngd.
+
+**Varningslistan står överst i exportvyn och på PDF:ens försättssida under rubriken *Att se över*.** Byggd 2026-10-19. I exportvyn går den före talen, eftersom en varning om varför ett tal är ofullständigt måste läsas före talet. I PDF:en hör den till försättssidan av samma skäl, och den tillåts fortsätta på en ny sida hellre än att trängas ihop över friskrivningen.
+
+**Listan tar bara upp det som inte redan står någon annanstans.** En hög som väntar på frågor står under *Återstår* i exportvyn och ska därför inte också stå i listan; en varning som står på projektets egen rad likaså. Upplysningen om ett ändrat projekt bor kvar på raden, där talet den handlar om står, och inte i listan. Skälet är att två formuleringar av samma sak läses som två problem, och den som räknar fel antal problem slutar lita på båda.
+
+Det här var ett verkligt hål, men ett annat än det jag trodde: av listans fyra varningar syntes tre redan, och den fjärde kunde knappt inträffa. **Det som faktiskt försvann tyst var en hög som väntade på frågor — och bara i PDF:en**, som saknar *Återstår* helt. Se den kända luckan i `produktspec.md`.
 
 **Friskrivningen står på den här sidan.** En dämpad rad om att appen inte ger skatterådgivning och att Skatteverkets upplysningstjänst svarar på gränsfall. Exportvyn är den enda skärm där användaren tar med sig siffror ut ur appen, och därmed den enda där påståendet behöver stå. Samma rad hör hemma i klassificeringsgenomgången, där bedömningarna faktiskt görs.
 

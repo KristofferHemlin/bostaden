@@ -41,6 +41,8 @@ import {
 import { slaUppRegelparameter } from "./regelparameter";
 import {
   bakreGransForklaring,
+  FORSAKRING_HELA_KOSTNADEN,
+  MERKOSTNAD_TAK_SIDA2,
   merkostnadAndratText,
   merkostnadOverBeloppetText,
   reparationsfonsterForklaring,
@@ -161,6 +163,13 @@ export interface K6aExport {
    *  sida 2, oklassificerade_hogar och den har listan tacker tillsammans hela
    *  Totalt inlagt. */
   aterstaende_kvitton: AterstaendeKvitto[];
+  /** Det som gor underlaget ofullstandigt och inte syns nagon annanstans –
+   *  varken pa en egen rad eller i Återstår. I dag: en merkostnad som saknas.
+   *  Visas overst i exportvyn och pa PDF:ens forsattssida (produktspec 8:
+   *  "Ett paket med ett tyst hål är värre än ett paket som säger var hålet
+   *  finns"). En varning som hor till en rad star pa raden; en hog som vantar
+   *  pa fragor star i oklassificerade_hogar. Samma information star aldrig
+   *  tva ganger (docs/design.md). */
   varningar: string[];
 }
 
@@ -400,9 +409,8 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
         ar: cell.ar,
         belopp_brutto: avrunda(cell.avdragsgrundande),
       });
-      varningar.push(
-        `Projektet "${cell.projekt.namn}" (${cell.ar}) väntar på frågor och ingår inte i underlaget än. Svara på frågorna för att ta med det.`,
-      );
+      // Ingen varning har: hogen star i oklassificerade_hogar, som exportvyn
+      // och PDF:en bada visar i Återstår (src/lib/aterstar.ts).
       continue;
     }
     klassificeradeCeller.push(cell);
@@ -472,6 +480,23 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
     const visarSida1 = p.atgardstyp !== "utbytt" || p.battre_kvalitet === true;
     const visarSida2 = p.atgardstyp === "utbytt";
 
+    // Tva nollor som annars stod utan skal (docs/design.md, Skarmuppbyggnad:
+    // "Och varje nolla har ett skäl intill sig", per sida). Galler bara en rad
+    // pa noll som inte redan har ett annat skal.
+    //
+    //   * Forsakringsersattningen tackte hela kostnaden: cellen har ett belopp
+    //     men inget avdragsgrundande. ROT kan inte ge det, sedan ROT aldrig
+    //     far na hela beloppet (CLAUDE.md, steg 2) – sa det ar forsakringen.
+    //   * Taket har slagit till (bara sida 2): merkostnaden ar inte mindre an
+    //     projektets belopp, och hela kostnaden ligger pa sida 1.
+    const forsakringenTackteAllt =
+      cell.totalbelopp > 0 && cell.avdragsgrundande <= 0;
+    const taketSlogTill =
+      p.atgardstyp === "utbytt" &&
+      p.battre_kvalitet === true &&
+      p.merkostnad !== null &&
+      p.merkostnad >= projektetsBelopp(kostnader, p.id);
+
     if (
       p.atgardstyp === "utbytt" &&
       p.battre_kvalitet === true &&
@@ -509,7 +534,9 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
         forklaring:
           beloppBrutto === 0 && uppdelning.grundforbattring_orsak
             ? nollforklaring(uppdelning.grundforbattring_orsak, ar)
-            : null,
+            : beloppBrutto === 0 && forsakringenTackteAllt
+              ? FORSAKRING_HELA_KOSTNADEN
+              : null,
       };
       sida1.push(rad1);
       sida1PerProjekt.set(p.id, [...(sida1PerProjekt.get(p.id) ?? []), rad1]);
@@ -564,7 +591,14 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
         }
       }
 
-      varningar.push(...radVarningar);
+      if (forklaring === null && beloppBrutto === 0) {
+        if (forsakringenTackteAllt) forklaring = FORSAKRING_HELA_KOSTNADEN;
+        else if (taketSlogTill) forklaring = MERKOSTNAD_TAK_SIDA2;
+      }
+
+      // Radens varningar star pa raden – i exportvyn och i PDF:en – och
+      // upprepas inte i den samlade listan, som bara bar det som saknar en
+      // egen rad (se K6aExport.varningar).
       sida2.push({
         sida: 2,
         atgard: p.namn,

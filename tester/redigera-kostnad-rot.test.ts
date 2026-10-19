@@ -127,17 +127,35 @@ describe("redigeraKostnad: ROT jamfors mot det NYSS INSKRIVNA totalbeloppet, i o
     );
 
     expect(resultat.fel).toBe(
-      "ROT-avdraget kan inte vara större än totalbeloppet.",
+      "Ange ett ROT-avdrag mindre än 50\u00a0000\u00a0kr – det är vad kvittot kostade.",
     );
     expect(h.transaction).not.toHaveBeenCalled();
   });
 
-  it("ett ROT-belopp lika stort som totalbeloppet ar tillatet, inte 'storre an'", async () => {
+  // Gransen ar STRANG sedan 2026-10-19 (CLAUDE.md, steg 2, tabellen): ROT ar
+  // en reduktion pa arbetsdelen och kan aldrig vara hela fakturan. Ett
+  // ROT-belopp lika med totalbeloppet ar fakturans slutsumma i fel falt.
+  // Testet sa tidigare motsatsen – "lika stort ar tillatet" – och ar omvant.
+  it("ett ROT-belopp lika stort som totalbeloppet avvisas – gransen ar strang", async () => {
     h.kostnadFindFirst.mockResolvedValue(kostnadRad(1));
 
     const resultat = await redigeraKostnad(
       {},
       formulardata({ totalbelopp: "75 000", rot_utnyttjat: "75 000" }),
+    );
+
+    expect(resultat.fel).toBe(
+      "Ange ett ROT-avdrag mindre än 75\u00a0000\u00a0kr – det är vad kvittot kostade.",
+    );
+    expect(h.transaction).not.toHaveBeenCalled();
+  });
+
+  it("ett ROT-belopp en krona under totalbeloppet passerar", async () => {
+    h.kostnadFindFirst.mockResolvedValue(kostnadRad(1));
+
+    const resultat = await redigeraKostnad(
+      {},
+      formulardata({ totalbelopp: "75 000", rot_utnyttjat: "74 999" }),
     );
 
     expect(resultat.fel).toBeUndefined();

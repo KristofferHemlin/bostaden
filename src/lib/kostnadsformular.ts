@@ -10,7 +10,7 @@
 
 import { dateratForeTilltradet } from "@/doman/atgardsberakning";
 import type { Faltfel } from "@/lib/formularfel";
-import { oreFranKronor } from "@/lib/format";
+import { formateraKronor, oreFranKronor } from "@/lib/format";
 
 /** Faltens namn i FormData. */
 export type Kostnadsfalt =
@@ -67,13 +67,17 @@ export function tolkaKostnadsformular(
     });
   }
 
-  // ROT-beloppet ar en del av totalbeloppet – ett varde over det ar en
-  // felskrivning. Blockerar inte flodet, anvandaren rattar bara talet.
-  if (giltigtBelopp && rotUtnyttjat !== null && rotUtnyttjat > totalbelopp) {
-    felen.push({
-      falt: "rot_utnyttjat",
-      fel: "ROT-avdraget kan inte vara större än totalbeloppet.",
+  // ROT-beloppet ar en reduktion pa arbetsdelen och alltid mindre an
+  // totalbeloppet (avdragensFel nedan). Inmatningen har ingen privat del och
+  // ingen forsakringsersattning, sa basen ar totalbeloppet.
+  if (giltigtBelopp && rotUtnyttjat !== null) {
+    const fel = avdragensFel({
+      bas: totalbelopp,
+      harPrivatDel: false,
+      rot: rotUtnyttjat,
+      forsakring: 0,
     });
+    if (fel) felen.push({ falt: "rot_utnyttjat", fel });
   }
 
   // Inmatningen har ETT datumfalt, "Datum", som satter bade dokumentdatum och
@@ -145,4 +149,55 @@ export function sparfragor({
     fragor.push("bilaga");
   }
   return fragor;
+}
+
+/**
+ * Gransen for de tva tal som dras fran en kostnad i steg 1 (CLAUDE.md, steg 1
+ * och tabellen i steg 2):
+ *
+ *   0 ≤ rot_utnyttjat < bas                    strangt – ROT ar en reduktion pa
+ *                                              arbetsdelen, aldrig hela fakturan
+ *   0 ≤ forsakringsersattning ≤ bas            lika med tillats – en forsakring
+ *                                              kan ha betalat hela skadan
+ *   rot_utnyttjat + forsakringsersattning ≤ bas
+ *
+ * `bas` ar kvittots del som hor till bostaden – totalbeloppet minus privata
+ * rader – eftersom det ar den steg 1 drar ROT och ersattning fran
+ * (bostadensBelopp, src/doman/berakningar.ts). Utan privat del ar det
+ * totalbeloppet. Fastslaget 2026-10-19.
+ *
+ * Utan gransen klams avdragsgrundande tyst till noll i steg 1, och en hel
+ * kostnad forsvinner ur underlaget utan ett ord. Spärra det som inte kan vara
+ * sant, forklara det som kan (docs/design.md).
+ *
+ * Meddelandet innehaller talet det galler (docs/design.md, "När ett formulär
+ * vägrar"). Gransen for ROT och forsakring ar harledd, inte avlast –
+ * Skatteverket fragar aldrig efter ett ROT-belopp (CLAUDE.md).
+ */
+export function avdragensFel({
+  bas,
+  harPrivatDel,
+  rot,
+  forsakring,
+}: {
+  /** Kvittots del som hor till bostaden, i oren. */
+  bas: number;
+  /** Om en del av kvittot ar privat – da sager meddelandet det. */
+  harPrivatDel: boolean;
+  rot: number;
+  forsakring: number;
+}): string | null {
+  const vad = harPrivatDel
+    ? "det är vad kvittot kostade utan den privata delen"
+    : "det är vad kvittot kostade";
+  if (rot > 0 && rot >= bas) {
+    return `Ange ett ROT-avdrag mindre än ${formateraKronor(bas)} – ${vad}.`;
+  }
+  if (forsakring > bas) {
+    return `Försäkringsersättningen kan vara högst ${formateraKronor(bas)} – ${vad}.`;
+  }
+  if (rot + forsakring > bas) {
+    return `ROT-avdraget och försäkringsersättningen blir tillsammans ${formateraKronor(rot + forsakring)}, men kvittot kostade ${formateraKronor(bas)}${harPrivatDel ? " utan den privata delen" : ""}.`;
+  }
+  return null;
 }

@@ -81,7 +81,9 @@ Det ändrar vilket svar som är rätt på fråga 5, inte hur svaret räknas, så
 
 **Merkostnaden är prisskillnaden mot ett likvärdigt byte.** Skatteverkets eget exempel på samma sida: ett parkettgolv kostar 8 000 kr där ett likvärdigt plastgolv hade kostat 3 000 kr, och **5 000 kr** är då grundförbättringen. Det är samma tal som deras e-tjänst frågar efter som *"hur mycket dyrare"*. Exemplet hör hemma i hjälprutan, eftersom det förklarar frågan bättre än någon definition.
 
-**Fråga 8 ställs bara när `skick_forvarv` är 0, 1 eller 2.** Är skicket vid förvärvet satt högre blir reparationsavdraget litet ändå, och då finns inget att försvara. Skälen till att fältet är villkorat står i `docs/produktspec.md` avsnitt 4.1.
+**Fråga 8 ställs bara när `skick_forvarv` är 0, 1 eller 2.** Gränsen är aritmetisk, inte språklig: ju lägre skicket var vid förvärvet, desto större kan skillnaden mot försäljningen bli, och desto mer står på spel i det tal som ska försvaras. Vid 2 kan faktorn bli 0,6; vid 3 som mest 0,4. Skälen till att fältet är villkorat står i `docs/produktspec.md` avsnitt 4.1.
+
+**Gränsen ändras inte av att etiketten gjorde det.** Agenten frågade 2026-10-19 om 0–2 fortfarande stämmer när 2 heter *Ganska bra skick* i stället för *Slitet skick*, och frågan var befogad – den gamla motiveringen talade om "ett dåligt skick vid förvärvet", vilket inte längre beskriver en tvåa. Men det var motiveringen som var slarvig, inte gränsen: siffran ger samma faktor som förut, och det är faktorn som avgör vad som står på spel. **Hur mycket som kan försvaras hänger på talet, inte på ordet.**
 
 **Fråga 6 ställs tidigt, fråga 7 sent.** Skicket vid förvärvet är det som blir omöjligt att minnas – det ska fångas medan det går. Skicket vid försäljningen kan inte besvaras i förväg, eftersom det handlar om hur något ser ut efter års användning.
 
@@ -134,13 +136,31 @@ Ordningen är bindande.
 
 **Merkostnaden ska vara mindre än projektets belopp.** Taket gäller alltid, inte bara efter en ändring, och gränsen är sträng i båda ändar: `0 < merkostnad < belopp`. Utan det ger ett projekt med 10 000 kr kvar och 12 000 kr i merkostnad **12 000 kr på sida 1 — mer än som betalats — och −2 000 kr i beloppkolumnen på sida 2.** Ett negativt belopp i ett deklarationsunderlag är det värsta tal appen kan skriva, och frågeträdet kontrollerar i dag bara att merkostnaden är större än noll. Den stränga övre gränsen är Skatteverkets, avläst i deras e-tjänst (se steg 2 ovan); lika med kostnaden avvisas där med samma meddelande som ett för högt belopp.
 
+**Tre tal dras från en kostnad, och alla tre behöver en övre gräns — men inte samma.** Skriven 2026-10-19, efter frågan om merkostnadsspärren borde gälla även ROT och försäkringsersättning. Svaret är ja, och att gränserna skiljer sig åt av sakliga skäl:
+
+| Tal | Gräns | Varför |
+|---|---|---|
+| `merkostnad` | `0 < merkostnad < belopp` | Är premien hela kostnaden var det likvärdiga bytet gratis. Skatteverkets egen gräns, avläst i deras e-tjänst |
+| `rot_utnyttjat` | `0 ≤ rot < belopp` | ROT är en skattereduktion på **arbetsdelen** av en faktura och kan aldrig vara hela den. Ett ROT-belopp lika med eller större än totalbeloppet är alltid ett inmatningsfel |
+| `forsakringsersattning` | `0 ≤ ersättning ≤ belopp` | **Lika med är tillåtet här**, till skillnad från de andra: en försäkring kan faktiskt ha betalat hela skadan, och då finns ingen egen utgift att dra av. Större än kostnaden är däremot alltid fel — ersättning som täcker mer än det här kvittot hör till de andra kvittona den också täcker |
+
+**Och summan av avdragen har en egen gräns:** `rot_utnyttjat + forsakringsersattning ≤ belopp`. Var för sig kan båda vara rimliga och tillsammans ändå äta upp hela kostnaden.
+
+**Basen är bostadens del av kvittot, inte kvittots totalbelopp.** Det följer av att steg 1 drar avdragen från just bostadens del — den privata delen räknas bort först, ROT därefter, enligt regeln under *Räknas inte med*. Ett kvitto på 10 000 kr med 6 000 kr privat har 4 000 kr som bas, och 5 000 kr i ROT ska avvisas även om det ryms i totalbeloppet.
+
+**Regeln bakom, som gäller varje gräns vi sätter: en gräns ska uttryckas i samma storhet som beräkningen drar ifrån, annars begränsar den ingenting.** Skriven 2026-10-19, efter att jag i en prompt gissade på kvittots totalbelopp och agenten läste koden i stället för att följa gissningen.
+
+**Vad gränsen skyddar mot är en tyst nolla, inte ett negativt tal.** `avdragsgrundande` klampas redan till noll, så minustalet kan inte nå underlaget. Följden utan gräns är i stället att ett feltypat ROT-belopp ger 0 kr i avdrag utan att någon säger till. Gränsen finns för att felet ska upptäckas vid fältet, medan användaren har fakturan framför sig, i stället för att bli en nolla hon ska tolka i ett underlag ett år senare. Klampningen står kvar som skyddsnät.
+
+**Bara den första raden har ett mätt original.** Skatteverket frågar aldrig efter ett ROT-belopp — deras e-tjänst ber om kostnaden *efter* avdraget — så det fältet är vårt eget val, gjort för att den som håller i en faktura har bruttot och ROT-raden framför sig men inte differensen. Gränserna för ROT och försäkring är alltså härledda, inte avlästa, och ska märkas som sådana om någon senare letar efter källan.
+
 **Spärren och taket är två olika saker, och bara spärren är sträng.** Spärren prövar **svaret** när det ges: `0 < merkostnad < belopp`, och den är sträng för att det är Skatteverkets gräns. Taket prövar **beräkningen** när svaret hunnit bli inaktuellt, och där gäller `min(merkostnad, belopp)` — alltså inte sträng. Skälet är att de löser olika problem: spärren hindrar ett omöjligt svar, taket hindrar ett omöjligt *tal* i ett underlag när projektet krympt efter att frågan besvarades. Taket får därför ge hela beloppet som grundförbättring och noll i reparation. Det är den generösa riktningen, och den är avsiktlig: alternativet vore att nolla eller skala ner, vilket reglerna nedan förbjuder, eller att hålla projektet utanför underlaget, vilket gör ett transient tillstånd till ett saknat avdrag. Upplysningen är det som bär sanningen tills frågan besvarats igen.
 
 Skriven 2026-10-18 efter att agenten byggde taket och frågade vilket tal det skulle sätta. Frågan var rätt ställd: de två gränserna stod i samma stycke och såg ut som en.
 
 **Ändras projektets innehåll ska frågan ställas igen, inte räknas om.** Projektets belopp sparas när merkostnaden besvaras, i `projekt.merkostnad_bas`. Ändras det åt något håll — ett kvitto flyttas ut, ett läggs till, ett belopp rättas — markeras projektet: *"Projektet har ändrats sedan du svarade. Stämmer merkostnaden fortfarande?"*, med det gamla svaret förifyllt. Tills hon svarat visar exporten en upplysning och taket ovan gäller. Att spara redigeringen räknas som svaret, även om ingenting ändrades.
 
-**Känd lucka med ett utgångsdatum:** svar som gavs innan `merkostnad_bas` fanns saknar jämförelsetal, och för dem upptäcks ingen ändring. Taket gäller ändå. Luckan går att stänga en gång för alla innan lansering, genom att sätta `merkostnad_bas` till projektets nuvarande belopp för de projekt som har en merkostnad men inget bas. Antagandet — att projektet inte ändrats sedan svaret — kan vara fel, men bara i de fall som i dag ändå aldrig flaggas, så åtgärden kan inte göra något sämre.
+**Lucka som stänger sig själv:** svar som gavs innan `merkostnad_bas` fanns saknar jämförelsetal, och för dem upptäcks ingen ändring. Taket gäller ändå. **Alla sådana svar är demodata och raderas vid lanseringen**, och varje svar som ges därefter får sitt bas direkt. Luckan behöver alltså ingen åtgärd. En påfyllning finns skriven om den någon gång skulle behövas — den sätter `merkostnad_bas` till projektets nuvarande belopp där merkostnad finns men bas saknas — men den ska inte köras rutinmässigt, eftersom antagandet att projektet inte ändrats sedan svaret bara är sant så länge ingen hunnit ändra det.
 
 **Skala aldrig ner automatiskt.** Det antar att premien fördelade sig jämnt över kvittona, och det gör den sällan: var det utflyttade kvittot installationen medan premien satt i fönstren, är premien oförändrad. **Och nolla aldrig.** Då faller hela projektet ur underlaget för en detalj användaren inte bett om att ändra.
 
@@ -201,6 +221,10 @@ Skicket frågas **per åtgärd, inte per bostad** – deras lydelse är *"hur va
 Faktorn är skillnaden delat med fem. Är skicket lika eller sämre vid försäljningen blir avdraget noll – åtgärden har då inte förbättrat bostaden jämfört med förvärvet.
 
 **Båda delarna är mätta mot Skatteverkets e-tjänst 2026-10-18, inte härledda.** En reparation på 10 000 kr med skick 1 vid köpet och 4 vid försäljningen gav där **6 000 kr**, alltså exakt `(4 − 1) / 5`. Samma post med skick 4 → 1 gav **0 kr**, med skälet *"Det du har bytt ut var av sämre eller i liknande skick när du sålde bostaden, jämfört med när du köpte den"* – vilket bekräftar att även lika skick ger noll. Skickfrågorna ställs bara när bostaden inte var nybyggd vid förvärvet; är den det släcks hela reparationsgrenen och frågan ställs aldrig.
+
+**Tabellen ovan är också appens etiketter, sedan 2026-10-19.** Dessförinnan visade appen *2 Slitet, 3 Normalt, 4 Gott* – ändpunkterna stämde, de tre i mitten inte. Den som kallar sitt badrum slitet landade på 2 hos oss och närmare 1 hos Skatteverket, och eftersom talet går rakt in i faktorn skilde sig avdraget. Det spelade roll just för att vi tänker uppmuntra kontroll mot deras verktyg: samma siffra måste betyda samma sak i båda, annars ger kontrollen falskt larm eller döljer ett verkligt fel.
+
+Bytet gjordes före lansering med flit. Lagrade svar är heltal, så byter etiketterna betydelse omtolkas varje befintligt svar tyst. Med enbart testdata kostar det ingenting; efter lansering hade det inte gått att göra alls. **Orden har en enda källa i koden och ett test som håller dem lika med tabellen ovan.**
 
 `skick_forsaljning` är null fram till försäljningen. Null blockerar aldrig inmatning eller översikt, bara exporten – som ändå inte kan tas fram innan försäljningen är registrerad.
 

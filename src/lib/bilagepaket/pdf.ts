@@ -31,7 +31,12 @@ import { formateraKronor } from "@/lib/format";
 import { TJANSTENS_NAMN } from "@/lib/kontakt";
 import type { BilagepaketBilagesida, BilagepaketData, BilagepaketRadavdrag } from "./hamta";
 import { radnyckel } from "./radnyckel";
-import { bilagepaketAvdragsforklaring } from "./text";
+import {
+  ATERSTAR_INLEDNING,
+  ATERSTAR_RUBRIK,
+  type Aterstarrad,
+} from "@/lib/aterstar";
+import { bilagepaketAvdragsforklaring, forsattssidansVarningar } from "./text";
 
 const [A4_BREDD, A4_HOJD] = PageSizes.A4;
 const MARGIN = 42;
@@ -99,6 +104,10 @@ export async function byggBilagepaketPdf(
     tomtText: "Inga förbättrande reparationer registrerade.",
     radavdrag: data.radavdrag,
   });
+  // Återstår efter sammanstallningen, i samma ordning som exportvyn: det som
+  // lagts in men inte ingar i talen. Utan den tiger det dokument som sparas i
+  // atta ar om det som inte raknats med (produktspec 8).
+  if (data.aterstar.length > 0) ritaAterstar(rv, data.aterstar);
   ritaBilageforteckning(rv, data.bilagesidor);
 
   const totalt = data.bilagesidor.length;
@@ -177,6 +186,31 @@ function ritaForsattssida(
     storlek: 10,
     farg: DAMPAD,
   });
+
+  // Hal i underlaget (forsattssidansVarningar): forst i dokumentet, fore
+  // talen, sa att den som laser det vet om dem innan summorna – och sa att
+  // de upptacks av anvandaren och inte av Skatteverket (produktspec 8).
+  // Manga hogar ryms inte ovanfor friskrivningen – listan fortsatter da pa
+  // en egen sida i stallet for att skriva over den.
+  const varningar = forsattssidansVarningar(data.ex, data.aterstar);
+  if (varningar.length > 0) {
+    let ytan = sida;
+    const nedersta = MARGIN + 60;
+    y -= 34;
+    rita(ytan, fontFet, "Att se över", { x: MARGIN, y, storlek: 12, farg: TEXT });
+    y -= 20;
+    for (const varning of varningar) {
+      for (const rad of brytText(font, varning, 10, A4_BREDD - 2 * MARGIN)) {
+        if (y < nedersta) {
+          ytan = doc.addPage([A4_BREDD, A4_HOJD]);
+          y = A4_HOJD - MARGIN;
+        }
+        rita(ytan, font, rad, { x: MARGIN, y, storlek: 10, farg: TEXT });
+        y -= 14;
+      }
+      y -= 4;
+    }
+  }
 
   // Friskrivningen i sin helhet, langst ned (produktspec 8, punkt 1).
   brytText(font, FRISKRIVNING_TEXT, 9, A4_BREDD - 2 * MARGIN).forEach((rad, i) => {
@@ -298,6 +332,50 @@ function ritaSammanstallningssida(rv: Ritverktyg, indata: SammanstallningsIndata
 // ---------------------------------------------------------------------------
 // Bilageforteckningen
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Återstår
+// ---------------------------------------------------------------------------
+
+/**
+ * Samma rader, skal och ordning som exportvyns Återstår (src/lib/aterstar.ts):
+ * namnet, skalet dampat under, aret och beloppet till hoger. Ett utkast har
+ * inget belopp och visar inget – en nolla vore ett pahittat tal.
+ */
+function ritaAterstar(rv: Ritverktyg, rader: readonly Aterstarrad[]) {
+  const { doc, font, fontFet } = rv;
+  let sida = doc.addPage([A4_BREDD, A4_HOJD]);
+  let y = A4_HOJD - MARGIN;
+
+  rita(sida, fontFet, ATERSTAR_RUBRIK, { x: MARGIN, y, storlek: 16, farg: TEXT });
+  y -= 22;
+  rita(sida, font, ATERSTAR_INLEDNING, { x: MARGIN, y, storlek: 10, farg: DAMPAD });
+  y -= 24;
+
+  const hoger = A4_BREDD - MARGIN;
+  for (const rad of rader) {
+    if (y < MARGIN + 40) {
+      sida = doc.addPage([A4_BREDD, A4_HOJD]);
+      y = A4_HOJD - MARGIN;
+    }
+    rita(sida, font, rad.namn, { x: MARGIN, y, storlek: 10, farg: TEXT, maxBredd: 340 });
+    if (rad.ar !== null) {
+      rita(sida, font, String(rad.ar), { x: hoger - 140, y, storlek: 10, farg: DAMPAD });
+    }
+    if (rad.belopp !== null) {
+      const text = formateraKronor(rad.belopp);
+      rita(sida, font, text, {
+        x: hoger - font.widthOfTextAtSize(text, 10),
+        y,
+        storlek: 10,
+        farg: TEXT,
+      });
+    }
+    y -= 13;
+    rita(sida, font, rad.orsak, { x: MARGIN, y, storlek: 9, farg: DAMPAD });
+    y -= 20;
+  }
+}
 
 function ritaBilageforteckning(rv: Ritverktyg, bilagesidor: BilagepaketBilagesida[]) {
   const { doc, font, fontFet } = rv;

@@ -24,7 +24,8 @@
     "bilaga-matt:fyll-pa": "node --conditions=react-server --env-file-if-exists=.env --import tsx scripts/fyll-pa-bilaga-matt.ts",
     "sakerhetskopiera": "node --env-file-if-exists=.env --import tsx scripts/sakerhetskopiera.ts",
     "sakerhetskopior:rensa": "node --env-file-if-exists=.env --import tsx scripts/rensa-sakerhetskopior.ts",
-    "konto:radera": "node --conditions=react-server --env-file-if-exists=.env --import tsx scripts/radera-konto.ts"
+    "konto:radera": "node --conditions=react-server --env-file-if-exists=.env --import tsx scripts/radera-konto.ts",
+    "merkostnad-bas:fyll-pa": "node --env-file-if-exists=.env --import tsx scripts/fyll-pa-merkostnad-bas.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

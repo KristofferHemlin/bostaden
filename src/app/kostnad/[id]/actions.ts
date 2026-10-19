@@ -29,7 +29,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { bostadensAndel, bostadensBelopp } from "@/doman/berakningar";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
+import { avdragensFel } from "@/lib/kostnadsformular";
 import {
   taBortAllaBilagorForKostnad,
   taBortBilaga,
@@ -150,9 +152,17 @@ export async function redigeraKostnad(
     // (delaUppKostnad, steg 10). Totalbeloppet gar darfor INTE att andra i den
     // har grenen (falet visas last i granssnittet) – ROT jamfors darfor mot
     // det SPARADE beloppet, det enda som galler har.
-    if (rotUtnyttjat !== null && rotUtnyttjat > kostnad.totalbelopp) {
-      return { fel: "ROT-avdraget kan inte vara större än totalbeloppet." };
-    }
+    // Raderna andras inte har, sa basen ar kvittots sparade del som hor
+    // till bostaden (avdragensFel, src/lib/kostnadsformular.ts).
+    const domanKostnad = tillDomanKostnad(kostnad);
+    const bas = bostadensBelopp(domanKostnad);
+    const avdragsfel = avdragensFel({
+      bas,
+      harPrivatDel: bas < kostnad.totalbelopp,
+      rot: rotUtnyttjat ?? 0,
+      forsakring: kostnad.forsakringsersattning ?? 0,
+    });
+    if (avdragsfel) return { fel: avdragsfel };
     await prisma.kostnad.update({
       where: { id },
       data: {
@@ -179,15 +189,6 @@ export async function redigeraKostnad(
   if (totalbelopp === null || totalbelopp <= 0) {
     return { fel: "Fyll i ett belopp större än noll, t.ex. 1 020,95." };
   }
-  // ROT jamfors mot det NYSS INSKRIVNA totalbeloppet (bagge i oren), inte det
-  // sedan tidigare SPARADE (kostnad.totalbelopp) – en tidigare version gjorde
-  // just det, vilket avvisade giltiga sparningar dar bade belopp och ROT
-  // hojdes i samma omgang (t.ex. totalbelopp 344 250 kr, ROT 75 000 kr,
-  // avvisat nar det gamla sparade beloppet rakade vara mindre an ROT-beloppet).
-  if (rotUtnyttjat !== null && rotUtnyttjat > totalbelopp) {
-    return { fel: "ROT-avdraget kan inte vara större än totalbeloppet." };
-  }
-
   // Projektkopplingen: "– inget projekt –" skickar en tom strang och kopplar
   // loss med avsikt. Saknas faltet helt har granssnittet inte visat det, och
   // da ligger den befintliga kopplingen kvar – annars kopplas kvittot tyst
@@ -233,6 +234,21 @@ export async function redigeraKostnad(
     privatbelopp,
   });
   if ("fel" in nyaRader) return { fel: nyaRader.fel };
+
+  // ROT och forsakringsersattning mot kvittots del som hor till bostaden,
+  // med de NYSS INSKRIVNA beloppen: totalbeloppet minus den privata delen
+  // (avdragensFel, src/lib/kostnadsformular.ts). Aldrig mot det sedan
+  // tidigare SPARADE beloppet – en tidigare version gjorde det, och avvisade
+  // giltiga sparningar dar bade belopp och ROT hojdes i samma omgang (t.ex.
+  // totalbelopp 344 250 kr, ROT 75 000 kr). Provas efter att raderna byggts,
+  // sa att en privat del lika stor som hela kvittot far sitt eget fel forst.
+  const avdragsfel = avdragensFel({
+    bas: totalbelopp - privatbelopp,
+    harPrivatDel: privatbelopp > 0,
+    rot: rotUtnyttjat ?? 0,
+    forsakring: kostnad.forsakringsersattning ?? 0,
+  });
+  if (avdragsfel) return { fel: avdragsfel };
 
   await prisma.$transaction([
     prisma.kostnad.update({
@@ -323,6 +339,22 @@ export async function delaUppKostnad(
     endastEttProjekt,
   });
   if ("fel" in tolkad) return { fel: tolkad.fel };
+
+  // En ny privat rad krymper kvittots del som hor till bostaden – och ROT och
+  // forsakringsersattning far aldrig vara storre an den (avdragensFel,
+  // src/lib/kostnadsformular.ts). Utan den har kontrollen klams kostnadens
+  // underlag tyst till noll i steg 1.
+  const nyBas = tolkad.rader.reduce(
+    (s, rad) => s + rad.belopp * bostadensAndel(rad),
+    0,
+  );
+  const avdragsfel = avdragensFel({
+    bas: nyBas,
+    harPrivatDel: nyBas < kostnad.totalbelopp,
+    rot: kostnad.rot_utnyttjat ?? 0,
+    forsakring: kostnad.forsakringsersattning ?? 0,
+  });
+  if (avdragsfel) return { fel: avdragsfel };
 
   if (tolkad.projektIder.length > 0) {
     const funna = await prisma.projekt.findMany({

@@ -105,3 +105,16 @@ export function merkostnadOverBeloppetText(
 ): string {
   return `Merkostnaden för ”${projektnamn}”, ${kronorKort(merkostnadOren)}, är inte mindre än vad projektet kostade, ${kronorKort(beloppOren)}. Den räknas som högst ${kronorKort(beloppOren)} tills du ändrat svaret.`;
 }
+
+/** Skalet pa sida 2 nar taket slagit till: hela kostnaden ar grundforbattring
+ *  tills merkostnaden andrats (docs/design.md, Skarmuppbyggnad). Varje sida
+ *  bar sitt eget skal – en forklaring pa sida 1 hjalper inte den som granskar
+ *  sida 2. */
+export const MERKOSTNAD_TAK_SIDA2 =
+  "Hela kostnaden räknas som grundförbättring på sida 1 tills merkostnaden ändrats.";
+
+/** Skalet nar forsakringsersattningen tackt hela kostnaden – ett legitimt
+ *  tillstand, inte ett fel (docs/design.md, Skarmuppbyggnad: "spärra det som
+ *  inte kan vara sant, förklara det som kan"). */
+export const FORSAKRING_HELA_KOSTNADEN =
+  "Försäkringsersättningen täckte hela kostnaden, så det finns ingen egen utgift att dra av.";

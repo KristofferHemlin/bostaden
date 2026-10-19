@@ -205,16 +205,25 @@ export function harledFragetradetSvar(
   };
 }
 
-// Skickskalan (produktspec 4.4, CLAUDE.md): CLAUDE.md anger bara skalans
-// andpunkter ordagrant (0 – mycket daligt skick, 5 – nytt skick); orden for
-// 1-4 ar ett rimligt mellanled i samma stil. Index = skickvardet 0-5. Delas
-// mellan fragetradet.tsx (fraga 6) och projektets detaljvy.
+// Skickskalan (CLAUDE.md, "Skickskalan"): Skatteverkets egna etiketter,
+// ordagrant, avlasta i deras e-tjanst 2026-10-18. Index = skickvardet 0-5.
+//
+// Orden ar inte en textfraga. Talet gar rakt in i (forsaljning − forvarv) / 5,
+// och vi uppmuntrar anvandaren att kontrollera sina tva tal mot Skatteverkets
+// tjanst – samma siffra maste da betyda samma sak i bada. Appen visade tidigare
+// "Slitet", "Normalt" och "Gott" for 2–4, dar Skatteverket sager "Ganska bra",
+// "Bra" och "Nästan nytt": ett badrum man kallade slitet hamnade pa 2 har och
+// narmare 1 dar. Bytt 2026-10-19, medan all data annu var testdata – efter
+// lansering hade bytet tyst omtolkat varje lagrat svar.
+//
+// Delas mellan fragetradet.tsx (fraga 6), skicket vid forsaljningen och
+// projektets detaljvy – den enda platsen dar skalan star i ord.
 export const SKICK_ORD = [
   "Mycket dåligt skick",
   "Dåligt skick",
-  "Slitet skick",
-  "Normalt skick",
-  "Gott skick",
+  "Ganska bra skick",
+  "Bra skick",
+  "Nästan nytt skick",
   "Nytt skick",
 ] as const;
 

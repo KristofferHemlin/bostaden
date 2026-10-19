@@ -99,6 +99,8 @@ Trädet står under *Frågeträdet per åtgärd* i `CLAUDE.md`. Här står varf�
 
 Att den bara efterfrågas i den nedre delen av skickskalan är ett gränssnittsbeslut med samma skäl: genomgången är produktens tyngsta moment, ett tomt textfält efter sex frågor är där folk ger upp, och ett fält som bara syns när det spelar roll blir också ett fält man faktiskt fyller i. Villkoret står hos regeln.
 
+**"Nedre delen" betyder 0–2 och ska läsas som en aritmetisk gräns, inte som en beskrivning.** Sedan skalan fick Skatteverkets ord 2026-10-19 heter 2 *Ganska bra skick*, vilket inte låter som något att försvara — men ett lågt tal vid förvärvet är just det som gör skillnaden mot försäljningen stor, och därmed avdraget stort. Vid 2 kan faktorn bli 0,6, vid 3 som mest 0,4. Det är beloppet som avgör behovet av en motivering, inte etiketten.
+
 **Registreringen frågar inte efter identifieringen.** Föreningens namn respektive fastighetsbeteckningen finns bara i inställningarna.
 
 Skälet är att uppgiften behövs först på bilagepaketets försättssida, där en granskare ska kunna se vilket objekt underlaget gäller. Den påverkar ingen beräkning och syns inte i något flöde. Att lägga den i registreringen gör steg två längre för att lösa ett problem som uppstår långt senare.
@@ -281,7 +283,7 @@ En åtgärd. Klassificeringen sitter här, inte på kostnaden.
 | atgardstyp | enum | `nybyggnad` \| `planlosning` \| `nytt_tillagg` \| `utbytt` – resultatet av frågeträdets steg 2–4 |
 | battre_kvalitet | bool? | endast när `atgardstyp` är `utbytt`; svaret på fråga 5 |
 | merkostnad | int? | ören, obligatorisk när `battre_kvalitet` är true; gränserna står i `CLAUDE.md` |
-| merkostnad_bas | int? | ören, projektets belopp när merkostnaden besvarades; tom för svar från före 2026-10-18 |
+| merkostnad_bas | int? | ören, projektets belopp när merkostnaden besvarades; tom för svar från före 2026-10-18, och de raderas vid lanseringen |
 | skick_forvarv | int? | skickskalan, se `CLAUDE.md`; ställs i klassificeringen |
 | skick_forsaljning | int? | skickskalan, se `CLAUDE.md`; null fram till försäljningen |
 | motivering | text? | svaret på fråga 8 |
@@ -308,8 +310,8 @@ Ett kvitto eller en faktura.
 | totalbelopp | int | |
 | dokumentdatum | date | |
 | betaldatum | date? | null = obetald, räknas inte in |
-| rot_utnyttjat | int? | dras bort från underlaget; anges i kronor, aldrig i procent |
-| forsakringsersattning | int? | dras bort från underlaget |
+| rot_utnyttjat | int? | dras bort från underlaget; anges i kronor, aldrig i procent. Gränserna står i `CLAUDE.md` |
+| forsakringsersattning | int? | dras bort från underlaget. Får vara lika med beloppet, till skillnad från de andra två – se `CLAUDE.md` |
 | arkiverad | bool | användarens val, default false |
 | anteckning | text? | "Vad gällde det?" – bär minnet till klassificeringen
 
@@ -351,6 +353,14 @@ Appen behöver inte veta vad som köptes, bara hur mycket som inte räknas. Kvit
 Fältet skapar de två raderna i bakgrunden: en privat rad med det angivna beloppet, och en rad med resten som ärver kvittots projektkoppling. Datamodellen är oförändrad, beräkningen likaså, och den som vill se detaljerna kan öppna uppdelningen.
 
 Töms fältet försvinner raderna och kvittot räknas i sin helhet igen. Beloppet måste vara större än noll och mindre än totalbeloppet – är allt privat hör kvittot hemma i "Räknas inte".
+
+**En privat del får kombineras med ROT, och den kombinationen ska inte spärras.** Frågan ställdes 2026-10-19: vore det inte enklare att förbjuda en privat del på ett kvitto som har ROT, och därmed bli av med en hel klass av kantfall? Svaret är nej, och skälet är inte att kombinationen är vanlig – den är ovanlig – utan vad en spärr skulle göra med den som ändå har en sådan faktura.
+
+Hon har ett papper från en firma där arbetet i bostaden gav ROT och en post inte hörde till bostaden. Spärras kombinationen kan hon inte registrera det hon faktiskt har, och de två utvägarna är att stryka den privata markeringen, vilket ger ett för högt avdrag, eller att stryka ROT, vilket ger ett för lågt. **En spärr som inte går att lyda driver fram ett felaktigt tal, inte ett uteblivet.** Det är sämre än kantfallet den tar bort, och det bryter mot regeln att inga flöden får blockera.
+
+Aritmetiken är dessutom redan avgjord och testad: den privata delen räknas bort först, ROT därefter, med räkneexemplet i `CLAUDE.md` under *Räknas inte med*. Och kantfallet som väckte frågan löses av gränsen mot bostadens del, inte av en spärr.
+
+**Det finns en riktig kärna i frågan, och den är ett gränssnittsproblem.** Ett kvitto med både ROT och en privat del är appens mest felbenägna inmatning, och ordningen mellan de två är inte självklar för den som fyller i. Svaret är att visa vad som blir kvar, inte att förbjuda läget. Se `docs/design.md`.
 
 **Uppdelningsvyn finns kvar** för det den är byggd för: en entreprenörsfaktura med flera poster som ska fördelas mellan olika projekt. Det är ett annat och ovanligare behov, och det motiverar sin komplexitet. Privatfältet gör det inte.
 
@@ -478,7 +488,7 @@ Rader grupperas per åtgärd och år, aldrig per kvitto. Kvittona ligger under s
 
 **Ordningen i dokumentet:**
 
-1. **Försättssida.** Bostadens identifiering – adress och ort, upplåtelseform, föreningens namn för bostadsrätt eller fastighetsbeteckning för fastighet. Tillträdesdatum, försäljningsdatum, ägarandel. Vilken blankett beloppen förs till, K5 eller K6. Datum då paketet skapades. Friskrivningen, i sin helhet.
+1. **Försättssida.** Bostadens identifiering – adress och ort, upplåtelseform, föreningens namn för bostadsrätt eller fastighetsbeteckning för fastighet. Tillträdesdatum, försäljningsdatum, ägarandel. Vilken blankett beloppen förs till, K5 eller K6. Datum då paketet skapades. **Avsnittet *Att se över*** med varningslistan och de högar som väntar på frågor. Friskrivningen, i sin helhet.
 2. **Sammanställningen, sida 1 – grundförbättringar.** Åtgärd, år, belopp. Summan utpekad: detta förs till punkt 4.
 3. **Sammanställningen, sida 2 – förbättrande reparationer.** Åtgärd, år, hel utgift, avdragsgill del efter förslitning. Summan utpekad: detta förs till punkt 5.
 4. **Bilageförteckning.** En numrerad lista som kopplar varje bilaga till sin rad. Den som får paketet ska kunna gå från ett belopp i sammanställningen till rätt kvitto utan att bläddra.
@@ -487,6 +497,10 @@ Rader grupperas per åtgärd och år, aldrig per kvitto. Kvittona ligger under s
 5. **Bilagorna, en per sida**, i samma ordning som raderna. Varje sida har en sidhuvudsrad som säger vilken post bilagan hör till: `Bilaga 7 · Omstrukturera lägenhet · 2026 · BAUHAUS 1 997,05 kr`. Utan den raden är en lös kvittobild i ett fyrtiosidigt dokument obrukbar som bevis.
 
 **Vad som ingår.** Bara det som ingår i underlaget. Arkiverade och privatmarkerade kvitton följer inte med – det är skillnaden mot zip-exporten, som tar allt användaren laddat upp. Bilagorna följer de kostnader som bidrar med ett belopp större än noll. En rad som redovisas med 0 kr står kvar i sammanställningen med sin förklaring, men har ingen bevisbörda och därmed inga bilagor.
+
+**Känd lucka, nästa omgång: PDF:en har ingen *Återstår*.** Exportvyn redovisar varje krona som lagts in — kvitton utan projekt, kvitton daterade före tillträdet, kvitton utan betaldatum, utkast med bilaga — men PDF:en gör det inte. Det är alltså **det dokument som sparas i åtta år** som tiger om det som inte räknats med, medan skärmen man tittar på en gång berättar det. Funnen 2026-10-19, av agenten, under arbetet med varningslistan.
+
+Regeln finns redan längre ned om bilagepaketets hål, och den gäller här: *ett paket med ett tyst hål är värre än ett paket som säger var hålet finns.* Ett underlag som ser komplett ut är dessutom farligare än ett som är synligt ofullständigt, eftersom ingen går tillbaka för att leta efter det som inte syns saknas.
 
 **Skillnaden mellan raden och bilagan måste förklaras i dokumentet.** Har ROT-avdrag eller försäkringsersättning dragits av står beloppet i sammanställningen lägre än summan på kvittot, och en granskare som jämför ser ett glapp utan förklaring. Under beloppet står därför en dämpad rad: *"varav ROT 7 500 kr, avgår"*. Att fakturan ofta skriver ut skattereduktionen själv räcker inte – det gör inte alla, och dokumentet ska vara självförklarande.
 

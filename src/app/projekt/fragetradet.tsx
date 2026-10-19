@@ -381,7 +381,7 @@ export function Fragetradet({
       ) : null}
 
       {/* Fraga 8 – ren fritext, blockerar aldrig. Visas bara nar svaret
-          betyder nagot: ett dåligt skick vid forvarvet (0-2) ger ett stort
+          betyder nagot: ett lagt skick vid forvarvet (0-2) ger ett stort
           reparationsavdrag pa tva subjektiva siffror, och da ar motiveringen
           en del av bevisningen. Ar skicket 3 eller hogre blir avdraget litet
           anda, och da finns inget att forsvara (produktspec 4.1). */}

@@ -81,7 +81,7 @@ describe("inmatningen – varje avvisning har en mening", () => {
     ).toEqual([
       {
         falt: "rot_utnyttjat",
-        fel: "ROT-avdraget kan inte vara större än totalbeloppet.",
+        fel: "Ange ett ROT-avdrag mindre än 1\u00a0000\u00a0kr – det är vad kvittot kostade.",
       },
     ]);
   });

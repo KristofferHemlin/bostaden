@@ -40,7 +40,6 @@ import {
 import {
   beloppIKolumnen,
   byggK6aExport,
-  type AterstaendeKvitto,
   type K6aExport,
   VANTAR_PA_BOSTADSFRAGOR_TEXT,
   VantarPaBostadsfragor,
@@ -63,6 +62,13 @@ import {
   kandEgenAndel,
 } from "@/lib/samagande";
 import { kravBostad } from "@/lib/session";
+import { UnderlagetsVarningar } from "./underlagets-varningar";
+import {
+  ATERSTAR_INLEDNING,
+  ATERSTAR_RUBRIK,
+  aterstarRader,
+  kvittonamn,
+} from "@/lib/aterstar";
 
 export const metadata = { title: "Deklarationsunderlag" };
 
@@ -165,11 +171,10 @@ export default async function ExportSida() {
     const behoverKlassificering =
       ex.oklassificerade_hogar.length > 0 ||
       ex.aterstaende_kvitton.some((k) => k.orsak === "utan_hog");
-    const kvittoNamn = new Map(
-      kostnadRader.map((k) => [
-        k.id,
-        k.anteckning?.trim() || k.leverantor?.trim() || "Kvitto",
-      ]),
+    const kvittoNamn = new Map(kostnadRader.map((k) => [k.id, kvittonamn(k)]));
+    const aterstar = aterstarRader(
+      ex,
+      (id) => kvittoNamn.get(id) ?? "Kvitto",
     );
     // Fraga 7 (steg 4): atgarder med reparationsdel vars skick vid
     // forsaljningen annu inte ar bedomt. Samma urval som /forsaljning/skick
@@ -182,6 +187,10 @@ export default async function ExportSida() {
 
     return (
       <>
+        {/* Hal i underlaget som inte syns nagon annanstans (K6aExport.
+            varningar) – overst, fore talen. */}
+        <UnderlagetsVarningar varningar={ex.varningar} />
+
         <Kort className="divide-y divide-linje">
           {delad ? (
             <p className="p-4 font-granssnitt text-sm text-text-primar">
@@ -283,36 +292,28 @@ export default async function ExportSida() {
           {harAterstaende ? (
             <section className="p-4">
               <p className="font-granssnitt text-sm font-medium text-text-primar">
-                Återstår
+                {ATERSTAR_RUBRIK}
               </p>
               <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
-                Det här har du lagt in, men det ingår inte i talen ovan.
+                {ATERSTAR_INLEDNING}
               </p>
+              {/* Samma rader och samma skal som i PDF:en (src/lib/aterstar.ts). */}
               <ul className="mt-2 divide-y divide-linje border-t border-linje">
-                {ex.oklassificerade_hogar.map((h) => (
+                {aterstar.map((r) => (
                   <AterstarRad
-                    key={`hog-${h.namn}-${h.ar}`}
-                    namn={h.namn}
-                    orsak="Väntar på frågor"
-                    ar={h.ar}
-                    belopp={h.belopp_brutto}
-                  />
-                ))}
-                {ex.aterstaende_kvitton.map((k) => (
-                  <AterstarRad
-                    key={`kvitto-${k.kostnad_id}`}
-                    namn={kvittoNamn.get(k.kostnad_id) ?? "Kvitto"}
-                    orsak={ATERSTAR_ORSAK[k.orsak]}
-                    ar={k.ar}
-                    belopp={k.belopp_brutto}
+                    key={r.nyckel}
+                    namn={r.namn}
+                    orsak={r.orsak}
+                    ar={r.ar}
+                    belopp={r.belopp}
                     href={
                       // Ett datum som saknas eller kan vara feltypat
                       // rattas pa kvittots skarm.
-                      k.orsak === "utan_betaldatum" ||
-                      k.orsak === "fore_tilltradet"
-                        ? `/kostnad/${k.kostnad_id}`
-                        : k.orsak === "utan_belopp"
-                          ? `/kostnad/nytt?utkast=${k.kostnad_id}`
+                      r.orsakKod === "utan_betaldatum" ||
+                      r.orsakKod === "fore_tilltradet"
+                        ? `/kostnad/${r.kostnadId}`
+                        : r.orsakKod === "utan_belopp"
+                          ? `/kostnad/nytt?utkast=${r.kostnadId}`
                           : undefined
                     }
                   />
@@ -533,12 +534,6 @@ function RutaCallout({
   );
 }
 
-const ATERSTAR_ORSAK: Record<AterstaendeKvitto["orsak"], string> = {
-  utan_hog: "Hör inte till något projekt än",
-  utan_betaldatum: "Saknar betaldatum",
-  utan_belopp: "Saknar belopp",
-  fore_tilltradet: "Daterat före tillträdet",
-};
 
 /**
  * En rad i listan over det som aterstar: atgardsprick, namn och en dampad rad

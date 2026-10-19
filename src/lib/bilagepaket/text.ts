@@ -3,6 +3,8 @@
 // paketets filnamn. Ren textformatering, ingen skatteregel – ligger darfor i
 // src/lib, inte src/doman.
 
+import type { K6aExport } from "@/doman/export-k6a";
+import { ATERSTAR_HANVISNING } from "@/lib/aterstar";
 import { formateraKronor } from "@/lib/format";
 import { rotAvgarRad } from "@/lib/kvittolista";
 
@@ -95,4 +97,19 @@ export function bilagepaketFilnamn(
 ): string {
   const sanerad = bostadsnamn.replace(OTILLATNA_TECKEN, "-").trim();
   return `Deklarationsunderlag ${sanerad} ${forsaljningsAr}.pdf`;
+}
+
+/**
+ * Det som gor underlaget ofullstandigt, for PDF:ens forsattssida: varningarna
+ * (K6aExport.varningar) och – nar nagot aterstar – en hanvisning till
+ * Återstår efter sammanstallningen. Hogar som vantar pa fragor star i
+ * Återstår, som i exportvyn, och upprepas inte har. Tom lista nar ingenting
+ * saknas. produktspec 8: "Ett paket med ett tyst hål är värre än ett paket som
+ * säger var hålet finns."
+ */
+export function forsattssidansVarningar(
+  ex: Pick<K6aExport, "varningar">,
+  aterstar: readonly unknown[],
+): string[] {
+  return [...ex.varningar, ...(aterstar.length > 0 ? [ATERSTAR_HANVISNING] : [])];
 }
