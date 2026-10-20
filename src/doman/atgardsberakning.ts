@@ -16,6 +16,7 @@
 import {
   arUtkast,
   avdragsgrundandeBelopp,
+  avrundaUppatTillKronor,
   beloppForKostnad,
   kalenderAr,
   reduktionsfaktor,
@@ -434,10 +435,12 @@ export function tillampaSkickfaktor(
  * tester/avrundning-reparation.test.ts). Anvands ENDAST pa reparationsbeloppet
  * efter skickfaktorn, och ENDAST vid utskrift – aldrig mitt i berakningskedjan,
  * eftersom avrundning per atgard skulle ackumulera fel over manga atgarder.
- * Grundforbattringen behover ingen motsvarande funktion: den ar merkostnaden
- * (eller hela beloppet) reducerad med reduktionsfaktorn, och blir aldrig
- * brutna oren i de scenarier appen stodjer.
+ *
+ * Grundforbattringen avrundas inte har. Den kan ha oren – en fordelad
+ * merkostnad ger det (uppmatt 2026-10-20: 205 973,42 kr) – men raderna
+ * behaller dem, och bara talet bredvid "Förs till" avrundas, sist av allt
+ * (rutorForLasaren i src/doman/blankett.ts).
  */
 export function avrundaReparationUppat(reparationOren: number): number {
-  return Math.ceil(reparationOren / 100) * 100;
+  return avrundaUppatTillKronor(reparationOren);
 }

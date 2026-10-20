@@ -3,7 +3,6 @@ import {
   andelssummaNotis,
   andelssummaVidAndring,
   formateraAndel,
-  kandEgenAndel,
   summeraAndelar,
 } from "@/lib/samagande";
 
@@ -31,22 +30,6 @@ describe("andelssummaVidAndring – en andring av en befintlig andel", () => {
   it("tillater att en for hog summa sanks, aven om den inte hinner under 100 % i ett steg", () => {
     // Tva medlemmar med standardvardet 100 var: ingen kan annars sanka forst.
     expect(andelssummaVidAndring({ fore: 200, efter: 150 })).toBeNull();
-  });
-});
-
-describe("kandEgenAndel – exportvyns rad", () => {
-  it("ar andelen i en delad bostad dar summan gar ihop", () => {
-    expect(kandEgenAndel({ egenAndel: 50, medlemsandelar: [50, 50] })).toBe(50);
-    expect(kandEgenAndel({ egenAndel: 25, medlemsandelar: [25, 25] })).toBe(25);
-  });
-
-  it("ar okand nar andelarna aldrig satts – summan spranger 100 %", () => {
-    expect(kandEgenAndel({ egenAndel: 100, medlemsandelar: [100, 100] })).toBeNull();
-    expect(kandEgenAndel({ egenAndel: 50, medlemsandelar: [50, 100] })).toBeNull();
-  });
-
-  it("galler bara en delad bostad", () => {
-    expect(kandEgenAndel({ egenAndel: 50, medlemsandelar: [50] })).toBeNull();
   });
 });
 

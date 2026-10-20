@@ -287,6 +287,10 @@ Förbättringsutgifter fördelas mellan delägarna efter ägarandel. Underlaget 
 
 Testa domänreglerna och de nödvändiga flödena. Skriv testet före implementationen.
 
+**Ett test som inte kan falla är sämre än inget test**, eftersom det läses som täckning. Skriven 2026-10-20, efter att agenten hittade ett sådant i sitt eget arbete från dagen innan: det prövade en hjälpfunktion som aldrig når komponenten den skulle säga något om, så påståendet hade passerat vad rutan än visade. **Därför är brytningen med flit inte en formalitet.** Ett test som inte faller när regeln rivs prövar inte regeln — och det är den enda kontroll som avslöjar ett tomt test.
+
+**Pröva det som renderas, inte det som räknar**, när påståendet handlar om vad användaren ser. En funktion kan ge rätt svar medan komponenten visar något annat, och det är komponenten användaren läser.
+
 Dessa fall måste finnas och passera. De sex första är verifierade mot Skatteverkets e-tjänst 2026-09-15 och får inte ändras utan att verktyget körs om.
 
 **Frågeträdet och skickskalan**
@@ -434,6 +438,16 @@ När ett steg är klart: kör testerna, sammanfatta vad som byggts, stanna.
 Fråga hellre än gissa när specen är tyst. Ett felaktigt antagande om skattereglerna är dyrare än en fråga.
 
 Använd riktig testdata från början – ett faktiskt byggvarukvitto med både projektmaterial och en privat artikel. Påhittad data döljer friktionen appen finns för att ta bort.
+
+### Tillståndet mellan två steg
+
+**Ett flöde i flera steg har tillstånd som bara finns mellan stegen, och den som går igenom hela flödet i ett svep ser dem aldrig.** Skriven 2026-10-20, efter att jag förklarade en känd bugg för avhjälpt därför att vägen jag körde fungerade.
+
+Högen som tas "för sig" skapas med tomt namn, eftersom namnet sätts av första frågan i nästa steg. Jag körde båda stegen efter varandra, fick ett namn, och drog slutsatsen att posten var rättad. Agenten läste koden och hittade **fyra nåbara ställen** där det tomma namnet skrivs ut rakt av: projektlistan, kvittots sida (*"Hör till "* och sedan ingenting), valen *Koppla till projekt* och *Dela upp*, och *Återstår* i underlaget.
+
+**Det är inte ett hörn, det är normalfallet.** Genomgången skriver själv *"Du kan avbryta när som helst – det du lagt ihop ligger kvar"*, alltså bjuder appen uttryckligen in till just det tillstånd den sedan visar fel. Den som lägger in kvitton en kväll och svarar på frågorna en annan lever där hela tiden.
+
+**Regeln: att ha kört vägen igenom säger ingenting om vad som syns halvvägs.** Den som prövar ett flerstegsflöde ska stanna mitt i och se sig omkring — och den som skriver prompten ska be om en läsning av *var ett halvfärdigt tillstånd visas*, inte bara om steget fungerar.
 
 ### Kan en användare komma hit?
 

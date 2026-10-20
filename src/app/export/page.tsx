@@ -13,17 +13,22 @@
 // domanregel. Struktur och farger: docs/design.md (metrikblock-monstret ateranvands
 // for ruta 4/5; inget rott/gront for status).
 //
-// Har bostaden fler an en medlem star overst att sammanstallningen galler hela
-// bostaden och att var och en deklarerar sin andel av den (docs/design.md,
-// "Samagande – medlemskapet"). Utan raden ser bada delagarna samma summa och
-// for in hela beloppet var. En rad, inget stycke – skarmens uppgift ar tva tal.
-//
 // Underlaget raknas med lasarens andel nar medlemmarnas andelar gar ihop –
 // summan hogst 100 % – oavsett hur manga som delar bostaden (CLAUDE.md,
-// "Agarandel"). Raden overst namnger da andelen. Gar de inte ihop finns ingen
-// andel att lita pa: beloppen ar hela bostadens, varken raden Agarandel eller
-// rutan om den egna andelen visas, och etiketten "Förs till K5" uteblir –
-// den far bara sta bredvid ett tal som ar lasarens eget (rutorForLasaren).
+// "Agarandel"). Talet bredvid "Förs till" ar da hennes eget, och rutan om den
+// egna andelen sager varfor bade hela bostadens belopp och andelen visas.
+//
+// Ingen rad ber henne sjalv ta sin andel. En sadan stod overst fram till
+// 2026-10-20 – "Du äger 50 % – det är den andelen du för in i din
+// deklaration." – skriven medan talet var hela bostadens. Nar talet lagades
+// bad den henne ta 50 % av sina egna 50 % (docs/design.md, "Samägande –
+// medlemskapet").
+//
+// Gar andelarna inte ihop finns ingen andel att lita pa: beloppen ar hela
+// bostadens, och overst star att sammanstallningen galler hela bostaden och
+// att var och en deklarerar sin andel av den. Varken raden Agarandel eller
+// rutan om den egna andelen visas, och etiketten "Förs till K5" uteblir – den
+// far bara sta bredvid ett tal som ar lasarens eget (rutorForLasaren).
 
 import Link from "next/link";
 import {
@@ -44,7 +49,12 @@ import {
   type K6aExportrad,
   type K6aIndata,
 } from "@/doman/export-k6a";
-import { blankettTexter, rutorForLasaren, type RutaForLasaren } from "@/doman/blankett";
+import {
+  AVRUNDAT_TILL_HELA_KRONOR,
+  blankettTexter,
+  rutorForLasaren,
+  type RutaForLasaren,
+} from "@/doman/blankett";
 import { slaUppRegelparameter } from "@/doman/regelparameter";
 import { reparationsfonsterNamn } from "@/doman/regeltext";
 import { behoverSkickForsaljning } from "@/doman/fragetradet";
@@ -56,8 +66,6 @@ import { hamtaAndelar } from "@/lib/andelar";
 import {
   andelForUnderlag,
   arDeladBostad,
-  formateraAndel,
-  kandEgenAndel,
 } from "@/lib/samagande";
 import { kravBostad } from "@/lib/session";
 import { UnderlagetsVarningar } from "./underlagets-varningar";
@@ -84,7 +92,6 @@ export default async function ExportSida() {
   const delad = arDeladBostad(medlemmar);
   const medlemsandelar = andelar.medlemmar.map((m) => m.andel);
   const andel = andelForUnderlag({ egenAndel: agarandel, medlemsandelar });
-  const kandAndel = kandEgenAndel({ egenAndel: agarandel, medlemsandelar });
   const { bostadsnamn } = bostadHeader(bostad);
 
   // Enda skillnaden mellan upplatelseformerna i den har vyn: huvudblanketten som
@@ -189,13 +196,11 @@ export default async function ExportSida() {
         <UnderlagetsVarningar varningar={ex.varningar} />
 
         <Kort className="divide-y divide-linje">
-          {delad ? (
+          {delad && andel === null ? (
             <p className="p-4 font-granssnitt text-sm text-text-primar">
               Sammanställningen gäller{" "}
-              <span className="font-medium">hela bostaden</span>
-              {kandAndel !== null
-                ? `. Du äger ${formateraAndel(kandAndel)} – det är den andelen du för in i din deklaration.`
-                : " – var och en deklarerar sin andel av den."}
+              <span className="font-medium">hela bostaden</span> – var och en
+              deklarerar sin andel av den.
             </p>
           ) : null}
           <section className="space-y-1 p-4 font-granssnitt text-sm text-text-sekundar">
@@ -519,6 +524,14 @@ function RutaCallout({
       <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
         {underrad}
       </p>
+      {/* Blanketten tar hela kronor: talet ovan ar avrundat och skiljer sig
+          darfor fran summan av raderna (CLAUDE.md, "Blanketten tar hela
+          kronor"). Bara nar avrundningen andrat talet. */}
+      {ruta.avrundat ? (
+        <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
+          {AVRUNDAT_TILL_HELA_KRONOR}
+        </p>
+      ) : null}
       {gemensam ? (
         <p className="mt-1 font-granssnitt text-sm tabular-nums text-text-sekundar">
           Hela bostaden {formateraKronor(brutto)} · din andel {agarandel} %

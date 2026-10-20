@@ -3,6 +3,7 @@
 // Exportvyn och bilagepaketets PDF hamtar texterna harifran, sa att namnet inte
 // kan skilja sig mellan stallena.
 
+import { avrundaUppatTillKronor } from "./berakningar";
 import type { K6aExport } from "./export-k6a";
 import type { Upplatelseform } from "./typer";
 
@@ -25,9 +26,15 @@ export function blankettTexter(upplatelseform: Upplatelseform) {
 export interface RutaForLasaren {
   /** "Förs till K5, ruta 4", eller null nar talet inte ar lasarens eget. */
   etikett: string | null;
-  /** Oren. */
+  /** Oren. Hela kronor nar etiketten finns. */
   belopp: number;
+  /** Sant nar talet avrundats och darfor skiljer sig fran raderna ovan. */
+  avrundat: boolean;
 }
+
+/** Raden under ett avrundat Förs till-tal: varfor det inte ar summan av raderna. */
+export const AVRUNDAT_TILL_HELA_KRONOR =
+  "Avrundat uppåt till hela kronor – blanketten tar inte ören. Raderna ovan är exakta, så summan av dem kan sluta några ören lägre.";
 
 /**
  * Vad exportvyns tva rutor visar. Etiketten "Förs till K5, ruta x" ar en
@@ -35,6 +42,11 @@ export interface RutaForLasaren {
  * "Agarandel"). Ar andelen kand ar det den individuella summan; ar den null –
  * medlemmarnas andelar gar inte ihop – visas hela bostadens summa utan
  * etiketten.
+ *
+ * Talet bredvid etiketten ar det enda som skrivs av, och blanketten tar hela
+ * krontal: det avrundas uppat, sist av allt och efter agarandelen (CLAUDE.md,
+ * "Blanketten tar hela kronor"). Raderna och summan utan etikett behaller sina
+ * oren – de ar dokumentation och ska stamma exakt mot berakningen.
  */
 export function rutorForLasaren(
   ex: K6aExport,
@@ -42,15 +54,13 @@ export function rutorForLasaren(
   andel: number | null,
 ): { ruta4: RutaForLasaren; ruta5: RutaForLasaren } {
   const texter = blankettTexter(upplatelseform);
-  const kand = andel !== null;
+  const ruta = (etikett: string, individuellt: number, brutto: number): RutaForLasaren => {
+    if (andel === null) return { etikett: null, belopp: brutto, avrundat: false };
+    const belopp = avrundaUppatTillKronor(individuellt);
+    return { etikett, belopp, avrundat: belopp !== individuellt };
+  };
   return {
-    ruta4: {
-      etikett: kand ? texter.ruta4 : null,
-      belopp: kand ? ex.ruta4_individuellt : ex.ruta4_brutto,
-    },
-    ruta5: {
-      etikett: kand ? texter.ruta5 : null,
-      belopp: kand ? ex.ruta5_individuellt : ex.ruta5_brutto,
-    },
+    ruta4: ruta(texter.ruta4, ex.ruta4_individuellt, ex.ruta4_brutto),
+    ruta5: ruta(texter.ruta5, ex.ruta5_individuellt, ex.ruta5_brutto),
   };
 }

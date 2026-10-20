@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { byggK6aExport, type K6aIndata } from "@/doman/export-k6a";
-import { rutorForLasaren } from "@/doman/blankett";
+import { AVRUNDAT_TILL_HELA_KRONOR, rutorForLasaren } from "@/doman/blankett";
 import { andelForUnderlag } from "@/lib/samagande";
 import { REGELPARAMETRAR, kostnad, projekt } from "./_hjalp";
 
@@ -13,6 +13,10 @@ import { REGELPARAMETRAR, kostnad, projekt } from "./_hjalp";
 // Kedjan ar densamma som exportvyns (src/app/export/page.tsx): andelen ur
 // medlemmarnas andelar, underlaget med den andelen, och sist vad rutorna visar.
 // Talen ar ett verkligt underlag ur produktionen.
+//
+// Blanketten tar hela kronor (CLAUDE.md, "Blanketten tar hela kronor"): talet
+// bredvid "Förs till" avrundas uppat, sist av allt och efter agarandelen.
+// Raderna behaller sina oren – de ar dokumentation och ska stamma exakt.
 
 const GRUND = 20_597_342; // 205 973,42 kr
 const REPARATION = 23_300_000; // 233 000 kr
@@ -51,37 +55,58 @@ function underlag({
     kostnader_med_bilaga: [],
     regelparametrar: REGELPARAMETRAR,
   };
-  return rutorForLasaren(byggK6aExport(indata), "fastighet", andel);
+  const ex = byggK6aExport(indata);
+  return { ...rutorForLasaren(ex, "fastighet", andel), ex };
 }
 
 describe("Förs till-raden visar lasarens eget tal", () => {
   it("tva medlemmar pa 50/50: halva bostaden, aldrig hela", () => {
     const r = underlag({ egenAndel: 50, medlemsandelar: [50, 50] });
-    expect(r.ruta4).toEqual({ etikett: "Förs till K5, ruta 4", belopp: 10_298_671 });
-    expect(r.ruta5).toEqual({ etikett: "Förs till K5, ruta 5", belopp: 11_650_000 });
+    // 102 986,71 -> 102 987; 116 500 ar redan hela kronor och ror sig inte.
+    expect(r.ruta4).toEqual({ etikett: "Förs till K5, ruta 4", belopp: 10_298_700, avrundat: true });
+    expect(r.ruta5).toEqual({ etikett: "Förs till K5, ruta 5", belopp: 11_650_000, avrundat: false });
   });
 
   it("en medlem med andel 50 %: samma tal som tidigare – rattningen tar inte bort andelen", () => {
     const r = underlag({ egenAndel: 50, medlemsandelar: [50] });
-    expect(r.ruta4).toEqual({ etikett: "Förs till K5, ruta 4", belopp: 10_298_671 });
-    expect(r.ruta5).toEqual({ etikett: "Förs till K5, ruta 5", belopp: 11_650_000 });
+    expect(r.ruta4).toEqual({ etikett: "Förs till K5, ruta 4", belopp: 10_298_700, avrundat: true });
+    expect(r.ruta5).toEqual({ etikett: "Förs till K5, ruta 5", belopp: 11_650_000, avrundat: false });
   });
 
   it("en ensam agare av hela bostaden: hela bostadens tal ar hennes eget", () => {
     const r = underlag({ egenAndel: 100, medlemsandelar: [100] });
-    expect(r.ruta4).toEqual({ etikett: "Förs till K5, ruta 4", belopp: GRUND });
-    expect(r.ruta5).toEqual({ etikett: "Förs till K5, ruta 5", belopp: REPARATION });
+    // 205 973,42 -> 205 974.
+    expect(r.ruta4).toEqual({ etikett: "Förs till K5, ruta 4", belopp: 20_597_400, avrundat: true });
+    expect(r.ruta5).toEqual({ etikett: "Förs till K5, ruta 5", belopp: REPARATION, avrundat: false });
   });
 
   it("summa under 100 %: var och en ser sin egen andel", () => {
     const r = underlag({ egenAndel: 25, medlemsandelar: [25, 25] });
     expect(r.ruta4.etikett).toBe("Förs till K5, ruta 4");
-    expect(r.ruta4.belopp).toBe(5_149_336); // 205 973,42 × 0,25 = 51 493,355 → 51 493,36
+    // 205 973,42 × 0,25 = 51 493,355 → 51 493,36 i raderna → 51 494 att fora in.
+    expect(r.ruta4.belopp).toBe(5_149_400);
   });
 
   it("summa over 100 %: hela bostadens belopp, men utan etiketten", () => {
     const r = underlag({ egenAndel: 100, medlemsandelar: [100, 100] });
-    expect(r.ruta4).toEqual({ etikett: null, belopp: GRUND });
-    expect(r.ruta5).toEqual({ etikett: null, belopp: REPARATION });
+    // Inget tal att skriva av – da finns inget skal att avrunda det.
+    expect(r.ruta4).toEqual({ etikett: null, belopp: GRUND, avrundat: false });
+    expect(r.ruta5).toEqual({ etikett: null, belopp: REPARATION, avrundat: false });
+  });
+});
+
+describe("raderna behaller sina oren, bara Förs till-talet avrundas", () => {
+  it("hela bostaden och andelen per rad ar exakta", () => {
+    const { ex, ruta4 } = underlag({ egenAndel: 50, medlemsandelar: [50, 50] });
+    const [rad] = ex.sida1.rader;
+    expect(rad.belopp_brutto).toBe(GRUND); // 205 973,42
+    expect(rad.belopp_individuellt).toBe(10_298_671); // 102 986,71
+    expect(ex.ruta4_brutto).toBe(GRUND);
+    expect(ex.ruta4_individuellt).toBe(10_298_671);
+    expect(ruta4.belopp).toBe(10_298_700); // bara har
+  });
+
+  it("meningen forklarar varfor talet skiljer sig fran raderna", () => {
+    expect(AVRUNDAT_TILL_HELA_KRONOR).toMatch(/hela kronor/);
   });
 });

@@ -5,6 +5,15 @@ export function avrunda(oren: number): number {
   return Math.round(oren);
 }
 
+/**
+ * Avrundar UPPAT till hela kronor. Blanketten tar hela krontal (CLAUDE.md,
+ * "Blanketten tar hela kronor"), och uppat ar den riktning Skatteverkets
+ * verktyg anvander for reparationsdelen. Bara vid utskrift.
+ */
+export function avrundaUppatTillKronor(oren: number): number {
+  return Math.ceil(oren / 100) * 100;
+}
+
 /** Kalenderaret ur ett "YYYY-MM-DD"-datum. Ingen tidszon inblandad. */
 export function kalenderAr(datum: string): number {
   const ar = Number.parseInt(datum.slice(0, 4), 10);

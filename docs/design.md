@@ -553,6 +553,17 @@ Ett tomt tillstånd säger aldrig bara att det är tomt. Det består av en rubri
 
 **En enda primärknapp.** Ingen knapp för att skapa ett projekt – det är inte vägen in i produkten, och ordet hör inte hemma på en landningsskärm. Två jämnstora knappar tvingar fram ett val innan användaren vet vad alternativen betyder.
 
+**Ett tomt tillstånd får bara säga "klart" om helheten är klar.** Skriven 2026-10-20, efter att frågesidan skrev *"Inget väntar på frågor"* medan två kvitton låg kvar i högen. Påståendet var sant om det sidan kände till — ihoplagda projekt — och osant om det användaren menar. **En skärm som bara ser en del av arbetet ska formulera sig om sin del, inte om alltihop.**
+
+Frågesidans tomläge har därför två lydelser, och den med kvitton kvar räknar dem:
+
+| Läge | Rubrik | Mening |
+|---|---|---|
+| Kvitton kvar i fas 1 | *"2 kvitton kvar att lägga ihop"*, singular vid ett | *"Frågorna om det du lagt ihop är besvarade. Lägg ihop det som är kvar, så kommer frågorna om det."* |
+| Inget kvar | *"Inget väntar på frågor"* | oförändrad |
+
+Rubriken följer fas 1:s egen räknare, så att samma kvitton heter samma sak på båda sidorna. Meningen säger först vad som **är** gjort och sedan vad som återstår – den som kommit ända hit ska inte mötas av en tillrättavisning.
+
 ### Förstaskärmen för en ny användare
 
 Den som just skapat kontot vet inte varför hen ska spara kvitton. Ingen gör det spontant – man gör det när man förstår att det är pengar den dagen bostaden säljs. Skärmen ska säga det, inte förutsätta det.
@@ -1361,6 +1372,23 @@ Med två delägare är "vem la in de här 40 000?" en fråga som kommer att stä
 
 Skillnaden är liten men avgörande: den som får veta vad hen ska göra gör det, medan den som påminns om att någon ska göra något ofta inte gör det.
 
+**Och när talet rättades blev raden fel i andra riktningen.** Uppmätt i produktionen 2026-10-20, efter att multiplikationen börjat fungera. Högst upp i underlaget står nu två meningar:
+
+> Sammanställningen gäller hela bostaden. Du äger 50 % – det är den andelen du för in i din deklaration.
+> Din ägarandel är under 100 %. Sammanställningen visar både hela bostadens belopp och din andel, så att den andra delägaren kan använda samma underlag.
+
+Den andra är sann. **Den första är kvar från tiden då talet var hela bostadens**, och den ber nu läsaren ta 50 % av ett tal som redan *är* hennes 50 %. Den som följer den för in 51 493 kr i stället för 102 986,71.
+
+**Felet har alltså bytt riktning, inte försvunnit.** Förut fick två delägare var sitt dubbelt yrkande; nu riskerar den noggranne att yrka hälften av sin andel. En mening som skrevs för att kompensera ett trasigt tal blir farlig i samma stund talet lagas, och ingenting kopplar de två. **Den som rättar en beräkning ska leta efter texten som bar sanningen under tiden.**
+
+Den första meningen ska bort. Den andra räcker, och säger dessutom varför båda talen visas. Borttagen 2026-10-20.
+
+**Talet i *Förs till*-raden är hela kronor, och raden säger varför.** Blanketten tar inte ören, så siffran som ska skrivas av avrundas uppåt sist av allt, efter ägarandelen. Raderna, kolumnen *Din andel* och foten behåller sina exakta belopp, eftersom de är dokumentation och inte ska skrivas av. Meningen visas bara när avrundningen faktiskt ändrade talet:
+
+> **Avrundat uppåt till hela kronor – blanketten tar inte ören. Raderna ovan är exakta, så summan av dem kan sluta några ören lägre.**
+
+Sista satsen finns för att den som lägger ihop raderna annars tror att något är fel. **Ett tal som avsiktligt skiljer sig från summan ovanför ska säga att det gör det**, av samma skäl som en nolla ska bära sitt skäl.
+
 **Men raden är inte det som står mellan två personer och att båda för in hela beloppet — det gör talet.** Så stod det här fram till 2026-10-19, och verifieringen visade varför det var fel att lita på: meningen bad läsaren ta sin andel medan etiketten *Förs till K5, ruta 4* pekade på hela bostadens tal två skärmlängder ner. **Den som läser en siffra bredvid en instruktion följer siffran, inte en mening längre upp.** En förklarande rad kan inte bära en sanning som talet motsäger.
 
 Utan den raden ser båda delägarna samma summa, tror att den är deras, och för in hela beloppet var. Att varje delägare deklarerar sin egen andel är bekräftat – se `docs/regelkallor.md`.
@@ -1418,6 +1446,8 @@ En ensam ägare berörs inte. Den som äger halva sin bostad och använder appen
 **Den som bjuder in anger den inbjudnas ägarandel.** Den som bjuder in vet nästan alltid hur de äger, och utan ett tal blir kortet Tillgång en lista med namn utan innebörd.
 
 Men andelen är ett **utgångsvärde, inte ett facit**. Den syns och går att ändra i *Förvärvet*, och den ska bekräftas när bostaden markeras som såld. Då blir frågan "ni har angett 50/50 – stämmer det?" i stället för ett tomt fält, vilket är mycket lättare att svara rätt på. Fältet multiplicerar hela underlaget, och ett tal som satts slarvigt vid en inbjudan för åtta år sedan ska inte få passera oläst.
+
+**Inbjudningskortets text undervärderar andelen sedan 2026-10-20.** Den skriver *"Andelarna är ett utgångsvärde. Var och en bekräftar sin när bostaden markeras som såld."* Det är inte osant, men andelen avgör nu talet bredvid *Förs till* direkt, och bekräftelsesteget den hänvisar till finns inte. Den som läser den kan tro att andelen ännu inte gör något. Texten ändras i samma omgång som bekräftelsesteget byggs — inte före, eftersom den då skulle lova ett steg som fortfarande saknas.
 
 **Bekräftelsesteget är utlovat men inte byggt.** Uppmätt 2026-10-19: ingenting under försäljningsflödet frågar efter eller sätter en andel, trots att inställningssidan skriver *"Var och en bekräftar sina egna när bostaden markeras som såld."* Appen lovar alltså ett steg som inte finns, vilket är samma sorts fel som när den här filen beskrev tillträdesgränsen innan koden läste den.
 

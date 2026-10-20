@@ -3,13 +3,13 @@
 // "Klassificeringsgenomgangen"). Redan klassificerade hogar visas inte alls –
 // listan blir kortare varje gang.
 
-import Link from "next/link";
 import { Bostadsfragor } from "./bostadsfragor";
 import { Fas2 } from "./fas2";
-import { PRIMARKNAPP_KLASS, SEKUNDARKNAPP_KLASS, Skarm } from "@/components/skarm";
+import { FragorTomtLage } from "./tomt-lage";
+import { Skarm } from "@/components/skarm";
 import { projektetsBelopp } from "@/doman/atgardsberakning";
 import { projektSumma } from "@/doman/berakningar";
-import { fragetradetNamnForslag } from "@/doman/genomgang";
+import { arOklassificerad, fragetradetNamnForslag } from "@/doman/genomgang";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { bostadHeader } from "@/lib/bostad-header";
 import { isoDatum } from "@/lib/format";
@@ -17,6 +17,7 @@ import { kvittoradText } from "@/lib/kvittolista";
 import { prisma } from "@/lib/prisma";
 import { bostadsfragornaBesvarade, lasBostadsfragor } from "@/doman/bostadsfragor";
 import { kravBostad } from "@/lib/session";
+import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 
 export const metadata = { title: "Berätta vad du gjort" };
 
@@ -100,6 +101,19 @@ export default async function FragorSida() {
     };
   });
 
+  // Kvitton som annu inte lagts ihop ligger i fas 1 och syns inte harifran.
+  // Samma urval som fas 1 och kvittolistans "Berätta om N kvitton": tomma
+  // utkast och kvitton som satts at sidan ingar inte (src/app/genomgang/page.tsx).
+  const kvarAttLaggaIhop =
+    hogarMedKvitton.length === 0
+      ? (
+          await prisma.kostnad.findMany({
+            where: { bostad_id: bostadId, ...INTE_TOMT_UTKAST },
+            include: { rader: { include: { fordelningar: true } } },
+          })
+        ).filter((k) => arOklassificerad(tillDomanKostnad(k))).length
+      : 0;
+
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
@@ -107,21 +121,7 @@ export default async function FragorSida() {
       bakLank={{ href: "/genomgang", text: "Lägg ihop kvitton" }}
     >
       {hogarMedKvitton.length === 0 ? (
-        <div className="p-5">
-          <p className="font-rubrik text-lg text-text-primar">
-            Inget väntar på frågor
-          </p>
-          <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
-            Du har svarat på frågorna om allt du lagt ihop. Kvitton du lägger
-            in senare dyker upp här när du kommer tillbaka.
-          </p>
-          <Link href="/" className={`${PRIMARKNAPP_KLASS} mt-4`}>
-            Till översikten
-          </Link>
-          <Link href="/genomgang" className={`${SEKUNDARKNAPP_KLASS} mt-2`}>
-            Lägg ihop fler kvitton
-          </Link>
-        </div>
+        <FragorTomtLage kvarAttLaggaIhop={kvarAttLaggaIhop} />
       ) : (
         <Fas2 hogar={hogarMedKvitton} />
       )}

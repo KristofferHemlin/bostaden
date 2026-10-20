@@ -100,22 +100,6 @@ export function andelForUnderlag({
   return summeraAndelar(medlemsandelar) <= HOGSTA_ANDELSSUMMA ? egenAndel : null;
 }
 
-/**
- * Lasarens egen andel for exportvyns rad om samagandet, eller null. Raden
- * finns bara i en delad bostad, och namnger andelen bara nar den ar kand –
- * samma villkor som underlaget raknas med (andelForUnderlag).
- */
-export function kandEgenAndel({
-  egenAndel,
-  medlemsandelar,
-}: {
-  egenAndel: number;
-  medlemsandelar: number[];
-}): number | null {
-  if (!arDeladBostad(medlemsandelar.length)) return null;
-  return andelForUnderlag({ egenAndel, medlemsandelar });
-}
-
 /** En andel i kortet Tillgang, for notisen nar summan inte gar ihop. */
 export interface SattAndel {
   /** "du", en e-postadress, eller en adress med en utestaende inbjudan. */

@@ -62,6 +62,8 @@ vi.mock("@/lib/lagring/klient", () => ({
 }));
 vi.mock("@/lib/dokumentavlasning/analysera", () => ({ analyseraDokumentbuffert: vi.fn() }));
 
+import type { ReactElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import InbjudanSida from "@/app/inbjudan/[id]/page";
 import {
   aterkallaInbjudanAction,
@@ -78,6 +80,7 @@ import { sparaKostnad } from "@/app/kostnad/nytt/actions";
 import { hamtaArkivexportlista } from "@/app/installningar/arkivexport-actions";
 import { raderaKonto } from "@/lib/konto/radera";
 import { summeraAndelar } from "@/lib/samagande";
+import { AVRUNDAT_TILL_HELA_KRONOR } from "@/doman/blankett";
 import { kravBostad } from "@/lib/session";
 
 const ANNA = "a0000000-0000-4000-8000-000000000001"; // ager bostaden X
@@ -158,6 +161,15 @@ function propsFor(nod: unknown, namn: string): Record<string, unknown>[] {
   const el = nod as { type?: unknown; props?: Record<string, unknown> };
   const egen = typeof el.type === "function" && (el.type as { name: string }).name === namn ? [el.props!] : [];
   return [...egen, ...propsFor(el.props?.children, namn)];
+}
+
+// Elementen i tradet vars komponent heter `namn`, for att rendera just dem.
+function elementFor(nod: unknown, namn: string): ReactElement[] {
+  if (nod == null || typeof nod !== "object") return [];
+  if (Array.isArray(nod)) return nod.flatMap((n) => elementFor(n, namn));
+  const el = nod as ReactElement<{ children?: unknown }> & { type?: unknown };
+  const egen = typeof el.type === "function" && (el.type as { name: string }).name === namn ? [el] : [];
+  return [...egen, ...elementFor(el.props?.children, namn)];
 }
 
 /** Formularet for en inbjudan – adressen och bada andelarna (50/50 om inget annat). */
@@ -494,7 +506,7 @@ describe("efter anslutningen", () => {
       expect(t).toContain("hela bostaden");
       expect(t).toContain("Ägarandel");
       const [ruta4] = propsFor(vy, "RutaCallout");
-      expect(ruta4.ruta).toEqual({ etikett: "Förs till K5, ruta 4", belopp: 624_500 });
+      expect(ruta4.ruta).toEqual({ etikett: "Förs till K5, ruta 4", belopp: 624_500, avrundat: false });
       expect(ruta4.gemensam).toBe(true);
       expect(ruta4.brutto).toBe(1_249_000);
       for (const s of propsFor(vy, "SidaBlock")) expect(s.gemensam).toBe(true);
@@ -510,7 +522,7 @@ describe("efter anslutningen", () => {
     expect(text(vy)).toContain("Ägarandel");
     const [ruta4] = propsFor(vy, "RutaCallout");
     expect(ruta4.gemensam).toBe(true);
-    expect(ruta4.ruta).toEqual({ etikett: "Förs till K5, ruta 4", belopp: 624_500 });
+    expect(ruta4.ruta).toEqual({ etikett: "Förs till K5, ruta 4", belopp: 624_500, avrundat: false });
   });
 
   it("kontoraderingen: den som lamnar en delad bostad tar inte med sig nagon fil", async () => {
@@ -650,20 +662,28 @@ describe("agarandelen vid inbjudan", () => {
   });
 });
 
-describe("exportvyns rad namnger andelen", () => {
-  const RAD_KAND = (andel: string) =>
-    `Sammanställningen gäller hela bostaden. Du äger ${andel} – det är den andelen du för in i din deklaration.`;
+describe("exportvyns rad om samagandet", () => {
   const RAD_OKAND = "Sammanställningen gäller hela bostaden – var och en deklarerar sin andel av den.";
 
-  it("namner lasarens egen andel nar den ar kand", async () => {
+  // docs/design.md, "Samägande – medlemskapet". Uppmatt i produktionen
+  // 2026-10-20: sedan talet bredvid "Förs till" blivit lasarens andel bad raden
+  // "Du äger 50 % – det är den andelen du för in i din deklaration." henne ta
+  // 50 % av ett tal som redan var hennes 50 %. En mening skriven for att
+  // kompensera ett trasigt tal blev fel i samma stund talet lagades.
+  it("ber aldrig lasaren sjalv ta sin andel av ett tal som redan ar hennes", async () => {
     const id = await bjudIn(EPOST[DORIS], "70", "30");
     loggaIn(DORIS);
     await losIn(id);
 
-    loggaIn(ANNA);
-    expect(text(await ExportSida())).toContain(RAD_KAND("70\u00a0%"));
-    loggaIn(DORIS);
-    expect(text(await ExportSida())).toContain(RAD_KAND("30\u00a0%"));
+    for (const vem of [ANNA, DORIS]) {
+      loggaIn(vem);
+      const t = text(await ExportSida());
+      expect(t).not.toContain("Du äger");
+      expect(t).not.toContain("för in i din deklaration");
+      expect(t).not.toContain(RAD_OKAND);
+      // Meningen som star kvar ar den som sager varfor bada talen visas.
+      expect(t).toContain("Sammanställningen visar både hela bostadens belopp och din andel");
+    }
   });
 
   it("sager som forut nar andelarna aldrig satts", async () => {
@@ -688,11 +708,15 @@ describe("exportvyns rad namnger andelen", () => {
     await losIn(id);
 
     const ETIKETT = "Förs till K5, ruta 4";
-    const fall: [number, number, { etikett: string | null; belopp: number }[]][] = [
-      [50, 50, [{ etikett: ETIKETT, belopp: 624_500 }, { etikett: ETIKETT, belopp: 624_500 }]],
-      [70, 30, [{ etikett: ETIKETT, belopp: 874_300 }, { etikett: ETIKETT, belopp: 374_700 }]],
-      [25, 25, [{ etikett: ETIKETT, belopp: 312_250 }, { etikett: ETIKETT, belopp: 312_250 }]],
-      [100, 100, [{ etikett: null, belopp: 1_249_000 }, { etikett: null, belopp: 1_249_000 }]],
+    type Ruta = { etikett: string | null; belopp: number; avrundat: boolean };
+    const fors = (belopp: number, avrundat = false): Ruta => ({ etikett: ETIKETT, belopp, avrundat });
+    const hela: Ruta = { etikett: null, belopp: 1_249_000, avrundat: false };
+    const fall: [number, number, Ruta[]][] = [
+      [50, 50, [fors(624_500), fors(624_500)]],
+      [70, 30, [fors(874_300), fors(374_700)]],
+      // 3 122,50 kr – blanketten tar hela kronor, uppat (CLAUDE.md).
+      [25, 25, [fors(312_300, true), fors(312_300, true)]],
+      [100, 100, [hela, hela]],
     ];
     for (const [anna, doris, vantat] of fall) {
       h.db.tabell("medlemskap").find((m) => m.anvandare_id === ANNA)!.agarandel = anna;
@@ -703,7 +727,14 @@ describe("exportvyns rad namnger andelen", () => {
         const [ruta4] = propsFor(vy, "RutaCallout");
         expect(ruta4.ruta).toEqual(vantat[i]);
         expect(ruta4.brutto).toBe(1_249_000);
-        if (vantat[i].etikett === null) expect(text(vy)).not.toContain("Förs till");
+        // Renderad, inte bara last: text() gar inte in i RutaCallout, sa det
+        // som star i rutan syns forst nar rutan renderas.
+        const t = elementFor(vy, "RutaCallout").map((e) => renderToStaticMarkup(e)).join("");
+        if (vantat[i].etikett === null) expect(t).not.toContain("Förs till");
+        else expect(t).toContain(vantat[i].etikett!);
+        // Meningen om avrundningen star bara dar talet faktiskt avrundats.
+        if (vantat[i].avrundat) expect(t).toContain(AVRUNDAT_TILL_HELA_KRONOR);
+        else expect(t).not.toContain(AVRUNDAT_TILL_HELA_KRONOR);
       }
     }
   });
