@@ -21,6 +21,11 @@ export interface AuthResultat {
    *  e-post eller losenord galler inget enskilt falt: vilket det ar sags
    *  medvetet inte. */
   falt?: "epost" | "losenord";
+  /** Adressen som skickades, tillbaka vid varje avvisning. Actionen har da
+   *  korts, och React 19 aterstaller formularet till faltens defaultValue –
+   *  utan den har vore adressen borta (tester/avvisat-falt-behaller-vardet).
+   *  Losenordet kommer aldrig tillbaka. */
+  epost?: string;
 }
 
 function las(formData: FormData, nyckel: string): string {
@@ -36,14 +41,14 @@ export async function hanteraAuth(
 
   // Samma regler och samma meningar som formularet (src/lib/inloggningsfalt.ts).
   const faltfel = inloggningensFel(formData);
-  if (faltfel) return faltfel;
+  if (faltfel) return { ...faltfel, epost };
 
   const supabase = await skapaServerklient();
   const { error } = await supabase.auth.signInWithPassword({
     email: epost,
     password: losenord,
   });
-  if (error) return { fel: oversattFel(error.message) };
+  if (error) return { fel: oversattFel(error.message), epost };
   redirect("/");
 }
 

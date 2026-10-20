@@ -15,11 +15,11 @@
 import "server-only";
 import { Prisma } from "@prisma/client";
 import { agarandelFel, agarandelFranText } from "@/lib/agarandel";
+import { epostfel } from "@/lib/epostfalt";
 import { allaAndelar, hamtaAndelar } from "@/lib/andelar";
 import { prisma } from "@/lib/prisma";
 import { andelssummaVidInbjudan, summeraAndelar } from "@/lib/samagande";
 
-const EPOST = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Adresser jamfors alltid trimmade och i gemener, aldrig som de skrevs. */
@@ -62,7 +62,8 @@ export async function skapaInbjudan(params: {
   inbjudenAndel: string;
 }): Promise<SkapaInbjudanResultat> {
   const epost = normaliseraEpost(params.epost);
-  if (!EPOST.test(epost)) return { ok: false, fel: "Fyll i en giltig e-postadress." };
+  const ogiltig = epostfel(epost);
+  if (ogiltig) return { ok: false, fel: ogiltig };
   if (epost === normaliseraEpost(params.anvandarEpost)) {
     return { ok: false, fel: "Det är din egen adress." };
   }

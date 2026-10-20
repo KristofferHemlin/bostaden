@@ -55,7 +55,9 @@ describe("inloggningen skickar inga e-postlankar", () => {
     expect(h.signInWithOtp).not.toHaveBeenCalled();
     // Lösenordet saknas – meningen står vid lösenordsfältet (docs/design.md,
     // "När ett formulär vägrar"), inte som en gemensam mening för båda.
-    expect(svar).toEqual({ fel: "Fyll i ditt lösenord.", falt: "losenord" });
+    // Adressen kommer tillbaka sa att faltet behaller den
+    // (tester/avvisat-falt-behaller-vardet.test.ts).
+    expect(svar).toEqual({ fel: "Fyll i ditt lösenord.", falt: "losenord", epost: "a@exempel.se" });
   });
 
   it("inloggning med losenord fungerar som forut", async () => {

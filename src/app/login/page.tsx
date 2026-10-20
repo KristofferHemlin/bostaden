@@ -87,7 +87,9 @@ function LoginInnehall() {
                 required
                 {...markering("epost")}
                 onChange={rensa}
-                defaultValue={forifyllEpost}
+                // Adressen fran en avvisning gar fore forifyllningen – den ar
+                // nyare. Utan den toms faltet nar actionen korts.
+                defaultValue={resultat.epost ?? forifyllEpost}
                 className={INPUT_KLASS}
                 placeholder="du@exempel.se"
               />

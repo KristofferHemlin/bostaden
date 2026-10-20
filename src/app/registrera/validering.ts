@@ -4,6 +4,7 @@
 // meningen vid faltet med aria-invalid och bindning (docs/design.md, "När ett
 // formulär vägrar"): registreringen ar det forsta en ny anvandare moter.
 
+import { epostfel } from "@/lib/epostfalt";
 import type { Faltfel } from "@/lib/formularfel";
 import { oreFranKronor } from "@/lib/format";
 import { losenordsfel } from "@/lib/losenord";
@@ -17,7 +18,6 @@ export type Registreringsfalt =
   | "adress"
   | "kopeskilling";
 
-const EPOST = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 // Undre grans: regelparametrarna seedas med giltig_fran 1970-01-01.
 const TIDIGASTE_TILLTRADE = "1970-01-01";
@@ -51,9 +51,9 @@ function las(formData: FormData, nyckel: string): string {
 export function kontostegetsFel(
   formData: FormData,
 ): Faltfel<Registreringsfalt> | null {
-  if (!EPOST.test(las(formData, "epost"))) {
-    return { falt: "epost", fel: "Fyll i en giltig e-postadress." };
-  }
+  // Samma regel och samma meningar som inloggningen (src/lib/epostfalt.ts).
+  const epost = epostfel(las(formData, "epost"));
+  if (epost) return { falt: "epost", fel: epost };
   // Losenordet trimmas inte – mellanslag ar tecken. Det aterges aldrig.
   const svagt = losenordsfel(String(formData.get("losenord") ?? ""));
   if (svagt) return { falt: "losenord", fel: svagt };

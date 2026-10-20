@@ -31,26 +31,13 @@ export function upphovsrad(
   return upphov.id === inloggadId ? `${verb} av dig` : `${verb} av ${upphov.epost}`;
 }
 
-/**
- * Agarandelen som underlaget ska raknas med, eller null nar det inte finns
- * nagon personlig andel – underlaget galler da hela bostaden.
- *
- * En ensam agare anger sin andel i kortet Agandet och far ett underlag for sin
- * del. I en delad bostad ar andelarna inte satta forran de fragas vid
- * forsaljningen (docs/design.md, "Att bjuda in en delagare"). En andel som
- * satts medan anvandaren var ensam galler inte langre: den skulle halvera
- * talen under en rubrik som sager hela bostaden.
- */
-export function andelForUnderlag(agarandel: number, antalMedlemmar: number): number | null {
-  return arDeladBostad(antalMedlemmar) ? null : agarandel;
-}
 
 // ---------------------------------------------------------------------------
 // Agarandelarna i en delad bostad (docs/design.md, "Att bjuda in en
 // delagare"). Den som bjuder in satter bada andelarna. Summan far aldrig
 // overstiga 100 % – andelen multiplicerar hela underlaget den dag bostaden
 // saljs – men garna vara under: det finns delagare som inte anvander appen.
-// Andelarna andrar ingenting i underlaget sa lange bostaden delas.
+// Gar de ihop multiplicerar de underlaget (andelForUnderlag).
 // ---------------------------------------------------------------------------
 
 /** Den hogsta summan av andelarna, i procent. Samma tak som for en enskild andel. */
@@ -91,11 +78,32 @@ export function andelssummaVidAndring({ fore, efter }: { fore: number; efter: nu
 }
 
 /**
- * Lasarens egen andel nar den ar kand, annars null. Kand betyder att bostaden
- * delas och att medlemmarnas andelar gar ihop (hogst 100 %). Medlemskapets
- * andel har standardvardet 100 och kan inte vara tom, sa "inte satt" syns som
- * en summa over 100: sedan inbjudan fick andelar kan en sadan summa bara
- * finnas i en bostad som delades innan dess, dar bada star pa 100.
+ * Agarandelen som underlaget ska raknas med, eller null nar ingen andel gar
+ * att lita pa – underlaget galler da hela bostaden, och raden "Förs till K5"
+ * uteblir (CLAUDE.md, "Agarandel").
+ *
+ * Villkoret ar inte antalet medlemmar utan att medlemmarnas andelar gar ihop:
+ * summan ar hogst 100 %. Under 100 % ar inget hinder – det finns delagare som
+ * inte anvander appen. En ensam agare har alltid en andel som gar ihop.
+ *
+ * Medlemskapets andel har standardvardet 100 och kan inte vara tom, sa "inte
+ * satt" syns som en summa over 100: servern vagrar skapa en sadan, och den
+ * kan bara finnas i en bostad som delades innan inbjudan fragade efter andelen.
+ */
+export function andelForUnderlag({
+  egenAndel,
+  medlemsandelar,
+}: {
+  egenAndel: number;
+  medlemsandelar: number[];
+}): number | null {
+  return summeraAndelar(medlemsandelar) <= HOGSTA_ANDELSSUMMA ? egenAndel : null;
+}
+
+/**
+ * Lasarens egen andel for exportvyns rad om samagandet, eller null. Raden
+ * finns bara i en delad bostad, och namnger andelen bara nar den ar kand –
+ * samma villkor som underlaget raknas med (andelForUnderlag).
  */
 export function kandEgenAndel({
   egenAndel,
@@ -105,7 +113,7 @@ export function kandEgenAndel({
   medlemsandelar: number[];
 }): number | null {
   if (!arDeladBostad(medlemsandelar.length)) return null;
-  return summeraAndelar(medlemsandelar) <= HOGSTA_ANDELSSUMMA ? egenAndel : null;
+  return andelForUnderlag({ egenAndel, medlemsandelar });
 }
 
 /** En andel i kortet Tillgang, for notisen nar summan inte gar ihop. */

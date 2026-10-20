@@ -79,7 +79,10 @@ describe("serverns svar namnger fältet", () => {
       {},
       fd({ fas: "konto", epost: "anna", losenord: "hemligt12345" }),
     );
-    expect(svar).toEqual({ fel: "Fyll i en giltig e-postadress.", falt: "epost" });
+    expect(svar).toEqual({
+      fel: "Fyll i en giltig e-postadress, t.ex. du@exempel.se.",
+      falt: "epost",
+    });
   });
 
   it("en upptagen adress gäller e-postfältet", async () => {

@@ -30,6 +30,9 @@ export interface GlomtResultat {
   falt?: "epost";
   /** Satt nar begaran ar besvarad – beskedet ar detsamma vad adressen an ar. */
   skickatTill?: string;
+  /** Adressen som skickades, tillbaka vid en avvisning – samma skal som
+   *  AuthResultat.epost i src/app/login/actions.ts. */
+  epost?: string;
 }
 
 export interface NyttLosenordResultat {
@@ -61,7 +64,7 @@ export async function begarAterstallning(
   const epost = String(formData.get("epost") ?? "").trim();
   // Samma regel och samma mening som formularet (src/lib/inloggningsfalt.ts).
   const faltfel = glomtLosenordFel(formData);
-  if (faltfel) return faltfel;
+  if (faltfel) return { ...faltfel, epost };
 
   const origin = (await headers()).get("origin") ?? "";
   const supabase = await skapaServerklient();
@@ -71,7 +74,7 @@ export async function begarAterstallning(
 
   if (error) {
     const fel = error as AuthFel;
-    if (arNatverksfel(fel)) return { fel: INGEN_KONTAKT };
+    if (arNatverksfel(fel)) return { fel: INGEN_KONTAKT, epost };
     // Bara felkoden – aldrig adressen (produktspec, felrapportering).
     rapporteraFel(new Error(`resetPasswordForEmail: ${fel.code ?? fel.status ?? "okant"}`), {
       sida: "losenord/glomt",

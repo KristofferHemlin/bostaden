@@ -10,16 +10,9 @@
 // Ett losenord aterges aldrig i en mening – varken har eller i felrapporter.
 // Meningarna namner falt och krav, aldrig vardet.
 
+import { epostfel } from "@/lib/epostfalt";
 import type { Faltfel } from "@/lib/formularfel";
 import { losenordsfel } from "@/lib/losenord";
-
-const EPOST = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-
-function epostfel(epost: string): string | null {
-  if (epost === "") return "Fyll i din e-postadress.";
-  if (!EPOST.test(epost)) return "Fyll i en giltig e-postadress, t.ex. du@exempel.se.";
-  return null;
-}
 
 function las(formData: FormData, nyckel: string): string {
   return String(formData.get(nyckel) ?? "");

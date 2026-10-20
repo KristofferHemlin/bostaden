@@ -197,6 +197,10 @@ Skriven 2026-10-18, efter att en genomklickning visade att ingen beräkning läs
 
 Appen känner inte till byggnadsdelar. Den har projekt, och två projekt som rör samma sak får i dag båda sin reparationsdel. **Felet går åt det farliga hållet: för högt avdrag.** Att lösa det kräver ett nytt begrepp — vilken del av bostaden en åtgärd rör — och det är ett designbeslut, inte en rättning. Hittad på skatteverket.se 2026-10-18, skriven hit samma dag så att ingen senare tror att fallet var avgjort.
 
+**Blanketten tar hela kronor, och det talet gör det inte i dag.** K5 bär instruktionen *"Ange belopp i hela krontal."* Vår export skriver 205 973,42 kr bredvid *Förs till K5, ruta 4*, eftersom en fördelad merkostnad ger ören i en grundförbättring. **Det talet går inte att föra in som det står**, så användaren avrundar själv, godtyckligt, i det sista steget innan siffran lämnar oss. Uppmätt och källkontrollerat 2026-10-20, se `docs/regelkallor.md`.
+
+**Beslutat: raderna behåller sina ören, talet i *Förs till*-raden avrundas uppåt till hela kronor.** Avrundningen ligger sist av allt, efter ägarandelen, och raden bär en kort mening om varför den skiljer sig från summan av raderna ovan. Skälen: raderna är dokumentation och ska stämma exakt mot beräkningen, medan *Förs till*-talet är det enda som ska skrivas av, och uppåt är den riktning Skatteverkets eget verktyg använder för reparationsdelen. **Riktningen är dock inte mätt för sida 1** – den är vald för att vara konsekvent med sida 2, inte avläst, och ska märkas som härledd om någon senare letar efter källan.
+
 **Avrundning sker uppåt, och först vid utskrift.**
 
 Skickfaktorn ger brutna belopp. Skatteverkets verktyg avrundar dem uppåt till hela kronor, i den skattskyldiges favör – inte enligt vanliga avrundningsregler. Verifierat i tre fall 2026-09-15:
@@ -272,6 +276,8 @@ Regeln finns för att en felräkning från en modell ser ut precis som en avläs
 ### Ägarandel
 
 Förbättringsutgifter fördelas mellan delägarna efter ägarandel. Underlaget ska visa både beloppet för hela bostaden och användarens andel. Andelen ligger på medlemskapet, inte på bostaden.
+
+**Andelen tillämpas oavsett hur många som delar bostaden.** Skriven 2026-10-19, efter att verifieringen visade att exporten hoppade över multiplikationen så fort bostaden hade fler än en medlem och i stället gav varje delägare hela bostadens tal märkt *Förs till K5*. Villkoret är inte antalet medlemmar utan om andelarna är trovärdiga: **summan av medlemmarnas andelar är högst 100 %.** Då multipliceras underlaget med läsarens andel. Är summan större går ingen andel att lita på, och då visas hela bostadens belopp utan etiketten som säger vilken ruta talet förs till. En summa under 100 % är inget hinder – delägare som inte använder appen är ett normalt fall.
 
 **Andelen är ett tal större än 0 till och med 100, och valideras som ett** – i gränssnittet och på servern. Fältet multiplicerar hela underlaget: skrivs 1000 i stället för 100 blir avdraget tio gånger för stort utan att något ser konstigt ut. Noll avvisas, decimaler tillåts, och ett tomt fält betyder hela bostaden.
 

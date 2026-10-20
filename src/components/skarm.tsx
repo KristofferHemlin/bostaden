@@ -254,6 +254,37 @@ export function Listrad({
   return innehall;
 }
 
+/**
+ * Barnen till ett Falt, med bindningen till meningen pa det forsta elementet
+ * nar faltet har ett fel. Det forsta elementet ar faltet: ett falt kan ha en
+ * rad efter sig (t.ex. "Inbjudan gäller den här adressen."), sa det ar inte
+ * bara ett ensamt barn som binds. Uppmatt 2026-10-19: registreringens
+ * e-postfalt hade tva barn och fick ingen bindning alls.
+ *
+ * Barnen gar ALLTID genom Children.map, med eller utan fel, sa att de har
+ * samma form och samma nycklar i bada lagena. Fram till 2026-10-20 mappades de
+ * bara nar ett fel fanns: utan fel ett ensamt element, med fel en lista med
+ * nyckel. React monterar om ett barn vars form bytts, och en okontrollerad
+ * input tappade da sitt varde i samma stund som den avvisades – och igen vid
+ * forsta tangenttrycket, nar felet forsvann.
+ */
+export function bindFaltet(
+  children: ReactNode,
+  fel: string | undefined,
+  felId: string,
+): ReactNode {
+  let bundet = false;
+  return Children.map(children, (barn) => {
+    if (bundet || !isValidElement(barn)) return barn;
+    bundet = true;
+    if (!fel) return barn;
+    return cloneElement(barn as ReactElement<Record<string, unknown>>, {
+      "aria-invalid": true,
+      "aria-describedby": felId,
+    });
+  });
+}
+
 export function Falt({
   etikett,
   children,
@@ -282,22 +313,7 @@ export function Falt({
   obligatoriskt?: boolean;
 }) {
   const felId = useId();
-  // Det forsta elementet bland barnen ar faltet och far bindningen till
-  // meningen. Ett falt kan ha en rad efter sig (t.ex. "Inbjudan gäller den
-  // här adressen."), sa det ar det forsta elementet som rakna – inte bara ett
-  // ensamt barn. Uppmatt 2026-10-19: registreringens e-postfalt hade tva barn
-  // och fick ingen bindning alls.
-  let bundet = false;
-  const falt = fel
-    ? Children.map(children, (barn) => {
-        if (bundet || !isValidElement(barn)) return barn;
-        bundet = true;
-        return cloneElement(barn as ReactElement<Record<string, unknown>>, {
-          "aria-invalid": true,
-          "aria-describedby": felId,
-        });
-      })
-    : children;
+  const falt = bindFaltet(children, fel, felId);
   return (
     <label className="block">
       <span className="mb-1.5 block font-granssnitt text-sm text-text-sekundar">

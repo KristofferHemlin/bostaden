@@ -77,7 +77,6 @@ import { sparaForvarvet } from "@/app/installningar/actions";
 import { sparaKostnad } from "@/app/kostnad/nytt/actions";
 import { hamtaArkivexportlista } from "@/app/installningar/arkivexport-actions";
 import { raderaKonto } from "@/lib/konto/radera";
-import { formateraKronor } from "@/lib/format";
 import { summeraAndelar } from "@/lib/samagande";
 import { kravBostad } from "@/lib/session";
 
@@ -210,6 +209,16 @@ describe("att bjuda in", () => {
     const [rad] = h.db.tabell("inbjudan");
     expect(rad).toMatchObject({ bostad_id: X, epost: "doris@exempel.se", inbjuden_av: ANNA, status: "utestaende" });
     expect(rad.skapad_at).toBeInstanceOf(Date);
+  });
+
+  // Samma tva meningar som pa inloggningen och i registreringen
+  // (tester/epostfalt.test.ts): tomt ar inte ogiltigt.
+  it("ett tomt adressfalt far meningen om att fylla i, ett ogiltigt den om giltig adress", async () => {
+    loggaIn(ANNA);
+    const tomt = (await skapaInbjudanAction({}, inbjudan_formular(""))) as { fel?: string };
+    const ogiltigt = (await skapaInbjudanAction({}, inbjudan_formular("doris@exempelse"))) as { fel?: string };
+    expect(tomt.fel).toBe("Fyll i din e-postadress.");
+    expect(ogiltigt.fel).toBe("Fyll i en giltig e-postadress, t.ex. du@exempel.se.");
   });
 
   it("sager om adressen redan har ett konto – och nar den inte har det", async () => {
@@ -474,20 +483,21 @@ describe("efter anslutningen", () => {
     expect(iX.map((k) => k.skapad_av).sort()).toEqual([ANNA, ANNA, DORIS].sort());
   });
 
-  it("exportvyn visar hela bostadens belopp, omultiplicerade – aven om Anna satt 50 % som ensam", async () => {
-    h.db.tabell("medlemskap").find((m) => m.anvandare_id === ANNA)!.agarandel = 50;
-
+  // CLAUDE.md, "Agarandel". Uppmatt i produktionen 2026-10-19: med tva
+  // delagare pa 50/50 stod hela bostadens tal bredvid "Förs till K5, ruta 4"
+  // hos bada – tillsammans ett dubbelt yrkande.
+  it("delagarna pa 50/50 ser var sin halva bredvid Förs till – aldrig hela bostaden", async () => {
     for (const vem of [ANNA, DORIS]) {
       loggaIn(vem);
       const vy = await ExportSida();
       const t = text(vy);
       expect(t).toContain("hela bostaden");
-      expect(t).not.toContain("Ägarandel");
+      expect(t).toContain("Ägarandel");
       const [ruta4] = propsFor(vy, "RutaCallout");
-      expect(ruta4.gemensam).toBe(false);
+      expect(ruta4.ruta).toEqual({ etikett: "Förs till K5, ruta 4", belopp: 624_500 });
+      expect(ruta4.gemensam).toBe(true);
       expect(ruta4.brutto).toBe(1_249_000);
-      expect(formateraKronor(ruta4.brutto as number)).toBe(formateraKronor(1_249_000));
-      for (const s of propsFor(vy, "SidaBlock")) expect(s.gemensam).toBe(false);
+      for (const s of propsFor(vy, "SidaBlock")) expect(s.gemensam).toBe(true);
     }
   });
 
@@ -500,7 +510,7 @@ describe("efter anslutningen", () => {
     expect(text(vy)).toContain("Ägarandel");
     const [ruta4] = propsFor(vy, "RutaCallout");
     expect(ruta4.gemensam).toBe(true);
-    expect(ruta4.individuellt).toBe(624_500);
+    expect(ruta4.ruta).toEqual({ etikett: "Förs till K5, ruta 4", belopp: 624_500 });
   });
 
   it("kontoraderingen: den som lamnar en delad bostad tar inte med sig nagon fil", async () => {
@@ -534,7 +544,7 @@ describe("efter anslutningen", () => {
 // ---------------------------------------------------------------------------
 // Agarandelen vid inbjudan (docs/design.md, "Att bjuda in en delagare").
 // Steget satter bada andelarna; summan far aldrig overstiga 100 % men garna
-// vara under. Andelarna andrar ingenting i underlaget sa lange bostaden delas.
+// vara under. Gar de ihop multiplicerar de underlaget (CLAUDE.md, "Agarandel").
 // ---------------------------------------------------------------------------
 
 const andelFor = (anvandare: string) =>
@@ -670,25 +680,32 @@ describe("exportvyns rad namnger andelen", () => {
     expect(text(await ExportSida())).not.toContain("hela bostaden");
   });
 
-  it("beloppen ar hela bostadens och oforandrade, vilka andelar som an satts", async () => {
+  // Talet bredvid "Förs till" ar lasarens eget sa snart andelarna gar ihop,
+  // aven under 100 %. Gar de inte ihop visas hela bostadens tal utan etiketten.
+  it("Förs till star bara bredvid lasarens eget tal, vilka andelar som an satts", async () => {
     const id = await bjudIn(EPOST[DORIS], "50", "50");
     loggaIn(DORIS);
     await losIn(id);
 
-    const brutto: number[] = [];
-    for (const [anna, doris] of [[50, 50], [70, 30], [25, 25], [100, 100]]) {
+    const ETIKETT = "Förs till K5, ruta 4";
+    const fall: [number, number, { etikett: string | null; belopp: number }[]][] = [
+      [50, 50, [{ etikett: ETIKETT, belopp: 624_500 }, { etikett: ETIKETT, belopp: 624_500 }]],
+      [70, 30, [{ etikett: ETIKETT, belopp: 874_300 }, { etikett: ETIKETT, belopp: 374_700 }]],
+      [25, 25, [{ etikett: ETIKETT, belopp: 312_250 }, { etikett: ETIKETT, belopp: 312_250 }]],
+      [100, 100, [{ etikett: null, belopp: 1_249_000 }, { etikett: null, belopp: 1_249_000 }]],
+    ];
+    for (const [anna, doris, vantat] of fall) {
       h.db.tabell("medlemskap").find((m) => m.anvandare_id === ANNA)!.agarandel = anna;
       h.db.tabell("medlemskap").find((m) => m.anvandare_id === DORIS)!.agarandel = doris;
-      for (const vem of [ANNA, DORIS]) {
+      for (const [i, vem] of [ANNA, DORIS].entries()) {
         loggaIn(vem);
         const vy = await ExportSida();
         const [ruta4] = propsFor(vy, "RutaCallout");
-        expect(ruta4.gemensam).toBe(false);
-        expect(ruta4.individuellt).toBe(ruta4.brutto);
-        brutto.push(ruta4.brutto as number);
+        expect(ruta4.ruta).toEqual(vantat[i]);
+        expect(ruta4.brutto).toBe(1_249_000);
+        if (vantat[i].etikett === null) expect(text(vy)).not.toContain("Förs till");
       }
     }
-    expect(new Set(brutto)).toEqual(new Set([1_249_000]));
   });
 });
 

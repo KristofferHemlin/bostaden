@@ -18,14 +18,12 @@
 // "Samagande – medlemskapet"). Utan raden ser bada delagarna samma summa och
 // for in hela beloppet var. En rad, inget stycke – skarmens uppgift ar tva tal.
 //
-// I en delad bostad ar andelarna inte satta forran de fragas vid forsaljningen.
-// Da visas varken raden Agarandel eller rutan om den egna andelen, och beloppen
-// raknas med 100 % – en andel fran tiden som ensam agare skulle annars halvera
-// talen under en rad som sager hela bostaden (src/lib/samagande.ts).
-//
-// Ar lasarens egen andel kand – medlemmarnas andelar gar ihop – namnger raden
-// den: det ar den andelen hen for in i sin deklaration. Raden ar text, inte
-// matematik: beloppen ar fortfarande hela bostadens.
+// Underlaget raknas med lasarens andel nar medlemmarnas andelar gar ihop –
+// summan hogst 100 % – oavsett hur manga som delar bostaden (CLAUDE.md,
+// "Agarandel"). Raden overst namnger da andelen. Gar de inte ihop finns ingen
+// andel att lita pa: beloppen ar hela bostadens, varken raden Agarandel eller
+// rutan om den egna andelen visas, och etiketten "Förs till K5" uteblir –
+// den far bara sta bredvid ett tal som ar lasarens eget (rutorForLasaren).
 
 import Link from "next/link";
 import {
@@ -46,7 +44,7 @@ import {
   type K6aExportrad,
   type K6aIndata,
 } from "@/doman/export-k6a";
-import { blankettTexter } from "@/doman/blankett";
+import { blankettTexter, rutorForLasaren, type RutaForLasaren } from "@/doman/blankett";
 import { slaUppRegelparameter } from "@/doman/regelparameter";
 import { reparationsfonsterNamn } from "@/doman/regeltext";
 import { behoverSkickForsaljning } from "@/doman/fragetradet";
@@ -84,11 +82,9 @@ export default async function ExportSida() {
     ]);
   const medlemmar = andelar.medlemmar.length;
   const delad = arDeladBostad(medlemmar);
-  const andel = andelForUnderlag(agarandel, medlemmar);
-  const kandAndel = kandEgenAndel({
-    egenAndel: agarandel,
-    medlemsandelar: andelar.medlemmar.map((m) => m.andel),
-  });
+  const medlemsandelar = andelar.medlemmar.map((m) => m.andel);
+  const andel = andelForUnderlag({ egenAndel: agarandel, medlemsandelar });
+  const kandAndel = kandEgenAndel({ egenAndel: agarandel, medlemsandelar });
   const { bostadsnamn } = bostadHeader(bostad);
 
   // Enda skillnaden mellan upplatelseformerna i den har vyn: huvudblanketten som
@@ -159,6 +155,7 @@ export default async function ExportSida() {
     }
 
     const gemensam = ex.delagarvariant === "gemensam_med_andel";
+    const rutor = rutorForLasaren(ex, bostad.upplatelseform, andel);
     // Summorna dampas nar underlaget ar ofullstandigt (docs/design.md,
     // Exportvyn): tva stora tal pa en skarm som heter Deklarationsunderlag ser
     // trasigt ut nar de anda inte galler. Full tyngd forst nar ingenting
@@ -240,10 +237,9 @@ export default async function ExportSida() {
           />
 
           <RutaCallout
-            rubrik={texter.ruta4}
+            ruta={rutor.ruta4}
             underrad="Summa sida 1 – grundförbättringar"
             brutto={ex.ruta4_brutto}
-            individuellt={ex.ruta4_individuellt}
             gemensam={gemensam}
             agarandel={ex.agarandel_procent}
             dampad={harAterstaende}
@@ -261,10 +257,9 @@ export default async function ExportSida() {
 
           {ex.sald ? (
             <RutaCallout
-              rubrik={texter.ruta5}
+              ruta={rutor.ruta5}
               underrad="Summa sida 2 – avdragsgill del efter förslitning"
               brutto={ex.ruta5_brutto}
-              individuellt={ex.ruta5_individuellt}
               gemensam={gemensam}
               agarandel={ex.agarandel_procent}
               dampad={harAterstaende}
@@ -490,18 +485,17 @@ function SidaBlock({
 }
 
 function RutaCallout({
-  rubrik,
+  ruta,
   underrad,
   brutto,
-  individuellt,
   gemensam,
   agarandel,
   dampad,
 }: {
-  rubrik: string;
+  /** Etikett och tal ur rutorForLasaren: "Förs till" bara bredvid läsarens eget tal. */
+  ruta: RutaForLasaren;
   underrad: string;
   brutto: number;
-  individuellt: number;
   gemensam: boolean;
   agarandel: number;
   /** Väntar något på frågor är talet ofullständigt och sätts i
@@ -512,14 +506,14 @@ function RutaCallout({
     <section className="p-4">
       <div className="flex items-baseline justify-between gap-3">
         <span className="font-granssnitt text-sm text-text-sekundar">
-          {rubrik}
+          {ruta.etikett}
         </span>
         <span
           className={`font-rubrik text-3xl tabular-nums ${
             dampad ? "text-text-sekundar" : "text-text-primar"
           }`}
         >
-          {formateraKronor(gemensam ? individuellt : brutto)}
+          {formateraKronor(ruta.belopp)}
         </span>
       </div>
       <p className="mt-1 font-granssnitt text-sm text-text-sekundar">

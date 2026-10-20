@@ -52,18 +52,27 @@ describe("arDeladBostad – styr exportvyns rad om hela bostaden", () => {
   });
 });
 
-// docs/design.md, "Samagande – medlemskapet": i en delad bostad ar andelarna
-// inte satta forran de fragas vid forsaljningen. Underlaget galler da hela
-// bostaden, och en gammal andel fran tiden som ensam agare far inte halvera
-// talen under en rubrik som sager hela.
+// CLAUDE.md, "Agarandel": andelen tillampas oavsett hur manga som delar
+// bostaden. Villkoret ar inte antalet medlemmar utan om andelarna ar
+// trovardiga – summan av medlemmarnas andelar ar hogst 100 %. Ar den storre
+// gar ingen andel att lita pa, och underlaget galler hela bostaden (null).
 describe("andelForUnderlag", () => {
   it("en ensam agare behaller sin andel", () => {
-    expect(andelForUnderlag(50, 1)).toBe(50);
-    expect(andelForUnderlag(100, 1)).toBe(100);
+    expect(andelForUnderlag({ egenAndel: 50, medlemsandelar: [50] })).toBe(50);
+    expect(andelForUnderlag({ egenAndel: 100, medlemsandelar: [100] })).toBe(100);
   });
 
-  it("i en delad bostad finns ingen personlig andel – null, inte den gamla", () => {
-    expect(andelForUnderlag(50, 2)).toBeNull();
-    expect(andelForUnderlag(100, 2)).toBeNull();
+  it("i en delad bostad dar andelarna gar ihop galler lasarens andel", () => {
+    expect(andelForUnderlag({ egenAndel: 50, medlemsandelar: [50, 50] })).toBe(50);
+    expect(andelForUnderlag({ egenAndel: 70, medlemsandelar: [70, 30] })).toBe(70);
+  });
+
+  it("en summa under 100 % ar inget hinder – tva syskon av tre ser var sin fjardedel", () => {
+    expect(andelForUnderlag({ egenAndel: 25, medlemsandelar: [25, 25] })).toBe(25);
+  });
+
+  it("en summa over 100 % ger ingen andel – null, aldrig den egna", () => {
+    expect(andelForUnderlag({ egenAndel: 100, medlemsandelar: [100, 100] })).toBeNull();
+    expect(andelForUnderlag({ egenAndel: 50, medlemsandelar: [50, 100] })).toBeNull();
   });
 });

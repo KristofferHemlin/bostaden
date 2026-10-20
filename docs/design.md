@@ -924,11 +924,45 @@ Ett tomt obligatoriskt fält flyttade bara fokus och sa ingenting. Ett ogiltigt 
 
 **Bindningen ligger i den gemensamma fältkomponenten, inte i varje formulär.** Ett fält som visar ett fel genom `Falt` får `aria-invalid` och `aria-describedby` automatiskt. Det är där regeln ska bo: en regel som varje formulär måste komma ihåg att följa blir följd av ungefär hälften.
 
-**Så står det, och så är det inte riktigt.** Uppmätt 2026-10-19: fälten går genom `Falt` i 11 av 13 filer, men datumfältet, adressfältet och ägarandelsfältet är egna komponenter och har var sin kopia av samma bindning. Regeln följs alltså på fyra ställen i stället för ett. Det är inte ett fel i appen — fyra kopior som gör rätt är bättre än tretton formulär som gör olika — men det är fyra ställen att glömma nästa gång något ändras. **Den som rör bindningen ska röra alla fyra, och den som kan slå ihop dem till en gör regeln sann i stället för nästan sann.**
+**Så står det, och så är det inte riktigt.** Uppmätt 2026-10-19: fälten går genom `Falt` i 11 av 13 filer, men datumfältet, adressfältet och ägarandelsfältet är egna komponenter och har var sin kopia av samma bindning. Regeln följs alltså på fyra ställen i stället för ett. Det är inte ett fel i appen — fyra kopior som gör rätt är bättre än tretton formulär som gör olika — men det är fyra ställen att glömma nästa gång något ändras.
+
+**"Automatiskt" var inte sant, och det var inte en formulering utan en bugg.** `Falt` band meningen till fältet bara när fältet var komponentens *enda* barn. Registreringens e-postfält har en rad om inbjudan efter sig och fick därför **ingen bindning alls**. Rättat 2026-10-19: `Falt` binder det första elementet bland barnen. Felet fanns innan påståendet skrevs — så andra gången på två dagar stod det i den här filen något om koden som ingen hade kontrollerat, och båda gångerna gällde det just den här bindningen. **Ett fält som visar ett fel genom `Falt` får attributen, och ett tomt löfte om "automatiskt" ska inte stå här utan att någon prövat det på ett fält med mer än ett barn.**
+
+**Och den rättningen gick sönder på ett annat sätt, vilket är tredje gången.** Uppmätt 2026-10-20: 19-oktoberrättningen lät `Falt` lämna ifrån sig barnen som en **lista med nyckel när ett fel fanns, och som ett ensamt element när det inte fanns**. React ser två olika former och monterar om fältet — och ett okontrollerat fält, ett som lever på `defaultValue`, tappar då sitt värde. Det var hela förklaringen till att e-postadressen suddades på inloggningen, som jag hade skrivit upp som två olika valideringar. Valideringarna var identiska. Registreringens fält är kontrollerade och klarade sig, vilket fick det att *se ut* som en skillnad mellan reglerna.
+
+Rättat genom att barnen alltid går genom `Children.map`, så att formen är densamma med och utan fel, och bindningen är utbruten till `bindFaltet` för att gå att pröva.
+
+**Regeln som följer, och den är inte om just den här buggen:** en ändring i `Falt` ska prövas på ett **okontrollerat** fält, inte bara på ett kontrollerat. Tre gånger har bindningen beskrivits här som färdig, och tre gånger har beskrivningen varit sann om det fall någon råkade titta på. **`Falt` sitter under nästan varje formulär i appen, så en ändring där har alltid större räckvidd än den som gör den tror.**
+
+**Det som tappades var inte bara värden, utan fokus — och det drabbade nästan alla.** Uppmätt 2026-10-20, med räkning: **fyra** okontrollerade fält tappade sitt värde (inloggningens och *Glömt lösenordets* e-post, kvittots leverantör och projektkoppling, inställningarnas storleksfält). Men **tolv** kontrollerade fält tappade **fokus vid första tecknet efter en avvisning** — registreringen, frågeträdet, merkostnaden, samtliga beloppsfält. Ommonteringen byter ut elementet på sidan, så nästa tecken hamnar ingenstans tills man trycker i fältet igen.
+
+**Fokusfelet är det större av de två, och det är därför ingen rapporterat det.** Den som tappar ett tecken mitt i en rättelse tror att hon slant, trycker i fältet och skriver om. Den som tappar hela sitt värde märker det och blir arg. Ett fel som användaren tar på sig själv blir aldrig anmält, och lever därför vidare — **sök efter den sortens fel aktivt, för de kommer inte till dig.**
+
+**En fälla för nästa ändring:** elva okontrollerade fält berördes inte, eftersom de aldrig får ett fel genom `Falt` — datumfälten, ägarandelsfälten, inbjudans adressfält och *Markera som såld*. Men datum- och ägarandelsfälten håller sitt värde i eget tillstånd, så **de hade nollställts av samma mekanism den dag deras `Falt` får ett fel**. Felet ligger alltså och väntar på en helt orelaterad ändring, och det är värt att veta innan någon lägger till en validering där.
+
+**Tre fält förblir egna, och det är ett beslut, inte en skuld.** Beslutat 2026-10-19 efter att koden lästs:
+
+| Fält | Beslut | Skäl |
+|---|---|---|
+| Ägarandelsfältet | Ska gå genom `Falt` | Ett vanligt fält. Enda skälet att det är eget är att det visar sitt fel medan man skriver, och det kan det göra genom `Falt`. |
+| Datumfältet | Förblir eget | Tre rutor och en mening. En `<label>` pekar på en kontroll, inte på tre, och fältets eget *"Ogiltig dag."* ska vinna över formulärets allmänna mening. |
+| Adressfältet | Förblir eget | `Falt` lindar in sitt fält i en `<label>`, och adressfältets förslagslista är knappar. Knappar inuti en `<label>` är fel HTML och gör att klick hamnar i fel element. |
+
+**Och det första barnet ska vara fältet.** `Falt` binder det första elementet bland sina barn, så en hjälptext eller en upplysning som läggs *före* inmatningen flyttar `aria-invalid` till en rad text. Det är ett av skälen att hjälptexter står under fältet och inte över — se *Hjälptexter under fält* — men regeln är värd att säga rakt ut här, eftersom den som bryter den inte får något felmeddelande, bara ett attribut på fel element.
+
+**Det som håller kopiorna ärliga är ett test, inte en regel att komma ihåg.** Varje fältkomponent som visar ett fel ska prövas av samma delade test: meningen finns, bär `role="alert"`, fältet har `aria-invalid`, och `aria-describedby` pekar på meningen. Då är tre kopior inte tre ställen att glömma, utan tre ställen där glömskan faller ut som ett rött test. **Att skriva testet är billigare än att bygga om `Falt` till att binda grupper, och det fångar mer.**
 
 Två fall faller utanför av skäl som inte går att bygga bort: upplåtelseformen är två knappar, inte ett fält, och `aria-invalid` hör till inmatning; skickfrågan är en egen komponent med sex steg.
 
-**Ett serversvar som ska peka ut ett fält måste säga vilket.** Fem formulär – markera som såld, registreringen, bjud in en delägare, dela upp kvittot, skick vid försäljningen – får sin mening från servern som en ensam text utan fältnamn. Den kan bära `role="alert"`, så den läses upp, men `aria-invalid` och bindningen kräver att svaret namnger fältet. Beslutet 2026-10-19: **registreringen ska namnge sitt fält, de andra fyra får vänta.** Registreringen är det första en ny användare möter, och att fastna där är samma sak som att inte komma in – det är enda posten av de fem som klarar testet *hindrar det här en vän från att använda appen på riktigt*. De fyra andra möter man efter att man redan är inne, med en mening som läses upp, och då är det en förbättring snarare än en spärr.
+**Ett avvisat fält behåller det användaren skrev.** Lösenordsfält är undantaget och får gärna tömmas. Regeln låter självklar och var ändå bruten i två led samtidigt: `Falt` monterade om fältet, och efter ett **server**svar nollställer React 19 hela formuläret eftersom actionen faktiskt körts. Det andra ledet löses av att servern skickar tillbaka adressen i sitt svar, så att den blir fältets `defaultValue` — samma mönster som *Glömt lösenordet* redan använde efter ett lyckat utskick. **Lösenordet skickas aldrig tillbaka**, och det finns ett test som letar efter det i hela svaret.
+
+**E-postregeln har en enda källa**, `src/lib/epostfalt.ts`, sedan 2026-10-20. Den fanns i tre kopior — inloggningen, registreringen och inbjudan — med samma regex och olika meningar. Tomt och ogiltigt är två olika fel och har var sin mening överallt: *"Fyll i din e-postadress."* respektive *"Fyll i en giltig e-postadress, t.ex. du@exempel.se."* Exemplet gäller nu även registreringen, som tidigare saknade det.
+
+**Ett serversvar som ska peka ut ett fält måste säga vilket.** En ensam text utan fältnamn kan bära `role="alert"`, så den läses upp, men `aria-invalid` och bindningen kräver att svaret namnger fältet.
+
+**Registreringen gör det sedan 2026-10-19.** Den var det första en ny användare möter, och att fastna där är samma sak som att inte komma in – enda posten av de fem som klarade testet *hindrar det här en vän från att använda appen på riktigt*. Klient och server prövar nu med samma regler och samma meningar, i stället för var sin kopia; formuläret har `noValidate`, eftersom e-postfältet förut lät webbläsaren göra en tyst formatkontroll; och *Logga in i stället* står intill meningen om adressen är upptagen, där den som läser meningen redan tittar.
+
+**Fyra återstår och får vänta:** markera som såld, bjud in en delägare, dela upp kvittot, skick vid försäljningen. De möter man efter att man redan är inne, med en mening som läses upp, och då är fältnamnet en förbättring snarare än en spärr.
 
 **Och meningen ska synas utan att användaren behöver leta.** Hamnar fokus på fältet ska meningen rymmas på samma skärm. På ett formulär med två fält spelar det ingen roll om den står under knappen; på kvittots ändringsläge är det nära tusen pixlar och då är den borta. **Det är avståndet som är regeln, inte den exakta positionen** — men den som placerar meningen direkt under fältet behöver aldrig fundera på det.
 
@@ -1325,13 +1359,23 @@ Med två delägare är "vem la in de här 40 000?" en fråga som kommer att stä
 
 **Exportvyn säger vems underlag det är.** Har bostaden fler än en medlem står det att sammanställningen gäller **hela bostaden**. Är läsarens andel känd namnger raden den: *"Sammanställningen gäller hela bostaden. Du äger 50 % – det är den andelen du för in i din deklaration."* Är den inte känd står det i stället att var och en deklarerar sin andel.
 
-Skillnaden är liten men avgörande: den som får veta vad hen ska göra gör det, medan den som påminns om att någon ska göra något ofta inte gör det. Det är den enda raden som står mellan två personer och att båda för in hela beloppet. Är andelarna satta – vilket sker när bostaden markeras som såld – står det i stället vem underlaget gäller och vilken andel det bygger på.
+Skillnaden är liten men avgörande: den som får veta vad hen ska göra gör det, medan den som påminns om att någon ska göra något ofta inte gör det.
+
+**Men raden är inte det som står mellan två personer och att båda för in hela beloppet — det gör talet.** Så stod det här fram till 2026-10-19, och verifieringen visade varför det var fel att lita på: meningen bad läsaren ta sin andel medan etiketten *Förs till K5, ruta 4* pekade på hela bostadens tal två skärmlängder ner. **Den som läser en siffra bredvid en instruktion följer siffran, inte en mening längre upp.** En förklarande rad kan inte bära en sanning som talet motsäger.
 
 Utan den raden ser båda delägarna samma summa, tror att den är deras, och för in hela beloppet var. Att varje delägare deklarerar sin egen andel är bekräftat – se `docs/regelkallor.md`.
 
 **Ägarandelen visas inte i en delad bostad förrän den är satt.** Har bostaden fler än en medlem och inga andelar är angivna finns varken raden *Ägarandel* eller rutan om den egna andelen i exportvyn. Två rader som säger emot varandra på samma skärm är värre än en rad för lite.
 
-**Och beloppen multipliceras inte med en gammal andel.** Den som ägde halva sin bostad, satte 50 %, och sedan bjuder in sin partner får se sina belopp fördubblas – det är riktigt, och raden ovanför förklarar varför. Skulle den gamla andelen ligga kvar och halvera talen visar skärmen halva bostaden under en rubrik som säger hela, och då ljuger rubriken. Andelarna frågas vid försäljningen, och först då blir underlaget personligt igen.
+**Beloppen multipliceras med andelen så snart andelarna går ihop.** Omskrivet 2026-10-19, efter att den stora verifieringen visade vad den gamla regeln gjorde i praktiken.
+
+Här stod tidigare att andelarna inte ska röra underlaget så länge bostaden delas, med motiveringen att den som satt 50 % som ensam ägare annars skulle se sina belopp halveras under en rubrik som säger "hela bostaden". **Den motiveringen vilade på att andelarna inte var satta förrän vid försäljningen, och det stämmer inte längre:** inbjudningssteget sätter båda andelarna, servern vägrar en summa över 100 %, och rubriken vet redan vilken andel läsaren har — det är den som skriver *"Du äger 50 %"*.
+
+Vad regeln kostade, uppmätt i produktionen 2026-10-19 med två delägare på 50/50: raden **Förs till K5, ruta 4** stod bredvid 205 973,42 kr hos båda, alltså hela bostadens tal, medan meningen överst bad var och en att föra in sin andel. Två delägare som följer etiketten yrkar tillsammans dubbelt avdrag.
+
+**Det avgörande argumentet är riktningen på felet.** Summan är spärrad till högst 100 % på servern, så andelar som appen själv satt kan aldrig få två delägare att tillsammans yrka mer än bostadens hela underlag. Utan multiplikationen kan de yrka dubbelt. En andel som är osäker ger ett tal som kan vara något fel; ingen andel alls ger ett tal som är fel för alla.
+
+**Etiketten *Förs till K5, ruta x* får bara stå bredvid ett tal som är läsarens eget.** Går andelen inte att fastställa visas hela bostadens belopp under sitt eget namn, utan den etiketten. Det är etiketten som är instruktionen, och en instruktion bredvid ett tal som inte är någons är det farligaste underlaget kan göra.
 
 **Skickbedömningen vid försäljningen räknas som ett svar.** Den sätter *Besvarat av* på samma sätt som klassificeringen och projektets redigering. "Var badrummet slitet innan?" är en åsikt, och med två delägare är frågan om vem som tyckte det lika befogad som vid klassificeringen.
 
@@ -1363,7 +1407,9 @@ Det är en omläggning gjord 2026-09-29, efter att den första modellen visat si
 
 **Frågorna ställs när bostaden markeras som såld.** Då, och först då, frågar appen varje medlem om sin ägarandel, sitt anskaffningsdatum och sitt inköpspris. Det är också då de öppna rättsfrågorna i `docs/regelkallor.md` måste vara besvarade – inte innan någon bjuder in.
 
-**Så länge andelarna inte är satta är underlaget för hela bostaden.** Det står med de orden i exportvyn när bostaden har fler än en medlem. Vad raden hindrar, och varför den är den enda som gör det, står under *Samägande – medlemskapet*.
+**Så länge andelarna inte går ihop är underlaget för hela bostaden.** Det står med de orden i exportvyn, utan etiketten *Förs till K5*. Går de ihop – summan är högst 100 % – är underlaget läsarens eget och multiplicerat med hennes andel. Vad raden hindrar, och varför den är den enda som gör det, står under *Samägande – medlemskapet*.
+
+**Summan får gärna vara under 100 %, och det ändrar ingenting här.** Två syskon av tre som använder appen äger en fjärdedel var, och var och en ska se sin fjärdedel. Det är bara summor **över** 100 % som gör andelen omöjlig att lita på, och dem vägrar servern att skapa.
 
 En ensam ägare berörs inte. Den som äger halva sin bostad och använder appen själv anger sin andel i kortet Förvärvet, och får ett underlag för sin del.
 
@@ -1371,13 +1417,19 @@ En ensam ägare berörs inte. Den som äger halva sin bostad och använder appen
 
 **Den som bjuder in anger den inbjudnas ägarandel.** Den som bjuder in vet nästan alltid hur de äger, och utan ett tal blir kortet Tillgång en lista med namn utan innebörd.
 
-Men andelen är ett **utgångsvärde, inte ett facit**. Den syns och går att ändra i *Förvärvet*, och den bekräftas när bostaden markeras som såld. Då blir frågan "ni har angett 50/50 – stämmer det?" i stället för ett tomt fält, vilket är mycket lättare att svara rätt på. Fältet multiplicerar hela underlaget den dagen, och ett tal som satts slarvigt vid en inbjudan för åtta år sedan ska inte få passera oläst.
+Men andelen är ett **utgångsvärde, inte ett facit**. Den syns och går att ändra i *Förvärvet*, och den ska bekräftas när bostaden markeras som såld. Då blir frågan "ni har angett 50/50 – stämmer det?" i stället för ett tomt fält, vilket är mycket lättare att svara rätt på. Fältet multiplicerar hela underlaget, och ett tal som satts slarvigt vid en inbjudan för åtta år sedan ska inte få passera oläst.
+
+**Bekräftelsesteget är utlovat men inte byggt.** Uppmätt 2026-10-19: ingenting under försäljningsflödet frågar efter eller sätter en andel, trots att inställningssidan skriver *"Var och en bekräftar sina egna när bostaden markeras som såld."* Appen lovar alltså ett steg som inte finns, vilket är samma sorts fel som när den här filen beskrev tillträdesgränsen innan koden läste den.
+
+**Men steget bär inte längre riktigheten, bara kontrollen.** Sedan underlaget multiplicerar med andelen är talet rätt så snart andelarna är rimliga; bekräftelsen finns för att användaren ska *titta* på andelen den dag den betyder något. Det gör steget viktigt men inte brådskande, och det ska byggas för sig — inte klämmas in i rättningen av multiplikationen.
 
 **Steget sätter båda andelarna, inte bara den inbjudnas.** `medlemskap.agarandel` har default 100, så den som registrerat sin bostad äger hela den i databasen. Ett steg som bara frågar efter den inbjudnas andel kan därför inte ge henne något alls utan att summan spränger 100 %. Steget visar vad den som bjuder in själv äger, låter hen ändra det, och sätter den inbjudnas – med summan synlig medan man skriver.
 
 **Summan får aldrig överstiga 100 %**, prövat på servern och inte bara i formuläret. Den får däremot gärna vara under: det finns delägare som inte använder appen, och syskon som ärvt en fjärdedel var. Kortet Tillgång visar summan och säger det när den inte går ihop, utan att kalla det ett fel.
 
-**Andelarna ändrar ingenting i underlaget så länge bostaden delas.** Exportvyn visar hela bostadens belopp, omultiplicerade – se *Samägande – medlemskapet*. Andelen är där för att vara synlig och rättbar, inte för att tyst justera ett tal.
+**Andelen multiplicerar underlaget, också när bostaden delas.** Exportvyn visar läsarens egen andel så snart andelarna går ihop – se *Samägande – medlemskapet*. Andelen är alltså både synlig, rättbar **och** verksam.
+
+Här stod motsatsen fram till 2026-10-20: *"Andelarna ändrar ingenting i underlaget så länge bostaden delas."* Den meningen revs under *Samägande – medlemskapet* den 19:e, men **den här kopian blev kvar ett dygn** – filen sa två saker om samma tal, och agenten hittade det i stället för jag. Det är exakt det `docs/` är till för att inte göra, och det är andra gången på en månad den här bindningen står skriven på fler ställen än den borde. **En regel som står på två ställen kommer förr eller senare att säga olika; den som river den ena ska söka efter den andra.**
 
 **Raden finns oavsett ägarandel.** Den villkorades tidigare på att andelen var under 100 %, vilket var rimligt när inbjudan handlade om ägande. Nu handlar den om åtkomst till ett arkiv, och den som äger sin bostad helt kan mycket väl vilja dela det med någon som bor där. Appen ska inte ha en åsikt om vem som får se ens egna kvitton.
 

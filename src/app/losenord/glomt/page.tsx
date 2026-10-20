@@ -50,7 +50,7 @@ export default function GlomtLosenordSida() {
             required
             {...markering("epost")}
             onChange={rensa}
-            defaultValue={resultat.skickatTill ?? ""}
+            defaultValue={resultat.skickatTill ?? resultat.epost ?? ""}
             className={INPUT_KLASS}
             placeholder="du@exempel.se"
           />
