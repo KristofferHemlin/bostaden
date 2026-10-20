@@ -564,6 +564,12 @@ Frågesidans tomläge har därför två lydelser, och den med kvitton kvar räkn
 
 Rubriken följer fas 1:s egen räknare, så att samma kvitton heter samma sak på båda sidorna. Meningen säger först vad som **är** gjort och sedan vad som återstår – den som kommit ända hit ska inte mötas av en tillrättavisning.
 
+**En hög utan namn heter samma sak överallt.** Den som ännu inte fått sin första fråga besvarad visas som sina kvitton, *"2 kvitton · BAUHAUS, Byggmax"*, med leverantörerna i datumordning. Det gäller projektlistan, kvittots *Hör till*, valen *Koppla till projekt* och *Dela upp*, och *Återstår*. Ett tomt namn skrivs aldrig ut rakt av.
+
+**I en kontroll som kapar text från höger står det som aldrig får tappas först.** Skriven 2026-10-20. I ett stängt `<select>` kortar webbläsaren texten, och stod året sist – *"2 kvitton · Beijer Bygg, VVS & Kakel AB (2025)"* – försvann just det som skiljer två annars identiska högar åt. Året ligger därför först i de två valen, för varje alternativ och inte bara för högar: *"2025 · Nytt kök"*, *"2025 · 2 kvitton · Beijer Bygg, VVS & Kakel AB"*.
+
+Leverantörslistan får däremot gärna kapas. Den är lång och varierande, dess första namn är det mest igenkännliga, och den öppna listan visar hela texten. **Att korta den med en egen regel vore att hitta på information där det räcker att visa den som finns.**
+
 ### Förstaskärmen för en ny användare
 
 Den som just skapat kontot vet inte varför hen ska spara kvitton. Ingen gör det spontant – man gör det när man förstår att det är pengar den dagen bostaden säljs. Skärmen ska säga det, inte förutsätta det.

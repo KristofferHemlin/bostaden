@@ -17,6 +17,7 @@ import {
   Skarm,
 } from "@/components/skarm";
 import { beloppForKostnad, projektSumma, rotForBelopp } from "@/doman/berakningar";
+import { projektetsArText } from "@/lib/projektar";
 import {
   merkostnadBehoverBekraftas,
   projektetsBelopp,
@@ -136,7 +137,15 @@ export default async function ProjektSida({
         {oklassificerad ? null : (
           <Rad etikett="Räknas som" varde={kategoriText} />
         )}
-        <Rad etikett="År" varde={String(projekt.ar)} />
+        {/* Kvittonas betaldatum, inte etiketten projekt.ar – samma ar som
+            underlaget (src/lib/projektar.ts). */}
+        <Rad
+          etikett="År"
+          varde={projektetsArText(
+            kostnader.map((k) => k.betaldatum),
+            projekt.ar,
+          )}
+        />
         {oklassificerad ? null : (
           <>
             <Rad etikett="Vad gjordes" varde={ATGARDSTYP_TEXT[projekt.atgardstyp!]} />
@@ -226,6 +235,9 @@ export default async function ProjektSida({
                 <Listrad
                   key={k.id}
                   namn={original.leverantor ?? "Kvitto"}
+                  // Till kvittot, som i kvittolistan – dar ratta man ett
+                  // belopp utan att leta upp kvittot via Kvitton.
+                  href={`/kostnad/${k.id}`}
                   status={
                     k.betaldatum
                       ? `Betald ${k.betaldatum}`

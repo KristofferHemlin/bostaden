@@ -30,14 +30,9 @@ import {
   formateraKronor,
   oreFranKronor,
 } from "@/lib/format";
+import { Projektalternativ, type Projektval } from "@/components/projektval";
 
 const START: KostnadRedigeraResultat = {};
-
-interface Projektval {
-  id: string;
-  namn: string;
-  ar: number;
-}
 
 interface Startrad {
   artikel: string;
@@ -179,11 +174,7 @@ export function DelaUppForm({
                 >
                   <option value="">– okopplat –</option>
                   <option value="privat">Privat</option>
-                  {projekt.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.namn} ({p.ar})
-                    </option>
-                  ))}
+                  <Projektalternativ projekt={projekt} />
                 </select>
               </Falt>
 

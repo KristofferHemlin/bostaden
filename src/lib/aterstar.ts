@@ -56,11 +56,17 @@ export function kvittonamn(k: {
 export function aterstarRader(
   ex: Pick<K6aExport, "oklassificerade_hogar" | "aterstaende_kvitton">,
   kvittonamnFor: (kostnadId: string) => string,
+  /** Hogens namn. En hog som annu inte fatt ett heter som i fas 1
+   *  (projektnamnKarta i src/doman/genomgang.ts) – obligatorisk, sa att ingen
+   *  anropare skriver ut det tomma namnet rakt av. */
+  hognamnFor: (projektId: string) => string,
 ): Aterstarrad[] {
   return [
     ...ex.oklassificerade_hogar.map((h) => ({
-      nyckel: `hog-${h.namn}-${h.ar}`,
-      namn: h.namn,
+      // Projektets id, inte namnet: tva namnlosa hogar fran samma ar fick
+      // forut samma nyckel ("hog--2025"), och React aterstallde fel rad.
+      nyckel: `hog-${h.projekt_id}-${h.ar}`,
+      namn: hognamnFor(h.projekt_id),
       orsakKod: "vantar_pa_fragor" as const,
       orsak: ATERSTAR_ORSAK.vantar_pa_fragor,
       ar: h.ar,

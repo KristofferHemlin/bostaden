@@ -38,6 +38,7 @@ import {
 import { kvittodatumNotis } from "@/lib/kvittodatum-notis";
 import type { Metadata } from "next";
 import { arGiltigtId } from "@/lib/giltigt-id";
+import { hamtaProjektnamn } from "@/lib/projektnamn";
 import { prisma } from "@/lib/prisma";
 import { upphovsrad } from "@/lib/samagande";
 import { antalMedlemmar, kravBostad } from "@/lib/session";
@@ -73,7 +74,7 @@ export default async function KostnadSida({
   if (!arGiltigtId(id)) notFound();
   const { bostadId, anvandareId } = await kravBostad();
 
-  const [kostnad, bostad, projekt, medlemmar] = await Promise.all([
+  const [kostnad, bostad, projektRader, medlemmar] = await Promise.all([
     prisma.kostnad.findFirst({
       where: { id, bostad_id: bostadId },
       include: {
@@ -91,6 +92,11 @@ export default async function KostnadSida({
   ]);
   if (!kostnad) notFound();
 
+  // En hog utan namn heter som i fas 1 – i "Hör till" och i valet "Koppla
+  // till projekt" (src/doman/genomgang.ts, projektnamnKarta).
+  const projektnamn = await hamtaProjektnamn(bostadId, projektRader);
+  const projekt = projektRader.map((p) => ({ ...p, namn: projektnamn.get(p.id) ?? p.namn }));
+
   // Ett utkast har inga uppgifter att visa – dess plats ar kompletteringsformularet.
   if (kostnad.totalbelopp === null) redirect(`/kostnad/nytt?utkast=${kostnad.id}`);
 
@@ -103,7 +109,7 @@ export default async function KostnadSida({
       kostnad.rader
         .flatMap((r) => r.fordelningar)
         .filter((f) => f.projekt)
-        .map((f) => [f.projekt!.id, f.projekt!.namn]),
+        .map((f) => [f.projekt!.id, projektnamn.get(f.projekt!.id) ?? f.projekt!.namn]),
     ).values(),
   ];
 

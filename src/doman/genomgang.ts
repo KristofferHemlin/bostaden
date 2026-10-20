@@ -83,6 +83,51 @@ export function hogVisningsnamn(
     : antalstext;
 }
 
+/** Ett kvitto som det behovs for att namnge hogarna det ligger i. */
+export interface KvittoForHognamn {
+  leverantor: string | null;
+  betaldatum: Date | null;
+  dokumentdatum: Date | null;
+  rader: { fordelningar: { projekt_id: string | null }[] }[];
+}
+
+// Samma ordning som fas 1 (src/app/genomgang/page.tsx): betaldatum, sedan
+// dokumentdatum, tomma sist – sa att leverantorerna star i samma ordning har
+// som dar hogen lades ihop.
+function tid(d: Date | null): number {
+  return d ? d.getTime() : Number.POSITIVE_INFINITY;
+}
+function fas1Ordning(a: KvittoForHognamn, b: KvittoForHognamn): number {
+  return tid(a.betaldatum) - tid(b.betaldatum) || tid(a.dokumentdatum) - tid(b.dokumentdatum);
+}
+
+/**
+ * Namnet som visas for varje projekt: dess eget, eller – for en hog som annu
+ * inte fatt ett – hogVisningsnamn av dess kvitton. En hog far sitt namn forst
+ * nar fragetradets forsta fraga besvaras, och mellan att den lades ihop och
+ * att fragan besvaras ar namnet tomt. Det fonstret ar normalfallet:
+ * genomgangen sager sjalv att man kan avbryta nar som helst.
+ *
+ * Uppmatt 2026-10-20: projektlistan, kvittots sida, valen "Koppla till
+ * projekt" och "Dela upp" och Återstår i underlaget skrev det tomma namnet
+ * rakt av. Alla gar genom den har funktionen.
+ */
+export function projektnamnKarta(
+  projekt: { id: string; namn: string }[],
+  kvitton: KvittoForHognamn[],
+): Map<string, string> {
+  const sorterade = [...kvitton].sort(fas1Ordning);
+  return new Map(
+    projekt.map((p) => {
+      if (p.namn.trim() !== "") return [p.id, p.namn];
+      const hogens = sorterade.filter((k) =>
+        k.rader.some((r) => r.fordelningar.some((f) => f.projekt_id === p.id)),
+      );
+      return [p.id, hogVisningsnamn(hogens)];
+    }),
+  );
+}
+
 // ---- Namnforslag -----------------------------------------------------------
 
 /** Forsta meningsfulla biten av en anteckning: fram till forsta skiljetecknet, kapat. */

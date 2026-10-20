@@ -37,10 +37,11 @@ describe("hog utan atgardstyp (grupperad men inte klassificerad)", () => {
     expect(ex.sida2.rader).toHaveLength(0);
     // ...men synlig i sin egen lista, med belopp, sa att man ser vad som fattas.
     expect(ex.oklassificerade_hogar).toEqual([
-      { namn: "Bauhaus i augusti", ar: 2026, belopp_brutto: 800_000 },
+      { projekt_id: "p1", namn: "Bauhaus i augusti", ar: 2026, belopp_brutto: 800_000 },
     ]);
     // Och i Återstår – i exportvyn och i PDF:en, med samma rad.
-    expect(aterstarRader(ex, () => "Kvitto")).toMatchObject([
+    const hognamn = (id: string) => (id === "p1" ? "Bauhaus i augusti" : "");
+    expect(aterstarRader(ex, () => "Kvitto", hognamn)).toMatchObject([
       { namn: "Bauhaus i augusti", orsak: "Väntar på frågor", ar: 2026, belopp: 800_000 },
     ]);
   });

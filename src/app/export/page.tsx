@@ -55,6 +55,7 @@ import {
   rutorForLasaren,
   type RutaForLasaren,
 } from "@/doman/blankett";
+import { projektnamnKarta } from "@/doman/genomgang";
 import { slaUppRegelparameter } from "@/doman/regelparameter";
 import { reparationsfonsterNamn } from "@/doman/regeltext";
 import { behoverSkickForsaljning } from "@/doman/fragetradet";
@@ -82,7 +83,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ExportSida() {
   const { bostadId, agarandel } = await kravBostad();
-  const [{ bostad, projekt, kostnader, kostnadRader, regelparametrar }, andelar, kostnaderMedBilaga] =
+  const [{ bostad, projekt, projektRader, kostnader, kostnadRader, regelparametrar }, andelar, kostnaderMedBilaga] =
     await Promise.all([
       hamtaBostadsdata(bostadId),
       hamtaAndelar(bostadId),
@@ -176,9 +177,12 @@ export default async function ExportSida() {
       ex.oklassificerade_hogar.length > 0 ||
       ex.aterstaende_kvitton.some((k) => k.orsak === "utan_hog");
     const kvittoNamn = new Map(kostnadRader.map((k) => [k.id, kvittonamn(k)]));
+    // En hog utan namn heter som i fas 1 (src/doman/genomgang.ts).
+    const projektnamn = projektnamnKarta(projektRader, kostnadRader);
     const aterstar = aterstarRader(
       ex,
       (id) => kvittoNamn.get(id) ?? "Kvitto",
+      (id) => projektnamn.get(id) ?? "Projekt",
     );
     // Fraga 7 (steg 4): atgarder med reparationsdel vars skick vid
     // forsaljningen annu inte ar bedomt. Samma urval som /forsaljning/skick

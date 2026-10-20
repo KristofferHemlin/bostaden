@@ -69,14 +69,9 @@ import {
 } from "@/lib/kvittodatum-notis";
 import type { Bilagevy } from "@/lib/lagring/bilagor";
 import { useNarKlar } from "@/lib/nar-klar";
+import { Projektalternativ, type Projektval } from "@/components/projektval";
 
 const START: KostnadRedigeraResultat = {};
-
-interface Projektval {
-  id: string;
-  namn: string;
-  ar: number;
-}
 
 interface LasVarden {
   sammanfattningsnamn: string;
@@ -486,11 +481,7 @@ export function RedigeraVy({
               className={INPUT_KLASS}
             >
               <option value="">– inget projekt –</option>
-              {projekt.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.namn} ({p.ar})
-                </option>
-              ))}
+              <Projektalternativ projekt={projekt} />
             </select>
           </Falt>
         ) : null}

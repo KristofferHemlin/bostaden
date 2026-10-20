@@ -10,6 +10,7 @@ import {
   rotForBelopp,
 } from "@/doman/berakningar";
 import { atgardKategoriText } from "@/doman/fragetradet";
+import { projektnamnKarta } from "@/doman/genomgang";
 import { slaUppRegelparameter } from "@/doman/regelparameter";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
@@ -42,6 +43,8 @@ export default async function ProjektlistaSida() {
   );
 
   const domanKostnadPerId = new Map(kostnader.map((k) => [k.id, k]));
+  // En hog utan namn heter som i fas 1 (src/doman/genomgang.ts).
+  const projektnamn = projektnamnKarta(projektRader, kostnadRader);
 
   const rader = projektRader.map((p) => {
     // Allt som kopplats hit, aven utan betaldatum – samma tal som projektets
@@ -82,7 +85,7 @@ export default async function ProjektlistaSida() {
 
     return {
       id: p.id,
-      namn: p.namn,
+      namn: projektnamn.get(p.id) ?? p.namn,
       ar: p.ar,
       belopp,
       // En hog fran klassificeringsgenomgangens fas 1 (atgardstyp = null) har

@@ -10,6 +10,7 @@ import { Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
+import { hamtaProjektnamn } from "@/lib/projektnamn";
 import { kravBostad } from "@/lib/session";
 
 export const metadata = { title: "Dela upp kvittot" };
@@ -37,7 +38,7 @@ export default async function DelaUppSida({
   if (!arGiltigtId(id)) notFound();
   const { bostadId } = await kravBostad();
 
-  const [kostnad, bostad, projekt] = await Promise.all([
+  const [kostnad, bostad, projektRader] = await Promise.all([
     prisma.kostnad.findFirst({
       where: { id, bostad_id: bostadId },
       include: { rader: { include: { fordelningar: true } } },
@@ -50,6 +51,10 @@ export default async function DelaUppSida({
     }),
   ]);
   if (!kostnad) notFound();
+
+  // En hog utan namn heter som i fas 1 (src/doman/genomgang.ts, projektnamnKarta).
+  const projektnamn = await hamtaProjektnamn(bostadId, projektRader);
+  const projekt = projektRader.map((p) => ({ ...p, namn: projektnamn.get(p.id) ?? p.namn }));
   // Ett utkast har inga rader att dela – det kompletteras i inmatningsformularet.
   if (kostnad.totalbelopp === null) redirect(`/kostnad/nytt?utkast=${id}`);
 

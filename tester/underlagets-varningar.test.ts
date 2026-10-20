@@ -8,6 +8,10 @@ import { ATERSTAR_HANVISNING, aterstarRader } from "@/lib/aterstar";
 import type { Kostnad, Projekt } from "@/doman/typer";
 import { byggBilagepaketPdf } from "@/lib/bilagepaket/pdf";
 import { forsattssidansVarningar } from "@/lib/bilagepaket/text";
+
+/** Hogarnas namn som de star i underlaget – testerna har bara namngivna hogar. */
+const hognamnIEx = (ex: K6aExport) => (id: string) =>
+  ex.oklassificerade_hogar.find((h) => h.projekt_id === id)?.namn ?? "";
 import { REGELPARAMETRAR, kostnad, projekt } from "./_hjalp";
 
 // Exportens samlade varningslista renderades ingenstans (uppmatt
@@ -141,7 +145,7 @@ function pdfData(ex: K6aExport) {
       skapadDatum: "2026-10-19",
     },
     ex,
-    aterstar: aterstarRader(ex, () => "Kvitto"),
+    aterstar: aterstarRader(ex, () => "Kvitto", hognamnIEx(ex)),
     radavdrag: {},
     bilagesidor: [],
     filnamn: "Deklarationsunderlag.pdf",
@@ -188,7 +192,11 @@ describe("PDF:en har Återstår", () => {
   async function textFor(namn: Record<string, string>) {
     const data = {
       ...pdfData(MED_AKTERSTAENDE),
-      aterstar: aterstarRader(MED_AKTERSTAENDE, (id) => namn[id] ?? "Kvitto"),
+      aterstar: aterstarRader(
+        MED_AKTERSTAENDE,
+        (id) => namn[id] ?? "Kvitto",
+        hognamnIEx(MED_AKTERSTAENDE),
+      ),
     };
     return pdfText(await byggBilagepaketPdf(data, () => {}));
   }

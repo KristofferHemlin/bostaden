@@ -108,6 +108,9 @@ export interface K6aSida {
  *  hemma pa nagon av de tva sidorna, men far aldrig utelamnas tyst – da undrar
  *  man varfor summan ar lag. Visas i en egen lista med sitt belopp. */
 export interface OklassificeradHog {
+  /** Hogens projekt – for namnet och for en nyckel som ar unik aven nar
+   *  namnet ar tomt (src/lib/aterstar.ts). */
+  projekt_id: string;
   namn: string;
   ar: number;
   /** Oren, efter ROT/forsakring, fore agarandel. Samma bidrag som en klassificerad hog. */
@@ -405,6 +408,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
   for (const cell of celler.values()) {
     if (cell.projekt.atgardstyp === null) {
       oklassificerade.push({
+        projekt_id: cell.projekt.id,
         namn: cell.projekt.namn,
         ar: cell.ar,
         belopp_brutto: avrunda(cell.avdragsgrundande),

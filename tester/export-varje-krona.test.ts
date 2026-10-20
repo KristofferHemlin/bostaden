@@ -95,7 +95,9 @@ describe("exportvyn redovisar varje krona", () => {
     });
     const kostnader: Kostnad[] = [NORDSTROM, BYGGMAX, iHog, delvis];
     const ex = byggK6aExport(bygg({ projekt: [EL_FIX, hog], kostnader }));
-    expect(ex.oklassificerade_hogar).toEqual([{ namn: "Hög 1", ar: 2026, belopp_brutto: 700_000 }]);
+    expect(ex.oklassificerade_hogar).toEqual([
+      { projekt_id: "hog", namn: "Hög 1", ar: 2026, belopp_brutto: 700_000 },
+    ]);
     expect(ex.aterstaende_kvitton).toContainEqual({
       kostnad_id: "delvis",
       ar: 2026,

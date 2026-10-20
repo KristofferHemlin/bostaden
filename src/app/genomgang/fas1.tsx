@@ -62,6 +62,12 @@ export function hogarText(antal: number): string {
   return `${antal} projekt väntar på frågor`;
 }
 
+/** Knappen pa en hog nar kvitton ar valda. Uppmatt 2026-10-19: "Lägg 1
+ *  valda här" – ett valt kvitto ar "valt". */
+export function laggValdaHarText(antal: number): string {
+  return `Lägg ${antal} ${antal === 1 ? "valt" : "valda"} här`;
+}
+
 // Samma regel som kvittolistan (kvittoradText): utan anteckning ar
 // leverantoren huvudtext och den dampade raden bara datumet.
 function kvittoRubrik(k: Kvitto): string {
@@ -352,7 +358,7 @@ export function Fas1({
                       disabled={laggPagar}
                       className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
                     >
-                      {laggPagar ? "Lägger till…" : `Lägg ${valda.size} valda här`}
+                      {laggPagar ? "Lägger till…" : laggValdaHarText(valda.size)}
                     </button>
                   </form>
                 ) : null}

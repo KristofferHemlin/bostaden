@@ -31,6 +31,7 @@ import {
 import { isoDatum } from "@/lib/format";
 import { bilagelager } from "@/lib/lagring/klient";
 import { aterstarRader, kvittonamn, type Aterstarrad } from "@/lib/aterstar";
+import { projektnamnKarta } from "@/doman/genomgang";
 import { prisma } from "@/lib/prisma";
 import { radnyckel } from "./radnyckel";
 import { bilagepaketFilnamn, bilagepaketSidhuvud } from "./text";
@@ -278,6 +279,9 @@ export async function hamtaBilagepaketdata(
   const forsaljningsdatum = isoDatum(bostad.forsaljningsdatum);
   const forsaljningsAr = Number.parseInt(forsaljningsdatum.slice(0, 4), 10);
 
+  // En hog utan namn heter som i fas 1 (src/doman/genomgang.ts).
+  const projektnamn = projektnamnKarta(projektRader, kostnadRader);
+
   return {
     ok: true,
     data: {
@@ -293,10 +297,14 @@ export async function hamtaBilagepaketdata(
         skapadDatum: isoDatum(new Date()),
       },
       ex,
-      aterstar: aterstarRader(ex, (id) => {
-        const k = kostnadRader.find((r) => r.id === id);
-        return k ? kvittonamn(k) : "Kvitto";
-      }),
+      aterstar: aterstarRader(
+        ex,
+        (id) => {
+          const k = kostnadRader.find((r) => r.id === id);
+          return k ? kvittonamn(k) : "Kvitto";
+        },
+        (id) => projektnamn.get(id) ?? "Projekt",
+      ),
       radavdrag,
       bilagesidor,
       filnamn: bilagepaketFilnamn(bostadsnamn, forsaljningsAr),
