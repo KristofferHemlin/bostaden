@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Falt, FALTFEL_KLASS, INPUT_KLASS } from "@/components/skarm";
 import { FALTFEL_ATTRIBUT } from "@/lib/formularfel";
+import { ortEfterUppslag } from "@/lib/ort-fran-uppslag";
 
 // Statisk access sa att Next kan inlina vardet i klientbunten.
 const NYCKEL = process.env.NEXT_PUBLIC_GOOGLE_PLACES_KEY?.trim() || undefined;
@@ -25,6 +26,24 @@ const NYCKEL = process.env.NEXT_PUBLIC_GOOGLE_PLACES_KEY?.trim() || undefined;
 const MIN_TECKEN = 3;
 const FORDROJNING_MS = 350;
 const MAX_FORSLAG = 5;
+
+// Forslagslistan ligger ovanpa innehallet under faltet. Den far tacka falten
+// i samma steg, men aldrig kontrollen som avslutar eller lamnar steget
+// (docs/design.md, Adressfaltet). Uppmatt 2026-10-19: med fem forslag lag den
+// over "Spara bostad", och ett tryck dar valde ett forslag i stallet for att
+// spara – och skrev over orten. Den felträffen ar tyst; ett tryck som byter
+// adressen nar man siktade pa Ort syns.
+//
+// Hojden ar tre forslag med tva rader (3 × 60 px, plus kanten), med egen
+// skroll for resten. Raknat ur klasserna, inte matt i en webblasare – men
+// varje del har fast hojd (radhojd, padding, mellanrum), och forslagen ar
+// `truncate` och kan inte bli hogre. Knappen som sparar ligger minst 232 px
+// under faltets underkant i registreringen (Ort och Köpeskilling med en rads
+// hjalptext) och ca 460 px i installningarnas kort Bostaden. Mer innehall
+// daremellan – ett felmeddelande, en hjalptext som bryts – okar bara
+// avstandet. Marginalen i registreringen, 46 px, forsvinner om Ort eller
+// Köpeskilling flyttas eller tas bort: da maste hojden provas om.
+const FORSLAG_MAX_HOJD = "max-h-[11.375rem]";
 const AUTOCOMPLETE_URL = "https://places.googleapis.com/v1/places:autocomplete";
 const DETALJ_URL = "https://places.googleapis.com/v1/places/";
 // Ort ligger olika i Googles addressComponents beroende pa land – i Sverige
@@ -70,6 +89,13 @@ export function AdressFalt({
 }) {
   const [adress, setAdress] = useState(forval?.adress ?? "");
   const [ort, setOrt] = useState(forval?.ort ?? "");
+  // Ortfaltet just nu, och om det som star dar skrevs av en uppslagning.
+  // Detaljerna kommer asynkront, sa uppslagningen maste lasa faltet nar svaret
+  // kommer – inte nar adressen valdes – annars skrivs en ort som anvandaren
+  // hann skriva under tiden over anda. En sparad ort (forval) raknas som
+  // anvandarens: varifran den en gang kom vet faltet inte.
+  const ortRef = useRef(forval?.ort ?? "");
+  const ortFranUppslagRef = useRef(false);
   const [platsId, setPlatsId] = useState(forval?.platsId ?? "");
   const [lat, setLat] = useState(forval?.lat ?? "");
   const [lng, setLng] = useState(forval?.lng ?? "");
@@ -79,6 +105,7 @@ export function AdressFalt({
   const [aktiv, setAktiv] = useState(-1);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listaRef = useRef<HTMLUListElement | null>(null);
   const avbrytRef = useRef<AbortController | null>(null);
   const tokenRef = useRef<string>("");
 
@@ -93,6 +120,13 @@ export function AdressFalt({
 
   // Stada timers och pagaende anrop nar komponenten lamnar sidan.
   useEffect(() => avbrytSokning, [avbrytSokning]);
+
+  // Listan skrollar for sig, sa ett forslag som markeras med piltangenterna
+  // maste hallas i bild.
+  useEffect(() => {
+    if (aktiv < 0) return;
+    listaRef.current?.children[aktiv]?.scrollIntoView?.({ block: "nearest" });
+  }, [aktiv]);
 
   function nollstallVal() {
     setPlatsId("");
@@ -203,7 +237,18 @@ export function AdressFalt({
       for (const typ of ORT_TYPER) {
         const traff = komponenter.find((k) => k.types?.includes(typ));
         if (traff?.longText) {
-          setOrt(traff.longText);
+          // Bara i ett tomt falt eller over en tidigare uppslagnings ort –
+          // aldrig over det anvandaren skrivit (src/lib/ort-fran-uppslag.ts).
+          const ny = ortEfterUppslag({
+            nuvarande: ortRef.current,
+            franUppslag: ortFranUppslagRef.current,
+            uppslagen: traff.longText,
+          });
+          if (ny !== ortRef.current) {
+            ortRef.current = ny;
+            ortFranUppslagRef.current = true;
+            setOrt(ny);
+          }
           break;
         }
       }
@@ -281,9 +326,10 @@ export function AdressFalt({
           />
           {oppen && forslag.length > 0 ? (
             <ul
+              ref={listaRef}
               id="adress-forslag"
               role="listbox"
-              className="absolute left-0 right-0 top-full z-10 mt-1 overflow-hidden rounded-lg border border-linje bg-yta-upphojd"
+              className={`absolute left-0 right-0 top-full z-10 mt-1 ${FORSLAG_MAX_HOJD} overflow-y-auto rounded-lg border border-linje bg-yta-upphojd`}
             >
               {forslag.map((f, i) => (
                 <li key={f.placeId} role="option" aria-selected={i === aktiv}>
@@ -326,7 +372,11 @@ export function AdressFalt({
           name="ort"
           autoComplete="address-level2"
           value={ort}
-          onChange={(e) => setOrt(e.target.value)}
+          onChange={(e) => {
+            ortRef.current = e.target.value;
+            ortFranUppslagRef.current = false;
+            setOrt(e.target.value);
+          }}
           className={INPUT_KLASS}
         />
       </Falt>

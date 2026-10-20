@@ -521,6 +521,8 @@ Och **den läses fel i precis det fall regeln skrevs för**: står resultatet in
 
 **Vilka listor som har raden:** kvittolistan och startskärmens sex senaste, som visar hela kvittot och samma avdrag. Projektlistan har den inte — raden är redan tät och är själv en länk. Underlaget har den inte, eftersom det inte listar kvitton med avdrag.
 
+**Resultatet följer med avdragen, det hämtas inte separat.** Byggt så 2026-10-20: funktionen som ger en rad dess avdragsrader ger också resultatraden. **Därmed kan ingen lista som visar avdragen låta bli att visa vad som blir kvar** — regeln sitter i datan i stället för i varje skärms minne. Det är samma grepp som när bindningen flyttade in i `Falt` och när namnfunktionen blev obligatorisk i sin signatur.
+
 **Projektsidan är en egen fråga, inte samma rad.** Där är beräkningens tal *projektets del* av kvittot, inte kvittots eget, och samma lydelse med ett annat tal på två skärmar är värre än ingen rad alls. Vad den raden ska heta där är obeslutat.
 
 Skrivet 2026-10-19, efter frågan om kombinationen ROT och privat del borde förbjudas helt. Den ska inte det — skälet står i `produktspec.md` — men frågan var ställd mot en verklig otydlighet, och den otydligheten löses av att visa resultatet.
@@ -1232,6 +1234,26 @@ Köpeskillingen ligger här trots att den är valfri, eftersom den hör till bes
 Storlek hör hemma i inställningar, inte här. Den används inte i någon beräkning och behövs inte för att komma igång.
 
 **Adressfältet är alltid ett vanligt textfält.** När en adresstjänst är inkopplad visas förslag under fältet medan man skriver, och väljer man ett förslag fylls ort, `place_id` och koordinater i automatiskt. Men fältet får aldrig kräva ett valt förslag: nybyggda adresser, fritidshus och lantliga lägen saknas ofta i registren, och ett fält som bara accepterar träffar låser ute dem. Skriver användaren fritext sparas texten och koordinatfälten lämnas null.
+
+**Uppslagningen fyller i orten, men skriver aldrig över det användaren skrivit.** Ändrat 2026-10-20, efter att *Enköping* blev *Älta* utan ett ord. Den fyller i när fältet är tomt, och när det som står där kom från en tidigare uppslagning — annars skulle ett andra adressval behålla den första adressens ort. Uppslagningen är asynkron, så fältet läses när svaret kommer och inte när adressen valdes; en ort som skrivs medan svaret är på väg överlever också.
+
+**Priset är att en sparad ort räknas som användarens.** I inställningarnas kort *Bostaden* vet fältet inte varifrån orten en gång kom, så den som byter till en adress i en annan ort får byta orten själv. Det är rätt pris: **att aldrig skriva över ett skrivet värde är värt mer än att slippa ett extra fält ibland.**
+
+**En flytande lista får aldrig täcka en knapp som utför något.** Förslagslistan ligger `absolute` och utanför flödet, så den flyttar ingenting när den stängs — men med fyra eller fem förslag är den hög nog att lägga sig över *Spara bostad*. Ett tryck där **väljer ett förslag i stället för att spara**, och eftersom adressen byts och listan stängs ser det ut som att ingenting hände. Nästa tryck sparar, och användaren har lärt sig att appen behöver två tryck.
+
+Listan har därför en egen höjdgräns med egen skroll, satt så att den inte når ned till knappen som sparar: **tre förslag.** I registreringen är marginalen ett fyrtiotal pixlar, i inställningarna flera hundra. Allt som kan variera — ett felmeddelande, en hjälptext som bryts på fler rader, ett extra fält för bostadsrätt — gör avståndet **större**, och måtten är i `rem`, så förstorad text skalar listan och avstånden lika mycket.
+
+**Det som kan bryta den är en ändring av formuläret, inte en felräkning.** Flyttas eller tas Ort eller Köpeskilling bort i registreringen försvinner marginalen. Regeln och talet står därför i en kommentar vid höjdkonstanten, så att den som ändrar formuläret ser att höjden måste prövas om. **En regel som bara bor i `docs/` skyddar inte den som aldrig öppnar `docs/`** — den som bor intill talet den gäller gör det. **Att i stället lägga listan i flödet löser fel problem** — då flyttar knappen sig när listan stängs, vilket är den mekanism vi först trodde på och som koden friade. Och att stänga listan på `mousedown` hjälper inte: trycket har redan landat på ett förslag.
+
+**Regeln bakom, i sin rättade form.** Här stod först att ett flytande lager får skymma text men aldrig en träffyta. **Den regeln går inte att uppfylla och ska inte stå kvar som ett mål**: en lista under ett fält ligger alltid över nästa fält — ortfältet börjar ett tjugotal pixlar ned — så redan första förslaget bryter mot den. En regel som förbjuder ett helt vedertaget mönster lär bara läsaren att regler går att strunta i.
+
+Så här lyder den i stället:
+
+> **Ett flytande lager får täcka fälten i samma steg. Det får aldrig täcka kontrollen som avslutar eller lämnar steget.**
+
+Skillnaden är vad en felträff ser ut som. Trycker du där ortfältet borde vara och får ett förslag valt, byts adressen synligt och listan stängs — du ser vad som hände och kan ångra det. Trycker du på *Spara* och får ett förslag valt **händer ingenting du väntade dig**, och slutsatsen blir att appen inte svarade. Det är den tysta felträffen, och den lär användaren att appen behöver två tryck.
+
+Skriven 2026-10-20 efter att den första lydelsen visade sig omöjlig. **Jag skrev en absolut regel om en layout jag inte sett**, och det är samma fel som att påstå något om kod ingen läst — bara att det här gick att upptäcka på en gång.
 
 Tjänsten får inte heller blockera. Svarar den inte, eller saknas nyckel, fungerar fältet som vanlig fritext utan felmeddelande – förslagen är en hjälp, inte ett krav.
 

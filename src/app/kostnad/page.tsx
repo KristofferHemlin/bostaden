@@ -50,13 +50,11 @@ interface KvittoRad {
    * Ett faktum om posten, som belopp och datum – ingen bedomning av
    * underlagsstyrka (den togs bort ur produkten, se docs/design.md). */
   underStatus: string | undefined;
-  /** ROT som avgar fran radens belopp – Listrad visar "varav ROT … kr, avgår"
-   * (docs/design.md, Listrader). */
-  rot: number;
-  /** Privat del – Listrad visar "varav … hörde inte till bostaden, avgår". */
-  privat: number;
-  /** "1 kr räknas med" nar nagot dragits av, annars null – sist bland beloppen. */
-  raknasMed: string | null;
+  /** Det som avgar och vad som blir kvar – ROT, privat del och "… räknas
+   * med" – sprids rakt in i Listrad, som pa startskarmen. Inga falt for sig:
+   * da kan ett nytt falt i avgarForKvitto inte tappas har i tysthet
+   * (docs/design.md, Listrader: inga undantag per skarm). */
+  avgar: ReturnType<typeof avgarForKvitto>;
   atgard: boolean;
   utkast: boolean;
   /** Bilagor sparade pa kostnaden – avgor om utkastets soptunna fragar. */
@@ -141,7 +139,7 @@ export default async function KvittolistaSida() {
       // Raden behaller fakturans totalbelopp – summan pa pappret – och visar
       // ROT-avdraget under, sa att arsrubriken (efter ROT) gar att rakna ihop
       // av raderna (docs/design.md, Listrader).
-      ...avgarForKvitto(kostnad),
+      avgar: avgarForKvitto(kostnad),
       atgard,
       utkast,
       antalBilagor: k._count.bilagor,
@@ -218,9 +216,7 @@ export default async function KvittolistaSida() {
                     namn={r.namn}
                     status={r.status}
                     underStatus={r.underStatus}
-                    rot={r.rot}
-                    privat={r.privat}
-                    raknasMed={r.raknasMed}
+                    {...r.avgar}
                     atgard={r.atgard}
                     belopp={r.belopp}
                     href={r.href}
