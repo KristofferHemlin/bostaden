@@ -38,8 +38,7 @@ import {
   tolkaBostadsfragesvar,
 } from "@/doman/bostadsfragor";
 import { agarandelFranText } from "@/lib/agarandel";
-import { allaAndelar, hamtaAndelar } from "@/lib/andelar";
-import { andelssummaVidAndring, summeraAndelar } from "@/lib/samagande";
+import { skrivEgenAndel } from "@/lib/egen-andel";
 import { isoDatum, oreFranKronor } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -205,7 +204,8 @@ export async function sparaBostaden(
  * (src/doman/bostadsfragor.ts).
  *
  * Agarandelen provas mot de andras pa servern: en andring som tar summan over
- * 100 % avvisas (src/lib/samagande.ts, andelssummaVidAndring). Utestaende
+ * 100 % avvisas (src/lib/egen-andel.ts, samma prov som bekraftelsen vid
+ * forsaljningen, men med andelssummaVidAndrings undantag). Utestaende
  * inbjudningar raknas med – de har redan sin andel reserverad.
  */
 export async function sparaForvarvet(
@@ -272,10 +272,10 @@ export async function sparaForvarvet(
   // andringar inte tillsammans kan ta summan over 100 %.
   const andelsfel = await prisma.$transaction(
     async (tx) => {
-      const andelar = await hamtaAndelar(bostadId, tx);
-      const fore = summeraAndelar(allaAndelar(andelar));
-      const egenNu = andelar.medlemmar.find((m) => m.anvandareId === anvandareId)?.andel ?? 0;
-      const fel = andelssummaVidAndring({ fore, efter: summeraAndelar([fore, agarandel, -egenNu]) });
+      // Andelen forst: provningen mot de andras ar samma som vid
+      // bekraftelsen (src/lib/egen-andel.ts). Ett fel avbryter fore bostaden
+      // skrivs.
+      const fel = await skrivEgenAndel(tx, { bostadId, anvandareId, agarandel, bekrafta: false });
       if (fel) return fel;
 
       await tx.bostad.update({
@@ -288,11 +288,6 @@ export async function sparaForvarvet(
         },
       });
 
-      // Agarandelen tillhor relationen person–bostad, inte bostaden (CLAUDE.md).
-      await tx.medlemskap.updateMany({
-        where: { anvandare_id: anvandareId, bostad_id: bostadId },
-        data: { agarandel },
-      });
       return null;
     },
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },

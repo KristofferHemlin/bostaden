@@ -6,11 +6,18 @@
 import "server-only";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { arAndelenBekraftad } from "@/lib/samagande";
 
 type Klient = Prisma.TransactionClient | typeof prisma;
 
 export interface Andelar {
-  medlemmar: { anvandareId: string; epost: string; andel: number }[];
+  medlemmar: {
+    anvandareId: string;
+    epost: string;
+    andel: number;
+    /** Bekraftad vid forsaljningen och oforandrad sedan (arAndelenBekraftad). */
+    bekraftad: boolean;
+  }[];
   /** Utestaende inbjudningar. `andel` ar null for inbjudningar fran innan andelen fragades. */
   inbjudningar: { id: string; epost: string; andel: number | null }[];
 }
@@ -23,7 +30,11 @@ export async function hamtaAndelar(bostadId: string, db: Klient = prisma): Promi
     db.medlemskap.findMany({
       where: { bostad_id: bostadId },
       orderBy: { skapad_at: "asc" },
-      select: { agarandel: true, anvandare: { select: { id: true, epost: true } } },
+      select: {
+        agarandel: true,
+        bekraftad_andel: true,
+        anvandare: { select: { id: true, epost: true } },
+      },
     }),
     db.inbjudan.findMany({
       where: { bostad_id: bostadId, status: "utestaende" },
@@ -36,6 +47,10 @@ export async function hamtaAndelar(bostadId: string, db: Klient = prisma): Promi
       anvandareId: m.anvandare.id,
       epost: m.anvandare.epost,
       andel: Number(m.agarandel),
+      bekraftad: arAndelenBekraftad(
+        Number(m.agarandel),
+        m.bekraftad_andel === null ? null : Number(m.bekraftad_andel),
+      ),
     })),
     inbjudningar: inbjudningar.map((i) => ({
       id: i.id,

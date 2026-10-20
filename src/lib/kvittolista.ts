@@ -9,7 +9,9 @@
 // kan glida isar.
 
 import {
+  avrunda,
   bostadensBelopp,
+  inlagtForKostnad,
   kostnadensAr,
   privatBelopp,
   rotForBelopp,
@@ -79,15 +81,50 @@ export function privatAvgarRad(privatBelopp: number | null): string | undefined 
 }
 
 /**
- * Det som avgar under en rad som visar HELA kvittot (kvittolistan,
- * startskarmens sex senaste): kvittots ROT och dess privata del. Totalbeloppet
- * minus de tva ar exakt vad kvittot raknas med (inlagtForKostnad). En funktion
- * for bada skarmarna – inga undantag per skarm (docs/design.md, Listrader).
+ * Raden som sager vad kvittot raknas med, nar nagot dragits av: "1 kr räknas
+ * med" (docs/design.md, Listrader). Talet ar berakningens eget –
+ * inlagtForKostnad, samma som underlaget och arssummorna – aldrig en egen
+ * uppraknad differens.
+ *
+ * Raden ar det som ersatter en procentgrans for ROT (CLAUDE.md, under
+ * granserna: "Det som ska fånga resten är inte en spärr utan en siffra på
+ * skärmen"). Den som skrivit arbetskostnaden i ROT-faltet ska se ett tal som
+ * inte stammer med fakturan. Uppmatt i produktionen: 18 000 kr med 6 000 kr
+ * privat och 11 999 kr ROT visade tre tal och aldrig den krona som raknades.
+ *
+ * Null nar ingenting dragits av – da ar talet beloppet, och raden vore en
+ * upprepning – och for ett kvitto som satts at sidan, som inte raknas alls
+ * och sager det med en egen rad.
  */
-export function avgarForKvitto(kostnad: Kostnad): { rot: number; privat: number } {
+export function raknasMedRad(kostnad: Kostnad): string | null {
+  if (kostnad.arkiverad || kostnad.totalbelopp === null) return null;
+  const raknas = avrunda(inlagtForKostnad(kostnad));
+  if (raknas === kostnad.totalbelopp) return null;
+  return `${formateraKronor(raknas)} räknas med`;
+}
+
+/**
+ * Det som avgar under en rad som visar HELA kvittot (kvittolistan,
+ * startskarmens sex senaste): kvittots ROT och dess privata del, och vad som
+ * blir kvar – raden "… räknas med" (raknasMedRad). Totalbeloppet minus de tva
+ * ar exakt vad kvittot raknas med (inlagtForKostnad). En funktion for bada
+ * skarmarna – inga undantag per skarm (docs/design.md, Listrader) – och
+ * resultatet foljer med avdragen, sa att ingen lista kan visa avdragen utan
+ * det.
+ *
+ * Inte for projektsidan: dar visas projektets del av kvittot, och berakningens
+ * tal ar projektets bidrag, inte kvittots. Samma lydelse med ett annat tal
+ * vore varre an ingen rad (docs/design.md, Listrader).
+ */
+export function avgarForKvitto(kostnad: Kostnad): {
+  rot: number;
+  privat: number;
+  raknasMed: string | null;
+} {
   return {
     rot: rotForBelopp(kostnad, bostadensBelopp(kostnad)),
     privat: privatBelopp(kostnad),
+    raknasMed: raknasMedRad(kostnad),
   };
 }
 

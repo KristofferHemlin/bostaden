@@ -6,8 +6,9 @@
 // src/app/export/page.tsx).
 //
 // Fraga 7 (skick_forsaljning per reparation) satts inte har utan i
-// src/app/forsaljning/skick – dit gar redirecten nedan direkt efter att
-// datumet sparats.
+// src/app/forsaljning/skick. Dit gar redirecten nedan efter att datumet
+// sparats – via bekraftelsen av agarandelen (src/app/forsaljning/andel) nar
+// den egna andelen annu inte ar bekraftad.
 //
 // Flodet far inte blockera. Datum kravs for att exporten alls ska ga att
 // skapa, men priset far lamnas tomt.
@@ -15,6 +16,7 @@
 import { redirect } from "next/navigation";
 import { isoDatum, oreFranKronor } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { arAndelenBekraftad } from "@/lib/samagande";
 import { kravBostad } from "@/lib/session";
 
 export interface ForsaljningResultat {
@@ -28,7 +30,7 @@ export async function markeraSald(
   _foreg: ForsaljningResultat,
   formData: FormData,
 ): Promise<ForsaljningResultat> {
-  const { bostadId } = await kravBostad();
+  const { bostadId, anvandareId } = await kravBostad();
 
   const bostad = await prisma.bostad.findUniqueOrThrow({
     where: { id: bostadId },
@@ -73,6 +75,21 @@ export async function markeraSald(
       forsaljningspris,
     },
   });
+
+  // Forst agarandelen, om den inte redan ar bekraftad (docs/design.md, "Att
+  // bjuda in en delägare"): efter datum och pris, fore skickfragorna. Steget
+  // gar vidare till skickfragorna sjalvt (src/app/forsaljning/andel).
+  const medlemskap = await prisma.medlemskap.findFirst({
+    where: { bostad_id: bostadId, anvandare_id: anvandareId },
+    select: { agarandel: true, bekraftad_andel: true },
+  });
+  const bekraftad =
+    medlemskap !== null &&
+    arAndelenBekraftad(
+      Number(medlemskap.agarandel),
+      medlemskap.bekraftad_andel === null ? null : Number(medlemskap.bekraftad_andel),
+    );
+  if (!bekraftad) redirect("/forsaljning/andel");
 
   // Fraga 7 stalls direkt (produktspec 4.1, CLAUDE.md "Vid markering som
   // sald"). Sidan sjalv hoppar vidare till /export om inget behover bedomas.

@@ -117,6 +117,9 @@ model medlemskap {
   anvandare_id String   @db.Uuid
   bostad_id    String   @db.Uuid
   agarandel    Decimal  @default(100) @db.Decimal(5, 2) // procent
+  // Andelen som bekraftades vid forsaljningen. Bekraftad sa lange den ar lika
+  // med agarandel; null eller annat varde betyder obekraftad.
+  bekraftad_andel Decimal? @db.Decimal(5, 2)
   skapad_at    DateTime @default(now())
 
   anvandare anvandare @relation(fields: [anvandare_id], references: [id], onDelete: Cascade)

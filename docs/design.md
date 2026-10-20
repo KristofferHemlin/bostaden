@@ -505,6 +505,24 @@ Visa beloppet före avräkning i listor över kvitton – det är summan på pap
 
 **Finns båda på samma kvitto ska resultatet stå utskrivet, inte räknas ut av läsaren.** Två avdragsrader under varandra är appens mest felbenägna inmatning, och ordningen mellan dem är inte självklar: den privata delen räknas bort först, ROT därefter, så ROT-avdraget hör bara till det som blev kvar. Den som ser *varav 1 000 kr hörde inte till bostaden* och *varav ROT 3 000 kr* under ett belopp på 10 000 kr har ingen rimlig chans att veta om svaret är 6 000 eller 6 300. Efter de två raderna står därför en tredje, i samma dämpade form, som säger talet: *6 000 kr räknas med*.
 
+**Villkoret är vidare än "båda", och ändrat 2026-10-20 till att gälla varje avdrag.** Regeln skrevs med två avdrag i tanken, eftersom det är det värsta fallet, men den gäller lika mycket med ett: den som skrivit arbetskostnaden i ROT-fältet i stället för avdraget ser bara sitt fel om resultatet står utskrivet. **Raden visas därför när beräkningens tal skiljer sig från kvittots belopp** – privat del, ROT eller båda – och aldrig när hela beloppet räknas med, eftersom en rad som upprepar totalbeloppet bara är brus.
+
+**Talet hämtas från beräkningen, inte räknat som en differens på sidan.** Det är samma funktion som underlaget och årssummorna använder. En rad som räknar själv kan visa rätt tal av en slump och fel tal när reglerna ändras.
+
+**Och den står sist bland beloppen, efter båda avdragen.** Stod den bredvid beloppet och ROT-avdraget skulle läsaren räkna 18 000 − 11 999 och tro att 6 001 var svaret. Placerad sist läses den som avdragens resultat.
+
+Kvittots detaljvy har raden sedan 2026-10-20. **Listorna har den ännu inte**, trots att stycket ovan skrevs för just dem — ordet fanns inte i koden alls förrän detaljvyn byggdes.
+
+**En egen rad, inte inlagd efter avdraget — och frågan är avgjord, inte öppen.** Jag föreslog 2026-10-20 att resultatet skulle ligga på den dämpade rad som redan finns, *varav ROT 11 999 kr, avgår · 1 kr räknas med*, för att spara höjd på en telefon. Två skäl fäller det.
+
+Det sparar ingen höjd. Textkolumnen rymmer omkring trettio tecken på en telefon, så den sammanslagna raden bryts ändå — och raden om den privata delen bryts redan i dag. Först på en bred skärm vinner formen något.
+
+Och **den läses fel i precis det fall regeln skrevs för**: står resultatet intill ROT-avdraget räknar den som läser raden för sig 18 000 − 11 999 och tror att 6 001 är svaret. Att talet står **sist, efter båda avdragen**, är inte en layoutdetalj utan hela poängen.
+
+**Vilka listor som har raden:** kvittolistan och startskärmens sex senaste, som visar hela kvittot och samma avdrag. Projektlistan har den inte — raden är redan tät och är själv en länk. Underlaget har den inte, eftersom det inte listar kvitton med avdrag.
+
+**Projektsidan är en egen fråga, inte samma rad.** Där är beräkningens tal *projektets del* av kvittot, inte kvittots eget, och samma lydelse med ett annat tal på två skärmar är värre än ingen rad alls. Vad den raden ska heta där är obeslutat.
+
 Skrivet 2026-10-19, efter frågan om kombinationen ROT och privat del borde förbjudas helt. Den ska inte det — skälet står i `produktspec.md` — men frågan var ställd mot en verklig otydlighet, och den otydligheten löses av att visa resultatet.
 
 **Och de går ihop, exakt.** 10 000 kr med 3 000 kr i ROT och 1 000 kr privat räknas som 6 000 kr: båda raderna avgår rakt av. Att det inte stämde var ett beräkningsfel, inte ett presentationsproblem – den gamla regeln fördelade ROT proportionellt över hela kvittot och lade därmed 300 kr av avdraget på den privata delen, vilket gav 6 300 kr och överskattade avdraget. ROT ges på arbetskostnad för arbete på bostaden, aldrig på en privat vara, så den delen kan inte bära någon del av avdraget. Rättat i `CLAUDE.md` 2026-10-02.
@@ -569,6 +587,12 @@ Rubriken följer fas 1:s egen räknare, så att samma kvitton heter samma sak p�
 **I en kontroll som kapar text från höger står det som aldrig får tappas först.** Skriven 2026-10-20. I ett stängt `<select>` kortar webbläsaren texten, och stod året sist – *"2 kvitton · Beijer Bygg, VVS & Kakel AB (2025)"* – försvann just det som skiljer två annars identiska högar åt. Året ligger därför först i de två valen, för varje alternativ och inte bara för högar: *"2025 · Nytt kök"*, *"2025 · 2 kvitton · Beijer Bygg, VVS & Kakel AB"*.
 
 Leverantörslistan får däremot gärna kapas. Den är lång och varierande, dess första namn är det mest igenkännliga, och den öppna listan visar hela texten. **Att korta den med en egen regel vore att hitta på information där det räcker att visa den som finns.**
+
+**Projektets år följer kvittonas betaldatum, inte grupperingsetiketten.** Ändrat 2026-10-20. Projektsidan skrev tidigare `projekt.ar`, som bara är en etikett satt vid grupperingen, medan underlaget räknar på betaldatum — ett projekt med kvitton i 2023 och 2024 stod därför som *"År 2023"*. **Ett enda år kan nu skilja sig från etiketten, och det är rätt: sidan säger numera samma sak som underlaget.**
+
+**Ett spann påstår att det finns något i varje år mellan ändpunkterna.** År i följd skrivs därför som spann, *"2023–2024"*, men år med glapp räknas upp, *"2021, 2024"*. Saknas betalt kvitto står etiketten kvar. Regeln är liten och generell: **ett intervall är ett påstående om allt som ligger emellan, och ska bara skrivas när påståendet är sant.**
+
+**En rad som själv är en länk innehåller inga andra länkar.** Kvittoraderna på **projektsidan** länkar till kvittot, eftersom den som står där och vill rätta ett belopp annars måste gå via Kvitton och leta. Kvittoraderna i **projektlistan** gör det inte, eftersom hela projektraden redan är en länk till projektet. Två träffytor i samma rad blir ett lotteri på en telefon, och projektsidan ligger ett tryck bort. Beslutat 2026-10-20.
 
 ### Förstaskärmen för en ny användare
 
@@ -1453,9 +1477,23 @@ En ensam ägare berörs inte. Den som äger halva sin bostad och använder appen
 
 Men andelen är ett **utgångsvärde, inte ett facit**. Den syns och går att ändra i *Förvärvet*, och den ska bekräftas när bostaden markeras som såld. Då blir frågan "ni har angett 50/50 – stämmer det?" i stället för ett tomt fält, vilket är mycket lättare att svara rätt på. Fältet multiplicerar hela underlaget, och ett tal som satts slarvigt vid en inbjudan för åtta år sedan ska inte få passera oläst.
 
-**Inbjudningskortets text undervärderar andelen sedan 2026-10-20.** Den skriver *"Andelarna är ett utgångsvärde. Var och en bekräftar sin när bostaden markeras som såld."* Det är inte osant, men andelen avgör nu talet bredvid *Förs till* direkt, och bekräftelsesteget den hänvisar till finns inte. Den som läser den kan tro att andelen ännu inte gör något. Texten ändras i samma omgång som bekräftelsesteget byggs — inte före, eftersom den då skulle lova ett steg som fortfarande saknas.
+**Inbjudningskortets text säger nu båda sakerna.** Den skrev *"Andelarna är ett utgångsvärde. Var och en bekräftar sin när bostaden markeras som såld."* Andra meningen blev sann när bekräftelsesteget byggdes 2026-10-20, men första undervärderade andelen: den avgör talet bredvid *Förs till* direkt och inte först vid försäljningen. Lydelsen är därför:
+
+> **Andelen avgör vad som står i ditt deklarationsunderlag, och bekräftas när bostaden markeras som såld.**
+
+En anteckning om hur den här raden blev fel i `docs/`: filen sa att texten skulle ändras i samma omgång som steget byggs, och **prompten till agenten sa att den kunde stå kvar**. Agenten byggde ingetdera och frågade vilken som gällde, vilket var rätt. Men motsägelsen var min — jag skrev en regel här och det motsatta i en prompt två dagar senare utan att läsa om den. **Det är samma fel som två kopior av en regel i samma fil, bara utspritt över två dokument som inte går att söka igenom tillsammans.**
 
 **Bekräftelsesteget är utlovat men inte byggt.** Uppmätt 2026-10-19: ingenting under försäljningsflödet frågar efter eller sätter en andel, trots att inställningssidan skriver *"Var och en bekräftar sina egna när bostaden markeras som såld."* Appen lovar alltså ett steg som inte finns, vilket är samma sorts fel som när den här filen beskrev tillträdesgränsen innan koden läste den.
+
+**Steget är byggt 2026-10-20, och det frågar också den som äger ensam.** Frågan lyder *"Ni har angett 50/50 – stämmer det?"* med de andras andelar listade, fältet förifyllt och summan synlig medan man skriver; för en ensam ägare *"Du har angett att du äger 100 % av bostaden – stämmer det?"*.
+
+**Att ensamägaren får frågan är inte en formalitet.** Det är precis där *Två personer, ett hus* fångas: den som äger halva sin bostad men registrerat sig ensam har aldrig haft anledning att röra andelsfältet, och hennes underlag är därför dubbelt så stort som det ska vara. Frågan ställs den enda vecka då hon har köpekontraktet framme. Hjälptexten säger var svaret finns och varför det spelar roll: *"Andelen står i köpekontraktet. Den avgör talen du för in i deklarationen."*
+
+**Den som inte bekräftat stoppas inte.** Underlaget räknas med den lagrade andelen och raden *Ägarandel* bär tillägget *"Inte bekräftad"* med en länk till steget, men bara efter försäljningen. Ett underlag som vägrar visa sig för att en annan delägare inte svarat vore en spärr den ena inte kan lyda.
+
+**Bekräftelsen lagras som ett tal, inte som en flagga.** Det som sparas är den andel som bekräftades, och den räknas som bekräftad bara så länge den är lika med den aktuella andelen. Ändras andelen i *Förvärvet* efteråt står *"Inte bekräftad"* där igen, utan att någon kod nollställer något. **Ett tillstånd som följer av en jämförelse kan inte bli inaktuellt; en flagga som någon måste komma ihåg att släcka kan det.** Samma mönster som `merkostnad_bas`.
+
+**Summan prövas på ett ställe, med ett undantag som inte gäller här.** *Förvärvet* släpper igenom en ändring som sänker en redan för hög summa, eftersom vägen ut ur ett trasigt läge annars vore spärrad. Bekräftelsen gör det inte — annars kunde två medlemmar på 100 % var bekräfta 100 % och ge en *bekräftad* summa på 200 %, vilket är värre än en obekräftad.
 
 **Men steget bär inte längre riktigheten, bara kontrollen.** Sedan underlaget multiplicerar med andelen är talet rätt så snart andelarna är rimliga; bekräftelsen finns för att användaren ska *titta* på andelen den dag den betyder något. Det gör steget viktigt men inte brådskande, och det ska byggas för sig — inte klämmas in i rättningen av multiplikationen.
 

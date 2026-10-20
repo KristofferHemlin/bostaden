@@ -100,6 +100,17 @@ export function andelForUnderlag({
   return summeraAndelar(medlemsandelar) <= HOGSTA_ANDELSSUMMA ? egenAndel : null;
 }
 
+/**
+ * Ar medlemmens andel bekraftad? Bekraftelsen ges vid forsaljningen och
+ * lagras som den andel som bekraftades (medlemskap.bekraftad_andel). Den
+ * galler sa lange andelen ar densamma – andras den efterat, i Forvarvet
+ * eller nagon annanstans, ar den obekraftad igen utan att nagon behover
+ * komma ihag att nollstalla den. Samma monster som projekt.merkostnad_bas.
+ */
+export function arAndelenBekraftad(agarandel: number, bekraftad: number | null): boolean {
+  return bekraftad !== null && Math.round(bekraftad * 100) === Math.round(agarandel * 100);
+}
+
 /** En andel i kortet Tillgang, for notisen nar summan inte gar ihop. */
 export interface SattAndel {
   /** "du", en e-postadress, eller en adress med en utestaende inbjudan. */

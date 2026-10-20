@@ -85,6 +85,8 @@ interface LasVarden {
   grupperingar: string[];
   /** Formaterad kronsträng, eller null nar inget av kvittot ar privat. */
   privatbelopp: string | null;
+  /** "1 kr räknas med" nar nagot dragits av, annars null (raknasMedRad). */
+  raknasMed: string | null;
   /** "Tillagt av …" (src/lib/samagande.ts), eller null – ensam agare, eller
    *  ett aldre kvitto utan uppgift. Da star ingenting. */
   tillagtAv: string | null;
@@ -235,6 +237,14 @@ function LasVy({
         {varden.privatbelopp ? (
           <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
             {varden.privatbelopp} hörde inte till bostaden
+          </p>
+        ) : null}
+        {/* Resultatet av avdragen ovan, efter dem bada sa att det lases som
+            deras summa (docs/design.md, Listrader). Samma dampade form och
+            samma lydelse som i listorna. */}
+        {varden.raknasMed ? (
+          <p className="mt-2 font-granssnitt text-sm text-text-sekundar">
+            {varden.raknasMed}
           </p>
         ) : null}
         {varden.tillagtAv ? (

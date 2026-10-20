@@ -82,7 +82,7 @@ export const metadata = { title: "Deklarationsunderlag" };
 export const dynamic = "force-dynamic";
 
 export default async function ExportSida() {
-  const { bostadId, agarandel } = await kravBostad();
+  const { bostadId, anvandareId, agarandel } = await kravBostad();
   const [{ bostad, projekt, projektRader, kostnader, kostnadRader, regelparametrar }, andelar, kostnaderMedBilaga] =
     await Promise.all([
       hamtaBostadsdata(bostadId),
@@ -93,6 +93,9 @@ export default async function ExportSida() {
   const delad = arDeladBostad(medlemmar);
   const medlemsandelar = andelar.medlemmar.map((m) => m.andel);
   const andel = andelForUnderlag({ egenAndel: agarandel, medlemsandelar });
+  // Bekraftad vid forsaljningen och oforandrad sedan (src/app/forsaljning/andel).
+  const egenBekraftad =
+    andelar.medlemmar.find((m) => m.anvandareId === anvandareId)?.bekraftad ?? false;
   const { bostadsnamn } = bostadHeader(bostad);
 
   // Enda skillnaden mellan upplatelseformerna i den har vyn: huvudblanketten som
@@ -220,6 +223,21 @@ export default async function ExportSida() {
                 <span className="tabular-nums text-text-primar">
                   {ex.agarandel_procent} %
                 </span>
+              </div>
+            ) : null}
+            {/* Bekraftelsen hor till forsaljningen. Den som inte bekraftat
+                stoppas inte – talen raknas med den lagrade andelen – men far
+                veta det, och vagen dit (docs/design.md, "Att bjuda in en
+                delägare"). */}
+            {ex.sald && andel !== null && !egenBekraftad ? (
+              <div className="flex justify-between gap-3">
+                <span>Inte bekräftad</span>
+                <Link
+                  href="/forsaljning/andel?nasta=export"
+                  className="text-text-primar underline underline-offset-2 hover:text-accent-mork"
+                >
+                  Bekräfta ägarandelen
+                </Link>
               </div>
             ) : null}
           </section>

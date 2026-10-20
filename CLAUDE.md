@@ -291,6 +291,10 @@ Testa domänreglerna och de nödvändiga flödena. Skriv testet före implementa
 
 **Pröva det som renderas, inte det som räknar**, när påståendet handlar om vad användaren ser. En funktion kan ge rätt svar medan komponenten visar något annat, och det är komponenten användaren läser.
 
+**Ett påstående om ett tal prövar elementets hela text, aldrig en delsträng.** Skriven 2026-10-20, efter att ett test som letade efter *"1 kr räknas med"* passerade medan sidan visade *"6 001 kr räknas med"*. Tal är särskilt lömska här: varje belopp som slutar på rätt siffror innehåller det rätta svaret som delsträng, så ett sådant test går igenom för nästan varje fel det skulle fånga. Agenten hittade det genom brytningen med flit — **ett test kan vara falskt utan att vara tomt, och bara brytningen skiljer dem åt.**
+
+**Och det väntade talet räknas fram ur samma källa som koden använder**, inte skrivet som en konstant bredvid. En rad som visar rätt tal av en slump är ingen spärr, och en konstant följer inte med när regeln ändras. Undantaget är de avlästa talen längst ned i det här avsnittet: de **ska** stå som konstanter, eftersom de är mätningar mot Skatteverkets verktyg och inte resultat av vår egen kod.
+
 Dessa fall måste finnas och passera. De sex första är verifierade mot Skatteverkets e-tjänst 2026-09-15 och får inte ändras utan att verktyget körs om.
 
 **Frågeträdet och skickskalan**
@@ -396,6 +400,12 @@ Följden är att varje rad kan tillhöra en riktig person, och att ett engångsj
 - stänga av RLS, eller lämna en tabell öppen efter att den skapats eller ändrats
 
 Behöver uppgiften något av det, är svaret att fråga – aldrig att göra det och rapportera efteråt. En användare som ber om det har nästan alltid menat något annat.
+
+**Driftsättningen kör inga migreringar.** Konstaterat 2026-10-20. En ny kolumn måste alltså läggas till för hand innan kod som läser den går ut, annars går appen sönder vid driftsättningen och inte vid bygget. Det är en fälla för varje omgång som rör datamodellen, och den står här för att ingen ska upptäcka den genom ett haveri.
+
+**En schemaändring säger till innan den körs, inte efteråt.** Att lägga till en nullbar kolumn står inte på listan ovan och är så ofarligt en ändring kan bli — men databasen är produktionens, och vad som är ofarligt avgörs av den som äger raderna. Meddelandet behöver vara kort: vilken kolumn, varför den behövs nu, och vad som händer om den inte finns. **Regeln finns inte för att ändringen var fel, utan för att nästa kanske inte är additiv**, och skillnaden syns inte i en rapport som kommer efteråt.
+
+Skriven efter att `medlemskap.bekraftad_andel` lades till mot produktionen och rapporterades i efterhand. Kolumnen var rätt, kontrollen efteråt var ordentlig – nullbar, RLS på, noll rader rörda – och tidpunkten var ändå inte agentens att välja.
 
 **Läs fritt.** Frågor mot databasen är aldrig ett problem.
 

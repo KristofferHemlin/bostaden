@@ -179,7 +179,7 @@ function SkapaInbjudan({
         </span>
       </div>
       <p className={HJALPTEXT_KLASS}>
-        Andelarna är ett utgångsvärde. Var och en bekräftar sin när bostaden markeras som såld.
+        Andelen avgör vad som står i ditt deklarationsunderlag, och bekräftas när bostaden markeras som såld.
       </p>
       {resultat.fel ? <p role="alert" className={FALTFEL_KLASS}>{resultat.fel}</p> : null}
       <button type="submit" disabled={pagar} className={SEKUNDARKNAPP_KLASS}>

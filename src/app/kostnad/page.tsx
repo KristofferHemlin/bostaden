@@ -55,6 +55,8 @@ interface KvittoRad {
   rot: number;
   /** Privat del – Listrad visar "varav … hörde inte till bostaden, avgår". */
   privat: number;
+  /** "1 kr räknas med" nar nagot dragits av, annars null – sist bland beloppen. */
+  raknasMed: string | null;
   atgard: boolean;
   utkast: boolean;
   /** Bilagor sparade pa kostnaden – avgor om utkastets soptunna fragar. */
@@ -218,6 +220,7 @@ export default async function KvittolistaSida() {
                     underStatus={r.underStatus}
                     rot={r.rot}
                     privat={r.privat}
+                    raknasMed={r.raknasMed}
                     atgard={r.atgard}
                     belopp={r.belopp}
                     href={r.href}

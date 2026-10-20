@@ -108,6 +108,7 @@ export function Listrad({
   underStatus,
   rot,
   privat,
+  raknasMed,
   belopp,
   href,
   strackt,
@@ -139,6 +140,13 @@ export function Listrad({
    * under ROT-raden (docs/design.md, Listrader). 0 eller null ger ingen rad.
    */
   privat?: number | null;
+  /**
+   * "1 kr räknas med" – vad kvittot raknas med nar nagot dragits av
+   * (raknasMedRad i src/lib/kvittolista.ts). En egen dampad rad, sist bland
+   * beloppen, efter bada avdragen (docs/design.md, Listrader): pa samma rad
+   * som ett avdrag lases den som det avdragets resultat. Null ger ingen rad.
+   */
+  raknasMed?: string | null;
   belopp?: string;
   href?: string;
   /**
@@ -206,6 +214,7 @@ export function Listrad({
         {[
           rotAvgarRad(rot ?? null),
           privatAvgarRad(privat ?? null),
+          raknasMed,
           ...(Array.isArray(underStatus) ? underStatus : [underStatus]),
         ]
           .filter((rad): rad is string => !!rad)

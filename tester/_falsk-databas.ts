@@ -94,7 +94,7 @@ const STANDARD: Record<Modell, () => Rad> = {
     kopkostnader: null, kapitaltillskott: null, uppskov_tidigare: null,
     forsaljningsdatum: null, forsaljningspris: null,
   }),
-  medlemskap: () => ({ agarandel: 100 }),
+  medlemskap: () => ({ agarandel: 100, bekraftad_andel: null }),
   projekt: () => ({
     atgardstyp: null, battre_kvalitet: null, merkostnad: null, skick_forvarv: null,
     skick_forsaljning: null, motivering: null, klassificerad_av: null,

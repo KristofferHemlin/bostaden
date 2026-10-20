@@ -27,6 +27,7 @@ import { KvittoKort } from "./kvitto-kort";
 import { Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
+import { raknasMedRad } from "@/lib/kvittolista";
 import { listaKostnadsbilagor } from "@/lib/lagring/bilagor";
 import { enkelPrivatUppdelning } from "@/lib/kostnadsuppdelning";
 import {
@@ -163,6 +164,8 @@ export default async function KostnadSida({
             privatDel && privatDel.privatbelopp > 0
               ? formateraKronor(privatDel.privatbelopp)
               : null,
+          // Vad kvittot raknas med, nar nagot dragits av (src/lib/kvittolista.ts).
+          raknasMed: raknasMedRad(domanKostnad),
           tillagtAv: upphovsrad("Tillagt", kostnad.skapare, anvandareId, medlemmar),
         }}
         redigeraVarden={{
