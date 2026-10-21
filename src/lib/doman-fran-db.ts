@@ -38,6 +38,7 @@ export function tillDomanBostad(b: PrismaBostad): DomanBostad {
     tilltradesdatum: isoDatum(b.tilltradesdatum),
     forsaljningsdatum: b.forsaljningsdatum ? isoDatum(b.forsaljningsdatum) : null,
     ...bostadsfragorForBerakning(b),
+    samma_del_besvarad_for: b.samma_del_besvarad_for,
   };
 }
 
@@ -51,6 +52,7 @@ export function tillDomanProjekt(p: PrismaProjekt): DomanProjekt {
     merkostnad_bas: p.merkostnad_bas,
     skick_forvarv: p.skick_forvarv,
     skick_forsaljning: p.skick_forsaljning,
+    tidigare_gang_samma_del: p.tidigare_gang_samma_del ?? false,
   };
 }
 

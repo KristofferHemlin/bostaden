@@ -16,13 +16,15 @@ import { useActionState, useState } from "react";
 import { sparaSkickForsaljning, type SkickForsaljningResultat } from "./actions";
 import { Fraga, Kortval } from "@/app/projekt/fragetradet";
 import { Avdelningsrubrik, Friskrivning, PRIMARKNAPP_KLASS } from "@/components/skarm";
-import { SKICK_ORD } from "@/doman/fragetradet";
+import {
+  HJALP_SKICK_FORSALJNING,
+  SKICK_FORSALJNING_FRAGA,
+  SKICK_ORD,
+} from "@/doman/fragetradet";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 
 const START: SkickForsaljningResultat = {};
 
-const HJALP_SKICK_FORSALJNING =
-  "Jämför med hur det såg ut när du köpte bostaden, inte med hur det såg ut precis innan du gjorde det här. Ditt svar då visas ovan.";
 
 interface Atgard {
   id: string;
@@ -34,7 +36,15 @@ interface Atgard {
   skickForvarv: number | null;
 }
 
-export function SkickForsaljningFlode({ atgarder }: { atgarder: Atgard[] }) {
+export function SkickForsaljningFlode({
+  atgarder,
+  nasta,
+}: {
+  atgarder: Atgard[];
+  /** Vart "Du hoppade över resten" leder: fragan om samma del av bostaden
+   *  nar den stalls, annars underlaget. */
+  nasta: { href: string; text: string };
+}) {
   const [index, setIndex] = useState(0);
   const atgard = atgarder[index];
 
@@ -48,8 +58,8 @@ export function SkickForsaljningFlode({ atgarder }: { atgarder: Atgard[] }) {
           Det du hoppade över ligger kvar och dyker upp nästa gång du öppnar
           den här sidan.
         </p>
-        <Link href="/export" className={`${PRIMARKNAPP_KLASS} mt-4`}>
-          Till deklarationsunderlaget
+        <Link href={nasta.href} className={`${PRIMARKNAPP_KLASS} mt-4`}>
+          {nasta.text}
         </Link>
       </div>
     );
@@ -103,7 +113,7 @@ function AtgardFormular({
         <input type="hidden" name="projekt_id" value={atgard.id} />
 
         <Fraga
-          rubrik="Hur var skicket på det du bytt ut eller renoverat när du sålde bostaden?"
+          rubrik={SKICK_FORSALJNING_FRAGA}
           hjalp={HJALP_SKICK_FORSALJNING}
         >
           {SKICK_ORD.map((ord, siffra) => (

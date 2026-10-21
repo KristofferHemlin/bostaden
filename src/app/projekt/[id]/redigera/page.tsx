@@ -1,5 +1,7 @@
 // Redigera ett projekt (produktspec 6.4): namn och fragetradets svar (fraga
-// 1-6, fraga 8). Omklassificering rakas om i arssumman sa fort vyerna
+// 1-6, fraga 8) – och fraga 7, skicket vid forsaljningen, nar bostaden ar
+// sald. Det ar vagen att rata ett skicksvar: forsaljningsflodet fragar bara
+// om obesvarade. Omklassificering rakas om i arssumman sa fort vyerna
 // revalideras. Ett projekt med kopplade kostnader gar inte att ta bort –
 // sidan visar vilka kostnader som blockerar i stallet for att bara neka.
 
@@ -90,6 +92,15 @@ export default async function RedigeraProjektSida({
         projektetsBelopp={belopp}
         projektetsSumma={projektSumma(kostnader, id)}
         merkostnadAndrad={merkostnadAndrad}
+        // Fraga 7 gar att andra har, men forst nar bostaden ar sald – fore
+        // forsaljningen finns inget "nar du salde" att svara om.
+        skickForsaljning={
+          bostad.forsaljningsdatum === null
+            ? undefined
+            : projekt.skick_forsaljning !== null
+              ? String(projekt.skick_forsaljning)
+              : ""
+        }
         varden={{
           namn: projekt.namn,
           ...harledFragetradetSvar(projekt.atgardstyp, projekt.battre_kvalitet),

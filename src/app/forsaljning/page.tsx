@@ -12,6 +12,7 @@ import { Meddelanderuta, Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
 import { isoDatum, orenTillFalt } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { hamtaSammaDelVy } from "@/lib/samma-del-vy";
 import { kravBostad } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,11 @@ export default async function ForsaljningSida() {
   const { bostadsnamn } = bostadHeader(bostad);
 
   const redanSald = bostad.forsaljningsdatum !== null;
+  // Sidan lovar bara det som gar att andra harifran. Skicksvaren gar inte
+  // att andra nar de val ar givna; svaret om samma del av bostaden gar det,
+  // och namns bara nar fragan stalls for den har bostaden.
+  const sammaDel = redanSald ? await hamtaSammaDelVy(bostadId) : null;
+  const sammaDelGarAttAndra = sammaDel !== null && sammaDel.status !== "visas_inte";
 
   return (
     <Skarm
@@ -50,7 +56,9 @@ export default async function ForsaljningSida() {
       <div className="border-b border-linje p-5">
         <Meddelanderuta>
           {redanSald
-            ? "Bostaden är markerad som såld. Här ändrar du datum, pris och bedömningen per reparation."
+            ? sammaDelGarAttAndra
+              ? "Bostaden är markerad som såld. Här ändrar du datum och pris, och därefter ditt svar om samma del av bostaden gjorts om."
+              : "Bostaden är markerad som såld. Här ändrar du datum och pris."
             : "När bostaden är såld kan du hämta deklarationsunderlaget."}
         </Meddelanderuta>
       </div>

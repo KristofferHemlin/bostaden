@@ -68,6 +68,10 @@ export interface Projekt {
   skick_forvarv: number | null;
   /** Fraga 7, heltal 0-5. null fram till forsaljningen. */
   skick_forsaljning: number | null;
+  /** Markerad vid forsaljningen som en tidigare gang av samma del av
+   *  bostaden – reparationsunderlaget nollas i steg 3 (src/doman/samma-del.ts).
+   *  Optional/default false. */
+  tidigare_gang_samma_del?: boolean;
 }
 
 export interface Bostad {
@@ -88,6 +92,9 @@ export interface Bostad {
    *  sa att befintliga anrop som bara satter nybyggd_vid_forvarv inte behover
    *  andras. */
   ombildning_fran_hyresratt?: boolean;
+  /** Kandidaterna nar fragan om samma del av bostaden senast besvarades
+   *  (src/doman/samma-del.ts). Tom/saknas nar den aldrig besvarats. */
+  samma_del_besvarad_for?: readonly string[];
 }
 
 export interface Medlemskap {

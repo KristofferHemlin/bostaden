@@ -20,6 +20,7 @@ import { PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import { behoverSkickForsaljning } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { prisma } from "@/lib/prisma";
+import { hamtaSammaDelVy } from "@/lib/samma-del-vy";
 import { kravBostad } from "@/lib/session";
 
 export const metadata = { title: "Skick vid försäljningen" };
@@ -51,6 +52,14 @@ export default async function SkickForsaljningSida() {
     .filter(behoverSkickForsaljning)
     .map((p) => ({ id: p.id, namn: p.namn, ar: p.ar, skickForvarv: p.skick_forvarv }));
 
+  // Efter skickfragorna: fragan om samma del av bostaden, nar den kan andra
+  // ett tal (CLAUDE.md, "Samma byggnadsdel reparerad två gånger"). Den sidan
+  // fyller i ett tidigare svar, sa kedjan fran Försäljningsuppgifter gar
+  // genom den aven nar den redan ar besvarad.
+  const sammaDel = await hamtaSammaDelVy(bostadId);
+  const sammaDelVisas = sammaDel !== null && sammaDel.status !== "visas_inte";
+  if (atgarder.length === 0 && sammaDelVisas) redirect("/forsaljning/samma-del");
+
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
@@ -72,7 +81,14 @@ export default async function SkickForsaljningSida() {
           </Link>
         </div>
       ) : (
-        <SkickForsaljningFlode atgarder={atgarder} />
+        <SkickForsaljningFlode
+          atgarder={atgarder}
+          nasta={
+            sammaDelVisas
+              ? { href: "/forsaljning/samma-del", text: "Nästa fråga" }
+              : { href: "/export", text: "Till deklarationsunderlaget" }
+          }
+        />
       )}
     </Skarm>
   );

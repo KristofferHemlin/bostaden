@@ -35,7 +35,9 @@ import {
   fraga4Relevant,
   fraga5Relevant,
   harReparationsdel,
+  HJALP_SKICK_FORSALJNING,
   motiveringRelevant,
+  SKICK_FORSALJNING_FRAGA,
   SKICK_ORD,
   type BattreEllerLiknandeSvar,
   type FragetradetSvar,
@@ -449,8 +451,15 @@ export function FragetradetFalt({
   fel,
   onAndring,
   helaBeloppet,
+  skickForsaljning,
 }: {
   initial?: FragetradetVarden;
+  /** Fraga 7, skicket vid forsaljningen – bara i projektets redigering och
+   *  bara nar bostaden ar markerad som sald (da skickas det tidigare svaret,
+   *  eller "" om det saknas). Utelamnad: fragan visas inte och faltet skickas
+   *  inte, sa att servern lamnar vardet orort. Fragan ar annars forsaljnings-
+   *  flodets; har ar den vagen att andra ett svar som redan ar givet. */
+  skickForsaljning?: string;
   /** Projektets summa efter ROT – se <Fragetradet>. */
   helaBeloppet: number;
   /** Ett avvisat svar – visas vid den fraga det galler. */
@@ -470,6 +479,8 @@ export function FragetradetFalt({
     skickForvarv: start.skickForvarv,
     motivering: start.motivering,
   });
+  const [skickVidForsaljning, setSkickVidForsaljning] = useState(skickForsaljning ?? "");
+  const fragaSkickForsaljning = skickForsaljning !== undefined && harReparationsdel(svar);
 
   return (
     <div className="flex flex-col gap-6">
@@ -492,8 +503,30 @@ export function FragetradetFalt({
         }}
       />
 
+      {fragaSkickForsaljning ? (
+        <Fraga
+          rubrik={SKICK_FORSALJNING_FRAGA}
+          hjalp={HJALP_SKICK_FORSALJNING}
+        >
+          {SKICK_ORD.map((ord, siffra) => (
+            <Kortval
+              key={siffra}
+              vald={skickVidForsaljning === String(siffra)}
+              text={`${siffra} – ${ord}`}
+              onClick={() => {
+                setSkickVidForsaljning(String(siffra));
+                onAndring?.();
+              }}
+            />
+          ))}
+        </Fraga>
+      ) : null}
+
       <input type="hidden" name="namn" value={namn} />
       <FragetradetDoldaFalt svar={svar} />
+      {fragaSkickForsaljning ? (
+        <input type="hidden" name="skick_forsaljning" value={skickVidForsaljning} />
+      ) : null}
     </div>
   );
 }

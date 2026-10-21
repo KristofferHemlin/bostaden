@@ -43,6 +43,7 @@ export function projekt(over: Partial<Projekt> = {}): Projekt {
     skick_forvarv: over.skick_forvarv === undefined ? null : over.skick_forvarv,
     skick_forsaljning:
       over.skick_forsaljning === undefined ? null : over.skick_forsaljning,
+    tidigare_gang_samma_del: over.tidigare_gang_samma_del ?? false,
   };
 }
 

@@ -69,6 +69,7 @@ import {
   arDeladBostad,
 } from "@/lib/samagande";
 import { kravBostad } from "@/lib/session";
+import { SAMMA_DEL_ANDRAD, SAMMA_DEL_OBESVARAD } from "@/doman/samma-del";
 import { UnderlagetsVarningar } from "./underlagets-varningar";
 import {
   ATERSTAR_INLEDNING,
@@ -364,6 +365,27 @@ export default async function ExportSida() {
                 className={`${SEKUNDARKNAPP_KLASS} mt-3`}
               >
                 Bedöm skicket
+              </Link>
+            </section>
+          ) : null}
+
+          {ex.samma_del === "obesvarad" || ex.samma_del === "andrad" ? (
+            // Fragan om samma del av bostaden (CLAUDE.md, "Samma byggnadsdel
+            // reparerad två gånger"): overhoppad, eller besvarad for andra
+            // projekt an dagens. Markeringarna galler anda – svaret ar
+            // ofullstandigt, inte ogiltigt (src/doman/samma-del.ts).
+            <section className="p-4">
+              <p className="font-granssnitt text-sm font-medium text-text-primar">
+                Samma del av bostaden
+              </p>
+              <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
+                {ex.samma_del === "andrad" ? SAMMA_DEL_ANDRAD : SAMMA_DEL_OBESVARAD}
+              </p>
+              <Link
+                href="/forsaljning/samma-del"
+                className={`${SEKUNDARKNAPP_KLASS} mt-3`}
+              >
+                Svara på frågan
               </Link>
             </section>
           ) : null}

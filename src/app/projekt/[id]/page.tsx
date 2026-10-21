@@ -27,6 +27,7 @@ import {
   MERKOSTNAD_ANDRAD_FRAGA,
   merkostnadOverBeloppetText,
 } from "@/doman/regeltext";
+import { SAMMA_DEL_SKAL } from "@/doman/samma-del";
 import type { Atgardstyp } from "@/doman/typer";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad, tillDomanProjekt } from "@/lib/doman-fran-db";
@@ -190,7 +191,33 @@ export default async function ProjektSida({
                     : "Inte bekräftat än"
                 }
                 atgard={projekt.skick_forsaljning === null}
+                // Vagen att rata ett givet svar (CLAUDE.md: varje tillstand ska
+                // ha en vag ut). Ett obesvarat skick besvaras i
+                // forsaljningsflodet, som underlaget redan pekar till.
+                lank={
+                  projekt.skick_forsaljning !== null && bostad.forsaljningsdatum !== null
+                    ? { href: `/projekt/${id}/redigera`, text: "Ändra" }
+                    : undefined
+                }
               />
+            ) : null}
+            {/* Markerad vid forsaljningen som en tidigare gang av samma del
+                (CLAUDE.md, "Samma byggnadsdel reparerad två gånger"): projektet
+                bidrar med noll i reparation, och skalet star dar talet star –
+                inte bara i underlaget. Lanken ar vagen ut ur markeringen. */}
+            {harReparationsdel && projekt.tidigare_gang_samma_del ? (
+              <>
+                <Rad etikett="Samma del av bostaden" varde="Gjordes om senare" />
+                <p className="pt-1 text-text-sekundar">
+                  {SAMMA_DEL_SKAL}{" "}
+                  <Link
+                    href="/forsaljning/samma-del"
+                    className="underline underline-offset-2 hover:text-text-primar"
+                  >
+                    Ändra svaret
+                  </Link>
+                </p>
+              </>
             ) : null}
           </>
         )}
@@ -292,10 +319,13 @@ function Rad({
   etikett,
   varde,
   atgard,
+  lank,
 }: {
   etikett: string;
   varde: string;
   atgard?: boolean;
+  /** En vag att andra svaret, direkt efter vardet. */
+  lank?: { href: string; text: string };
 }) {
   return (
     <div className="flex justify-between gap-3">
@@ -308,6 +338,14 @@ function Rad({
           />
         ) : null}
         {varde}
+        {lank ? (
+          <Link
+            href={lank.href}
+            className="ml-1 text-text-sekundar underline underline-offset-2 hover:text-text-primar"
+          >
+            {lank.text}
+          </Link>
+        ) : null}
       </span>
     </div>
   );

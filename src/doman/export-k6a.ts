@@ -39,6 +39,7 @@ import {
   type NollOrsak,
 } from "./atgardsberakning";
 import { slaUppRegelparameter } from "./regelparameter";
+import { SAMMA_DEL_SKAL, sammaDelStatus, type SammaDelStatus } from "./samma-del";
 import {
   bakreGransForklaring,
   FORSAKRING_HELA_KOSTNADEN,
@@ -174,6 +175,11 @@ export interface K6aExport {
    *  pa fragor star i oklassificerade_hogar. Samma information star aldrig
    *  tva ganger (docs/design.md). */
   varningar: string[];
+  /** Fragan om samma del av bostaden gjorts om (CLAUDE.md, steg 3): projekten
+   *  som har ett reparationsunderlag kvar efter steg 3, raknat utan
+   *  markeringen. Tom fore forsaljningen – fragan stalls forst da. */
+  samma_del_kandidater: string[];
+  samma_del: SammaDelStatus;
 }
 
 /** Texten nar sammanstallningen vantar pa bostadsfragorna – samma pa skarmen
@@ -244,6 +250,9 @@ interface CellSplit {
   /** Fragetradets uppdelning fore varje grind (steg 2) – vad atgarden
    *  kostade, oavsett om den sedan faller bort. */
   foreBortfall: KategoriUppdelning;
+  /** Reparationsunderlaget efter steg 3 men UTAN markeringen av en tidigare
+   *  gang av samma del – urvalet for fragan om samma del (src/doman/samma-del.ts). */
+  reparationForeSammaDel: number;
 }
 
 /** Forklaringstexterna till en 0-kr-rad (docs/design.md, Exportvyn). Tva av
@@ -255,6 +264,7 @@ const FASTA_NOLLFORKLARINGAR = {
     "Det du bytte ut var i samma eller sämre skick vid försäljningen än vid förvärvet.",
   nybyggd_vid_forvarv:
     "Allt var nytt vid tillträdet, så reparationer räknas inte.",
+  tidigare_gang_samma_del: SAMMA_DEL_SKAL,
 } as const;
 
 export function byggK6aExport(indata: K6aIndata): K6aExport {
@@ -444,6 +454,29 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
       fonsterAr,
     ),
   );
+
+  //    Fragan om samma del av bostaden (CLAUDE.md, steg 3): kandidaterna ar
+  //    projekten med reparationsunderlag kvar efter steg 3 – fore troskeln,
+  //    och raknat utan markeringen sjalv (src/doman/samma-del.ts). Fragan
+  //    stalls forst vid forsaljningen.
+  const reparationForeSammaDel = new Map<string, number>();
+  for (const s of splits) {
+    const id = s.cell.projekt.id;
+    reparationForeSammaDel.set(
+      id,
+      (reparationForeSammaDel.get(id) ?? 0) + s.reparationForeSammaDel,
+    );
+  }
+  const sammaDelKandidater = sald
+    ? projekt
+        .filter((p) => (reparationForeSammaDel.get(p.id) ?? 0) > 0)
+        .map((p) => p.id)
+    : [];
+  const sammaDel = sammaDelStatus({
+    kandidater: sammaDelKandidater,
+    markerade: projekt.filter((p) => p.tidigare_gang_samma_del).map((p) => p.id),
+    besvaradFor: bostad.samma_del_besvarad_for ?? [],
+  });
 
   // 4. TROSKELN provas per kalenderar, pa summan av bada kategorierna for hela
   //    bostaden – EFTER tidsgranserna, FORE skickbedomningen (CLAUDE.md,
@@ -728,6 +761,8 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
     oklassificerade_hogar: oklassificerade,
     aterstaende_kvitton: aterstaende,
     varningar,
+    samma_del_kandidater: sammaDelKandidater,
+    samma_del: sammaDel,
   };
 }
 
@@ -746,20 +781,27 @@ function buildCellSplit(
 ): CellSplit {
   const betaldatum = `${cell.ar}-12-31`;
   const raaUppdelning = cell.uppdelning;
+  const tidigareGang = cell.projekt.tidigare_gang_samma_del ?? false;
 
   if (sald) {
+    const indata = {
+      betaldatum,
+      forsaljningsAr: forsaljningsAr!,
+      femarsfonsterAr: fonsterAr!,
+      upplatelseform: bostad.upplatelseform,
+      bostadenNybyggdVidForvarv: nybyggdVidForvarv,
+      bostadenOmbildningFranHyresratt: bostad.ombildning_fran_hyresratt,
+      regelparametrar,
+    };
     return {
       cell,
       foreBortfall: raaUppdelning,
       uppdelning: tillampaTidsgranser(raaUppdelning, {
-        betaldatum,
-        forsaljningsAr: forsaljningsAr!,
-        femarsfonsterAr: fonsterAr!,
-        upplatelseform: bostad.upplatelseform,
-        bostadenNybyggdVidForvarv: nybyggdVidForvarv,
-        bostadenOmbildningFranHyresratt: bostad.ombildning_fran_hyresratt,
-        regelparametrar,
+        ...indata,
+        tidigareGangAvSammaDel: tidigareGang,
       }),
+      reparationForeSammaDel: tillampaTidsgranser(raaUppdelning, indata)
+        .reparationsunderlag,
     };
   }
 
@@ -767,6 +809,9 @@ function buildCellSplit(
   // forsaljningsaret. Raden visas anda (docs/design.md, Exportvyn), bara utan
   // den granden. Bakre gransen och "nybyggd vid forvarv" beror inte av
   // forsaljningen och provas som vanligt.
+  //
+  // Fragan om samma del stalls forst vid forsaljningen, sa fore den finns
+  // ingen markering att prova och inga kandidater att rakna.
   const nybyggdUtanOmbildning =
     nybyggdVidForvarv && !(bostad.ombildning_fran_hyresratt ?? false);
   const grundforbattringTillaten = innanforBakreGrans(
@@ -777,6 +822,7 @@ function buildCellSplit(
   return {
     cell,
     foreBortfall: raaUppdelning,
+    reparationForeSammaDel: 0,
     uppdelning: {
       grundforbattringsdel: grundforbattringTillaten
         ? raaUppdelning.grundforbattringsdel

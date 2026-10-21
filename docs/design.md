@@ -1307,7 +1307,15 @@ Beskedet säger också vad man ska göra om inget kommer – titta i skräpposte
 
 **Lösenordet följer aldrig med.** Bara adressen.
 
-**Och adressen ligger aldrig i en URL.** Inte som frågeparameter, inte i en länk. En adress i en adressrad hamnar i webbläsarhistoriken, i serverloggar och i referrer-huvuden, och det är en personuppgift på tre ställen den inte hör hemma. Den ska bäras i klientens eget tillstånd för fliken och försvinna när fliken stängs.
+**Och adressen ligger aldrig i en URL.** Inte som frågeparameter, inte i en länk. En adress i en adressrad hamnar i webbläsarhistoriken, i serverloggar och i referrer-huvuden, och det är en personuppgift på tre ställen den inte hör hemma. Den bärs i `sessionStorage` och försvinner när fliken stängs.
+
+**Regeln skrevs som ett villkor för nytt arbete och visade sig vara en rättelse.** Uppmätt 2026-10-21: appen skickade redan adressen i URL:en på **två** ställen — *Logga in i stället* gick till `/login?epost=…`, och det gjorde även *Logga in för att ansluta* på inbjudningssidan. Den andra är värre: en inbjudningslänk är gjord för att skickas vidare, och den bar mottagarens adress i klartext i adressraden. Båda är borta, och inloggningen läser inte längre parametern.
+
+**Lärdomen om `docs/`:** en regel om vad som *ska* gälla säger ingenting om vad som gäller. Den här stod i filen i ett dygn som ett krav på framtida arbete medan appen bröt mot den på två ställen — och det var en läsning av koden, inte regeln, som hittade dem.
+
+**Nedräkningen till en ny länk räknas i webbläsaren, inte efter serverns svar.** Supabases minutspärr slår bara till för adresser som **har** ett konto. Ett besked byggt på serversvaret skulle därför säga en sak för befintliga adresser och en annan för okända — och därmed avslöja vilka adresser som finns hos oss, vilket är precis det återställningssidan i övrigt vägrar göra. Knappen är i stället overksam i sextio sekunder efter ett utskick, med den dämpade raden *"Du kan be om en ny länk om en stund."* och inget felmeddelande: den som trycker igen har inte gjort fel, hon är otålig.
+
+**Ändras adressen i fältet går knappen att trycka direkt**, så att en felstavning kan rättas utan att vänta ut en spärr som inte gällde henne.
 
 **De tre sidorna på vägen in avvisar med egna meningar, inte med webbläsarens.** Byggt 2026-10-19: inloggningen, *Glömt lösenordet* och *Nytt lösenord* validerar själva, med samma regler för alla tre, och följer *När ett formulär vägrar* – mening vid fältet, `role="alert"`, `aria-invalid`, bindning, fokus på första felet. Innan dess lät de webbläsaren sköta `required`, och den flyttar ibland bara fokus utan ett ord. Det är sämre här än någon annanstans i appen: den som inte kommer in kan inte be om hjälp inifrån produkten.
 

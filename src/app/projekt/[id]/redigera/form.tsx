@@ -46,6 +46,7 @@ export function RedigeraProjektForm({
   projektetsBelopp,
   projektetsSumma,
   merkostnadAndrad,
+  skickForsaljning,
 }: {
   projektId: string;
   blockerande: Blockerande[];
@@ -58,6 +59,8 @@ export function RedigeraProjektForm({
   /** Fragan som stalls igen nar projektet andrats sedan merkostnaden
    *  besvarades (CLAUDE.md, steg 2), eller null. */
   merkostnadAndrad: string | null;
+  /** Fraga 7 – se FragetradetFalt. Utelamnad fore forsaljningen. */
+  skickForsaljning?: string;
 }) {
   const [resultat, spara, sparar] = useActionState(redigeraProjekt, START);
   const [radera, raderaAction, raderar] = useActionState(taBortProjekt, START);
@@ -97,6 +100,7 @@ export function RedigeraProjektForm({
           fel={faltfel}
           onAndring={rensaFel}
           helaBeloppet={projektetsSumma}
+          skickForsaljning={skickForsaljning}
         />
 
         {/* Bara fel som inte hor till nagon fraga star har – resten star vid

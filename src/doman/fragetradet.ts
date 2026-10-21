@@ -242,6 +242,13 @@ export function atgardKategoriText(
   return battre_kvalitet ? "Grundförbättring och reparation" : "Reparation";
 }
 
+/** Fraga 7 – samma lydelse i forsaljningsflodet och i projektets
+ *  redigering, sa att de inte kan glida isar. */
+export const SKICK_FORSALJNING_FRAGA =
+  "Hur var skicket på det du bytt ut eller renoverat när du sålde bostaden?";
+export const HJALP_SKICK_FORSALJNING =
+  "Jämför med hur det såg ut när du köpte bostaden, inte med hur det såg ut precis innan du gjorde det här. Ditt svar då visas ovan.";
+
 /**
  * Behover atgarden fraga 7 – skicket vid forsaljningen (produktspec 4.1)?
  * Bara atgarder med en reparationsdel har ett "fore" att jamfora mot; en ren

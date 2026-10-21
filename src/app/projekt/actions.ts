@@ -12,6 +12,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { kostnaderKoppladeTillProjekt } from "@/doman/berakningar";
+import { tolkaSkickForvarv } from "@/doman/fragetradet";
 import { hamtaProjektetsBelopp, tillDomanKostnad } from "@/lib/doman-fran-db";
 import { kravBostadsfragorBesvarade } from "@/lib/bostadsfragor-sparr";
 import {
@@ -39,8 +40,14 @@ function revalideraProjektvyer(projektId: string): void {
 
 // Omklassificering andrar atgardstyp/battre_kvalitet/merkostnad/skick_forvarv,
 // vilket slaar igenom i arets troskelsumma sa fort vyerna revalideras – inget
-// lagras harlett. skick_forsaljning ror vi aldrig har; det satts bara i
-// src/app/forsaljning/skick.
+// lagras harlett.
+//
+// skick_forsaljning (fraga 7) satts har bara nar bostaden ar sald. Har stod
+// forut att faltet aldrig rors har, eftersom fragan stalls forst i
+// forsaljningsflodet – fore forsaljningen finns inget att svara om, och det
+// skalet galler fortfarande. Men flodet fragar bara om obesvarade atgarder,
+// sa ett feltryck dar gick inte att rata nagonstans: varje tillstand appen
+// kan hamna i ska ha en vag ut (CLAUDE.md). Redigeringen ar den vagen.
 export async function redigeraProjekt(
   _foreg: ProjektResultat,
   formData: FormData,
@@ -54,6 +61,23 @@ export async function redigeraProjekt(
     select: { id: true },
   });
   if (!projekt) return { fel: "Projektet hittades inte." };
+
+  // Fraga 7: bara nar faltet skickats, bostaden ar sald och atgarden har en
+  // reparationsdel. Ett tomt falt lamnar vardet orort – en obesvarad fraga
+  // besvaras i forsaljningsflodet, och ett svar tas aldrig bort harifran.
+  const skickText = formData.get("skick_forsaljning");
+  let skickForsaljning: number | undefined;
+  if (skickText !== null && String(skickText) !== "") {
+    const bostad = await prisma.bostad.findUniqueOrThrow({
+      where: { id: bostadId },
+      select: { forsaljningsdatum: true },
+    });
+    if (bostad.forsaljningsdatum !== null) {
+      const tolkatSkick = tolkaSkickForvarv(String(skickText));
+      if (tolkatSkick === null) return { fel: "Ange skicket vid försäljningen, 0–5." };
+      skickForsaljning = tolkatSkick;
+    }
+  }
 
   // Projektets belopp: merkostnaden maste vara mindre (CLAUDE.md, steg 2).
   // Att spara svaret – aven oforandrat – ar att bekrafta det: beloppet sparas
@@ -71,6 +95,9 @@ export async function redigeraProjekt(
       merkostnad: tolkat.merkostnad,
       merkostnad_bas: tolkat.merkostnad !== null ? belopp : null,
       skick_forvarv: tolkat.skick_forvarv,
+      ...(skickForsaljning !== undefined && tolkat.atgardstyp === "utbytt"
+        ? { skick_forsaljning: skickForsaljning }
+        : {}),
       motivering: tolkat.motivering,
       klassificerad_av: anvandareId,
     },

@@ -53,7 +53,8 @@ export type NollOrsak =
   | "femarsfonster"
   | "bakre_grans"
   | "skicket_forbattrades_inte"
-  | "nybyggd_vid_forvarv";
+  | "nybyggd_vid_forvarv"
+  | "tidigare_gang_samma_del";
 
 export interface KategoriUppdelning {
   /** Oren. */
@@ -304,13 +305,18 @@ export interface TidsgransIndata {
    *  formellt ar forsta agare (produktspec 4.6). Optional/default false sa
    *  att befintliga anrop inte behover andras. */
   bostadenOmbildningFranHyresratt?: boolean;
+  /** Atgarden ar markerad som en tidigare gang av samma del av bostaden
+   *  (CLAUDE.md, steg 3, src/doman/samma-del.ts). Nollar bara
+   *  reparationsunderlaget. Optional/default false. */
+  tidigareGangAvSammaDel?: boolean;
   regelparametrar: Regelparameter[];
 }
 
 /**
  * Steg 3: tidsgranserna provas var for sig per kategori, INNAN troskeln.
  * Reparationsunderlaget nollas av femarsfonstret (och av att bostaden var
- * nybyggd vid forvarvet utan att vara en ombildning fran hyresratt).
+ * nybyggd vid forvarvet utan att vara en ombildning fran hyresratt, och av
+ * att atgarden markerats som en tidigare gang av samma del av bostaden).
  * Grundforbattringsdelen nollas bara av den bakre gransen – den har i ovrigt
  * ingen tidsgrans.
  */
@@ -337,7 +343,10 @@ export function tillampaTidsgranser(
     grundforbattringsdel: grundforbattringTillaten
       ? uppdelning.grundforbattringsdel
       : 0,
-    reparationsunderlag: reparationTillaten ? uppdelning.reparationsunderlag : 0,
+    reparationsunderlag:
+      reparationTillaten && !indata.tidigareGangAvSammaDel
+        ? uppdelning.reparationsunderlag
+        : 0,
     // Samma princip: ett skal bara nar gransen faktiskt nollade nagot – en
     // tom nolla ar samre an inget tal (docs/design.md, Skarmuppbyggnad).
     grundforbattring_orsak:
@@ -347,12 +356,20 @@ export function tillampaTidsgranser(
     // Orsaken satts bara nar tidsgransen faktiskt nollade nagot (reparationen
     // var > 0 innan) – annars var faltet redan 0 av fragetradets egen
     // uppdelning, och den nollningen behover ingen forklaring.
+    //
+    // Markeringen av en tidigare gang provas sist: en reparation som redan
+    // fallit bort behaller sitt forsta skal, sa att ingen nolla far tva
+    // (CLAUDE.md, "Samma byggnadsdel reparerad två gånger").
     reparation_orsak:
-      !reparationTillaten && uppdelning.reparationsunderlag > 0
-        ? nybyggdUtanOmbildning
-          ? "nybyggd_vid_forvarv"
-          : "femarsfonster"
-        : undefined,
+      uppdelning.reparationsunderlag <= 0
+        ? undefined
+        : !reparationTillaten
+          ? nybyggdUtanOmbildning
+            ? "nybyggd_vid_forvarv"
+            : "femarsfonster"
+          : indata.tidigareGangAvSammaDel
+            ? "tidigare_gang_samma_del"
+            : undefined,
   };
 }
 

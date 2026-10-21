@@ -111,6 +111,8 @@ Ordningen är bindande.
         gränsen för upplåtelseformen (se nedan)
       båda delarna = 0 om kvittots datum ligger före bostadens
         tilltradesdatum (se nedan)
+      reparationsunderlag = 0 om åtgärden markerats som en tidigare
+        gång av samma del av bostaden (se nedan)
       Grundförbättringar har i övrigt ingen tidsgräns
 
 4.  TRÖSKELN prövas här, per kalenderår, på summan av
@@ -193,9 +195,39 @@ Skriven 2026-10-18, efter att en genomklickning visade att ingen beräkning läs
 
 **Känd lucka, medvetet olöst:** material som köps dagarna före tillträdet och hör till bostaden faller ut med den här regeln. Fallet är ovanligt, och kvittot försvinner inte – det ligger i arkivet och redovisas under *Återstår* med sitt skäl, där användaren ser det. Att lösa det kräver en branch på betaldatum eller ett bekräftat undantag, och ingen av dem är genomtänkt. Det står här för att ingen senare ska tro att fallet var avgjort.
 
-**Känd lucka, ännu obeslutad: samma byggnadsdel reparerad två gånger.** Skatteverket skriver, under *Detta räknas som reparation eller underhåll*, att har man reparerat eller bytt ut samma byggnadsdel flera gånger **är det bara den senaste utgiften som får dras av**. Regeln träffar bara reparationsdelen, och den biter bara när båda utgifterna ligger inne i femårsfönstret — måla om fasaden 2022 och igen 2025 inför en försäljning 2026, och bara 2025 räknas.
+**Samma byggnadsdel reparerad två gånger — avgjort 2026-10-21.** Skatteverket skriver, under *Detta räknas som reparation eller underhåll*, att har man reparerat eller bytt ut samma byggnadsdel flera gånger **är det bara den senaste utgiften som får dras av**. Regeln träffar bara reparationsdelen, och den biter bara när båda utgifterna ligger inne i femårsfönstret — måla om fasaden 2022 och igen 2025 inför en försäljning 2026, och bara 2025 räknas.
 
-Appen känner inte till byggnadsdelar. Den har projekt, och två projekt som rör samma sak får i dag båda sin reparationsdel. **Felet går åt det farliga hållet: för högt avdrag.** Att lösa det kräver ett nytt begrepp — vilken del av bostaden en åtgärd rör — och det är ett designbeslut, inte en rättning. Hittad på skatteverket.se 2026-10-18, skriven hit samma dag så att ingen senare tror att fallet var avgjort.
+**Lydelsen är kontrollerad vid källan 2026-10-21 och står ordagrant:** *"Sådana arbeten eller utbyten av byggnadsdelar kan du ha gjort en eller flera gånger under bostadens livslängd."* och *"Även om du har reparerat och underhållit samma byggnadsdel vid flera tillfällen är det bara den senaste utgiften som du får göra avdrag för."*
+
+**Två saker säger Skatteverket inte.** De definierar inte vad **samma byggnadsdel** är, och de säger inget om hur regeln samspelar med femårsregeln. Vår mening om femårsfönstret ovan är alltså **vår slutsats, inte deras** — den följer av att en äldre utgift utanför fönstret ändå faller bort, så regeln kan bara bita när båda ligger inne.
+
+**Vad felet är, uttryckt i vår egen beräkning:** två åtgärder på samma byggnadsdel får var sin reparationsdel, och **båda multipliceras med skillnaden mellan skicket vid förvärvet och vid försäljningen**. Båda gör alltså anspråk på hela förbättringen från köp till sälj, fast förbättringen bara skedde en gång. **Felet går åt det farliga hållet: för högt avdrag.**
+
+### Beslutet: en fråga vid försäljningen, besvarad av den som vet
+
+**Vi bygger inget begrepp för byggnadsdel.** Skatteverket definierar inte termen, så varje lista vi hittar på — fasad, badrum, kök, golv — vore vår egen uppfinning, och gränsen mellan *badrum* och *kakel i badrummet* skulle vi dra själva. En felaktig gruppering tar bort ett avdrag användaren har rätt till, och **ett borttaget avdrag syns inte.**
+
+**Vi utesluter ingenting automatiskt, och vi varnar inte heller på måfå.** En upplysning som bygger på *"det finns två reparationsåtgärder i fönstret"* skulle visas för nästan varje bostad — i vår egen testbostad fem gånger om — och en rad som alltid står där är ingen upplysning. Den vore en generell brasklapp **utklädd till** en upptäckt, placerad i ett avsnitt vars hela värde är att det som står där gäller just den här bostaden.
+
+**I stället frågar appen den enda som kan svara, i det enda ögonblick frågan betyder något.** När bostaden markeras som såld, **efter skickfrågorna** — hon har då just gått igenom varje åtgärd med en reparationsdel, en i taget — får hon en fråga: har du gjort om samma del av bostaden mer än en gång? Svarar hon ja visas hennes egna åtgärder med årtal, och hon markerar den eller de äldre.
+
+**En markerad åtgärd får reparationsunderlag noll med sitt skäl**, på samma sätt som varje annan nolla i underlaget. Grundförbättringsdelen rörs inte — regeln träffar bara reparationen.
+
+**Nollan läggs i steg 3, tillsammans med nybyggd-regeln och tillträdesgränsen.** Skälet är deras: en utgift som aldrig var avdragsgill kan inte lyfta året över tröskeln. Läggs den efter tröskeln kan en bortmarkerad målning 2022 fortfarande få just 2022 att passera 5 000 kr och därmed släppa igenom andra utgifter samma år. Den träffar **bara reparationsdelen** — grundförbättringen rörs inte, precis som nybyggd-regeln.
+
+**Frågan ställs när minst två åtgärder fortfarande har ett reparationsunderlag efter steg 3.** Alltså efter femårsfönstret, nybyggd-regeln och tillträdesgränsen, och före tröskeln. Villkoret följer av att frågan bara ska ställas när svaret kan ändra ett tal: ett par där den ena redan fallit på femårsregeln kan aldrig göra det, och en nybyggd bostad har ingen reparationsdel alls att fråga om. Det är inget påstående om att något är fel — frågan är bara omöjlig att besvara meningsfullt annars.
+
+**Och det avgör det fall som annars hade behövt egen omsorg:** en markering av något som redan fallit bort kan inte uppstå, så ingen nolla kan få två skäl.
+
+**Ett tillägg till villkoret: frågan visas också när bara en kandidat finns kvar men den fortfarande är markerad.** Det inträffar när den **senare** åtgärden raderats. Utan tillägget blir markeringen en fälla — den fortsätter nolla ett tal och det finns ingen väg att ta bort den. Agentens tillägg 2026-10-21, och det följer samma princip som villkoret i övrigt: frågan ställs när svaret kan ändra ett tal.
+
+**Regeln bakom, som gäller mer än det här:** **varje tillstånd appen kan hamna i ska ha en väg ut.** Ett val som går att göra men inte att ångra är en fälla, och den är värst när den tyst drar ifrån ett avdrag — för då letar ingen efter vägen ut.
+
+**Urvalet räknar inte med markeringen när kandidaterna tas fram.** Gjorde det det skulle varje svar se inaktuellt ut i samma ögonblick det gavs, eftersom svaret självt ändrar vilka som har reparationsunderlag kvar.
+
+**Skälet att vi frågar fast Skatteverkets eget verktyg inte gör det:** deras verktyg används en gång, vid försäljningen, av någon som skriver in det hon tror är avdragsgillt. **Vår app är den enda som har båda kvittona** — hon la in dem med sju års mellanrum och minns inte regeln. Att ha uppgiften och tiga är något annat än att inte ha den.
+
+**Och ansvarsfriskrivningen är ett skyddsnät, aldrig ett skäl.** Att användaren svarar för vad hon lämnar in är sant och står kvar. Men den dagen vi lutar oss mot den som *motiv* för att inte lösa något vi kan lösa, har vi börjat använda den för att slippa arbetet — och det är ett glidande plan i en produkt som räknar fram skattetal.
 
 **Blanketten tar hela kronor, och det talet gör det inte i dag.** K5 bär instruktionen *"Ange belopp i hela krontal."* Vår export skriver 205 973,42 kr bredvid *Förs till K5, ruta 4*, eftersom en fördelad merkostnad ger ören i en grundförbättring. **Det talet går inte att föra in som det står**, så användaren avrundar själv, godtyckligt, i det sista steget innan siffran lämnar oss. Uppmätt och källkontrollerat 2026-10-20, se `docs/regelkallor.md`.
 
@@ -403,6 +435,14 @@ Behöver uppgiften något av det, är svaret att fråga – aldrig att göra det
 
 **Driftsättningen kör inga migreringar.** Konstaterat 2026-10-20. En ny kolumn måste alltså läggas till för hand innan kod som läser den går ut, annars går appen sönder vid driftsättningen och inte vid bygget. Det är en fälla för varje omgång som rör datamodellen, och den står här för att ingen ska upptäcka den genom ett haveri.
 
+**Kolumnen in före koden, och med Prisma är insatsen hela appen.** Prisma läser alla kolumner som standard, så saknas en kolumn som schemat känner till går **varje sida som rör tabellen** sönder — inte den funktion som använder kolumnen. En ny kolumn på `bostad` eller `projekt` betyder alltså att hela appen slutar fungera om driftsättningen kommer först. Ordningen är: kolumnen in för hand, kontrollera, driftsätt sedan.
+
+**Och läs vad migreringen faktiskt innehåller, inte bara vad den heter.** Uppmätt 2026-10-21: en additiv migrering för två nya kolumner bar också `ENABLE ROW LEVEL SECURITY` på båda tabellerna. Raderna var handskrivna som en idempotent kontroll, kopierade från en tidigare migrering, och verkningslösa mot dagens databas — men det gick inte att se på namnet, och vanan att läsa SQL:en ska finnas kvar.
+
+**Så här hänger åtkomsten ihop, och det förklarar varför "inga policyer" inte är ett fel.** Kontrollerat 2026-10-21: RLS är påslagen på varje tabell i `public`, och det finns **inga policyer alls** — avsiktligt, eftersom allt som går via PostgREST då nekas. Appen kommer inte den vägen: den ansluter som `postgres`, som äger tabellerna och har `rolbypassrls = true`, och `FORCE ROW LEVEL SECURITY` är av. RLS stänger alltså ute `anon` och `authenticated`, vilket är meningen, och rör inte appen.
+
+**Två ändringar skulle vända på det, och båda ser oskyldiga ut.** Byter appen till en roll utan bypass, eller slås `FORCE ROW LEVEL SECURITY` på, stängs appen ute från sina egna tabeller — utan fel, bara noll rader överallt. Den som rör anslutningen eller tvingar på RLS ska veta att policyerna saknas med flit och måste skrivas först.
+
 **En schemaändring säger till innan den körs, inte efteråt.** Att lägga till en nullbar kolumn står inte på listan ovan och är så ofarligt en ändring kan bli — men databasen är produktionens, och vad som är ofarligt avgörs av den som äger raderna. Meddelandet behöver vara kort: vilken kolumn, varför den behövs nu, och vad som händer om den inte finns. **Regeln finns inte för att ändringen var fel, utan för att nästa kanske inte är additiv**, och skillnaden syns inte i en rapport som kommer efteråt.
 
 Skriven efter att `medlemskap.bekraftad_andel` lades till mot produktionen och rapporterades i efterhand. Kolumnen var rätt, kontrollen efteråt var ordentlig – nullbar, RLS på, noll rader rörda – och tidpunkten var ändå inte agentens att välja.
@@ -458,6 +498,14 @@ Högen som tas "för sig" skapas med tomt namn, eftersom namnet sätts av först
 **Det är inte ett hörn, det är normalfallet.** Genomgången skriver själv *"Du kan avbryta när som helst – det du lagt ihop ligger kvar"*, alltså bjuder appen uttryckligen in till just det tillstånd den sedan visar fel. Den som lägger in kvitton en kväll och svarar på frågorna en annan lever där hela tiden.
 
 **Regeln: att ha kört vägen igenom säger ingenting om vad som syns halvvägs.** Den som prövar ett flerstegsflöde ska stanna mitt i och se sig omkring — och den som skriver prompten ska be om en läsning av *var ett halvfärdigt tillstånd visas*, inte bara om steget fungerar.
+
+### Vem skriver reglerna
+
+**Agenten rör inga md-filer — inte heller den här.** Regeln har alltid varit att `docs/` är mitt, och `CLAUDE.md` ligger utanför `docs/` men lyder under samma ordning: den som skriver prompten skriver reglerna, agenten läser dem och säger emot dem. Skriven 2026-10-21 efter att agenten frågade, vilket var befogat eftersom regeln bara stått som *"ändra ingenting i `docs/`"*.
+
+**Och en prompt får aldrig hänvisa till en regel som inte ligger i repot än.** Samma dag stannade agenten med rätta: prompten sa att beslutet stod i den här filen, men filen i repot sa fortfarande *"ännu obeslutad"* eftersom ändringen låg hos mig och inte var inlagd. Agenten gjorde exakt rätt i att inte bygga på en rad i `regelkallor.md`, som uttryckligen inte får användas för att härleda regler.
+
+**Ordningen är alltså: filerna in först, prompten sedan.** Går det inte — står regeln bara i prompten — ska prompten säga det rakt ut i stället för att påstå att den står någon annanstans.
 
 ### Kan en användare komma hit?
 

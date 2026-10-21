@@ -102,6 +102,11 @@ model bostad {
   uppskov_tidigare          BigInt? // oren, paverkar vinstberakning, inte avdrag
   forsaljningsdatum         DateTime?      @db.Date
   forsaljningspris          BigInt? // oren
+  // Projekten fragan om samma del av bostaden besvarades for (CLAUDE.md,
+  // "Samma byggnadsdel reparerad två gånger"). Tom nar den aldrig besvarats.
+  // Skiljer sig dagens kandidater ar svaret ofullstandigt – markeringarna
+  // galler anda (src/doman/samma-del.ts).
+  samma_del_besvarad_for    String[]       @default([]) @db.Uuid
   skapad_at                 DateTime       @default(now())
 
   medlemskap   medlemskap[]
@@ -185,6 +190,9 @@ model projekt {
   skick_forvarv     Int? // fraga 6, 0-5, stalls bara nar atgarden har en reparationsdel
   skick_forsaljning Int? // fraga 7, 0-5, null fram till forsaljningen
   motivering        String? // fraga 8, "hur vet du det?" – fritext, valfri, bar bevisningen
+  // Markerad vid forsaljningen som en tidigare gang av samma del av bostaden:
+  // reparationsunderlaget nollas i steg 3 (CLAUDE.md). Null = inte markerad.
+  tidigare_gang_samma_del Boolean?
   // Vem som senast besvarade fragetradet (fas 2 eller redigeringen). Bara for
   // raden "Besvarat av" nar bostaden har fler an en medlem. Null for aldre
   // svar och nar personen raderat sitt konto – raden uteblir da, den gissar inte.
