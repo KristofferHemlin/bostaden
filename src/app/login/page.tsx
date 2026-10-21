@@ -9,17 +9,19 @@
 // Kortet ligger vertikalt centrerat – klistrat mot overkanten ser sidan ut som
 // en vy som inte hunnit ladda klart.
 
-import Link from "next/link";
 import { TJANSTENS_NAMN } from "@/lib/kontakt";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useActionState } from "react";
+import { Suspense, useActionState, useEffect } from "react";
 import { hanteraAuth, type AuthResultat } from "./actions";
+import { EpostLank } from "@/components/epost-lank";
+import { LosenordFalt } from "@/components/losenord-falt";
 import {
   Falt,
   INPUT_KLASS,
   PRIMARKNAPP_KLASS,
   SANDKNAPP_KLASS,
 } from "@/components/skarm";
+import { fyllEpostfaltFranFliken } from "@/lib/epost-for-fliken";
 import { useFormularfel } from "@/lib/formularfel-klient";
 import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 import { inloggningsfelFranLank } from "@/lib/inloggning";
@@ -44,10 +46,10 @@ function LoginInnehall() {
   // roll.
   const { formRef, hanteraSubmit, felFor, markering, formularfel, rensa } =
     useFormularfel({ pagar, resultat, validera: inloggningensFel });
-  // Registreringsflodet skickar hit med ?epost=... nar adressen redan har ett
-  // konto (docs/design.md, Registreringsflodet) – forifyll den da.
+  // Adressen fran registreringen, Glomt losenordet eller en inbjudan foljer
+  // med i flikens tillstand – aldrig i URL:en (src/lib/epost-for-fliken.ts).
+  useEffect(() => fyllEpostfaltFranFliken(formRef.current), [formRef]);
   const sokparametrar = useSearchParams();
-  const forifyllEpost = sokparametrar.get("epost") ?? "";
   // /auth/callback skickar hit med ?fel=lank nar en lank inte gick att losa in.
   // Ett eget fel fran ett inloggningsforsok gar fore – det ar nyare.
   const lankfel = inloggningsfelFranLank(sokparametrar.get("fel"));
@@ -87,25 +89,23 @@ function LoginInnehall() {
                 required
                 {...markering("epost")}
                 onChange={rensa}
-                // Adressen fran en avvisning gar fore forifyllningen – den ar
-                // nyare. Utan den toms faltet nar actionen korts.
-                defaultValue={resultat.epost ?? forifyllEpost}
+                // Adressen fran en avvisning – utan den toms faltet nar
+                // actionen korts.
+                defaultValue={resultat.epost ?? ""}
                 className={INPUT_KLASS}
                 placeholder="du@exempel.se"
               />
             </Falt>
 
-            <Falt etikett="Lösenord" fel={felFor("losenord")}>
-              <input
-                type="password"
-                name="losenord"
-                autoComplete="current-password"
-                required
-                {...markering("losenord")}
-                onChange={rensa}
-                className={INPUT_KLASS}
-              />
-            </Falt>
+            <LosenordFalt
+              etikett="Lösenord"
+              fel={felFor("losenord")}
+              name="losenord"
+              autoComplete="current-password"
+              required
+              {...markering("losenord")}
+              onChange={rensa}
+            />
 
             {/* Fel som inte hor till ett falt – fel e-post eller losenord
                 (vilket sags medvetet inte), en lank som inte gick att losa in,
@@ -134,17 +134,18 @@ function LoginInnehall() {
             {/* Skapa konto: sandknapp i full bredd, samma form och hojd som
                 primarknappen men utan orange – en vag in i produkten, inte
                 handlingen den har sidan finns for. */}
-            <Link href="/registrera" className={SANDKNAPP_KLASS}>
+            <EpostLank href="/registrera" formular={formRef} className={SANDKNAPP_KLASS}>
               Skapa konto
-            </Link>
+            </EpostLank>
             {/* Glomt losenord: en egen lank som sager just det, under de tva
                 knapparna (docs/design.md, Inloggningssidan). */}
-            <Link
+            <EpostLank
               href="/losenord/glomt"
+              formular={formRef}
               className="text-center font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
             >
               Glömt lösenordet?
-            </Link>
+            </EpostLank>
           </div>
         </div>
       </main>

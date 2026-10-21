@@ -109,7 +109,10 @@ describe("formuläret visar meningen vid fältet", () => {
     const mening = "E-postadressen har redan ett konto. Logga in i stället.";
     const html = rendera({ fel: mening, falt: "epost", epostUpptagen: true, epost: "a@exempel.se" });
     arBundet(html, input(html, "epost"), mening);
-    const lank = html.indexOf("/login?epost=");
+    // Adressen foljer med i flikens tillstand, aldrig i lankens URL
+    // (tester/epost-mellan-vagarna-in.test.ts provar att den foljer med).
+    const lank = html.indexOf('href="/login"');
+    expect(html).not.toMatch(/href="[^"]*(epost|@|%40)/);
     expect(lank).toBeGreaterThan(html.indexOf(mening));
     expect(lank).toBeLessThan(html.indexOf('name="losenord"'));
   });

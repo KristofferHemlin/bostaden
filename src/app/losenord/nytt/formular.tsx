@@ -4,7 +4,8 @@
 // provat har for ett snabbt besked och pa servern for att galla.
 
 import { useActionState } from "react";
-import { Falt, INPUT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
+import { LosenordFalt } from "@/components/losenord-falt";
+import { PRIMARKNAPP_KLASS } from "@/components/skarm";
 import { useFormularfel } from "@/lib/formularfel-klient";
 import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 import { nyttLosenordFel } from "@/lib/inloggningsfalt";
@@ -31,21 +32,18 @@ export function NyttLosenordFormular() {
       noValidate
       className="flex flex-col gap-4"
     >
-      <Falt
+      {/* Ett enda falt, inget bekraftelsefalt – lösenordet gar att se i
+          stallet (docs/design.md, Inloggningssidan). */}
+      <LosenordFalt
         etikett="Nytt lösenord"
         hjalp={`Minst ${LOSENORD_MINSTA_LANGD} tecken.`}
         fel={felFor("losenord")}
-      >
-        <input
-          type="password"
-          name="losenord"
-          autoComplete="new-password"
-          required
-          {...markering("losenord")}
-          onChange={rensa}
-          className={INPUT_KLASS}
-        />
-      </Falt>
+        name="losenord"
+        autoComplete="new-password"
+        required
+        {...markering("losenord")}
+        onChange={rensa}
+      />
 
       {formularfel ? (
         <p

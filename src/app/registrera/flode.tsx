@@ -21,6 +21,8 @@
 import Link from "next/link";
 import { useActionState, useEffect, useState } from "react";
 import { BeloppFalt } from "@/components/belopp-falt";
+import { EpostLank } from "@/components/epost-lank";
+import { LosenordFalt } from "@/components/losenord-falt";
 import {
   Bekraftelseruta,
   Falt,
@@ -32,6 +34,7 @@ import {
 } from "@/components/skarm";
 import { DatumFalt } from "@/components/datum-falt";
 import { forsokBorjaInskickning, useDubbelinskickRef } from "@/lib/dubbelinskick";
+import { lasEpostForFliken } from "@/lib/epost-for-fliken";
 import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 import { useFormularfel } from "@/lib/formularfel-klient";
 import { isoDatum } from "@/lib/format";
@@ -71,6 +74,16 @@ export function RegistreraFlode({
   const [kontoRedan, setKontoRedan] = useState(endastBostad);
 
   const [epost, setEpost] = useState(inbjudan?.epost ?? "");
+  // Adressen fran inloggningen foljer med i flikens tillstand – aldrig i URL:en
+  // (src/lib/epost-for-fliken.ts). Lases efter monteringen, eftersom
+  // sessionStorage inte finns pa servern. En inbjudans adress ar last och gar
+  // fore.
+  useEffect(() => {
+    if (inbjudan || endastBostad) return;
+    const franFliken = lasEpostForFliken();
+    if (franFliken) setEpost((nu) => nu || franFliken);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [losenord, setLosenord] = useState("");
   // Inget forval (docs/design.md, Registreringsflodet: "ett förval är ett
   // svar användaren inte gav"). Ett hus som registrerades utan att nagon
@@ -187,31 +200,24 @@ export function RegistreraFlode({
             </p>
           ) : null}
         </Falt>
-        {/* En upptagen adress: vagen vidare star vid faltet, intill meningen. */}
+        {/* En upptagen adress: vagen vidare star vid faltet, intill meningen.
+            Adressen foljer med i flikens tillstand, aldrig i lankens URL. */}
         {resultat.epostUpptagen && felFor("epost") ? (
-          <Link
-            href={`/login?epost=${encodeURIComponent(resultat.epost ?? epost)}`}
-            className={SEKUNDARKNAPP_KLASS}
-          >
+          <EpostLank href="/login" epost={epost} className={SEKUNDARKNAPP_KLASS}>
             Logga in i stället
-          </Link>
+          </EpostLank>
         ) : null}
-        <Falt
+        <LosenordFalt
           etikett="Lösenord"
           obligatoriskt
           hjalp="Minst 8 tecken."
           fel={felFor("losenord")}
-        >
-          <input
-            type="password"
-            name="losenord"
-            autoComplete="new-password"
-            {...markering("losenord")}
-            value={losenord}
-            onChange={(e) => setLosenord(e.target.value)}
-            className={INPUT_KLASS}
-          />
-        </Falt>
+          name="losenord"
+          autoComplete="new-password"
+          {...markering("losenord")}
+          value={losenord}
+          onChange={(e) => setLosenord(e.target.value)}
+        />
       </div>
 
       {/* STEG 2 – BOSTADEN */}
@@ -330,9 +336,9 @@ export function RegistreraFlode({
             Bakåt
           </button>
         ) : !endastBostad ? (
-          <Link href="/login" className={SEKUNDARKNAPP_KLASS}>
+          <EpostLank href="/login" epost={epost} className={SEKUNDARKNAPP_KLASS}>
             Jag har redan ett konto
-          </Link>
+          </EpostLank>
         ) : null}
 
         {/* Undertexten fran produktspec 14, "Integritetspolicyn" – under

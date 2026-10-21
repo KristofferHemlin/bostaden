@@ -19,6 +19,7 @@
 // adressen inbjudan stallts till (src/lib/inbjudan.ts).
 
 import Link from "next/link";
+import { EpostLank } from "@/components/epost-lank";
 import { loggaUt } from "@/app/login/actions";
 import { Meddelanderuta, PRIMARKNAPP_KLASS, SEKUNDARKNAPP_KLASS } from "@/components/skarm";
 import {
@@ -89,9 +90,11 @@ async function utgang(vy: Inbjudningsvy) {
     return (
       <Inbjudningskort vy={vy}>
         {harKonto ? (
-          <Link href={`/login?epost=${encodeURIComponent(vy.epost)}`} className={PRIMARKNAPP_KLASS}>
+          // Adressen foljer med i flikens tillstand, aldrig i lankens URL
+          // (src/lib/epost-for-fliken.ts).
+          <EpostLank href="/login" epost={vy.epost} className={PRIMARKNAPP_KLASS}>
             Logga in för att ansluta
-          </Link>
+          </EpostLank>
         ) : (
           <Link href={`/registrera?inbjudan=${vy.id}`} className={PRIMARKNAPP_KLASS}>
             Skapa konto

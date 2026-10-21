@@ -85,8 +85,13 @@ describe("formularet", () => {
 
   it("inget kort ar valt fran borjan, och det dolda faltet ar tomt", () => {
     const markup = html();
-    expect(markup).not.toContain('aria-pressed="true"');
-    expect(markup.match(/aria-pressed="false"/g)).toHaveLength(2);
+    // Rakna bara i kortens grupp – losenordets oga bar ocksa aria-pressed.
+    const grupp = markup.slice(
+      markup.indexOf('aria-labelledby="upplatelseform-etikett"'),
+      markup.indexOf('name="upplatelseform"'),
+    );
+    expect(grupp).not.toContain('aria-pressed="true"');
+    expect(grupp.match(/aria-pressed="false"/g)).toHaveLength(2);
     expect(markup).toMatch(/<input type="hidden" name="upplatelseform" value=""\/>/);
   });
 

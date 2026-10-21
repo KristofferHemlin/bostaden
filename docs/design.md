@@ -1243,6 +1243,8 @@ Storlek hör hemma i inställningar, inte här. Den används inte i någon berä
 
 Listan har därför en egen höjdgräns med egen skroll, satt så att den inte når ned till knappen som sparar: **tre förslag.** I registreringen är marginalen ett fyrtiotal pixlar, i inställningarna flera hundra. Allt som kan variera — ett felmeddelande, en hjälptext som bryts på fler rader, ett extra fält för bostadsrätt — gör avståndet **större**, och måtten är i `rem`, så förstorad text skalar listan och avstånden lika mycket.
 
+**Uppmätt i produktionen 2026-10-20**, i inställningarnas kort: listan slutar vid 523 px och *Spara* börjar vid 842 px, alltså 319 px fritt. Listan **täcker däremot upplåtelseformens knappar nästan helt** (471–525 px). Det är tillåtet av regeln ovan — de är ett fält i samma steg och en felträff där byter adressen synligt — men det är mätt och inte uppskattat, och värt att veta om någon senare trycker fel där. **Registreringen är uppmätt samma dag på ett nytt konto:** listan slutar vid 723 px och *Spara bostad* börjar vid 797 px, alltså **74 px fritt** — mot de 46 px som räknats fram ur klasserna. Uppskattningen låg åt det försiktiga hållet, vilket är rätt håll. Och knappen sparade på **första** trycket med listan öppen.
+
 **Det som kan bryta den är en ändring av formuläret, inte en felräkning.** Flyttas eller tas Ort eller Köpeskilling bort i registreringen försvinner marginalen. Regeln och talet står därför i en kommentar vid höjdkonstanten, så att den som ändrar formuläret ser att höjden måste prövas om. **En regel som bara bor i `docs/` skyddar inte den som aldrig öppnar `docs/`** — den som bor intill talet den gäller gör det. **Att i stället lägga listan i flödet löser fel problem** — då flyttar knappen sig när listan stängs, vilket är den mekanism vi först trodde på och som koden friade. Och att stänga listan på `mousedown` hjälper inte: trycket har redan landat på ett förslag.
 
 **Regeln bakom, i sin rättade form.** Här stod först att ett flytande lager får skymma text men aldrig en träffyta. **Den regeln går inte att uppfylla och ska inte stå kvar som ett mål**: en lista under ett fält ligger alltid över nästa fält — ortfältet börjar ett tjugotal pixlar ned — så redan första förslaget bryter mot den. En regel som förbjuder ett helt vedertaget mönster lär bara läsaren att regler går att strunta i.
@@ -1299,7 +1301,23 @@ Beskedet säger också vad man ska göra om inget kommer – titta i skräpposte
 
 **Kommer en oanvändbar länk in mot inloggningssidan** står det på samma plats som inloggningens övriga fel: *"Länken gick inte att använda – den kan redan vara använd eller för gammal. Logga in med ditt lösenord, eller välj Glömt lösenordet? för att få en ny."* Ett nyare inloggningsfel tar över platsen. Beskedet nämner båda vägarna vidare, eftersom den som klickat på en död länk inte vet vilken av dem som gäller för just hen.
 
+**Adressen följer med mellan vägarna in.** Beslutat 2026-10-21. Den som skrivit sin adress på inloggningen och sedan inser att hon behöver skapa ett konto ska hitta adressen ifylld i registreringen — och tvärtom, och likaså på vägen till *Glömt lösenordet*. Uppmätt samma dag: i dag följer ingenting med, fältet står tomt på andra sidan.
+
+**Det gäller alla fyra övergångarna**, och den mest uppenbara är den vi själva byggt: *Logga in i stället*, som visas när adressen redan finns. Appen har just sagt *"den här adressen har ett konto"* — att då möta ett tomt fält är nästan en förolämpning.
+
+**Lösenordet följer aldrig med.** Bara adressen.
+
+**Och adressen ligger aldrig i en URL.** Inte som frågeparameter, inte i en länk. En adress i en adressrad hamnar i webbläsarhistoriken, i serverloggar och i referrer-huvuden, och det är en personuppgift på tre ställen den inte hör hemma. Den ska bäras i klientens eget tillstånd för fliken och försvinna när fliken stängs.
+
 **De tre sidorna på vägen in avvisar med egna meningar, inte med webbläsarens.** Byggt 2026-10-19: inloggningen, *Glömt lösenordet* och *Nytt lösenord* validerar själva, med samma regler för alla tre, och följer *När ett formulär vägrar* – mening vid fältet, `role="alert"`, `aria-invalid`, bindning, fokus på första felet. Innan dess lät de webbläsaren sköta `required`, och den flyttar ibland bara fokus utan ett ord. Det är sämre här än någon annanstans i appen: den som inte kommer in kan inte be om hjälp inifrån produkten.
+
+**Ett lösenord skrivs en gång, och går att se.** Beslutat 2026-10-21, efter att Kristoffer märkte att nypa-lösenordssidan saknar bekräftelsefält och tyckte att det var skönt.
+
+Han har rätt, men inte av det skäl som ligger närmast. **Ett bekräftelsefält finns inte för säkerhets skull — det finns för att man inte kan se vad man skrivit.** Det ber användaren göra samma sak blint två gånger, och fångar inte ens fallet där hon råkar skriva samma fel båda gångerna. Den bättre lösningen på samma problem är att låta henne se lösenordet: ett öga i fältet som växlar mellan prickar och text. Det löser felskrivningen direkt, kostar ingen extra inmatning, och är bättre på en telefon där tangentbordet gör fler fel.
+
+**Det är samma mönster som produkten landat i tre gånger förut** — visa det riktiga talet i stället för att sätta en spärr, skriv ut talet i avvisningen i stället för att gissa en gräns. Nu: visa lösenordet i stället för att be om det två gånger.
+
+Växlingen är avstängd från början, är en egen knapp som aldrig skickar formuläret, och finns på både nypa-lösenordssidan och inloggningen — **den som just satt ett lösenord är samma person som strax ska skriva in det igen.**
 
 **Ett lösenord återges aldrig.** Inte i ett felmeddelande, inte i ett tomt-fält-besked, inte i felrapporteringen. Meningen säger att fältet saknas eller är för kort, aldrig vad som står i det.
 
