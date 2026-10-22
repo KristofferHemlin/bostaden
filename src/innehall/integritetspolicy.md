@@ -42,6 +42,8 @@ Följande företag behandlar uppgifter på uppdrag av oss. De får inte använda
 
 **Vercel** – kör applikationen. Funktionerna är placerade i Stockholm.
 
+**Resend** – skickar mejlet när du ber om ett nytt lösenord. Endast din e-postadress och mejlets innehåll skickas dit. Mejlen skickas från Irland, medan loggar och kontouppgifter lagras i USA.
+
 **Sentry** – tekniska felrapporter. Rapporterna innehåller inte kvittobilder, belopp, leverantörer eller adresser, utan tekniska uppgifter om felet: vilken sida det inträffade på, vad som gick fel i koden, vilken webbläsare som användes och ett användar-id. Data lagras inom EU.
 
 **Anthropic** – läser av belopp, datum och leverantör ur det kvitto du laddar upp. Bilden skickas vid uppladdningen och används inte för att träna någon modell.
@@ -52,7 +54,7 @@ Följande företag behandlar uppgifter på uppdrag av oss. De får inte använda
 
 ## 5. Överföring utanför EU/EES
 
-Uppgifterna lagras inom EU/EES. Leverantörerna i avsnitt 4 är i flera fall amerikanska bolag, och i den mån uppgifter behandlas utanför EU/EES sker det med stöd av EU-kommissionens standardavtalsklausuler.
+Dina kvitton, bilagor och kontouppgifter lagras inom EU/EES. Leverantörerna i avsnitt 4 är i flera fall amerikanska bolag, och i den mån uppgifter behandlas eller lagras utanför EU/EES – som Resends loggar över utskickade mejl – sker det med stöd av EU-kommissionens standardavtalsklausuler.
 
 ## 6. Hur länge uppgifterna sparas
 
@@ -62,7 +64,7 @@ Vill du att ditt konto raderas mejlar du kvittobo@gmail.com. Då tas ditt konto 
 
 Säkerhetskopior av databasen och de uppladdade filerna tas varje vecka och förvaras på en dator i Sverige. Raderar du ditt konto försvinner uppgifterna ur kopiorna när dessa rensas, senast 30 dagar efter raderingen.
 
-Tekniska felrapporter sparas i högst 30 dagar.
+Tekniska felrapporter sparas i högst 30 dagar, och loggarna över utskickade mejl lika länge hos Resend.
 
 ## 7. Säkerhet
 
@@ -90,4 +92,4 @@ Skulle tjänsten överlåtas till ett bolag eller till någon annan kan uppgifte
 
 Policyn kan uppdateras. Har en ändring betydelse för dig meddelas du innan den börjar gälla.
 
-Senast uppdaterad: 17 oktober 2026
+Senast uppdaterad: 22 oktober 2026
