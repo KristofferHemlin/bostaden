@@ -4,15 +4,22 @@ import { SentryAnvandare } from "@/components/sentry-anvandare";
 import { BostadsvalProvider, type Bostadslista } from "@/components/bostadsvaxlare";
 import { hamtaAktivBostad, hamtaAnvandare } from "@/lib/session";
 import { TJANSTENS_NAMN } from "@/lib/kontakt";
+import { webbadress } from "@/lib/webbadress";
 
 // Varje sida har sin egen titel, "<Sidans namn> – Kvittobo": utan den gar
 // flikar inte att skilja at, och en skarmlasare meddelar samma titel vid
 // varje sidbyte. Sidan anger bara sitt namn; mallen lagger till resten.
 // Landningssidan behaller standardtiteln.
+//
+// Delningsbilden ar src/app/opengraph-image.jpg och galler varje sida som inte
+// satter en egen (docs/design.md, "Ikoner, delning och metadata"). Ikonerna
+// ligger bredvid som favicon.ico och apple-icon.png; Next lankar dem sjalv.
 export const metadata: Metadata = {
+  metadataBase: webbadress(),
   title: { default: TJANSTENS_NAMN, template: `%s – ${TJANSTENS_NAMN}` },
   description:
     "Samlar kvittona för det du lagt på bostaden, så att underlaget finns när du säljer.",
+  openGraph: { siteName: TJANSTENS_NAMN, locale: "sv_SE", type: "website" },
 };
 
 export default async function RootLayout({

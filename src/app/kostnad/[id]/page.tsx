@@ -49,19 +49,26 @@ export const dynamic = "force-dynamic";
 // Sidans titel ar kvittots namn – samma som rubriken i lasläget
 // (anteckningen, annars leverantoren), sa att tva oppna kvitton gar att skilja
 // at. Samma uppslag som sidan: bara i den aktiva bostaden.
+//
+// Finns kvittot inte kastar ocksa metadatan notFound(), inte en reservtitel.
+// Next 15 stralar metadata separat fran sidan: en lyckad generateMetadata
+// skriver sin titel over 404-sidans en stund efter att den visats, och
+// fliken stod pa "Kvitto – Kvittobo" over en sida som sa att kvittot inte
+// finns (uppmatt 2026-10-23). Titeln antydde da att det lag ett kvitto dar.
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  if (!arGiltigtId(id)) return { title: "Kvitto" };
+  if (!arGiltigtId(id)) notFound();
   const { bostadId } = await kravBostad();
   const k = await prisma.kostnad.findFirst({
     where: { id, bostad_id: bostadId },
     select: { anteckning: true, leverantor: true },
   });
-  return { title: k?.anteckning?.trim() || k?.leverantor?.trim() || "Kvitto" };
+  if (!k) notFound();
+  return { title: k.anteckning?.trim() || k.leverantor?.trim() || "Kvitto" };
 }
 
 export default async function KostnadSida({

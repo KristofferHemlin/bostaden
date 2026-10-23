@@ -18,7 +18,9 @@
 // Id:t i adressen ar ingen nyckel. Att losa in kraver att man ar inloggad med
 // adressen inbjudan stallts till (src/lib/inbjudan.ts).
 
+import type { Metadata } from "next";
 import Link from "next/link";
+import { TJANSTENS_NAMN } from "@/lib/kontakt";
 import { EpostLank } from "@/components/epost-lank";
 import { loggaUt } from "@/app/login/actions";
 import { Meddelanderuta, PRIMARKNAPP_KLASS, SEKUNDARKNAPP_KLASS } from "@/components/skarm";
@@ -33,7 +35,25 @@ import { hamtaAktivBostad, hamtaAnvandare } from "@/lib/session";
 import { AnslutKnapp } from "../anslut-knapp";
 import { Inbjudningskort } from "../inbjudningskort";
 
-export const metadata = { title: "Inbjudan" };
+// Lanken ar gjord for att skickas vidare, ofta i en chatt som fler ser
+// (docs/design.md, "Ikoner, delning och metadata"). Forhandsvisningen ar
+// darfor `Kvittobo` och ingenting mer – inte bostadens adress, inte den
+// inbjudnas e-post, inte vem som bjudit in, och inte heller ordet "inbjudan".
+// Metadatan ar statisk med flit: den laser aldrig inbjudan.
+// tester/publika-sidor.test.ts faller om den borjar bara nagot av det.
+//
+// Ingen beskrivning: rotens text beskriver produkten och hade varit ofarlig,
+// men regeln ar "ingenting mer". Sokmotorer haller sig borta – brodtexten
+// bar adressen (src/app/robots.ts forbjuder dessutom rutten).
+//
+// Inget eget `openGraph`: ett sadant ersatter rotens helt, och da forsvinner
+// delningsbilden (src/app/opengraph-image.jpg) – uppmatt 2026-10-23. og:title
+// fylls i ur titeln ovan.
+export const metadata: Metadata = {
+  title: { absolute: TJANSTENS_NAMN },
+  description: null,
+  robots: { index: false, follow: false },
+};
 
 export const dynamic = "force-dynamic";
 

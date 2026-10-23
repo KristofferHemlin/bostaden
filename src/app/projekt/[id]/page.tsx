@@ -41,20 +41,23 @@ import { antalMedlemmar, kravBostad } from "@/lib/session";
 export const dynamic = "force-dynamic";
 
 // Sidans titel ar projektets namn – samma som rubriken. Samma uppslag som
-// sidan: bara i den aktiva bostaden.
+// sidan: bara i den aktiva bostaden. Finns projektet inte kastar metadatan
+// notFound() i stallet for en reservtitel – se samma stalle i
+// src/app/kostnad/[id]/page.tsx for varfor.
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  if (!arGiltigtId(id)) return { title: "Projekt" };
+  if (!arGiltigtId(id)) notFound();
   const { bostadId } = await kravBostad();
   const p = await prisma.projekt.findFirst({
     where: { id, bostad_id: bostadId },
     select: { namn: true },
   });
-  return { title: p?.namn?.trim() || "Projekt" };
+  if (!p) notFound();
+  return { title: p.namn?.trim() || "Projekt" };
 }
 
 // Fraga 2-4:s svar, sammanfattat till en rad (produktspec 4.1).
