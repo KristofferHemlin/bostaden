@@ -11,15 +11,23 @@ import { webbadress } from "@/lib/webbadress";
 // varje sidbyte. Sidan anger bara sitt namn; mallen lagger till resten.
 // Landningssidan behaller standardtiteln.
 //
-// Delningsbilden ar src/app/opengraph-image.jpg och galler varje sida som inte
-// satter en egen (docs/design.md, "Ikoner, delning och metadata"). Ikonerna
-// ligger bredvid som favicon.ico och apple-icon.png; Next lankar dem sjalv.
+// Delningsbilden ar den neutrala public/delningsbild.jpg och galler varje sida
+// som inte satter en egen (docs/design.md, "Ikoner, delning och metadata").
+// Den ar konfigurerad har och inte som src/app/opengraph-image.*: en sadan fil
+// gar fore all konfigurerad metadata i samma segment, och landningssidan ligger
+// i just det segmentet – den hade aldrig kunnat fa sin egen bild. Ikonerna
+// ligger som favicon.ico och apple-icon.png; Next lankar dem sjalv.
 export const metadata: Metadata = {
   metadataBase: webbadress(),
   title: { default: TJANSTENS_NAMN, template: `%s – ${TJANSTENS_NAMN}` },
   description:
     "Samlar kvittona för det du lagt på bostaden, så att underlaget finns när du säljer.",
-  openGraph: { siteName: TJANSTENS_NAMN, locale: "sv_SE", type: "website" },
+  openGraph: {
+    siteName: TJANSTENS_NAMN,
+    locale: "sv_SE",
+    type: "website",
+    images: [{ url: "/delningsbild.jpg", width: 1200, height: 630, alt: TJANSTENS_NAMN }],
+  },
 };
 
 export default async function RootLayout({

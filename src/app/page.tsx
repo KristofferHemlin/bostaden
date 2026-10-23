@@ -45,6 +45,12 @@ import {
 import { avgarForKvitto } from "@/lib/kvittolista";
 import { prisma } from "@/lib/prisma";
 import { Landningssida } from "@/app/landningssida";
+import {
+  HJALTEBILDENS_ALT,
+  LANDNINGSSIDANS_BESKRIVNING,
+  LANDNINGSSIDANS_TITEL,
+} from "@/innehall/landningssida";
+import { TJANSTENS_NAMN } from "@/lib/kontakt";
 import { hamtaAnvandare, kravBostad } from "@/lib/session";
 import { utestaendeInbjudningar } from "@/lib/inbjudan";
 import { AnslutKnapp } from "@/app/inbjudan/anslut-knapp";
@@ -52,10 +58,35 @@ import { Inbjudningskort } from "@/app/inbjudan/inbjudningskort";
 
 export const dynamic = "force-dynamic";
 
-// Inloggad heter sidan "Översikt", som fliken. Landningssidan behaller
-// standardtiteln (src/app/layout.tsx). hamtaAnvandare ar cachad per begaran.
+// Inloggad heter sidan "Översikt", som fliken. Utloggad far landningssidan
+// sin metadata (docs/design.md, "Sidans metadata"): titel och beskrivning
+// skrivna for ett sokresultat, och hjaltebilden som delningsbild.
+// Ett eget openGraph ersatter rotens helt, darfor star siteName och de andra
+// har igen. hamtaAnvandare ar cachad per begaran.
+//
+// Titlarna ar `absolute` med flit: rotlayoutens mall galler bara sidor i
+// segmenten UNDER den, inte den har sidan som delar segment med den.
+// Uppmatt 2026-10-23: fliken hette "Dra av renovering vid försäljning" utan
+// "– Kvittobo", och den inloggade oversikten har av samma skal hetat bara
+// "Översikt".
 export async function generateMetadata(): Promise<Metadata> {
-  return (await hamtaAnvandare()) ? { title: "Översikt" } : {};
+  if (await hamtaAnvandare()) return { title: { absolute: `Översikt – ${TJANSTENS_NAMN}` } };
+  return {
+    title: { absolute: `${LANDNINGSSIDANS_TITEL} – ${TJANSTENS_NAMN}` },
+    description: LANDNINGSSIDANS_BESKRIVNING,
+    alternates: { canonical: "/" },
+    openGraph: {
+      title: `${LANDNINGSSIDANS_TITEL} – ${TJANSTENS_NAMN}`,
+      description: LANDNINGSSIDANS_BESKRIVNING,
+      siteName: TJANSTENS_NAMN,
+      locale: "sv_SE",
+      type: "website",
+      url: "/",
+      images: [
+        { url: "/delningsbild-landningssida.jpg", width: 1200, height: 630, alt: HJALTEBILDENS_ALT },
+      ],
+    },
+  };
 }
 
 export default async function Oversikt({

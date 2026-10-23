@@ -64,8 +64,9 @@ function ico(png, storlek) {
   return Buffer.concat([huvud, png]);
 }
 
-// Delningsbilden: market i naturlig storlek mitt pa en yta i --yta-bas,
-// 1200 x 630. Ingen text – ingenting som kan bara anvandarens innehall.
+// Den neutrala delningsbilden: market i naturlig storlek mitt pa en yta i
+// --yta-bas, 1200 x 630. Ingen text – ingenting som kan bara anvandarens
+// innehall. Galler varje sida utom landningssidan.
 async function delningsbild() {
   const B = 1200;
   const H = 630;
@@ -82,13 +83,62 @@ async function delningsbild() {
     .toBuffer();
 }
 
+// Landningssidans delningsbild (docs/design.md, "Sidans metadata"):
+// hjaltebilden i samma webblasarram som pa sidan, centrerad pa --yta-bas.
+// Skarmbilden ar 800 x 678 och delningsbilden 1200 x 630 – den skalas NED
+// till ramens hojd med bibehallen proportion, aldrig strackt och aldrig upp.
+const HJALTEBILD = "public/hero-920x780.jpg";
+// Farger ur src/app/globals.css, som tal av samma skal som YTA_BAS.
+const LINJE = "#d1c5b6";
+const YTA_NEDSANKT = "#e4d8cc";
+const SAND_MORK = "#b99a76";
+
+async function landningssidansDelningsbild() {
+  const B = 1200;
+  const H = 630;
+  const MARGINAL = 48;
+  const LIST = 28; // ramens topplist, samma som h-7 pa sidan
+  const { width: hb, height: hh } = await sharp(HJALTEBILD).metadata();
+  const bildH = H - 2 * MARGINAL - LIST - 2; // 2 = ramens kant upptill och nedtill
+  const bildB = Math.round((hb * bildH) / hh);
+  if (bildH > hh) throw new Error("Skarmbilden ar for liten – den skulle skalas upp");
+  const ramB = bildB + 2;
+  const ramH = bildH + LIST + 2;
+  const x = Math.round((B - ramB) / 2);
+  const y = MARGINAL;
+  const ram = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${ramB}" height="${ramH}">
+    <defs><clipPath id="r"><rect x="0.5" y="0.5" width="${ramB - 1}" height="${ramH - 1}" rx="12"/></clipPath></defs>
+    <g clip-path="url(#r)">
+      <rect width="${ramB}" height="${LIST + 1}" fill="${YTA_NEDSANKT}"/>
+      <rect y="${LIST}" width="${ramB}" height="1" fill="${LINJE}"/>
+      ${[0, 1, 2].map((i) => `<circle cx="${17 + i * 16}" cy="${LIST / 2 + 0.5}" r="5" fill="${SAND_MORK}"/>`).join("")}
+    </g>
+    <rect x="0.5" y="0.5" width="${ramB - 1}" height="${ramH - 1}" rx="12" fill="none" stroke="${LINJE}"/>
+  </svg>`);
+  const bild = await sharp(HJALTEBILD).resize(bildB, bildH, { kernel: "lanczos3" }).toBuffer();
+  // Bildens nedre horn rundas som ramens, sa att den inte sticker ut.
+  const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${bildB}" height="${bildH}">
+    <path d="M0 0 H${bildB} V${bildH - 11} Q${bildB} ${bildH} ${bildB - 11} ${bildH} H11 Q0 ${bildH} 0 ${bildH - 11} Z" fill="#fff"/>
+  </svg>`);
+  const rundad = await sharp(bild).composite([{ input: mask, blend: "dest-in" }]).png().toBuffer();
+  return sharp({ create: { width: B, height: H, channels: 3, background: YTA_BAS } })
+    .composite([
+      { input: ram, left: x, top: y },
+      { input: rundad, left: x + 1, top: y + LIST + 1 },
+    ])
+    .flatten({ background: YTA_BAS })
+    .jpeg({ quality: 85, mozjpeg: true })
+    .toBuffer();
+}
+
 const ikon32 = await ikon(32);
 const filer = {
   "src/app/favicon.ico": ico(ikon32, 32),
   "src/app/apple-icon.png": await ikon(180),
   "public/ikon-192.png": await ikon(192),
   "public/ikon-512.png": await ikon(512),
-  "src/app/opengraph-image.jpg": await delningsbild(),
+  "public/delningsbild.jpg": await delningsbild(),
+  "public/delningsbild-landningssida.jpg": await landningssidansDelningsbild(),
   "public/kvittobo-logo-toppraden.png": await sharp(KALLA)
     .resize({ height: TOPPRADEN_HOJD, kernel: "lanczos3" })
     .png({ compressionLevel: 9, palette: true, quality: 90 })
