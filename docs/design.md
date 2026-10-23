@@ -1193,6 +1193,25 @@ Där gäller avsikten i stället: **vikningen ska falla mitt i ett stycke, aldri
 
 **Regeln hör hit, inte i en prompt.** Den mättes 2026-09-29 och specificerades bara i den omgångens prompt. Tre dagar senare hänvisade `vad-som-aterstar`-arbetet till ett avsnitt i den här filen som aldrig skrevs, och agenten stannade med rätta: den vägrade rätta mot ett krav som inte fanns dokumenterat. En uppmätt regel som bara står i en prompt upphör att finnas när omgången är klar.
 
+### Ikoner, delning och metadata
+
+**Appen har i dag ingen ikon alls.** Uppmätt 2026-10-23: `/favicon.ico` svarar 404, det finns ingen `<link rel="icon">`, ingen apple-touch-icon och inget manifest. En flik visar webbläsarens tomma standardikon, och den som sparar sidan på sin hemskärm får en vit ruta. Det är inte ett skönhetsfel — en app man öppnar två gånger om året är en app man letar efter bland sina flikar.
+
+**Ikonen är husmärket på appens egen bakgrund.** Källan är `/kvittobo-logo.png`, som är 384 × 410 px och alltså inte kvadratisk. Märket centreras på en kvadrat i `--yta-bas` i stället för att sträckas. Formen får inte beskäras.
+
+**Ingen bild får vara större än den visas.** Samma logotypfil är 199 kB och renderas som 22 × 24 px i toppraden. Det är tvåhundra kilobyte på varje sidvisning för ett märke på tjugotvå pixlar, och det kostar på en telefon med dålig täckning — vilket är precis den situation någon fotograferar ett kvitto i.
+
+**Varje publik sida har en titel och en beskrivning skriven för ett sökresultat**, inte för en flik. Titeln under 60 tecken, beskrivningen under 155.
+
+**Och varje publik sida har en delningsbild.** Utan `og:image` blir förhandsvisningen i ett sms eller en chatt en tom ruta, vilket läser som en trasig länk. Formatet är 1200 × 630.
+
+**En inbjudningslänk är gjord för att skickas vidare.** Den går från en person till en annan, ofta i en chatt som fler kan se, och den kan vidarebefordras i flera led. Därför får dess förhandsvisning inte innehålla bostadens adress, inte den inbjudnas e-postadress, och inte vem som bjudit in. Där står `Kvittobo` och ingenting mer.
+
+**Det är samma regel som adressen i URL:en**, beslutad 2026-10-21, tillämpad på det som webbläsaren och chattappen visar i stället för på det som står i adressraden. En personuppgift som läcker i en förhandsvisning läcker lika mycket som en som läcker i en länk, och den syns dessutom för fler.
+
+**Ingen sida som går att nå utan inloggning får bära användarens innehåll i sin metadata.** Varken i titeln, i beskrivningen eller i delningsbilden.
+
+
 ### Registreringsflödet
 
 Att skapa konto är ett eget flöde, inte samma formulär som inloggningen med en extra knapp. Den som trycker "Skapa konto" ska veta vad som händer härnäst.
