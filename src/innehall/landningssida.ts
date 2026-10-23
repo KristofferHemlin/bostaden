@@ -32,7 +32,7 @@ export const FORBATTRINGSUTGIFT: { rubrik: string; block: Stycke[] } = {
     },
     {
       rubrik: "Reparationer räknas i fem år.",
-      text: "Förbättrande reparationer och underhåll räknas bara om de gjorts inom fem år före försäljningen, och bara till den del bostaden blivit bättre än den var när du köpte den.",
+      text: "Förbättrande reparationer och underhåll räknas bara om de gjorts under försäljningsåret eller de fem kalenderåren närmast före, och bara till den del bostaden blivit bättre än den var när du köpte den.",
     },
     {
       rubrik: "Minst 5 000 kr per kalenderår.",
@@ -72,11 +72,11 @@ export const VANLIGA_FRAGOR: { rubrik: string; fragor: Fraga[] } = {
   fragor: [
     {
       fraga: "Vilka renoveringar får jag dra av?",
-      svar: "Grundförbättringar – att bygga nytt, bygga till, bygga om eller sätta in något som inte fanns – räknas alltid. Reparationer och underhåll räknas bara om de gjorts inom fem år före försäljningen, och bara till den del bostaden blivit bättre än när du köpte den.",
+      svar: "Grundförbättringar – att bygga nytt, bygga till, bygga om eller sätta in något som inte fanns – räknas alltid. Reparationer och underhåll räknas bara om de gjorts under försäljningsåret eller de fem kalenderåren närmast före, och bara till den del bostaden blivit bättre än när du köpte den.",
     },
     {
       fraga: "Hur långt tillbaka i tiden räknas det?",
-      svar: "Grundförbättringar har ingen tidsgräns framåt. En ombyggnad från 2004 räknas lika fullt vid en försäljning i dag. Förbättrande reparationer räknas bara om de gjorts inom fem år före försäljningen.",
+      svar: "Grundförbättringar har ingen tidsgräns framåt. En ombyggnad från 2004 räknas lika fullt vid en försäljning i dag. Förbättrande reparationer räknas bara under försäljningsåret och de fem kalenderåren närmast före.",
     },
     {
       fraga: "Måste jag ha kvar kvittot?",
@@ -92,7 +92,7 @@ export const VANLIGA_FRAGOR: { rubrik: string; fragor: Fraga[] } = {
     },
     {
       fraga: "Räknas det jag gjort själv?",
-      svar: "Ditt eget arbete får du inte dra av, och inte heller verktygen. Materialet får du. Och gör du jobbet själv finns ingen hantverkarfaktura som minns åt dig – då är kvittot på materialet allt du har.",
+      svar: "Ditt eget arbete får du inte dra av. Materialet får du, och hyrde du en maskin för jobbet räknas hyran också. Gör du jobbet själv finns ingen hantverkarfaktura som minns åt dig – då är kvittona allt du har.",
     },
     {
       fraga: "Vad kostar Kvittobo?",
@@ -106,10 +106,8 @@ export const VEM_STAR_BAKOM = {
   text: "Kvittobo byggs av några få personer som själva tappat bort kvitton på sådant de gjort hemma. Bakom tjänsten står en privatperson, inte ett bolag. Appen ger ingen skatterådgivning och ersätter inte Skatteverkets information – den hjälper dig att ha underlaget i ordning.",
 };
 
-// design.md namnger avsnittet ("En avslutande uppmaning") men ger det ingen
-// rubrik. Den har ar vald av agenten 2026-10-23 och vantar pa en beslutad.
 export const AVSLUTNING = {
-  rubrik: "Kom igång",
+  rubrik: "Börja med nästa kvitto",
 };
 
 export const HJALTEBILDENS_ALT =

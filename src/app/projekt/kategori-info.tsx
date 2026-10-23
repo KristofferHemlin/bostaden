@@ -39,13 +39,17 @@ export function KategoriInfo({ fonsterAr }: { fonsterAr: number }) {
         <div className="mt-2 space-y-2 rounded-lg bg-sand px-3 py-2 font-granssnitt text-sm text-text-primar">
           <p>
             <span className="font-medium">Grundförbättring:</span> något
-            tillfördes eller standarden höjdes. Ingen tidsgräns bakåt.
+            tillfördes eller standarden höjdes, ingen tidsgräns bakåt.
           </p>
+          {/* Fonstret ar forsaljningsaret plus de narmast foregaende
+              kalenderaren, inte en rullande period bakat fran
+              forsaljningsdagen (CLAUDE.md, Bortfall). Lydelsen ar
+              design.md:s, ordagrant – tester/femarsfonstret-lydelse.test.ts. */}
           <p>
             <span className="font-medium">Reparation:</span> något fräschades
-            upp eller lagades. Avdragsgill bara inom {talSomOrd(fonsterAr)} år
-            före försäljningen och bara om bostaden är i bättre skick än vid
-            tillträdet.
+            upp eller lagades, avdragsgill bara under försäljningsåret och de{" "}
+            {talSomOrd(fonsterAr)} kalenderåren närmast före, och bara om
+            bostaden är i bättre skick än vid tillträdet.
           </p>
         </div>
       ) : null}

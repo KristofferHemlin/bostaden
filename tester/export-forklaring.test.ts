@@ -62,7 +62,9 @@ describe("forklaringen till en 0-kr-rad i K6A-exporten", () => {
     const ex = byggK6aExport(bygg({ projekt: [p], kostnader: [k] }));
     const rad = ex.sida2.rader.find((r) => r.atgard === "Slipa golv");
     expect(rad?.belopp_brutto).toBe(0);
-    expect(rad?.forklaring).toBe("Åtgärden utfördes mer än fem år före försäljningen.");
+    expect(rad?.forklaring).toBe(
+      "Åtgärden ligger utanför femårsfönstret, som är försäljningsåret och de fem kalenderåren närmast före.",
+    );
   });
 
   it("skicket forbattrades inte: reparationsunderlaget racker sjalvt over troskeln men skickfaktorn ar 0", () => {
@@ -245,6 +247,8 @@ describe("förklaringen följer regelparametern", () => {
     );
     const rad = ex.sida2.rader.find((r) => r.atgard === "Slipa golv");
     expect(rad?.belopp_brutto).toBe(0);
-    expect(rad?.forklaring).toBe("Åtgärden utfördes mer än sex år före försäljningen.");
+    expect(rad?.forklaring).toBe(
+      "Åtgärden ligger utanför sexårsfönstret, som är försäljningsåret och de sex kalenderåren närmast före.",
+    );
   });
 });

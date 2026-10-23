@@ -30,9 +30,14 @@ describe("regeltexter", () => {
 
   it("tidsfönstret skrivs som ord och följer värdet", () => {
     expect(reparationsfonsterForklaring(5)).toBe(
-      "Åtgärden utfördes mer än fem år före försäljningen.",
+      "Åtgärden ligger utanför femårsfönstret, som är försäljningsåret och de fem kalenderåren närmast före.",
     );
-    expect(reparationsfonsterForklaring(6)).toContain("sex år");
+    expect(reparationsfonsterForklaring(6)).toBe(
+      "Åtgärden ligger utanför sexårsfönstret, som är försäljningsåret och de sex kalenderåren närmast före.",
+    );
+    expect(reparationsfonsterForklaring(15)).toBe(
+      "Åtgärden ligger utanför 15-årsfönstret, som är försäljningsåret och de 15 kalenderåren närmast före.",
+    );
     expect(reparationsfonsterNamn(5)).toBe("femårsregeln");
     expect(reparationsfonsterNamn(7)).toBe("sjuårsregeln");
   });

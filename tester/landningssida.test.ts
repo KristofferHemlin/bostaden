@@ -63,7 +63,7 @@ const SVAREN = citat("### De sju svaren")
     const [fraga, ...svar] = block.split("\n");
     return { fraga: normalisera(utanFet(fraga)), svar: normalisera(svar.join(" ")) };
   });
-const AVSNITTEN = DESIGN.filter((r) => /^\*\*[1-5]\. /.test(r)).map((r) =>
+const AVSNITTEN = DESIGN.filter((r) => /^\*\*[1-6]\. /.test(r)).map((r) =>
   r.match(/^\*\*\d\. (.+?)\.?\*\*/)![1],
 );
 
@@ -132,12 +132,11 @@ describe("landningssidan – under vikningen", () => {
     expect(dok.querySelectorAll("h1")).toHaveLength(1);
   });
 
-  it("avsnitten i design.md:s ordning, ett h2 vardera, plus avslutningen", () => {
+  it("de sex avsnitten i design.md:s ordning, ett h2 vardera", () => {
     const { dok } = sida();
     const h2 = [...dok.querySelectorAll("h2")].map(text);
-    expect(AVSNITTEN).toHaveLength(5);
-    expect(h2.slice(0, 5)).toEqual(AVSNITTEN);
-    expect(h2).toHaveLength(6);
+    expect(AVSNITTEN).toHaveLength(6);
+    expect(h2).toEqual(AVSNITTEN);
   });
 
   it("de sju frågorna och svaren står på sidan ordagrant som i design.md", () => {

@@ -70,9 +70,17 @@ export function bakreGransForklaring(
   return `Åtgärden utfördes före ${gransAr} – för ${vilka} räknas inget tidigare.`;
 }
 
-/** Forklaringen till en reparation som foll ur tidsfonstret fore forsaljningen. */
+/**
+ * Forklaringen till en reparation som foll ur tidsfonstret fore forsaljningen
+ * (docs/design.md, Exportvyn). Fonstret ar forsaljningsaret plus de narmast
+ * foregaende kalenderaren – inte en rullande period. Den tidigare lydelsen,
+ * "mer an fem ar fore forsaljningen", var alltid sann dar den visades men
+ * beskrev fel form pa regeln (rattad 2026-10-24).
+ */
 export function reparationsfonsterForklaring(fonsterAr: number): string {
-  return `Åtgärden utfördes mer än ${talSomOrd(fonsterAr)} år före försäljningen.`;
+  const ord = talSomOrd(fonsterAr);
+  const fonster = /^\d/.test(ord) ? `${ord}-årsfönstret` : `${ord}årsfönstret`;
+  return `Åtgärden ligger utanför ${fonster}, som är försäljningsåret och de ${ord} kalenderåren närmast före.`;
 }
 
 /** Regelns namn i lopande text: "femårsregeln" nar fonstret ar fem ar. */
