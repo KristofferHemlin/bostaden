@@ -5,7 +5,6 @@
 import { describe, expect, it } from "vitest";
 import {
   reparationsfonsterForklaring,
-  reparationsfonsterNamn,
   talSomOrd,
   bakreGransForklaring,
   troskelForklaring,
@@ -38,13 +37,10 @@ describe("regeltexter", () => {
     expect(reparationsfonsterForklaring(15)).toBe(
       "Åtgärden ligger utanför 15-årsfönstret, som är försäljningsåret och de 15 kalenderåren närmast före.",
     );
-    expect(reparationsfonsterNamn(5)).toBe("femårsregeln");
-    expect(reparationsfonsterNamn(7)).toBe("sjuårsregeln");
   });
 
   it("större tal skrivs som siffror", () => {
     expect(talSomOrd(12)).toBe("tolv");
     expect(talSomOrd(15)).toBe("15");
-    expect(reparationsfonsterNamn(15)).toBe("15-årsregeln");
   });
 });

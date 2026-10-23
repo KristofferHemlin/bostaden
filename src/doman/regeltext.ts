@@ -79,15 +79,27 @@ export function bakreGransForklaring(
  */
 export function reparationsfonsterForklaring(fonsterAr: number): string {
   const ord = talSomOrd(fonsterAr);
-  const fonster = /^\d/.test(ord) ? `${ord}-årsfönstret` : `${ord}årsfönstret`;
-  return `Åtgärden ligger utanför ${fonster}, som är försäljningsåret och de ${ord} kalenderåren närmast före.`;
+  return `Åtgärden ligger utanför ${reparationsfonstret(fonsterAr)}, som är försäljningsåret och de ${ord} kalenderåren närmast före.`;
 }
 
-/** Regelns namn i lopande text: "femårsregeln" nar fonstret ar fem ar. */
-export function reparationsfonsterNamn(fonsterAr: number): string {
+/** Fonstrets namn i lopande text: "femårsfönstret" nar fonstret ar fem ar. */
+export function reparationsfonstret(fonsterAr: number): string {
   const ord = talSomOrd(fonsterAr);
-  return /^\d/.test(ord) ? `${ord}-årsregeln` : `${ord}årsregeln`;
+  return /^\d/.test(ord) ? `${ord}-årsfönstret` : `${ord}årsfönstret`;
 }
+
+/**
+ * Exportvyn fore forsaljningen (docs/design.md, Exportvyn): varfor sida 2
+ * saknar avdragsgill kolumn. Fonstret raknas fran forsaljningsARET – datumet
+ * avgor vilket ar det blir, det mats ingen period bakat fran en dag. Den
+ * tidigare lydelsen, "raknas bakat fran forsaljningsdatumet", gick att lasa
+ * som en rullande period (rattad 2026-10-24).
+ */
+export function foreForsaljningForklaring(fonsterAr: number): string {
+  const fonster = reparationsfonstret(fonsterAr);
+  return `${fonster.charAt(0).toUpperCase()}${fonster.slice(1)} räknas från försäljningsåret och förslitningen bedöms vid försäljningen, så det går inte att räkna ut ännu. Sida 1 påverkas inte – grundförbättringar har ingen tidsgräns.`;
+}
+
 
 /** Fragan ovanfor projektets fragor nar projektet andrats sedan merkostnaden
  *  besvarades – CLAUDE.md:s lydelse, ordagrant. */

@@ -57,7 +57,7 @@ import {
 } from "@/doman/blankett";
 import { projektnamnKarta } from "@/doman/genomgang";
 import { slaUppRegelparameter } from "@/doman/regelparameter";
-import { reparationsfonsterNamn } from "@/doman/regeltext";
+import { foreForsaljningForklaring } from "@/doman/regeltext";
 import { behoverSkickForsaljning } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { BILAGEPAKET_SYNLIGT } from "@/lib/bilagepaket/flagga";
@@ -113,7 +113,6 @@ export default async function ExportSida() {
       ? isoDatum(bostad.forsaljningsdatum)
       : isoDatum(new Date()),
   );
-  const fonsterNamn = reparationsfonsterNamn(fonsterAr);
 
   return (
     // Egna kort: uppgifterna, sida 1, sida 2 och det som aterstar ar innehall
@@ -298,13 +297,7 @@ export default async function ExportSida() {
         <Kort className="divide-y divide-linje">
           {ex.sald ? null : (
             <div className="p-4">
-              <Meddelanderuta>
-                {fonsterNamn.charAt(0).toUpperCase() + fonsterNamn.slice(1)} och
-                förslitningen räknas bakåt från försäljningsdatumet, så den
-                avdragsgilla delen på sida 2 går inte att beräkna förrän
-                bostaden är markerad som såld. Sida 1 påverkas inte –
-                grundförbättringar har ingen tidsgräns.
-              </Meddelanderuta>
+              <Meddelanderuta>{foreForsaljningForklaring(fonsterAr)}</Meddelanderuta>
             </div>
           )}
 
