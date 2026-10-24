@@ -142,7 +142,14 @@ export function Landningssida() {
           <Hjaltebild />
         </div>
 
-        <div className="lg:max-w-[680px]">
+        {/* Sektionerna: 680 px ar textens matt, valt for lasbarhet, och
+            behallaren CENTRERAS i sidan i stallet for att sta kvar under
+            hjaltetextens vansterkant (docs/design.md, "Sidans sektioner ska
+            synas som sektioner"). Uppmatt 2026-10-24 vid 1440 px: utan
+            centrering lag 598 px tomt till hoger. Att vansterkanterna inte
+            linjerar med hjalten ar beslutat. Pa smal skarm fyller den
+            bredden, och mx-auto andrar ingenting dar. */}
+        <div data-sektioner="" className="mx-auto lg:max-w-[680px]">
           <Avsnitt id="forbattringsutgift" rubrik={FORBATTRINGSUTGIFT.rubrik}>
             {/* Fyra saker, inte fyra stycken: kort i appens eget formsprak,
                 samma <Kort> som oversiktens kvittolista. Tva i bredd fran sm:. */}

@@ -131,6 +131,8 @@ afterAll(async () => {
 
 interface Matning {
   typsnittLaddade: boolean;
+  fonsterBredd: number;
+  sektioner: { vanster: number; hoger: number; bredd: number; rubrikVanster: number };
   fonsterHojd: number;
   knappOverkant: number;
   knappUnderkant: number;
@@ -161,6 +163,12 @@ async function mat(bredd: number, hojd: number): Promise<Matning> {
         typsnittLaddade: ['Fraunces', 'Instrument Sans'].every(namn =>
           [...document.fonts].some(f => f.family.replace(/["']/g, '') === namn && f.status === 'loaded')),
         fonsterHojd: window.innerHeight,
+        fonsterBredd: document.documentElement.clientWidth,
+        sektioner: (() => {
+          const s = document.querySelector('[data-sektioner]').getBoundingClientRect();
+          const h2 = document.querySelector('[data-sektioner] h2').getBoundingClientRect();
+          return { vanster: s.left, hoger: s.right, bredd: s.width, rubrikVanster: h2.left };
+        })(),
         knappOverkant: k.top + window.scrollY,
         knappUnderkant: k.bottom + window.scrollY,
         rubrikStorlek: getComputedStyle(document.querySelector('h1')).fontSize,
@@ -171,6 +179,28 @@ async function mat(bredd: number, hojd: number): Promise<Matning> {
   expect(m.typsnittLaddade, "Fraunces och Instrument Sans måste laddas – med reservtypsnitt mäts fel radbrytningar").toBe(true);
   return m;
 }
+
+// "680 px är textens mått" – talet lases ur docs/design.md, inte ur koden.
+const TEXTENS_MATT = Number(
+  readFileSync(join(ROT, "docs/design.md"), "utf-8").match(/(\d+) px är textens mått/)![1],
+);
+
+describe("sektionerna under knappen ligger centrerade i sidan, i textens mått", () => {
+  // docs/design.md, "Sidans sektioner ska synas som sektioner". Uppmatt
+  // 2026-10-24 vid 1440 px: sektionerna lag kvar 162 px in med 598 px tomt
+  // till hoger. Pa smal skarm fyller de bredden och felet syns inte – darfor
+  // mats det pa bred skarm.
+  it.each([
+    [1440, 900],
+    [1280, 800],
+  ])("vid %i × %i", async (bredd, hojd) => {
+    const { sektioner: s, fonsterBredd } = await mat(bredd, hojd);
+    expect(TEXTENS_MATT).toBe(680);
+    expect(s.bredd).toBeLessThanOrEqual(TEXTENS_MATT);
+    // Lika mycket luft pa bada sidor, inom en pixels avrundning.
+    expect(Math.abs(s.vanster - (fonsterBredd - s.hoger))).toBeLessThanOrEqual(1);
+  }, 60_000);
+});
 
 describe("Skapa konto syns utan att rulla", () => {
   it("vid 390 × 844: rubriken är 24 px, som när knappen mättes, och knappen ligger inom 700 px", async () => {
