@@ -25,6 +25,15 @@
 // utanfor (docs/design.md, "Sidans sektioner ska synas som sektioner").
 // tester/landningssida.test.ts faller om nagon storlek under lg: andras.
 //
+// Pa bred skarm ar regeln knappens synlighet, inte rubrikens storlek: hela
+// Skapa konto inom fonstret vid 1280 × 800. Uppmatt 2026-10-24 (svepet star i
+// omgangens rapport): 54 px i en spalt pa 520 px gav fem rader och knappen pa
+// 909–965. 54 px i 720 px ger tre rader och knappen pa 709–765, 35 px marginal.
+// Spalten ar 720 och inte 696 – den smalaste med samma tal – eftersom ett av
+// styckena bryter om vid 692 och marginalen da faller till 8 px. Priset ar
+// bilden, som krymper fran 542 till 342 px. tester/landningssida-layout.test.ts
+// mater detta i Chrome.
+//
 // Pa telefon ligger bilden under knappen; pa bred skarm (lg:) star texten
 // till vanster med sin egen maxbredd och bilden till hoger. DOM-ordningen ar
 // densamma i bada, sa bilden kan aldrig hamna ovanfor knappen.
@@ -81,7 +90,7 @@ export function Landningssida() {
         </div>
 
         <div className="flex flex-col lg:flex-row lg:items-start lg:gap-12">
-          <div className="w-full lg:max-w-[520px] lg:shrink-0">
+          <div className="w-full lg:max-w-[720px] lg:shrink-0">
             <h1 className="mt-1 px-1 sm:mt-2 font-rubrik text-2xl text-text-primar lg:mt-4 lg:text-5xl lg:leading-[1.1]">
               Det du gjort med bostaden sänker skatten när du säljer. Om kvittot
               finns kvar.
