@@ -1137,11 +1137,11 @@ Motiveringen – fråga 8, "Hur vet du det?" – ligger sist och blockerar aldri
 
 Den som inte är inloggad möter en sida som förklarar produkten, inte ett inloggningskort. Inloggningssidan ligger kvar som den är, på sin egen rutt.
 
-**Sidan skrivs för en främling.** Inte för de första testpersonerna, som ändå vet vad det handlar om, utan för någon som fått länken vidarskickad utan förklaring. Den ska ensam svara på vad det här är och varför det spelar roll. Det är också skälet att den byggs nu och inte efter testet: den är det första testpersonerna möter, och en produkt som inte förklarar sig själv får fynd om förvirring i stället för om flödet.
+**Sidan skrivs för en främling.** Inte för de första testpersonerna, som ändå vet vad det handlar om, utan för någon som sökt på *får man dra av renovering vid försäljning* och aldrig hört talas om Kvittobo. Den ska ensam svara på vad det här är och varför det spelar roll.
 
 **Löftet är förlusten först, enkelheten som svar.** Att börja i vad man går miste om ger skälet att läsa vidare; att sedan visa hur lite det kostar i möda ger skälet att börja. Omvänd ordning ger en app som låter smidig utan att någon förstår varför de skulle vilja ha den.
 
-Texten är:
+Texten ovanför vikningen är:
 
 > **Det du gjort med bostaden sänker skatten när du säljer. Om kvittot finns kvar.**
 >
@@ -1161,15 +1161,110 @@ Det som gäller, var det än står: **avdraget vilar på att du kan göra utgift
 
 Förstaskärmens lydelse är därför: *"Renoveringar och förbättringar sänker vinstskatten den dag bostaden säljs, och ett kvitto är det enklaste beviset som finns. Kvitton bleknar och mejl försvinner – lägg in dem medan de finns kvar."*
 
-**Inget blankettnamn på den här sidan.** Varken K5 eller K6, och inte SKV 2197. Namnet beror på upplåtelseformen och hälften av läsarna skulle få fel – och ingen som inte redan sålt en bostad vet vad någotdera betyder. Appen säger rätt namn när det är dags, på exportvyn.
+**Regeln gäller också allt som skrivs utanför appen.** Ett utkast taget från en sidgenerator 2026-10-23 kom tillbaka med *"men bara om du kan visa vad du lagt ut"* – den förbjudna lydelsen, ordagrant, i den första meningen. Den som beställer text av någon annan måste skicka med den här regeln, annars kommer den hårda formen tillbaka varje gång: den låter bättre.
 
-**Skapa konto är den orange knappen här**, tvärtemot inloggningssidan, med Logga in som sekundärknapp bredvid eller under. Det är den handling sidan finns för. Bär båda knapparna orange försvinner skillnaden och sidan tappar sitt ärende.
+**Inget blankettnamn ovanför vikningen.** Varken K5 eller K6, och inte SKV 2197. Namnet beror på upplåtelseformen och hälften av läsarna skulle få fel – och ingen som inte redan sålt en bostad vet vad någotdera betyder. Längre ned, där reglerna förklaras, får båda namnen stå med sin upplåtelseform bredvid.
 
-**Ingenting om pris.** Ett medvetet val 2026-09-29, inte en glömska. Den kända risken är att en läsare antar prenumeration, eftersom det är vad de flesta appar har, och avstår av det skälet. Blir det ett återkommande fynd i användartestet är åtgärden en rad om affärsmodellen utan siffra, inte en prislista.
+**Skapa konto är den orange knappen här**, tvärtemot inloggningssidan, med Logga in som dämpad länk i toppraden. Det är den handling sidan finns för. Bär båda knapparna orange försvinner skillnaden och sidan tappar sitt ärende.
 
-**Inga bilder.** Vi har ingen egen fotografi, och en köpt bild för in färger och en ton som ligger utanför paletten. Sidan bärs av text, luft och samma tokens som resten av appen – en enda kolumn, samma maxbredd, ingen ny visuell värld att underhålla.
+### Tre beslut som ändrades 2026-10-23
 
-**En skärm, ingen scrollsaga.** Inga sektioner att bläddra igenom, inga kundcitat, inga logotyper. Det finns inget att styrka ännu, och en tom marknadsföringsstruktur syns.
+Alla tre stod tidigare tvärtom i den här filen, och alla tre ändrades av samma skäl: sidan skrivs nu för någon som kommer från en sökmotor och inte för någon som fått länken av Kristoffer.
+
+**Priset nämns nu.** Tidigare stod *ingenting om pris*, med den kända risken att en läsare antar prenumeration och avstår. Åtgärden som den gamla regeln pekade ut var *en rad om affärsmodellen utan siffra*, och det är precis vad som skrivs: **"Gratis att använda. Inget kort, ingen bindning."** Alla tre är sanna i dag. Formuleringen *gratis för alltid* används inte – det är ett löfte om framtiden som ingen behöver ge för att svara på frågan.
+
+**Sidan har en bild.** Tidigare stod *inga bilder*, med skälet att vi saknar egen fotografi och att en köpt bild för in färger utanför paletten. Skälet står kvar och är fortfarande rätt – det är därför bilden är en skärmbild av appens egen översikt. Inga stockbilder, ingen genererad stämning, inget påhittat gränssnitt.
+
+**Sidan fortsätter under vikningen.** Tidigare stod *en skärm, ingen scrollsaga*, med skälet att det inte finns något att styrka ännu och att en tom marknadsföringsstruktur syns. Skälet står kvar: det som läggs till är **reglerna**, inte kundcitat, logotyper eller stjärnbetyg. Substans är inte samma sak som struktur, och det är substansen en främling kom för.
+
+### Vad som står under vikningen
+
+I den här ordningen. Varje avsnitt har en `<h2>` skriven som en sökfras, och sidan har exakt ett `<h1>` – rubriken ovanför vikningen.
+
+**1. Vad räknas som förbättringsutgift?** Utgifterna delas i två slag, och reglerna skiljer sig åt. Fyra korta block:
+
+> **Grundförbättringar räknas alltid.** Att bygga nytt, bygga till, bygga om eller sätta in något som inte fanns. Det finns ingen tidsgräns framåt – en ombyggnad från 2004 räknas lika fullt vid en försäljning i dag.
+>
+> **Reparationer räknas i fem år.** Förbättrande reparationer och underhåll räknas bara om de gjorts under försäljningsåret eller de fem kalenderåren närmast före, och bara till den del bostaden blivit bättre än den var när du köpte den.
+>
+> **Minst 5 000 kr per kalenderår.** Ett år räknas bara om utgifterna det året är minst 5 000 kr. Gränsen gäller bostaden som helhet, inte varje enskild åtgärd.
+>
+> **K5, K6 och ROT.** Avdragen redovisas på blankett K5 för villa och radhus, K6 för bostadsrätt. Ett ROT-avdrag du redan fått räknas av från beloppet.
+
+**2. Varför kvitton på renovering försvinner.** Kvittot ska finnas kvar den dag du säljer, och det kan vara tio eller tjugo år bort. Under tiden byter man e-postadress, termopapper bleknar i lådan, och ingen minns längre vilket år badrummet gjordes eller vad det kostade.
+
+**3. Så fungerar Kvittobo.** Fyra punkter, samma ordning som i appen: lägg in kvittot medan det är färskt – fota det eller ladda upp fakturan; svara på frågorna om vad som gjordes när du har tid; allt sparas per år och per bostad; den dag du säljer finns ett färdigt underlag.
+
+**4. Vanliga frågor om avdrag vid bostadsförsäljning.** Sju stycken, med svaren nedan.
+
+**5. Vem står bakom Kvittobo.**
+
+**6. Börja med nästa kvitto.** Rubriken är avsnittets egen, följd av samma knapp och en länk till integritetspolicyn. Den ber om en sak, inte om en vana: nästa kvitto, inte alla de gamla.
+
+### De sju svaren
+
+De är sidans tyngsta innehåll. En språkmodell som får frågan *"vilka renoveringar får man dra av"* citerar ett sådant här svar om det är fristående och korrekt – därför ska varje svar gå att läsa ur sitt sammanhang utan att bli fel.
+
+> **Vilka renoveringar får jag dra av?**
+> Grundförbättringar – att bygga nytt, bygga till, bygga om eller sätta in något som inte fanns – räknas alltid. Reparationer och underhåll räknas bara om de gjorts under försäljningsåret eller de fem kalenderåren närmast före, och bara till den del bostaden blivit bättre än när du köpte den.
+>
+> **Hur långt tillbaka i tiden räknas det?**
+> Grundförbättringar har ingen tidsgräns framåt. En ombyggnad från 2004 räknas lika fullt vid en försäljning i dag. Förbättrande reparationer räknas bara under försäljningsåret och de fem kalenderåren närmast före.
+>
+> **Måste jag ha kvar kvittot?**
+> Kvittot är det enklaste beviset, inte det enda. Foton före och efter, bygglov, kontoutdrag och lånehandlingar räknas också. Men ju längre tiden går desto svårare blir det att visa något alls, och det är därför det är värt att spara kvittot medan du har det.
+>
+> **Vad händer om jag gjort om samma sak två gånger?**
+> Har samma del av bostaden reparerats eller bytts flera gånger får bara den senaste utgiften dras av. Det som gjorde bostaden bättre än förut räknas ändå.
+>
+> **Vi är två som äger bostaden – vem får dra av vad?**
+> Utgifterna fördelas normalt efter ägarandel, inte efter vem som betalat. Två som äger hälften var delar lika på hela summan, även om den ena betalat mer.
+>
+> **Räknas det jag gjort själv?**
+> Ditt eget arbete får du inte dra av. Materialet får du, och hyrde du en maskin för jobbet räknas hyran också. Gör du jobbet själv finns ingen hantverkarfaktura som minns åt dig – då är kvittona allt du har.
+>
+> **Vad kostar Kvittobo?**
+> Ingenting. Gratis att använda, inget kort, ingen bindning.
+
+**Svaret om eget arbete vänder en besvikelse till ett skäl.** Den som renoverar själv får höra att helgerna inte är värda något – vilket är sant – och i samma andetag att hon är den som har minst kvar att visa om tio år. Det är hennes starkaste skäl att använda appen, och det är gratis att säga.
+
+**Svaret om två ägare kom från en testare** som frågade om den som lagt 100 000 drar av mer än den som lagt 50 000. Svaret är nej, och frågan kommer att ställas igen.
+
+### Vem står bakom
+
+> Kvittobo byggs av några få personer som själva tappat bort kvitton på sådant de gjort hemma. Bakom tjänsten står en privatperson, inte ett bolag. Appen ger ingen skatterådgivning och ersätter inte Skatteverkets information – den hjälper dig att ha underlaget i ordning.
+
+**Att det inte är ett bolag är en tillgång här, inte en svaghet.** Det förklarar varför det inte finns annonser och varför ingen säljer uppgifterna vidare.
+
+**Och lydelsen måste tåla att läsas bredvid integritetspolicyn**, som säger att *"Kvittobo drivs i dag av en privatperson, inte av ett bolag"*. De två påståendena handlar om olika saker – vem som bygger och vem som ansvarar för uppgifterna – men en besökare som jämför ser en motsägelse om den ena säger *team* och den andra *privatperson*. Därför står båda meningarna här.
+
+### Bilden
+
+**En skärmbild av appens egen översikt, i en webbläsarram.** Ramen ritas i koden och bakas inte in i bilden, så att skärmbilden går att byta utan att ramen måste ritas om.
+
+**Skärmbilden tas vid 920 × 780 px.** Innehållskolumnen är 644 px bred oavsett fönstret – vid 1280 px blir den en tunn remsa i ett tomt fält, vid 920 fyller den bilden. Vid den bredden ligger dessutom Översikt, Kvitton, Projekt och Deklaration vågrätt i toppraden i stället för som flikrad längst ned, vilket läser som en app och inte som en telefon.
+
+**Innehållet är verkligt, men valt.** Sex poster som fyller listan, datumen i fallande ordning, och minst fyra rader som visar *varav ROT, avgår* och *räknas med*. Den raden är poängen: den visar att appen räknar och inte bara lagrar. Att välja vilka poster som syns är vad varje produkt gör med sitt demokonto; att måla in andra siffror i en skärmbild är något annat och görs inte.
+
+**Adressen i bilden är påhittad.** Ingen verklig bostad, varken Kristoffers eller någon annans, får synas i marknadsföringsmaterial.
+
+**Och den ska vara uppenbart påhittad, inte bara okänd.** En adress hämtad ur en adressökning är någons hem även om vi inte vet vems. Demobostaden heter därför `Kvarnvägen 12 B`, samma text som adressfältets egen platshållare.
+
+**På en telefon ligger bilden under knappen.** Aldrig över. Då kan den aldrig knuffa *Skapa konto* nedanför de 700 pixlarna, oavsett vilken bild som läggs in senare.
+
+**På en bred skärm står texten till vänster och bilden till höger.** Texten behåller sin egen maxbredd och är vänsterställd, så att en tom högerspalt läser som luft och inte som ett hål. Sidan ska se avsiktlig ut även innan bilden finns.
+
+### Sidans metadata
+
+**Titel:** *Dra av renovering vid försäljning – Kvittobo*. Under 60 tecken, och skriven som det någon söker på.
+
+**Beskrivning:** *Förbättringar sänker vinstskatten när du säljer bostaden – om kvittot finns kvar. Kvittobo sparar dem tills dagen kommer.* Under 155 tecken.
+
+**Strukturerad data:** `FAQPage` för de sju frågorna och `WebSite` för sajten. Svaren i den strukturerade datan ska vara ordagrant samma text som på sidan.
+
+**Delningsbild:** hjältebilden, 1200 × 630. Fram till dess ordmärket på `--yta-bas`.
+
+`lang="sv"`. All text som riktig text i HTML – ingenting som bara finns i en bild, ingenting som bara renderas efter att JavaScript kört.
 
 ### Landningssidans luft
 
@@ -1191,6 +1286,8 @@ Där gäller avsikten i stället: **vikningen ska falla mitt i ett stycke, aldri
 
 **Marginalen 2026-10-02 är 22 px, och en textrad är 22 px.** Det är alltså exakt en rad kvar. Läggs en mening till i något av de fyra styckena så att det växer med en rad, faller knappen utanför gränsen igen. Rör någon texten på den här sidan ska raden mätas om – det är den enda regeln i produkten som ett ord kan bryta.
 
+**Budgeten gäller allt som ligger ovanför knappen.** När sidan fick innehåll under vikningen 2026-10-23 ändrades ingenting i den här regeln, och det är hela poängen: det nya ligger under knappen, aldrig över. Varken bilden, prisraden eller någon rubrik får hamna mellan toppen och *Skapa konto*. **Mät om vid varje ändring av hjältedelen.**
+
 **Regeln hör hit, inte i en prompt.** Den mättes 2026-09-29 och specificerades bara i den omgångens prompt. Tre dagar senare hänvisade `vad-som-aterstar`-arbetet till ett avsnitt i den här filen som aldrig skrevs, och agenten stannade med rätta: den vägrade rätta mot ett krav som inte fanns dokumenterat. En uppmätt regel som bara står i en prompt upphör att finnas när omgången är klar.
 
 ### Ikoner, delning och metadata
@@ -1211,6 +1308,10 @@ Där gäller avsikten i stället: **vikningen ska falla mitt i ett stycke, aldri
 
 **Ingen sida som går att nå utan inloggning får bära användarens innehåll i sin metadata.** Varken i titeln, i beskrivningen eller i delningsbilden.
 
+
+**Rotlayoutens titelmall gäller inte sidan på `/`.** Next tillämpar mallen bara på sidor i segmenten under layouten, inte på den som delar segment med den. Uppmätt 2026-10-23: den inloggade översiktens flik hade därför alltid hetat bara *Översikt*, utan tjänstens namn, och landningssidans titel saknade samma tillägg. Båda sätts nu med `absolute` och skriver ut namnet själva.
+
+**Och en bildfil i `src/app` vinner över sidans egen metadata.** Rotens delningsbild låg där, och eftersom landningssidan delar segment med roten kunde den aldrig få en egen. Filen ligger nu i `public/` i stället. Båda felen är av samma slag: ramverket tog tyst över, och ingenting i testerna sa ifrån — det var mätningen av den renderade sidan som hittade dem.
 
 ### Registreringsflödet
 
@@ -1394,7 +1495,7 @@ Varje rad visar projektets namn, belopp och vad det räknas som. Etiketten heter
 
 Skillnaden är etiketten, och den är värd att formulera eftersom den avgör fler fall än det här: **ett fält med etikett måste besvaras av sitt värde. En dämpad rad utan etikett får bära vad som helst som är sant om raden.** "Räknas som" är en fråga, och *Väntar på frågor* svarar inte på den. En dämpad andra rad ställer ingen fråga. Värdet står som ren text – "Grundförbättring" eller "Reparation" – utan färg, prick eller etikett.
 
-**En informationsknapp vid listans rubrik förklarar vad kategorierna betyder.** Grundförbättring: något tillfördes eller standarden höjdes, ingen tidsgräns bakåt. Reparation: något fräschades upp eller lagades, avdragsgill bara inom fem år före försäljningen och bara om bostaden är i bättre skick än vid tillträdet.
+**En informationsknapp vid listans rubrik förklarar vad kategorierna betyder.** Grundförbättring: något tillfördes eller standarden höjdes, ingen tidsgräns bakåt. Reparation: något fräschades upp eller lagades, avdragsgill bara under försäljningsåret och de fem kalenderåren närmast före, och bara om bostaden är i bättre skick än vid tillträdet.
 
 Förklaringen ligger bakom knappen, inte som brödtext ovanför listan. Den som redan vet ska inte behöva läsa förbi den varje gång.
 
@@ -1679,7 +1780,11 @@ Vinsten är att appen alltid har något att handla om. Det finns inget tomt till
 Utan försäljningsdatum visas:
 
 - **Sida 1 komplett.** Grundförbättringar saknar tidsgräns bakåt och påverkas inte av när bostaden säljs. Summan till ruta 4 är verklig.
-- **Sida 2 med sina rader men utan avdragsgill kolumn**, och en förklaring: femårsregeln och förslitningen utgår från försäljningsdatumet, så det går inte att räkna ut ännu.
+- **Sida 2 med sina rader men utan avdragsgill kolumn**, och en förklaring. Rutans lydelse är: *"Femårsfönstret räknas från försäljningsåret och förslitningen bedöms vid försäljningen, så den avdragsgilla delen på sida 2 går inte att beräkna förrän bostaden är markerad som såld. Sida 1 påverkas inte – grundförbättringar har ingen tidsgräns."*
+
+**Lydelsen *"räknas bakåt från försäljningsdatumet"* används inte.** Den säger inte *inom fem år*, men den går att läsa som samma rullande period, och sidan ska inte lämna kvar den bilden sedan vi rättat den överallt annars. Fönstret räknas från försäljnings**året**; det är datumet som avgör vilket år det blir.
+
+**Och rutan ska säga vad som inte går att räkna ut, och när det går.** Min första rättelse 2026-10-23 bytte *"bakåt från försäljningsdatumet"* mot *"så det går inte att räkna ut ännu"* — precist om fönstret, men den tappade både vad det är som inte går att beräkna och vad som krävs för att det ska gå. **En rättelse av ett ord får inte kosta en mening.** Rutan säger därför båda sakerna, och den andra meningen om sida 1 hör till lydelsen och står med här i stället för att bara finnas i koden.
 - **Projekt som väntar på frågor** som vanligt.
 
 "Markera som såld" ligger som en knapp längst ned på sidan, aldrig som en spärr framför den.
@@ -1695,9 +1800,13 @@ En varning per projekt som fyller fyra rader var gör skärmen till en vägg av 
 | Orsak | Vad raden säger |
 |---|---|
 | Året nådde inte tröskeln | Utgifterna för året understeg 5 000 kr, så inget avdrag medges för året |
-| Reparationen ligger utanför femårsfönstret | Åtgärden utfördes mer än fem år före försäljningen |
+| Reparationen ligger utanför femårsfönstret | Åtgärden ligger utanför femårsfönstret, som är försäljningsåret och de fem kalenderåren närmast före |
 | Skicket förbättrades inte | Det du bytte ut var i samma eller sämre skick vid försäljningen än vid förvärvet |
 | Bostaden var nybyggd vid förvärvet | Allt var nytt vid tillträdet, så reparationer räknas inte |
+
+**Skälets lydelse rättad 2026-10-23.** Den sa tidigare *"Åtgärden utfördes mer än fem år före försäljningen"*. Meningen är alltid sann på de rader där den visas — en utesluten rad ligger alltid minst fem år och en dag före — men den beskriver fel form på regeln. Fönstret är **försäljningsåret plus de fem närmast föregående kalenderåren**, och den som läser skälet och drar slutsatsen att gränsen är rullande planerar fel nästa gång.
+
+**Och rättelsen skrevs först in mitt i tabellen**, som ett stycke mellan två rader. Det delade tabellen i två och de sista raderna slutade renderas som tabell. En rättelse som förstör filen den står i är ingen rättelse — **en tabell ändras i sin rad, aldrig genom ett stycke inuti den**.
 
 Förklaringen står **under sin egen rad**, inte samlad per år. Raderna i sammanställningen står i en lång lista och är inte grupperade visuellt; en förklaring långt från sin rad går inte att koppla ihop. Det blir repetitivt när flera rader delar orsak, och det priset är värt att betala.
 
