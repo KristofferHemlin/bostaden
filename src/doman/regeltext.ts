@@ -93,11 +93,12 @@ export function reparationsfonstret(fonsterAr: number): string {
  * saknar avdragsgill kolumn. Fonstret raknas fran forsaljningsARET – datumet
  * avgor vilket ar det blir, det mats ingen period bakat fran en dag. Den
  * tidigare lydelsen, "raknas bakat fran forsaljningsdatumet", gick att lasa
- * som en rullande period (rattad 2026-10-24).
+ * som en rullande period (rattad 2026-10-24). Rutan sager ocksa VAD som inte
+ * gar att berakna och NAR det gar – en forsta rattelse tappade bada.
  */
 export function foreForsaljningForklaring(fonsterAr: number): string {
   const fonster = reparationsfonstret(fonsterAr);
-  return `${fonster.charAt(0).toUpperCase()}${fonster.slice(1)} räknas från försäljningsåret och förslitningen bedöms vid försäljningen, så det går inte att räkna ut ännu. Sida 1 påverkas inte – grundförbättringar har ingen tidsgräns.`;
+  return `${fonster.charAt(0).toUpperCase()}${fonster.slice(1)} räknas från försäljningsåret och förslitningen bedöms vid försäljningen, så den avdragsgilla delen på sida 2 går inte att beräkna förrän bostaden är markerad som såld. Sida 1 påverkas inte – grundförbättringar har ingen tidsgräns.`;
 }
 
 

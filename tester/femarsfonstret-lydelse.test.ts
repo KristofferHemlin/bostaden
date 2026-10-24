@@ -69,10 +69,15 @@ const FONSTER_AR = 5;
  * Former som later som en rullande period bakat fran forsaljningsdagen:
  * "inom fem år före försäljningen", "mer än sex år före försäljningen",
  * "räknas bakåt från försäljningsdatumet".
+ *
+ * Och den forkortade rattelsen fran 2026-10-23, "så det går inte att räkna ut
+ * ännu": ratt om fonstret, men den sager varken vad som inte gar att berakna
+ * eller nar det gar. En rattelse av ett ord far inte kosta en mening.
  */
 const ROLLANDE = [
   /(inom|mer än)\s+\S+\s+år\s+före\s+försäljningen/i,
   /bakåt\s+från\s+försäljnings(datumet|dagen|dag)\b/i,
+  /så\s+det\s+går\s+inte\s+att\s+räkna\s+ut\s+ännu/i,
 ];
 const arRullande = (t: string) => ROLLANDE.some((r) => r.test(t));
 
@@ -92,12 +97,13 @@ function exportskaletEnligtDesign(): string {
   return rad!.split("|")[2].trim();
 }
 
-/** Forklaringen pa exportvyn fore forsaljningen, ur punkten om sida 2. */
+/** Rutans hela lydelse pa exportvyn fore forsaljningen, ur punkten om sida 2. */
 function foreForsaljningEnligtDesign(): string {
   const rad = DESIGN.split("\n").find((r) => r.startsWith("- **Sida 2 med sina rader men utan avdragsgill kolumn**"));
   expect(rad, "punkten om sida 2 fore forsaljningen i design.md").toBeTruthy();
-  const mening = rad!.split("en förklaring: ")[1].trim();
-  return mening.charAt(0).toUpperCase() + mening.slice(1);
+  const traff = rad!.match(/Rutans lydelse är: \*"([^"]+)"\*/);
+  expect(traff, "rutans lydelse i punkten om sida 2").toBeTruthy();
+  return traff![1];
 }
 
 const ANNA = "a0000000-0000-4000-8000-0000000000c1";
@@ -166,12 +172,8 @@ describe("exportens skäl när en reparation fallit ur fönstret", () => {
 });
 
 describe("exportvyn före försäljningen", () => {
-  // Rutan bar en mening till efter design.md:s, om sida 1. Den star kvar
-  // fran fore rattelsen och sager inget om fonstret.
-  const SIDA_1 = "Sida 1 påverkas inte – grundförbättringar har ingen tidsgräns.";
-
-  it("rutan säger design.md:s mening, räknad från försäljningsåret", async () => {
-    const forvantat = `${foreForsaljningEnligtDesign()} ${SIDA_1}`;
+  it("rutan säger design.md:s hela lydelse – vad som inte går att beräkna, och när", async () => {
+    const forvantat = foreForsaljningEnligtDesign();
     expect(foreForsaljningForklaring(FONSTER_AR)).toBe(forvantat);
     expect(await exportvynsRutor()).toContain(forvantat);
   });
