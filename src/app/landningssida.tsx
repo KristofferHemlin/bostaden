@@ -20,6 +20,11 @@
 // de sex avsnitten. Ingenting far hamna mellan toppen och Skapa konto –
 // tester/landningssida.test.ts jamfor texten fore knappen med design.md.
 //
+// Rubriken vaxer bara pa bred skarm (lg:), aldrig vid 390 px: dar ar
+// marginalen till 700 px en enda textrad, och en storre rubrik puttar knappen
+// utanfor (docs/design.md, "Sidans sektioner ska synas som sektioner").
+// tester/landningssida.test.ts faller om nagon storlek under lg: andras.
+//
 // Pa telefon ligger bilden under knappen; pa bred skarm (lg:) star texten
 // till vanster med sin egen maxbredd och bilden till hoger. DOM-ordningen ar
 // densamma i bada, sa bilden kan aldrig hamna ovanfor knappen.
@@ -31,7 +36,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { PRIMARKNAPP_KLASS } from "@/components/skarm";
+import { Kort, PRIMARKNAPP_KLASS } from "@/components/skarm";
 import {
   AVSLUTNING,
   FORBATTRINGSUTGIFT,
@@ -77,7 +82,7 @@ export function Landningssida() {
 
         <div className="flex flex-col lg:flex-row lg:items-start lg:gap-12">
           <div className="w-full lg:max-w-[520px] lg:shrink-0">
-            <h1 className="mt-1 px-1 sm:mt-2 font-rubrik text-2xl text-text-primar">
+            <h1 className="mt-1 px-1 sm:mt-2 font-rubrik text-2xl text-text-primar lg:mt-4 lg:text-5xl lg:leading-[1.1]">
               Det du gjort med bostaden sänker skatten när du säljer. Om kvittot
               finns kvar.
             </h1>
@@ -129,11 +134,15 @@ export function Landningssida() {
 
         <div className="lg:max-w-[680px]">
           <Avsnitt id="forbattringsutgift" rubrik={FORBATTRINGSUTGIFT.rubrik}>
-            <div className="space-y-3">
+            {/* Fyra saker, inte fyra stycken: kort i appens eget formsprak,
+                samma <Kort> som oversiktens kvittolista. Tva i bredd fran sm:. */}
+            <div className="grid gap-3 sm:grid-cols-2">
               {FORBATTRINGSUTGIFT.block.map((b) => (
-                <p key={b.rubrik} className={BRODTEXT}>
-                  <strong className={FET}>{b.rubrik}</strong> {b.text}
-                </p>
+                <Kort key={b.rubrik} className="p-4 sm:p-5">
+                  <p className={BRODTEXT}>
+                    <strong className={`block ${FET}`}>{b.rubrik}</strong> {b.text}
+                  </p>
+                </Kort>
               ))}
             </div>
           </Avsnitt>
@@ -151,9 +160,11 @@ export function Landningssida() {
           </Avsnitt>
 
           <Avsnitt id="vanliga-fragor" rubrik={VANLIGA_FRAGOR.rubrik}>
-            <div className="space-y-5">
+            {/* En tunn linje mellan varje fraga – sju svar i rad utan
+                avgransning ar den langsta obrutna texten pa sidan. */}
+            <div className="divide-y divide-linje">
               {VANLIGA_FRAGOR.fragor.map(({ fraga, svar }) => (
-                <div key={fraga} data-fraga="">
+                <div key={fraga} data-fraga="" className="py-5 first:pt-0 last:pb-0">
                   <h3 className="font-granssnitt text-base font-medium text-text-primar">{fraga}</h3>
                   <p data-svar="" className={`mt-1 ${BRODTEXT}`}>
                     {svar}
@@ -186,10 +197,14 @@ export function Landningssida() {
   );
 }
 
+// Varje avsnitt inleds med en tunn linje i --linje, i innehallets bredd, och
+// luften ar ojamn kring rubriken: mer ovanfor (pt-) an under (mb-), sa att
+// rubriken binder nedat till sitt innehall i stallet for att svava mellan
+// tva avsnitt (docs/design.md, "Sidans sektioner ska synas som sektioner").
 function Avsnitt({ id, rubrik, children }: { id: string; rubrik: string; children: ReactNode }) {
   return (
-    <section aria-labelledby={id} className="mt-12 px-1 sm:mt-16">
-      <h2 id={id} className="mb-4 font-rubrik text-xl text-text-primar">
+    <section aria-labelledby={id} className="mt-12 border-t border-linje px-1 pt-10 sm:mt-14 sm:pt-12">
+      <h2 id={id} className="mb-3 font-rubrik text-xl text-text-primar">
         {rubrik}
       </h2>
       {children}

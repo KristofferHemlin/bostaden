@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { arBaraForUtloggade, arOskyddadSokvag } from "@/lib/oskyddade-sokvagar";
 import { HJALTEBILD, Landningssida } from "@/app/landningssida";
+import { Kort } from "@/components/skarm";
 import { jsonForSkript } from "@/lib/landningssida-schema";
 
 describe("oskyddade sokvagar", () => {
@@ -179,6 +180,80 @@ describe("landningssidan – under vikningen", () => {
   it("lovar inte att avdraget kräver kvitto", () => {
     const { dok } = sida();
     expect(text(dok.body)).not.toMatch(/kräver att du kan visa|bara om du kan visa/);
+  });
+});
+
+// docs/design.md, "Sidans sektioner ska synas som sektioner". jsdom raknar
+// inte ut layout, sa det som provas ar klasserna pa de renderade elementen –
+// pixlarna mats i webblasaren (knappens lage, i omgangens rapport).
+
+const klasser = (el: Element) => (el.getAttribute("class") ?? "").split(/\s+/).filter(Boolean);
+/** Tailwinds avstandssteg som tal: "pt-10" -> 10. */
+const steg = (el: Element, prefix: string) => {
+  const k = klasser(el).find((c) => new RegExp(`^${prefix}-\\d+$`).test(c));
+  expect(k, `${prefix}- pa ${el.tagName}`).toBeTruthy();
+  return Number(k!.split("-")[1]);
+};
+const TEXTSTORLEK = /^text-(xs|sm|base|lg|\d?xl|\[.+\])$/;
+
+describe("rubriken växer bara på bred skärm", () => {
+  // Vid 390 px ar marginalen till 700 px en enda textrad (Landningssidans
+  // luft). Varje storlek som galler under lg: – utan prefix, eller med sm:
+  // och md: – ar den uppmatta 2026-10-02, och far inte andras.
+  it("under lg: samma storlek som när knappen mättes – text-2xl, inget annat", () => {
+    const { dok } = sida();
+    const h1 = dok.querySelector("h1")!;
+    const underLg = klasser(h1).filter((c) => {
+      const [pref, bas] = c.includes(":") ? c.split(":") : ["", c];
+      return ["", "sm", "md"].includes(pref) && (TEXTSTORLEK.test(bas) || /^leading-/.test(bas));
+    });
+    expect(underLg).toEqual(["text-2xl"]);
+  });
+
+  it("på bred skärm är den större", () => {
+    const { dok } = sida();
+    const lg = klasser(dok.querySelector("h1")!).filter((c) => c.startsWith("lg:text-"));
+    expect(lg).toHaveLength(1);
+    expect(["lg:text-3xl", "lg:text-4xl", "lg:text-5xl", "lg:text-6xl"]).toContain(lg[0]);
+  });
+});
+
+describe("avsnitten är avgränsade", () => {
+  const LINJE = ["border-t", "border-linje"];
+
+  it("varje avsnitt inleds med en tunn linje i --linje", () => {
+    const { dok } = sida();
+    const avsnitt = [...dok.querySelectorAll("section")];
+    expect(avsnitt).toHaveLength(6);
+    for (const s of avsnitt) expect(klasser(s)).toEqual(expect.arrayContaining(LINJE));
+  });
+
+  it("mer luft ovanför rubriken än under den", () => {
+    const { dok } = sida();
+    for (const s of dok.querySelectorAll("section")) {
+      const h2 = s.querySelector("h2")!;
+      expect(steg(s, "pt")).toBeGreaterThan(steg(h2, "mb"));
+    }
+  });
+
+  it("de fyra blocken är kort i appens formspråk – samma klasser som <Kort>", () => {
+    const { dok } = sida();
+    const kortKlasser = klasser(
+      new DOMParser().parseFromString(renderToStaticMarkup(Kort({ children: "x" })), "text/html").body.firstElementChild!,
+    );
+    const avsnitt = forsta(dok, "h2", AVSNITTEN[0]).parentElement!;
+    const block = [...avsnitt.querySelectorAll("p")].map((p) => p.parentElement!);
+    expect(block).toHaveLength(4);
+    for (const b of block) expect(klasser(b)).toEqual(expect.arrayContaining(kortKlasser));
+  });
+
+  it("de sju frågesvaren skiljs åt med en linje mellan varje", () => {
+    const { dok } = sida();
+    const fragor = [...dok.querySelectorAll("[data-fraga]")];
+    expect(fragor).toHaveLength(7);
+    const behallare = fragor[0].parentElement!;
+    expect(fragor.every((f) => f.parentElement === behallare)).toBe(true);
+    expect(klasser(behallare)).toEqual(expect.arrayContaining(["divide-y", "divide-linje"]));
   });
 });
 
