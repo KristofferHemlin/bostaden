@@ -23,8 +23,10 @@ import tailwindKonfig from "../tailwind.config";
 // andra radbrytningar, och ett test som tyst hoppar over sig sjalvt kan inte
 // falla.
 //
-// Uppmatt 2026-10-24 i den korande appen: 628–678 px vid 390 px, och 765 px
-// vid 1280 × 800 med rubriken i 54 px och spalten 720 px bred.
+// Uppmatt 2026-10-24 i den korande appen: 628–678 px vid 390 px, och 719–775
+// px vid 1280 × 800 med rubriken i 40,5 px och spalten 560 px bred. Marginalen
+// dar ar 25 px – en rad brodtext (27 px) till i hjaltedelen, och knappen
+// hamnar under. "800" ar den synliga ytan, inte skarmen (docs/design.md).
 
 const CHROME =
   process.env.CHROME_SOKVAG ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
