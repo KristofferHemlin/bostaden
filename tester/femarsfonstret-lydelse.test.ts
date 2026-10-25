@@ -45,7 +45,8 @@ vi.mock("@/lib/dokumentavlasning/analysera", () => ({ analyseraDokumentbuffert: 
 import ExportSida from "@/app/export/page";
 import { Landningssida } from "@/app/landningssida";
 import { KategoriInfo } from "@/app/projekt/kategori-info";
-import { foreForsaljningForklaring, reparationsfonsterForklaring } from "@/doman/regeltext";
+import { foreForsaljningForklaring, reparationsfonsterForklaring, reparationsfonstret } from "@/doman/regeltext";
+import { slaUppRegelparameter } from "@/doman/regelparameter";
 
 // Femarsfonstret ar forsaljningsaret plus de fem narmast foregaende
 // kalenderaren (CLAUDE.md, Bortfall) – inte "inom fem ar fore forsaljningen",
@@ -172,10 +173,28 @@ describe("exportens skäl när en reparation fallit ur fönstret", () => {
 });
 
 describe("exportvyn före försäljningen", () => {
+  // Troskeln i rutan kommer ur regelparametern, som i koden. Beloppet skrivs
+  // med harda mellanslag (docs/design.md, Typografi) och design.md med vanliga;
+  // jamforelsen slar ihop allt blanktecken, inget annat.
+  const TROSKEL = slaUppRegelparameter(REGELPARAMETRAR, "troskelbelopp", "2026-10-25");
+
   it("rutan säger design.md:s hela lydelse – vad som inte går att beräkna, och när", async () => {
     const forvantat = foreForsaljningEnligtDesign();
-    expect(foreForsaljningForklaring(FONSTER_AR)).toBe(forvantat);
+    expect(normalisera(foreForsaljningForklaring(FONSTER_AR, TROSKEL))).toBe(forvantat);
     expect(await exportvynsRutor()).toContain(forvantat);
+  });
+
+  // Rattad 2026-10-25: rutan lovade att sida 1 ligger fast. Troskeln provas
+  // pa bada slagen tillsammans, och fore forsaljningen hoppas femarsfonstret
+  // over – sa ett ar kan passera i dag och falla nar reparationen raknas bort.
+  it("rutan säger att också sida 1 kan ändras, och lovar inte att den ligger fast", async () => {
+    const helaLydelsen = foreForsaljningEnligtDesign();
+    const sida1 = helaLydelsen.slice(helaLydelsen.indexOf("Också sida 1"));
+    expect(sida1.startsWith("Också sida 1 kan ändras då:")).toBe(true);
+    const ruta = (await exportvynsRutor()).find((t) => t.startsWith(reparationsfonstret(FONSTER_AR).replace(/^./, (c) => c.toUpperCase())));
+    expect(ruta).toBeDefined();
+    expect(ruta!.endsWith(sida1)).toBe(true);
+    expect(ruta).not.toMatch(/Sida 1 påverkas inte/);
   });
 });
 

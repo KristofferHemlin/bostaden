@@ -129,8 +129,9 @@ export function Fraga({
   children,
 }: {
   rubrik: string;
-  /** Konkret exempel pa vad svaret betyder – Skatteverkets egen stil. */
-  hjalp: string;
+  /** Konkret exempel pa vad svaret betyder – Skatteverkets egen stil. En
+   *  strang blir ett stycke; en ruta med flera delar skickar sina egna. */
+  hjalp: ReactNode;
   /** Varfor svaret avvisades. Star under alternativen, och gruppens forsta
    *  alternativ far fokus. */
   fel?: string;
@@ -144,7 +145,9 @@ export function Fraga({
       </legend>
       {visaHjalp ? (
         <div className="mb-2 flex items-start gap-2 rounded-lg bg-sand px-3 py-2 font-granssnitt text-sm text-text-primar">
-          <p className="flex-1">{hjalp}</p>
+          <div data-hjalpruta="" className="flex-1">
+            {typeof hjalp === "string" ? <p>{hjalp}</p> : hjalp}
+          </div>
           <button
             type="button"
             aria-label="Stäng hjälptexten"
@@ -179,8 +182,33 @@ const HJALP_PLANLOSNING =
 const HJALP_NYTT_ELLER_BYTT =
   "Nytt: du satte in något där det aldrig funnits något liknande förut, till exempel en diskmaskin i ett kök som saknade en. Bytt: du bytte ut något som redan fanns, till exempel en diskmaskin som stod där sedan tidigare.";
 
-const HJALP_BATTRE_ELLER_LIKNANDE =
-  "Bättre: du bytte till högre kvalitet och betalade mer för det – till exempel en kraftigare köksfläkt i stället för en enkel. Liknande: du bytte till motsvarande kvalitet, till exempel en trasig blandare mot en likvärdig ny. Bara mellanskillnaden vid ett bättre byte räknas som grundförbättring; resten är reparation.";
+// Fraga 5:s hjalpruta, ordagrant ur docs/design.md ("Projektfragorna").
+// Tredje delen bar regeln om teknisk utveckling (CLAUDE.md, fragetradet): en
+// varmekalla eller vitvara som blivit battre bara for att tekniken gatt framat
+// ar ett likvardigt byte. Utan den svarar den som bytt panna mot varmepump
+// "Battre kvalitet" och far en grundforbattring som inte finns. Exemplet pa
+// battre ar darfor parkett, aldrig en vitvara – rutan gav lange en kraftigare
+// koksflakt. tester/fragetradet-hjalp.test.ts laser det vantade ur design.md.
+const HJALP_BATTRE_ELLER_LIKNANDE = (
+  <div className="space-y-1.5">
+    <p>
+      <strong className="font-medium">Bättre:</strong> du bytte till högre
+      kvalitet och betalade mer för det – parkett för 8&nbsp;000&nbsp;kr i stället för
+      plastmatta för 3&nbsp;000&nbsp;kr. Då är mellanskillnaden, 5&nbsp;000&nbsp;kr,
+      grundförbättring och resten reparation.
+    </p>
+    <p>
+      <strong className="font-medium">Liknande:</strong> du bytte till
+      motsvarande kvalitet, till exempel en trasig blandare mot en likvärdig ny.
+    </p>
+    <p>
+      <strong className="font-medium">Och nytt är inte samma sak som bättre.</strong>{" "}
+      En ny värmekälla eller vitvara som är bättre bara för att tekniken gått
+      framåt – en värmepump som drar mindre el än den gamla pannan – räknas som
+      ett likvärdigt byte, alltså som <em>Liknande</em>.
+    </p>
+  </div>
+);
 
 const HJALP_MERKOSTNAD =
   "Skillnaden i pris mot vad ett likvärdigt byte hade kostat – inte hela beloppet. Uppskatta om du inte har en exakt summa på kvittot.";

@@ -276,9 +276,12 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
   // dessutom bara blankettnamnet (K5/K6) i exportvyn, aldrig nagot harinne.
   //
   // Sidan gar alltid att oppna, aven innan bostaden ar sald (docs/design.md,
-  // Exportvyn). Utan forsaljningsdatum ar sida 1 anda komplett – grundforbattringar
-  // saknar tidsgrans bakat – medan sida 2 visar sina rader utan avdragsgill del,
-  // eftersom femarsfonstret och skickfaktorn bada utgar fran forsaljningsdatumet.
+  // Exportvyn). Utan forsaljningsdatum raknas sida 1 ut med den avdragsgilla
+  // delen, medan sida 2 visar sina rader utan, eftersom femarsfonstret och
+  // skickfaktorn bada utgar fran forsaljningen. Sida 1 ar dock inte slutgiltig:
+  // fonstret hoppas over har, men troskeln provas anda pa bada slagen
+  // tillsammans. Faller en reparation ur fonstret nar forsaljningen registreras
+  // kan aret hamna under troskeln och ta grundforbattringen med sig.
   const sald = bostad.forsaljningsdatum !== null;
   const forsaljningsAr = bostad.forsaljningsdatum
     ? kalenderAr(bostad.forsaljningsdatum)

@@ -103,16 +103,14 @@ export default async function ExportSida() {
   // de tva talen skrivs av till (produktspec 4.9, src/doman/blankett.ts).
   const texter = blankettTexter(bostad.upplatelseform);
 
-  // Tidsfonstret for reparationer namns i forklaringen innan bostaden ar sald.
-  // Talet ur regelparametern, aldrig bokstavligt (docs/design.md, Exportvyn);
+  // Tidsfonstret och troskeln namns i forklaringen innan bostaden ar sald.
+  // Talen ur regelparametern, aldrig bokstavliga (docs/design.md, Exportvyn);
   // utan forsaljningsdatum galler vardet for i dag.
-  const fonsterAr = slaUppRegelparameter(
-    regelparametrar,
-    "reparationsfonster_ar",
-    bostad.forsaljningsdatum
-      ? isoDatum(bostad.forsaljningsdatum)
-      : isoDatum(new Date()),
-  );
+  const regeldatum = bostad.forsaljningsdatum
+    ? isoDatum(bostad.forsaljningsdatum)
+    : isoDatum(new Date());
+  const fonsterAr = slaUppRegelparameter(regelparametrar, "reparationsfonster_ar", regeldatum);
+  const troskelbelopp = slaUppRegelparameter(regelparametrar, "troskelbelopp", regeldatum);
 
   return (
     // Egna kort: uppgifterna, sida 1, sida 2 och det som aterstar ar innehall
@@ -257,8 +255,12 @@ export default async function ExportSida() {
             rader={ex.sida1.rader}
             gemensam={gemensam}
             // Samma tva kolumner som sida 2 (docs/design.md, Skarmuppbyggnad).
-            // Sida 1 ar komplett aven fore forsaljningen – en grundforbattring
-            // har ingen skickfaktor att vanta pa.
+            // Sida 1 visar sin avdragsgilla kolumn aven fore forsaljningen –
+            // en grundforbattring har ingen skickfaktor att vanta pa. Men den
+            // ligger inte fast: troskeln provas pa bada slagen tillsammans,
+            // och en reparation som faller ur femarsfonstret vid forsaljningen
+            // kan ta ett ar under troskeln (src/doman/regeltext.ts,
+            // foreForsaljningForklaring).
             visaAvdragsgill
             tomtText="Inga grundförbättringar registrerade."
           />
@@ -297,7 +299,7 @@ export default async function ExportSida() {
         <Kort className="divide-y divide-linje">
           {ex.sald ? null : (
             <div className="p-4">
-              <Meddelanderuta>{foreForsaljningForklaring(fonsterAr)}</Meddelanderuta>
+              <Meddelanderuta>{foreForsaljningForklaring(fonsterAr, troskelbelopp)}</Meddelanderuta>
             </div>
           )}
 

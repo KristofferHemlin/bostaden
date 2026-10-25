@@ -95,10 +95,17 @@ export function reparationsfonstret(fonsterAr: number): string {
  * tidigare lydelsen, "raknas bakat fran forsaljningsdatumet", gick att lasa
  * som en rullande period (rattad 2026-10-24). Rutan sager ocksa VAD som inte
  * gar att berakna och NAR det gar – en forsta rattelse tappade bada.
+ *
+ * Och den lovar inte att sida 1 ligger fast. Den sa tidigare "Sida 1 påverkas
+ * inte", vilket ar fel: troskeln provas per ar pa bada slagen tillsammans, och
+ * fore forsaljningen hoppas femarsfonstret over. En reparation som faller ur
+ * fonstret nar forsaljningen registreras kan da ta ett ar under troskeln och
+ * med det en grundforbattring pa sida 1 (rattad 2026-10-25). Beloppet ur
+ * regelparametern, aldrig bokstavligt.
  */
-export function foreForsaljningForklaring(fonsterAr: number): string {
+export function foreForsaljningForklaring(fonsterAr: number, troskelbeloppOren: number): string {
   const fonster = reparationsfonstret(fonsterAr);
-  return `${fonster.charAt(0).toUpperCase()}${fonster.slice(1)} räknas från försäljningsåret och förslitningen bedöms vid försäljningen, så den avdragsgilla delen på sida 2 går inte att beräkna förrän bostaden är markerad som såld. Sida 1 påverkas inte – grundförbättringar har ingen tidsgräns.`;
+  return `${fonster.charAt(0).toUpperCase()}${fonster.slice(1)} räknas från försäljningsåret och förslitningen bedöms vid försäljningen, så den avdragsgilla delen på sida 2 går inte att beräkna förrän bostaden är markerad som såld. Också sida 1 kan ändras då: tröskeln på ${kronorKort(troskelbeloppOren)} prövas per år på båda slagen tillsammans, så ett år som passerar i dag kan falla under gränsen när reparationen räknas bort.`;
 }
 
 
