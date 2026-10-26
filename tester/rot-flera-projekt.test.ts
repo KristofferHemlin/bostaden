@@ -164,6 +164,25 @@ describe("ett kvitto med ROT kan delas mellan två åtgärder – hela vägen ge
   });
 });
 
+describe("ROT fördelas aldrig på en privat del – inte heller i en uppdelning", () => {
+  // CLAUDE.md, Tester: samma fall som "6 000 kr, inte 6 300", men genom
+  // uppdelningen och inte med ett kvitto byggt for hand. Basen ar bostadens
+  // del, 9 000 kr; faktorn blir 6 000/9 000. Buggen fran 2 oktober lade ROT
+  // aven pa den privata raden – faktor 7 000/10 000 – och gav 4 200 och
+  // 2 100 kr. Talparen skiljer sig i bada projekten.
+  it("10 000 kr, 3 000 kr ROT, 1 000 kr privat, resten 6 000 och 3 000 kr – ger 4 000 och 2 000 kr", async () => {
+    seeda(300_000);
+    const svar = await dela(uppdelning([
+      ["Privat", "1 000", "privat", ""],
+      ["Arbete kök", "6 000", KOK, ""],
+      ["Arbete badrum", "3 000", BADRUM, ""],
+    ]));
+    expect(svar).toBe("sparad");
+    expect(await bidrag(KOK)).toBe(400_000);
+    expect(await bidrag(BADRUM)).toBe(200_000);
+  });
+});
+
 describe("ROT fördelas i proportion till radernas andel", () => {
   it("varje rads ROT är dess andel av bostadens del, och de går ihop till hela avdraget", async () => {
     seeda(300_000);

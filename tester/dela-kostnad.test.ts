@@ -227,7 +227,11 @@ describe("tolkaUppdelning: ROT och forsakringsersattning", () => {
       P,
     );
     expect(utanRot).toBe(79_195);
-    expect(medRot).toBeLessThan(utanRot);
-    expect(medRot).toBeGreaterThan(0);
+    // Bostadens del minus ROT, inte en riktning (CLAUDE.md, Tester: "Ett test
+    // som provar en riktning ar ingen sparr"). Fallet kravde till 2026-10-26
+    // bara att bidraget blev mindre och storre an noll – och gick igenom med
+    // buggen fran 2 oktober, som ger 636,80 kr har eftersom den lagger ROT
+    // aven pa den privata raden.
+    expect(medRot).toBe(utanRot - 20_000);
   });
 });
