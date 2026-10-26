@@ -4,7 +4,9 @@ App som samlar och klassificerar kostnader nedlagda på den egna bostaden, så a
 
 Fullständig specifikation: `docs/produktspec.md`. Läs den innan du börjar på ett nytt byggsteg.
 
-`docs/regelkallor.md` innehåller källhänvisningar och historik. Den är **inte** implementationsunderlag och ska inte läsas för att härleda regler – reglerna nedan och i specen är den enda sanningen. Filen uppdateras när en regel ändras, inte när kod skrivs.
+`docs/regelkallor.md` innehåller källhänvisningar och historik. Den är **inte** implementationsunderlag och ska inte läsas för att härleda regler – reglerna nedan är den enda sanningen. Filen uppdateras när en regel ändras, inte när kod skrivs.
+
+**Raden sa till 2026-10-26 "reglerna nedan och i specen".** Det motsade avsnittet *Den här filen är ensam källa för varje regel*, som säger att specen inte innehåller några regler alls. Två rader om vilken fil som är sanningen, med olika svar, i den fil som avgör allt annat.
 
 `docs/design.md` är styrande för allt visuellt och är den **enda** visuella referensen – det finns inga mockuper, designfiler eller skärmbilder att utgå från. Läs den innan du skriver komponenter eller väljer färger. Är något visuellt ospecificerat, fråga hellre än att välja fritt.
 
@@ -92,8 +94,9 @@ Det ändrar vilket svar som är rätt på fråga 5, inte hur svaret räknas, så
 Ordningen är bindande.
 
 ```
-1.  avdragsgrundande = belopp - rot_utnyttjat - forsakringsersattning
-    reduktionsfaktor = avdragsgrundande / belopp
+1.  bostadens_del    = belopp - privata_rader
+    avdragsgrundande = bostadens_del - rot_utnyttjat - forsakringsersattning
+    reduktionsfaktor = avdragsgrundande / bostadens_del
 
 2.  grundforbattringsdel:
       nybyggnad | planlosning | nytt_tillagg → hela avdragsgrundande
@@ -126,6 +129,8 @@ Ordningen är bindande.
 6.  Ägarandel tillämpas sist, på båda kategorierna.
 ```
 
+**Steg 1 utgick till 2026-10-26 från kvittots totalbelopp**, alltså `avdragsgrundande = belopp - rot - ersättning` med `reduktionsfaktor = avdragsgrundande / belopp`. Det var fel i båda leden: den privata delen ska räknas bort först, och faktorn ska ha bostadens del som nämnare. Koden har hela tiden gjort rätt — testfallet *6 000 kr, inte 6 300* finns just för att vakta det, och är buggen från 2026-10-02 i testform. **Formeln i den här filen var alltså den enda kvarvarande platsen där buggen stod kvar**, och den som följt den bokstavligt hade återinfört den. Ett testfall som vaktar en regel ersätter inte regeln; det förklarar den inte för den som bara läser formeln.
+
 **Tidsgränsen räknas bort före tröskeln, skickbedömningen efter.** Det är den enda ordningen som stämmer med Skatteverkets verktyg, och den är lätt att få fel. En reparation som fallit ur femårsfönstret kan inte lyfta året över tröskeln. En reparation vars skick knappt förbättrats räknas däremot med hela sitt underlag i tröskelprövningen, även om avdraget blir nästan noll.
 
 **Nybyggd-regeln ligger i steg 3 av samma skäl**, trots att den inte är en tidsgräns: var bostaden nybyggd vid förvärvet är reparationen inte en förbättringsutgift, och ett belopp som aldrig var avdragsgillt kan inte lyfta året över tröskeln. Den träffar bara reparationsdelen – en merkostnad för bättre kvalitet är en standardhöjning oavsett bostadens skick vid köpet.
@@ -136,7 +141,9 @@ Ordningen är bindande.
 
 **Basen är brutto just för att `reduktionsfaktor` redan bär reduktionen.** Fördelas merkostnaden i stället på det avdragsgrundande beloppet, och varje del sedan multipliceras med sin faktor, dras ROT av två gånger. Räkneexemplet som visade det: 30 000 kr med 6 000 kr ROT och 20 000 kr utan, samma år, merkostnad 12 000 kr. Brutto som bas ger `12 000 × 30/50 × 0,8 + 12 000 × 20/50 × 1,0 = 10 560 kr`. Avdragsgrundande som bas ger 10 690,91 kr — 131 kr för mycket, och felet växer med ROT-beloppet. Saknas ROT och privat andel är baserna identiska, så skillnaden syns bara i blandade projekt.
 
-**Merkostnaden ska vara mindre än projektets belopp.** Taket gäller alltid, inte bara efter en ändring, och gränsen är sträng i båda ändar: `0 < merkostnad < belopp`. Utan det ger ett projekt med 10 000 kr kvar och 12 000 kr i merkostnad **12 000 kr på sida 1 — mer än som betalats — och −2 000 kr i beloppkolumnen på sida 2.** Ett negativt belopp i ett deklarationsunderlag är det värsta tal appen kan skriva, och frågeträdet kontrollerar i dag bara att merkostnaden är större än noll. Den stränga övre gränsen är Skatteverkets, avläst i deras e-tjänst (se steg 2 ovan); lika med kostnaden avvisas där med samma meddelande som ett för högt belopp.
+**Merkostnaden ska vara mindre än projektets belopp.** Taket gäller alltid, inte bara efter en ändring, och gränsen är sträng i båda ändar: `0 < merkostnad < belopp`. Utan det ger ett projekt med 10 000 kr kvar och 12 000 kr i merkostnad **12 000 kr på sida 1 — mer än som betalats — och −2 000 kr i beloppkolumnen på sida 2.** Ett negativt belopp i ett deklarationsunderlag är det värsta tal appen kan skriva. Den stränga övre gränsen är Skatteverkets, avläst i deras e-tjänst; lika med kostnaden avvisas där med samma meddelande som ett för högt belopp.
+
+**Båda gränserna är byggda sedan 2026-10-19.** Till 2026-10-26 stod här att frågeträdet *"kontrollerar i dag bara att merkostnaden är större än noll"*, och hänvisningen *"se steg 2 ovan"* pekade på en punkt som inte handlar om avläsningen. En mening som börjar *"i dag"* har ett utgångsdatum och behöver bytas mot sakläget den dag den byggs, inte stå kvar som ett krav på något som redan finns.
 
 **Tre tal dras från en kostnad, och alla tre behöver en övre gräns — men inte samma.** Skriven 2026-10-19, efter frågan om merkostnadsspärren borde gälla även ROT och försäkringsersättning. Svaret är ja, och att gränserna skiljer sig åt av sakliga skäl:
 
@@ -149,7 +156,7 @@ Ordningen är bindande.
 | `forsakringsersattning` | `0 ≤ ersättning ≤ bostadens_del` | **Lika med är tillåtet här**, till skillnad från de andra: en försäkring kan faktiskt ha betalat hela skadan, och då finns ingen egen utgift att dra av. Större än så är däremot alltid fel — ersättning som täcker mer än det här kvittot hör till de andra kvittona den också täcker |
 | summan | `rot + ersättning ≤ bostadens_del` | Var för sig rimliga, tillsammans kan de äta upp hela kostnaden |
 
-**Basen är bostadens del av kvittot, inte kvittots totalbelopp.** Det följer av att steg 1 drar avdragen från just bostadens del — den privata delen räknas bort först, ROT därefter, enligt regeln under *Räknas inte med*. Ett kvitto på 10 000 kr med 6 000 kr privat har 4 000 kr som bas, och 5 000 kr i ROT ska avvisas även om det ryms i totalbeloppet.
+**Basen är bostadens del av kvittot, inte kvittots totalbelopp.** Det följer av steg 1, som drar avdragen från just bostadens del: den privata delen räknas bort först, ROT och försäkringsersättning därefter. *Räknas inte med* räknar upp ROT och ersättningen men inte den privata delen, så hänvisningen dit stod fel till 2026-10-26 — ordningen hör till steg 1 och står där. Ett kvitto på 10 000 kr med 6 000 kr privat har 4 000 kr som bas, och 5 000 kr i ROT ska avvisas även om det ryms i totalbeloppet.
 
 **Regeln bakom, som gäller varje gräns vi sätter: en gräns ska uttryckas i samma storhet som beräkningen drar ifrån, annars begränsar den ingenting.** Skriven 2026-10-19, efter att jag i en prompt gissade på kvittots totalbelopp och agenten läste koden i stället för att följa gissningen.
 
@@ -229,7 +236,9 @@ Skriven 2026-10-18, efter att en genomklickning visade att ingen beräkning läs
 
 **Och ansvarsfriskrivningen är ett skyddsnät, aldrig ett skäl.** Att användaren svarar för vad hon lämnar in är sant och står kvar. Men den dagen vi lutar oss mot den som *motiv* för att inte lösa något vi kan lösa, har vi börjat använda den för att slippa arbetet — och det är ett glidande plan i en produkt som räknar fram skattetal.
 
-**Blanketten tar hela kronor, och det talet gör det inte i dag.** K5 bär instruktionen *"Ange belopp i hela krontal."* Vår export skriver 205 973,42 kr bredvid *Förs till K5, ruta 4*, eftersom en fördelad merkostnad ger ören i en grundförbättring. **Det talet går inte att föra in som det står**, så användaren avrundar själv, godtyckligt, i det sista steget innan siffran lämnar oss. Uppmätt och källkontrollerat 2026-10-20, se `docs/regelkallor.md`.
+**Blanketten tar hela kronor.** K5 bär instruktionen *"Ange belopp i hela krontal."* En fördelad merkostnad ger ören i en grundförbättring, och ett sådant tal går inte att föra in som det står — användaren avrundar då själv, godtyckligt, i det sista steget innan siffran lämnar oss. Uppmätt och källkontrollerat 2026-10-20, se `docs/regelkallor.md`.
+
+**Exportvyn avrundar sedan dess.** Till 2026-10-26 stod här att *"vår export skriver 205 973,42 kr"*. Det är sant bara om PDF-paketet, som ligger bakom en flagga och fortfarande skriver ören — se *Bilagepaketet* nedan. Mätningen var riktig när den gjordes; det som fattades var en tidsform och en avgränsning till vilken av de två utskrifterna den gällde.
 
 **Beslutat: raderna behåller sina ören, talet i *Förs till*-raden avrundas uppåt till hela kronor.** Avrundningen ligger sist av allt, efter ägarandelen, och raden bär en kort mening om varför den skiljer sig från summan av raderna ovan. Skälen: raderna är dokumentation och ska stämma exakt mot beräkningen, medan *Förs till*-talet är det enda som ska skrivas av, och uppåt är den riktning Skatteverkets eget verktyg använder för reparationsdelen. **Riktningen är dock inte mätt för sida 1** – den är vald för att vara konsekvent med sida 2, inte avläst, och ska märkas som härledd om någon senare letar efter källan.
 
@@ -245,7 +254,9 @@ Skickfaktorn ger brutna belopp. Skatteverkets verktyg avrundar dem uppåt till h
 
 Alla tre har decimal under 0,5 och avrundas ändå uppåt.
 
-Avrundningen gäller **bara reparationsdelen efter skickfaktorn** – det är den enda platsen där ett brutet belopp uppstår. Grundförbättringen är merkostnaden rakt av.
+Avrundningen uppåt enligt tabellen gäller **reparationsdelen efter skickfaktorn** – det är där de brutna beloppen uppstår, och de tre mätta fallen är alla av det slaget.
+
+**Men den är inte den enda platsen, och raden sa det till 2026-10-26.** En fördelad merkostnad ger ören också i en grundförbättring, och *Förs till*-talet avrundas uppåt oavsett vilket av de två slagen som gav decimalerna – beslutet står ovan. De två raderna sa alltså emot varandra med några stycken emellan: en sa *bara reparationsdelen*, den andra avrundade ruta 4. Koden följer beslutet ovan.
 
 Den ligger **vid utskrift, inte i beräkningskedjan**. Interna belopp är heltal i ören; avrunda först när talet visas eller hamnar i exporten. Avrundas det mitt i kedjan ackumuleras felet över många åtgärder.
 
@@ -273,7 +284,9 @@ Faktorn är skillnaden delat med fem. Är skicket lika eller sämre vid försäl
 
 Bytet gjordes före lansering med flit. Lagrade svar är heltal, så byter etiketterna betydelse omtolkas varje befintligt svar tyst. Med enbart testdata kostar det ingenting; efter lansering hade det inte gått att göra alls. **Orden har en enda källa i koden och ett test som håller dem lika med tabellen ovan.**
 
-`skick_forsaljning` är null fram till försäljningen. Null blockerar aldrig inmatning eller översikt, bara exporten – som ändå inte kan tas fram innan försäljningen är registrerad.
+`skick_forsaljning` är null fram till försäljningen. Null blockerar aldrig inmatning eller översikt.
+
+**Och det blockerar inte exporten heller, sedan exportvyn öppnades före försäljningen.** Till 2026-10-26 stod här att exporten *"ändå inte kan tas fram innan försäljningen är registrerad"*. Vyn går att öppna hela tiden: sida 1 visas med sina rader, sida 2 med sina rader men utan avdragsgill kolumn, och det är `docs/design.md` som styr vad som står där. För en såld bostad med saknat skick ger exporten en varning, inte en spärr. **Testet som enligt testlistan nedan skulle vakta spärren har därför aldrig funnits**, och ska inte skrivas – regeln den vaktade är borta.
 
 ### Bakre tidsgräns för grundförbättringar
 
@@ -325,6 +338,10 @@ Testa domänreglerna och de nödvändiga flödena. Skriv testet före implementa
 
 **Ett påstående om ett tal prövar elementets hela text, aldrig en delsträng.** Skriven 2026-10-20, efter att ett test som letade efter *"1 kr räknas med"* passerade medan sidan visade *"6 001 kr räknas med"*. Tal är särskilt lömska här: varje belopp som slutar på rätt siffror innehåller det rätta svaret som delsträng, så ett sådant test går igenom för nästan varje fel det skulle fånga. Agenten hittade det genom brytningen med flit — **ett test kan vara falskt utan att vara tomt, och bara brytningen skiljer dem åt.**
 
+**Ett test som prövar en riktning är ingen spärr.** Skriven 2026-10-26. `dela-kostnad.test.ts` hade ett fall som hette *"ROT drar ner bidraget även när kvittot är uppdelat"* och som bara krävde att bidraget blev mindre än beloppet och större än noll. Det gick igenom med buggen från den 2 oktober, alltså med 6 300 kr i stället för 6 000 — felet är ju också mindre än beloppet. Ett påstående om att ett tal är *lägre*, *högre*, *mindre* eller *inte noll* passerar för nästan varje fel i samma riktning. **Varje testfall i listan nedan står med sitt tal, och ett test som vaktar det ska kräva just det talet.**
+
+Det är tredje gången samma mönster dyker upp: tomma strängar som passerade, `document.fonts.check()` som svarar sant för ett typsnitt som inte finns, och nu en riktning i stället för ett tal. De är alla samma fel — ett test som inte kan falla — och de upptäcks bara av brytningen med flit.
+
 **Och det väntade talet räknas fram ur samma källa som koden använder**, inte skrivet som en konstant bredvid. En rad som visar rätt tal av en slump är ingen spärr, och en konstant följer inte med när regeln ändras. Undantaget är de avlästa talen längst ned i det här avsnittet: de **ska** stå som konstanter, eftersom de är mätningar mot Skatteverkets verktyg och inte resultat av vår egen kod.
 
 Dessa fall måste finnas och passera. De sex första är verifierade mot Skatteverkets e-tjänst 2026-09-15 och får inte ändras utan att verktyget körs om.
@@ -359,9 +376,12 @@ Dessa fall måste finnas och passera. De sex första är verifierade mot Skattev
 **Avräkning, fördelning och andel**
 
 - ROT-reducerad del av arbetskostnad dras bort före allt annat
-- Kostnad på 10 000 kr med 3 000 kr ROT, rad fördelad 60 % **mellan två åtgärder**, bidrar med 4 200 kr. ROT fördelas proportionellt mellan åtgärder, eftersom båda avser arbete på bostaden
+- Kostnad på 10 000 kr med 3 000 kr ROT, uppdelad på **två åtgärder** med 6 000 kr respektive 4 000 kr, bidrar med 4 200 kr till den första och 2 800 kr till den andra. ROT fördelas proportionellt mellan åtgärder, eftersom båda avser arbete på bostaden
+
+  **Fallet löd till 2026-10-26 "rad fördelad 60 % mellan två åtgärder".** En rad har ett mål, så en enda rad går inte att koppla till två projekt – uppdelningen skapar två rader, och det är den vägen 60/40 matas in. Lydelsen lät som en saknad funktion när agenten läste den mot formuläret; talen är desamma. **Andelsfältet är något annat:** det kopplar en del av en rad till ett projekt och lämnar resten okopplad, inte till ett andra projekt
 - **ROT fördelas aldrig på en privat del.** Kostnad på 10 000 kr med 3 000 kr ROT och 1 000 kr markerat som privat bidrar med **6 000 kr**, inte 6 300. Den privata delen fick ingen ROT – ROT ges på arbetskostnad för arbete på bostaden, aldrig på varor och aldrig på något som inte är bostaden – så hela avdraget hör till den del som räknas. Den privata delen räknas bort först, ROT därefter
 - Felet åt fel håll: den proportionella fördelningen gav 6 300 kr och **överskattade avdraget**. Rättat 2026-10-02
+- **Samma fall genom en uppdelning:** 10 000 kr med 3 000 kr ROT och 1 000 kr privat, resten delad på två projekt med 6 000 och 3 000 kr, ger **4 000 och 2 000 kr** – inte 4 200 och 2 100. Basen är bostadens del, 9 000 kr, och faktorn blir 6 000/9 000. Fallet ska prövas via uppdelningen och inte med ett kvitto byggt för hand, eftersom det är den vägen som öppnades 2026-10-26 när ROT-spärren togs bort. Mätt 2026-10-26: det enda test som var skrivet för 6 000-fallet bygger kvittot för hand och går varken genom `tolkaUppdelning` eller `delaUppKostnad`
 - Vid ägarandel 50 % halveras beloppen i det individuella underlaget, men inte tröskelprövningen
 - Rad fördelad till 60 % på ett projekt bidrar med 60 % av beloppet, inte hela
 - Kvittorad markerad som privat ingår inte i något projekt
@@ -376,7 +396,10 @@ Dessa fall måste finnas och passera. De sex första är verifierade mot Skattev
 
 **Export**
 
-- `skick_forsaljning` = null blockerar exporten men aldrig inmatning eller översikt
+- En osåld bostad ger ett underlag: sida 1 med sina rader, sida 2 med sina rader men utan avdragsgill kolumn
+- En såld bostad med `skick_forsaljning` = null ger en varning i exporten, inte en spärr
+
+**Raden löd till 2026-10-26 "`skick_forsaljning` = null blockerar exporten".** Testet för den har aldrig funnits, eftersom spärren inte finns. Det är det enda fallet i hela den här listan som saknade sitt test, och det saknades av rätt skäl.
 
 Kör testerna innan du säger att ett steg är klart.
 
@@ -511,7 +534,7 @@ Högen som tas "för sig" skapas med tomt namn, eftersom namnet sätts av först
 
 **Innan något byggs eller rättas på en sida: kontrollera att sidan går att nå från appen.** Finns ingen knapp, ingen länk och ingen flagga som är på, är sidan inte nåbar, och då är ingenting som står där ett fel för någon användare. Säg det i svaret i stället för att bygga.
 
-Skriven 2026-10-19, efter femte gången jag specificerat arbete på ett tillstånd ingen kan nå. Senaste var bilagepaketets komplettering, som jag satte i högsta prioritet med motiveringen *"det kan låsa ute någon"* — `BILAGEPAKET_SYNLIGT` är `false` och `/export/paket` går till `/export`. Tidigare: *Återstår* i PDF:en, som jag drev som brådskande innan jag kontrollerade att appen kan skapa en PDF (den kan inte, och ska inte förrän steg 13).
+Skriven 2026-10-19, efter femte gången jag specificerat arbete på ett tillstånd ingen kan nå. Senaste var bilagepaketets komplettering, som jag satte i högsta prioritet med motiveringen *"det kan låsa ute någon"* — `BILAGEPAKET_SYNLIGT` är `false` och `/export/paket` går till `/export`. Tidigare: *Återstår* i PDF:en, som jag drev som brådskande innan jag kontrollerade om appen alls kan skapa en PDF. **Den kunde inte då. Den kan nu** – `src/lib/bilagepaket/pdf.ts` finns, bakom samma flagga – vilket gör exemplet till en illustration av sin egen poäng: meningen i parentes stod kvar som ett påstående om koden i tre veckor efter att den slutade vara sann.
 
 Kontrollen hör till agenten, inte till den som skriver prompten. **Den som skriver prompten minns inte vilka flaggor som är av; den som läser koden ser det på en minut.** En rad i svaret räcker: *den här sidan nås från X*, eller *den nås inte, flaggan är av*.
 
@@ -521,6 +544,10 @@ Samma kontroll gäller en gren i beräkningen. Försäkringsersättningen har in
 
 ## Uttryckligen utanför scope
 
-Ingen integration mot Skatteverket. Ingen OCR. Ingen automatisk produktkategorisering av kvittorader. Ingen automatisk avläsning av entreprenörsfakturor. Ingen värderingsintegration.
+Ingen integration mot Skatteverket. Ingen automatisk produktkategorisering av kvittorader. Ingen värderingsintegration.
+
+**Ingen OCR i klassisk mening** – ingen teckenigenkänning som läser ett kvitto tecken för tecken och lämnar en textmassa att tolka. Däremot läser appen både kvitton och entreprenörsfakturor med en språkmodell, och hämtar belopp, datum, leverantör och ROT. Se *Avläsningen läser, den räknar aldrig*.
+
+**Den här raden löd till 2026-10-26 "Ingen OCR … Ingen automatisk avläsning av entreprenörsfakturor".** Avläsningen var byggd och beskrivs på två ställen längre upp i samma fil. Det är den farligaste raden som stått fel i något av våra dokument, av ett enkelt skäl: en rad under *utanför scope* läses inte som en beskrivning utan som ett förbud, och den stod i den fil som avgör vad som får byggas. Begränsningen hörde till en tidigare tolkning av ordet OCR, och förtydligandet ovan är specens lydelse, som varit den riktiga hela tiden.
 
 Appen ger inte skatterådgivning. Vid gränsfall hänvisar den till Skatteverkets upplysningstjänst.

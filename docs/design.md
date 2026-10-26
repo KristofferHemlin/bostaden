@@ -1113,6 +1113,18 @@ Frågornas nummer följer frågeträdet i `CLAUDE.md`, där fråga 4 skiljer nyt
 
 **Varje fråga får en hjälpruta med konkreta exempel**, på samma sätt som Skatteverkets egen tjänst: vad som räknas som ändrad planlösning, vad bättre kvalitet betyder, hur merkostnaden uppskattas. Rutan är utfälld som standard och går att stänga. Det gör skärmen lång, och det är rätt pris – genomgången är produktens tyngsta moment och den enda plats där skatteterminologi hör hemma.
 
+**Hjälprutan till fråga 5 måste säga att nytt inte är samma sak som bättre.** Frågan skiljer bättre kvalitet från likvärdig, och hela skillnaden mellan grundförbättring och reparation hänger på svaret. Men den som bytt oljepanna mot värmepump, eller ett gammalt kylskåp mot ett nytt, svarar *bättre kvalitet* – det är det ärliga svaret på frågan som den låter – och får ett avdrag som är för högt. Felet går mot Skatteverket, inte mot oss, så rutan ska bära regeln i stället för att lita på att användaren känner den. Rutans tre delar är:
+
+> **Bättre:** du bytte till högre kvalitet och betalade mer för det – parkett för 8 000 kr i stället för plastmatta för 3 000 kr. Då är mellanskillnaden, 5 000 kr, grundförbättring och resten reparation.
+>
+> **Liknande:** du bytte till motsvarande kvalitet, till exempel en trasig blandare mot en likvärdig ny.
+>
+> **Och nytt är inte samma sak som bättre.** En ny värmekälla eller vitvara som är bättre bara för att tekniken gått framåt – en värmepump som drar mindre el än den gamla pannan – räknas som ett likvärdigt byte, alltså som *Liknande*.
+
+Regeln står i `CLAUDE.md` sedan den 18 oktober och är kontrollerad mot källan den 25 oktober: Skatteverket skriver att standardförbättring av värmekälla eller vitvaror på grund av den tekniska utvecklingen räknas som underhåll. Den nådde bara aldrig hjälptexten, som är det enda stället där någon möter frågan.
+
+**Exemplet på bättre kvalitet får inte vara en vitvara eller en värmekälla.** Rutan gav länge *en kraftigare köksfläkt*, och en köksfläkt ligger nära nog en vitvara för att dra åt tvärtemot regeln ovan. Parkett mot plastmatta är Skatteverkets eget exempel, har en uträknad mellanskillnad i sig och kan inte missförstås.
+
 **Skickfrågorna är en skala med ord vid varje steg** – skalans ändpunkter står under *Skickskalan* i `CLAUDE.md`, inte bara siffror: 0 – mycket dåligt skick, 5 – nytt skick. De två frågorna ställs på olika skärmar vid olika tillfällen; skicket vid förvärvet i genomgången, skicket vid försäljningen när bostaden markeras som såld.
 
 **Skalan har inget förval.** Värdet har större hävstång på slutsiffran än något annat i appen, och ett förval mitt på skalan blir det svar de flesta lämnar orört.
@@ -1200,6 +1212,54 @@ I den här ordningen. Varje avsnitt har en `<h2>` skriven som en sökfras, och s
 **5. Vem står bakom Kvittobo.**
 
 **6. Börja med nästa kvitto.** Rubriken är avsnittets egen, följd av samma knapp och en länk till integritetspolicyn. Den ber om en sak, inte om en vana: nästa kvitto, inte alla de gamla.
+
+### Sidans sektioner ska synas som sektioner
+
+**Uppmätt i produktionen 2026-10-24:** alla sex avsnitten under vikningen har genomskinlig bakgrund, ingen ram, ingen indragning, och exakt 72 px mellan sig. Det enda som skiljer dem åt är luft av samma mängd överallt. Sidan läser därför som ett enda långt dokument i en spalt, inte som en sida med delar — och de fyra blocken under *Vad räknas som förbättringsutgift?* går inte att skilja från avsnittets egen brödtext.
+
+**De fyra blocken är kort, i appens eget formspråk.** `--yta-upphojd` som yta, `--linje` som ram, samma hörnradie som kvittokorten på översikten. Två i bredd på en bred skärm, staplade på telefon. Det gör dels att de läser som fyra saker i stället för fyra stycken, dels att förstasidan ser ut som produkten den säljer.
+
+**Varje avsnitt inleds med en tunn linje i `--linje`**, i innehållets bredd. Ingen ny färg, ingen ny yta, ingenting som behöver underhållas — en linje räcker för att ögat ska se var en del slutar och nästa börjar.
+
+**Och luften är inte lika på båda sidor om en rubrik.** Mer utrymme ovanför rubriken än under den, så att rubriken binder nedåt till sitt innehåll i stället för att sväva mellan två avsnitt. Jämnt fördelad luft är det som får en sida att se ut som en enda löptext.
+
+**De sju frågesvaren skiljs åt på samma sätt** som avsnitten, med en tunn linje mellan varje fråga. Sju svar i rad utan avgränsning är den längsta obrutna texten på sidan.
+
+**Sektionerna är centrerade i sidan, inte ställda under hjältetextens vänsterkant.** Uppmätt 2026-10-24 vid 1440 px: hjältedelen spänner symmetriskt över hela bredden, 162 px in från vänster och 163 px från höger, medan sektionerna var 680 px breda och låg kvar vid 162 — alltså **598 px tomt på höger sida**. Sidan tappade sin högra halva så fort hjältedelen tog slut. På en smal skärm fyller samma sektioner hela bredden och ser därför centrerade ut; det är samma kod som ger två olika intryck.
+
+**Bredden ändras inte, bara placeringen.** 680 px är textens mått och det är valt för läsbarhet. Att låta sektionerna fylla hjältedelens bredd går inte: 1115 px brödtext blir omkring 140 tecken per rad, ungefär dubbelt så mycket som går att läsa bekvämt.
+
+**Att vänsterkanterna inte längre ligger i linje är avsiktligt och accepterat.** Hjältetexten börjar 162 px in, sektionsrubriken 380. Ett tomt fält på 598 px läser som att något saknas; en indragning läser som att en ny del börjar — vilket den gör, och den har redan en linje ovanför sig som säger det.
+
+**Hjältedelen rörs inte.** Ändringen gäller bara det som ligger under knappen, så knappens uppmätta lägen står kvar.
+
+**Rubriken får växa på breda skärmar, men aldrig på telefon.** Sjuhundrapixelregeln gäller vid 390 px och marginalen är en enda textrad — en större rubrik där skulle putta knappen utanför. Det är samma text i två storlekar, inte två texter.
+
+**Men budgeten finns på bred skärm också, och jag skrev först att den inte gjorde det.** Uppmätt 2026-10-24, efter att rubriken satts till 54 px: *Skapa konto* flyttade från 711–767 px till **909–965 px** vid 1280 × 800 och hamnade därmed under vikningen på en vanlig laptop. Rubriken tog fem rader i en spalt byggd för brödtext.
+
+**Regeln är knappens synlighet, inte rubrikens storlek.** Hela primärknappen ska synas utan att rulla vid **1280 × 800 synlig yta** på samma sätt som vid 390 px, och rubriken är den variabel som får ge vika. Klarar en storlek inte båda villkoren är det fel storlek — en rubrik som kostar knappen har tagit betalt för energi med sidans enda ärende.
+
+**Talet 800 är den synliga ytan, inte skärmen.** Det motsvarar ungefär en skärm på 1440 × 900 efter webbläsarens egna rader, vilket är den vanliga bärbara datorn i dag. En äldre skärm på 1280 × 800 ger omkring 700 px synligt och klaras inte av någon rubrikstorlek som också ger sidan kraft — där får knappen hamna under vikningen, och avsikten bärs av att vikningen faller mitt i ett stycke.
+
+**Och bilden är den tredje variabeln, inte en rest.** Rubrikens storlek och textspaltens bredd flyttar båda knappen — men spalten tar sin bredd från bilden, som krymper lika mycket. Uppmätt 2026-10-24: en spalt på 720 px ger bilden 342 px, och då går siffrorna i skärmbilden inte att läsa. **Bilden finns på sidan för att visa att appen räknar**, och raderna *varav ROT, avgår* och *räknas med* är hela skälet att den är med. Blir de oläsliga har bilden slutat göra sitt jobb och är bara en dekoration som tar plats.
+
+**Avvägningen är därför tre tal och inte två**, och den ska göras i den här ordningen: knappen synlig, bildens siffror läsbara, rubriken så stor som återstoden tillåter.
+
+**Utfallet 2026-10-24: rubriken 40,5 px i en spalt på 560 px.** Knappen ligger på 719–775 med 25 px marginal mot 800, bilden är 502 px bred och dess siffror går att läsa. Elva kombinationer mättes och förkastades; den bredare spalten på 720 px gav en större rubrik men krympte bilden till 342 px, där raderna *varav ROT, avgår* inte längre går att läsa.
+
+**Och nu är texten låst på båda skärmbredderna.** På telefon är marginalen 22 px och en textrad 22 px. På bred skärm är marginalen 25 px och en rad brödtext 27 px — alltså ännu tunnare. Uppmätt utrymme innan något stycke bryter om: **rubriken tål ungefär sju tecken till**, *"Den dag du säljer …"* ungefär sexton, de övriga styckena mellan tjugofem och trettio. Spalten tål att krympa 32 px innan samma sak händer.
+
+**Det betyder att hjältedelens text inte längre kan ändras fritt.** Varje tillagt ord ska mätas mot båda tabellerna, inte bara mot telefonens. Det är priset för en sida som håller sitt löfte på två skärmstorlekar, och det är ett pris värt att betala så länge någon minns att betala det.
+
+### Skärmbilden som ligger i hjältedelen
+
+**Den tas i dubbel upplösning.** Uppmätt 2026-10-24: filen är 800 px bred och visas 502 px, vilket blir 1000 skärmpixlar på en skärm med hög upplösning — bilden skalas alltså upp och texten blir mjuk. En skärmbild sparad i 1600 px ger skarp text på samma yta.
+
+**Och nederkanten får aldrig skära genom en rad.** I den första bilden kapades *"116 000 kr räknas med"* av bildens egen underkant. Snittet ska falla i mellanrummet mellan två kort, så att den sista raden som syns är hel. En avhuggen textrad läser som ett fel i appen, inte som en beskärning av en bild.
+
+**Vägen dit mäts, inte gissas.** Både typsnittssteget och spaltens bredd påverkar radantalet, och en bredare spalt kan vara det billigare svaret: 54 px i en spalt på 520 px ger fem rader, medan samma storlek i en bredare spalt ger färre. En display-rubrik vill ha en bredare rad än brödtext.
+
+**Ett nytt typsnittssteg är tillåtet, och bara här.** Appens skala slutade på `text-3xl` före 2026-10-24. Landningssidans rubrik är den enda rubrik i produkten som har en display-uppgift, och den får därför ett eget steg. Det gäller inte någon annan yta.
 
 ### De sju svaren
 
@@ -1779,8 +1839,10 @@ Vinsten är att appen alltid har något att handla om. Det finns inget tomt till
 
 Utan försäljningsdatum visas:
 
-- **Sida 1 komplett.** Grundförbättringar saknar tidsgräns bakåt och påverkas inte av när bostaden säljs. Summan till ruta 4 är verklig.
-- **Sida 2 med sina rader men utan avdragsgill kolumn**, och en förklaring. Rutans lydelse är: *"Femårsfönstret räknas från försäljningsåret och förslitningen bedöms vid försäljningen, så den avdragsgilla delen på sida 2 går inte att beräkna förrän bostaden är markerad som såld. Sida 1 påverkas inte – grundförbättringar har ingen tidsgräns."*
+- **Sida 1 med sina rader, men summan är inte slutgiltig.** Grundförbättringar har ingen egen tidsgräns, så raderna står kvar. Men **tröskeln prövas per kalenderår på båda slagen tillsammans**, och före försäljningen hoppas femårsfönstret över — alltså räknas reparationer med i tröskelprövningen som senare kan falla ur fönstret. Ett år som passerar i dag kan därför falla under 5 000 kr när försäljningen registreras, och då nollas även grundförbättringen det året.
+
+  **Det här stod tvärtom i filen till 2026-10-25**, och meningen *"Sida 1 påverkas inte"* fanns i appens egen ruta. Felet är lätt att göra eftersom grundförbättringens *egen* regel saknar tidsgräns — det är tröskeln, inte tidsgränsen, som binder ihop de två slagen.
+- **Sida 2 med sina rader men utan avdragsgill kolumn**, och en förklaring. Rutans lydelse är: *"Femårsfönstret räknas från försäljningsåret och förslitningen bedöms vid försäljningen, så den avdragsgilla delen på sida 2 går inte att beräkna förrän bostaden är markerad som såld. Också sida 1 kan ändras då: tröskeln på 5 000 kr prövas per år på båda slagen tillsammans, så ett år som passerar i dag kan falla under gränsen när reparationen räknas bort."*
 
 **Lydelsen *"räknas bakåt från försäljningsdatumet"* används inte.** Den säger inte *inom fem år*, men den går att läsa som samma rullande period, och sidan ska inte lämna kvar den bilden sedan vi rättat den överallt annars. Fönstret räknas från försäljnings**året**; det är datumet som avgör vilket år det blir.
 

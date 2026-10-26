@@ -25,12 +25,10 @@ Inga uppgifter hämtas om dig från andra källor. Tjänsten begär inte tillgå
 | Ändamål | Rättslig grund |
 |---|---|
 | Tillhandahålla tjänsten: spara din dokumentation, läsa av kvitton, räkna fram ett underlag | Fullgörande av avtal, art. 6.1 b |
-| Drift och felsökning: tekniska felrapporter så att fel går att åtgärda | Berättigat intresse, art. 6.1 f |
-| Säkerhet: skydda kontot och upptäcka missbruk | Berättigat intresse, art. 6.1 f |
+| Drift, felsökning och säkerhet | Berättigat intresse, art. 6.1 f |
+| Förbättra och utveckla tjänsten | Berättigat intresse, art. 6.1 f |
 
-**Vårt berättigade intresse** för de två sista består i att kunna driva en tjänst som fungerar och att upptäcka fel innan de drabbar dig.
-
-**Dina uppgifter säljs inte, och tjänsten visar inga annonser.** Skulle det någon gång bli aktuellt att behandla uppgifterna för något annat ändamål än de ovan kommer du att tillfrågas särskilt. Du kan svara nej och ändå fortsätta använda tjänsten.
+**Vårt berättigade intresse** för de två sista består i att kunna driva en tjänst som fungerar och göra den bättre.
 
 Ingen behandling innebär automatiserat beslutsfattande som har rättsliga följder för dig. Avläsningen av kvittot föreslår värden som du själv granskar och kan ändra.
 
@@ -82,7 +80,7 @@ Hör av dig till kvittobo@gmail.com om du vill utöva någon av rättigheterna.
 
 ## 9. Kakor
 
-Tjänsten använder kakor för att hålla dig inloggad. De är nödvändiga för att inloggningen ska fungera. Inga kakor används för annonsering eller för att följa dig mellan webbplatser.
+Tjänsten använder kakor för att hålla dig inloggad. De är nödvändiga för att inloggningen ska fungera.
 
 ## 10. Om verksamheten överlåts
 
@@ -92,4 +90,4 @@ Skulle tjänsten överlåtas till ett bolag eller till någon annan kan uppgifte
 
 Policyn kan uppdateras. Har en ändring betydelse för dig meddelas du innan den börjar gälla.
 
-Senast uppdaterad: 22 oktober 2026
+Senast uppdaterad: 25 oktober 2026
