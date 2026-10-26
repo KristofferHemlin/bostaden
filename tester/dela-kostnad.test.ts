@@ -7,9 +7,10 @@ import type { Kostnad } from "@/doman/typer";
 // formularets rader till domanens radform och validerar invarianterna
 // (produktspec 5 "Kostnadsrad" + 4.2): summan av radernas belopp MASTE vara lika
 // med kostnadens totalbelopp, en rads fordelning far summera till hogst 100 %
-// (resten ar okopplat), och ett ROT-/forsakringskvitto far bara kopplas till ett
-// projekt. Sjalva bidraget raknas av den befintliga domanlogiken – ingen ny
-// berakningsregel i steg 10.
+// (resten ar okopplat). Ett kvitto med ROT eller forsakringsersattning far
+// kopplas till flera projekt – avdraget fordelas proportionellt (CLAUDE.md,
+// Berakningen; begransningen till ett projekt struken 2026-10-18). Sjalva
+// bidraget raknas av den befintliga domanlogiken – ingen ny berakningsregel.
 
 const P = "20000000-0000-0000-0000-000000000001";
 const P2 = "20000000-0000-0000-0000-000000000002";
@@ -184,27 +185,41 @@ describe("tolkaUppdelning: grindar", () => {
   });
 });
 
-describe("tolkaUppdelning: ROT och forsakringsersattning (4.2)", () => {
-  it("ett ROT-/forsakringskvitto far bara kopplas till ett projekt", () => {
+describe("tolkaUppdelning: ROT och forsakringsersattning", () => {
+  // Den gamla regeln vagrade ett ROT-kvitto pa flera projekt. Den ar struken
+  // (CLAUDE.md, Berakningen; produktspec "Begransningen … ar struken
+  // 2026-10-18"). Uppdelningen kanner inte ens till kvittots avdrag.
+  it("ett kvitto med ROT kan delas mellan två projekt", () => {
     const tvaProjekt = [
       { artikel: "a", belopp: "100,00", mal: P, andel: "" },
       { artikel: "b", belopp: "100,00", mal: P2, andel: "" },
     ];
-    expect(
-      "fel" in tolkaUppdelning(tvaProjekt, 20_000, { endastEttProjekt: true }),
-    ).toBe(true);
-    expect(
-      "fel" in tolkaUppdelning(tvaProjekt, 20_000, { endastEttProjekt: false }),
-    ).toBe(false);
+    const r = tolkaUppdelning(tvaProjekt, 20_000);
+    if ("fel" in r) throw new Error(r.fel);
+    expect(r.projektIder).toEqual([P, P2]);
+    const k = medRader(20_000, r.rader, { rot_utnyttjat: 5_000 });
+    // 200 kr med 50 kr ROT: varje projekt bar halften av avdraget.
+    expect(bidragForKostnad(k, P)).toBe(7_500);
+    expect(bidragForKostnad(k, P2)).toBe(7_500);
   });
 
-  it("privat rad rakas inte som ett andra projekt", () => {
-    const r = tolkaUppdelning(BAUHAUS, 102_095, { endastEttProjekt: true });
-    expect("fel" in r).toBe(false);
+  it("ROT fördelas efter radernas andel, inte lika", () => {
+    const r = tolkaUppdelning(
+      [
+        { artikel: "Kök", belopp: "6 000,00", mal: P, andel: "" },
+        { artikel: "Badrum", belopp: "4 000,00", mal: P2, andel: "" },
+      ],
+      1_000_000,
+    );
+    if ("fel" in r) throw new Error(r.fel);
+    const k = medRader(1_000_000, r.rader, { rot_utnyttjat: 300_000 });
+    // 60 % av 7 000 kr och 40 % av 7 000 kr – inte 3 500 kr var.
+    expect(bidragForKostnad(k, P)).toBe(420_000);
+    expect(bidragForKostnad(k, P2)).toBe(280_000);
   });
 
   it("ROT drar ner bidraget aven nar kvittot ar uppdelat", () => {
-    const r = tolkaUppdelning(BAUHAUS, 102_095, { endastEttProjekt: true });
+    const r = tolkaUppdelning(BAUHAUS, 102_095);
     if ("fel" in r) throw new Error(r.fel);
     const utanRot = bidragForKostnad(medRader(102_095, r.rader), P);
     const medRot = bidragForKostnad(

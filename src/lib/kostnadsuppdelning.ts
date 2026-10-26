@@ -7,9 +7,12 @@
 //   * En rads fordelning far summera till mindre an 100 % – resten ar okopplat
 //     och raknas inte in. En rad utan mal ger darfor tom fordelning.
 //   * Ett delat kvitto har minst tva rader; tomma extrafalt ignoreras.
-//   * Har kostnaden ROT eller forsakringsersattning far raderna bara kopplas
-//     till ETT projekt (produktspec 5) – reduktionen fordelas annars inte
-//     entydigt over raderna. Privat rakas inte som ett projekt.
+//
+// ROT och forsakringsersattning begransar inte uppdelningen: de fordelas
+// proportionellt over radernas del av bostaden, aven mellan olika projekt
+// (CLAUDE.md, Berakningen). Att de ryms i bostadsdelen provas av anroparen
+// (avdragensFel i src/lib/kostnadsformular.ts), eftersom bara den kanner
+// kvittots avdrag.
 //
 // Ingen ny berakningsregel: sjalva bidraget och den proportionella ROT-/
 // forsakringsreduktionen over raderna raknas av src/doman/berakningar.ts.
@@ -33,7 +36,6 @@ export type UppdelningsResultat =
 export function tolkaUppdelning(
   indata: UppdelningsradIndata[],
   totalbelopp: number,
-  { endastEttProjekt = false }: { endastEttProjekt?: boolean } = {},
 ): UppdelningsResultat {
   // En rad ar "ifylld" sa fort artikel eller belopp har innehall. Ett tomt
   // extrafalt som anvandaren lade till men inte fyllde i ska inte blockera.
@@ -82,14 +84,6 @@ export function tolkaUppdelning(
       fel:
         `Radernas belopp summerar till ${formateraKronor(summa)}, men kvittot ` +
         `är på ${formateraKronor(totalbelopp)}. Justera raderna så att de går ihop.`,
-    };
-  }
-
-  if (endastEttProjekt && projektIder.size > 1) {
-    return {
-      fel:
-        "Kvittot har ROT-avdrag eller försäkringsersättning och kan då bara " +
-        "kopplas till ett projekt. Dela upp fakturan på två kostnader i stället.",
     };
   }
 

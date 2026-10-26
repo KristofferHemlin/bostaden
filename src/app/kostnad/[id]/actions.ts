@@ -70,10 +70,6 @@ const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 // med betaldatum fore dess avvisas har i stallet for att berakningen kastar fel.
 const TIDIGASTE_BETALDATUM = "1970-01-01";
 
-const SEK5_FEL =
-  "Kvittot har ROT-avdrag eller försäkringsersättning och kan då bara vara " +
-  "kopplat till ett projekt. Dela upp fakturan på två kostnader i stället.";
-
 /** Ett belopp som anvandaren kan ha lamnat tomt eller pa noll blir null. */
 function positivtEllerNull(varde: number | null): number | null {
   return varde !== null && varde > 0 ? varde : null;
@@ -134,20 +130,11 @@ export async function redigeraKostnad(
     }
   }
 
-  // Ar ROT eller forsakringsersattning satt far kostnaden bara vara kopplad
-  // till ett projekt (produktspec 5). En enkel kostnad har alltid hogst ett
-  // projekt; en uppdelad kan spanna flera och maste da kontrolleras.
-  const antalProjekt = new Set(
-    kostnad.rader
-      .flatMap((r) => r.fordelningar)
-      .filter((f) => !f.privat && f.projekt_id)
-      .map((f) => f.projekt_id as string),
-  ).size;
-  const harAvdragspost =
-    rotUtnyttjat !== null || (kostnad.forsakringsersattning ?? 0) > 0;
-  if (harAvdragspost && antalProjekt > 1) {
-    return { fel: SEK5_FEL, falt: "rot_utnyttjat" };
-  }
+  // Ett kvitto med ROT eller forsakringsersattning far vara kopplat till flera
+  // projekt: reduktionen fordelas proportionellt over raderna (CLAUDE.md,
+  // Berakningen; begransningen till ett projekt struken 2026-10-18). Grinden
+  // som galler ar att avdragen ar mindre an kvittots del som hor till bostaden
+  // – den provas nedan, i bada grenarna, mot just den delen (avdragensFel).
 
   const dok = new Date(`${dokumentdatum}T00:00:00.000Z`);
   const bet = betaldatum ? new Date(`${betaldatum}T00:00:00.000Z`) : null;
@@ -373,16 +360,12 @@ export async function delaUppKostnad(
     andel: andelar[i] ?? "",
   }));
 
-  // ROT och forsakringsersattning ligger pa kostnadsniva men fordelas
-  // proportionellt over raderna (produktspec 4.2). Da maste raderna hallas till
-  // ett enda projekt, annars blir reduktionen inte entydig.
-  const endastEttProjekt =
-    (kostnad.rot_utnyttjat ?? 0) > 0 ||
-    (kostnad.forsakringsersattning ?? 0) > 0;
-
-  const tolkad = tolkaUppdelning(indata, kostnad.totalbelopp, {
-    endastEttProjekt,
-  });
+  // ROT och forsakringsersattning ligger pa kostnadsniva och fordelas
+  // proportionellt over raderna, aven nar de ar kopplade till olika projekt
+  // (CLAUDE.md, Berakningen: "ROT fordelas proportionellt mellan atgarder pa
+  // samma kvitto"). Det enda som provas ar att avdragen ryms i den nya
+  // bostadsdelen, nedan.
+  const tolkad = tolkaUppdelning(indata, kostnad.totalbelopp);
   if ("fel" in tolkad) return { fel: tolkad.fel };
 
   // En ny privat rad krymper kvittots del som hor till bostaden – och ROT och
