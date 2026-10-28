@@ -38,8 +38,13 @@ export function KategoriInfo({ fonsterAr }: { fonsterAr: number }) {
       {visa ? (
         <div className="mt-2 space-y-2 rounded-lg bg-sand px-3 py-2 font-granssnitt text-sm text-text-primar">
           <p>
+            {/* Inte "ingen tidsgräns bakåt" – den bakre gränsen finns och
+                exporten nollar rader med den (docs/design.md,
+                "Projektfrågorna"). Skillnaden mot en reparation ar
+                femårsfönstret, inte att gränsen saknas. */}
             <span className="font-medium">Grundförbättring:</span> något
-            tillfördes eller standarden höjdes, ingen tidsgräns bakåt.
+            tillfördes eller standarden höjdes, och den faller inte ut med
+            tiden på samma sätt som en reparation.
           </p>
           {/* Fonstret ar forsaljningsaret plus de narmast foregaende
               kalenderaren, inte en rullande period bakat fran

@@ -173,8 +173,11 @@ export function helaBeloppetText(belopp: number): string {
   return `Hela beloppet, ${formateraKronor(belopp)}, räknas då som grundförbättring.`;
 }
 
+// Inte "utan tidsgräns bakåt": den bakre gränsen finns (CLAUDE.md, steg 3).
+// Det som skiljer en grundförbättring är att den inte faller ut med
+// femårsfönstret (docs/design.md, "Projektfrågorna").
 const HJALP_BYGGDE_NYTT =
-  "Nytt betyder att det inte fanns något liknande förut – ett nytt uterum, en tillbyggnad, ett förråd som inte fanns, en inglasad balkong. Räknas som grundförbättring utan tidsgräns bakåt.";
+  "Nytt betyder att det inte fanns något liknande förut – ett nytt uterum, en tillbyggnad, ett förråd som inte fanns, en inglasad balkong. Räknas som grundförbättring och faller därför inte ut med femårsfönstret.";
 
 const HJALP_PLANLOSNING =
   "Du slog ihop två rum till ett, tog bort eller flyttade en vägg, eller gjorde om ett förråd till ett rum. Räknas som grundförbättring, precis som att bygga nytt.";
