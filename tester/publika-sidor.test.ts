@@ -99,7 +99,7 @@ function seeda() {
   db.lagg("anvandare", { id: AGARE, epost: ANVANDARINNEHALL.inbjudarensEpost });
   db.lagg("bostad", {
     id: BOSTAD, adress: ANVANDARINNEHALL.adress, upplatelseform: "fastighet",
-    tilltradesdatum: datum("2019-06-01"), bostadsfragor_besvarade: true,
+    tilltradesdatum: datum("2019-06-01"), nybyggd_vid_forvarv: false,
   });
   db.lagg("medlemskap", { anvandare_id: AGARE, bostad_id: BOSTAD, agarandel: 50 });
   db.lagg("inbjudan", {

@@ -5,11 +5,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // BESVARADE – inte bara ha ett värde.
 //
 // Ett aktivt val ar ett svar, var det an gors. Genomgangen lovar att svaren
-// kan andras i installningarna, sa kortet Forvarvet satter
-// bostadsfragor_besvarade efter samma villkor som genomgangen
-// (src/doman/bostadsfragor.ts). Forvarvet visar inget forval for en obesvarad
-// fraga, och ett tomt val skriver ingenting – en sparning av nagot helt annat
-// far aldrig tystas ned som ett bekraftat svar.
+// kan andras i installningarna, sa kortet Forvarvet skriver dem efter samma
+// villkor som genomgangen (src/doman/bostadsfragor.ts). Forvarvet visar inget
+// forval for en obesvarad fraga, och ett tomt val skriver ingenting – en
+// sparning av nagot helt annat far aldrig tystas ned som ett svar.
+//
+// Kolumnerna ar nullbara sedan 2026-10-28, och flaggan bostadsfragor_besvarade
+// ar borta: ett skrivet false ar svaret, ett oskrivet falt ar obesvarat.
+// Andelsfaltet bar ett riktigt tal – det ar inte det som provas har.
 
 const BOSTAD = "11111111-1111-1111-1111-111111111111";
 const ANVANDARE = "22222222-2222-2222-2222-222222222222";
@@ -68,49 +71,46 @@ beforeEach(() => {
   ensamAgare();
 });
 
-describe("Forvarvet satter bostadsfragor_besvarade efter samma villkor som genomgangen", () => {
-  it("ett obesvarat forsta agaren skriver varken svaret eller flaggan", async () => {
+describe("Forvarvet skriver bostadsfragorna efter samma villkor som genomgangen", () => {
+  it("ett obesvarat forsta agaren skriver ingenting – kolumnen forblir null", async () => {
     const resultat = await sparaForvarvet(
       {},
-      formulardata({ tilltradesdatum: "2018-06-01", agarandel: "", forsta_agare: "" }),
+      formulardata({ tilltradesdatum: "2018-06-01", agarandel: "100", forsta_agare: "" }),
     );
 
     expect(resultat.fel).toBeUndefined();
     const data = h.bostadUpdate.mock.calls[0][0].data;
     expect(data).not.toHaveProperty("nybyggd_vid_forvarv");
     expect(data).not.toHaveProperty("ombildning_fran_hyresratt");
-    expect(data).not.toHaveProperty("bostadsfragor_besvarade");
   });
 
-  it("nej ar ett fullstandigt svar och satter flaggan", async () => {
+  it("nej ar ett fullstandigt svar och skrivs som false", async () => {
     const resultat = await sparaForvarvet(
       {},
-      formulardata({ tilltradesdatum: "2018-06-01", agarandel: "", forsta_agare: "nej" }),
+      formulardata({ tilltradesdatum: "2018-06-01", agarandel: "100", forsta_agare: "nej" }),
     );
 
     expect(resultat.fel).toBeUndefined();
     const data = h.bostadUpdate.mock.calls[0][0].data;
     expect(data.nybyggd_vid_forvarv).toBe(false);
-    expect(data.bostadsfragor_besvarade).toBe(true);
   });
 
-  it("ja med ombildningssvar satter bada och flaggan", async () => {
+  it("ja med ombildningssvar skriver bada", async () => {
     const resultat = await sparaForvarvet(
       {},
-      formulardata({ tilltradesdatum: "2018-06-01", agarandel: "", forsta_agare: "ja", ombildning: "nej" }),
+      formulardata({ tilltradesdatum: "2018-06-01", agarandel: "100", forsta_agare: "ja", ombildning: "nej" }),
     );
 
     expect(resultat.fel).toBeUndefined();
     const data = h.bostadUpdate.mock.calls[0][0].data;
     expect(data.nybyggd_vid_forvarv).toBe(true);
     expect(data.ombildning_fran_hyresratt).toBe(false);
-    expect(data.bostadsfragor_besvarade).toBe(true);
   });
 
   it("ja utan ombildningssvar avvisas och ingenting sparas", async () => {
     const resultat = await sparaForvarvet(
       {},
-      formulardata({ tilltradesdatum: "2018-06-01", agarandel: "", forsta_agare: "ja", ombildning: "" }),
+      formulardata({ tilltradesdatum: "2018-06-01", agarandel: "100", forsta_agare: "ja", ombildning: "" }),
     );
 
     expect(resultat.fel).toContain("ombildning");
@@ -121,13 +121,12 @@ describe("Forvarvet satter bostadsfragor_besvarade efter samma villkor som genom
     h.bostadFindUniqueOrThrow.mockResolvedValue({ upplatelseform: "fastighet" });
     const resultat = await sparaForvarvet(
       {},
-      formulardata({ tilltradesdatum: "2018-06-01", agarandel: "", forsta_agare: "ja", ombildning: "" }),
+      formulardata({ tilltradesdatum: "2018-06-01", agarandel: "100", forsta_agare: "ja", ombildning: "" }),
     );
 
     expect(resultat.fel).toBeUndefined();
     const data = h.bostadUpdate.mock.calls[0][0].data;
     expect(data.nybyggd_vid_forvarv).toBe(true);
     expect(data).not.toHaveProperty("ombildning_fran_hyresratt");
-    expect(data.bostadsfragor_besvarade).toBe(true);
   });
 });

@@ -5,21 +5,24 @@
 // nybyggd villa kan inte ha kommit ur en ombildning (docs/regelkallor.md,
 // Fastigheter). For en fastighet ar forsta agaren darfor den enda fragan.
 //
-// Den har modulen ar ENDA stallet som laser de lagrade kolumnerna
-// (nybyggd_vid_forvarv, ombildning_fran_hyresratt, bostadsfragor_besvarade)
-// och ENDA stallet som avgor om fragorna ar besvarade. Kolumnerna defaultar
-// till false, och false ar ocksa svaret som TILLATER reparationsavdrag – en
-// rå lasning av nybyggd_vid_forvarv gor darfor ett obesvarat till ett "Nej"
-// och overskattar avdraget. Las alltid via forstaAgaren/lasBostadsfragor, som
-// ger null for obesvarat sa att varje anropare maste ta stallning till det.
+// Kolumnerna (nybyggd_vid_forvarv, ombildning_fran_hyresratt) ar nullbara
+// utan forval: null betyder obesvarad, och ett lagrat false ar ett besvarat
+// nej (CLAUDE.md, "Andelen ar null tills den besvarats", sista stycket). Till
+// 2026-10-28 hade de forvalet false, och en tredje kolumn,
+// bostadsfragor_besvarade, holl reda pa om ett false var ett svar. Flaggan
+// vaktade BADA kolumnerna – darfor blev bada nullbara samtidigt: blir bara
+// den ena det, lases ett obesvarat ombildningssvar som nej.
+//
+// Den har modulen ar ENDA stallet som avgor om fragorna ar besvarade.
 
 import type { Upplatelseform } from "./typer";
 
 export interface LagradeBostadsfragor {
   upplatelseform: Upplatelseform;
-  nybyggd_vid_forvarv: boolean;
-  ombildning_fran_hyresratt: boolean;
-  bostadsfragor_besvarade: boolean;
+  /** null = obesvarad. */
+  nybyggd_vid_forvarv: boolean | null;
+  /** null = obesvarad, eller aldrig stalld. */
+  ombildning_fran_hyresratt: boolean | null;
 }
 
 export interface Bostadsfragesvar {
@@ -32,41 +35,9 @@ export interface Bostadsfragesvar {
   ombildning: boolean | null;
 }
 
-/**
- * REGELN FOR BADA SVARSKOLUMNERNA (nybyggd_vid_forvarv och
- * ombildning_fran_hyresratt):
- *
- *   Ett lagrat true ar sitt eget bevis. Ett lagrat false ar ett svar bara om
- *   bostadsfragor_besvarade sager det.
- *
- * Skalet: bada kolumnerna har standardvardet false (migreringarna
- * 20260915120000_fragetradet och 20260916071711_bostadsfragor). Ett true kan
- * darfor bara ha skrivits av ett aktivt "Ja" – i genomgangen, eller i
- * installningarna, som fore 2026-10-06 sparade svaren utan att satta
- * flaggan. Ett false bevisar ingenting om sig sjalvt: det ar lika garna
- * kolumnens standardvarde, eller ett forval som sparades utan att nagon
- * svarade.
- *
- * Slutledningen haller bara sa lange INGENTING annat skriver true
- * programmatiskt: ingen seed, inget engangsjobb, inget standardvarde. Gor
- * nagot det, ar regeln fel.
- *
- * Flaggan nollstalls nar upplatelseformen byts (installningar/actions.ts,
- * sparaBostaden), sa att ett lagrat false blir obesvarat igen medan ett true
- * star kvar som svar.
- *
- * Hela konstruktionen ar en kringgang for att kolumnerna inte ar nullbara.
- * Migreringen efter slapp – nullbara svarskolumner, och "besvarade" harlett i
- * stallet for lagrat – gor den onodig.
- */
-function lagratSvar(varde: boolean, besvarade: boolean): boolean | null {
-  if (varde) return true;
-  return besvarade ? false : null;
-}
-
-/** Forsta agaren: true, false eller null for obesvarat (regeln ovan). */
+/** Forsta agaren: true, false eller null for obesvarat – kolumnens varde. */
 export function forstaAgaren(b: LagradeBostadsfragor): boolean | null {
-  return lagratSvar(b.nybyggd_vid_forvarv, b.bostadsfragor_besvarade);
+  return b.nybyggd_vid_forvarv;
 }
 
 /** Stalls ombildningsfragan for den har bostaden, givet forsta agaren? Samma
@@ -75,12 +46,9 @@ export function ombildningStalls(upplatelseform: Upplatelseform, forstaAgare: bo
   return upplatelseform === "bostadsratt" && forstaAgare === true;
 }
 
-/** Ombildningen: null nar fragan inte stalls, och annars samma regel som
- *  forsta agaren – ett lagrat false utan flaggan ar obesvarat. */
+/** Ombildningen: null nar fragan inte stalls, annars kolumnens varde. */
 export function ombildningen(b: LagradeBostadsfragor): boolean | null {
-  return ombildningStalls(b.upplatelseform, forstaAgaren(b))
-    ? lagratSvar(b.ombildning_fran_hyresratt, b.bostadsfragor_besvarade)
-    : null;
+  return ombildningStalls(b.upplatelseform, forstaAgaren(b)) ? b.ombildning_fran_hyresratt : null;
 }
 
 export function lasBostadsfragor(b: LagradeBostadsfragor): Bostadsfragesvar {
@@ -102,7 +70,10 @@ export function bostadsfragornaBesvarade(svar: Bostadsfragesvar): boolean {
 }
 
 /** Svaren i den form berakningen tar emot (src/doman/typer.ts, Bostad).
- *  nybyggd_vid_forvarv ar null sa lange fragorna inte ar besvarade. */
+ *  nybyggd_vid_forvarv ar null sa lange fragorna inte ar besvarade – aven nar
+ *  forsta agaren ar besvarad men ombildningen, som da stalls, inte ar det.
+ *  Ombildningen blir false bara nar fragan inte stalls: da finns inget
+ *  undantag att upphava. */
 export function bostadsfragorForBerakning(b: LagradeBostadsfragor): {
   nybyggd_vid_forvarv: boolean | null;
   ombildning_fran_hyresratt: boolean;
@@ -128,7 +99,7 @@ export const FEL_OMBILDNING =
  * Tolkar formularens "ja"/"nej"/"" for bostadsfragorna – samma tolkning i
  * genomgangen och i installningarna. Ett tomt forsta agaren ger ett obesvarat
  * svar (anroparen avgor om det ar tillatet); ett ja utan ombildningssvar ar
- * alltid ett fel, eftersom flaggan annars inte gar att satta.
+ * alltid ett fel, eftersom svaret da ar ofullstandigt och inte skrivs.
  */
 export function tolkaBostadsfragesvar(
   forstaAgareText: string,
@@ -145,35 +116,39 @@ export function tolkaBostadsfragesvar(
 }
 
 /**
- * Det som ska skrivas till bostaden for ett svar. Ett obesvarat forsta agaren
+ * Det som ska skrivas till bostaden for ett svar. Ett ofullstandigt svar
  * skriver ingenting. Ombildningen skrivs bara nar fragan stalls – ett nej,
- * eller en fastighet, ror den inte (docs/design.md, "Installningssidan"). Flaggan
- * satts av samma villkor som laser den.
+ * eller en fastighet, ror den inte (docs/design.md, "Installningssidan").
  */
 export function lagringAvBostadsfragor(svar: Bostadsfragesvar): {
   nybyggd_vid_forvarv?: boolean;
   ombildning_fran_hyresratt?: boolean;
-  bostadsfragor_besvarade?: true;
 } {
   if (svar.forstaAgare === null || !bostadsfragornaBesvarade(svar)) return {};
   return {
     nybyggd_vid_forvarv: svar.forstaAgare,
     ...(svar.ombildning !== null ? { ombildning_fran_hyresratt: svar.ombildning } : {}),
-    bostadsfragor_besvarade: true,
   };
 }
 
 /**
- * Byts upplatelseformen nollstalls flaggan – at bada hallen, utan undantag for
- * riktningen. Vilka fragor som stalls beror pa formen, och den som byter har
- * just sagt att hen registrerade fel. Med regeln ovan blir ett lagrat false
- * obesvarat igen, medan ett lagrat true star kvar som svar: en fastighet med
- * "Ja" som blir bostadsratt far ombildningsfragan, och behover inte svara om
- * forsta agaren.
+ * Byts upplatelseformen blir varje lagrat nej obesvarat igen – at bada
+ * hallen, utan undantag for riktningen. Vilka fragor som stalls beror pa
+ * formen, och den som byter har just sagt att hen registrerade fel. Ett
+ * lagrat ja star kvar som svar: en fastighet med "Ja" som blir bostadsratt
+ * far ombildningsfragan, och behover inte svara om forsta agaren igen.
+ *
+ * Samma utfall som nar flaggan bostadsfragor_besvarade nollstalldes (till
+ * 2026-10-28) – ett false var da obesvarat utan flaggan, ett true stod kvar.
  */
 export function lagringVidBytAvUpplatelseform(
   fore: Upplatelseform,
   efter: Upplatelseform,
-): { bostadsfragor_besvarade?: false } {
-  return fore === efter ? {} : { bostadsfragor_besvarade: false };
+  lagrat: Pick<LagradeBostadsfragor, "nybyggd_vid_forvarv" | "ombildning_fran_hyresratt">,
+): { nybyggd_vid_forvarv?: null; ombildning_fran_hyresratt?: null } {
+  if (fore === efter) return {};
+  return {
+    ...(lagrat.nybyggd_vid_forvarv === false ? { nybyggd_vid_forvarv: null } : {}),
+    ...(lagrat.ombildning_fran_hyresratt === false ? { ombildning_fran_hyresratt: null } : {}),
+  };
 }

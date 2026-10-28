@@ -93,7 +93,8 @@ export interface ForvarvetData {
   kopkostnaderOren: bigint | null;
   /** Styr hjalptexten for kopkostnader. */
   arBostadsratt: boolean;
-  agarandelProcent: number;
+  /** null = inte angiven (CLAUDE.md, "Andelen ar null tills den besvarats"). */
+  agarandelProcent: number | null;
   /** Las via src/doman/bostadsfragor.ts – null ar obesvarat och visas som
    *  "Inte ifyllt", aldrig som ett "Nej" (docs/design.md: ett forval ar ett
    *  svar anvandaren inte gav). */
@@ -270,7 +271,7 @@ function identifieringEtikett(arBostadsratt: boolean): string {
 }
 
 // Bytet har tva foljder, och rutan namner bada: identifieringen, och att
-// bostadsfragorna oppnas igen (sparaBostaden nollstaller flaggan,
+// bostadsfragorna oppnas igen (sparaBostaden gor ett lagrat nej obesvarat,
 // src/doman/bostadsfragor.ts). Andra meningen ar samma i bada riktningarna.
 export function bytestext(mal: "bostadsratt" | "fastighet"): string {
   const nyEtikett = identifieringEtikett(mal === "bostadsratt");
@@ -605,7 +606,10 @@ export function ForvarvetKort({ data, oppen, formRef, onAndra, onAvbryt, onDirty
           <Rad etikett="Tillträdesdatum" varde={data.tilltradesdatum} />
           <Rad etikett="Köpeskilling" varde={orenTillKronsträng(data.kopeskillingOren)} />
           <Rad etikett="Köpkostnader" varde={orenTillKronsträng(data.kopkostnaderOren)} />
-          <Rad etikett="Ägarandel" varde={formateraAndel(data.agarandelProcent)} />
+          <Rad
+            etikett="Ägarandel"
+            varde={data.agarandelProcent === null ? null : formateraAndel(data.agarandelProcent)}
+          />
           <Rad etikett="Första ägaren" varde={jaNejText(data.bostadsfragor.forstaAgare)} />
           {/* Raden finns nar fragan stalls – en bostadsratt dar forsta
               agaren ar ja – och sager "Inte ifyllt" nar den ar obesvarad,
@@ -709,10 +713,14 @@ function ForvarvetEditForm({
         />
       </Falt>
 
-      <Falt etikett="Ägarandel" hjalp="Anges i procent. Lämna tomt om du äger hela bostaden själv.">
+      <Falt etikett="Ägarandel" hjalp="Anges i procent. Äger du hela bostaden själv är det 100.">
+        {/* Tomt ar ett fel nar en andel redan ar angiven – den gar inte att ta
+            tillbaka, bara att andra. Ar den inte angiven an far faltet sta
+            tomt, och resten av kortet sparas anda (installningar/actions.ts). */}
         <AgarandelFalt
           name="agarandel"
-          defaultValue={data.agarandelProcent === 100 ? "" : String(data.agarandelProcent)}
+          defaultValue={data.agarandelProcent === null ? "" : String(data.agarandelProcent).replace(".", ",")}
+          tomtTillatet={data.agarandelProcent === null}
           fel={felFor("agarandel")}
         />
       </Falt>

@@ -1,15 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { agarandelFel, agarandelFranText } from "@/lib/agarandel";
+import { ANDEL_SAKNAS, agarandelFel, agarandelFranText } from "@/lib/agarandel";
 
 // Agarandelen multiplicerar hela underlaget: skrivs 1000 i stallet for 100
 // blir avdraget tio ganger for stort utan att nagot ser fel ut (docs/
 // produktspec.md 4.7, CLAUDE.md). Dessa tester galler den delade valideringen
 // – bade faltkomponenten (agarandel-falt.tsx) och servern (installningar/
 // actions.ts) anropar samma funktioner.
+//
+// Ett tomt falt ar ett fel sedan 2026-10-28 (CLAUDE.md, "Andelen ar null
+// tills den besvarats"). Det betydde hela bostaden till dess.
 
 describe("agarandelFel", () => {
-  it("tillater ett tomt falt – det betyder hela bostaden", () => {
-    expect(agarandelFel("")).toBeNull();
+  it("avvisar ett tomt falt – det betyder inte hela bostaden", () => {
+    expect(agarandelFel("")).toBe(ANDEL_SAKNAS);
+    expect(agarandelFel("   ")).toBe(ANDEL_SAKNAS);
   });
 
   it("avvisar noll", () => {
@@ -36,8 +40,8 @@ describe("agarandelFel", () => {
 });
 
 describe("agarandelFranText", () => {
-  it("tolkar ett tomt falt som hela bostaden, 100", () => {
-    expect(agarandelFranText("")).toBe(100);
+  it("ger inget tal for ett tomt falt – aldrig 100", () => {
+    expect(agarandelFranText("")).toBeUndefined();
   });
 
   it("tolkar ett giltigt varde", () => {

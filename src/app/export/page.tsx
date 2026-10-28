@@ -29,6 +29,13 @@
 // att var och en deklarerar sin andel av den. Varken raden Agarandel eller
 // rutan om den egna andelen visas, och etiketten "Förs till K5" uteblir – den
 // far bara sta bredvid ett tal som ar lasarens eget (rutorForLasaren).
+//
+// Ar lasarens egen andel inte angiven ar det ett tredje lage (CLAUDE.md,
+// "Andelen ar null tills den besvarats"): underlaget multipliceras inte,
+// talet ar hela bostadens med etiketten och avrundningen kvar, raden
+// Agarandel sager "Inte angiven" med vagen dit, och raden under varje
+// Förs till-tal sager att talet galler hela bostaden – intill talet, inte i en
+// ruta ovanfor.
 
 import Link from "next/link";
 import {
@@ -48,6 +55,7 @@ import {
   VantarPaBostadsfragor,
   type K6aExportrad,
   type K6aIndata,
+  OgiltigAgarandel,
 } from "@/doman/export-k6a";
 import {
   AVRUNDAT_TILL_HELA_KRONOR,
@@ -65,8 +73,12 @@ import { hamtaBostadsdata, hamtaKostnaderMedBilaga, tillDomanBostad } from "@/li
 import { formateraKronor, isoDatum } from "@/lib/format";
 import { hamtaAndelar } from "@/lib/andelar";
 import {
+  ANDEL_INTE_ANGIVEN,
+  GALLER_HELA_BOSTADEN,
+  andelAttMultiplicera,
   andelForUnderlag,
   arDeladBostad,
+  formateraAndel,
 } from "@/lib/samagande";
 import { kravBostad } from "@/lib/session";
 import { SAMMA_DEL_ANDRAD, SAMMA_DEL_OBESVARAD } from "@/doman/samma-del";
@@ -93,7 +105,8 @@ export default async function ExportSida() {
   const medlemmar = andelar.medlemmar.length;
   const delad = arDeladBostad(medlemmar);
   const medlemsandelar = andelar.medlemmar.map((m) => m.andel);
-  const andel = andelForUnderlag({ egenAndel: agarandel, medlemsandelar });
+  const andelslage = andelForUnderlag({ egenAndel: agarandel, medlemsandelar });
+  const andelarnaGarIhop = andelslage.slag !== "gar_inte_ihop";
   // Bekraftad vid forsaljningen och oforandrad sedan (src/app/forsaljning/andel).
   const egenBekraftad =
     andelar.medlemmar.find((m) => m.anvandareId === anvandareId)?.bekraftad ?? false;
@@ -124,7 +137,7 @@ export default async function ExportSida() {
   function renderaInnehall() {
     const indata: K6aIndata = {
       bostad: tillDomanBostad(bostad),
-      medlemskap: { agarandel: andel ?? 100 },
+      medlemskap: { agarandel: andelAttMultiplicera(andelslage) },
       projekt,
       kostnader,
       kostnader_med_bilaga: kostnaderMedBilaga,
@@ -149,6 +162,22 @@ export default async function ExportSida() {
           </Kort>
         );
       }
+      // En ogiltig andel (i praktiken 0: en null som lasts som ett tal) –
+      // ingen siffra alls hellre an ett underlag pa 0 kr.
+      if (fel instanceof OgiltigAgarandel) {
+        return (
+          <Kort>
+            <div className="p-5">
+              <Meddelanderuta>
+                Underlaget kunde inte beräknas: {fel.message}
+              </Meddelanderuta>
+              <Link href="/installningar" className={`${SEKUNDARKNAPP_KLASS} mt-4`}>
+                Se över ägarandelen
+              </Link>
+            </div>
+          </Kort>
+        );
+      }
       return (
         <Kort>
           <div className="p-5">
@@ -164,7 +193,8 @@ export default async function ExportSida() {
     }
 
     const gemensam = ex.delagarvariant === "gemensam_med_andel";
-    const rutor = rutorForLasaren(ex, bostad.upplatelseform, andel);
+    const rutor = rutorForLasaren(ex, bostad.upplatelseform, andelarnaGarIhop);
+    const andelInteAngiven = andelslage.slag === "inte_angiven";
     // Summorna dampas nar underlaget ar ofullstandigt (docs/design.md,
     // Exportvyn): tva stora tal pa en skarm som heter Deklarationsunderlag ser
     // trasigt ut nar de anda inte galler. Full tyngd forst nar ingenting
@@ -201,7 +231,7 @@ export default async function ExportSida() {
         <UnderlagetsVarningar varningar={ex.varningar} />
 
         <Kort className="divide-y divide-linje">
-          {delad && andel === null ? (
+          {delad && !andelarnaGarIhop ? (
             <p className="p-4 font-granssnitt text-sm text-text-primar">
               Sammanställningen gäller{" "}
               <span className="font-medium">hela bostaden</span> – var och en
@@ -215,11 +245,27 @@ export default async function ExportSida() {
                 {ex.genererad_for_datum ?? "Inte såld än"}
               </span>
             </div>
-            {andel !== null ? (
+            {andelslage.slag === "andel" ? (
               <div className="flex justify-between gap-3">
                 <span>Ägarandel</span>
                 <span className="tabular-nums text-text-primar">
-                  {ex.agarandel_procent} %
+                  {formateraAndel(andelslage.andel)}
+                </span>
+              </div>
+            ) : null}
+            {/* Inte angiven: ingen spärr, men raden säger det och visar vägen
+                dit (docs/design.md, "Ägarandelen har inget förval"). */}
+            {andelInteAngiven ? (
+              <div className="flex justify-between gap-3">
+                <span>Ägarandel</span>
+                <span className="text-text-primar">
+                  {ANDEL_INTE_ANGIVEN} ·{" "}
+                  <Link
+                    href="/installningar"
+                    className="underline underline-offset-2 hover:text-accent-mork"
+                  >
+                    Ange ägarandelen
+                  </Link>
                 </span>
               </div>
             ) : null}
@@ -227,7 +273,7 @@ export default async function ExportSida() {
                 stoppas inte – talen raknas med den lagrade andelen – men far
                 veta det, och vagen dit (docs/design.md, "Att bjuda in en
                 delägare"). */}
-            {ex.sald && andel !== null && !egenBekraftad ? (
+            {ex.sald && andelslage.slag === "andel" && !egenBekraftad ? (
               <div className="flex justify-between gap-3">
                 <span>Inte bekräftad</span>
                 <Link
@@ -271,6 +317,7 @@ export default async function ExportSida() {
             brutto={ex.ruta4_brutto}
             gemensam={gemensam}
             agarandel={ex.agarandel_procent}
+            andelInteAngiven={andelInteAngiven}
             dampad={harAterstaende}
           />
         </Kort>
@@ -291,6 +338,7 @@ export default async function ExportSida() {
               brutto={ex.ruta5_brutto}
               gemensam={gemensam}
               agarandel={ex.agarandel_procent}
+              andelInteAngiven={andelInteAngiven}
               dampad={harAterstaende}
             />
           ) : null}
@@ -534,6 +582,7 @@ function RutaCallout({
   brutto,
   gemensam,
   agarandel,
+  andelInteAngiven,
   dampad,
 }: {
   /** Etikett och tal ur rutorForLasaren: "Förs till" bara bredvid läsarens eget tal. */
@@ -541,7 +590,11 @@ function RutaCallout({
   underrad: string;
   brutto: number;
   gemensam: boolean;
-  agarandel: number;
+  /** Andelen underlaget multiplicerades med; null när det inte multiplicerades. */
+  agarandel: number | null;
+  /** Läsarens andel är inte angiven: talet är hela bostadens, och raden intill
+   *  det säger det (CLAUDE.md, "Andelen är null tills den besvarats"). */
+  andelInteAngiven: boolean;
   /** Väntar något på frågor är talet ofullständigt och sätts i
    *  --text-sekundar i stället för --text-primar (docs/design.md, Exportvyn). */
   dampad: boolean;
@@ -571,9 +624,14 @@ function RutaCallout({
           {AVRUNDAT_TILL_HELA_KRONOR}
         </p>
       ) : null}
-      {gemensam ? (
+      {gemensam && agarandel !== null ? (
         <p className="mt-1 font-granssnitt text-sm tabular-nums text-text-sekundar">
-          Hela bostaden {formateraKronor(brutto)} · din andel {agarandel} %
+          Hela bostaden {formateraKronor(brutto)} · din andel {formateraAndel(agarandel)}
+        </p>
+      ) : null}
+      {andelInteAngiven ? (
+        <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
+          {GALLER_HELA_BOSTADEN}
         </p>
       ) : null}
     </section>

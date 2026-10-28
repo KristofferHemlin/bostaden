@@ -58,21 +58,37 @@ describe("arDeladBostad – styr exportvyns rad om hela bostaden", () => {
 // gar ingen andel att lita pa, och underlaget galler hela bostaden (null).
 describe("andelForUnderlag", () => {
   it("en ensam agare behaller sin andel", () => {
-    expect(andelForUnderlag({ egenAndel: 50, medlemsandelar: [50] })).toBe(50);
-    expect(andelForUnderlag({ egenAndel: 100, medlemsandelar: [100] })).toBe(100);
+    expect(andelForUnderlag({ egenAndel: 50, medlemsandelar: [50] })).toEqual({ slag: "andel", andel: 50 });
+    expect(andelForUnderlag({ egenAndel: 100, medlemsandelar: [100] })).toEqual({ slag: "andel", andel: 100 });
   });
 
   it("i en delad bostad dar andelarna gar ihop galler lasarens andel", () => {
-    expect(andelForUnderlag({ egenAndel: 50, medlemsandelar: [50, 50] })).toBe(50);
-    expect(andelForUnderlag({ egenAndel: 70, medlemsandelar: [70, 30] })).toBe(70);
+    expect(andelForUnderlag({ egenAndel: 50, medlemsandelar: [50, 50] })).toEqual({ slag: "andel", andel: 50 });
+    expect(andelForUnderlag({ egenAndel: 70, medlemsandelar: [70, 30] })).toEqual({ slag: "andel", andel: 70 });
   });
 
   it("en summa under 100 % ar inget hinder – tva syskon av tre ser var sin fjardedel", () => {
-    expect(andelForUnderlag({ egenAndel: 25, medlemsandelar: [25, 25] })).toBe(25);
+    expect(andelForUnderlag({ egenAndel: 25, medlemsandelar: [25, 25] })).toEqual({ slag: "andel", andel: 25 });
   });
 
-  it("en summa over 100 % ger ingen andel – null, aldrig den egna", () => {
-    expect(andelForUnderlag({ egenAndel: 100, medlemsandelar: [100, 100] })).toBeNull();
-    expect(andelForUnderlag({ egenAndel: 50, medlemsandelar: [50, 100] })).toBeNull();
+  it("en summa over 100 % ger ingen andel – aldrig den egna", () => {
+    expect(andelForUnderlag({ egenAndel: 100, medlemsandelar: [100, 100] })).toEqual({ slag: "gar_inte_ihop" });
+    expect(andelForUnderlag({ egenAndel: 50, medlemsandelar: [50, 100] })).toEqual({ slag: "gar_inte_ihop" });
+  });
+
+  // CLAUDE.md, "Andelen ar null tills den besvarats": null ar varken 0 eller
+  // 100, och en obesvarad andel ar ett annat lage an att andelarna inte gar ihop.
+  it("en obesvarad egen andel ar inte_angiven, aldrig 100", () => {
+    expect(andelForUnderlag({ egenAndel: null, medlemsandelar: [null] })).toEqual({ slag: "inte_angiven" });
+    expect(andelForUnderlag({ egenAndel: null, medlemsandelar: [null, 50] })).toEqual({ slag: "inte_angiven" });
+  });
+
+  it("en annans obesvarade andel hoppas over i summan – den ar inte 100", () => {
+    expect(andelForUnderlag({ egenAndel: 50, medlemsandelar: [50, null] })).toEqual({ slag: "andel", andel: 50 });
+    expect(andelForUnderlag({ egenAndel: 100, medlemsandelar: [100, null] })).toEqual({ slag: "andel", andel: 100 });
+  });
+
+  it("de angivna over 100 % gar inte ihop, aven nar lasaren inte svarat", () => {
+    expect(andelForUnderlag({ egenAndel: null, medlemsandelar: [null, 60, 50] })).toEqual({ slag: "gar_inte_ihop" });
   });
 });

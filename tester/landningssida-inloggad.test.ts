@@ -55,7 +55,7 @@ beforeEach(() => {
   h.db.lagg("anvandare", { id: ANNA, epost: "anna@exempel.se" });
   h.db.lagg("bostad", {
     id: BOSTAD, adress: "Storgatan 1", upplatelseform: "fastighet",
-    tilltradesdatum: datum("2019-06-01"), bostadsfragor_besvarade: true,
+    tilltradesdatum: datum("2019-06-01"), nybyggd_vid_forvarv: false,
   });
   h.db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: BOSTAD, agarandel: 100 });
 });

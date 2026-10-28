@@ -90,7 +90,7 @@ function seeda({ forstaBetald = "2022-06-01" }: { forstaBetald?: string } = {}) 
     adress: "Storgatan 1",
     upplatelseform: "fastighet",
     tilltradesdatum: datum("2015-06-01"),
-    bostadsfragor_besvarade: true,
+    nybyggd_vid_forvarv: false,
     forsta_agare: false,
     forsaljningsdatum: datum("2026-09-15"),
   });

@@ -68,7 +68,7 @@ function seeda(rot: number | null) {
   db.lagg("anvandare", { id: ANNA, epost: "anna@exempel.se" });
   db.lagg("bostad", {
     id: BOSTAD, adress: "Kvarnvägen 12 B", upplatelseform: "fastighet",
-    tilltradesdatum: datum("2019-06-01"), bostadsfragor_besvarade: true,
+    tilltradesdatum: datum("2019-06-01"), nybyggd_vid_forvarv: false,
   });
   db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: BOSTAD, agarandel: 100 });
   db.lagg("projekt", { id: KOK, bostad_id: BOSTAD, namn: "Köket", ar: 2026, atgardstyp: "nybyggnad" });

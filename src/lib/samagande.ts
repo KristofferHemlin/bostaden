@@ -43,14 +43,32 @@ export function upphovsrad(
 /** Den hogsta summan av andelarna, i procent. Samma tak som for en enskild andel. */
 export const HOGSTA_ANDELSSUMMA = 100;
 
-/** Summan i procent, raknad i hundradels procent sa att 33,33 × 3 + 0,01 blir 100. */
-export function summeraAndelar(andelar: number[]): number {
-  return andelar.reduce((s, a) => s + Math.round(a * 100), 0) / 100;
+/**
+ * Summan i procent, raknad i hundradels procent sa att 33,33 × 3 + 0,01 blir
+ * 100. En andel som inte ar angiven (null) hoppas over – den ar varken noll
+ * eller hundra, och en summa dar nagon inte svarat ar inte en summa over 100 %
+ * (CLAUDE.md, "Andelen ar null tills den besvarats").
+ */
+export function summeraAndelar(andelar: readonly (number | null)[]): number {
+  return andelar.reduce<number>((s, a) => (a === null ? s : s + Math.round(a * 100)), 0) / 100;
 }
 
 /** "50 %", "33,33 %" – decimalkomma, hart mellanslag fore tecknet. */
 export function formateraAndel(andel: number): string {
   return `${String(andel).replace(".", ",")} %`;
+}
+
+/** Texten for en andel som inte ar angiven (docs/design.md, "Ägarandelen har inget förval"). */
+export const ANDEL_INTE_ANGIVEN = "Inte angiven";
+
+/** Raden under ett Förs till-tal nar lasarens andel inte ar angiven: talet
+ *  ar hela bostadens, och det ska sta intill talet (CLAUDE.md, "Andelen ar
+ *  null tills den besvarats"). */
+export const GALLER_HELA_BOSTADEN = "Gäller hela bostaden – din ägarandel är inte angiven.";
+
+/** "50 %", eller "Inte angiven" for null. */
+export function formateraAndelEllerInteAngiven(andel: number | null): string {
+  return andel === null ? ANDEL_INTE_ANGIVEN : formateraAndel(andel);
 }
 
 function overSummaText(summa: number): string {
@@ -69,8 +87,8 @@ export function andelssummaVidInbjudan(efter: number): string | null {
  * Proven nar en befintlig andel andras. En andring som tar summan over 100 %
  * avvisas. En andring som SANKER en redan for hog summa slapps igenom, aven
  * om den inte hinner ner till 100 % i ett steg – annars kan tva medlemmar som
- * bada star pa standardvardet 100 aldrig rata sina andelar, eftersom den som
- * sanker forst anda lamnar summan over taket.
+ * bada angett 100 aldrig rata sina andelar, eftersom den som sanker forst
+ * anda lamnar summan over taket.
  */
 export function andelssummaVidAndring({ fore, efter }: { fore: number; efter: number }): string | null {
   if (efter <= HOGSTA_ANDELSSUMMA || efter <= fore) return null;
@@ -78,26 +96,44 @@ export function andelssummaVidAndring({ fore, efter }: { fore: number; efter: nu
 }
 
 /**
- * Agarandelen som underlaget ska raknas med, eller null nar ingen andel gar
- * att lita pa – underlaget galler da hela bostaden, och raden "Förs till K5"
- * uteblir (CLAUDE.md, "Agarandel").
+ * Vad underlaget ska raknas med for lasaren – tre lagen, och de far inte
+ * blandas ihop (CLAUDE.md, "Agarandel" och "Andelen ar null tills den
+ * besvarats"):
  *
- * Villkoret ar inte antalet medlemmar utan att medlemmarnas andelar gar ihop:
- * summan ar hogst 100 %. Under 100 % ar inget hinder – det finns delagare som
- * inte anvander appen. En ensam agare har alltid en andel som gar ihop.
+ * - "andel": de angivna andelarna gar ihop och lasarens ar angiven.
+ *   Underlaget multipliceras med den, och talet bar etiketten "Förs till".
+ * - "inte_angiven": andelarna gar ihop men lasarens ar inte angiven.
+ *   Underlaget multipliceras inte – talet ar hela bostadens, med etiketten
+ *   kvar och avrundat som vanligt – men raden intill talet sager att andelen
+ *   inte ar angiven.
+ * - "gar_inte_ihop": de angivna andelarna ar tillsammans over 100 %. Ingen
+ *   andel gar att lita pa; hela bostadens belopp utan etiketten.
  *
- * Medlemskapets andel har standardvardet 100 och kan inte vara tom, sa "inte
- * satt" syns som en summa over 100: servern vagrar skapa en sadan, och den
- * kan bara finnas i en bostad som delades innan inbjudan fragade efter andelen.
+ * Villkoret ar inte antalet medlemmar utan att de ANGIVNA andelarna gar ihop.
+ * En andel som inte ar angiven hoppas over i summan (summeraAndelar), och en
+ * summa under 100 % ar inget hinder – det finns delagare som inte anvander
+ * appen.
  */
+export type AndelForUnderlag =
+  | { slag: "andel"; andel: number }
+  | { slag: "inte_angiven" }
+  | { slag: "gar_inte_ihop" };
+
 export function andelForUnderlag({
   egenAndel,
   medlemsandelar,
 }: {
-  egenAndel: number;
-  medlemsandelar: number[];
-}): number | null {
-  return summeraAndelar(medlemsandelar) <= HOGSTA_ANDELSSUMMA ? egenAndel : null;
+  egenAndel: number | null;
+  medlemsandelar: readonly (number | null)[];
+}): AndelForUnderlag {
+  if (summeraAndelar(medlemsandelar) > HOGSTA_ANDELSSUMMA) return { slag: "gar_inte_ihop" };
+  return egenAndel === null ? { slag: "inte_angiven" } : { slag: "andel", andel: egenAndel };
+}
+
+/** Andelen berakningen ska multiplicera med: null nar underlaget INTE ska
+ *  multipliceras – andelen ar inte angiven, eller andelarna gar inte ihop. */
+export function andelAttMultiplicera(lage: AndelForUnderlag): number | null {
+  return lage.slag === "andel" ? lage.andel : null;
 }
 
 /**
@@ -107,15 +143,19 @@ export function andelForUnderlag({
  * eller nagon annanstans, ar den obekraftad igen utan att nagon behover
  * komma ihag att nollstalla den. Samma monster som projekt.merkostnad_bas.
  */
-export function arAndelenBekraftad(agarandel: number, bekraftad: number | null): boolean {
-  return bekraftad !== null && Math.round(bekraftad * 100) === Math.round(agarandel * 100);
+export function arAndelenBekraftad(agarandel: number | null, bekraftad: number | null): boolean {
+  // En andel som inte ar angiven kan inte vara bekraftad: att bekrafta skriver
+  // bada kolumnerna (src/lib/egen-andel.ts), sa en bekraftelse ar ocksa ett svar.
+  if (agarandel === null || bekraftad === null) return false;
+  return Math.round(bekraftad * 100) === Math.round(agarandel * 100);
 }
 
 /** En andel i kortet Tillgang, for notisen nar summan inte gar ihop. */
 export interface SattAndel {
   /** "du", en e-postadress, eller en adress med en utestaende inbjudan. */
   vem: string;
-  andel: number;
+  /** null = inte angiven. */
+  andel: number | null;
   /** Utestaende inbjudan – andelen andrar den som bjod in, inte medlemmen. */
   inbjudan?: boolean;
 }
@@ -124,11 +164,12 @@ export interface SattAndel {
  * Kortet Tillgangs rad under summan, eller null nar summan ar 100 %. En summa
  * under 100 ar tillaten och namns utan att kallas ett fel – det finns
  * delagare som inte anvander appen. En summa over 100 kan bara finnas i en
- * bostad som delades innan andelen fragades vid inbjudan.
+ * bostad som delades innan andelen fragades vid inbjudan. En andel som inte
+ * ar angiven ingar inte i summan.
  *
  * Over 100 pekar texten INTE ut vems andel som ar fel – appen vet inte det.
  * Uppmatt 2026-10-02: "Ändra din egen under Förvärvet" stod hos den som hade
- * 50 %, medan den andra stod pa kolumnens standardvarde 100 %. Texten sager
+ * 50 %, medan den andra stod pa kolumnens dåvarande standardvarde 100 %. Texten sager
  * att summan inte gar ihop, vad var och en ar satt till, och vem som kan
  * andra vad: en medlem sin egen andel under Förvärvet, den som bjod in en
  * utestaende inbjudans andel genom att bjuda in samma adress igen.
@@ -140,7 +181,7 @@ export function andelssummaNotis(summa: number, andelar: SattAndel[] = []): stri
   if (summa > HOGSTA_ANDELSSUMMA) {
     const satt = andelar.length
       ? ` Satt nu: ${andelar
-          .map((a) => `${a.vem}${a.inbjudan ? " (inbjuden)" : ""} ${formateraAndel(a.andel)}`)
+          .map((a) => `${a.vem}${a.inbjudan ? " (inbjuden)" : ""} ${formateraAndelEllerInteAngiven(a.andel)}`)
           .join(", ")}.`
       : "";
     const inbjudan = andelar.some((a) => a.inbjudan)

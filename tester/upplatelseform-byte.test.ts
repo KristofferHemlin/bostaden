@@ -110,23 +110,57 @@ describe("byte av upplatelseform nekas efter forsaljning", () => {
 
 // Ett byte av upplatelseform oppnar bostadsfragorna igen (src/doman/
 // bostadsfragor.ts): vilka fragor som stalls beror pa formen. Ett lagrat
-// false blir obesvarat, ett lagrat true star kvar som svar.
-describe("byte av upplatelseform nollstaller bostadsfragor_besvarade", () => {
-  it("fastighet till bostadsratt skriver flaggan som false", async () => {
-    h.bostadFindUniqueOrThrow.mockResolvedValue({ upplatelseform: "fastighet", forsaljningsdatum: null });
+// nej blir obesvarat (null), ett lagrat ja star kvar som svar.
+describe("byte av upplatelseform gor ett lagrat nej obesvarat", () => {
+  it("fastighet till bostadsratt: nej blir null", async () => {
+    h.bostadFindUniqueOrThrow.mockResolvedValue({
+      upplatelseform: "fastighet",
+      forsaljningsdatum: null,
+      nybyggd_vid_forvarv: false,
+      ombildning_fran_hyresratt: null,
+    });
     await sparaBostaden({}, formulardata({ upplatelseform: "bostadsratt" }));
-    expect(h.bostadUpdate.mock.calls[0][0].data.bostadsfragor_besvarade).toBe(false);
+    const data = h.bostadUpdate.mock.calls[0][0].data;
+    expect(data.nybyggd_vid_forvarv).toBeNull();
+    expect(data).not.toHaveProperty("ombildning_fran_hyresratt");
   });
 
-  it("bostadsratt till fastighet skriver flaggan som false", async () => {
-    h.bostadFindUniqueOrThrow.mockResolvedValue({ upplatelseform: "bostadsratt", forsaljningsdatum: null });
+  it("bostadsratt till fastighet: nej och ombildningens nej blir null", async () => {
+    h.bostadFindUniqueOrThrow.mockResolvedValue({
+      upplatelseform: "bostadsratt",
+      forsaljningsdatum: null,
+      nybyggd_vid_forvarv: false,
+      ombildning_fran_hyresratt: false,
+    });
     await sparaBostaden({}, formulardata({ upplatelseform: "fastighet" }));
-    expect(h.bostadUpdate.mock.calls[0][0].data.bostadsfragor_besvarade).toBe(false);
+    const data = h.bostadUpdate.mock.calls[0][0].data;
+    expect(data.nybyggd_vid_forvarv).toBeNull();
+    expect(data.ombildning_fran_hyresratt).toBeNull();
   });
 
-  it("utan byte rors flaggan inte", async () => {
-    h.bostadFindUniqueOrThrow.mockResolvedValue({ upplatelseform: "bostadsratt", forsaljningsdatum: null });
+  it("ett lagrat ja star kvar som svar", async () => {
+    h.bostadFindUniqueOrThrow.mockResolvedValue({
+      upplatelseform: "fastighet",
+      forsaljningsdatum: null,
+      nybyggd_vid_forvarv: true,
+      ombildning_fran_hyresratt: null,
+    });
     await sparaBostaden({}, formulardata({ upplatelseform: "bostadsratt" }));
-    expect(h.bostadUpdate.mock.calls[0][0].data).not.toHaveProperty("bostadsfragor_besvarade");
+    const data = h.bostadUpdate.mock.calls[0][0].data;
+    expect(data).not.toHaveProperty("nybyggd_vid_forvarv");
+    expect(data).not.toHaveProperty("ombildning_fran_hyresratt");
+  });
+
+  it("utan byte rors svaren inte", async () => {
+    h.bostadFindUniqueOrThrow.mockResolvedValue({
+      upplatelseform: "bostadsratt",
+      forsaljningsdatum: null,
+      nybyggd_vid_forvarv: false,
+      ombildning_fran_hyresratt: null,
+    });
+    await sparaBostaden({}, formulardata({ upplatelseform: "bostadsratt" }));
+    const data = h.bostadUpdate.mock.calls[0][0].data;
+    expect(data).not.toHaveProperty("nybyggd_vid_forvarv");
+    expect(data).not.toHaveProperty("ombildning_fran_hyresratt");
   });
 });

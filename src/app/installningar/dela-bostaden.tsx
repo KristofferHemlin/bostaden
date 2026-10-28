@@ -10,9 +10,10 @@
 //   2. adressen och andelarna – bada, med summan synlig medan man skriver
 //   3. QR-koden och lanken att kopiera – ingenting skickas
 //
-// Steget satter BADA andelarna. Den som bjuder in star pa standardvardet
-// 100 %, sa ett steg som bara fragade efter den inbjudnas kunde inte ge henne
-// nagot utan att summan sprangde 100 %. Summan provas pa servern
+// Steget satter BADA andelarna. Den egna kan redan vara angiven – ofta 100 %
+// – och ett steg som bara fragade efter den inbjudnas kunde da inte ge henne
+// nagot utan att summan sprangde 100 %. Ar den inte angiven borjar faltet
+// tomt, aldrig pa 100. Summan provas pa servern
 // (src/lib/inbjudan.ts); har visas den bara. Den far garna vara under 100 % –
 // kortet namner det utan att kalla det ett fel.
 
@@ -30,6 +31,7 @@ import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import {
   andelssummaNotis,
   formateraAndel,
+  formateraAndelEllerInteAngiven,
   HOGSTA_ANDELSSUMMA,
   summeraAndelar,
 } from "@/lib/samagande";
@@ -40,14 +42,11 @@ import {
 } from "@/app/inbjudan/actions";
 
 export interface TillgangData {
-  /** Alla medlemmar, den inloggade forst. */
-  medlemmar: { epost: string; du: boolean; andel: number }[];
+  /** Alla medlemmar, den inloggade forst. `andel` ar null nar den inte ar angiven. */
+  medlemmar: { epost: string; du: boolean; andel: number | null }[];
   /** Utestaende inbjudningar. `andel` ar null for inbjudningar fran innan andelen fragades. */
   inbjudningar: { id: string; epost: string; andel: number | null }[];
 }
-
-/** Standardvardet en inbjudan utan andel ger (src/lib/andelar.ts). */
-const ANDEL_UTAN_UPPGIFT = 100;
 
 const TEXTLANK_KLASS =
   "font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar";
@@ -55,18 +54,16 @@ const TEXTLANK_KLASS =
 export function TillgangKort({ data }: { data: TillgangData }) {
   const [steg, setSteg] = useState<"vila" | "info" | "adress">("vila");
   const delad = data.medlemmar.length > 1 || data.inbjudningar.length > 0;
+  // En andel som inte ar angiven hoppas over i summan – den ar varken noll
+  // eller hundra (src/lib/samagande.ts, summeraAndelar).
   const summa = summeraAndelar([
     ...data.medlemmar.map((m) => m.andel),
-    ...data.inbjudningar.map((i) => i.andel ?? ANDEL_UTAN_UPPGIFT),
+    ...data.inbjudningar.map((i) => i.andel),
   ]);
-  const egen = data.medlemmar.find((m) => m.du)?.andel ?? ANDEL_UTAN_UPPGIFT;
+  const egen = data.medlemmar.find((m) => m.du)?.andel ?? null;
   const notis = andelssummaNotis(summa, [
     ...data.medlemmar.map((m) => ({ vem: m.du ? "du" : m.epost, andel: m.andel })),
-    ...data.inbjudningar.map((i) => ({
-      vem: i.epost,
-      andel: i.andel ?? ANDEL_UTAN_UPPGIFT,
-      inbjudan: true,
-    })),
+    ...data.inbjudningar.map((i) => ({ vem: i.epost, andel: i.andel, inbjudan: true })),
   ]);
 
   return (
@@ -82,7 +79,9 @@ export function TillgangKort({ data }: { data: TillgangData }) {
                 <span className="min-w-0 break-words text-text-primar">
                   {m.du ? `${m.epost} (du)` : m.epost}
                 </span>
-                <span className="shrink-0 tabular-nums text-text-primar">{formateraAndel(m.andel)}</span>
+                <span className="shrink-0 tabular-nums text-text-primar">
+                  {formateraAndelEllerInteAngiven(m.andel)}
+                </span>
               </div>
             ))}
             {data.inbjudningar.map((i) => (
@@ -119,7 +118,7 @@ export function TillgangKort({ data }: { data: TillgangData }) {
             egenAndel={egen}
             ovriga={[
               ...data.medlemmar.filter((m) => !m.du).map((m) => m.andel),
-              ...data.inbjudningar.map((i) => i.andel ?? ANDEL_UTAN_UPPGIFT),
+              ...data.inbjudningar.map((i) => i.andel),
             ]}
             onKlar={() => setSteg("vila")}
           />
@@ -134,9 +133,11 @@ function SkapaInbjudan({
   ovriga,
   onKlar,
 }: {
-  egenAndel: number;
-  /** Andelar som redan ar tagna av andra medlemmar och utestaende inbjudningar. */
-  ovriga: number[];
+  /** null nar den inte ar angiven – faltet borjar da tomt. */
+  egenAndel: number | null;
+  /** Andelar som redan ar tagna av andra medlemmar och utestaende inbjudningar.
+   *  null = inte angiven, och raknas inte i summan. */
+  ovriga: (number | null)[];
   onKlar: () => void;
 }) {
   const [resultat, action, pagar] = useActionState<InbjudanResultat, FormData>(
@@ -144,7 +145,8 @@ function SkapaInbjudan({
     {},
   );
   const hanteraSubmit = useForhindraDubbelinskick(pagar);
-  const [egenText, setEgenText] = useState(String(egenAndel).replace(".", ","));
+  // Tomt nar den egna andelen inte ar angiven – aldrig 100 som gissning.
+  const [egenText, setEgenText] = useState(egenAndel === null ? "" : String(egenAndel).replace(".", ","));
   const [inbjudenText, setInbjudenText] = useState("");
 
   if (resultat.ok) return <Inbjudningskod resultat={resultat} onKlar={onKlar} />;
@@ -153,7 +155,7 @@ function SkapaInbjudan({
   // har sitt eget felmeddelande under faltet.
   const egen = agarandelFranText(egenText);
   const inbjuden = inbjudenText.trim() === "" ? undefined : agarandelFranText(inbjudenText);
-  const summa = summeraAndelar([...ovriga, egen ?? 0, inbjuden ?? 0]);
+  const summa = summeraAndelar([...ovriga, egen ?? null, inbjuden ?? null]);
   const ovrigaSumma = summeraAndelar(ovriga);
 
   return (
@@ -258,7 +260,7 @@ function UtestaendeInbjudan({ id, epost, andel }: { id: string; epost: string; a
       <div className="flex justify-between gap-3">
         <span className="min-w-0 break-words text-text-sekundar">{epost} (inbjuden)</span>
         <span className="shrink-0 tabular-nums text-text-sekundar">
-          {formateraAndel(andel ?? ANDEL_UTAN_UPPGIFT)}
+          {formateraAndelEllerInteAngiven(andel)}
         </span>
       </div>
       <button type="submit" disabled={pagar} className={`${TEXTLANK_KLASS} self-start`}>

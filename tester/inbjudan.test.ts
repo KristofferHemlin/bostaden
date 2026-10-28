@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { REGELPARAMETRAR } from "./_hjalp";
+import { ANDEL_SAKNAS } from "@/lib/agarandel";
 
 // Samagande, del 2: inbjudan (docs/design.md, "Att bjuda in en delagare").
 //
@@ -108,8 +109,8 @@ function seeda({ doris = true }: { doris?: boolean } = {}) {
   for (const r of REGELPARAMETRAR) {
     db.lagg("regelparameter", { ...r, giltig_fran: datum(r.giltig_fran), giltig_till: null });
   }
-  db.lagg("bostad", { id: X, adress: "Storgatan 1", upplatelseform: "fastighet", tilltradesdatum: datum("2019-06-01"), bostadsfragor_besvarade: true });
-  db.lagg("bostad", { id: Y, adress: "Lillgatan 2", upplatelseform: "bostadsratt", tilltradesdatum: datum("2021-03-15"), bostadsfragor_besvarade: true });
+  db.lagg("bostad", { id: X, adress: "Storgatan 1", upplatelseform: "fastighet", tilltradesdatum: datum("2019-06-01"), nybyggd_vid_forvarv: false });
+  db.lagg("bostad", { id: Y, adress: "Lillgatan 2", upplatelseform: "bostadsratt", tilltradesdatum: datum("2021-03-15"), nybyggd_vid_forvarv: false });
   db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: X, agarandel: 100 });
   db.lagg("medlemskap", { anvandare_id: BERTIL, bostad_id: Y });
 
@@ -559,10 +560,35 @@ describe("efter anslutningen", () => {
 // vara under. Gar de ihop multiplicerar de underlaget (CLAUDE.md, "Agarandel").
 // ---------------------------------------------------------------------------
 
-const andelFor = (anvandare: string) =>
-  Number(h.db.tabell("medlemskap").find((m) => m.anvandare_id === anvandare)!.agarandel);
+/** Andelen som den ligger i databasen – null nar den inte ar angiven. Inte
+ *  Number() rakt av: Number(null) ar 0, och da ser en obesvarad andel ut som
+ *  ett svar aven i testerna (CLAUDE.md, "Andelen ar null tills den besvarats"). */
+const andelFor = (anvandare: string): number | null => {
+  const varde = h.db.tabell("medlemskap").find((m) => m.anvandare_id === anvandare)!.agarandel;
+  return varde === null ? null : Number(varde);
+};
 
 describe("agarandelen vid inbjudan", () => {
+  it("en inbjudan utan andel ger ett medlemskap utan andel – inte 100", async () => {
+    // Fran innan inbjudan fragade efter andelen. Till 2026-10-28 gav den
+    // kolumnens standardvarde, 100.
+    const gammal = h.db.lagg("inbjudan", { bostad_id: X, epost: EPOST[DORIS], inbjuden_av: ANNA, agarandel: null })
+      .id as string;
+    loggaIn(DORIS);
+    await losIn(gammal);
+    expect(andelFor(DORIS)).toBeNull();
+  });
+
+  it("den som bjuder in maste ange sin egen andel – ett tomt falt ar inte hela bostaden", async () => {
+    h.db.tabell("medlemskap").find((m) => m.anvandare_id === ANNA)!.agarandel = null;
+    loggaIn(ANNA);
+    const res = await skapaInbjudanAction({}, inbjudan_formular(EPOST[DORIS], "", "50"));
+
+    expect(res).toEqual({ fel: `Din andel: ${ANDEL_SAKNAS}` });
+    expect(h.db.tabell("inbjudan")).toHaveLength(0);
+    expect(andelFor(ANNA)).toBeNull();
+  });
+
   it("en inbjudan med andel ger medlemskapet den andelen nar den loses in", async () => {
     const id = await bjudIn(EPOST[DORIS], "60", "40");
     expect(Number(inbjudan(id).agarandel)).toBe(40);
@@ -686,13 +712,23 @@ describe("exportvyns rad om samagandet", () => {
     }
   });
 
-  it("sager som forut nar andelarna aldrig satts", async () => {
-    // En bostad delad innan andelen fragades: bada pa standardvardet 100.
-    h.db.lagg("medlemskap", { anvandare_id: DORIS, bostad_id: X });
+  it("sager som forut nar andelarna inte gar ihop", async () => {
+    // Tva medlemmar som bada angett 100 %. Till 2026-10-28 uppstod det har av
+    // sig sjalvt – bada stod pa kolumnens standardvarde – och testet provade
+    // da forvalet, inte regeln. Nu maste talen vara angivna for att ga over.
+    h.db.lagg("medlemskap", { anvandare_id: DORIS, bostad_id: X, agarandel: 100 });
     loggaIn(ANNA);
     const t = text(await ExportSida());
     expect(t).toContain(RAD_OKAND);
     expect(t).not.toContain("Du äger");
+  });
+
+  it("en delagare som inte svarat ar inte 100 % – andelarna gar fortfarande ihop", async () => {
+    // Doris har ingen andel. Lastes den som 100 gick summan over och ingen
+    // fick etiketten; den hoppas over, och Anna har sin.
+    h.db.lagg("medlemskap", { anvandare_id: DORIS, bostad_id: X });
+    loggaIn(ANNA);
+    expect(text(await ExportSida())).not.toContain(RAD_OKAND);
   });
 
   it("finns inte alls for en ensam agare", async () => {

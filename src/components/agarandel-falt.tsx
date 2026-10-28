@@ -35,24 +35,34 @@ export function AgarandelFalt({
   name,
   defaultValue = "",
   onVarde,
+  tomtTillatet = false,
   fel: formularetsFel,
 }: {
   /** Formularets mening fran servern. Faltets eget fel, som raknas medan man
    *  skriver, vinner – ett fel ger ett meddelande (docs/design.md). */
   fel?: string;
   name: string;
-  /** Startvarde som text, t.ex. "50" eller "33,33". Tomt betyder hela bostaden. */
+  /** Startvarde som text, t.ex. "50" eller "33,33". Tomt nar andelen inte ar
+   *  angiven – aldrig "100" som gissning. */
   defaultValue?: string;
+  /** Ett tomt falt ar inget fel – andelen ar inte angiven an, och formularet
+   *  har annat att spara (Förvärvet). Annars ar tomt ett fel. */
+  tomtTillatet?: boolean;
   /** Faltets text efter varje andring – for en summa som visas medan man skriver. */
   onVarde?: (text: string) => void;
 }) {
   const [varde, setVarde] = useState(defaultValue);
-  const [fel, setFel] = useState<string | null>(() => agarandelFel(defaultValue));
+  // Ett tomt startvarde ar inte nagot anvandaren skrivit, och visar darfor
+  // inget fel forran hon rort faltet.
+  const felFor = (text: string) => (text.trim() === "" && tomtTillatet ? null : agarandelFel(text));
+  const [fel, setFel] = useState<string | null>(() =>
+    defaultValue.trim() === "" ? null : felFor(defaultValue),
+  );
 
   function hanteraAndring(e: React.ChangeEvent<HTMLInputElement>) {
     const nytt = rensa(e.target.value);
     setVarde(nytt);
-    setFel(agarandelFel(nytt));
+    setFel(felFor(nytt));
     onVarde?.(nytt);
   }
 

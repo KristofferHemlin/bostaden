@@ -7,8 +7,12 @@
  *
  * Andelen ligger i intervallet 0 < andel <= 100 (Decimal(5,2) i schemat).
  * Noll avvisas – det betyder att ingenting ar anvandarens och ar nastan
- * alltid ett skrivfel. Ett tomt falt betyder daremot fortfarande att
- * anvandaren ager hela bostaden.
+ * alltid ett skrivfel, och sa lange noll ar ogiltigt ar varje nolla som nar
+ * berakningen ett bevis pa att en null lasts som ett tal.
+ *
+ * Ett tomt falt ar ett fel (CLAUDE.md, "Andelen ar null tills den
+ * besvarats"). Det betydde hela bostaden till 2026-10-28. Anvandaren kan inte
+ * ange null: null uppstar bara av att fragan aldrig besvarats.
  */
 
 const ANDEL_MONSTER = /^\d+(?:[.,]\d{1,2})?$/;
@@ -17,12 +21,12 @@ function normalisera(text: string): string {
   return text.trim().replace(/\s/g, "").replace(",", ".").replace(/%/g, "");
 }
 
-/**
- * Felmeddelande for faltets nuvarande text, eller null om texten ar giltig –
- * ett tomt falt racknas som giltigt (hela bostaden), inte som ett fel.
- */
+/** Meningen for ett tomt falt. */
+export const ANDEL_SAKNAS = "Ange ägarandelen i procent, t.ex. 100 om du äger hela bostaden.";
+
+/** Felmeddelande for faltets nuvarande text, eller null om texten ar giltig. */
 export function agarandelFel(text: string): string | null {
-  if (text.trim() === "") return null;
+  if (text.trim() === "") return ANDEL_SAKNAS;
   const normaliserad = normalisera(text);
   if (!ANDEL_MONSTER.test(normaliserad)) {
     return "Ägarandel anges som ett tal mellan 0 och 100, t.ex. 50 eller 33,33.";
@@ -34,12 +38,10 @@ export function agarandelFel(text: string): string | null {
 }
 
 /**
- * Agarandel i procent for faltets text, eller 100 vid tomt falt (hela
- * bostaden). Returnerar undefined nar texten inte gar att tolka eller ligger
- * utanfor 0–100.
+ * Agarandel i procent for faltets text. Returnerar undefined nar faltet ar
+ * tomt, nar texten inte gar att tolka eller nar den ligger utanfor 0–100.
  */
 export function agarandelFranText(text: string): number | undefined {
-  if (text.trim() === "") return 100;
   if (agarandelFel(text) !== null) return undefined;
   return Number.parseFloat(normalisera(text));
 }

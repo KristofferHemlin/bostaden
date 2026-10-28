@@ -57,7 +57,6 @@ async function main() {
       tilltradesdatum: d(SEED_BOSTAD.tilltradesdatum),
       nybyggd_vid_forvarv: SEED_BOSTAD.nybyggd_vid_forvarv,
       ombildning_fran_hyresratt: SEED_BOSTAD.ombildning_fran_hyresratt,
-      bostadsfragor_besvarade: SEED_BOSTAD.bostadsfragor_besvarade,
       forsaljningsdatum: SEED_BOSTAD.forsaljningsdatum
         ? d(SEED_BOSTAD.forsaljningsdatum)
         : null,

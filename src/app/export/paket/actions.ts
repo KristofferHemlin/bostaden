@@ -11,6 +11,7 @@
 // hamta.ts) i samma anrop, sa att klienten kan borja bygga PDF:en utan ett
 // extra race mellan "sparat" och "hamtat".
 
+import { ANDEL_SAKNAS, agarandelFel, agarandelFranText } from "@/lib/agarandel";
 import { serverfelMeddelande } from "@/lib/databas-fel";
 import { hamtaBilagepaketdata, type BilagepaketResultat } from "@/lib/bilagepaket/hamta";
 import { prisma } from "@/lib/prisma";
@@ -18,15 +19,6 @@ import { kravBostad } from "@/lib/session";
 
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 const TIDIGASTE_DATUM = "1970-01-01";
-
-// Till skillnad fran installningssidans andelFranText ar faltet har ett hart
-// krav (produktspec 8): tomt ar ett fel, inte "hela bostaden".
-function agarandelFranText(text: string): number | undefined {
-  const normaliserad = text.replace(/\s/g, "").replace(",", ".").replace(/%/g, "");
-  if (!/^\d+(\.\d{1,2})?$/.test(normaliserad)) return undefined;
-  const varde = Number.parseFloat(normaliserad);
-  return varde > 0 && varde <= 100 ? varde : undefined;
-}
 
 export async function skapaBilagepaket(
   _foreg: BilagepaketResultat,
@@ -36,9 +28,14 @@ export async function skapaBilagepaket(
 
   const las = (nyckel: string) => String(formData.get(nyckel) ?? "").trim();
 
-  const agarandel = agarandelFranText(las("agarandel"));
+  // Ett hart krav (produktspec 8), med samma regel som overallt annars sedan
+  // tomt slutade betyda hela bostaden (CLAUDE.md, "Andelen ar null tills den
+  // besvarats"): tomt, noll och over 100 ar fel. Spärren vilar alltsa pa
+  // valideringen av svaret, inte pa vad som ar lagrat.
+  const andelText = las("agarandel");
+  const agarandel = agarandelFranText(andelText);
   if (agarandel === undefined) {
-    return { ok: false, fel: "Ange ägarandelen i procent, t.ex. 100." };
+    return { ok: false, fel: agarandelFel(andelText) ?? ANDEL_SAKNAS };
   }
 
   const tilltradesdatum = las("tilltradesdatum");

@@ -10,20 +10,28 @@ import { arAndelenBekraftad } from "@/lib/samagande";
 
 type Klient = Prisma.TransactionClient | typeof prisma;
 
+/**
+ * En lagrad andel som tal, eller null nar den inte ar angiven (CLAUDE.md,
+ * "Andelen ar null tills den besvarats"). ENDA vagen fran databasens Decimal
+ * till ett tal: Number(null) ar 0, och en null som lases som 0 ser ut som ett
+ * svar. Las aldrig kolumnen med Number() direkt.
+ */
+export function lasAndel(varde: Prisma.Decimal | null): number | null {
+  return varde === null ? null : Number(varde);
+}
+
 export interface Andelar {
   medlemmar: {
     anvandareId: string;
     epost: string;
-    andel: number;
+    /** null = inte angiven. */
+    andel: number | null;
     /** Bekraftad vid forsaljningen och oforandrad sedan (arAndelenBekraftad). */
     bekraftad: boolean;
   }[];
   /** Utestaende inbjudningar. `andel` ar null for inbjudningar fran innan andelen fragades. */
   inbjudningar: { id: string; epost: string; andel: number | null }[];
 }
-
-/** Standardvardet en inbjudan utan andel ger nar den loses in (schemats default). */
-export const ANDEL_UTAN_UPPGIFT = 100;
 
 export async function hamtaAndelar(bostadId: string, db: Klient = prisma): Promise<Andelar> {
   const [medlemskap, inbjudningar] = await Promise.all([
@@ -46,16 +54,13 @@ export async function hamtaAndelar(bostadId: string, db: Klient = prisma): Promi
     medlemmar: medlemskap.map((m) => ({
       anvandareId: m.anvandare.id,
       epost: m.anvandare.epost,
-      andel: Number(m.agarandel),
-      bekraftad: arAndelenBekraftad(
-        Number(m.agarandel),
-        m.bekraftad_andel === null ? null : Number(m.bekraftad_andel),
-      ),
+      andel: lasAndel(m.agarandel),
+      bekraftad: arAndelenBekraftad(lasAndel(m.agarandel), lasAndel(m.bekraftad_andel)),
     })),
     inbjudningar: inbjudningar.map((i) => ({
       id: i.id,
       epost: i.epost,
-      andel: i.agarandel === null ? null : Number(i.agarandel),
+      andel: lasAndel(i.agarandel),
     })),
   };
 }
@@ -64,11 +69,9 @@ export async function hamtaAndelar(bostadId: string, db: Klient = prisma): Promi
  * Alla andelar som kommer att galla nar de utestaende inbjudningarna losts in
  * – medlemmarnas och de inbjudnas. En utestaende inbjudan reserverar sin
  * andel, annars kan tva inbjudningar till 50 % var losas in pa 50 % som redan
- * ar tagna.
+ * ar tagna. En andel som inte ar angiven ar null och hoppas over i summan
+ * (summeraAndelar) – den ar varken noll eller hundra.
  */
-export function allaAndelar(a: Andelar): number[] {
-  return [
-    ...a.medlemmar.map((m) => m.andel),
-    ...a.inbjudningar.map((i) => i.andel ?? ANDEL_UTAN_UPPGIFT),
-  ];
+export function allaAndelar(a: Andelar): (number | null)[] {
+  return [...a.medlemmar.map((m) => m.andel), ...a.inbjudningar.map((i) => i.andel)];
 }

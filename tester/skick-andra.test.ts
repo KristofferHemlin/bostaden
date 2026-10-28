@@ -79,7 +79,7 @@ function seeda({ sald = true }: { sald?: boolean } = {}) {
     adress: "Storgatan 1",
     upplatelseform: "fastighet",
     tilltradesdatum: datum("2015-06-01"),
-    bostadsfragor_besvarade: true,
+    nybyggd_vid_forvarv: false,
     forsta_agare: false,
     ...(sald ? { forsaljningsdatum: datum("2026-09-15") } : {}),
   });

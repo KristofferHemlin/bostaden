@@ -5,6 +5,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // granssnittet"). Agarandelen ligger pa kortet Forvarvet (docs/design.md,
 // "Installningssidan"). I en delad bostad provas den dessutom mot de andras:
 // en andring som tar summan over 100 % avvisas.
+//
+// Ett tomt falt betyder inte langre hela bostaden (CLAUDE.md, "Andelen ar null
+// tills den besvarats"): ar en andel angiven avvisas det, och ar den inte
+// angiven an lamnar det andelen obesvarad medan resten av kortet sparas.
 
 const BOSTAD = "11111111-1111-1111-1111-111111111111";
 const ANVANDARE = "22222222-2222-2222-2222-222222222222";
@@ -14,13 +18,18 @@ const h = vi.hoisted(() => ({
   bostadUpdate: vi.fn(),
   medlemskapUpdateMany: vi.fn(),
   medlemskapFindMany: vi.fn(),
+  medlemskapFindFirst: vi.fn(),
   inbjudanFindMany: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => {
   const klient = {
     bostad: { findUniqueOrThrow: h.bostadFindUniqueOrThrow, update: h.bostadUpdate },
-    medlemskap: { updateMany: h.medlemskapUpdateMany, findMany: h.medlemskapFindMany },
+    medlemskap: {
+      updateMany: h.medlemskapUpdateMany,
+      findMany: h.medlemskapFindMany,
+      findFirst: h.medlemskapFindFirst,
+    },
     inbjudan: { findMany: h.inbjudanFindMany },
   };
   return { prisma: { ...klient, $transaction: (fn: (k: typeof klient) => unknown) => fn(klient) } };
@@ -47,12 +56,13 @@ function ensamAgare() {
 }
 
 import { sparaForvarvet } from "@/app/installningar/actions";
+import { ANDEL_SAKNAS } from "@/lib/agarandel";
 
 function formulardata(over: Record<string, string> = {}): FormData {
   const data = new FormData();
   const varden: Record<string, string> = {
     tilltradesdatum: "2018-06-01",
-    agarandel: "",
+    agarandel: "100",
     forsta_agare: "nej",
     ...over,
   };
@@ -94,13 +104,24 @@ describe("agarandel valideras aven pa servern", () => {
     );
   });
 
-  it("tolkar ett tomt falt som hela bostaden, 100", async () => {
-    const resultat = await sparaForvarvet({}, formulardata({ agarandel: "" }));
+  // CLAUDE.md, testlistan: "Ett tomt andelsfalt i installningarna avvisas och
+  // andrar ingenting."
+  it("avvisar ett tomt falt nar en andel ar angiven, och andrar ingenting", async () => {
+    h.medlemskapFindFirst.mockResolvedValue({ agarandel: 100 });
+    const resultat = await sparaForvarvet({}, formulardata({ agarandel: "", kopeskilling: "3 250 000" }));
+
+    expect(resultat).toEqual({ fel: ANDEL_SAKNAS, falt: "agarandel" });
+    expect(h.medlemskapUpdateMany).not.toHaveBeenCalled();
+    expect(h.bostadUpdate).not.toHaveBeenCalled();
+  });
+
+  it("ett tomt falt nar andelen inte ar angiven: andelen forblir null, resten sparas", async () => {
+    h.medlemskapFindFirst.mockResolvedValue({ agarandel: null });
+    const resultat = await sparaForvarvet({}, formulardata({ agarandel: "", kopeskilling: "3 250 000" }));
 
     expect(resultat.fel).toBeUndefined();
-    expect(h.medlemskapUpdateMany).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { agarandel: 100 } }),
-    );
+    expect(h.medlemskapUpdateMany).not.toHaveBeenCalled();
+    expect(h.bostadUpdate.mock.calls[0][0].data.kopeskilling).toBe(325_000_000n);
   });
 });
 
@@ -126,10 +147,25 @@ describe("summan av andelarna i en delad bostad", () => {
     ]);
     h.inbjudanFindMany.mockResolvedValue([{ id: "i", epost: "doris@exempel.se", agarandel: 50 }]);
 
-    const resultat = await sparaForvarvet({}, formulardata({ agarandel: "" }));
+    const resultat = await sparaForvarvet({}, formulardata({ agarandel: "100" }));
 
     expect(resultat.fel).toContain("150");
     expect(h.medlemskapUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("en andel som inte ar angiven hoppas over i summan – den ar varken 0 eller 100", async () => {
+    // Doris har inte svarat. Raknades hennes null som 100 – som en inbjudan
+    // utan andel gjorde till 2026-10-28 – blev summan 160 och svaret avvisades.
+    h.medlemskapFindMany.mockResolvedValue([
+      { agarandel: 50, anvandare: { id: ANVANDARE, epost: "anna@exempel.se" } },
+      { agarandel: null, anvandare: { id: "33333333-3333-3333-3333-333333333333", epost: "doris@exempel.se" } },
+    ]);
+    const resultat = await sparaForvarvet({}, formulardata({ agarandel: "60" }));
+
+    expect(resultat.fel).toBeUndefined();
+    expect(h.medlemskapUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { agarandel: 60 } }),
+    );
   });
 
   it("tillater en summa under 100 %", async () => {

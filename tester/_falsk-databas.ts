@@ -89,12 +89,15 @@ const STANDARD: Record<Modell, () => Rad> = {
   anvandare: () => ({ aktiv_bostad_id: null }),
   bostad: () => ({
     namn: null, adress: null, place_id: null, latitud: null, longitud: null, ort: null,
-    storlek: null, identifiering: null, husform: null, nybyggd_vid_forvarv: false,
-    ombildning_fran_hyresratt: false, bostadsfragor_besvarade: false, kopeskilling: null,
+    storlek: null, identifiering: null, husform: null,
+    // Nullbara utan forval, som i Postgres sedan 2026-10-28: obesvarad ar null.
+    nybyggd_vid_forvarv: null, ombildning_fran_hyresratt: null, kopeskilling: null,
     kopkostnader: null, kapitaltillskott: null, uppskov_tidigare: null,
     forsaljningsdatum: null, forsaljningspris: null, samma_del_besvarad_for: [],
   }),
-  medlemskap: () => ({ agarandel: 100, bekraftad_andel: null }),
+  // Inget forval for andelen (CLAUDE.md, "Andelen ar null tills den
+  // besvarats"). Ett test som behover en andel satter den uttryckligen.
+  medlemskap: () => ({ agarandel: null, bekraftad_andel: null }),
   projekt: () => ({
     atgardstyp: null, battre_kvalitet: null, merkostnad: null, skick_forvarv: null,
     skick_forsaljning: null, motivering: null, klassificerad_av: null,

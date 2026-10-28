@@ -44,7 +44,7 @@ export default async function AndelSida({
       bakLank={nasta === "export" ? { href: "/export", text: "Deklarationsunderlag" } : undefined}
     >
       <BekraftaAndel
-        egenAndel={egen?.andel ?? 100}
+        egenAndel={egen?.andel ?? null}
         // Medlemmarna i den ordning de gick med, den inloggade markerad – fragan
         // namner andelarna i den ordningen ("50/50").
         medlemmar={andelar.medlemmar.map((m) => ({
@@ -52,7 +52,7 @@ export default async function AndelSida({
           andel: m.andel,
           du: m.anvandareId === anvandareId,
         }))}
-        inbjudningar={andelar.inbjudningar.map((i) => ({ epost: i.epost, andel: i.andel ?? 100 }))}
+        inbjudningar={andelar.inbjudningar.map((i) => ({ epost: i.epost, andel: i.andel }))}
         nasta={nasta}
       />
     </Skarm>

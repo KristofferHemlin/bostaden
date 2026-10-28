@@ -186,14 +186,14 @@ function seeda() {
     adress: "Storgatan 1",
     upplatelseform: "fastighet",
     tilltradesdatum: datum("2019-06-01"),
-    bostadsfragor_besvarade: true,
+    nybyggd_vid_forvarv: false,
   });
   db.lagg("bostad", {
     id: Y,
     adress: "Lillgatan 2",
     upplatelseform: "bostadsratt",
     tilltradesdatum: datum("2021-03-15"),
-    bostadsfragor_besvarade: true,
+    nybyggd_vid_forvarv: false,
   });
   db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: X });
   db.lagg("medlemskap", { anvandare_id: BERTIL, bostad_id: Y });
@@ -713,8 +713,11 @@ describe("exportvyn", () => {
     expect(text(await ExportSida())).not.toContain("hela bostaden");
   });
 
-  it("med fler medlemmar star det att sammanstallningen galler hela bostaden", async () => {
-    h.db.lagg("medlemskap", { anvandare_id: DORIS, bostad_id: X });
+  it("nar andelarna inte gar ihop star det att sammanstallningen galler hela bostaden", async () => {
+    // Bada har angett 100 %. Till 2026-10-28 var det kolumnens standardvarde,
+    // och testet behovde inte satta nagot – det provade forvalet.
+    medlemskap(ANNA, X).agarandel = 100;
+    h.db.lagg("medlemskap", { anvandare_id: DORIS, bostad_id: X, agarandel: 100 });
     for (const vem of [ANNA, DORIS]) {
       loggaIn(vem);
       expect(text(await ExportSida())).toContain(
@@ -950,7 +953,10 @@ describe.each([
 
     await kor(() => sparaForvarvet(START, formular({ tilltradesdatum: "2021-03-15", agarandel: "50" })));
     expect(Number(medlemskap(BERTIL, Y).agarandel)).toBe(50);
-    expect(Number(medlemskap(BERTIL, X).agarandel)).toBe(100);
+    // X ar orord: Bertil har inte angett nagon andel dar, och den ar kvar som
+    // null. Till 2026-10-28 stod har 100 – kolumnens standardvarde, inte ett
+    // svar, och samma tal som en felaktig skrivning till X hade kunnat ge.
+    expect(medlemskap(BERTIL, X).agarandel).toBeNull();
 
     const sida = (await NyKostnadSida({ searchParams: Promise.resolve({}) })) as {
       props: { bostadsnamn: string; children: { props: { bostad: { id: string; namn: string | null } } } };

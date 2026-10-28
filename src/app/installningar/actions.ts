@@ -6,10 +6,10 @@
 // src/app/inbjudan/actions.ts; Ditt konto har inga uppgifter.) Sparas
 // Bostaden far Forvarvet aldrig roras, inte ens med ett standardvarde for ett falt som inte
 // skickades med. Det har ar den viktigaste punkten i hela sidan: samma fel
-// har funnits forut, dar EN gemensam sparning for hela sidan tyst kunde satta
-// bostadsfragor_besvarade till sant nar vilken installning som helst
-// sparades. (Undantaget ar ett byte av upplatelseform, som nollstaller
-// flaggan till false – se sparaBostaden.) Losningen ar strukturell, inte en extra kontroll – varje action
+// har funnits forut, dar EN gemensam sparning for hela sidan tyst kunde
+// markera bostadsfragorna som besvarade nar vilken installning som helst
+// sparades. (Undantaget ar ett byte av upplatelseform, som gor ett lagrat nej
+// obesvarat igen – se sparaBostaden.) Losningen ar strukturell, inte en extra kontroll – varje action
 // skriver ENDAST de falt som hor till dess eget kort i `data`-objektet, och
 // Prisma rör aldrig ett falt som inte star dar.
 //
@@ -37,7 +37,7 @@ import {
   lagringVidBytAvUpplatelseform,
   tolkaBostadsfragesvar,
 } from "@/doman/bostadsfragor";
-import { agarandelFranText } from "@/lib/agarandel";
+import { ANDEL_SAKNAS, agarandelFel, agarandelFranText } from "@/lib/agarandel";
 import { skrivEgenAndel } from "@/lib/egen-andel";
 import { isoDatum, oreFranKronor } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -126,7 +126,12 @@ export async function sparaBostaden(
   // och anvandaren inte kunnat andra det.
   const bostadNu = await prisma.bostad.findUniqueOrThrow({
     where: { id: bostadId },
-    select: { upplatelseform: true, forsaljningsdatum: true },
+    select: {
+      upplatelseform: true,
+      forsaljningsdatum: true,
+      nybyggd_vid_forvarv: true,
+      ombildning_fran_hyresratt: true,
+    },
   });
   if (bostadNu.forsaljningsdatum && upplatelseform !== bostadNu.upplatelseform) {
     return {
@@ -178,8 +183,12 @@ export async function sparaBostaden(
       kapitaltillskott,
       // Ett byte av upplatelseform oppnar bostadsfragorna igen
       // (src/doman/bostadsfragor.ts) – den enda gang det har kortet ror
-      // flaggan, och da alltid till false, aldrig till true.
-      ...lagringVidBytAvUpplatelseform(bostadNu.upplatelseform, upplatelseform as "bostadsratt" | "fastighet"),
+      // svaren, och da bara genom att gora ett nej obesvarat, aldrig ett ja.
+      ...lagringVidBytAvUpplatelseform(
+        bostadNu.upplatelseform,
+        upplatelseform as "bostadsratt" | "fastighet",
+        bostadNu,
+      ),
     },
   });
 
@@ -190,7 +199,7 @@ export async function sparaBostaden(
 /**
  * Kortet Forvarvet: tilltradesdatum, kopeskilling, kopkostnader, forsta
  * agaren, ombildningen (bostad) och agarandelen (medlemskap). Skriver ENDAST
- * dessa, plus bostadsfragor_besvarade nar forsta agaren besvaras (se nedan).
+ * dessa.
  *
  * Ombildningen har en enda uppgift: att upphava forsta agaren. Den fragas och
  * skrivs bara nar forsta agaren ar ja. Ett nej nollstaller den INTE
@@ -199,14 +208,19 @@ export async function sparaBostaden(
  *
  * Forsta agaren och ombildningen saknar forval nar de ar obesvarade, och ett
  * tomt forsta agaren skrivs inte. Ett aktivt val ar ett svar, var det an gors:
- * genomgangen lovar att svaren kan andras har, sa sparningen satter
- * bostadsfragor_besvarade efter samma villkor som genomgangen
- * (src/doman/bostadsfragor.ts).
+ * genomgangen lovar att svaren kan andras har, och de skrivs efter samma
+ * villkor som i genomgangen (src/doman/bostadsfragor.ts).
  *
  * Agarandelen provas mot de andras pa servern: en andring som tar summan over
  * 100 % avvisas (src/lib/egen-andel.ts, samma prov som bekraftelsen vid
  * forsaljningen, men med andelssummaVidAndrings undantag). Utestaende
  * inbjudningar raknas med – de har redan sin andel reserverad.
+ *
+ * Ett tomt andelsfalt ar ett fel nar en andel redan ar angiven: man kan inte
+ * ta tillbaka sitt svar, bara skriva ett nytt tal (CLAUDE.md, "Andelen ar
+ * null tills den besvarats"). Ar andelen inte angiven an lamnar ett tomt falt
+ * den obesvarad och resten av kortet sparas – annars gar kopeskillingen inte
+ * att spara forran andelen ar kand.
  */
 export async function sparaForvarvet(
   _foreg: InstallningarResultat,
@@ -244,17 +258,16 @@ export async function sparaForvarvet(
     };
   }
 
-  const agarandel = agarandelFranText(las(formData, "agarandel"));
-  if (agarandel === undefined) {
-    return {
-      fel: "Ägarandel anges som ett tal mellan 0 och 100, t.ex. 50 eller 33,33.",
-      falt: "agarandel",
-    };
+  // undefined = faltet ar tomt; provas mot den lagrade andelen i
+  // transaktionen nedan.
+  const andelText = las(formData, "agarandel");
+  const agarandel = andelText === "" ? undefined : agarandelFranText(andelText);
+  if (andelText !== "" && agarandel === undefined) {
+    return { fel: agarandelFel(andelText) ?? ANDEL_SAKNAS, falt: "agarandel" };
   }
 
   // Tomt betyder obesvarat – da skrivs ingenting. Ett svar tolkas och lagras
-  // som i genomgangen, och satter flaggan efter samma villkor
-  // (src/doman/bostadsfragor.ts).
+  // efter samma villkor som i genomgangen (src/doman/bostadsfragor.ts).
   // Upplatelseformen avgor om ombildningsfragan stalls, och lases fran
   // bostaden – den andras i ett annat kort och skickas inte med har.
   const { upplatelseform } = await prisma.bostad.findUniqueOrThrow({
@@ -275,8 +288,16 @@ export async function sparaForvarvet(
       // Andelen forst: provningen mot de andras ar samma som vid
       // bekraftelsen (src/lib/egen-andel.ts). Ett fel avbryter fore bostaden
       // skrivs.
-      const fel = await skrivEgenAndel(tx, { bostadId, anvandareId, agarandel, bekrafta: false });
-      if (fel) return fel;
+      if (agarandel === undefined) {
+        const egen = await tx.medlemskap.findFirst({
+          where: { anvandare_id: anvandareId, bostad_id: bostadId },
+          select: { agarandel: true },
+        });
+        if (egen && egen.agarandel !== null) return ANDEL_SAKNAS;
+      } else {
+        const fel = await skrivEgenAndel(tx, { bostadId, anvandareId, agarandel, bekrafta: false });
+        if (fel) return fel;
+      }
 
       await tx.bostad.update({
         where: { id: bostadId },

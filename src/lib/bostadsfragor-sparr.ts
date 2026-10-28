@@ -20,7 +20,6 @@ export async function kravBostadsfragorBesvarade(bostadId: string): Promise<void
       upplatelseform: true,
       nybyggd_vid_forvarv: true,
       ombildning_fran_hyresratt: true,
-      bostadsfragor_besvarade: true,
     },
   });
   if (!bostadsfragornaBesvarade(lasBostadsfragor(bostad))) {

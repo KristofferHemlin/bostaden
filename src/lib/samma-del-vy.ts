@@ -51,8 +51,9 @@ export async function hamtaSammaDelVy(bostadId: string): Promise<SammaDelVy | nu
   try {
     ex = byggK6aExport({
       bostad: tillDomanBostad(bostad),
-      // Agarandelen paverkar inte urvalet – den tillampas sist (steg 6).
-      medlemskap: { agarandel: 100 },
+      // Agarandelen paverkar inte urvalet – den tillampas sist (steg 6) –
+      // och null multiplicerar ingenting.
+      medlemskap: { agarandel: null },
       projekt: projektRader.map(tillDomanProjekt),
       kostnader: kostnadRader.map(tillDomanKostnad),
       kostnader_med_bilaga: kostnaderMedBilaga,

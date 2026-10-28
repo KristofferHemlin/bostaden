@@ -149,7 +149,10 @@ export async function slutforRegistrering(
       kopeskilling,
       upplatelseform: upplatelseform as "bostadsratt" | "fastighet",
       tilltradesdatum: new Date(`${tilltradesdatum}T00:00:00.000Z`),
-      medlemskap: { create: { anvandare_id: authId, agarandel: 100 } },
+      // Ingen agarandel: den fragas efter registreringen, och null betyder
+      // inte angiven – aldrig 100 (CLAUDE.md, "Andelen ar null tills den
+      // besvarats").
+      medlemskap: { create: { anvandare_id: authId } },
     },
   });
 

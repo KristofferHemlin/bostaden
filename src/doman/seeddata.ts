@@ -59,14 +59,16 @@ export const SEED_BOSTAD = {
   upplatelseform: "bostadsratt" as const,
   husform: null,
   tilltradesdatum: "2021-03-01",
-  nybyggd_vid_forvarv: false,
-  ombildning_fran_hyresratt: false,
-  // Redan besvarade i seeden – annars skulle varje lokal test av genomgangen
-  // mota bostadsfragorna i stallet for det den faktiskt testar.
-  bostadsfragor_besvarade: true,
+  // Forsta agaren redan besvarad med nej i seeden – annars skulle varje lokal
+  // test av genomgangen mota bostadsfragorna i stallet for det den faktiskt
+  // testar. Ombildningen stalls inte efter ett nej, och ar darfor null.
+  nybyggd_vid_forvarv: false as boolean | null,
+  ombildning_fran_hyresratt: null as boolean | null,
   forsaljningsdatum: null as string | null,
 };
 
+// Ett uttryckligt svar, inte ett forval: seedens anvandare har angett att hon
+// ager hela bostaden (CLAUDE.md, "Andelen ar null tills den besvarats").
 export const SEED_MEDLEMSKAP = { agarandel: 100 };
 
 interface SeedProjekt extends Projekt {

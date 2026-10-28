@@ -41,7 +41,8 @@ export default async function BilagepaketSida() {
       bakLank={{ href: "/export", text: "Deklarationsunderlag" }}
     >
       <BilagepaketFlode
-        agarandel={String(agarandel)}
+        // Tomt nar andelen inte ar angiven – aldrig "null", "0" eller "100".
+        agarandel={agarandel === null ? "" : String(agarandel).replace(".", ",")}
         tilltradesdatum={isoDatum(bostad.tilltradesdatum)}
         identifiering={bostad.identifiering ?? ""}
         upplatelseform={bostad.upplatelseform}

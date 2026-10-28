@@ -20,7 +20,7 @@ import {
  *
  * Utan `bekrafta` – Forvarvet – galler andelssummaVidAndring: en andring som
  * tar summan over 100 % avvisas, men en som sanker en redan for hog summa
- * slapps igenom, annars kan tva medlemmar pa standardvardet 100 aldrig rata
+ * slapps igenom, annars kan tva medlemmar som bada angett 100 aldrig rata
  * sina andelar.
  *
  * Med `bekrafta` – vid forsaljningen – maste summan efterat vara hogst 100 %,
@@ -39,8 +39,15 @@ export async function skrivEgenAndel(
 ): Promise<string | null> {
   const andelar = await hamtaAndelar(bostadId, tx);
   const fore = summeraAndelar(allaAndelar(andelar));
-  const egenNu = andelar.medlemmar.find((m) => m.anvandareId === anvandareId)?.andel ?? 0;
-  const efter = summeraAndelar([fore, agarandel, -egenNu]);
+  // Summan efter: de andras andelar och den nya egna. Den egna nuvarande –
+  // ett tal eller null – byts ut, och en null bidrog aldrig till summan.
+  const efter = summeraAndelar([
+    ...allaAndelar({
+      ...andelar,
+      medlemmar: andelar.medlemmar.filter((m) => m.anvandareId !== anvandareId),
+    }),
+    agarandel,
+  ]);
   const fel = bekrafta ? andelssummaVidInbjudan(efter) : andelssummaVidAndring({ fore, efter });
   if (fel) return fel;
 

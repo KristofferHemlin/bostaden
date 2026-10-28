@@ -152,7 +152,9 @@ export interface K6aExport {
   genererad_for_datum: string | null;
   /** Falskt nar bostaden inte ar sald: sida 2 saknar da avdragsgill del. */
   sald: boolean;
-  agarandel_procent: number;
+  /** Andelen underlaget multiplicerades med, eller null nar det inte
+   *  multiplicerades – de individuella beloppen ar da hela bostadens. */
+  agarandel_procent: number | null;
   delagarvariant: "egen" | "gemensam_med_andel";
   sida1: K6aSida;
   sida2: K6aSida;
@@ -201,6 +203,20 @@ export class VantarPaBostadsfragor extends Error {
   constructor() {
     super(VANTAR_PA_BOSTADSFRAGOR_TEXT);
     this.name = "VantarPaBostadsfragor";
+  }
+}
+
+/**
+ * Agarandelen som nadde berakningen ar inte en giltig andel. Noll ar ogiltigt
+ * (CLAUDE.md, "Andelen ar null tills den besvarats"): Number(null) ar 0, sa
+ * ett 0 har betyder att en obesvarad andel lasts som ett tal. Berakningen
+ * avbryter hellre an att ge ett underlag pa 0 kr – en nolla i ett
+ * deklarationsunderlag ser ut som ett svar.
+ */
+export class OgiltigAgarandel extends Error {
+  constructor(agarandel: number) {
+    super(`Ägarandelen ${agarandel} går inte att räkna med.`);
+    this.name = "OgiltigAgarandel";
   }
 }
 
@@ -269,6 +285,16 @@ const FASTA_NOLLFORKLARINGAR = {
 
 export function byggK6aExport(indata: K6aIndata): K6aExport {
   const { bostad, medlemskap, projekt, kostnader, regelparametrar } = indata;
+
+  // 6. Agarandelen tillampas sist, men provas forst: en ogiltig andel ska
+  //    avbryta innan nagot raknats, inte ge nollor i varje rad. null betyder
+  //    att underlaget inte multipliceras – aldrig noll, aldrig en gissning.
+  const agarandel = medlemskap.agarandel;
+  if (agarandel !== null && !(agarandel > 0 && agarandel <= 100)) {
+    throw new OgiltigAgarandel(agarandel);
+  }
+  const individuellt = (belopp: number): number =>
+    agarandel === null ? belopp : individuelltBelopp(belopp, agarandel);
 
   // Berakningsreglerna ar identiska for bostadsratt och fastighet (produktspec
   // 4.9) – enda undantaget ar den bakre gransen for grundforbattringar, som
@@ -556,19 +582,13 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
         ar,
         belopp_brutto: beloppBrutto,
         kostnad_brutto: avrunda(foreBortfall.grundforbattringsdel),
-        belopp_individuellt: individuelltBelopp(
-          beloppBrutto,
-          medlemskap.agarandel,
-        ),
+        belopp_individuellt: individuellt(beloppBrutto),
         // En grundforbattring reduceras aldrig delvis – den raknas helt eller
         // inte alls – sa den avdragsgilla delen ar bidraget. Kolumnen heter
         // anda samma sak som pa sida 2 (docs/design.md, Skarmuppbyggnad:
         // "Båda sidorna har samma två kolumner").
         avdragsgill_del_brutto: beloppBrutto,
-        avdragsgill_del_individuellt: individuelltBelopp(
-          beloppBrutto,
-          medlemskap.agarandel,
-        ),
+        avdragsgill_del_individuellt: individuellt(beloppBrutto),
         kostnad_ider: [...cell.kostnadIder].sort(),
         varningar: [],
         forklaring:
@@ -645,15 +665,10 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
         ar,
         belopp_brutto: beloppBrutto,
         kostnad_brutto: avrunda(foreBortfall.reparationsunderlag),
-        belopp_individuellt: individuelltBelopp(
-          beloppBrutto,
-          medlemskap.agarandel,
-        ),
+        belopp_individuellt: individuellt(beloppBrutto),
         avdragsgill_del_brutto: avdragsgillDelBrutto,
         avdragsgill_del_individuellt:
-          avdragsgillDelBrutto === null
-            ? null
-            : individuelltBelopp(avdragsgillDelBrutto, medlemskap.agarandel),
+          avdragsgillDelBrutto === null ? null : individuellt(avdragsgillDelBrutto),
         kostnad_ider: [...cell.kostnadIder].sort(),
         varningar: radVarningar,
         forklaring,
@@ -753,8 +768,8 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
   return {
     genererad_for_datum: bostad.forsaljningsdatum,
     sald,
-    agarandel_procent: medlemskap.agarandel,
-    delagarvariant: medlemskap.agarandel < 100 ? "gemensam_med_andel" : "egen",
+    agarandel_procent: agarandel,
+    delagarvariant: agarandel !== null && agarandel < 100 ? "gemensam_med_andel" : "egen",
     sida1: { rader: sida1, summa_brutto: s1b, summa_individuellt: s1i },
     sida2: { rader: sida2, summa_brutto: s2b, summa_individuellt: s2i },
     ruta4_brutto: s1b,

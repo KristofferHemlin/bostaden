@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { byggK6aExport, type K6aIndata } from "@/doman/export-k6a";
 import { AVRUNDAT_TILL_HELA_KRONOR, rutorForLasaren } from "@/doman/blankett";
-import { andelForUnderlag } from "@/lib/samagande";
+import { andelAttMultiplicera, andelForUnderlag } from "@/lib/samagande";
 import { REGELPARAMETRAR, kostnad, projekt } from "./_hjalp";
 
 // CLAUDE.md, "Agarandel", och docs/design.md, "Samagande – medlemskapet":
@@ -25,10 +25,15 @@ function underlag({
   egenAndel,
   medlemsandelar,
 }: {
-  egenAndel: number;
-  medlemsandelar: number[];
+  egenAndel: number | null;
+  medlemsandelar: (number | null)[];
 }) {
-  const andel = andelForUnderlag({ egenAndel, medlemsandelar });
+  // Samma kedja som exportvyn, utan egen reserv: vad underlaget multipliceras
+  // med kommer ur andelForUnderlag och andelAttMultiplicera, och vad testet
+  // vantar sig star i varje fall nedan. Till 2026-10-28 stod har
+  // `andel ?? 100`, en kopia av vyns reserv – och ett test som kopierar
+  // reserven kan aldrig upptacka att reserven ar fel.
+  const lage = andelForUnderlag({ egenAndel, medlemsandelar });
   const indata: K6aIndata = {
     bostad: {
       upplatelseform: "fastighet",
@@ -36,7 +41,7 @@ function underlag({
       forsaljningsdatum: "2032-06-01",
       nybyggd_vid_forvarv: false,
     },
-    medlemskap: { agarandel: andel ?? 100 },
+    medlemskap: { agarandel: andelAttMultiplicera(lage) },
     projekt: [
       projekt({ id: "p1", atgardstyp: "nybyggnad", namn: "Altan" }),
       projekt({
@@ -56,7 +61,7 @@ function underlag({
     regelparametrar: REGELPARAMETRAR,
   };
   const ex = byggK6aExport(indata);
-  return { ...rutorForLasaren(ex, "fastighet", andel), ex };
+  return { ...rutorForLasaren(ex, "fastighet", lage.slag !== "gar_inte_ihop"), ex, lage };
 }
 
 describe("Förs till-raden visar lasarens eget tal", () => {
@@ -92,6 +97,40 @@ describe("Förs till-raden visar lasarens eget tal", () => {
     // Inget tal att skriva av – da finns inget skal att avrunda det.
     expect(r.ruta4).toEqual({ etikett: null, belopp: GRUND, avrundat: false });
     expect(r.ruta5).toEqual({ etikett: null, belopp: REPARATION, avrundat: false });
+  });
+  it("summa over 100 % av de angivna, aven om nagon inte svarat: utan etiketten", () => {
+    const r = underlag({ egenAndel: null, medlemsandelar: [null, 60, 50] });
+    expect(r.lage).toEqual({ slag: "gar_inte_ihop" });
+    expect(r.ruta4).toEqual({ etikett: null, belopp: GRUND, avrundat: false });
+  });
+});
+
+// CLAUDE.md, testlistan: "Obesvarad andel ger samma tal som 100 %, med
+// etiketten Förs till kvar och avrundningen uppat." Raden som sager att
+// andelen inte ar angiven provas pa den renderade vyn (samagande-rader.test.ts).
+describe("en obesvarad andel", () => {
+  it("ger samma tal som 100 %, med etiketten och avrundningen kvar", () => {
+    const obesvarad = underlag({ egenAndel: null, medlemsandelar: [null] });
+    const hel = underlag({ egenAndel: 100, medlemsandelar: [100] });
+    expect(obesvarad.lage).toEqual({ slag: "inte_angiven" });
+    expect(obesvarad.ruta4).toEqual(hel.ruta4);
+    expect(obesvarad.ruta5).toEqual(hel.ruta5);
+    // Och 100 %-fallets tal ar provat mot sina konstanter ovan: 205 974 kr.
+    expect(obesvarad.ruta4).toEqual({ etikett: "Förs till K5, ruta 4", belopp: 20_597_400, avrundat: true });
+  });
+
+  it("underlaget multipliceras inte – inte med 0, inte med nagot annat", () => {
+    const { ex } = underlag({ egenAndel: null, medlemsandelar: [null] });
+    expect(ex.agarandel_procent).toBeNull();
+    expect(ex.delagarvariant).toBe("egen");
+    expect(ex.ruta4_individuellt).toBe(GRUND);
+    expect(ex.ruta5_individuellt).toBe(REPARATION);
+  });
+
+  it("i en delad bostad dar den andra angett 50: lasarens tal ar hela bostadens, med etiketten", () => {
+    const r = underlag({ egenAndel: null, medlemsandelar: [null, 50] });
+    expect(r.lage).toEqual({ slag: "inte_angiven" });
+    expect(r.ruta4).toEqual({ etikett: "Förs till K5, ruta 4", belopp: 20_597_400, avrundat: true });
   });
 });
 

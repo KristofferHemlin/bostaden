@@ -40,9 +40,9 @@ function bostadsrad(besvarade: boolean) {
     upplatelseform: "bostadsratt",
     tilltradesdatum: dag("2010-01-01"),
     forsaljningsdatum: dag("2032-06-01"),
-    nybyggd_vid_forvarv: false,
-    ombildning_fran_hyresratt: false,
-    bostadsfragor_besvarade: besvarade,
+    // Obesvarat ar null sedan 2026-10-28; besvarat ar ett lagrat nej.
+    nybyggd_vid_forvarv: besvarade ? false : null,
+    ombildning_fran_hyresratt: null,
   };
 }
 

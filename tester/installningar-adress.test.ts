@@ -91,7 +91,7 @@ beforeEach(() => {
     adress: null,
     upplatelseform: "fastighet",
     tilltradesdatum: datum("2019-06-01"),
-    bostadsfragor_besvarade: true,
+    nybyggd_vid_forvarv: false,
   });
   h.db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: X, agarandel: 100 });
   h.inloggad = { id: ANNA, email: "anna@exempel.se" };

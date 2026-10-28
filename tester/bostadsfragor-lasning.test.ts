@@ -9,36 +9,30 @@ import {
   tolkaBostadsfragesvar,
 } from "@/doman/bostadsfragor";
 
-// src/doman/bostadsfragor.ts: det enda stallet som laser de lagrade
-// kolumnerna och det enda stallet som avgor om bostadsfragorna ar besvarade.
-// Kolumnerna defaultar till false, och false ar svaret som TILLATER
-// reparationsavdrag – ett obesvarat far darfor aldrig lasas som "Nej".
+// src/doman/bostadsfragor.ts: det enda stallet som avgor om bostadsfragorna
+// ar besvarade. Kolumnerna ar nullbara utan forval sedan 2026-10-28 (CLAUDE.md,
+// "Andelen ar null tills den besvarats", sista stycket): null ar obesvarat,
+// false ar ett besvarat nej. Ingen flagga, ingen oversattning.
 
 function lagrat(
-  nybyggd: boolean,
-  ombildning: boolean,
-  besvarade: boolean,
+  nybyggd: boolean | null,
+  ombildning: boolean | null,
   upplatelseform: "bostadsratt" | "fastighet" = "bostadsratt",
 ) {
-  return {
-    upplatelseform,
-    nybyggd_vid_forvarv: nybyggd,
-    ombildning_fran_hyresratt: ombildning,
-    bostadsfragor_besvarade: besvarade,
-  };
+  return { upplatelseform, nybyggd_vid_forvarv: nybyggd, ombildning_fran_hyresratt: ombildning };
 }
 
-describe("forstaAgaren: true, false eller null", () => {
-  it("en ny bostad (kolumnernas standardvarden) ar obesvarad, inte ett nej", () => {
-    expect(forstaAgaren(lagrat(false, false, false))).toBeNull();
+describe("forstaAgaren: true, false eller null – kolumnens varde", () => {
+  it("en ny bostad (null) ar obesvarad", () => {
+    expect(forstaAgaren(lagrat(null, null))).toBeNull();
   });
 
-  it("ett besvarat nej ar false", () => {
-    expect(forstaAgaren(lagrat(false, false, true))).toBe(false);
+  it("ett lagrat nej ar false – ett svar, utan nagon flagga", () => {
+    expect(forstaAgaren(lagrat(false, null))).toBe(false);
   });
 
-  it("ett lagrat ja raknas som svar aven utan flaggan – bara ett aktivt Ja skriver true", () => {
-    expect(forstaAgaren(lagrat(true, false, false))).toBe(true);
+  it("ett lagrat ja ar true", () => {
+    expect(forstaAgaren(lagrat(true, null))).toBe(true);
   });
 });
 
@@ -60,15 +54,33 @@ describe("bostadsfragornaBesvarade, bostadsratt: varje fraga som galler, givet s
   });
 });
 
+// CLAUDE.md, testlistan: "Obesvarad ombildning_fran_hyresratt blockerar nar
+// bostaden ar en bostadsratt och forsta agaren ar ja, men inte annars." Provat
+// fran de lagrade kolumnerna – det ar dar ett obesvarat nej forr kunde gomma sig.
+describe("obesvarad ombildning, fran de lagrade kolumnerna", () => {
+  it("bostadsratt, forsta agaren ja, ombildningen null: obesvarade", () => {
+    expect(bostadsfragornaBesvarade(lasBostadsfragor(lagrat(true, null)))).toBe(false);
+  });
+
+  it("bostadsratt, forsta agaren ja, ombildningen nej: besvarade", () => {
+    expect(bostadsfragornaBesvarade(lasBostadsfragor(lagrat(true, false)))).toBe(true);
+  });
+
+  it("bostadsratt, forsta agaren nej, ombildningen null: besvarade – fragan stalls inte", () => {
+    expect(bostadsfragornaBesvarade(lasBostadsfragor(lagrat(false, null)))).toBe(true);
+  });
+
+  it("fastighet, forsta agaren ja, ombildningen null: besvarade – fragan stalls inte", () => {
+    expect(bostadsfragornaBesvarade(lasBostadsfragor(lagrat(true, null, "fastighet")))).toBe(true);
+  });
+});
+
 describe("tillståndet som uppmättes i produktionen 2026-10-06", () => {
-  // Ja och ombildning nej sparades i installningarna, flaggan false.
-  //
-  // VANT 2026-10-06. Fallet slog forst fast att tillstandet var BESVARAT – det
-  // kodifierade en kringgang som ett krav. Ombildningens "nej" var ett forval
-  // som sparades, inte ett svar, och ett lagrat false bevisar ingenting utan
-  // flaggan (src/doman/bostadsfragor.ts, regeln vid lagratSvar). Ett lagrat
-  // true ar daremot sitt eget bevis, sa forsta agaren star kvar som "Ja".
-  const b = lagrat(true, false, false);
+  // Ja sparades i installningarna, ombildningen lamnades obesvarad. Med
+  // flaggan var det ombildningens forval false som maste kannas igen som
+  // obesvarat; med nullbara kolumner ar det null, och ingenting behover
+  // tolkas.
+  const b = lagrat(true, null);
 
   it("forsta agaren ar besvarad med ja, ombildningen ar obesvarad", () => {
     expect(lasBostadsfragor(b)).toEqual({
@@ -87,36 +99,29 @@ describe("tillståndet som uppmättes i produktionen 2026-10-06", () => {
   });
 });
 
-describe("samma regel for bada kolumnerna: true ar sitt eget bevis, false kraver flaggan", () => {
-  it("ett lagrat ombildnings-ja raknas som svar aven utan flaggan", () => {
-    expect(lasBostadsfragor(lagrat(true, true, false)).ombildning).toBe(true);
+describe("byte av upplatelseform gor ett lagrat nej obesvarat, at bada hallen", () => {
+  it("bara ett faktiskt byte ror svaren", () => {
+    expect(lagringVidBytAvUpplatelseform("bostadsratt", "bostadsratt", lagrat(false, false))).toEqual({});
+    expect(lagringVidBytAvUpplatelseform("fastighet", "fastighet", lagrat(false, false))).toEqual({});
   });
 
-  it("ett lagrat ombildnings-nej med flaggan ar ett svar", () => {
-    expect(lasBostadsfragor(lagrat(true, false, true)).ombildning).toBe(false);
-  });
-});
-
-describe("byte av upplatelseform nollstaller flaggan, at bada hallen", () => {
-  it("bara ett faktiskt byte nollstaller", () => {
-    expect(lagringVidBytAvUpplatelseform("bostadsratt", "bostadsratt")).toEqual({});
-    expect(lagringVidBytAvUpplatelseform("fastighet", "fastighet")).toEqual({});
-    expect(lagringVidBytAvUpplatelseform("fastighet", "bostadsratt")).toEqual({
-      bostadsfragor_besvarade: false,
+  it("ett nej blir null, ett ja star kvar, ett null ror ingenting", () => {
+    expect(lagringVidBytAvUpplatelseform("fastighet", "bostadsratt", lagrat(false, false))).toEqual({
+      nybyggd_vid_forvarv: null,
+      ombildning_fran_hyresratt: null,
     });
-    expect(lagringVidBytAvUpplatelseform("bostadsratt", "fastighet")).toEqual({
-      bostadsfragor_besvarade: false,
-    });
+    expect(lagringVidBytAvUpplatelseform("bostadsratt", "fastighet", lagrat(true, true))).toEqual({});
+    expect(lagringVidBytAvUpplatelseform("bostadsratt", "fastighet", lagrat(null, null))).toEqual({});
   });
 
   it("fastighet med ja blir bostadsratt: forsta agaren star kvar, ombildningen fragas", () => {
-    const fore = lagrat(true, false, true, "fastighet");
+    const fore = lagrat(true, null, "fastighet");
     expect(bostadsfragornaBesvarade(lasBostadsfragor(fore))).toBe(true);
 
     const efter = {
       ...fore,
       upplatelseform: "bostadsratt" as const,
-      ...lagringVidBytAvUpplatelseform("fastighet", "bostadsratt"),
+      ...lagringVidBytAvUpplatelseform("fastighet", "bostadsratt", fore),
     };
     expect(lasBostadsfragor(efter)).toEqual({
       upplatelseform: "bostadsratt",
@@ -127,11 +132,11 @@ describe("byte av upplatelseform nollstaller flaggan, at bada hallen", () => {
   });
 
   it("bostadsratt med nej blir fastighet: forsta agaren fragas igen", () => {
-    const fore = lagrat(false, false, true, "bostadsratt");
+    const fore = lagrat(false, null, "bostadsratt");
     const efter = {
       ...fore,
       upplatelseform: "fastighet" as const,
-      ...lagringVidBytAvUpplatelseform("bostadsratt", "fastighet"),
+      ...lagringVidBytAvUpplatelseform("bostadsratt", "fastighet", fore),
     };
     expect(lasBostadsfragor(efter).forstaAgare).toBeNull();
     expect(bostadsfragornaBesvarade(lasBostadsfragor(efter))).toBe(false);
@@ -140,11 +145,11 @@ describe("byte av upplatelseform nollstaller flaggan, at bada hallen", () => {
 
 describe("bostadsfragorForBerakning: obesvarat blir null, aldrig false", () => {
   it("en ny bostad ger nybyggd_vid_forvarv null", () => {
-    expect(bostadsfragorForBerakning(lagrat(false, false, false)).nybyggd_vid_forvarv).toBeNull();
+    expect(bostadsfragorForBerakning(lagrat(null, null)).nybyggd_vid_forvarv).toBeNull();
   });
 
   it("ett besvarat nej ger false", () => {
-    expect(bostadsfragorForBerakning(lagrat(false, false, true)).nybyggd_vid_forvarv).toBe(false);
+    expect(bostadsfragorForBerakning(lagrat(false, null)).nybyggd_vid_forvarv).toBe(false);
   });
 });
 
@@ -161,22 +166,18 @@ describe("tolkning och lagring – samma for genomgangen och installningarna", (
     expect(tolkaBostadsfragesvar("ja", "", "bostadsratt")).toHaveProperty("fel");
   });
 
-  it("nej satter flaggan och ror inte ombildningen", () => {
+  it("nej skriver svaret och ror inte ombildningen", () => {
     const t = tolkaBostadsfragesvar("nej", "ja", "bostadsratt");
     if (!("svar" in t)) throw new Error("väntade ett svar");
-    expect(lagringAvBostadsfragor(t.svar)).toEqual({
-      nybyggd_vid_forvarv: false,
-      bostadsfragor_besvarade: true,
-    });
+    expect(lagringAvBostadsfragor(t.svar)).toEqual({ nybyggd_vid_forvarv: false });
   });
 
-  it("ja och ombildning satter bada och flaggan", () => {
+  it("ja och ombildning skriver bada", () => {
     const t = tolkaBostadsfragesvar("ja", "nej", "bostadsratt");
     if (!("svar" in t)) throw new Error("väntade ett svar");
     expect(lagringAvBostadsfragor(t.svar)).toEqual({
       nybyggd_vid_forvarv: true,
       ombildning_fran_hyresratt: false,
-      bostadsfragor_besvarade: true,
     });
   });
 });
@@ -206,14 +207,11 @@ describe("fastighet: forsta agaren ar den enda fragan", () => {
   it("ja tolkas utan ombildningssvar, och ombildningen skrivs inte", () => {
     const t = tolkaBostadsfragesvar("ja", "", "fastighet");
     if (!("svar" in t)) throw new Error("väntade ett svar");
-    expect(lagringAvBostadsfragor(t.svar)).toEqual({
-      nybyggd_vid_forvarv: true,
-      bostadsfragor_besvarade: true,
-    });
+    expect(lagringAvBostadsfragor(t.svar)).toEqual({ nybyggd_vid_forvarv: true });
   });
 
   it("ett lagrat ombildnings-ja lases aldrig for en fastighet", () => {
-    const b = lagrat(true, true, true, "fastighet");
+    const b = lagrat(true, true, "fastighet");
     expect(lasBostadsfragor(b).ombildning).toBeNull();
     // Nybyggd utan ombildning: reparationerna faller bort.
     expect(bostadsfragorForBerakning(b)).toEqual({

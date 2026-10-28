@@ -14,6 +14,7 @@
 // skapa, men priset far lamnas tomt.
 
 import { redirect } from "next/navigation";
+import { lasAndel } from "@/lib/andelar";
 import { isoDatum, oreFranKronor } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { arAndelenBekraftad } from "@/lib/samagande";
@@ -85,10 +86,7 @@ export async function markeraSald(
   });
   const bekraftad =
     medlemskap !== null &&
-    arAndelenBekraftad(
-      Number(medlemskap.agarandel),
-      medlemskap.bekraftad_andel === null ? null : Number(medlemskap.bekraftad_andel),
-    );
+    arAndelenBekraftad(lasAndel(medlemskap.agarandel), lasAndel(medlemskap.bekraftad_andel));
   if (!bekraftad) redirect("/forsaljning/andel");
 
   // Fraga 7 stalls direkt (produktspec 4.1, CLAUDE.md "Vid markering som

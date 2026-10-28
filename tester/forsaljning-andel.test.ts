@@ -82,7 +82,7 @@ function seeda({ doris = true, sald = false }: { doris?: boolean; sald?: boolean
     adress: "Storgatan 1",
     upplatelseform: "fastighet",
     tilltradesdatum: datum("2019-06-01"),
-    bostadsfragor_besvarade: true,
+    nybyggd_vid_forvarv: false,
     forsta_agare: false,
     ...(sald ? { forsaljningsdatum: datum("2026-09-15") } : {}),
   });
@@ -225,6 +225,28 @@ describe("fragan stalls med det som star lagrat", () => {
     const html = await steget();
     // Hart mellanslag fore procenttecknet (formateraAndel).
     expect(html).toContain("Du har angett att du äger 100\u00a0% av bostaden – stämmer det?");
+  });
+
+  // CLAUDE.md, "Andelen ar null tills den besvarats": finns ingen andel att
+  // bekrafta ar "Du har angett …" osant. Lydelsen for det laget ar inte
+  // bestamd; till dess stalls ingen sadan fraga och faltet borjar tomt.
+  it("ensam agare utan angiven andel: ingen fraga om vad hon angett, och faltet ar tomt", async () => {
+    seeda({ doris: false, sald: true });
+    medlemskap(ANNA).agarandel = null;
+    loggaIn(ANNA);
+    const html = await steget();
+    expect(html).not.toContain("angett");
+    expect(html).not.toContain("0\u00a0%");
+    expect(html).toMatch(/<input[^>]*name="agarandel"[^>]*value=""/);
+  });
+
+  it("delagaren har inte svarat: ingen fraga om ni har angett, och hennes andel star som Inte angiven", async () => {
+    seeda({ sald: true });
+    medlemskap(DORIS).agarandel = null;
+    loggaIn(ANNA);
+    const html = await steget();
+    expect(html).not.toContain("Ni har angett");
+    expect(html).toMatch(new RegExp(`${EPOST[DORIS].replace(".", "\\.")}</span><span[^>]*>\\s*Inte angiven`));
   });
 
   it("inte sald: steget hor inte hemma har", async () => {

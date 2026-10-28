@@ -7,6 +7,7 @@ import { Prisma } from "@prisma/client";
 import * as Sentry from "@sentry/nextjs";
 import { redirect } from "next/navigation";
 import { valjAktivtMedlemskap } from "@/lib/aktiv-bostad";
+import { lasAndel } from "@/lib/andelar";
 import { bostadHeader } from "@/lib/bostad-header";
 import { kastaVanligtDatabasfel } from "@/lib/databas-fel";
 import { arGiltigtId } from "@/lib/giltigt-id";
@@ -111,7 +112,9 @@ export async function kravAnvandare(): Promise<InloggadAnvandare> {
 export interface AktivBostad {
   anvandareId: string;
   bostadId: string;
-  agarandel: number;
+  /** Procent, eller null nar andelen inte ar angiven (CLAUDE.md, "Andelen ar
+   *  null tills den besvarats") – aldrig 100 som gissning. */
+  agarandel: number | null;
   /** Hur manga bostader anvandaren ar medlem i. Inmatningen namnger bostaden nar de ar fler an en. */
   antalBostader: number;
   /** Alla anvandarens bostader, aldsta medlemskapet forst – for vaxlaren. */
@@ -169,7 +172,7 @@ export const hamtaAktivBostad = cache(async (): Promise<AktivBostad | null> => {
   return {
     anvandareId: anvandare.id,
     bostadId: medlemskap.bostad_id,
-    agarandel: Number(medlemskap.agarandel),
+    agarandel: lasAndel(medlemskap.agarandel),
     antalBostader: rad.medlemskap.length,
     bostader: rad.medlemskap.map((m) => ({
       id: m.bostad_id,
@@ -208,7 +211,7 @@ export async function kravMedlemskapI(bostadId: string | null | undefined): Prom
     });
   }
   if (!medlemskap) return null;
-  return { ...aktiv, bostadId, agarandel: Number(medlemskap.agarandel) };
+  return { ...aktiv, bostadId, agarandel: lasAndel(medlemskap.agarandel) };
 }
 
 /**

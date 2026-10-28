@@ -98,5 +98,8 @@ export interface Bostad {
 }
 
 export interface Medlemskap {
-  agarandel: number; // procent, 0..100
+  /** Procent, 0 < andel <= 100. null = underlaget multipliceras inte: andelen
+   *  ar inte angiven, eller medlemmarnas andelar gar inte ihop (CLAUDE.md,
+   *  "Andelen ar null tills den besvarats"). Aldrig 100 som gissning. */
+  agarandel: number | null;
 }

@@ -88,7 +88,7 @@ export async function byggBilagepaketPdf(
     rutaText: texter.ruta4,
     summaBrutto: data.ex.ruta4_brutto,
     summaIndividuellt: data.ex.ruta4_individuellt,
-    agarandelProcent: data.ex.agarandel_procent,
+    agarandelProcent: data.forsattsdata.agarandelProcent,
     tomtText: "Inga grundförbättringar registrerade.",
     radavdrag: data.radavdrag,
   });
@@ -100,7 +100,7 @@ export async function byggBilagepaketPdf(
     rutaText: texter.ruta5,
     summaBrutto: data.ex.ruta5_brutto,
     summaIndividuellt: data.ex.ruta5_individuellt,
-    agarandelProcent: data.ex.agarandel_procent,
+    agarandelProcent: data.forsattsdata.agarandelProcent,
     tomtText: "Inga förbättrande reparationer registrerade.",
     radavdrag: data.radavdrag,
   });

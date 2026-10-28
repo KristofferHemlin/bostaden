@@ -39,9 +39,13 @@ export const AVRUNDAT_TILL_HELA_KRONOR =
 /**
  * Vad exportvyns tva rutor visar. Etiketten "Förs till K5, ruta x" ar en
  * instruktion och far bara sta bredvid ett tal som ar lasarens eget (CLAUDE.md,
- * "Agarandel"). Ar andelen kand ar det den individuella summan; ar den null –
- * medlemmarnas andelar gar inte ihop – visas hela bostadens summa utan
- * etiketten.
+ * "Agarandel"). Talet ar alltid den individuella summan – den ar hela
+ * bostadens nar underlaget inte multiplicerats.
+ *
+ * `andelarnaGarIhop` falskt – medlemmarnas angivna andelar ar over 100 % –
+ * ger hela bostadens summa utan etiketten. En andel som bara inte ar angiven
+ * ar ett annat lage: talet ar hela bostadens men etiketten och avrundningen
+ * star kvar (CLAUDE.md, "Andelen ar null tills den besvarats").
  *
  * Talet bredvid etiketten ar det enda som skrivs av, och blanketten tar hela
  * krontal: det avrundas uppat, sist av allt och efter agarandelen (CLAUDE.md,
@@ -51,11 +55,11 @@ export const AVRUNDAT_TILL_HELA_KRONOR =
 export function rutorForLasaren(
   ex: K6aExport,
   upplatelseform: Upplatelseform,
-  andel: number | null,
+  andelarnaGarIhop: boolean,
 ): { ruta4: RutaForLasaren; ruta5: RutaForLasaren } {
   const texter = blankettTexter(upplatelseform);
   const ruta = (etikett: string, individuellt: number, brutto: number): RutaForLasaren => {
-    if (andel === null) return { etikett: null, belopp: brutto, avrundat: false };
+    if (!andelarnaGarIhop) return { etikett: null, belopp: brutto, avrundat: false };
     const belopp = avrundaUppatTillKronor(individuellt);
     return { etikett, belopp, avrundat: belopp !== individuellt };
   };

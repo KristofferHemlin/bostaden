@@ -117,10 +117,10 @@ export async function klassificeraHog(
 // EN gang per bostad, som ett steg innan forsta hogen klassificeras – aldrig
 // per atgard. Blockerar genomgangen tills de ar besvarade, eftersom
 // reparationsdelen annars inte gar att rakna. Gar att andra i
-// installningarna efterat (se installningar/actions.ts), som satter
-// bostadsfragor_besvarade efter samma villkor – och nollstaller den nar
-// upplatelseformen byts. Flaggan rors aldrig i klassificeringen av en
-// enskild hog.
+// installningarna efterat (se installningar/actions.ts), som skriver svaren
+// efter samma villkor – och gor ett lagrat nej obesvarat igen nar
+// upplatelseformen byts. Svaren rors aldrig i klassificeringen av en enskild
+// hog.
 
 export interface BostadsfragorResultat {
   fel?: string;

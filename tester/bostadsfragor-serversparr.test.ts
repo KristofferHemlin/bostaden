@@ -41,13 +41,16 @@ vi.mock("next/navigation", () => ({
 import { klassificeraHog } from "@/app/genomgang/fragor/actions";
 import { redigeraProjekt } from "@/app/projekt/actions";
 
+// Kolumnerna ar nullbara sedan 2026-10-28: null ar obesvarat, false ett
+// besvarat nej. Skillnaden mellan de tva ar hela poangen (CLAUDE.md,
+// testlistan: "Obesvarad nybyggd_vid_forvarv blockerar genomgangen; ett
+// besvarat nej gor det inte").
 const OBESVARAD = {
   upplatelseform: "bostadsratt",
-  nybyggd_vid_forvarv: false,
-  ombildning_fran_hyresratt: false,
-  bostadsfragor_besvarade: false,
+  nybyggd_vid_forvarv: null,
+  ombildning_fran_hyresratt: null,
 };
-const BESVARAD = { ...OBESVARAD, bostadsfragor_besvarade: true };
+const BESVARAD = { ...OBESVARAD, nybyggd_vid_forvarv: false };
 
 function klassificering(): FormData {
   const data = new FormData();

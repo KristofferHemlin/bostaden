@@ -42,7 +42,7 @@ export type SkapaInbjudanResultat =
 
 /**
  * Skapar en inbjudan och satter bada andelarna (docs/design.md, "Att bjuda in
- * en delagare"). Den som bjuder in star pa standardvardet 100 %, sa ett steg
+ * en delagare"). Den som bjuder in kan redan ha angett 100 %, sa ett steg
  * som bara fragade efter den inbjudnas andel kunde inte ge henne nagot utan
  * att summan sprangde 100 %. Den egna andelen sparas nu; den inbjudnas skrivs
  * pa inbjudan och blir medlemskapets nar den loses in.
@@ -56,7 +56,9 @@ export async function skapaInbjudan(params: {
   anvandareId: string;
   anvandarEpost: string;
   epost: string;
-  /** Den som bjuder ins egen andel, som text ur faltet. Tomt = hela bostaden. */
+  /** Den som bjuder ins egen andel, som text ur faltet. Maste anges – tomt ar
+   *  ett fel, aldrig hela bostaden (CLAUDE.md, "Andelen ar null tills den
+   *  besvarats"). */
   egenAndel: string;
   /** Den inbjudnas andel, som text ur faltet. Maste anges. */
   inbjudenAndel: string;
@@ -286,7 +288,8 @@ export async function losInInbjudan(params: {
 
         // Andelen den som bjod in angav blir medlemskapets. Ett utgangsvarde,
         // bekraftat nar bostaden markeras som sald. En inbjudan fran innan
-        // andelen fragades har ingen och ger schemats standardvarde.
+        // andelen fragades har ingen, och medlemskapet far ingen heller – inte
+        // angiven, inget forval.
         await tx.medlemskap.create({
           data: {
             anvandare_id: params.anvandareId,
