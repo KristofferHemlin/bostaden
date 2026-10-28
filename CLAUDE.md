@@ -155,6 +155,9 @@ Ordningen är bindande.
 | `rot_utnyttjat` | `0 ≤ rot < bostadens_del` | ROT är en skattereduktion på **arbetsdelen** av en faktura och kan aldrig vara hela den. En hantverkare ställer aldrig ut en faktura där avdraget är lika stort som eller större än det fakturan går på |
 | `forsakringsersattning` | `0 ≤ ersättning ≤ bostadens_del` | **Lika med är tillåtet här**, till skillnad från de andra: en försäkring kan faktiskt ha betalat hela skadan, och då finns ingen egen utgift att dra av. Större än så är däremot alltid fel — ersättning som täcker mer än det här kvittot hör till de andra kvittona den också täcker |
 | summan | `rot + ersättning ≤ bostadens_del` | Var för sig rimliga, tillsammans kan de äta upp hela kostnaden |
+| privat belopp | `0 < privat < belopp` | Noll är ingen uppdelning, och är allt privat hör kvittot inte till bostaden alls utan i *Räknas inte*. Gäller kvittots totalbelopp, inte bostadens del, eftersom det är den privata delen som definierar bostadens del |
+
+**Den privata gränsen flyttade hit 2026-10-27.** Den bodde till dess bara i `docs/produktspec.md`, alltså i den fil som inte får innehålla regler, medan den här filen bara hade summan `rot + privat < totalbelopp`. Koden prövade den hela tiden. En regel som avgör ett tal och saknas i den ensamma källan är samma fel som en dubblett, fast åt andra hållet.
 
 **Basen är bostadens del av kvittot, inte kvittots totalbelopp.** Det följer av steg 1, som drar avdragen från just bostadens del: den privata delen räknas bort först, ROT och försäkringsersättning därefter. *Räknas inte med* räknar upp ROT och ersättningen men inte den privata delen, så hänvisningen dit stod fel till 2026-10-26 — ordningen hör till steg 1 och står där. Ett kvitto på 10 000 kr med 6 000 kr privat har 4 000 kr som bas, och 5 000 kr i ROT ska avvisas även om det ryms i totalbeloppet.
 
@@ -324,7 +327,27 @@ Förbättringsutgifter fördelas mellan delägarna efter ägarandel. Underlaget 
 
 **Andelen tillämpas oavsett hur många som delar bostaden.** Skriven 2026-10-19, efter att verifieringen visade att exporten hoppade över multiplikationen så fort bostaden hade fler än en medlem och i stället gav varje delägare hela bostadens tal märkt *Förs till K5*. Villkoret är inte antalet medlemmar utan om andelarna är trovärdiga: **summan av medlemmarnas andelar är högst 100 %.** Då multipliceras underlaget med läsarens andel. Är summan större går ingen andel att lita på, och då visas hela bostadens belopp utan etiketten som säger vilken ruta talet förs till. En summa under 100 % är inget hinder – delägare som inte använder appen är ett normalt fall.
 
-**Andelen är ett tal större än 0 till och med 100, och valideras som ett** – i gränssnittet och på servern. Fältet multiplicerar hela underlaget: skrivs 1000 i stället för 100 blir avdraget tio gånger för stort utan att något ser konstigt ut. Noll avvisas, decimaler tillåts, och ett tomt fält betyder hela bostaden.
+**Andelen är ett tal större än 0 till och med 100, och valideras som ett** – i gränssnittet och på servern. Fältet multiplicerar hela underlaget: skrivs 1000 i stället för 100 blir avdraget tio gånger för stort utan att något ser konstigt ut. Noll avvisas och decimaler tillåts.
+
+### Andelen är null tills den besvarats
+
+**Null betyder *inte angiven*, aldrig 100 %.** `agarandel` har inget förval. Beslutat 2026-10-28, efter att samma fråga ställts om `nybyggd_vid_forvarv`: ett förval är ett svar användaren inte gav, och med förvalet 100 går det inte att skilja *hon äger allt* från *hon har inte svarat*. Den som äger halva sin bostad och registrerat sig ensam har aldrig haft anledning att röra fältet, och hennes underlag är dubbelt så stort som det ska vara ända till försäljningen. Felet går åt det höga hållet.
+
+**Null uppstår bara av att frågan aldrig besvarats.** Användaren kan inte ange null. Att ett tomt fält betydde hela bostaden var regeln till 2026-10-28, och den är det som ersätts här.
+
+**Ett tomt fält är inget svar, och ändrar därför ingenting.** Finns redan ett tal står det kvar – den som svarat fel skriver ett nytt, inte ett tomt. Finns inget tal står ingenting kvar, och fältet är fortfarande obesvarat. Det är en regel och inte två, och den gör att ett kort med flera fält går att spara innan andelen är känd: köpeskillingen ska inte hållas gisslan av en obesvarad fråga.
+
+**Undantaget är ett formulär vars enda ärende är svaret** – steget på startsidan och andelsfrågan vid försäljningen. Där är ett tomt fält ett fel, eftersom det inte finns något annat att spara.
+
+**En obesvarad andel ger samma tal som 100 %, med etiketten kvar.** Underlaget multipliceras inte, så talet är hela bostadens – avrundat uppåt till hela kronor som vanligt, och raden säger fortfarande vilken ruta det förs till. Skälet är att hon som öppnar vyn vill ha sina två tal, ofta med deklarationen framför sig, och att hon mycket väl kan äga hela bostaden. **Det är ett annat läge än att andelarna inte går ihop**, där appen inte vet vems talet är och etiketten därför faller bort.
+
+Men **raden som bär talet säger att andelen inte är angiven**, intill talet och inte i en ruta ovanför. Utan det är det här läget oskiljaktigt från ett bekräftat helägande, och två delägare som båda för in hela bostadens tal yrkar dubbelt.
+
+**Noll är ogiltigt, och det är en spärr mot just den här ändringen.** `Number(null)` är 0 i JavaScript, och varje läsning ur databasen går den vägen. Blir 0 ett giltigt värde är en felläst null oskiljaktig från ett riktigt svar, och den enda plats felet syns är i ett deklarationsunderlag. **Ett 0 som når beräkningen betyder därför att en null läckt igenom, och beräkningen ska avbryta** – inte producera ett underlag på 0 kr.
+
+Att tillåta 0 för en medlem som lagts in för att hjälpa till utan att äga något är beslutat i sak, men ligger i en egen omgång efter att null är byggd och prövad. Till dess är 0 kanariefågeln.
+
+**Samma sak gäller bostadsfrågorna.** `nybyggd_vid_forvarv` och `ombildning_fran_hyresratt` blir nullbara utan förval, och flaggan `bostadsfragor_besvarade` försvinner med dem. Båda kolumnerna måste med: vaktar flaggan båda och bara den ena blir nullbar, läses ett obesvarat ombildningssvar som nej, reparationsdelen blir noll och genomgången släpper igenom. **Domänen är redan nullbar** – beräkningen kastar `VantarPaBostadsfragor` vid null – så ändringen lägger inte till ett begrepp, den tar bort en översättning. Frågorna flyttar inte: de ställs i genomgången som i dag.
 
 ---
 
@@ -383,6 +406,11 @@ Dessa fall måste finnas och passera. De sex första är verifierade mot Skattev
 - Felet åt fel håll: den proportionella fördelningen gav 6 300 kr och **överskattade avdraget**. Rättat 2026-10-02
 - **Samma fall genom en uppdelning:** 10 000 kr med 3 000 kr ROT och 1 000 kr privat, resten delad på två projekt med 6 000 och 3 000 kr, ger **4 000 och 2 000 kr** – inte 4 200 och 2 100. Basen är bostadens del, 9 000 kr, och faktorn blir 6 000/9 000. Fallet ska prövas via uppdelningen och inte med ett kvitto byggt för hand, eftersom det är den vägen som öppnades 2026-10-26 när ROT-spärren togs bort. Mätt 2026-10-26: det enda test som var skrivet för 6 000-fallet bygger kvittot för hand och går varken genom `tolkaUppdelning` eller `delaUppKostnad`
 - Vid ägarandel 50 % halveras beloppen i det individuella underlaget, men inte tröskelprövningen
+- **Obesvarad andel ger samma tal som 100 %**, med etiketten *Förs till* kvar och avrundningen uppåt – och raden säger att andelen inte är angiven
+- **Ett lagrat 0 i `agarandel` avbryter beräkningen**, i stället för att ge ett underlag på 0 kr. Noll är ogiltigt, så ett nollvärde som nått fram betyder att en null lästs som ett tal
+- Ett tomt andelsfält i inställningarna avvisas och ändrar ingenting
+- **Obesvarad `nybyggd_vid_forvarv` blockerar genomgången; ett besvarat nej gör det inte.** Testet ska skilja de två, inte bara pröva att något blockerar
+- Obesvarad `ombildning_fran_hyresratt` blockerar när bostaden är en bostadsrätt och första ägaren är ja, men inte annars
 - Rad fördelad till 60 % på ett projekt bidrar med 60 % av beloppet, inte hela
 - Kvittorad markerad som privat ingår inte i något projekt
 - Kostnad utan projektkoppling räknas inte in i årssumman

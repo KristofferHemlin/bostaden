@@ -2,7 +2,13 @@
 
 En app som samlar och klassificerar kostnader nedlagda på den egna bostaden, så att avdragsgilla förbättringsutgifter finns dokumenterade och sammanställda den dag bostaden säljs.
 
-Detta dokument är skrivet som byggunderlag för en kodagent. Avsnittet **Domänregler** innehåller skatteregler som inte får ändras eller approximeras – de är produktens kärna, och fel där ger felaktiga deklarationsunderlag.
+Detta dokument är skrivet som byggunderlag för en kodagent. Avsnittet **Domänregler** förklarar skattereglerna men innehåller dem inte – de står i `CLAUDE.md` och ingen annanstans. Fel i dem ger felaktiga deklarationsunderlag, och det är därför de bara får finnas på ett ställe.
+
+> **Filen gicks igenom mot koden 2026-10-27**, efter en granskning av alla fyra dokumenten dagen innan. Tjugosex ställen rättades: sju kopior av regler som bara får stå i `CLAUDE.md`, en regel som bara stod här och flyttade dit, sju påståenden om appen som inte stämde, sex krav som skrivits som *ska* utan att byggas eller beslutas bort, tre dubbletter inom filen och två hänvisningar som pekade fel. Ingen regel har ändrat innebörd.
+>
+> **Rättelserna är rena, och historiken ligger i `git log`.** Den gamla lydelsen står kvar bara där den är lockande att skriva tillbaka. En notering per rättelse gör på ett år filen till mest anteckningar om vad som stod förr — och den läses av agenten varje omgång.
+>
+> **Regeln som gäller framåt:** skriv aldrig här vad appen gör utan att sätta datum i samma mening, och skriv aldrig *ska* om något som inte är beslutat och byggt. Krav bor i `CLAUDE.md` och `docs/design.md`. Den här filen förklarar varför, och beskriver läget en bestämd dag.
 
 ---
 
@@ -59,9 +65,7 @@ Högar som redan klassificerats visas inte alls. Genomgången blir kortare varje
 
 **Genomgången går att avbryta när som helst.** Det som grupperats och besvarats sparas; resten ligger kvar som oklassificerat. Hundra kvitton ska inte kräva en obruten session.
 
-**Klassificeringen sker på användarens initiativ.** Det finns en väg in – "Klassificera det du lagt in" – som går igenom oklassificerade kostnader en i taget. Den startas när användaren själv vill, inte när appen tycker. Vid försäljningen är samma genomgång ett obligatoriskt steg innan underlaget kan tas fram.
-
-Redan klassificerade kostnader hoppas över. Genomgången blir därför kortare varje gång, och den som gör den löpande möter till slut en tom lista.
+**Klassificeringen sker på användarens initiativ.** Vägen in startas när användaren själv vill, inte när appen tycker. Vid försäljningen ligger genomgången i flödet, men den spärrar inte underlaget – det som inte hunnit klassificeras listas i stället under *Återstår*.
 
 Appen påminner inte om klassificeringen enligt något schema. Att lägga in kvitton ska aldrig kännas som att man ådragit sig en skuld.
 
@@ -71,7 +75,7 @@ Appen påminner inte om klassificeringen enligt något schema. Att lägga in kvi
 
 **Målgrupp:** privatpersoner som äger sin bostad – bostadsrätt eller fastighet. Hyresrätt stöds inte och ska inte modelleras: utan ägande finns ingen kapitalvinst och inget avdrag. `upplatelseform` har därför exakt två värden.
 
-Båda stöds fullt ut. Beräkningsreglerna är identiska; skillnaderna är kosmetiska och räknas upp i 4.8.
+Båda stöds fullt ut. Beräkningsreglerna är identiska så när som på den bakre tidsgränsen; skillnaderna räknas upp i **4.9**.
 
 Modellera upplåtelseform som ett riktigt fält från start. Hårdkoda aldrig bostadsrättsantaganden i schemat.
 
@@ -91,7 +95,7 @@ Reglerna stod en gång i båda filerna. De gled isär, och den felaktiga version
 
 Trädet står under *Frågeträdet per åtgärd* i `CLAUDE.md`. Här står varför det ser ut som det gör.
 
-**Frågorna hör till åtgärden, inte till kvittot.** Med hundra kvitton och tio åtgärder ställs de tio gånger, inte hundra. Det är hela skälet till att klassificeringsgenomgången grupperar först och frågar sedan.
+**Frågorna hör till åtgärden, inte till kvittot.** Det är hela skälet till att klassificeringsgenomgången grupperar först och frågar sedan; räkneexemplet står i 2b och upprepas inte här.
 
 **Skicket vid förvärvet fångas tidigt, skicket vid försäljningen sent.** Det förstnämnda är det som blir omöjligt att minnas och ska fångas medan det går; det andra handlar om hur något ser ut efter års användning och kan inte besvaras i förväg. Samma tidsdelning som produktens två faser i övrigt.
 
@@ -99,7 +103,7 @@ Trädet står under *Frågeträdet per åtgärd* i `CLAUDE.md`. Här står varf�
 
 Att den bara efterfrågas i den nedre delen av skickskalan är ett gränssnittsbeslut med samma skäl: genomgången är produktens tyngsta moment, ett tomt textfält efter sex frågor är där folk ger upp, och ett fält som bara syns när det spelar roll blir också ett fält man faktiskt fyller i. Villkoret står hos regeln.
 
-**"Nedre delen" betyder 0–2 och ska läsas som en aritmetisk gräns, inte som en beskrivning.** Sedan skalan fick Skatteverkets ord 2026-10-19 heter 2 *Ganska bra skick*, vilket inte låter som något att försvara — men ett lågt tal vid förvärvet är just det som gör skillnaden mot försäljningen stor, och därmed avdraget stort. Vid 2 kan faktorn bli 0,6, vid 3 som mest 0,4. Det är beloppet som avgör behovet av en motivering, inte etiketten.
+**Gränsen ska läsas som aritmetik, inte som en beskrivning.** Sedan skalan fick Skatteverkets ord 2026-10-19 heter ett av stegen i intervallet *Ganska bra skick*, vilket inte låter som något att försvara — men ett lågt tal vid förvärvet är just det som gör skillnaden mot försäljningen stor, och därmed avdraget stort. Det är beloppet som avgör behovet av en motivering, inte etiketten. **Vilka steg som ingår och vilka faktorer de ger står i `CLAUDE.md`.**
 
 **Registreringen frågar inte efter identifieringen.** Föreningens namn respektive fastighetsbeteckningen finns bara i inställningarna.
 
@@ -135,13 +139,15 @@ Kedjan och dess bindande ordning står under *Beräkningen* i `CLAUDE.md`. Här 
 
 Det är den enskilt lättaste delen av modellen att få fel, och felet ger ett underlag som ser rimligt ut. Kedjans ordning är därför bindande och står på ett enda ställe.
 
-**Avrundningen går uppåt, i den skattskyldiges favör**, och sker först när ett tal visas eller hamnar i exporten. Interna belopp är heltal i ören. Avrundas det mitt i kedjan ackumuleras felet över många åtgärder.
+**Avrundningen har sin regel i `CLAUDE.md`** – riktningen, vad som avrundas och när. Här står bara varför den ligger sist: avrundas ett tal mitt i kedjan ackumuleras felet över många åtgärder.
 
 ### 4.3 Tröskeln
 
 Beloppet och villkoret står under *Tröskeln* i `CLAUDE.md`.
 
-Tröskeln räknas per bostad, inte per delägare, vilket är den vanligare tolkningen och den mer generösa för användaren. Rättsläget är inte helt avgjort – se *Öppna rättsfrågor* i `docs/regelkallor.md`. När användarens egen andel understiger gränsen trots att beloppet för hela bostaden passerar den ska en upplysning visas om att bedömningen kan gå åt andra hållet.
+Tröskeln räknas per bostad, inte per delägare, vilket är den vanligare tolkningen och den mer generösa för användaren. Rättsläget är inte helt avgjort – se *Öppna rättsfrågor* i `docs/regelkallor.md`, där frågan står i sin helhet.
+
+**Upplysningen om att bedömningen kan gå åt andra hållet är inte byggd**, och ingen har beslutat att släppa den. Vill vi ha den skrivs den i `docs/design.md`.
 
 Tröskeln är också produktens vanligaste besked. De flesta har ett eller två kvitton ett enskilt år och når inte över den, vilket gör förklaringen av varför ett år ger noll till en av de viktigaste texterna i hela appen – se Exportvyn i `docs/design.md`.
 
@@ -153,7 +159,7 @@ Den är Skatteverkets egen konstruktion och inte en lagregel. Appen använder de
 
 Skattningen är användarens, aldrig appens. Appen tar emot två observationer och räknar; den härleder dem inte ur avskrivningstider eller artikeltexter. Se *Bedömningar som appen inte ska göra* i `docs/regelkallor.md`.
 
-`skick_forsaljning` saknas fram till försäljningen. Det blockerar aldrig inmatning eller översikt, bara exporten, som ändå inte kan tas fram innan försäljningen är registrerad.
+`skick_forsaljning` saknas fram till försäljningen och blockerar aldrig något. Exportvyn går att öppna hela tiden: sida 1 visas med sina rader, sida 2 med sina rader men utan avdragsgill kolumn. För en såld bostad med saknat skick ger exporten en varning, inte en spärr.
 
 ### 4.5 Tidsgränser
 
@@ -169,9 +175,9 @@ Listan står under *Räknas inte med* i `CLAUDE.md`.
 
 **Ombildning från hyresrätt är undantaget som är värt att förstå.** Den som köpte sin hyresrätt när föreningen ombildades är formellt första ägaren av bostadsrätten, men lägenheten fanns och var använd. Då gäller vanliga regler.
 
-Det är en av få regler där ett för hårt villkor kostar användaren pengar hen har rätt till, och ombildningar är vanliga i storstäderna. Verifierat mot Skatteverkets e-tjänst 2026-09-16.
+Det är en av få regler där ett för hårt villkor kostar användaren pengar hen har rätt till, och ombildningar är vanliga i storstäderna. Verifierat mot Skatteverkets e-tjänst vid genomgången 2026-09-15.
 
-Flera av punkterna i listan går inte att avgöra ur ett kvitto – om en garderob följer med vid flytt, vad föreningens stadgar lägger på medlemmen. Appen frågar och litar på svaret. Se *Bedömningar som appen inte ska göra* i `docs/regelkallor.md`.
+Flera av punkterna i listan går inte att avgöra ur ett kvitto – om en garderob följer med vid flytt, vad föreningens stadgar lägger på medlemmen. Avgörandet är användarens, aldrig appens; se *Bedömningar som appen inte ska göra* i `docs/regelkallor.md`. **Appen ställer ingen fråga om lös inredning.**
 
 ### 4.7 Bevisning
 
@@ -238,6 +244,8 @@ Det är inte brådskande för en lansering till vänner och familj, men det ska 
 
 **Frågan ställs bara när användaren inte var första ägaren**, på samma grund som Skatteverkets egen ordning: man ärver inte ett hus man själv byggt.
 
+**Men då kan den inte ställas vid registreringen, och ingenting av det här är byggt.** Frågan om första ägaren ställs i genomgången och inte vid registreringen – se 4.1 – så villkoret går inte att pröva där stycket ovan placerar frågan. Arvsfrågan, upplysningen och placeringen är alltså ett öppet krav, inte ett genomfört val.
+
 **Kartlagt, inte gissat.** Skatteverkets modell för fallet är kontinuitet, och deras enda följdfråga är *"Var den tidigare ägaren den första ägaren av bostaden?"* – nybyggd-testet flyttas alltså bakåt i arvsledet. Det är den form en framtida implementation ska ha. Se ändringsloggen i `docs/regelkallor.md` 2026-10-18.
 
 ---
@@ -247,8 +255,10 @@ Det är inte brådskande för en lansering till vänner och familj, men det ska 
 ### Bostad
 | Fält | Typ | Not |
 |---|---|---|
-| namn | string? | visas i headern; faller tillbaka på adress, annars "Min bostad" |
-| adress | string? | fritext eller vald från adresstjänst |
+| namn | string? | visas i headern; faller tillbaka på adress |
+| adress | string | **obligatorisk** – fritext eller vald från adresstjänst |
+| ort | string? | från adresstjänsten; står på bilagepaketets försättssida |
+| storlek | int? | kvadratmeter, informativt |
 | place_id | string? | Google Places-id, null vid fritext |
 | latitud | decimal? | |
 | longitud | decimal? | |
@@ -262,10 +272,14 @@ Det är inte brådskande för en lansering till vänner och familj, men det ska 
 | uppskov_tidigare | int? | påverkar vinstberäkning, inte avdrag |
 | nybyggd_vid_forvarv | bool | var du första ägaren av en nyproduktion? Se 4.6. Default false |
 | ombildning_fran_hyresratt | bool | köptes bostaden vid en ombildning? Upphäver villkoret ovan. Default false |
+| bostadsfragor_besvarade | bool | skiljer ett svarat *nej* från ett obesvarat förval på de två fälten ovan |
+| samma_del_besvarad_for | date? | när frågan om tidigare åtgärder på samma byggnadsdel senast besvarades |
 | forsaljningsdatum | date? | sätts när bostaden markeras som såld |
 | forsaljningspris | int? | |
 
-Obligatoriskt vid registrering: endast `upplatelseform` och `tilltradesdatum`. Allt annat ska gå att fylla i senare. Onboardingen måste vara avbrytbar.
+Obligatoriskt vid registrering: `upplatelseform`, `tilltradesdatum` och `adress`. Allt annat ska gå att fylla i senare. Onboardingen måste vara avbrytbar.
+
+> **`nybyggd_vid_forvarv` har ett förval som `docs/design.md` förbjuder.** Flaggan `bostadsfragor_besvarade` finns just för att hålla isär ett svarat nej från ett obesvarat, vilket är lappen på lappen som designfilen varnar för. Det står på åtgärdslistan efter lanseringen, inte som ett löst problem.
 
 ### Medlemskap
 Kopplingen mellan användare och bostad. Finns från början även om det bara någonsin blir en rad per bostad i v1.
@@ -274,7 +288,8 @@ Kopplingen mellan användare och bostad. Finns från början även om det bara n
 |---|---|---|
 | anvandare_id | fk | |
 | bostad_id | fk | |
-| agarandel | decimal | procent, större än 0 till och med 100, default 100 – se 4.8 |
+| agarandel | decimal | procent – intervall och validering står i `CLAUDE.md`, se 4.8 |
+| bekraftad_andel | bool | har delägaren bekräftat andelen vid försäljningen? |
 
 Projekt och kostnader hänger på `bostad_id`, aldrig direkt på användaren. Flera bostäder per användare och två personer per hushåll ska kunna läggas till utan migrering.
 
@@ -293,12 +308,15 @@ En åtgärd. Klassificeringen sitter här, inte på kostnaden.
 | skick_forvarv | int? | skickskalan, se `CLAUDE.md`; ställs i klassificeringen |
 | skick_forsaljning | int? | skickskalan, se `CLAUDE.md`; null fram till försäljningen |
 | motivering | text? | svaret på fråga 8 |
+| tidigare_gang_samma_del | bool? | markerar att samma byggnadsdel åtgärdats tidigare; nollar reparationsdelen |
 
 **Kategorierna är härledda, inte lagrade.** En åtgärd kan bidra till både grundförbättring och reparation samtidigt – ett exklusivare kök är merkostnaden i den ena kategorin och resten i den andra. Ett lagrat `kategori`-fält kan inte uttrycka det och glider dessutom isär från frågeträdets svar vid varje redigering.
 
 De tidigare fälten `kategori`, `slitet_vid_tilltrade`, `battre_skick_vid_forsaljning` och `kvarvarande_andel` är borttagna. De två sista ersätts av `skick_forvarv` och `skick_forsaljning`: i stället för att be användaren uppskatta en andel ber appen om två observationer vid tidpunkter då de går att göra.
 
-**Året är en etikett, inte en sanning.** `ar` sätts som förval till betaldatumets år för den kostnad som skapade projektet, och till innevarande år om projektet skapas fristående. Det sätts när projektet skapas och används för gruppering i gränssnittet, men allt som räknas – tröskeln, femårsfönstret, exportens rader – utgår från kostnadernas `betaldatum`. Ett projekt vars kostnader spänner över ett årsskifte ger därför automatiskt två rader i exporten utan att användaren behöver dela projektet. Avviker en kostnads betaldatum från projektets år visas en upplysning, aldrig en blockering.
+**Året är en etikett, inte en sanning.** `ar` sätts som förval till betaldatumets år för den kostnad som skapade projektet, och till innevarande år om projektet skapas fristående. Det sätts när projektet skapas och används för gruppering i gränssnittet, men allt som räknas – tröskeln, femårsfönstret, exportens rader – utgår från kostnadernas `betaldatum`. Ett projekt vars kostnader spänner över ett årsskifte ger därför automatiskt två rader i exporten utan att användaren behöver dela projektet.
+
+**Ingen upplysning visas när en kostnads betaldatum avviker från projektets år.** Eftersom året härleds ur betaldatumen och projektets `ar` bara är en etikett finns det ingen avvikelse att varna för.
 
 **Ingen baslinje, ingen underlagsstyrka.** En tidigare version av modellen hade en `baslinjepost` med foton och besiktningsprotokoll från tillträdet, och en härledd `underlagsstyrka` som visade om ett projekt hade den kopplingen.
 
@@ -317,9 +335,12 @@ Ett kvitto eller en faktura.
 | dokumentdatum | date | |
 | betaldatum | date? | null = obetald, räknas inte in |
 | rot_utnyttjat | int? | dras bort från underlaget; anges i kronor, aldrig i procent. Gränserna står i `CLAUDE.md` |
-| forsakringsersattning | int? | dras bort från underlaget. Får vara lika med bostadens del, till skillnad från de andra två – se `CLAUDE.md`. **Inget inmatningsfält finns än**, se 4.10 |
+| forsakringsersattning | int? | dras bort från underlaget. Gränsen står i `CLAUDE.md` och skiljer sig från de andra avdragens. **Inget inmatningsfält finns än**, se 4.10 |
 | arkiverad | bool | användarens val, default false |
+| klassificerad_av | fk? | vilken medlem som kopplade kostnaden till ett projekt |
 | anteckning | text? | "Vad gällde det?" – bär minnet till klassificeringen
+
+**`totalbelopp`, `leverantor` och `dokumentdatum` är tomma i ett utkast.** Ett utkast skapas så snart en fil valts, och kan bli liggande utan att kompletteras – se *Dokumentavläsning*.
 
 **Tillstånden är härledda, inte lagrade.** Endast `arkiverad` är ett fält, eftersom det är ett aktivt användarval. Övriga tillstånd beräknas:
 
@@ -329,13 +350,15 @@ Ett kvitto eller en faktura.
 
 Betalning och projektkoppling är oberoende av varandra. En entreprenörsfaktura kan mycket väl vara både obetald och okopplad samtidigt, och en enda enum hade tvingat fram ett val mellan dem. Lagrade tillstånd som kan härledas glider dessutom isär från verkligheten vid varje redigering.
 
-Räknas in i årssumman gör en kostnad först när den har både betaldatum och projektkoppling och inte är arkiverad.
+**Två summor, inte en.** *Inlagt* på startskärmen visar allt som lagts in, klassificerat eller ej – det är hela poängen med namnet, se avsnitt 2b och Översikt. Först i exportens underlag krävs både betaldatum och projektkoppling, och att kostnaden inte är arkiverad.
 
 **Begränsningen för ROT och försäkringsersättning är struken 2026-10-18.** Den löd att en kostnad med `rot_utnyttjat` eller `forsakringsersattning` bara fick fördelas till ett enda projekt, och kallade det en medveten förenkling "för ett sällsynt fall".
 
 **Båda premisserna visade sig falska.** Fallet är inte sällsynt: en entreprenörsfaktura som täcker flera sorters arbete – en flyttad vägg, utbytta luckor, en diskmaskin där ingen fanns – är den vanligaste formen en renovering har, och en faktura från en firma har nästan alltid ROT. Begränsningen stoppade alltså precis det fall uppdelningen finns till för. Och den komplicerar inte modellen: beräkningen fördelar redan ROT proportionellt över kostnadens rader, och det är testat.
 
-`CLAUDE.md` har hela tiden utgått från att ROT fördelas mellan åtgärder – testfallet *"10 000 kr med 3 000 kr ROT, rad fördelad 60 % mellan två åtgärder, bidrar med 4 200 kr"* bygger på det. De två dokumenten sa emot varandra, och `CLAUDE.md` gäller.
+`CLAUDE.md` har hela tiden utgått från att ROT fördelas mellan åtgärder, och har testfallet som visar det. De två dokumenten sa emot varandra, och `CLAUDE.md` gäller.
+
+**Spärren togs bort i koden först 2026-10-26**, åtta dagar efter att de här raderna skrevs. Till dess stod beslutet i två filer medan koden vägrade, och ett test höll den gamla regeln på plats.
 
 ### Kostnadsrad
 Möjliggör att ett kvitto delas mellan projekt eller mellan projekt och privat.
@@ -358,7 +381,7 @@ Appen behöver inte veta vad som köptes, bara hur mycket som inte räknas. Kvit
 
 Fältet skapar de två raderna i bakgrunden: en privat rad med det angivna beloppet, och en rad med resten som ärver kvittots projektkoppling. Datamodellen är oförändrad, beräkningen likaså, och den som vill se detaljerna kan öppna uppdelningen.
 
-Töms fältet försvinner raderna och kvittot räknas i sin helhet igen. Beloppet måste vara större än noll och mindre än totalbeloppet – är allt privat hör kvittot hemma i "Räknas inte".
+Töms fältet försvinner raderna och kvittot räknas i sin helhet igen. Gränsen för det privata beloppet står i `CLAUDE.md` tillsammans med de andra avdragens – är allt privat hör kvittot hemma i "Räknas inte".
 
 **En privat del får kombineras med ROT, och den kombinationen ska inte spärras.** Frågan ställdes 2026-10-19: vore det inte enklare att förbjuda en privat del på ett kvitto som har ROT, och därmed bli av med en hel klass av kantfall? Svaret är nej, och skälet är inte att kombinationen är vanlig – den är ovanlig – utan vad en spärr skulle göra med den som ändå har en sådan faktura.
 
@@ -413,7 +436,7 @@ Betaldatum som avviker från kvittots datum, uppdelning och koppling till en gru
 
 ### 6.2 Frågeträdet
 
-Ställs en gång per åtgärd, aldrig per kvitto. Se avsnitt 4.1 för den fullständiga modellen.
+Ställs en gång per åtgärd, aldrig per kvitto. Trädet självt står under *Frågeträdet per åtgärd* i `CLAUDE.md`; 4.1 i den här filen förklarar varför det ser ut som det gör.
 
 Formuleringarna följer Skatteverkets egna, av två skäl: de är prövade på riktiga användare, och den som sedan öppnar Skatteverkets verktyg möter samma frågor och kan jämföra.
 
@@ -427,14 +450,14 @@ Fråga 8 blockerar aldrig och påverkar ingen beräkning. Den bevarar resonemang
 
 Att fånga kostnaden är brådskande, att klassificera den är det inte. Kostnader ska kunna sparas utan projekt.
 
-- Okopplade kostnader räknas **inte** in i årssumman
-- De visas som en egen rad: "4 210 kr klart, 792 kr oklassificerat"
-- Klassificering sker i klump med svepning, med senast använda projekt som förval
-- Utgången "arkivera som privat" måste finnas, annars växer inkorgen tills användaren slutar titta
-- Arkiverat är inte raderat – bilagan ligger kvar som bevis
-- "Dela upp" är endast tillgängligt vid öppnad enskild post, aldrig i svepflödet
+- Okopplade kostnader ingår i *Inlagt* men inte i exportens underlag – se *Kostnad* ovan
+- Utgången "räknas inte" måste finnas, annars växer inkorgen tills användaren slutar titta
+- Att lägga något där är inte att radera – bilagan ligger kvar som bevis
+- "Dela upp" är endast tillgängligt vid öppnad enskild post
 
 Betaldatumet styr året även om klassificeringen sker senare.
+
+> **Inkorgen är inte byggd.** Svepning i klump, senast använda projekt som förval och raden *"4 210 kr klart, 792 kr oklassificerat"* finns inte; det som finns är genomgången i avsnitt 2b. Steg 11 i byggordningen är alltså inte gjort.
 
 ### 6.4 Rättning i efterhand
 
@@ -452,15 +475,16 @@ Rubrik som inbjuder, en rad förklaring, en knapp. Ingenting annat.
 - Progressfältet är **sand under tröskeln, orange över** – under tröskeln är läget inte bra, det är oavslutat. Inför inte rött eller grönt; se `docs/design.md`
 - Siffran heter **"Inlagt 2026"**, aldrig "underlag" och aldrig "avdrag". Den visar summan av allt som lagts in, klassificerat eller ej. Att kalla den något annat vore ett påstående appen inte kan stå för innan klassificeringen är gjord
 - Under progressfältet en rad som förklarar tröskeln och att beloppet är preliminärt tills allt klassificerats. När inget oklassificerat återstår faller den bort
-- Antal oklassificerade kostnader som en klickbar rad in i genomgången, när det finns några
 - Lista över det som lagts in, senaste först, med anteckningen som radtext
 - Klassificerade kostnader visas grupperade under sin gruppering med kategori. Ingen markering av underlagsstyrka
 
+**Skärmen har ingen klassificeringssektion och ingen tröskelruta.** Vägen in i genomgången går via knappen *Berätta om N kvitton*; tröskelrutan togs bort 2026-10-16. Skälen står i `docs/design.md`.
+
 ### Notiser
-Sparsamt. Tre motiverade:
-- Mitten av oktober: tröskelläget medan året går att påverka
-- Mitten av december: okopplade poster som kan påverka om tröskeln nås
-- Vid markering som såld: dags att förbereda deklarationsunderlaget
+
+**Inga notiser är byggda, och två av de tre nedan är beslutade bort.** Avsnitt 2b säger att appen inte påminner om klassificering enligt något schema – *att lägga in kvitton ska aldrig kännas som att man ådragit sig en skuld*. Det beslutet är senare än listan och gäller.
+
+Det som kan bli aktuellt är påminnelsen i mitten av oktober, medan året fortfarande går att påverka – den handlar om pengar som annars försvinner tyst, inte om att städa en inkorg. Den dagen den byggs skrivs den i `docs/design.md`.
 
 Bygg inte tips, inspiration eller veckosammanfattningar. Femton öppningar om året är ett rimligt resultat. Måttet som betyder något är andelen av årets relevanta kvitton som hamnar i appen, inte öppningsfrekvensen.
 
@@ -470,9 +494,9 @@ Bygg inte tips, inspiration eller veckosammanfattningar. Femton öppningar om å
 
 Målformatet är hjälpblankett SKV 2197 (K6A). Den lämnas inte in till Skatteverket, men ska sparas eftersom Skatteverket kan begära in en redogörelse. Appen ska alltså inte bygga någon inlämningsintegration – den ska producera två tal att skriva av, plus ett arkiv som ligger redo.
 
-**Sida 1 – grundförbättringar.** Rader: åtgärd, år, belopp. Summan förs till K6 punkt 4.
+**Sida 1 – grundförbättringar.** Rader: åtgärd, år, belopp. Summan förs till K6 ruta 4.
 
-**Sida 2 – förbättrande reparationer.** Rader: åtgärd, år, belopp i vänster kolumn, avdragsgill del efter förslitning i höger kolumn. Summan förs till K6 punkt 5.
+**Sida 2 – förbättrande reparationer.** Rader: åtgärd, år, belopp i vänster kolumn, avdragsgill del efter förslitning i höger kolumn. Summan förs till K6 ruta 5.
 
 Rader grupperas per åtgärd och år, aldrig per kvitto. Kvittona ligger under som underlag men syns inte i sammanställningen.
 
@@ -484,7 +508,9 @@ Rader grupperas per åtgärd och år, aldrig per kvitto. Kvittona ligger under s
 
 **Koden ligger kvar och testerna fortsätter köras.** Att ta bort den vore att kasta det största enskilda byggsteget i projektet, och att återinföra det skulle bli en vecka i stället för en rad. Testerna gör dessutom att en framtida ändring i beräkningen säger till om paketet slutar stämma.
 
-**Deklarationsvyn säger vad som gäller i stället för ingenting.** Den som fått sina två tal undrar rimligen vad hen visar om Skatteverket frågar. En dämpad rad om att kvittona finns sparade och går att ladda ner som zip-arkiv svarar på det. Det är ett undantag från regeln om att appen aldrig beskriver sin egen byggordning: den regeln finns för att slippa berätta om sådant användaren inte efterfrågat, och här står hen inför en verklig fråga.
+**Deklarationsvyn säger vad som gäller i stället för ingenting.** Den som fått sina två tal undrar rimligen vad hen visar om Skatteverket frågar. Det är ett undantag från regeln om att appen aldrig beskriver sin egen byggordning: den regeln finns för att slippa berätta om sådant användaren inte efterfrågat, och här står hen inför en verklig fråga.
+
+**Hur det sägs bestäms i `docs/design.md`, och där finns ingen rad om zip-arkivet i exportvyn.** Zip-arkivet nås från inställningarna; vad exportvyn säger om bevisningen är en designfråga och inte en specfråga.
 
 **Talen är leveransen, paketet är försäkringen.** Talen behövs av alla som säljer, en bestämd månad. Paketet behövs sällan, men skyddar avdraget när det behövs. Att det kan vänta beror på att det bara är en presentation av data som redan samlats in – kvittona, klassificeringen och kopplingen mellan belopp och bilaga finns på plats långt innan frågan kommer.
 
@@ -497,8 +523,8 @@ Rader grupperas per åtgärd och år, aldrig per kvitto. Kvittona ligger under s
 **Ordningen i dokumentet:**
 
 1. **Försättssida.** Bostadens identifiering – adress och ort, upplåtelseform, föreningens namn för bostadsrätt eller fastighetsbeteckning för fastighet. Tillträdesdatum, försäljningsdatum, ägarandel. Vilken blankett beloppen förs till, K5 eller K6. Datum då paketet skapades. **Avsnittet *Att se över*** med varningslistan, och – när något återstår – en mening som pekar vidare dit det står. Friskrivningen, i sin helhet.
-2. **Sammanställningen, sida 1 – grundförbättringar.** Åtgärd, år, belopp. Summan utpekad: detta förs till punkt 4.
-3. **Sammanställningen, sida 2 – förbättrande reparationer.** Åtgärd, år, hel utgift, avdragsgill del efter förslitning. Summan utpekad: detta förs till punkt 5.
+2. **Sammanställningen, sida 1 – grundförbättringar.** Åtgärd, år, belopp. Summan utpekad: detta förs till ruta 4.
+3. **Sammanställningen, sida 2 – förbättrande reparationer.** Åtgärd, år, hel utgift, avdragsgill del efter förslitning. Summan utpekad: detta förs till ruta 5.
 4. **Bilageförteckning.** En numrerad lista som kopplar varje bilaga till sin rad. Den som får paketet ska kunna gå från ett belopp i sammanställningen till rätt kvitto utan att bläddra.
 
    Namnet står en gång. Är åtgärdens namn och leverantören samma ord – "JANS MÅLERI AB · 2016 · JANS MÅLERI AB 34 425 kr" – skrivs det inte två gånger. Samma regel gäller bilagornas sidhuvudsrader.
@@ -520,7 +546,9 @@ Regeln som gäller står längre ned om bilagepaketets hål: *ett paket med ett 
 
 **Ett kompletteringssteg ligger före genereringen.** Saknas någon av de uppgifter som står på försättssidan visas de som ett kort formulär innan paketet byggs: ifyllda där svar redan finns, tomma där de saknas. Ingen uppgift efterfrågas två gånger.
 
-Det är den enda punkten i appen där det är rätt att kräva något. Regeln om att inget får blockera gäller inmatningen – kvittot ska sparas även när allt inte är känt, annars läggs det aldrig in. Här är läget det motsatta: användaren sitter med deklarationen framför sig och vill ha ett riktigt underlag.
+Här är det rätt att kräva något. Regeln om att inget får blockera gäller inmatningen – kvittot ska sparas även när allt inte är känt, annars läggs det aldrig in. Här är läget det motsatta: användaren sitter med deklarationen framför sig och vill ha ett riktigt underlag.
+
+**Det är inte den enda punkten i appen där något krävs.** Bostadsfrågorna blockerar genomgången, tillträdet och adressen krävs vid registreringen, och andelen måste bekräftas vid försäljningen. Alla fyra är medvetna och står beskrivna i den här filen eller i `docs/design.md`.
 
 **Gränsen går mellan uppgifter som ändrar talen och uppgifter som beskriver objektet.**
 
@@ -535,7 +563,9 @@ Det är den enda punkten i appen där det är rätt att kräva något. Regeln om
 
 **Listan är kort.** Köpeskilling, köpkostnader och kapitaltillskott hör till vinstberäkningen och inte till underlaget för förbättringsutgifter – de ska inte in i kontrollen. Annars blir steget en tiofältsguide framför en knapp.
 
-**Den egentliga spärren finns redan och sitter rätt.** Klassificeringsgenomgången är obligatorisk innan underlaget kan tas fram. Det som gör en deklaration fel är en obesvarad skickfråga, inte ett tomt fält på en försättssida.
+**Det som gör en deklaration fel är en obesvarad skickfråga, inte ett tomt fält på en försättssida.**
+
+**Genomgången spärrar inte underlaget.** Försäljningsflödet går andel, skick, samma byggnadsdel, export, och det oklassificerade listas under *Återstår*. Underlaget blir till och säger själv vad som saknas, i stället för att vägra bli till. `docs/design.md` beskriver det.
 
 **Byggs i webbläsaren**, av samma skäl som zip-arkivet: en serverfunktion som drar alla bilagor genom sig slår i storleks- och tidsgränser. `pdfjs-dist` tål inte webpack och laddas som ren ES-modul från `public/`.
 
@@ -543,15 +573,15 @@ Det är den enda punkten i appen där det är rätt att kräva något. Regeln om
 
 **En bilaga som saknas eller inte går att läsa ger en platshållarsida** som säger vilken post den hörde till och att filen inte kunde läsas. Ett paket med ett tyst hål är värre än ett paket som säger var hålet finns, eftersom det första upptäcks av Skatteverket och det andra av användaren.
 
-**Öppet: upplösningen på HEIC-bilagor.** Se avsnittet Visningsversion nedan – frågan är löst, men versionen måste finnas innan paketet kan byggas.
+**Upplösningen på HEIC-bilagor är avgjord** – se avsnittet Visningsversion nedan. Versionen måste finnas innan paketet kan byggas.
 
 **Filnamn:** `Deklarationsunderlag Ulriksborgsgatan 7 2026.pdf` – adress och försäljningsår, så att dokumentet går att hitta i en nedladdningsmapp åtta år senare. **Filen heter vad den är, inte var den kom ifrån.** Den som öppnar den 2034 letar efter sitt deklarationsunderlag och minns kanske inte vilken app som gjorde det; tjänstens namn hör hemma på försättssidan, där det går att läsa i sitt sammanhang.
 
 Levereras som nedladdning. Ingen integration behövs.
 
-**Delägarvarianten.** Exporten avgör utifrån medlemskapets `agarandel` om beloppen ska anges som individuella eller som gemensamma för flera delägare, och sätter markeringen därefter. Vid andel under 100 % redovisas bruttobeloppen tillsammans med den egna andelen i procent, så att båda delägarna kan använda samma sammanställning. Inget separat fält behövs – andelen räcker.
+**Delägarvarianten** står beskriven i 4.8 och upprepas inte här.
 
-**Lås exportens fältlista först.** Detta är vad steg 1 i byggordningen betyder: bestäm exakt vilka fält sammanställningen behöver och låt datamodellen följa av det. Själva PDF-genereringen byggs i steg 9. Låser man inte fältlistan tidigt upptäcks saknade uppgifter när det är för sent att samla in dem.
+**Lås exportens fältlista först.** Detta är vad steg 1 i byggordningen betyder: bestäm exakt vilka fält sammanställningen behöver och låt datamodellen följa av det. Själva PDF-genereringen är steg 13. Låser man inte fältlistan tidigt upptäcks saknade uppgifter när det är för sent att samla in dem.
 
 ---
 
@@ -560,14 +590,18 @@ Levereras som nedladdning. Ingen integration behövs.
 - Ingen integration mot Skatteverket – e-tjänsten har ingen import
 - Ingen OCR i klassisk mening. Dokumentavläsning sker via språkmodell på hela dokumentet – se avsnittet Dokumentavläsning nedan
 - Ingen automatisk produktkategorisering av kvittorader. Volymen är fel för det (~20 relevanta inköp per år) och felaktiga förval blir tyst godkända, vilket producerar fel underlag med självförtroende
-- Ingen automatisk uppdelning av entreprenörsfakturor i arbets- och materialkostnad – appen efterfrågar inte den uppdelningen alls. Avläsningen fyller belopp, datum och leverantör; ROT-beloppet anger användaren själv
+- Ingen automatisk uppdelning av entreprenörsfakturor i arbets- och materialkostnad – appen efterfrågar inte den uppdelningen alls
+- Ingen värderingsintegration i v1. Lägg ett värderingsfält per tidpunkt i modellen och fyll det manuellt tills användarvolymen motiverar ett leverantörsavtal
+- Appen ger inte skatterådgivning. Vid gränsfall ska den hänvisa till Skatteverkets upplysningstjänst
 
 ### Dokumentavläsning
 
 **Modellen läser hela dokumentet, inte första sidan.** En flersidig PDF skickas som dokument i sin helhet, aldrig som en bild av sida 1. Fakturor har nästan alltid totalbeloppet sist; läses bara första sidan hamnar specifikationens första rad i totalbeloppsfältet, och felet syns inte förrän någon jämför med papperet.
 
 
-När en bilaga valts skickas den till en språkmodell som returnerar tre fält: datum, totalbelopp inklusive moms, och leverantör. Ingen egen OCR, ingen artikelkategorisering.
+När en bilaga valts skickas den till en språkmodell. Ingen egen OCR, ingen artikelkategorisering.
+
+**Svaret bär fler fält än de tre som syns tydligast.** Datum, totalbelopp inklusive moms och leverantör är de som fyller formulärets huvudfält, men modellen svarar också om ROT – och är det beloppet ifyllt fälls ROT-raden ut, enligt flödet i 6.1.
 
 **Kostnaden skapas som utkast så snart en fil valts.** Då finns ett `kostnad_id`, filen laddas upp direkt till sin riktiga plats i lagringen, och analysen läser den därifrån. Filen laddas upp en gång, inte två.
 
@@ -625,9 +659,7 @@ Det tredje läget täcker felen som inte är modellens: API:et svarar inte, nyck
 
 **Värdena är förslag som ska granskas.** Ett belopp som lästs fel och sparats utan att någon tittat är värre än ett tomt fält, eftersom det ser rätt ut i underlaget flera år senare. Gränssnittet ska säga att fälten fyllts i automatiskt och behöver kontrolleras.
 
-**Modellvalet ska stå i proportion till uppgiften.** Att läsa tre fält ur ett kvitto är enkelt; använd den minsta modell som klarar det tillförlitligt och byt uppåt bara om träffsäkerheten visar sig otillräcklig. Kostnaden per anrop skiljer en storleksordning mellan modellerna, och kvaliteten på just den här uppgiften gör det inte.
-- Ingen värderingsintegration i v1. Lägg ett värderingsfält per tidpunkt i modellen och fyll det manuellt tills användarvolymen motiverar ett leverantörsavtal
-- Appen ger inte skatterådgivning. Vid gränsfall ska den hänvisa till Skatteverkets upplysningstjänst
+**Modellvalet ska stå i proportion till uppgiften.** Att läsa ett par fält ur ett kvitto är enkelt; använd den minsta modell som klarar det tillförlitligt och byt uppåt bara om träffsäkerheten visar sig otillräcklig. Kostnaden per anrop skiljer en storleksordning mellan modellerna, och kvaliteten på just den här uppgiften gör det inte.
 
 ---
 
@@ -637,7 +669,9 @@ Byggordningen är en **tunn skiva genom hela produkten först**, inte lager för
 
 ### Etapp A – genomgående flöde
 
-1. **Datamodell och exportformat** – definiera K6A-utdata först, låt schemat följa *(klart)*
+**Listan beskriver ordningen, inte läget.** 2026-10-27 var allt till och med steg 14 byggt och synligt i koden utom steg 11, inkorgen, som ersattes av genomgången i avsnitt 2b. Vad som är gjort syns i koden och i `docs/design.md`.
+
+1. **Datamodell och exportformat** – definiera K6A-utdata först, låt schemat följa
 2. **Inloggning** – Supabase Auth med e-post, ingen registreringsdesign, bara fungerande
 3. **Onboarding** – skapa bostad med upplåtelseform och tillträdesdatum
 4. **Projekt** – skapa med frågeträdet, lista, öppna
@@ -678,7 +712,9 @@ Projektsumma 791,95 kr, privat 229,00 kr.
 
 Kvittot är valt för att det innehåller de tre saker som gör inmatningen svår: avkortade artikelnamn från kassasystemet, en privat artikel bland projektmaterialet, och belopp med både tusentalsavgränsare och decimaler.
 
-Seeda även ett projekt kopplat till kvittot ("måla sovrum", 2026, kategori `reparation`) och två fiktiva projekt så att årssumman hamnar under tröskeln – det är det tillstånd flest användare befinner sig i och det som är svårast att formulera i gränssnittet.
+Seeda även ett projekt kopplat till kvittot ("måla sovrum", 2026) och två fiktiva projekt så att årssumman hamnar under tröskeln – det är det tillstånd flest användare befinner sig i och det som är svårast att formulera i gränssnittet.
+
+Projektet seedas med frågeträdets svar, inte med en kategori: **fältet `kategori` är borttaget** – se *Projekt* ovan.
 
 ---
 

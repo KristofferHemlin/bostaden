@@ -1,5 +1,11 @@
 # Design
 
+**Tal ur regelregistret skrivs ut här bara som en del av en skärmtext.** Tröskelbeloppet, årtalen för den bakre gränsen och femårsfönstrets längd har sin enda definition i `CLAUDE.md`. Den här filen citerar lydelser som användaren ska möta, och de innehåller ibland ett tal – men **koden hämtar talet ur regelparametern och sätter in det**, som exportvyns tröskelruta redan gör. Ändras en parameter faller testet som jämför skärmtexten med den här filen, och då uppdateras filen först och koden sedan. Det är rätt ordning och den enda som inte tyst glider isär.
+
+**Och filen beskriver hur appen ser ut, inte vad som är byggt.** Står något som ett krav utan att finnas är det ett önskemål, och det ska stå i klartext i samma stycke. En designfil som i tysthet samlar ofyllda löften blir en kravlista ingen beslutat om.
+
+*Genomgången mot koden 2026-10-27: tjugotvå ställen rättade — ett dubblerat avsnitt och ett borttaget gränssnitt som levde kvar, sex påståenden om appen som inte stämde, fyra önskemål som stod som krav, och elva lydelser eller hänvisningar som pekade fel. Den gamla texten står kvar bara där den är lockande att skriva tillbaka; i övrigt är rättelsen ren, och `git log` bär historiken.*
+
 ## Känslan
 
 Innehållet är torrt och byråkratiskt – kvitton, blanketter, skatteregler. Tjänsten ska ändå kännas som ett hem, inte som en myndighet. Det är ett arkiv över något användaren bryr sig om, inte en bokföringsapp.
@@ -72,6 +78,8 @@ Här korsar två regler i den här filen varandra, och det är värt att se inna
 
 Högst ett orange element per skärm, och det är primärknappen.
 
+**Undantaget är registreringens stegprickar.** Den aktiva pricken är `--accent` på en skärm som också har en primärknapp. Det är avsiktligt: pricken är inte en handling utan en plats i ett förlopp, och den lånar accenten för att säga *här är du* på en skärm där knappen säger *gå vidare*. Regeln ovan gäller element som ser ut att gå att trycka på; en prick på fyra pixlar gör inte det. Undantaget står här för att det annars läses som ett fel varje gång någon jämför de två reglerna.
+
 **`--accent` är knappens färg** och den enda orange som får bära ljus text: 5,13 mot `--yta-upphojd`. Den tidigare tonen `#CC6631` gav 3,54 och klarade alltså inte brödtextkravet på en knappetikett.
 
 **`--accent-ljus` är kvar för stora märken och ikoner** där texten inte ska läsas som brödtext – ett stort tal, en ikon, en grafisk detalj. Den bär aldrig text i gränssnittsstorlek.
@@ -88,13 +96,19 @@ Orange är aldrig en statusfärg. Ett tillstånd som är avklarat sägs med ord,
 
 ### Meddelanderutor
 
+**Formen:** `--sand` som bakgrund för en förklaring, `--text-primar` som text, samma hörnradie som inputfält, ingen ram och ingen ikon.
+
 **En förklaring bärs av sand, en bekräftelse av grönt.** Skillnaden är inte hur viktig rutan är utan vad den är: en förklaring hör till sidan och har stått där hela tiden, medan en bekräftelse är en händelse som just inträffat. "Sammanställningen följer Skatteverkets hjälpblankett" är det förra. "Belopp, datum och leverantör är ifyllda från kvittot" är det senare.
+
+**Sparsamt, men ingen hård gräns per skärm.** Filen hade till 2026-10-27 ett andra avsnitt med samma namn som sa *högst en per skärm*, och den regeln går inte att följa på exportvyn, som har tre rutor med tre olika ärenden. Gränsen är att varje ruta ska ha ett eget ärende som läsaren kan handla på — två rutor som säger samma sak i olika ord är en för mycket, tre som säger tre saker är rätt.
 
 Förklaringsrutan är därför `--sand` mot kortets yta, och bekräftelserutan `--bg-klart` med `--text-klart`.
 
 **Blått finns inte i paletten.** Det var den enda kalla tonen i en genomgående varm palett och den lästes som en främling. `--bg-info` och `--text-info` ströks 2026-09-29, efter att det visat sig att koden redan använde sand och att filen sagt emot sig själv på den punkten en tid.
 
-**En händelse som inte är en framgång bär sand, inte grönt.** "Kvittot är sparat. Vi kunde inte läsa av det automatiskt – fyll i uppgifterna nedan själv" är en händelse, men budskapet är att något inte fungerade och att användaren får göra jobbet. En grön ruta hade sagt att det gick bra. Sand är det neutrala svaret, och appen har medvetet ingen varningsfärg att ta till.
+**En händelse som inte är en framgång bär sand, inte grönt.** "Bilagan är sparad, men den gick inte att läsa av" är en händelse, men budskapet är att något inte fungerade och att användaren får göra jobbet. En grön ruta hade sagt att det gick bra. Sand är det neutrala svaret, och appen har medvetet ingen varningsfärg att ta till.
+
+**Exemplet löd till 2026-10-26 "Kvittot är sparat. Vi kunde inte läsa av det automatiskt – fyll i uppgifterna nedan själv".** Båda halvorna var fel, och koden förbjuder dem med ett test: i det läget är bara *bilagan* sparad, inte kvittot, och appen säger aldrig *vi*. Exemplet i den här filen var alltså en färdig bugg att kopiera. Ett exempel på en lydelse ska hämtas ur den lydelse som gäller, aldrig skrivas fritt för att illustrera en färgregel.
 
 `--bg-klart` mörknades samtidigt från 1,17 mot kortet, där den var nästan osynlig, till 1,45. Texten i den ligger kvar över kravet. Hämta aldrig in signalgrönt från ett standardbibliotek.
 
@@ -322,11 +336,11 @@ Innehållet ligger i kort på `--yta-upphojd` mot sidbakgrunden, med 1px `--linj
 
 ### Metrikblock
 
-Överst på översikten står årets summa. Etiketten "Inlagt 2026" i dämpad text till vänster, beloppet stort och höger om det på samma baslinje. Under dem ett progressfält, och under det två rader småtext: tröskelbeloppet till vänster, återstående belopp till höger.
+Överst på översikten står en rad med tre tal, och alla tre växer: *Totalt inlagt*, *Inlagt 2026* och *Antal kvitton*. Etiketten i dämpad text, beloppet stort under.
 
 Etiketten säger "Inlagt", aldrig "Underlag" eller "Avdrag". Siffran är summan av allt som lagts in, berättat om eller inte, och appen kan inte påstå mer än så innan klassificeringen är gjord.
 
-**Raden visar tre tal, och alla tre växer.** *Totalt inlagt*, *Inlagt 2026* och *Antal kvitton*.
+**Inget progressfält och ingen tröskelrad.** Båda beskrevs här till 2026-10-27, trots att tröskelrutan togs bort från startskärmen 2026-10-16 – skälen står under *Kvittolistan*. Det här är den rättelse i filen som är lättast att göra ogjord, eftersom ett progressfält mot en tröskel låter som en självklar sak att ha på en startskärm. Den är prövad och förkastad: fältet kan aldrig bli exakt före försäljningen.
 
 **Etiketten bär inget årtal.** Den hette först *Samlat sedan 2022*, med årtalet från tillträdesdatumet. Det föll av två skäl: etiketten bröts i två rader vid 390 px, och den var inte sann för en utgift från före tillträdet eller en utan datum. Utan årtal försvinner båda problemen, och ingen ursäkt behövs för att summan räknar allt.
 
@@ -378,7 +392,7 @@ En kolumnrubrik är ett löfte. Betyder *Belopp* "vad det kostade" på sida 2 oc
 
 **Regeln gäller per sida, inte per dokument.** Sidorna läses var för sig — en granskare som kontrollerar reparationerna bläddrar inte till grundförbättringarna för att hitta förklaringen till en nolla. Skrivet 2026-10-19 efter att ett takfall i produktionen gav en rad med `0 kr` på sida 2 medan skälet stod på sida 1. Talet var rätt; raden sa ingenting.
 
-**Två kända nollor saknar skäl i dag och ska få ett:**
+**Två nollor var länge utan skäl och har fått ett:**
 
 - **Taket har slagit till.** Merkostnaden är större än projektets belopp, hela kostnaden hamnar på sida 1, och sida 2 får en nolla. Skälet ska säga vart beloppet tog vägen och att det är tillfälligt: *"Hela kostnaden räknas som grundförbättring på sida 1 tills merkostnaden ändrats."*
 - **Försäkringsersättningen täcker hela kostnaden.** Då blir `belopp − rot_utnyttjat − forsakringsersattning` noll, och raden visar `0 kr` utan ett ord — på den sida projektet hör hemma, vilken det än är. Det är ett legitimt tillstånd: har försäkringen betalat allt finns ingen egen utgift att dra av, och raden ska säga just det.
@@ -405,7 +419,7 @@ Ordningen var: två tal som var samma tal, en ruta som sade "5 000 kr kvar" på 
 
 **Tröskelregeln är oförändrad.** Den prövas i beräkningen som förut, den står i `CLAUDE.md` steg 4, och underlaget förklarar varje år som fallit på den. Det är där den biter, och det är där den hör hemma: bredvid följden, inte som en mätare man ska gå och hålla ögonen på.
 
-Vad som eventuellt ska finnas i stället är obestämt och ligger i `vad-som-aterstar.md`. Mätningarna av den borttagna rutan – raden 324 px vid 390 px skärm, radhöjd 20 px för en rad vid 14 px – gäller fortfarande för vilken ensam rad som helst i ett kort på startskärmen och är därför kvar under *Minsta textstorlek är 14 px*.
+Vad som eventuellt ska finnas i stället är obestämt och ligger i `vad-som-aterstar.md`. Mätningarna av den borttagna rutan – raden 324 px vid 390 px skärm, radhöjd 20 px för en rad vid 14 px – gäller fortfarande för vilken ensam rad som helst i ett kort på startskärmen, och står kvar här eftersom det är här de hör hemma. Hänvisningen pekade till 2026-10-27 på *Minsta textstorlek är 14 px*, där talen aldrig stod.
 
 ### Kvittolistan
 
@@ -463,7 +477,7 @@ På startskärmen finns ingen sådan sektion. Att möta en påminnelse varje gå
 
 **Det förbjudna på en kvittorad är kategorin, inte tillståndet.** Formuleringen "aldrig kategori eller status" var för grov och rättades 2026-10-01. Ett normalt kvitto har leverantör och datum på andra raden och ingenting annat. Men ett utkast har ofta varken leverantör eller datum, och ett kvitto som satts åt sidan behöver säga varför – för dem är tillståndet det enda som är värt att visa: *Utkast · komplettera uppgifterna* och *Hör inte till bostaden*. Det som aldrig får stå där är klassificeringen: *Underhåll*, *Grundförbättring* och deras släkt.
 
-Projekt och kostnader visas som rader avdelade med 1px linjer, inte som separata kort. Varje rad har namnet på första raden och en dämpad andra rad med kategori eller status, med beloppet högerställt på samma höjd som namnet. Rader vars status kräver åtgärd markeras med en liten fylld prick i `--accent` före den dämpade texten, inte genom att färga hela raden. Med flera rader i samma läge blir orange text en vägg av varningar, och färgen tappar sin betydelse.
+Projekt visas som rader avdelade med 1px linjer, inte som separata kort. Varje rad har namnet på första raden och en dämpad andra rad med kategori, med beloppet högerställt på samma höjd som namnet. Kvittoraderna följer regeln ovan i stället: aldrig kategori, ibland tillstånd. Rader vars status kräver åtgärd markeras med en liten fylld prick i `--accent` före den dämpade texten, inte genom att färga hela raden. Med flera rader i samma läge blir orange text en vägg av varningar, och färgen tappar sin betydelse.
 
 **"Räknas inte med" heter "Hör inte till bostaden".** Den första säger inte vad som inte räknas eller varför; den andra säger precis vad valet betyder. Det gäller matkassen som råkade fotograferas och möbler som flyttar med.
 
@@ -511,7 +525,7 @@ Visa beloppet före avräkning i listor över kvitton – det är summan på pap
 
 **Och den står sist bland beloppen, efter båda avdragen.** Stod den bredvid beloppet och ROT-avdraget skulle läsaren räkna 18 000 − 11 999 och tro att 6 001 var svaret. Placerad sist läses den som avdragens resultat.
 
-Kvittots detaljvy har raden sedan 2026-10-20. **Listorna har den ännu inte**, trots att stycket ovan skrevs för just dem — ordet fanns inte i koden alls förrän detaljvyn byggdes.
+Raden finns i kvittots detaljvy och i listorna sedan 2026-10-20.
 
 **En egen rad, inte inlagd efter avdraget — och frågan är avgjord, inte öppen.** Jag föreslog 2026-10-20 att resultatet skulle ligga på den dämpade rad som redan finns, *varav ROT 11 999 kr, avgår · 1 kr räknas med*, för att spara höjd på en telefon. Två skäl fäller det.
 
@@ -602,7 +616,9 @@ Den som just skapat kontot vet inte varför hen ska spara kvitton. Ingen gör de
 
 Adressen står i toppraden som vanligt.
 
-Kortet inleds med en rubrik i stil med "Spara kvittona nu, dra av dem när du säljer" och en till två meningar om att renoveringar minskar vinstskatten men måste kunna styrkas – och att kvitton bleknar och mejl försvinner. Sedan knappen.
+Kortet inleds med en rubrik i stil med "Spara kvittona nu, dra av dem när du säljer" och en till två meningar om att renoveringar minskar vinstskatten och att ett kvitto är det enklaste beviset – och att kvitton bleknar och mejl försvinner. Sedan knappen.
+
+**Inte *måste kunna styrkas*.** Så stod det här till 2026-10-27, och det bryter mot regeln under *Landningssidan*: avdraget vilar på att utgiften går att göra trolig, aldrig på att det krävs ett kvitto. Den lydelsen är lätt att skriva tillbaka eftersom den låter försiktig och ansvarsfull — den är bara inte sann, och den avskräcker den som tappat ett kvitto från att lägga in resten.
 
 **Under knappen står tre rader om hur det går till.** Ett kort och en knapp lämnar två tredjedelar av skärmen tom, och den som just skapat kontot vet inte att appen läser av kvittot åt en eller att inga skattefrågor kommer att ställas vid inmatningen. Det är produktens starkaste argument och det står ingenstans annars.
 
@@ -757,7 +773,7 @@ Ikonen behöver en egen tryckyta på minst 44px och en **helt täckande** ljus p
 
 **Rutorna har fast storlek och sträcks aldrig ut för att fylla raden.** Ett kvitto med en bilaga ska visa den lika stort som ett kvitto med tre. Växer rutorna med antalet blir den ensamma bilagan minst, vilket är tvärtemot vad man vill, och papperskorgens andel av rutan ändrar sig från skärm till skärm.
 
-Bekräftelsen säger vad som går förlorat, inte bara om man är säker: *"Ta bort bilagan? Bilden raderas och går inte att återskapa. Kvittots uppgifter ligger kvar."* Sista meningen är inte artighet – utan den tror användaren att hela kvittot försvinner och vågar inte röra knappen alls.
+Bekräftelsen säger vad som går förlorat, inte bara om man är säker. **Lydelsen står under *Att ta bort en bilaga är två olika handlingar* och bara där** – den sa *"Bilden raderas och går inte att återskapa"* här till 2026-10-27, alltså den lydelse som samma avsnitt uttryckligen ersatte för att den är fel när bilagan är en PDF. Den avslutande meningen om att kvittots uppgifter ligger kvar är inte artighet: utan den tror användaren att hela kvittot försvinner och vågar inte röra knappen alls.
 
 Knappen som bekräftar är aldrig orange. Orange betyder handling i den här appen, och radering av bevisning är inte den handling produkten vill uppmuntra.
 
@@ -809,7 +825,7 @@ Rubriken över raden är "Kvitto eller faktura". Uppladdning sker via klick, int
 
 **Ingen varning när bilaga saknas.** En kostnad utan kvitto är inget fel och ska inte markeras som ett – fri bevisning gäller. En gul varningsruta om att avdraget kan underkännas är både felaktig och skrämmande, och den drar in en varningsfärg appen inte har.
 
-**Flera bilagor per kostnad.** En faktura och dess betalningsunderlag är två filer, och ett kvitto kan behöva fotograferas i flera delar. Miniatyrraden växer med en ruta per fil och en `+`-ruta sist. Varje miniatyr har ett kryss för att tas bort innan sparning.
+**Flera bilagor per kostnad.** En faktura och dess betalningsunderlag är två filer, och ett kvitto kan behöva fotograferas i flera delar. Miniatyrraden växer med en ruta per fil och en `+`-ruta sist. Varje miniatyr har en papperskorgsikon för att tas bort – samma ikon som i ändringsläget, se *Bilagor*. Ordet *kryss* stod här till 2026-10-27, och ett kryss betyder stäng i den här appen, aldrig radera.
 
 **Förhandsvisning direkt vid val, innan sparning.** Så snart en fil valts renderas dokumentet stort, ovanför miniatyrraden, i en ram med tunn kant – ordningen är densamma som på ett sparat kvitto, se *Ordningen är alltid stor bild först*. Bilder visas som bild, PDF renderas som en bild av sin första sida – inte som en ikon.
 
@@ -1083,7 +1099,9 @@ Förvalet är **två rader** – en till projektet och en privat. En "lägg till
 
 När en fil valts läses den av och belopp, datum och leverantör fylls i automatiskt. En bekräftelseruta i `--bg-klart` säger att fälten fyllts i och ska granskas. Rubriken över fälten blir "Granska uppgifterna" i stället för "Fyll i uppgifter" när analysen lyckats.
 
-**Analysen skriver aldrig över något användaren redan skrivit.** Bara tomma fält fylls. Och den blockerar aldrig: misslyckas den, tar för lång tid eller är formatet oläsbart, händer ingenting alls – inget felmeddelande, inga tomma fält som ser trasiga ut. Användaren fyller i som vanligt utan att veta att något försökte hjälpa till.
+**Analysen skriver aldrig över något användaren redan skrivit.** Bara tomma fält fylls. Och den blockerar aldrig: misslyckas den, tar för lång tid eller är formatet oläsbart, går formuläret att fylla i som vanligt och inga fält ser trasiga ut.
+
+**Men den är inte tyst.** Gick avläsningen inte att genomföra står en rad om det, i sand enligt *Meddelanderutor* — bilagan är sparad, den gick inte att läsa av, fyll i själv. Raden säger aldrig *varför* och aldrig något tekniskt. **Det här stod tvärtom i filen till 2026-10-26**, där det hette att ingenting alls händer; koden har hela tiden sagt till, och koden har rätt. Att en hjälp uteblir är inte ett fel användaren behöver förklaras, men en skärm som lovat läsa av kvittot och sedan står tom utan ett ord lämnar henne att gissa om hon ska vänta.
 
 **Två steg, inte ett – och de sker i tur och ordning.** Filen sparas först och läses av sedan. Att starta båda samtidigt skulle betyda att filens byte skickas två gånger, en gång till lagringen och en gång till avläsningen, och på en telefon över mobilnät är överföringen den långsamma delen. Parallellitet gör då totaltiden längre, inte kortare. Ordningen ligger fast av samma skäl som står i produktspecen under *Filen laddas upp en gång, inte två*.
 
@@ -1095,13 +1113,27 @@ Indikatorn försvinner när svaret kommit, oavsett om något fylldes i eller int
 
 **Fälten är öppna hela tiden, även under uppladdningen.** Den som redan vet beloppet ska kunna skriva in det medan filen går upp. Avläsningen fyller ändå bara i det som är tomt, så ingenting av det man hinner skriva går förlorat, och den blockerar aldrig.
 
-### Progressfältet mot tröskeln
+### Avläsningens filgräns
 
-Fältet visar årets belopp i förhållande till tröskeln, men fylls aldrig mer än helt. När tröskeln passerats står fyllningen kvar på full bredd och det överskjutande beloppet visas inte – det har ingen egen betydelse, eftersom allt över gränsen räknas ändå.
+Uppladdningen släpper igenom 10 MiB. Avläsningens tak är 10 MB **base64-kodat**, och base64 gör filen en tredjedel större, så en bild över ungefär 7,5 MB avvisas av API:et fastän appen tog emot den. Nedskalningen fanns till 2026-10-26 bara för HEIC.
 
-**Texten bär beskedet, inte färgen.** Under fältet står tröskelbeloppet till vänster och läget till höger. Är tröskeln passerad säger raden det som en hel mening: "Tröskeln för 2026 är passerad – allt du lägger in i år räknas." Det är den enda gången på året appen har goda nyheter, och två ord i småtext gör inte det jobbet.
+**Talet 5 MB, som stod i inventeringen 2026-10-25, var fel.** Det gäller Bedrock, inte det API vi använder. Felet spelar roll för hur stort problemet är: det är inte hälften av alla telefonfoton som faller bort, utan de största. Ett fynd som vilar på ett tal ska bära talets källa med sig.
 
-Är tröskeln inte nådd står återstående belopp där i stället, utan att läget beskrivs som ett problem – under tröskeln är året oavslutat, inte misslyckat.
+**Gränsen hör till mottagaren, inte till filändelsen.** Det som skickas till avläsningen ska vara under avläsningens eget tak, oavsett vad filen heter. En regel som räknar upp format – HEIC ja, JPG nej – går sönder nästa gång en telefontillverkare byter format, och AVIF ligger redan i nya telefoner. Villkoret är filens storlek och ingenting annat.
+
+**Nedskalningen kostar ingen läsbarhet, och det är skälet att alltid göra den.** Modellen skalar själv ned allt över 1 568 px längsta kant, så en större bild ger den ingenting mer att läsa. En nedskalning till den storleken är alltså ingen avvägning mellan storlek och träffsäkerhet – den tar bort byte som ändå kastas, och det enda som kan förloras är komprimeringens egen skärpa. Att varje HEIC-bild hittills gått den vägen, med fungerande avläsning, är beviset för att kvaliteten räcker.
+
+Därför gäller nedskalningen alla bilder, inte bara de som är för stora. Vinsten på de små är inte träffsäkerhet utan tid och kostnad: en bild på 6 MB blir 8 MB på väg ut och tar motsvarande tid, varje gång, för ett resultat som är detsamma.
+
+**Originalet skalas aldrig ned.** Kvittobilden är beviset. Hela avdraget vilar på att utgiften går att göra trolig, och frågan kan komma tio år senare – då ska den fil Skatteverket får se vara den som laddades upp, inte en komprimerad kopia vi gjorde för att spara ett API-anrop. Den nedskalade bilden finns bara på väg till avläsningen och sparas inte. En sparad kopia vore en andra fil att hålla i takt med den första, utan att någon behöver den.
+
+**Nedskalningen sker efter att filen sparats, inte före.** Originalet måste upp ändå, så en nedskalning i webbläsaren skulle antingen betyda att filens byte skickas två gånger eller att beviset blir den mindre bilden. Ordningen är densamma som redan gäller under *Kostnadsformulärets ordning*: filen sparas först, läses av sedan, och nedskalningen hör till det andra steget.
+
+**Mediatypen följer den fil som faktiskt skickas, inte den som laddades upp.** Nedskalningen ger JPEG tillbaka oavsett vad som kom in, och sägs det då `image/png` därför att originalet var en PNG beskriver anropet en fil som inte finns. Det är den sortens fel som uppstår när en omvandling läggs till i efterhand och den ena halvan av paret glöms.
+
+**PDF:er har en annan gräns, och den är inte byte.** En PDF går inte att skala ned som en bild och behöver det inte: taket för hela anropet räcker gott. Det som kan slå i är antalet sidor, omkring hundra, och täta sidor tidigare. Appen räknar inga sidor före anropet, så en för lång faktura får ett fel från API:et, felet rapporteras, och användaren får raden om att bilagan är sparad men inte gick att läsa av. Det är ett acceptabelt utfall för ett sällsynt fall – en kvittobunt på hundra sidor är inte en entreprenörsfaktura – men det är ett medvetet val och inte en lucka.
+
+**Båda talen ska stå på ett ställe i koden, med vems gräns det är och vad de gäller.** Uppladdningens tak är MiB av fil. Avläsningens är MB av base64. Att det andra bara fanns i leverantörens dokumentation är hela anledningen att de kunde glida ifrån varandra utan att något gick sönder synligt, och att enheten skiljer sig är anledningen att de inte går att jämföra i huvudet.
 
 ### Projektfrågorna
 
@@ -1131,17 +1163,27 @@ Regeln står i `CLAUDE.md` sedan den 18 oktober och är kontrollerad mot källan
 
 **Friskrivningen hör till skärmen, inte till fältet.** Raden om att appen inte ger skatterådgivning ska stå avskild nederst, inte direkt under fritextfältets hjälptext – två dämpade rader under varandra läses som om båda gällde fältet.
 
-**Svarsalternativ är klickbara kort med kort text, inte radioknappar.** "Det fanns redan" och "Det är nytt". "Ja", "Nej", "Vet inte". Inga underrubriker i korten.
+**Svarsalternativ är klickbara kort med kort text, inte radioknappar.** "Det är nytt" och "Jag bytte ut något som fanns". "Ja" och "Nej". Inga underrubriker i korten.
+
+**Det finns inget *Vet inte*.** Ett sådant alternativ lämnar ett projekt i ett tillstånd beräkningen inte kan hantera, och det blir det bekväma svaret på just de frågor som avgör mest. Den som inte vet hoppar över frågan och kommer tillbaka.
 
 Underrubriker gör alternativen till definitioner i stället för svar, och en definition läser alltid fel i det enskilda fallet – "Jag fräschade upp eller lagade något som redan var på plats" är inte något man säger om att måla sitt sovrum. Korta alternativ går att skumma på en sekund.
 
-**Varför frågan ställs ligger bakom en informationsknapp vid frågans rubrik.** En liten cirkel som fälls ut vid klick och förklarar vad svaret får för följd: att nytt räknas som grundförbättring utan tidsgräns, att jämförelsen görs mot tillträdesdagen, att en skada man själv orsakat inte ger avdrag.
+**Varför frågan ställs ligger bakom en informationsknapp vid frågans rubrik.** En liten cirkel som fälls ut vid klick och förklarar vad svaret får för följd: att nytt räknas som grundförbättring och därför inte faller ut med femårsfönstret, att jämförelsen görs mot tillträdesdagen, att en skada man själv orsakat inte ger avdrag.
+
+**Säg aldrig att grundförbättringar saknar tidsgräns bakåt.** Det gör de inte: den bakre gränsen står i `CLAUDE.md` och exporten nollar rader med just den regeln. Skillnaden mot en reparation är femårsfönstret framåt, inte frånvaron av en gräns bakåt, och det är den skillnaden texten ska säga. Appen sa motsatsen till sin egen export på två skärmar till 2026-10-27.
+
+Hjälptextens lydelse är: *"Räknas som grundförbättring och faller därför inte ut med femårsfönstret."*
+
+**Den står ordagrant här för att den ska gå att vakta.** Filen gav till 2026-10-29 bara innebörden, och lydelsen blev därför kodens egen — utan något test som höll den mot en regel. **En mening som redan varit fel en gång ska inte vara oskyddad andra gången.** Det är samma skäl som gör att exportvyns ruta och fråga 5:s hjälpruta står ordagrant: inte varje text i appen hör hemma i den här filen, men varje text som bär en regel gör det.
+
+**Knappen finns bara vid projektlistans rubrik, inte vid varje fråga.** Stycket ovan beskriver vad den ska göra den dag den byggs per fråga; i dag gör den det på ett ställe. Detsamma gäller *Se exempel*-länken längre ned och svarsalternativet *Vet inte* – de är önskemål, inte byggda.
 
 Klick, aldrig hover. Hover finns inte på telefon, och det är där appen används.
 
 **Skickfrågorna visas bara när åtgärden har en reparationsdel.** Är svaret på fråga 4 att något byttes ut ställs de. Byggde man nytt, ändrade planlösningen eller satte in något som inte fanns är det en ren grundförbättring, och skicket saknar då betydelse. Att ändå fråga gör formuläret längre och får användaren att tro att svaret spelar roll. I hälften av fallen halveras formuläret.
 
-**En "Se exempel"-länk vid frågorna** öppnar konkreta fall: målad vägg som var sliten, nytt kök, lagat hål efter egen tavla, bytt blandare som läckte. Det abstrakta blir begripligt genom exempel, inte genom bättre formuleringar – frågan måste vara generisk och blir därför alltid lite trubbig i det enskilda fallet.
+**En "Se exempel"-länk vid frågorna är önskad men inte byggd.** Den skulle öppna konkreta fall: målad vägg som var sliten, nytt kök, lagat hål efter egen tavla, bytt blandare som läckte. Det abstrakta blir begripligt genom exempel, inte genom bättre formuleringar – frågan måste vara generisk och blir därför alltid lite trubbig i det enskilda fallet. Hjälprutorna bär den uppgiften så länge länken saknas.
 
 Motiveringen – fråga 8, "Hur vet du det?" – ligger sist och blockerar aldrig. Den visas bara när `skick_forvarv` är 0, 1 eller 2; se `docs/produktspec.md` avsnitt 4.1.
 
@@ -1352,7 +1394,7 @@ Där gäller avsikten i stället: **vikningen ska falla mitt i ett stycke, aldri
 
 ### Ikoner, delning och metadata
 
-**Appen har i dag ingen ikon alls.** Uppmätt 2026-10-23: `/favicon.ico` svarar 404, det finns ingen `<link rel="icon">`, ingen apple-touch-icon och inget manifest. En flik visar webbläsarens tomma standardikon, och den som sparar sidan på sin hemskärm får en vit ruta. Det är inte ett skönhetsfel — en app man öppnar två gånger om året är en app man letar efter bland sina flikar.
+**Appen saknade ikon helt fram till 2026-10-23.** Uppmätt den morgonen: `/favicon.ico` svarade 404, det fanns ingen `<link rel="icon">`, ingen apple-touch-icon och inget manifest. En flik visade webbläsarens tomma standardikon, och den som sparade sidan på sin hemskärm fick en vit ruta. Det är inte ett skönhetsfel — en app man öppnar två gånger om året är en app man letar efter bland sina flikar. Ikonerna och manifestet byggdes samma dag; reglerna nedan är det som gäller för dem.
 
 **Ikonen är husmärket på appens egen bakgrund.** Källan är `/kvittobo-logo.png`, som är 384 × 410 px och alltså inte kvadratisk. Märket centreras på en kvadrat i `--yta-bas` i stället för att sträckas. Formen får inte beskäras.
 
@@ -1397,19 +1439,66 @@ Förklaringsraden under rubriken är **valfri** och ritas inte som ett tomt styc
 
 **En platshållare som visar format förtjänar sin plats. En som upprepar etiketten gör det inte.** `ÅÅÅÅ / MM / DD` visar ordningen i tre rutor, *t.ex. Kvarnvägen 12 B* visar att fritext med nummer duger, och *t.ex. 3 250 000* visar storleksordning och tusentalsformat. *du@exempel.se* i ett fält som heter E-post gör ingetdera.
 
-**Bostadssteget** har fem fält: upplåtelseform, tillträdesdatum, adress, ort och köpeskilling. De tre första är obligatoriska, ort och köpeskilling valfria.
+**Bostadssteget har två fält: upplåtelseform och tillträdesdatum.** Båda obligatoriska. Adress, ort och köpeskilling låg här till 2026-10-28 och flyttade till *Onboardingen fortsätter på startsidan* nedan. Skälet står där.
+
+**Tillträdesfältet heter "När fick du nycklarna?"** med *motsvarar tillträdesdatum* som hjälptext under. Frågan ställs med de ord folk använder och bär termen bredvid för den som vill ha den – samma princip som gjorde att vi tog Skatteverkets *"Var du första ägaren av bostaden?"* framför *"var bostaden nybyggd"*.
+
+**Och aldrig "När flyttade du in?".** De två dagarna är inte samma: man kan få nycklarna i mars och flytta in i maj, eller hyra ut och aldrig flytta in alls. Tillträdet är den dag gränsen går för vilka utgifter som är dina, och en renovering mellan nycklarna och flytten hamnar på fel sida av en fråga som ställts med fel ord.
 
 **Steget räknar inte upp vilka fält som är obligatoriska.** Markeringen vid varje fält säger det redan, och regeln finns sedan tidigare under *Undvik*: är obligatoriska fält markerade behövs ingen text om de andra. En rad som listade dem – *"Upplåtelseform, tillträdesdatum och adress behövs"* – prövades och togs bort 2026-10-05, eftersom den sa samma sak en andra gång.
 
 Att något går att hoppa över står där det betyder något: i hjälptexten under fältet, som köpeskillingens *"Går att fylla i senare."* En rad som räknar upp fält måste dessutom hållas i synk med vilka som är märkta, och det är nu andra gången en sådan rad blivit osann när ett fält ändrades.
 
-**Adressen är obligatorisk sedan 2026-10-01.** Skälet är toppraden: den visar adressen på varenda skärm, och var fältet frivilligt satt den som hoppade över det en tom rad i appens mest synliga yta. Ett fält till i registreringen är ett billigare pris än det.
+### Onboardingen fortsätter på startsidan
 
-Kravet är att något står där, inte att det är en riktig adress. Fritext duger – regeln om att fältet aldrig får kräva ett valt förslag gäller oförändrat, och *Skogsstigen, torpet* är ett giltigt svar.
+**Registreringen frågar om det minsta som gör appen begriplig, resten frågas sedan.** Efter två steg är hon inne och kan lägga in ett kvitto. Upplåtelseform och tillträde måste vara med, eftersom ingen beräkning finns utan dem. Adressen, köpeskillingen och ägarandelen är lika viktiga men behövs inte i samma sekund, och varje fält i registreringen är ett fält mellan henne och det första kvittot.
 
-Köpeskillingen ligger här trots att den är valfri, eftersom den hör till beskrivningen av bostaden och behövs för vinstberäkningen. Hjälptexten säger var man hittar den – på köpekontraktet eller överlåtelseavtalet – så att den som inte minns beloppet vet att det går att hoppa över och fylla i senare.
+**Resten frågar appen efter inifrån, överst på startsidan, en sak i taget.**
 
-**Att stryka även den prövades 2026-10-05 och valdes bort.** Steget hade då blivit etiketter, fält och en knapp utan en rad prosa. Skälet att behålla den: köpeskillingen är det enda fältet i steget vars svar ligger i ett papper användaren kanske inte har framme, och utan meningen kan hon stanna upp i stället för att hoppa över. Priset för att vara kvar är en rad text; priset för att försvinna är en avbruten registrering.
+| Ordning | Vad appen frågar efter |
+|---|---|
+| Först | Adress och köpeskilling |
+| Sedan | Ägarandel, och om den är under 100 % en följdfråga om att bjuda in den andra delägaren |
+
+**Det här är inte steg tre och fyra i onboardingen.** Onboardingen är två steg och slutar där. Det som ligger på startsidan är uppgifter appen vill ha svar på, inte en registrering som fortsätter – och skillnaden syns i orden: inga stegnummer, ingen *Steg 3 av 4*, ingen fortsättning på en räknare som redan sagt *av 2*. Säger registreringen två steg och startsidan sedan talar om steg tre, blir tvåan en lögn i efterhand.
+
+**Och att appen frågar är poängen, inte bara ett sätt att samla in fält.** En app som står tom efter registreringen ser ut att vänta på användaren. En som säger vad den vill veta – och vad svaret låser upp – ser ut att vara i gång. Det är den enda anledningen att de här frågorna ligger synligt på startsidan i stället för att ligga i inställningarna och vänta på att någon letar.
+
+**Ingen ifyllnadsmätare.** Varken *3 av 7 klart* eller en ring som fylls. Vi tog bort tröskelrutan därför att den gjorde arkivet till en skuld man ådrar sig, och en procentmätare över onboardingen är samma mönster i annan form. Varje kvarvarande steg säger i stället vad det låser upp.
+
+**Adressen flyttade hit 2026-10-28.** Den var obligatorisk i registreringen sedan 2026-10-01, med toppraden som skäl: den visar adressen på varenda skärm, och var fältet frivilligt satt den som hoppade över det en tom rad i appens mest synliga yta. Det skälet är löst på annat sätt nu — toppraden faller tillbaka på *Lägenheten* eller *Huset* efter upplåtelseform, så raden är aldrig tom. **Men adressen måste komma före steg 4**, eftersom en inbjudan matchas mot den. Ordningen mellan stegen är alltså inte en smaksak.
+
+Kravet är fortfarande att något står där, inte att det är en riktig adress. Fritext duger – regeln om att fältet aldrig får kräva ett valt förslag gäller oförändrat, och *Skogsstigen, torpet* är ett giltigt svar.
+
+**Köpeskillingen är obligatorisk i steg 3, och fältet säger varför.** Den står på K5 och K6, eftersom vinsten räknas från den — användaren kommer alltså att behöva talet den dag hon säljer, oavsett vad appen gör med det. Att fånga det medan hon minns är produktens egen tes tillämpad på ett fält till. Hjälptexten säger var det står, på köpekontraktet eller överlåtelseavtalet.
+
+**Ett fält utan uttalat syfte ska inte vara obligatoriskt.** Köpeskillingen frågades till 2026-10-28 utan att något läste den och utan att något sa varför, vilket är tveksamt mot dataminimering och den sortens fråga folk svarar fel på för att bli klara. Raden under fältet är det som gör kravet legitimt, och den är sann även innan appen räknar något med talet.
+
+**Steg 4 står ensamt, för det är steget med en följd.** Ägarandelen multiplicerar hela underlaget, och det är följden som får henne att klicka – inte en mätare. Lydelsen är densamma som bekräftelsen vid försäljningen använder: talen i ditt underlag gäller hela bostaden tills du säger vilken andel du äger.
+
+**Skriver hon mindre än 100 % kommer följdfrågan om att bjuda in.** Det ögonblicket är det enda i hela appen då *vem äger den andra halvan?* är en självklar fråga. I dag ligger delningen i inställningarna, där ingen letar.
+
+**Frågan är ett erbjudande och får aldrig bli ett krav.** Den andra halvan ägs ofta av någon som aldrig kommer att använda appen. Att hoppa över ska inte lämna något halvt, och **underlaget är riktigt ändå**: skriver hon 50 och stannar där visar underlaget hennes halva, vilket är precis rätt. Den andra delägaren är inte en användare, och hennes andel ska inte representeras. Utan den meningen läses den uteblivna inbjudan som en lucka.
+
+### Ägarandelen har inget förval
+
+**Fältet är tomt tills användaren svarat.** `agarandel` är nullbar utan förval, och null betyder *inte angiven* – inte 100 %.
+
+Så länge fältet har förvalet 100 finns inget sätt att skilja *hon äger allt* från *hon har inte svarat*, och allt som byggs ovanpå blir en flagga som håller reda på vad en annan flagga betyder. Den som äger halva sin bostad och registrerat sig ensam har aldrig haft anledning att röra fältet, och hennes underlag är därför dubbelt så stort som det ska vara – ända till försäljningen. Felet går åt det höga hållet och syns inte förrän det räknas.
+
+**Samma sak gäller `nybyggd_vid_forvarv`.** Den styr hela reparationsgrenen och har förvalet nej, skyddat av en extra flagga för vem som faktiskt svarat. Den ska också bli nullbar. **Frågan flyttar inte** – den ställs i genomgången som i dag, av skäl som står i `docs/produktspec.md` 4.1. Det är bara förvalet som ska bort, och flaggan med det.
+
+**Ett tal som hänger på en obesvarad andel säger det, intill talet.** Raden *Ägarandel* bär tillägget *Inte angiven* med en länk till steget, och **raden som bär *Förs till*-talet säger att det gäller hela bostaden** – inte i en ruta ovanför, utan där ögat landar när det läser av siffran.
+
+Lydelsen är: *"Talet gäller hela bostaden, eftersom din ägarandel inte är angiven."* Ett led och inte två — orsaken hänger på påståendet i stället för att stå bredvid det som en andra upplysning. Raden *Ägarandel* bär handlingen, *Ange ägarandelen*, och den ska inte sägas två gånger på samma skärm.
+
+Skälet är att det här läget annars är oskiljaktigt från ett bekräftat helägande. Hon får hela bostadens tal märkt med den ruta det ska föras till, vilket är rätt om hon äger allt och dubbelt för mycket om hon äger halva. En ruta högst upp läses en gång och glöms; raden intill talet läses varje gång talet läses.
+
+**Talet självt ändras inte.** Samma avrundning uppåt, samma etikett, samma siffra som om hon angett 100 %. Att ge henne ören i stället för kronor, eller att plocka bort etiketten, vore att straffa henne för en obesvarad fråga i samma stund vi bestämt att inte spärra. **Det är ett annat läge än när andelarna inte går ihop** – då vet appen inte vems talet är, och då faller etiketten bort.
+
+**Men deklarationssidan spärras aldrig.** Den som öppnar den gör det för att få sina två tal, ofta med deklarationen framför sig, och att vägra visa dem för att ett fält är obesvarat är en spärr i produktens sämsta ögonblick. Spärren hör hemma i bilagepaketets kompletteringssteg, där den redan är beslutad och där användaren begär ett färdigt dokument.
+
+**Migreringen hör till det här beslutet och inte till en senare städning.** Varje befintlig rad måste få svaret på frågan *var 100 ett svar eller en gissning?*, och det går inte att veta i efterhand. Så länge all data är testdata är svaret gratis: allt sätts till null. Efter lansering finns inget riktigt svar alls.
 
 Storlek hör hemma i inställningar, inte här. Den används inte i någon beräkning och behövs inte för att komma igång.
 
@@ -1443,6 +1532,8 @@ Tjänsten får inte heller blockera. Svarar den inte, eller saknas nyckel, funge
 
 Regeln är bredare än fältet: **ett förval är ett svar användaren inte gav.** Det är acceptabelt när valet är lätt att ändra och syns igen – men upplåtelseformen sätts en gång, i registreringen, och visas sedan bara i inställningarna. Felet är osynligt tills den dag underlaget är fel, vilket kan vara tjugo år senare. Då ska fältet inte ha något förval, och steget ska inte gå att passera utan ett val.
 
+**Två fält bryter fortfarande mot regeln, och det ska stå här tills de är rättade.** Ägarandelen har förvalet 100 % i schemat, och *nybyggd vid förvärvet* har förvalet nej. Båda styr beräkningen och sätts en gång. Det andra skyddas av en flagga som håller reda på vem som faktiskt svarat – precis den lapp på lappen regeln finns till för att slippa – och det första skyddas inte alls: den som äger halva bostaden och registrerat sig ensam får tal för hela bostaden ända till försäljningen. Ligger på åtgärdslistan efter lanseringen.
+
 Följden är att upplåtelseformen bär samma markering för obligatoriskt som de andra obligatoriska fälten. Att den saknade markeringen var en följd av förvalet, inte ett eget beslut.
 
 Upplåtelseform väljs med klickbara kort i rad, inte radioknappar. Korten är lättare att träffa på mobil och tydligare att avläsa. **Två kort: Bostadsrätt och Villa eller radhus.** Fritidshus är skattemässigt en fastighet och behöver inget eget val – ett tredje kort måste ändå mappa till samma värde och skapar en distinktion som modellen inte har.
@@ -1467,7 +1558,7 @@ Sekundärknappen har samma form och höjd som primärknappen. Att skapa konto ä
 
 **Den som glömt sitt lösenord måste se en väg som säger det.** Länken heter *Glömt lösenordet?* och ligger under de två knapparna. En app man loggar in i två gånger om året är den app där lösenordet oftast är borta.
 
-**Inloggning med e-postlänk är borttagen ur gränssnittet 2026-10-01.** Den fungerade inte – utgående mejl är inte uppsatt – och en väg in som inte fungerar är sämre än ingen väg alls: den ser ut som räddningen för den som inte kommer in, och lämnar hen sedan utan besked. Den var dessutom aldrig det rätta svaret på ett glömt lösenord; ingen som står och inte minns sitt lösenord läser "Logga in med e-postlänk i stället" som lösningen på just det. Den kan komma tillbaka senare, som en bekvämlighet och inte som en reservväg.
+**Inloggning med e-postlänk är borttagen ur gränssnittet 2026-10-01.** Den fungerade inte – utgående mejl var inte uppsatt då – och en väg in som inte fungerar är sämre än ingen väg alls: den ser ut som räddningen för den som inte kommer in, och lämnar hen sedan utan besked. Den var dessutom aldrig det rätta svaret på ett glömt lösenord; ingen som står och inte minns sitt lösenord läser "Logga in med e-postlänk i stället" som lösningen på just det. Den kan komma tillbaka senare, som en bekvämlighet och inte som en reservväg.
 
 **Borttagandet gäller gränssnittet, inte rutten som tar emot länken.** Återställningsmejlet landar på samma ställe, så den som river ut e-postinloggningen och tar rutten med sig har tagit bort återställningen också, utan att det syns på inloggningssidan.
 
@@ -1541,7 +1632,7 @@ Tomt läge här: en rad som säger att du berättat om allt du lagt in, en rad o
 
 **Ett projekt ska gå att skapa av ett enda kvitto.** Allt man gör består inte av flera inköp, och ordet får inte göra ett bytt blandare till något större än det var – i flödet sägs det därför nästan aldrig. Användaren svarar på frågor, hen ombeds inte skapa ett objekt.
 
-**Skickfrågan vid förvärvet måste dyka upp när svaret på fråga 4 är "Det fanns redan".** Den är villkorad, inte borttagen – utan den kan en reparations avdragsrätt inte avgöras, och det är hela skälet till att frågorna ställs.
+**Skickfrågan vid förvärvet måste dyka upp när svaret på fråga 4 är att något byttes ut.** Den är villkorad, inte borttagen – utan den kan en reparations avdragsrätt inte avgöras, och det är hela skälet till att frågorna ställs.
 
 **ÅÄÖ i all text som användaren ser.** ASCII-translitterering gäller identifierare i koden, aldrig meddelanden. "battre skick vid forsaljningen ar inte bekraftat" ser ut som ett fel, för det är det.
 
@@ -1555,7 +1646,7 @@ Varje rad visar projektets namn, belopp och vad det räknas som. Etiketten heter
 
 Skillnaden är etiketten, och den är värd att formulera eftersom den avgör fler fall än det här: **ett fält med etikett måste besvaras av sitt värde. En dämpad rad utan etikett får bära vad som helst som är sant om raden.** "Räknas som" är en fråga, och *Väntar på frågor* svarar inte på den. En dämpad andra rad ställer ingen fråga. Värdet står som ren text – "Grundförbättring" eller "Reparation" – utan färg, prick eller etikett.
 
-**En informationsknapp vid listans rubrik förklarar vad kategorierna betyder.** Grundförbättring: något tillfördes eller standarden höjdes, ingen tidsgräns bakåt. Reparation: något fräschades upp eller lagades, avdragsgill bara under försäljningsåret och de fem kalenderåren närmast före, och bara om bostaden är i bättre skick än vid tillträdet.
+**En informationsknapp vid listans rubrik förklarar vad kategorierna betyder.** Grundförbättring: något tillfördes eller standarden höjdes, och den faller inte ut med tiden på samma sätt som en reparation. Reparation: något fräschades upp eller lagades, avdragsgill bara under försäljningsåret och de fem kalenderåren närmast före, och bara om bostaden är i bättre skick än vid tillträdet.
 
 Förklaringen ligger bakom knappen, inte som brödtext ovanför listan. Den som redan vet ska inte behöva läsa förbi den varje gång.
 
@@ -1565,7 +1656,7 @@ Det är ett undantag från regeln att tomma tillstånd har en primärknapp. Rege
 
 ### Inställningssidan
 
-Här ligger allt som beskriver bostaden men inte behövs för att komma igång. Fälten är valfria, och sidan ska aldrig kännas som ett formulär man måste fylla i.
+Här ligger allt som beskriver bostaden. Sidan ska aldrig kännas som ett formulär man måste fylla i, men tre uppgifter är obligatoriska och valideras: adressen, tillträdesdatumet och ägarandelen. De två första är grunden för alla tidsberäkningar, den tredje multiplicerar hela underlaget. Resten är valfritt.
 
 **Sidan visar värden, inte fält.** Den besöks oftast för att kontrollera en enda uppgift, och en lång rad öppna inmatningsfält med hjälptext under vart och ett gör den övermäktig. Uppgifterna visas därför i läsläge – etikett till vänster, värde till höger, samma form som kvittots detaljvy. Ett tomt värde står som ett dämpat *Inte ifyllt*.
 
@@ -1612,7 +1703,7 @@ Hjälptexten för köpkostnader skiljer sig: lagfart, pantbrev och inköpsprovis
 
 **Utloggningen ligger i kortet Ditt konto**, som en sekundärknapp. Inte en primärknapp – utloggning är ingen huvudhandling och ska inte dra blicken från det man kom hit för. Den hör inte hemma på startskärmen.
 
-Sidan ska gå att lämna halvfylld. Ingen validering utöver att angivna belopp är tolkbara.
+Sidan ska gå att lämna halvfylld i allt utom de tre obligatoriska uppgifterna ovan. I övrigt valideras bara att angivna belopp är tolkbara.
 
 ### Samägande – medlemskapet
 
@@ -1626,9 +1717,9 @@ Med två delägare är "vem la in de här 40 000?" en fråga som kommer att stä
 
 **Fördelningen efter ägarandel är inget val.** Avdragen hör till bostaden, inte till personen, och fördelas efter ägarandel oavsett vem som betalade fakturan. Appen erbjuder därför ingen möjlighet för en delägare att ta hela beloppet – ett sådant val vore en inbjudan till en position Skatteverkets huvudregel inte accepterar. Källan står i `docs/regelkallor.md`.
 
-**Exportvyn säger vems underlag det är.** Har bostaden fler än en medlem står det att sammanställningen gäller **hela bostaden**. Är läsarens andel känd namnger raden den: *"Sammanställningen gäller hela bostaden. Du äger 50 % – det är den andelen du för in i din deklaration."* Är den inte känd står det i stället att var och en deklarerar sin andel.
+**Exportvyn säger vems underlag det är.** Har bostaden fler än en medlem står det att sammanställningen gäller **hela bostaden**, och att var och en för in sin andel.
 
-Skillnaden är liten men avgörande: den som får veta vad hen ska göra gör det, medan den som påminns om att någon ska göra något ofta inte gör det.
+Skillnaden mot en ren upplysning är liten men avgörande: den som får veta vad hen ska göra gör det, medan den som påminns om att någon ska göra något ofta inte gör det.
 
 **Och när talet rättades blev raden fel i andra riktningen.** Uppmätt i produktionen 2026-10-20, efter att multiplikationen börjat fungera. Högst upp i underlaget står nu två meningar:
 
@@ -1655,7 +1746,7 @@ Utan den raden ser båda delägarna samma summa, tror att den är deras, och fö
 
 **Beloppen multipliceras med andelen så snart andelarna går ihop.** Omskrivet 2026-10-19, efter att den stora verifieringen visade vad den gamla regeln gjorde i praktiken.
 
-Här stod tidigare att andelarna inte ska röra underlaget så länge bostaden delas, med motiveringen att den som satt 50 % som ensam ägare annars skulle se sina belopp halveras under en rubrik som säger "hela bostaden". **Den motiveringen vilade på att andelarna inte var satta förrän vid försäljningen, och det stämmer inte längre:** inbjudningssteget sätter båda andelarna, servern vägrar en summa över 100 %, och rubriken vet redan vilken andel läsaren har — det är den som skriver *"Du äger 50 %"*.
+Här stod tidigare att andelarna inte ska röra underlaget så länge bostaden delas, med motiveringen att den som satt 50 % som ensam ägare annars skulle se sina belopp halveras under en rubrik som säger "hela bostaden". **Den motiveringen vilade på att andelarna inte var satta förrän vid försäljningen, och det stämmer inte längre:** inbjudningssteget sätter båda andelarna, och servern vägrar en summa över 100 %.
 
 Vad regeln kostade, uppmätt i produktionen 2026-10-19 med två delägare på 50/50: raden **Förs till K5, ruta 4** stod bredvid 205 973,42 kr hos båda, alltså hela bostadens tal, medan meningen överst bad var och en att föra in sin andel. Två delägare som följer etiketten yrkar tillsammans dubbelt avdrag.
 
@@ -1691,7 +1782,11 @@ Fritext hon själv skrivit – anteckningen på ett kvitto, ett originalfilnamn 
 
 Det är en omläggning gjord 2026-09-29, efter att den första modellen visat sig kräva svar på frågor som inte spelar roll förrän långt senare. Appen är ett arkiv i tjugo år och en deklaration i en vecka. Andelar, anskaffningsdatum och inköpspris hör till den veckan, och att fråga efter dem vid inbjudan är att kräva besked om något som ännu inte hänt – precis det tvåfasmodellen finns för att undvika.
 
-**Frågorna ställs när bostaden markeras som såld.** Då, och först då, frågar appen varje medlem om sin ägarandel, sitt anskaffningsdatum och sitt inköpspris. Det är också då de öppna rättsfrågorna i `docs/regelkallor.md` måste vara besvarade – inte innan någon bjuder in.
+**Frågan ställs när bostaden markeras som såld.** Då frågar appen varje medlem om sin ägarandel.
+
+**Anskaffningsdatum och inköpspris per delägare är inte byggda och behövs inte än.** De hör till vinstberäkningen, som appen inte gör – den räknar förbättringsutgifter. Stycket här sa till 2026-10-27 att alla tre frågas; bara andelen gör det. Den dag vinsten ska räknas blir de tre en grupp igen.
+
+**Andelen sätts dessutom redan vid inbjudan**, av den som bjuder in, och bekräftas vid försäljningen. *"Först då"* stämde när det skrevs och inte efter att inbjudningssteget byggdes. Det är också då de öppna rättsfrågorna i `docs/regelkallor.md` måste vara besvarade – inte innan någon bjuder in.
 
 **Så länge andelarna inte går ihop är underlaget för hela bostaden.** Det står med de orden i exportvyn, utan etiketten *Förs till K5*. Går de ihop – summan är högst 100 % – är underlaget läsarens eget och multiplicerat med hennes andel. Vad raden hindrar, och varför den är den enda som gör det, står under *Samägande – medlemskapet*.
 
@@ -1711,9 +1806,13 @@ Men andelen är ett **utgångsvärde, inte ett facit**. Den syns och går att ä
 
 En anteckning om hur den här raden blev fel i `docs/`: filen sa att texten skulle ändras i samma omgång som steget byggs, och **prompten till agenten sa att den kunde stå kvar**. Agenten byggde ingetdera och frågade vilken som gällde, vilket var rätt. Men motsägelsen var min — jag skrev en regel här och det motsatta i en prompt två dagar senare utan att läsa om den. **Det är samma fel som två kopior av en regel i samma fil, bara utspritt över två dokument som inte går att söka igenom tillsammans.**
 
-**Bekräftelsesteget är utlovat men inte byggt.** Uppmätt 2026-10-19: ingenting under försäljningsflödet frågar efter eller sätter en andel, trots att inställningssidan skriver *"Var och en bekräftar sina egna när bostaden markeras som såld."* Appen lovar alltså ett steg som inte finns, vilket är samma sorts fel som när den här filen beskrev tillträdesgränsen innan koden läste den.
-
 **Steget är byggt 2026-10-20, och det frågar också den som äger ensam.** Frågan lyder *"Ni har angett 50/50 – stämmer det?"* med de andras andelar listade, fältet förifyllt och summan synlig medan man skriver; för en ensam ägare *"Du har angett att du äger 100 % av bostaden – stämmer det?"*.
+
+**Men en bekräftelse förutsätter att något är angivet.** Är den egna andelen obesvarad är det ingen bekräftelse utan en fråga, och den ska se ut som en: rubriken lyder *"Hur stor del av bostaden äger du?"* och knappen *Spara ägarandelen*, inte *Bekräfta*. Hjälptexten är densamma – andelen står i köpekontraktet, och den avgör talen som förs in i deklarationen.
+
+Är den egna andelen angiven men någon annans inte, är det fortfarande en bekräftelse: *"Du har angett att du äger 50 % – stämmer det?"*, med den andra listad som *Inte angiven*. Det hennes delägare inte svarat på är inte hennes fråga, och ett underlag som väntar på någon annan vore en spärr hon inte kan lyda.
+
+**Att svara på frågan räknas som att bekräfta.** Talet sparas som både andelen och den bekräftade andelen, vilket följer av att bekräftelsen lagras som ett tal och inte som en flagga – se nedan.
 
 **Att ensamägaren får frågan är inte en formalitet.** Det är precis där *Två personer, ett hus* fångas: den som äger halva sin bostad men registrerat sig ensam har aldrig haft anledning att röra andelsfältet, och hennes underlag är därför dubbelt så stort som det ska vara. Frågan ställs den enda vecka då hon har köpekontraktet framme. Hjälptexten säger var svaret finns och varför det spelar roll: *"Andelen står i köpekontraktet. Den avgör talen du för in i deklarationen."*
 
@@ -1759,7 +1858,7 @@ Posten valdes framför en ren länk därför att den överlever ett glömt löse
 
 **Den som bjuder in får ändå veta.** När adressen angetts kan appen säga att personen redan har ett konto och att inbjudan dyker upp på hennes startsida nästa gång hon loggar in. Uppslagningen sker på servern och informerar bara – den förgrenar ingenting.
 
-**Den som redan har en bostad kan inte ansluta ännu.** Inbjudan ligger kvar på startskärmen med ett ärligt besked: appen hanterar en bostad per person i dag, och den dag växlaren finns går den att acceptera. **Ingen bostad tas bort**, inte ens en tom. Den vanliga vägen berörs inte: en partner som aldrig använt appen registrerar sig och ansluts till den befintliga bostaden i stället för att skapa en egen.
+**Den som redan har en bostad kan ansluta.** Växlaren finns sedan 2026-10-02 och anslutningen fungerar; se *Att äga flera bostäder* nedan. **Ingen bostad tas bort**, inte ens en tom. Den vanliga vägen berörs inte: en partner som aldrig använt appen registrerar sig och ansluts till den befintliga bostaden i stället för att skapa en egen.
 
 **Fel adress ger ett begripligt besked.** Försöker någon lösa in en inbjudan som inloggad med en annan adress ska det stå varför det inte går, inte ett generiskt fel.
 
@@ -1857,14 +1956,20 @@ Poängen är att sidan ska vara meningsfull under hela ägandet i stället för 
 
 En varning per projekt som fyller fyra rader var gör skärmen till en vägg av text, och läsaren slutar läsa vid den andra punkten.
 
-**En rad som ger 0 kr måste säga varför.** Tre olika regler ger noll, och de betyder helt olika saker för användaren:
+**En rad som ger 0 kr måste säga varför**, och skälen betyder helt olika saker för användaren:
 
 | Orsak | Vad raden säger |
 |---|---|
-| Året nådde inte tröskeln | Utgifterna för året understeg 5 000 kr, så inget avdrag medges för året |
+| Året nådde inte tröskeln | Utgifterna för året understeg tröskeln, så inget avdrag medges för året |
 | Reparationen ligger utanför femårsfönstret | Åtgärden ligger utanför femårsfönstret, som är försäljningsåret och de fem kalenderåren närmast före |
 | Skicket förbättrades inte | Det du bytte ut var i samma eller sämre skick vid försäljningen än vid förvärvet |
 | Bostaden var nybyggd vid förvärvet | Allt var nytt vid tillträdet, så reparationer räknas inte |
+| Åtgärden ligger före den bakre gränsen | Grundförbättringar före gränsen för upplåtelseformen är inte avdragsgilla |
+| Samma byggnadsdel är åtgärdad senare | Bara den senaste utgiften på samma byggnadsdel får dras av |
+| Merkostnadens tak har slagit till | Hela kostnaden räknas som grundförbättring på sida 1 tills merkostnaden ändrats |
+| Försäkringen täckte hela kostnaden | Har försäkringen betalat allt finns ingen egen utgift att dra av |
+
+**Tabellen ändras i sin rad, aldrig genom ett stycke inuti den**, och den ska hållas lika med skälen i koden. Den sa *tre olika regler* ovanför fyra rader till 2026-10-27, och saknade de fyra sista – som alla fanns i koden.
 
 **Skälets lydelse rättad 2026-10-23.** Den sa tidigare *"Åtgärden utfördes mer än fem år före försäljningen"*. Meningen är alltid sann på de rader där den visas — en utesluten rad ligger alltid minst fem år och en dag före — men den beskriver fel form på regeln. Fönstret är **försäljningsåret plus de fem närmast föregående kalenderåren**, och den som läser skälet och drar slutsatsen att gränsen är rullande planerar fel nästa gång.
 
@@ -1886,7 +1991,7 @@ Formuleringen följer Skatteverkets egen: *"Kostnaden för det året som åtgär
 
 **Summorna dämpas när de är ofullständiga.** Två stora nollor på en skärm som heter Deklarationsunderlag ser trasigt ut. Väntar något på frågor sätts talen i `--text-sekundar` i stället för `--text-primar`, så att blicken går till listan över det som återstår. När allt är klassificerat får de full tyngd.
 
-**Varningslistan står överst i exportvyn och på PDF:ens försättssida under rubriken *Att se över*.** Byggd 2026-10-19. I exportvyn går den före talen, eftersom en varning om varför ett tal är ofullständigt måste läsas före talet. I PDF:en hör den till försättssidan av samma skäl, och den tillåts fortsätta på en ny sida hellre än att trängas ihop över friskrivningen.
+**Varningslistan står överst i exportvyn och på PDF:ens försättssida.** Byggd 2026-10-19. Rubriken *Att se över* hör till PDF:en; i exportvyn står listan som en ruta utan rubrik. I exportvyn går den före talen, eftersom en varning om varför ett tal är ofullständigt måste läsas före talet. I PDF:en hör den till försättssidan av samma skäl, och den tillåts fortsätta på en ny sida hellre än att trängas ihop över friskrivningen.
 
 **Listan tar bara upp det som inte redan står någon annanstans.** En hög som väntar på frågor står under *Återstår* i exportvyn och ska därför inte också stå i listan; en varning som står på projektets egen rad likaså. Upplysningen om ett ändrat projekt bor kvar på raden, där talet den handlar om står, och inte i listan. Skälet är att två formuleringar av samma sak läses som två problem, och den som räknar fel antal problem slutar lita på båda.
 
@@ -1904,12 +2009,8 @@ Sidan säger att sidan inte finns, att ingenting gått förlorat, och leder till
 
 **En inloggad användare som når inloggningssidan skickas till översikten.** Uppmätt samma dag: `/login` renderade en helt tom sida för en inloggad användare. En vit skärm är det enda tillstånd en app aldrig får visa – den säger varken vad som hänt eller vad man kan göra.
 
-### Meddelanderutor
-
-Information som förklarar ett tillstånd sätts i en ruta med `--sand` som bakgrund, `--text-primar` som text, samma hörnradie som inputfält, ingen ram och ingen ikon. Använd dem sparsamt – högst en per skärm.
-
 ---
 
 ## Referens
 
-Logotypen ligger i `docs/`. Den ska inte ritas om, färgas om eller användas som ikon i gränssnittet.
+Logotypen ligger i `docs/`. Den ska inte ritas om eller färgas om, och den används inte som ikon **inuti** gränssnittet – inte som knappikon, listikon eller statusmarkör. Husmärket som appens ikon i webbläsarfliken, på hemskärmen och i delningsbilder är något annat och är beslutat under *Ikoner, delning och metadata*.
