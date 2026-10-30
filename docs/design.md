@@ -963,7 +963,7 @@ Tre exempel på texter som ska bort:
 - "Används som namn i toppen om inget annat anges." Det är vår interna logik. Ingen undrar det.
 - "Alla tidsberäkningar utgår härifrån." Sant men irrelevant för den som ska fylla i ett datum.
 
-Och en som ska vara kvar: "Står på köpekontraktet eller överlåtelseavtalet. Går att fylla i senare." Den säger var uppgiften finns och att man kan hoppa över – båda är verkliga frågor.
+Och en som ska vara kvar: köpeskillingens, som säger var uppgiften finns, varför den behövs och att den går att hoppa över – alla tre är verkliga frågor. Lydelsen står under *Ägarandelen frågas från startsidan*, tillsammans med regeln om vilken sats som bara gäller i registreringen.
 
 **Obligatoriskt markeras på fältet, inte i en mening under.** En liten markering vid etiketten räcker.
 
@@ -1439,7 +1439,13 @@ Förklaringsraden under rubriken är **valfri** och ritas inte som ett tomt styc
 
 **En platshållare som visar format förtjänar sin plats. En som upprepar etiketten gör det inte.** `ÅÅÅÅ / MM / DD` visar ordningen i tre rutor, *t.ex. Kvarnvägen 12 B* visar att fritext med nummer duger, och *t.ex. 3 250 000* visar storleksordning och tusentalsformat. *du@exempel.se* i ett fält som heter E-post gör ingetdera.
 
-**Bostadssteget har två fält: upplåtelseform och tillträdesdatum.** Båda obligatoriska. Adress, ort och köpeskilling låg här till 2026-10-28 och flyttade till *Onboardingen fortsätter på startsidan* nedan. Skälet står där.
+**Bostadssteget har fem fält:** upplåtelseform, tillträdesdatum, adress, ort och köpeskilling. De tre första är obligatoriska, ort och köpeskilling valfria.
+
+> **Adressen och köpeskillingen flyttade ut 2026-10-28 och tillbaka 2026-10-30.** Skälet att flytta ut dem var riktigt på papperet — varje fält i registreringen är ett fält mellan henne och det första kvittot — men prövat i produktionen blev det sämre, inte bättre. En registrering som säger *två steg*, tar slut, och sedan omedelbart ställer fler frågor känns längre än tre fält till i steg 2. Löftet infrias formellt och bryts i upplevelsen.
+>
+> **Ägarandelen stannar däremot på startsidan**, och den fungerade. Skillnaden är att andelen är en fråga man kan behöva tänka på, medan adressen är något man skriver utan att stanna upp. Det som vann på att flyttas ut var alltså den fråga som har en följd, inte de som bara är fält.
+>
+> **Lärdomen är att det här inte gick att avgöra från filen.** Resonemanget höll hela vägen och utfallet blev ändå fel. Den sortens beslut ska prövas på skärmen innan det skrivs som en regel.
 
 **Tillträdesfältet heter "När fick du nycklarna?"** med hjälptexten *"Motsvarar tillträdesdatum."* under. Versal och punkt som appens övriga hjälptexter – en glosa som sätts i småtext är ändå en mening, och en som saknar punkt bland tio som har det läses som oavslutad. Frågan ställs med de ord folk använder och bär termen bredvid för den som vill ha den – samma princip som gjorde att vi tog Skatteverkets *"Var du första ägaren av bostaden?"* framför *"var bostaden nybyggd"*.
 
@@ -1447,25 +1453,26 @@ Förklaringsraden under rubriken är **valfri** och ritas inte som ett tomt styc
 
 **Steget räknar inte upp vilka fält som är obligatoriska.** Markeringen vid varje fält säger det redan, och regeln finns sedan tidigare under *Undvik*: är obligatoriska fält markerade behövs ingen text om de andra. En rad som listade dem – *"Upplåtelseform, tillträdesdatum och adress behövs"* – prövades och togs bort 2026-10-05, eftersom den sa samma sak en andra gång.
 
-Att något går att hoppa över står där det betyder något: i hjälptexten under fältet, som köpeskillingens *"Går att fylla i senare."* En rad som räknar upp fält måste dessutom hållas i synk med vilka som är märkta, och det är nu andra gången en sådan rad blivit osann när ett fält ändrades.
+Att något går att hoppa över står där det betyder något: i hjälptexten under fältet, som köpeskillingens avslutande sats. En rad som räknar upp fält måste dessutom hållas i synk med vilka som är märkta, och det är nu andra gången en sådan rad blivit osann när ett fält ändrades.
 
-### Onboardingen fortsätter på startsidan
+### Ägarandelen frågas från startsidan
 
-**Registreringen frågar om det minsta som gör appen begriplig, resten frågas sedan.** Efter två steg är hon inne och kan lägga in ett kvitto. Upplåtelseform och tillträde måste vara med, eftersom ingen beräkning finns utan dem. Adressen, köpeskillingen och ägarandelen är lika viktiga men behövs inte i samma sekund, och varje fält i registreringen är ett fält mellan henne och det första kvittot.
+**Registreringen samlar in allt som beskriver bostaden. Kortet frågar om det som har en följd.**
 
-**Resten frågar appen efter inifrån, från ett enda kort överst på startsidan.**
+Gränsen går inte vid hur viktig uppgiften är utan vid om den kräver eftertanke. Adressen och köpeskillingen skriver man utan att stanna upp, och de hör därför till registreringen. Ägarandelen ändrar varje tal i underlaget och är den enda frågan som är värd en egen skärm.
 
-Kortet pekar på **nästa obesvarade fråga**, aldrig på en lista. Ordningen är fast:
+**Kortet pekar på nästa obesvarade fråga**, aldrig på en lista. Ordningen är:
 
 | Ordning | Vad appen frågar efter |
 |---|---|
-| 1 | Adress |
-| 2 | Köpeskilling |
-| 3 | Ägarandel, och om den är under 100 % ett erbjudande om att bjuda in den andra delägaren |
+| 1 | Köpeskilling, om den hoppades över i registreringen |
+| 2 | Ägarandel, och om den är under 100 % ett erbjudande om att bjuda in den andra delägaren |
 
-**Kortet säger vad som är nästa, inte *Fortsätt*.** *Lägg till adressen* när det är den som saknas, *Hur stor del av bostaden äger du?* när det är andelen. Ett generiskt *Fortsätt* tvingar användaren att klicka för att få veta vad appen vill, och det är en klickning för att läsa en fråga.
+**Köpeskillingen står på båda ställena, och det är avsiktligt.** Fältet är valfritt i registreringen, eftersom dess svar ligger i ett papper hon kanske inte har framme — och ett obligatoriskt fält där hade blivit en vägg mitt i registreringen för den som inte minns talet. Hoppas det över tar kortet upp frågan i stället. Kravet gäller alltså uppgiften, inte ögonblicket.
 
-**Frågorna hänger ihop som ett flöde, men varje svar sparas när det ges.** Den som fyller i adressen och kliver ur har lagt till en adress – inte avbrutit en registrering. Sparas allt först när flödet är klart är det inte att kliva ur utan att förlora sitt arbete, och det är den detaljen som är lättast att bygga fel. Samma princip som genomgången: *det som besvarats sparas, resten ligger kvar*.
+**Kortet säger vad som är nästa, inte *Fortsätt*.** *Lägg till köpeskillingen*, *Hur stor del av bostaden äger du?*. Ett generiskt *Fortsätt* tvingar användaren att klicka för att få veta vad appen vill, och det är en klickning för att läsa en fråga.
+
+**Varje svar sparas när det ges.** Den som svarar på köpeskillingen och kliver ur har lagt till en köpeskilling – inte avbrutit något. Sparas allt först när flödet är klart är det inte att kliva ur utan att förlora sitt arbete, och det är den detaljen som är lättast att bygga fel.
 
 **Att kliva ur är ett normalt sätt att använda flödet**, inte ett avbrott som ska varnas för. Nästa gång pekar kortet på samma ställe.
 
@@ -1473,27 +1480,35 @@ Kortet pekar på **nästa obesvarade fråga**, aldrig på en lista. Ordningen ä
 
 **Inbjudan räknas inte som en fråga.** Den är ett erbjudande som dyker upp i samma stund andelen är under 100 %, och hoppar man över den kommer kortet inte tillbaka för det. Kortet håller reda på svar appen behöver för att räkna rätt, inte på erbjudanden.
 
-**Erbjudandet visas inte när adressen saknas, och det är ett accepterat hål.** Ordningen garanterar normalt att adressen finns när andelen besvaras — men exportvyns länk *Ange ägarandelen* går direkt till andelsfrågan och hoppar därmed över ordningen. Den som öppnar underlaget innan hon svarat på något, och svarar på andelen den vägen, får inget erbjudande. Inbjudan finns kvar i inställningarna.
+**Kortet är inget steg i onboardingen.** Registreringen är två steg och slutar där. Inga stegnummer på startsidan, ingen fortsättning på en räknare som redan sagt *av 2*.
 
-Att täppa till det skulle betyda att exportlänken i stället öppnar adressfrågan, och då får hon en annan fråga än den hon klickade på. Hålet är smalare än botemedlet. **Det står här för att det är ett val och inte en lucka**, så att nästa som hittar det vet att någon redan tittat på det.
-
-**Det här är inte steg tre och fyra i onboardingen.** Onboardingen är två steg och slutar där. Det som ligger på startsidan är uppgifter appen vill ha svar på, inte en registrering som fortsätter – och skillnaden syns i orden: inga stegnummer, ingen *Steg 3 av 4*, ingen fortsättning på en räknare som redan sagt *av 2*. Säger registreringen två steg och startsidan sedan talar om steg tre, blir tvåan en lögn i efterhand.
-
-**Och att appen frågar är poängen, inte bara ett sätt att samla in fält.** En app som står tom efter registreringen ser ut att vänta på användaren. En som säger vad den vill veta – och vad svaret låser upp – ser ut att vara i gång. Det är den enda anledningen att de här frågorna ligger synligt på startsidan i stället för att ligga i inställningarna och vänta på att någon letar.
+**Och att appen frågar är poängen, inte bara ett sätt att samla in ett fält.** En app som står tom efter registreringen ser ut att vänta på användaren. En som säger vad den vill veta – och vad svaret låser upp – ser ut att vara i gång.
 
 **Ingen ifyllnadsmätare.** Varken *3 av 7 klart* eller en ring som fylls. Vi tog bort tröskelrutan därför att den gjorde arkivet till en skuld man ådrar sig, och en procentmätare över onboardingen är samma mönster i annan form. Kortet säger i stället vad nästa fråga är och vad svaret låser upp.
 
-**Adressen flyttade hit 2026-10-28.** Den var obligatorisk i registreringen sedan 2026-10-01, med toppraden som skäl: den visar adressen på varenda skärm, och var fältet frivilligt satt den som hoppade över det en tom rad i appens mest synliga yta. Det skälet är löst på annat sätt nu — toppraden faller tillbaka på *Lägenheten* eller *Huset* efter upplåtelseform, så raden är aldrig tom. **Men adressen måste komma före andelen**, eftersom en inbjudan matchas mot den. Ordningen är alltså inte en smaksak.
+**Adressen är obligatorisk i registreringen.** Skälet är toppraden: den visar adressen på varenda skärm, och var fältet frivilligt satt den som hoppade över det en tom rad i appens mest synliga yta. Kravet är att något står där, inte att det är en riktig adress — fritext duger, och *Skogsstigen, torpet* är ett giltigt svar.
 
-Kravet är fortfarande att något står där, inte att det är en riktig adress. Fritext duger – regeln om att fältet aldrig får kräva ett valt förslag gäller oförändrat, och *Skogsstigen, torpet* är ett giltigt svar.
+Att adressen alltid finns gör också att erbjudandet om att bjuda in alltid går att visa, eftersom en inbjudan matchas mot adressen.
 
-**Köpeskillingen är obligatorisk i sin fråga, och fältet säger varför.** Den står på K5 och K6, eftersom vinsten räknas från den — användaren kommer alltså att behöva talet den dag hon säljer, oavsett vad appen gör med det. Att fånga det medan hon minns är produktens egen tes tillämpad på ett fält till.
+**Köpeskillingens hjälptext säger varför fältet finns, och den är densamma på båda ställena:** *"Står på köpekontraktet eller överlåtelseavtalet. Du behöver talet själv på blankett K5 eller K6 den dag du säljer."*
 
-Hjälptextens lydelse är: *"Står på köpekontraktet eller överlåtelseavtalet. Du behöver talet själv på blankett K5 eller K6 den dag du säljer."*
+**Ordet *själv* bär meningen.** Utan det låter raden som att vi vill ha talet; med det säger den att hon kommer att behöva det oavsett. Det är skillnaden mellan ett fält som kräver något och ett som påminner om något.
 
-**Ordet *själv* bär meningen.** Utan det låter raden som att vi vill ha talet; med det säger den att hon kommer att behöva det oavsett. Det är skillnaden mellan ett fält som kräver något och ett som påminner om något — och den skillnaden är hela skälet att fältet får vara obligatoriskt.
+**I registreringen följer en sats till: *", men det går att fylla i senare."*** Den satsen är sann bara där, eftersom fältet är valfritt i registreringen och obligatoriskt i kortet. Skrivs den in på båda ställena blir den en osanning på det ena; stryks den från båda försvinner skälet den tillkom för 2026-10-05 — köpeskillingen är det enda fältet i steget vars svar ligger i ett papper hon kanske inte har framme, och utan meningen stannar hon upp i stället för att hoppa över.
 
-**Ett fält utan uttalat syfte ska inte vara obligatoriskt.** Köpeskillingen frågades till 2026-10-28 utan att något läste den och utan att något sa varför, vilket är tveksamt mot dataminimering och den sortens fråga folk svarar fel på för att bli klara. Raden under fältet är det som gör kravet legitimt, och den är sann även innan appen räknar något med talet.
+**Och i inställningarna står bara den första meningen.** Hjälptexten byggs av tre delar, och varje plats använder dem som är sanna där:
+
+| Del | Var |
+|---|---|
+| *Står på köpekontraktet eller överlåtelseavtalet.* | Överallt – frågan *var hittar jag talet?* gäller alltid |
+| *Du behöver talet själv på blankett K5 eller K6 den dag du säljer.* | Där fältet möts första gången: registreringen och kortet |
+| *…, men det går att fylla i senare.* | Bara där fältet går att hoppa över: registreringen |
+
+Den som ändrar köpeskillingen i inställningarna har redan mött skälet två gånger och är där med avsikt. Att upprepa det en tredje gång är brus på den skärm vars hela poäng är att visa värden i lugn och ro.
+
+**Det är alltså inte tre lydelser utan en text i delar.** Den som senare vill harmonisera dem ska läsa tabellen först: skillnaderna är inte slarv, de är villkorade av var fältet står.
+
+**Ett fält utan uttalat syfte ska inte efterfrågas alls.** Köpeskillingen frågades till 2026-10-28 utan att något läste den och utan att något sa varför, vilket är tveksamt mot dataminimering och den sortens fråga folk svarar fel på för att bli klara. Raden under fältet är det som gör frågan legitim, och den är sann även innan appen räknar något med talet.
 
 **Andelen är den fråga som har en följd.** Den multiplicerar hela underlaget, och det är följden som får henne att svara – inte en mätare. Lydelsen är densamma som bekräftelsen vid försäljningen använder: talen i ditt underlag gäller hela bostaden tills du säger vilken andel du äger.
 
