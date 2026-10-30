@@ -1,6 +1,6 @@
 // Fragan om kopeskillingen, fran startsidans kort (docs/design.md,
-// "Onboardingen fortsätter på startsidan"). Obligatorisk har, och faltet
-// sager varfor.
+// "Ägarandelen frågas från startsidan"), nar den hoppades over i
+// registreringen. Obligatorisk har, och faltet sager varfor.
 
 import { Skarm } from "@/components/skarm";
 import { UPPGIFTENS_TEXT } from "@/lib/bostadsuppgifter";

@@ -17,12 +17,12 @@
 // dolda falt till fas 2. Utan e-postbekraftelse finns ingen session att lasa
 // authId ur i fas 2, sa den maste folja med formularet.
 //
-// Bostadssteget har tva falt, bada obligatoriska: upplatelseform och
-// tilltradesdatum – utan dem finns ingen berakning. Adress, ort och
-// kopeskilling lag har till 2026-10-28 och fragas nu fran kortet pa
-// startsidan, ett svar i taget (docs/design.md, "Onboardingen fortsätter på
-// startsidan"; src/app/bostaden). Toppraden faller tillbaka pa "Lägenheten"
-// eller "Huset" tills adressen finns (src/lib/bostad-header.ts).
+// Bostadssteget har fem falt: upplatelseform, tilltradesdatum, adress, ort och
+// kopeskilling. De tre forsta ar obligatoriska – adressen for att toppraden
+// aldrig ska sta tom. Kopeskillingen gar bra att fylla i senare; hoppas den
+// over fragar kortet pa startsidan efter den (src/lib/bostadsuppgifter.ts).
+// Agarandelen fragas inte har utan fran kortet. Storlek hor hemma pa installningssidan (docs/design.md,
+// Registreringsflodet), inte har.
 //
 // Identifieringen (foreningens namn/fastighetsbeteckningen) frågas INTE har
 // (produktspec 8/4.1): den behovs forst pa bilagepaketets forsattssida, och
@@ -32,7 +32,7 @@
 // senare vore fel avvagning. Fältet finns kvar, oforandrat, i installningarna.
 
 import { redirect } from "next/navigation";
-import { isoDatum } from "@/lib/format";
+import { isoDatum, oreFranKronor } from "@/lib/format";
 import { INGEN_KONTAKT_MED_INLOGGNINGEN } from "@/lib/inloggning";
 import { prisma } from "@/lib/prisma";
 import { hamtaAnvandare, sakerstallAnvandarrad } from "@/lib/session";
@@ -42,6 +42,7 @@ import {
   kontostegetsFel,
   type Registreringsfalt,
 } from "./validering";
+import { tolkaGeokod } from "./koordinater";
 
 export interface RegistreringResultat {
   fel?: string;
@@ -80,10 +81,37 @@ export async function slutforRegistrering(
   // ---- STEG 2: spara bostaden ---------------------------------------------
   const upplatelseform = las(formData, "upplatelseform");
   const tilltradesdatum = las(formData, "tilltradesdatum");
+  const adress = las(formData, "adress");
+  const ort = las(formData, "ort");
+  const kopeskillingText = las(formData, "kopeskilling");
+  // Adressfaltet ar alltid fritext. Kom place_id + koordinater med fran ett valt
+  // Places-forslag sparas de, annars sparas adressen som den ar med falten null.
+  const geokod = tolkaGeokod(
+    las(formData, "place_id"),
+    las(formData, "latitud"),
+    las(formData, "longitud"),
+  );
 
   // Samma regler och samma meningar som formularet (./validering.ts).
   const faltfel = bostadsstegetsFel(formData, isoDatum(new Date()));
   if (faltfel) return faltfel;
+
+  // Kopeskilling ar valfri (docs/design.md, Registreringsflodet). Anges i kronor
+  // i faltet, tolkas som heltal oren och lagras som BigInt – Int (Postgres int4)
+  // tar slut vid ~21,5 miljoner kr, vilket en villaforsaljning kan overstiga.
+  let kopeskillingOren: number | null = null;
+  if (kopeskillingText !== "") {
+    kopeskillingOren = oreFranKronor(kopeskillingText);
+    // Redan provat i bostadsstegetsFel – kvar for typernas skull.
+    if (kopeskillingOren === null || kopeskillingOren <= 0) {
+      return {
+        fel: "Köpeskilling anges som ett belopp, t.ex. 3 250 000.",
+        falt: "kopeskilling",
+      };
+    }
+  }
+  const kopeskilling =
+    kopeskillingOren === null ? null : BigInt(kopeskillingOren);
 
   let authId: string;
   let harSession: boolean;
@@ -114,6 +142,12 @@ export async function slutforRegistrering(
 
   await prisma.bostad.create({
     data: {
+      adress,
+      ort: ort || null,
+      place_id: geokod.place_id,
+      latitud: geokod.latitud,
+      longitud: geokod.longitud,
+      kopeskilling,
       upplatelseform: upplatelseform as "bostadsratt" | "fastighet",
       tilltradesdatum: new Date(`${tilltradesdatum}T00:00:00.000Z`),
       // Ingen agarandel: den fragas efter registreringen, och null betyder

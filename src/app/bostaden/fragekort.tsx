@@ -1,6 +1,7 @@
-// Kortet overst pa startsidan (docs/design.md, "Onboardingen fortsätter på
-// startsidan"). Det pekar pa NASTA obesvarade fraga – adress, kopeskilling,
-// agarandel, i den ordningen – och sager vad fragan ar, aldrig "Fortsätt".
+// Kortet overst pa startsidan (docs/design.md, "Ägarandelen frågas från
+// startsidan"). Det pekar pa NASTA obesvarade fraga – kopeskilling, om den
+// hoppades over i registreringen, och agarandel – och sager vad fragan ar,
+// aldrig "Fortsätt".
 // Inga stegnummer och ingen ifyllnadsmatare.
 //
 // Kortet ar en lank, inte en sparr. Det ligger ovanfor "Lägg till kvitto"

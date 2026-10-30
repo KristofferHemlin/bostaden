@@ -1,5 +1,5 @@
 // Andelsfragan, fran startsidans kort och fran exportvyns "Ange ägarandelen"
-// (docs/design.md, "Onboardingen fortsätter på startsidan" och "Ägarandelen
+// (docs/design.md, "Ägarandelen frågas från startsidan" och "Ägarandelen
 // har inget förval"). Fran exportvyn gar vagen tillbaka dit.
 
 import { Skarm } from "@/components/skarm";

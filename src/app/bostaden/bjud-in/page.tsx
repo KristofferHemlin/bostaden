@@ -1,5 +1,5 @@
 // Erbjudandet om att bjuda in den andra delagaren, direkt efter en andel
-// under 100 % (docs/design.md, "Onboardingen fortsätter på startsidan"). Ett
+// under 100 % (docs/design.md, "Ägarandelen frågas från startsidan"). Ett
 // erbjudande, aldrig ett krav: "Hoppa över" lamnar ingenting halvt, och
 // kortet pa startsidan kommer inte tillbaka for en utebliven inbjudan.
 //
@@ -27,7 +27,7 @@ export default async function BjudInSida({
 }) {
   const { bostad, bostadsnamn, egenAndel, andraFinns } = await lasFragesidan();
   const franExport = (await searchParams)?.fran === "export";
-  const svar = { adress: bostad.adress, kopeskilling: bostad.kopeskilling, agarandel: egenAndel };
+  const svar = { kopeskilling: bostad.kopeskilling, agarandel: egenAndel };
   const efter = efterSvaret({ svar, nyssBesvarad: "agarandel", andraFinns });
   // Efter erbjudandet: nasta obesvarade fraga, eller oversikten.
   const dit = franExport ? "/export" : nastaSidan(svar);

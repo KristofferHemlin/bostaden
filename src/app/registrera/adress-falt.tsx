@@ -1,9 +1,7 @@
 "use client";
 
-// Adressfaltet – i fragan fran startsidans kort (src/app/bostaden) och i
-// installningarnas kort Bostaden. Lag i registreringens bostadssteg till
-// 2026-10-28 (docs/design.md, Registreringsflodet). Faltet ar ALLTID ett
-// vanligt textfalt:
+// Adressfaltet i registreringens bostadssteg (docs/design.md,
+// Registreringsflodet). Faltet ar ALLTID ett vanligt textfalt:
 //
 //  - Finns NEXT_PUBLIC_GOOGLE_PLACES_KEY visas forslag under faltet medan man
 //    skriver. Valjer man ett forslag fylls ort, place_id och koordinater i
@@ -17,7 +15,7 @@
 // FORDROJNING_MS fordrojning mellan tangenttryckningar. En pagaende sokning
 // avbryts nar en ny tangent trycks.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type Ref, useCallback, useEffect, useRef, useState } from "react";
 import { Falt, FALTFEL_KLASS, INPUT_KLASS } from "@/components/skarm";
 import { FALTFEL_ATTRIBUT } from "@/lib/formularfel";
 import { ortEfterUppslag } from "@/lib/ort-fran-uppslag";
@@ -36,16 +34,14 @@ const MAX_FORSLAG = 5;
 // spara – och skrev over orten. Den felträffen ar tyst; ett tryck som byter
 // adressen nar man siktade pa Ort syns.
 //
-// Hojden ar tre forslag med tva rader (3 × 60 px, plus kanten), med egen
-// skroll for resten. Raknat ur klasserna, inte matt i en webblasare – men
-// varje del har fast hojd (radhojd, padding, mellanrum), och forslagen ar
-// `truncate` och kan inte bli hogre. Knappen som sparar ligger ca 460 px
-// under faltets underkant i installningarnas kort Bostaden. I adressfragan
-// fran startsidans kort (src/app/bostaden/formular.tsx) ar det bara Ort
-// emellan, och ytan for falten har darfor en minsta hojd som haller knappen
-// drygt 2 rem under en oppen lista. Mer innehall daremellan – ett
-// felmeddelande, en hjalptext som bryts – okar bara avstandet. Andras
-// hojden har maste den minsta hojden dar provas om.
+// Hojden ar tre forslag med tva rader, med egen skroll for resten. Matt
+// renderat i Chrome, i registreringen, 2026-10-30
+// (tester/adressforslag-layout.test.ts): 86 px fritt till "Spara bostad" vid
+// 390 × 844 och 97 px vid 1280 × 800, med kopeskillingens hjalptext pa tva
+// rader. Med den korta hjalptexten var det 66 och 74 px – samma 74 px som
+// uppmattes i produktionen 2026-10-20. I installningarnas kort Bostaden ar avstandet flera
+// hundra pixlar. Marginalen bars av Ort och Köpeskilling under adressfaltet:
+// tas Köpeskilling bort tacker listan knappen med 70–80 px, och testet faller.
 const FORSLAG_MAX_HOJD = "max-h-[11.375rem]";
 const AUTOCOMPLETE_URL = "https://places.googleapis.com/v1/places:autocomplete";
 const DETALJ_URL = "https://places.googleapis.com/v1/places/";
@@ -53,7 +49,7 @@ const DETALJ_URL = "https://places.googleapis.com/v1/places/";
 // oftast som postal_town, annars locality.
 const ORT_TYPER = ["postal_town", "locality", "administrative_area_level_2"];
 
-interface Forslag {
+export interface Forslag {
   placeId: string;
   primar: string;
   sekundar: string;
@@ -76,10 +72,12 @@ export function AdressFalt({
    *  "När ett formulär vägrar"): star direkt under faltet med role="alert",
    *  och faltet far aria-invalid och aria-describedby. */
   fel?: string;
-  /** Markering vid etiketten, som Falt. I installningarnas kort Bostaden,
-   *  dar obligatoriska och valfria falt blandas. */
+  /** Markering vid etiketten, som Falt. Adressen ar obligatorisk sedan
+   *  2026-10-01 – i registreringen och i installningarnas kort Bostaden. */
   obligatoriskt?: boolean;
-  /** Startvarden – en redan sparad adress och ort. */
+  /** Startvarden – utelamnas i registreringen (dar faltet alltid borjar tomt);
+   *  anvands av installningarnas kort Bostaden for att visa en redan sparad
+   *  adress. */
   forval?: {
     adress?: string;
     ort?: string;
@@ -326,38 +324,13 @@ export function AdressFalt({
             placeholder="t.ex. Kvarnvägen 12 B"
           />
           {oppen && forslag.length > 0 ? (
-            <ul
+            <Forslagslista
               ref={listaRef}
-              id="adress-forslag"
-              role="listbox"
-              className={`absolute left-0 right-0 top-full z-10 mt-1 ${FORSLAG_MAX_HOJD} overflow-y-auto rounded-lg border border-linje bg-yta-upphojd`}
-            >
-              {forslag.map((f, i) => (
-                <li key={f.placeId} role="option" aria-selected={i === aktiv}>
-                  <button
-                    type="button"
-                    // Behall fokus i faltet sa att onBlur inte hinner stanga
-                    // listan innan klicket registreras.
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => valjForslag(f)}
-                    onMouseEnter={() => setAktiv(i)}
-                    className={[
-                      "block w-full px-3 py-2.5 text-left font-granssnitt transition-colors",
-                      i === aktiv ? "bg-yta-nedsankt" : "hover:bg-yta-nedsankt",
-                    ].join(" ")}
-                  >
-                    <span className="block truncate text-sm text-text-primar">
-                      {f.primar}
-                    </span>
-                    {f.sekundar ? (
-                      <span className="block truncate text-sm text-text-sekundar">
-                        {f.sekundar}
-                      </span>
-                    ) : null}
-                  </button>
-                </li>
-              ))}
-            </ul>
+              forslag={forslag}
+              aktiv={aktiv}
+              onValj={valjForslag}
+              onPeka={setAktiv}
+            />
           ) : null}
         </div>
         {fel ? (
@@ -387,5 +360,55 @@ export function AdressFalt({
       <input type="hidden" name="latitud" value={lat} />
       <input type="hidden" name="longitud" value={lng} />
     </>
+  );
+}
+
+/**
+ * Forslagslistan under adressfaltet. Egen komponent sa att hojden kan matas
+ * renderad, i registreringen, mot knappen som sparar
+ * (tester/adressforslag-layout.test.ts) – det ar samma lista som visas.
+ */
+export function Forslagslista({
+  ref,
+  forslag,
+  aktiv,
+  onValj,
+  onPeka,
+}: {
+  ref?: Ref<HTMLUListElement>;
+  forslag: Forslag[];
+  aktiv: number;
+  onValj: (f: Forslag) => void;
+  onPeka: (i: number) => void;
+}) {
+  return (
+    <ul
+      ref={ref}
+      id="adress-forslag"
+      role="listbox"
+      className={`absolute left-0 right-0 top-full z-10 mt-1 ${FORSLAG_MAX_HOJD} overflow-y-auto rounded-lg border border-linje bg-yta-upphojd`}
+    >
+      {forslag.map((f, i) => (
+        <li key={f.placeId} role="option" aria-selected={i === aktiv}>
+          <button
+            type="button"
+            // Behall fokus i faltet sa att onBlur inte hinner stanga
+            // listan innan klicket registreras.
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onValj(f)}
+            onMouseEnter={() => onPeka(i)}
+            className={[
+              "block w-full px-3 py-2.5 text-left font-granssnitt transition-colors",
+              i === aktiv ? "bg-yta-nedsankt" : "hover:bg-yta-nedsankt",
+            ].join(" ")}
+          >
+            <span className="block truncate text-sm text-text-primar">{f.primar}</span>
+            {f.sekundar ? (
+              <span className="block truncate text-sm text-text-sekundar">{f.sekundar}</span>
+            ) : null}
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }

@@ -2,8 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 // Fragorna fran startsidans kort vagrar som alla andra formular (docs/design.md,
 // "När ett formulär vägrar"): meningen vid sitt falt, med aria-invalid och
-// bindning. Adressen och kopeskillingen provades sa i registreringen tills de
-// flyttade hit 2026-10-28.
+// bindning.
 
 const h = vi.hoisted(() => ({ resultat: {} as Record<string, unknown> }));
 
@@ -12,7 +11,6 @@ vi.mock("react", async (original) => {
   return { ...react, useActionState: () => [h.resultat, () => {}, false] };
 });
 vi.mock("@/app/bostaden/actions", () => ({
-  sparaAdressen: vi.fn(),
   sparaKopeskillingen: vi.fn(),
   sparaAndelen: vi.fn(),
 }));
@@ -26,7 +24,7 @@ vi.mock("next/navigation", () => ({
 
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { AdressFormular, AndelFormular, KopeskillingFormular } from "@/app/bostaden/formular";
+import { AndelFormular, KopeskillingFormular } from "@/app/bostaden/formular";
 import { KOPESKILLING_SAKNAS } from "@/app/bostaden/validering";
 import { ANDEL_SAKNAS } from "@/lib/agarandel";
 
@@ -40,12 +38,6 @@ function arBundet(html: string, name: string, mening: string) {
 }
 
 describe("frågorna visar meningen vid fältet", () => {
-  it("adressen", () => {
-    h.resultat = { fel: "Fyll i adressen.", falt: "adress" };
-    const html = renderToStaticMarkup(createElement(AdressFormular, { forval: { adress: "", ort: "" } }));
-    arBundet(html, "adress", "Fyll i adressen.");
-  });
-
   it("köpeskillingen", () => {
     h.resultat = { fel: KOPESKILLING_SAKNAS, falt: "kopeskilling" };
     const html = renderToStaticMarkup(createElement(KopeskillingFormular, { forval: "" }));

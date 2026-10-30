@@ -1,31 +1,27 @@
 // Det appen fragar efter inifran, fran ett enda kort overst pa startsidan
-// (docs/design.md, "Onboardingen fortsätter på startsidan"). Registreringen
-// fragar bara om upplatelseform och tilltrade; adressen, kopeskillingen och
-// agarandelen fragas sedan, en i taget.
+// (docs/design.md, "Ägarandelen frågas från startsidan"). Registreringen
+// samlar in allt som beskriver bostaden; kortet fragar om det som har en
+// foljd – agarandelen – och om kopeskillingen nar den hoppades over.
 //
-// Ordningen ar fast och ar ett villkor, inte en smaksak: en inbjudan matchas
-// mot adressen, sa adressen maste komma fore andelen – det ar den som gor
-// inbjudningserbjudandet mojligt att visa.
+// Kopeskillingen star pa bada stallena med flit: valfri i registreringen,
+// eftersom svaret ligger i ett papper hon kanske inte har framme, och fragad
+// har nar den saknas. Kravet galler uppgiften, inte ogonblicket. Adressen
+// fragas inte har – den ar obligatorisk i registreringen.
 //
 // Kortet pekar pa NASTA obesvarade fraga, aldrig pa en lista, och forsvinner
 // nar inget ar obesvarat. Inbjudan raknas inte som en fraga: den ar ett
 // erbjudande, och en overhoppad inbjudan far aldrig fa kortet att komma
-// tillbaka. Darfor laser nastaUppgift bara de tre svaren – inget om
-// inbjudningar finns ens i dess indata.
+// tillbaka. Darfor laser nastaUppgift bara svaren – inget om inbjudningar
+// finns ens i dess indata.
 //
 // Ingenting har ar en sparr. Kortet ligger ovanfor "Lägg till kvitto", aldrig
 // i stallet for den.
 
-export type Bostadsuppgift = "adress" | "kopeskilling" | "agarandel";
+export type Bostadsuppgift = "kopeskilling" | "agarandel";
 
-export const UPPGIFTERNAS_ORDNING: readonly Bostadsuppgift[] = [
-  "adress",
-  "kopeskilling",
-  "agarandel",
-];
+export const UPPGIFTERNAS_ORDNING: readonly Bostadsuppgift[] = ["kopeskilling", "agarandel"];
 
 export interface Bostadssvar {
-  adress: string | null;
   kopeskilling: bigint | number | null;
   /** null = inte angiven (CLAUDE.md, "Andelen ar null tills den besvarats"). */
   agarandel: number | null;
@@ -33,8 +29,6 @@ export interface Bostadssvar {
 
 function besvarad(uppgift: Bostadsuppgift, svar: Bostadssvar): boolean {
   switch (uppgift) {
-    case "adress":
-      return (svar.adress ?? "").trim() !== "";
     case "kopeskilling":
       return svar.kopeskilling !== null;
     case "agarandel":
@@ -48,7 +42,6 @@ export function nastaUppgift(svar: Bostadssvar): Bostadsuppgift | null {
 }
 
 export const UPPGIFTENS_SOKVAG: Record<Bostadsuppgift, string> = {
-  adress: "/bostaden/adress",
   kopeskilling: "/bostaden/kopeskilling",
   agarandel: "/bostaden/andel",
 };
@@ -60,10 +53,6 @@ export const INBJUDNINGSERBJUDANDETS_SOKVAG = "/bostaden/bjud-in";
  * Rubriken ar ocksa rubriken pa fragans egen sida – samma namn pa samma sak.
  */
 export const UPPGIFTENS_TEXT: Record<Bostadsuppgift, { fraga: string; rad: string }> = {
-  adress: {
-    fraga: "Lägg till adressen",
-    rad: "Den står överst på varje skärm, och den du bjuder in ser vilken bostad det gäller.",
-  },
   kopeskilling: {
     fraga: "Lägg till köpeskillingen",
     rad: "Den står på K5 och K6, så du behöver talet den dag du säljer.",
@@ -75,12 +64,14 @@ export const UPPGIFTENS_TEXT: Record<Bostadsuppgift, { fraga: string; rad: strin
 };
 
 /**
- * Hjalptexten under kopeskillingsfaltet. Faltet ar obligatoriskt i kortet och
- * sager darfor varfor: var talet star, och att det behovs pa K5 och K6 den
- * dag bostaden saljs, oavsett vad appen gor med det.
+ * Kopeskillingens hjalptext (docs/design.md, "Ägarandelen frågas från
+ * startsidan"), densamma i kortets fraga och i registreringen. Ordet "själv"
+ * bar meningen: hon behover talet oavsett vad appen gor med det.
+ * Registreringen lagger till satsen om att det gar att fylla i senare – sann
+ * bara dar (src/app/registrera/validering.ts).
  */
 export const KOPESKILLINGENS_HJALPTEXT =
-  "Står på köpekontraktet eller överlåtelseavtalet, och behövs på K5 och K6 när du säljer.";
+  "Står på köpekontraktet eller överlåtelseavtalet. Du behöver talet själv på blankett K5 eller K6 den dag du säljer.";
 
 /** Hjalptexten under andelsfaltet – samma som fragan vid forsaljningen. */
 export const ANDELENS_HJALPTEXT =
@@ -91,10 +82,10 @@ export const ANDELENS_HJALPTEXT =
  * anropas, sa att kliva ur ar ett normalt satt att anvanda flodet: nasta gang
  * pekar kortet pa samma stalle.
  *
- * Erbjudandet om att bjuda in visas direkt efter en andel under 100 %, men
- * bara nar adressen finns – inbjudan visar den, och utan den star det "en
- * bostad" pa sidan bakom koden – och bara nar ingen annan redan har eller
- * ar inbjuden till bostaden. Da finns redan den andra delagaren.
+ * Erbjudandet om att bjuda in visas direkt efter en andel under 100 %, utom
+ * nar nagon annan redan har eller ar inbjuden till bostaden – da finns redan
+ * den andra delagaren. Adressen som inbjudan matchas mot ar obligatorisk i
+ * registreringen och villkoras darfor inte har.
  */
 export function efterSvaret({
   svar,
@@ -111,7 +102,6 @@ export function efterSvaret({
     nyssBesvarad === "agarandel" &&
     svar.agarandel !== null &&
     svar.agarandel < 100 &&
-    besvarad("adress", svar) &&
     !andraFinns
   ) {
     return INBJUDNINGSERBJUDANDETS_SOKVAG;

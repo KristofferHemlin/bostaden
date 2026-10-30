@@ -1,7 +1,8 @@
 "use server";
 
-// Fragorna fran kortet pa startsidan (docs/design.md, "Onboardingen fortsätter
-// på startsidan"): adress, kopeskilling, agarandel – i den ordningen.
+// Fragorna fran kortet pa startsidan (docs/design.md, "Ägarandelen frågas
+// från startsidan"): kopeskilling, om den hoppades over i registreringen, och
+// agarandel – i den ordningen.
 //
 // Frågorna hanger ihop som ett flode, men VARJE SVAR SPARAS NAR DET GES. En
 // action per fraga, och var och en skriver bara sitt eget falt. Det ar den
@@ -27,13 +28,11 @@ import { skrivEgenAndel } from "@/lib/egen-andel";
 import { oreFranKronor } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
-import { tolkaGeokod } from "@/app/registrera/koordinater";
-import { adressfel } from "@/app/registrera/validering";
 import { KOPESKILLING_SOM_BELOPP, kopeskillingsfel } from "./validering";
 
 export interface UppgiftResultat {
   fel?: string;
-  falt?: "adress" | "kopeskilling" | "agarandel";
+  falt?: "kopeskilling" | "agarandel";
 }
 
 function las(formData: FormData, nyckel: string): string {
@@ -45,13 +44,13 @@ async function lasLaget(bostadId: string, anvandareId: string) {
   const [bostad, andelar] = await Promise.all([
     prisma.bostad.findUniqueOrThrow({
       where: { id: bostadId },
-      select: { adress: true, kopeskilling: true },
+      select: { kopeskilling: true },
     }),
     hamtaAndelar(bostadId),
   ]);
   const egen = andelar.medlemmar.find((m) => m.anvandareId === anvandareId);
   return {
-    svar: { adress: bostad.adress, kopeskilling: bostad.kopeskilling, agarandel: egen?.andel ?? null },
+    svar: { kopeskilling: bostad.kopeskilling, agarandel: egen?.andel ?? null },
     andraFinns: andelar.medlemmar.length > 1 || andelar.inbjudningar.length > 0,
   };
 }
@@ -75,36 +74,6 @@ async function vidare(
     redirect(dit === INBJUDNINGSERBJUDANDETS_SOKVAG ? `${dit}?fran=export` : "/export");
   }
   redirect(dit);
-}
-
-export async function sparaAdressen(
-  _foreg: UppgiftResultat,
-  formData: FormData,
-): Promise<UppgiftResultat> {
-  const { bostadId, anvandareId } = await kravBostad();
-  // Samma regel och mening som i installningarna: nagot ska sta dar, inte
-  // nodvandigtvis en riktig adress. Fritext duger.
-  const adress = las(formData, "adress");
-  const fel = adressfel(adress);
-  if (fel) return { fel, falt: "adress" };
-  const geokod = tolkaGeokod(
-    las(formData, "place_id"),
-    las(formData, "latitud"),
-    las(formData, "longitud"),
-  );
-  const ort = las(formData, "ort");
-
-  await prisma.bostad.update({
-    where: { id: bostadId },
-    data: {
-      adress,
-      ort: ort || null,
-      place_id: geokod.place_id,
-      latitud: geokod.latitud,
-      longitud: geokod.longitud,
-    },
-  });
-  return vidare(bostadId, anvandareId, "adress", { export: false });
 }
 
 export async function sparaKopeskillingen(

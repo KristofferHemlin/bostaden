@@ -205,7 +205,7 @@ export default async function Oversikt({
       {/* Overst, fore bade forstaskarmen och nyckeltalen – men aldrig i
           stallet for "Lägg till kvitto", som star kvar dar den alltid star. */}
       <Fragekort
-        svar={{ adress: bostad.adress, kopeskilling: bostad.kopeskilling, agarandel }}
+        svar={{ kopeskilling: bostad.kopeskilling, agarandel }}
       />
       {tomt ? (
         // Forstaskarmen: den som just skapat kontot vet inte varfor kvitton ska

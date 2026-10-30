@@ -1,7 +1,7 @@
 "use client";
 
 // Formularen for fragorna fran startsidans kort (docs/design.md,
-// "Onboardingen fortsätter på startsidan"). Ett formular per fraga, och varje
+// "Ägarandelen frågas från startsidan"). Ett formular per fraga, och varje
 // sparar sitt eget svar – se ./actions.ts. Inga stegnummer: det har ar inte
 // steg tre och fyra i registreringen.
 
@@ -13,11 +13,8 @@ import { Falt, INPUT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
 import { ANDELENS_HJALPTEXT, KOPESKILLINGENS_HJALPTEXT } from "@/lib/bostadsuppgifter";
 import { agarandelFel } from "@/lib/agarandel";
 import { useFormularfel } from "@/lib/formularfel-klient";
-import { AdressFalt } from "@/app/registrera/adress-falt";
-import { adressfel } from "@/app/registrera/validering";
 import { INBJUDAN_SER_ALLT, SkapaInbjudan } from "@/app/installningar/dela-bostaden";
 import {
-  sparaAdressen,
   sparaAndelen,
   sparaKopeskillingen,
   type UppgiftResultat,
@@ -31,33 +28,6 @@ function Knapp({ pagar, text }: { pagar: boolean; text: string }) {
     <button type="submit" disabled={pagar} className={PRIMARKNAPP_KLASS}>
       {pagar ? "Sparar…" : text}
     </button>
-  );
-}
-
-export function AdressFormular({ forval }: { forval: { adress: string; ort: string } }) {
-  const [resultat, action, pagar] = useActionState(sparaAdressen, START);
-  const { formRef, hanteraSubmit, felFor } = useFormularfel({
-    pagar,
-    resultat,
-    validera: (fd) => {
-      const fel = adressfel(String(fd.get("adress") ?? ""));
-      return fel ? { falt: "adress" as const, fel } : null;
-    },
-  });
-  return (
-    <form ref={formRef} action={action} onSubmit={hanteraSubmit} noValidate className="flex flex-col gap-5 p-5">
-      {/* Forslagslistan under adressfaltet far tacka Ort men aldrig knappen
-          som sparar (docs/design.md, Adressfaltet). Listan ar 11,375 rem hog
-          plus 0,25 rem till faltet; Ort och mellanrummen ar ungefar 7 rem.
-          Ytan for falten ar darfor minst 17 rem hog, sa att knappen borjar
-          minst 18,25 rem under adressfaltets overkant – drygt 2 rem fritt
-          under en oppen lista. Matten ar i rem, sa forstorad text skalar
-          listan och avstandet lika. Flyttas Ort maste hojden provas om. */}
-      <div className="flex min-h-[17rem] flex-col gap-5">
-        <AdressFalt obligatoriskt={false} forval={forval} fel={felFor("adress")} />
-      </div>
-      <Knapp pagar={pagar} text="Spara adressen" />
-    </form>
   );
 }
 

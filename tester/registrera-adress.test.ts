@@ -1,11 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Adressen fragas inte langre i registreringen (docs/design.md,
-// Registreringsflodet, 2026-10-28) utan fran kortet pa startsidan. Regeln for
-// adressen ar densamma dar den fragas: nagot ska sta dar, inte nodvandigtvis
-// en riktig adress – fritext duger och inget valt forslag kravs (adressfel).
-// Bostadssteget skapar bostaden utan adress, och skickas en med anda sparas
-// den inte. Kortets adressfraga provas i tester/onboarding-startsidan.test.ts.
+// Adressen ar obligatorisk i registreringen sedan 2026-10-01 (docs/design.md,
+// Registreringsflodet). Kravet ar att nagot star dar, inte att det ar en
+// riktig adress – fritext duger och inget valt forslag kravs. Klienten och
+// servern provar samma regel (adressfel).
 
 const h = await vi.hoisted(async () => {
   const { skapaFalskDatabas } = await import("./_falsk-databas");
@@ -74,19 +72,18 @@ describe("bostadssteget pa servern", () => {
     h.db.lagg("anvandare", { id: ANVANDARE, epost: "a@exempel.se" });
   });
 
-  it("utan adress skapas bostaden, med adressen tom", async () => {
-    await expect(slutforRegistrering({}, bostadssteg({}))).rejects.toThrow("NEXT_REDIRECT /");
-    const [bostad] = await h.db.klient.bostad.findMany();
-    expect(bostad.adress).toBeNull();
-    expect(bostad.place_id).toBeNull();
+  it("utan adress skapas ingen bostad", async () => {
+    const svar = await slutforRegistrering({}, bostadssteg({ adress: "  " }));
+    expect(svar.fel).toBe("Fyll i adressen.");
+    expect(await h.db.klient.bostad.count()).toBe(0);
   });
 
-  it("en adress som skickas med anda sparas inte – den fragas fran kortet", async () => {
+  it("med fritextadress skapas bostaden med adressen som den skrevs", async () => {
     await expect(
-      slutforRegistrering({}, bostadssteg({ adress: "Skogsstigen, torpet", place_id: "x" })),
+      slutforRegistrering({}, bostadssteg({ adress: "Skogsstigen, torpet" })),
     ).rejects.toThrow("NEXT_REDIRECT /");
     const [bostad] = await h.db.klient.bostad.findMany();
-    expect(bostad.adress).toBeNull();
+    expect(bostad.adress).toBe("Skogsstigen, torpet");
     expect(bostad.place_id).toBeNull();
   });
 });
