@@ -2,9 +2,10 @@
 // visar BARA bostadens adress. Ingen andrarad med upplatelseform och
 // tilltradesar – de satts en gang och hor sedan hemma i installningarna.
 //
-// Adressen ar obligatorisk i registreringen sedan 2026-10-01, men bostader
-// skapade fore det kan sakna den. Da star upplatelseformen dar – "Lagenheten"
-// eller "Huset". Toppraden far aldrig vara tom och aldrig visa ett bindestreck.
+// Adressen fragas inte i registreringen (sedan 2026-10-28) utan fran kortet
+// pa startsidan, sa en ny bostad saknar den tills den besvarats. Da star
+// upplatelseformen dar – "Lagenheten" eller "Huset". Toppraden far aldrig
+// vara tom och aldrig visa ett bindestreck.
 //
 // `bostad.namn` lases INTE. Kolumnen ligger kvar i schemat (att droppa den
 // vore en migrering mot levande data) men ingenting skriver till den, och ett

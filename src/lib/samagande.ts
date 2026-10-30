@@ -63,8 +63,9 @@ export const ANDEL_INTE_ANGIVEN = "Inte angiven";
 
 /** Raden under ett Förs till-tal nar lasarens andel inte ar angiven: talet
  *  ar hela bostadens, och det ska sta intill talet (CLAUDE.md, "Andelen ar
- *  null tills den besvarats"). */
-export const GALLER_HELA_BOSTADEN = "Gäller hela bostaden – din ägarandel är inte angiven.";
+ *  null tills den besvarats"). Ett led, inte tva – orsaken hanger pa
+ *  pastaendet (docs/design.md, "Ägarandelen har inget förval"). */
+export const GALLER_HELA_BOSTADEN = "Talet gäller hela bostaden, eftersom din ägarandel inte är angiven.";
 
 /** "50 %", eller "Inte angiven" for null. */
 export function formateraAndelEllerInteAngiven(andel: number | null): string {

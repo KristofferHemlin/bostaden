@@ -59,16 +59,16 @@ describe("reglerna pekar ut sitt fält", () => {
     );
   });
 
-  it("bostadssteget: upplåtelseform, tillträdesdatum, adress, köpeskilling", () => {
+  it("bostadssteget: upplåtelseform, sedan tillträdesdatum – inga andra fält", () => {
     const idag = "2026-10-19";
-    const bas = { upplatelseform: "fastighet", tilltradesdatum: "2016-06-01", adress: "Kvarnvägen 12" };
+    const bas = { upplatelseform: "fastighet", tilltradesdatum: "2016-06-01" };
     expect(bostadsstegetsFel(fd({ ...bas, upplatelseform: "" }), idag)?.falt).toBe("upplatelseform");
     expect(bostadsstegetsFel(fd({ ...bas, tilltradesdatum: "" }), idag)?.falt).toBe("tilltradesdatum");
     expect(bostadsstegetsFel(fd({ ...bas, tilltradesdatum: "2027-01-01" }), idag)?.falt).toBe(
       "tilltradesdatum",
     );
-    expect(bostadsstegetsFel(fd({ ...bas, adress: " " }), idag)?.falt).toBe("adress");
-    expect(bostadsstegetsFel(fd({ ...bas, kopeskilling: "abc" }), idag)?.falt).toBe("kopeskilling");
+    // Adress och kopeskilling hor inte hit langre – de provas inte.
+    expect(bostadsstegetsFel(fd({ ...bas, adress: " ", kopeskilling: "abc" }), idag)).toBeNull();
     expect(bostadsstegetsFel(fd(bas), idag)).toBeNull();
   });
 });
@@ -121,17 +121,6 @@ describe("formuläret visar meningen vid fältet", () => {
     const mening = "Lösenordet måste vara minst 8 tecken.";
     const html = rendera({ fel: mening, falt: "losenord" });
     arBundet(html, input(html, "losenord"), mening);
-  });
-
-  it("adress: bunden", () => {
-    const html = rendera({ fel: "Fyll i adressen.", falt: "adress" }, true);
-    arBundet(html, input(html, "adress"), "Fyll i adressen.");
-  });
-
-  it("köpeskilling: bunden", () => {
-    const mening = "Köpeskilling anges som ett belopp, t.ex. 3 250 000.";
-    const html = rendera({ fel: mening, falt: "kopeskilling" }, true);
-    arBundet(html, input(html, "kopeskilling"), mening);
   });
 
   it("tillträdesdatum: bundet i datumfältet", () => {

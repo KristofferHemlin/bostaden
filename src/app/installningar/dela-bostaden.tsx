@@ -48,6 +48,11 @@ export interface TillgangData {
   inbjudningar: { id: string; epost: string; andel: number | null }[];
 }
 
+/** Informationssteget fore koden: vad som delas (docs/design.md, "Att bjuda
+ *  in en delägare"). Delas med erbjudandet efter andelsfragan pa startsidan. */
+export const INBJUDAN_SER_ALLT =
+  "Den du bjuder in ser allt: varje kvitto, varje belopp, hela historiken och underlaget. Ni ser samma bostad, och båda kan lägga in nya kvitton.";
+
 const TEXTLANK_KLASS =
   "font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar";
 
@@ -101,11 +106,7 @@ export function TillgangKort({ data }: { data: TillgangData }) {
           </button>
         ) : steg === "info" ? (
           <div className="flex flex-col gap-3">
-            <p className="text-text-primar">
-              Den du bjuder in ser allt: varje kvitto, varje belopp, hela historiken
-              och underlaget. Ni ser samma bostad, och båda kan lägga in nya
-              kvitton.
-            </p>
+            <p className="text-text-primar">{INBJUDAN_SER_ALLT}</p>
             <button type="button" onClick={() => setSteg("adress")} className={SEKUNDARKNAPP_KLASS}>
               Fortsätt
             </button>
@@ -128,9 +129,10 @@ export function TillgangKort({ data }: { data: TillgangData }) {
   );
 }
 
-function SkapaInbjudan({
+export function SkapaInbjudan({
   egenAndel,
   ovriga,
+  avbrytText = "Avbryt",
   onKlar,
 }: {
   /** null nar den inte ar angiven – faltet borjar da tomt. */
@@ -138,6 +140,8 @@ function SkapaInbjudan({
   /** Andelar som redan ar tagna av andra medlemmar och utestaende inbjudningar.
    *  null = inte angiven, och raknas inte i summan. */
   ovriga: (number | null)[];
+  /** Erbjudandet efter andelsfragan sager "Hoppa över" – det avbryter inget. */
+  avbrytText?: string;
   onKlar: () => void;
 }) {
   const [resultat, action, pagar] = useActionState<InbjudanResultat, FormData>(
@@ -188,7 +192,7 @@ function SkapaInbjudan({
         {pagar ? "Skapar…" : "Skapa inbjudan"}
       </button>
       <button type="button" onClick={onKlar} className={`${TEXTLANK_KLASS} self-start`}>
-        Avbryt
+        {avbrytText}
       </button>
     </form>
   );

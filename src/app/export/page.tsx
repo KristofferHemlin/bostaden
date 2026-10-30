@@ -72,6 +72,7 @@ import { BILAGEPAKET_SYNLIGT } from "@/lib/bilagepaket/flagga";
 import { hamtaBostadsdata, hamtaKostnaderMedBilaga, tillDomanBostad } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
 import { hamtaAndelar } from "@/lib/andelar";
+import { UPPGIFTENS_SOKVAG } from "@/lib/bostadsuppgifter";
 import {
   ANDEL_INTE_ANGIVEN,
   GALLER_HELA_BOSTADEN,
@@ -89,6 +90,8 @@ import {
   aterstarRader,
   kvittonamn,
 } from "@/lib/aterstar";
+
+const ANDELSFRAGAN_FRAN_EXPORT = `${UPPGIFTENS_SOKVAG.agarandel}?fran=export`;
 
 export const metadata = { title: "Deklarationsunderlag" };
 
@@ -260,8 +263,10 @@ export default async function ExportSida() {
                 <span>Ägarandel</span>
                 <span className="text-text-primar">
                   {ANDEL_INTE_ANGIVEN} ·{" "}
+                  {/* Oppnar andelsfragan sjalv, inte installningarna eller
+                      startsidan i allmanhet – och vagen tillbaka gar hit. */}
                   <Link
-                    href="/installningar"
+                    href={ANDELSFRAGAN_FRAN_EXPORT}
                     className="underline underline-offset-2 hover:text-accent-mork"
                   >
                     Ange ägarandelen

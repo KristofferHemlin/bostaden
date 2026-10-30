@@ -1,7 +1,9 @@
 "use client";
 
-// Adressfaltet i registreringens bostadssteg (docs/design.md,
-// Registreringsflodet). Faltet ar ALLTID ett vanligt textfalt:
+// Adressfaltet – i fragan fran startsidans kort (src/app/bostaden) och i
+// installningarnas kort Bostaden. Lag i registreringens bostadssteg till
+// 2026-10-28 (docs/design.md, Registreringsflodet). Faltet ar ALLTID ett
+// vanligt textfalt:
 //
 //  - Finns NEXT_PUBLIC_GOOGLE_PLACES_KEY visas forslag under faltet medan man
 //    skriver. Valjer man ett forslag fylls ort, place_id och koordinater i
@@ -37,12 +39,13 @@ const MAX_FORSLAG = 5;
 // Hojden ar tre forslag med tva rader (3 × 60 px, plus kanten), med egen
 // skroll for resten. Raknat ur klasserna, inte matt i en webblasare – men
 // varje del har fast hojd (radhojd, padding, mellanrum), och forslagen ar
-// `truncate` och kan inte bli hogre. Knappen som sparar ligger minst 232 px
-// under faltets underkant i registreringen (Ort och Köpeskilling med en rads
-// hjalptext) och ca 460 px i installningarnas kort Bostaden. Mer innehall
-// daremellan – ett felmeddelande, en hjalptext som bryts – okar bara
-// avstandet. Marginalen i registreringen, 46 px, forsvinner om Ort eller
-// Köpeskilling flyttas eller tas bort: da maste hojden provas om.
+// `truncate` och kan inte bli hogre. Knappen som sparar ligger ca 460 px
+// under faltets underkant i installningarnas kort Bostaden. I adressfragan
+// fran startsidans kort (src/app/bostaden/formular.tsx) ar det bara Ort
+// emellan, och ytan for falten har darfor en minsta hojd som haller knappen
+// drygt 2 rem under en oppen lista. Mer innehall daremellan – ett
+// felmeddelande, en hjalptext som bryts – okar bara avstandet. Andras
+// hojden har maste den minsta hojden dar provas om.
 const FORSLAG_MAX_HOJD = "max-h-[11.375rem]";
 const AUTOCOMPLETE_URL = "https://places.googleapis.com/v1/places:autocomplete";
 const DETALJ_URL = "https://places.googleapis.com/v1/places/";
@@ -73,12 +76,10 @@ export function AdressFalt({
    *  "När ett formulär vägrar"): star direkt under faltet med role="alert",
    *  och faltet far aria-invalid och aria-describedby. */
   fel?: string;
-  /** Markering vid etiketten, som Falt. Adressen ar obligatorisk sedan
-   *  2026-10-01 – i registreringen och i installningarnas kort Bostaden. */
+  /** Markering vid etiketten, som Falt. I installningarnas kort Bostaden,
+   *  dar obligatoriska och valfria falt blandas. */
   obligatoriskt?: boolean;
-  /** Startvarden – utelamnas i registreringen (dar faltet alltid borjar tomt);
-   *  anvands av installningarnas kort Bostaden for att visa en redan sparad
-   *  adress. */
+  /** Startvarden – en redan sparad adress och ort. */
   forval?: {
     adress?: string;
     ort?: string;

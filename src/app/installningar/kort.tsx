@@ -54,7 +54,7 @@ import { useFormularfel } from "@/lib/formularfel-klient";
 import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 import { formateraBeloppInmatning, formateraKronor } from "@/lib/format";
 import { useNarKlar } from "@/lib/nar-klar";
-import { formateraAndel } from "@/lib/samagande";
+import { ANDEL_INTE_ANGIVEN, formateraAndel } from "@/lib/samagande";
 import { ArkivexportKnapp } from "./arkivexport-knapp";
 import { KONTAKTADRESS } from "@/lib/kontakt";
 import {
@@ -216,7 +216,18 @@ export function InstallningarKort({
 // "samma form som kvittots detaljvy"). Ett tomt varde visas dampat som "Inte
 // ifyllt" – inte tankstrecket kvittovyn anvander, det later som "okant"
 // snarare an "inget angivet" for ett fritt valbart falt.
-function Rad({ etikett, varde }: { etikett: string; varde: string | null }) {
+function Rad({
+  etikett,
+  varde,
+  tomtText = "Inte ifyllt",
+}: {
+  etikett: string;
+  varde: string | null;
+  /** Agarandelen sager "Inte angiven", som i exportvyn: den ar inte frivillig
+   *  pa samma satt som storlek och kopkostnader – den andrar vad
+   *  deklarationen sager – och samma dampade ord placerar den i fel klass. */
+  tomtText?: string;
+}) {
   const tomt = varde == null || varde.trim() === "";
   return (
     <div className="flex justify-between gap-3 py-1.5">
@@ -224,7 +235,7 @@ function Rad({ etikett, varde }: { etikett: string; varde: string | null }) {
       <span
         className={`text-right ${tomt ? "text-text-sekundar" : "text-text-primar"}`}
       >
-        {tomt ? "Inte ifyllt" : varde}
+        {tomt ? tomtText : varde}
       </span>
     </div>
   );
@@ -609,6 +620,7 @@ export function ForvarvetKort({ data, oppen, formRef, onAndra, onAvbryt, onDirty
           <Rad
             etikett="Ägarandel"
             varde={data.agarandelProcent === null ? null : formateraAndel(data.agarandelProcent)}
+            tomtText={ANDEL_INTE_ANGIVEN}
           />
           <Rad etikett="Första ägaren" varde={jaNejText(data.bostadsfragor.forstaAgare)} />
           {/* Raden finns nar fragan stalls – en bostadsratt dar forsta

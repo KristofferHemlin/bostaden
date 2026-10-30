@@ -55,6 +55,7 @@ import { hamtaAnvandare, kravBostad } from "@/lib/session";
 import { utestaendeInbjudningar } from "@/lib/inbjudan";
 import { AnslutKnapp } from "@/app/inbjudan/anslut-knapp";
 import { Inbjudningskort } from "@/app/inbjudan/inbjudningskort";
+import { Fragekort } from "@/app/bostaden/fragekort";
 
 export const dynamic = "force-dynamic";
 
@@ -99,7 +100,7 @@ export default async function Oversikt({
   const anvandare = await hamtaAnvandare();
   if (!anvandare) return <Landningssida />;
 
-  const { bostadId, antalBostader } = await kravBostad();
+  const { bostadId, agarandel, antalBostader } = await kravBostad();
   // Efter en accepterad inbjudan (src/app/inbjudan/actions.ts): appen sager
   // vilken bostad man nu tittar pa, och var de andra finns (docs/design.md,
   // "Att äga flera bostäder"). Annars accepterar man och ingenting syns handa.
@@ -201,6 +202,11 @@ export default async function Oversikt({
           </Inbjudningskort>
         </Kort>
       ))}
+      {/* Overst, fore bade forstaskarmen och nyckeltalen – men aldrig i
+          stallet for "Lägg till kvitto", som star kvar dar den alltid star. */}
+      <Fragekort
+        svar={{ adress: bostad.adress, kopeskilling: bostad.kopeskilling, agarandel }}
+      />
       {tomt ? (
         // Forstaskarmen: den som just skapat kontot vet inte varfor kvitton ska
         // sparas. Skarmen ska saga det, inte forutsatta det.

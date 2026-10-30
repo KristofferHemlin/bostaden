@@ -20,7 +20,6 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useState } from "react";
-import { BeloppFalt } from "@/components/belopp-falt";
 import { EpostLank } from "@/components/epost-lank";
 import { LosenordFalt } from "@/components/losenord-falt";
 import {
@@ -39,11 +38,12 @@ import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 import { useFormularfel } from "@/lib/formularfel-klient";
 import { isoDatum } from "@/lib/format";
 import { slutforRegistrering, type RegistreringResultat } from "./actions";
-import { AdressFalt } from "./adress-falt";
 import { Ram } from "./ram";
 import {
   bostadsstegetsFel,
   kontostegetsFel,
+  TILLTRADESFALTETS_ETIKETT,
+  TILLTRADESFALTETS_HJALPTEXT,
   type Registreringsfalt,
 } from "./validering";
 
@@ -89,7 +89,6 @@ export function RegistreraFlode({
   // svar användaren inte gav"). Ett hus som registrerades utan att nagon
   // tryckte pa kortet blev forut en bostadsratt – och det syns aldrig mer.
   const [upplatelseform, setUpplatelseform] = useState("");
-  const [kopeskilling, setKopeskilling] = useState("");
 
   // Varje avvisning har en mening vid sitt falt, med aria-invalid och
   // bindning, och fokus flyttas dit (docs/design.md, "När ett formulär
@@ -276,28 +275,15 @@ export function RegistreraFlode({
           ) : null}
         </div>
 
-        <Falt etikett="Tillträdesdatum" obligatoriskt>
+        {/* Fragan med de ord folk anvander, termen bredvid – och aldrig "När
+            flyttade du in?": nycklarna och flytten ar inte samma dag, och
+            tilltradet ar gransen for vilka utgifter som ar dina
+            (docs/design.md, Registreringsflodet). */}
+        <Falt etikett={TILLTRADESFALTETS_ETIKETT} hjalp={TILLTRADESFALTETS_HJALPTEXT} obligatoriskt>
           <DatumFalt
             name="tilltradesdatum"
             fel={felFor("tilltradesdatum")}
             framtidsFelmeddelande="Tillträdesdatum kan inte ligga i framtiden."
-          />
-        </Falt>
-
-        <AdressFalt obligatoriskt fel={felFor("adress")} />
-
-        <Falt
-          etikett="Köpeskilling"
-          hjalp="Står på köpekontraktet eller överlåtelseavtalet. Går att fylla i senare."
-          fel={felFor("kopeskilling")}
-        >
-          <BeloppFalt
-            name="kopeskilling"
-            {...markering("kopeskilling")}
-            value={kopeskilling}
-            onValueChange={setKopeskilling}
-            className={INPUT_KLASS}
-            placeholder="t.ex. 3 250 000"
           />
         </Falt>
       </div>
