@@ -63,9 +63,11 @@ describe("ombildningsraden i Forvarvet", () => {
     expect(vardeFor(html, OMBILDNING)).toBeNull();
   });
 
-  it("obesvarad forsta agare: Inte ifyllt, och ingen ombildningsrad", () => {
+  it("obesvarad forsta agare: Inte angiven, och ingen ombildningsrad", () => {
+    // Inte "Inte ifyllt": fragan ar inte frivillig – obesvarad blockerar den
+    // genomgangen – och det dampade ordet placerar den bland de frivilliga.
     const html = laslage({ upplatelseform: "bostadsratt", forstaAgare: null, ombildning: null });
-    expect(vardeFor(html, "Första ägaren")).toBe("Inte ifyllt");
+    expect(vardeFor(html, "Första ägaren")).toBe("Inte angiven");
     expect(vardeFor(html, OMBILDNING)).toBeNull();
   });
 });

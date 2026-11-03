@@ -223,9 +223,9 @@ function Rad({
 }: {
   etikett: string;
   varde: string | null;
-  /** Agarandelen sager "Inte angiven", som i exportvyn: den ar inte frivillig
-   *  pa samma satt som storlek och kopkostnader – den andrar vad
-   *  deklarationen sager – och samma dampade ord placerar den i fel klass. */
+  /** Agarandelen och forsta agaren sager "Inte angiven", som i exportvyn: de
+   *  ar inte frivilliga pa samma satt som storlek och kopkostnader – de andrar
+   *  vad deklarationen sager – och samma dampade ord placerar dem i fel klass. */
   tomtText?: string;
 }) {
   const tomt = varde == null || varde.trim() === "";
@@ -622,7 +622,14 @@ export function ForvarvetKort({ data, oppen, formRef, onAndra, onAvbryt, onDirty
             varde={data.agarandelProcent === null ? null : formateraAndel(data.agarandelProcent)}
             tomtText={ANDEL_INTE_ANGIVEN}
           />
-          <Rad etikett="Första ägaren" varde={jaNejText(data.bostadsfragor.forstaAgare)} />
+          {/* Samma ord som agarandelen, av samma skal: obesvarad blockerar den
+              genomgangen och styr hela reparationsgrenen, och "Inte ifyllt"
+              placerar den bland de frivilliga falten. */}
+          <Rad
+            etikett="Första ägaren"
+            varde={jaNejText(data.bostadsfragor.forstaAgare)}
+            tomtText={ANDEL_INTE_ANGIVEN}
+          />
           {/* Raden finns nar fragan stalls – en bostadsratt dar forsta
               agaren ar ja – och sager "Inte ifyllt" nar den ar obesvarad,
               som varje annan tom uppgift. Annars syns kortet komplett medan

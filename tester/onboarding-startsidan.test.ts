@@ -456,4 +456,34 @@ describe("texterna läses ur design.md", () => {
     expect(t).toContain(`|Köpkostnader|${inteIfyllt}|`);
     expect(t).toContain(`|Köpeskilling|${inteIfyllt}|`);
   });
+
+  it("inställningarnas rad Första ägaren säger Inte angiven när den är obesvarad, som andelen", () => {
+    // Obesvarad blockerar genomgangen och styr hela reparationsgrenen – den
+    // ar inte frivillig, och far darfor inte det frivilliga faltets ord.
+    const inteAngiven = ur(/Raden \*Ägarandel\* bär tillägget \*([^*]+)\*/);
+    const inteIfyllt = ur(/Ett tomt värde står som ett dämpat \*([^*]+)\*/);
+    const data = {
+      tilltradesdatum: "2019-06-01",
+      kopeskillingOren: null,
+      kopkostnaderOren: null,
+      arBostadsratt: false,
+      agarandelProcent: 50,
+      bostadsfragor: { upplatelseform: "fastighet", forstaAgare: null, ombildning: null },
+    } as unknown as ForvarvetData;
+    const t = text(
+      renderToStaticMarkup(
+        createElement(ForvarvetKort, {
+          data,
+          oppen: false,
+          formRef: { current: null },
+          onAndra: () => {},
+          onAvbryt: () => {},
+          onDirty: () => {},
+          onKlar: () => {},
+        }),
+      ),
+    );
+    expect(t).toContain(`|Första ägaren|${inteAngiven}|`);
+    expect(t).toContain(`|Köpkostnader|${inteIfyllt}|`);
+  });
 });

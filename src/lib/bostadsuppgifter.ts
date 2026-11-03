@@ -55,7 +55,11 @@ export const INBJUDNINGSERBJUDANDETS_SOKVAG = "/bostaden/bjud-in";
 export const UPPGIFTENS_TEXT: Record<Bostadsuppgift, { fraga: string; rad: string }> = {
   kopeskilling: {
     fraga: "Lägg till köpeskillingen",
-    rad: "Den står på K5 och K6, så du behöver talet den dag du säljer.",
+    // Kortet ar en hanvisning, inte faltet: samma innebord som
+    // KOPESKILLINGENS_HJALPTEXT, inte samma ord. Riktningen ar att talet ska
+    // DIT – blanketten ar tom tills hon fyller i den, sa "står på K5" pekar at
+    // fel hall.
+    rad: "Du för in den på K5 eller K6 den dag du säljer.",
   },
   agarandel: {
     fraga: "Hur stor del av bostaden äger du?",
