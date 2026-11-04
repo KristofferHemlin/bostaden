@@ -223,9 +223,10 @@ function Rad({
 }: {
   etikett: string;
   varde: string | null;
-  /** Agarandelen, forsta agaren och ombildningen sager "Inte angiven", som i exportvyn: de
-   *  ar inte frivilliga pa samma satt som storlek och kopkostnader – de andrar
-   *  vad deklarationen sager – och samma dampade ord placerar dem i fel klass. */
+  /** "Inte angiven" dar appen vantar pa ett svar – det kortet eller
+   *  genomgangen fragar efter: agarandelen, kopeskillingen, forsta agaren och
+   *  ombildningen (docs/design.md, "Inställningssidan"). Samma dampade ord som
+   *  storlek och kopkostnader placerar dem i fel klass. */
   tomtText?: string;
 }) {
   const tomt = varde == null || varde.trim() === "";
@@ -615,7 +616,14 @@ export function ForvarvetKort({ data, oppen, formRef, onAndra, onAvbryt, onDirty
         <ForvarvetIntro />
         <div className="p-4 font-granssnitt text-sm">
           <Rad etikett="Tillträdesdatum" varde={data.tilltradesdatum} />
-          <Rad etikett="Köpeskilling" varde={orenTillKronsträng(data.kopeskillingOren)} />
+          {/* Startsidans kort fragar efter den sa lange den saknas – appen
+              vantar pa ett svar, och da ar den inte frivillig har heller
+              (docs/design.md, "Inställningssidan"). */}
+          <Rad
+            etikett="Köpeskilling"
+            varde={orenTillKronsträng(data.kopeskillingOren)}
+            tomtText={ANDEL_INTE_ANGIVEN}
+          />
           <Rad etikett="Köpkostnader" varde={orenTillKronsträng(data.kopkostnaderOren)} />
           <Rad
             etikett="Ägarandel"

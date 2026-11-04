@@ -470,12 +470,14 @@ function tomtOrd(rad: string): string {
   return r.ord;
 }
 
-// "Köpkostnader, storlek, kapitaltillskott och identifiering ändrar inget tal"
-const ALLT_ANNAT: string[] = (() => {
-  const m = TOMMA_RADER.get("Allt annat")?.varfor.match(/^(.+) ändrar inget tal$/);
+// "Köpkostnader, storlek, kapitaltillskott och identifiering efterfrågas
+// ingenstans". Lases i testet, inte nar filen laddas: en omskriven mening ska
+// falla ett test, inte ta med sig hela filen.
+function alltAnnat(): string[] {
+  const m = TOMMA_RADER.get("Allt annat")?.varfor.match(/^(.+) efterfrågas ingenstans$/);
   if (!m) throw new Error("design.md: raden Allt annat räknar inte upp sina fält");
   return m[1].split(/, | och /).map((f) => f.charAt(0).toUpperCase() + f.slice(1));
-})();
+}
 
 const ingenting = () => {};
 
@@ -535,6 +537,7 @@ describe("inställningarnas tomma rader följer tabellen i design.md", () => {
   it("tabellen har de rader testerna prövar – en ny rad behöver ett eget fall", () => {
     expect([...TOMMA_RADER.keys()]).toEqual([
       "Ägarandel",
+      "Köpeskilling",
       "Första ägaren",
       "Ombildning från hyresrätt",
       "Allt annat",
@@ -547,6 +550,14 @@ describe("inställningarnas tomma rader följer tabellen i design.md", () => {
       bostadsfragor: { upplatelseform: "fastighet", forstaAgare: false, ombildning: null },
     });
     expect(t).toContain(`|Ägarandel|${tomtOrd("Ägarandel")}|`);
+  });
+
+  it("Köpeskilling obesvarad – kortet frågar efter den", () => {
+    const t = forvarvet({
+      kopeskillingOren: null,
+      bostadsfragor: { upplatelseform: "fastighet", forstaAgare: false, ombildning: null },
+    });
+    expect(t).toContain(`|Köpeskilling|${tomtOrd("Köpeskilling")}|`);
   });
 
   it("Första ägaren obesvarad", () => {
@@ -575,7 +586,7 @@ describe("inställningarnas tomma rader följer tabellen i design.md", () => {
     }
   });
 
-  it("allt annat behåller Inte ifyllt: köpkostnader, storlek, kapitaltillskott, identifiering", () => {
+  it("allt annat behåller Inte ifyllt: köpkostnader, storlek, kapitaltillskott, identifiering – inget efterfrågar dem", () => {
     const ord = tomtOrd("Allt annat");
     const etiketter: Record<string, string[]> = {
       Köpkostnader: ["Köpkostnader"],
@@ -583,12 +594,13 @@ describe("inställningarnas tomma rader följer tabellen i design.md", () => {
       Kapitaltillskott: ["Kapitaltillskott"],
       Identifiering: ["Föreningens namn", "Fastighetsbeteckning"],
     };
-    expect(ALLT_ANNAT.sort()).toEqual(Object.keys(etiketter).sort());
+    const falt = alltAnnat();
+    expect([...falt].sort()).toEqual(Object.keys(etiketter).sort());
     const forv = forvarvet({
       bostadsfragor: { upplatelseform: "bostadsratt", forstaAgare: true, ombildning: false },
     });
     const allt = forv + bostaden("bostadsratt") + bostaden("fastighet");
-    for (const etikett of ALLT_ANNAT.flatMap((f) => etiketter[f])) {
+    for (const etikett of falt.flatMap((f) => etiketter[f])) {
       expect(allt).toContain(`|${etikett}|${ord}|`);
     }
   });
