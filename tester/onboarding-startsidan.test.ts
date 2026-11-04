@@ -70,7 +70,7 @@ import AndelSida from "@/app/bostaden/andel/page";
 import BjudInSida from "@/app/bostaden/bjud-in/page";
 import { slutforRegistrering } from "@/app/registrera/actions";
 import { RegistreraFlode } from "@/app/registrera/flode";
-import { ForvarvetKort, type ForvarvetData } from "@/app/installningar/kort";
+import { BostadenKort, ForvarvetKort, type BostadenData, type ForvarvetData } from "@/app/installningar/kort";
 import { UPPGIFTENS_SOKVAG } from "@/lib/bostadsuppgifter";
 
 const DESIGN = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
@@ -426,64 +426,170 @@ describe("texterna läses ur design.md", () => {
     const t = text(renderToStaticMarkup((await ExportSida()) as ReactElement));
     expect(t).toContain(`|${lydelse}|`);
   });
+});
 
-  it("inställningarnas rad Ägarandel säger Inte angiven; frivilliga fält behåller Inte ifyllt", () => {
-    // "Raden *Ägarandel* bär tillägget *Inte angiven*" och "Ett tomt värde står som ett dämpat *Inte ifyllt*".
-    const inteAngiven = ur(/Raden \*Ägarandel\* bär tillägget \*([^*]+)\*/);
-    const inteIfyllt = ur(/Ett tomt värde står som ett dämpat \*([^*]+)\*/);
-    const data = {
-      tilltradesdatum: "2019-06-01",
-      kopeskillingOren: null,
-      kopkostnaderOren: null,
-      arBostadsratt: false,
-      agarandelProcent: null,
-      bostadsfragor: { upplatelseform: "fastighet", forstaAgare: false, ombildning: null },
-    } as unknown as ForvarvetData;
-    const t = text(
-      renderToStaticMarkup(
-        createElement(ForvarvetKort, {
-          data,
-          oppen: false,
-          formRef: { current: null },
-          onAndra: () => {},
-          onAvbryt: () => {},
-          onDirty: () => {},
-          onKlar: () => {},
-        }),
-      ),
-    );
-    expect(t).toContain(`|Ägarandel|${inteAngiven}|`);
-    expect(t).toContain(`|Köpkostnader|${inteIfyllt}|`);
-    expect(t).toContain(`|Köpeskilling|${inteIfyllt}|`);
+// ---------------------------------------------------------------------------
+// Kortets underrubrik, och installningarnas tomma rader – ur design.md
+// ---------------------------------------------------------------------------
+
+/** Underrubriken under kortets fraga – styckets hela text, aldrig en delstrang. */
+function kortetsUnderrubrik(html: string): string | null {
+  const k = kortet(html);
+  return k ? (k.match(/<p[^>]*>([^<]*)<\/p>/)?.[1] ?? null) : null;
+}
+
+describe("kortets underrubrik läses ur design.md", () => {
+  it("köpeskillingen: underrubriken säger att talet förs in på blanketten", async () => {
+    // **Kortets underrubrik för köpeskillingen är:** *"Du för in den på K5 eller K6 den dag du säljer."*
+    const lydelse = ur(/\*\*Kortets underrubrik för köpeskillingen är:\*\* \*"([^"]+)"\*/);
+    seeda({});
+    const html = await startsidan();
+    expect(kortetsFraga(html)).toBe(KOPESKILLINGSFRAGAN);
+    expect(kortetsUnderrubrik(html)).toBe(lydelse);
+  });
+});
+
+// Tabellen under "Inställningssidan": vilka rader som sager "Inte angiven"
+// och vilka som behaller "Inte ifyllt".
+const TOMMA_RADER: Map<string, { ord: string; varfor: string }> = (() => {
+  const rubrik = "| Rad | Tomt värde säger | Varför |";
+  const start = DESIGN.indexOf(rubrik);
+  if (start < 0) throw new Error("design.md saknar tabellen över tomma rader");
+  const rader = new Map<string, { ord: string; varfor: string }>();
+  for (const rad of DESIGN.slice(start).split("\n").slice(2)) {
+    if (!rad.startsWith("|")) break;
+    const [namn, ord, varfor] = rad.split("|").slice(1, -1).map((c) => c.trim());
+    rader.set(namn, { ord: ord.replace(/^\*(.+)\*$/, "$1"), varfor });
+  }
+  return rader;
+})();
+
+function tomtOrd(rad: string): string {
+  const r = TOMMA_RADER.get(rad);
+  if (!r) throw new Error(`tabellen i design.md saknar raden ${rad}`);
+  return r.ord;
+}
+
+// "Köpkostnader, storlek, kapitaltillskott och identifiering ändrar inget tal"
+const ALLT_ANNAT: string[] = (() => {
+  const m = TOMMA_RADER.get("Allt annat")?.varfor.match(/^(.+) ändrar inget tal$/);
+  if (!m) throw new Error("design.md: raden Allt annat räknar inte upp sina fält");
+  return m[1].split(/, | och /).map((f) => f.charAt(0).toUpperCase() + f.slice(1));
+})();
+
+const ingenting = () => {};
+
+function forvarvet(over: Partial<ForvarvetData> & { bostadsfragor: ForvarvetData["bostadsfragor"] }): string {
+  const data: ForvarvetData = {
+    tilltradesdatum: "2019-06-01",
+    kopeskillingOren: 325000000n,
+    kopkostnaderOren: null,
+    arBostadsratt: over.bostadsfragor.upplatelseform === "bostadsratt",
+    agarandelProcent: 50,
+    ...over,
+  };
+  return text(
+    renderToStaticMarkup(
+      createElement(ForvarvetKort, {
+        data,
+        oppen: false,
+        formRef: { current: null },
+        onAndra: ingenting,
+        onAvbryt: ingenting,
+        onDirty: ingenting,
+        onKlar: ingenting,
+      }),
+    ),
+  );
+}
+
+function bostaden(upplatelseform: "bostadsratt" | "fastighet"): string {
+  const data: BostadenData = {
+    adress: "Storgatan 1",
+    ort: "Uppsala",
+    platsId: "",
+    lat: "",
+    lng: "",
+    upplatelseform,
+    identifiering: "",
+    storlek: "",
+    kapitaltillskottOren: null,
+    sald: false,
+  };
+  return text(
+    renderToStaticMarkup(
+      createElement(BostadenKort, {
+        data,
+        oppen: false,
+        formRef: { current: null },
+        onAndra: ingenting,
+        onAvbryt: ingenting,
+        onDirty: ingenting,
+        onKlar: ingenting,
+      }),
+    ),
+  );
+}
+
+describe("inställningarnas tomma rader följer tabellen i design.md", () => {
+  it("tabellen har de rader testerna prövar – en ny rad behöver ett eget fall", () => {
+    expect([...TOMMA_RADER.keys()]).toEqual([
+      "Ägarandel",
+      "Första ägaren",
+      "Ombildning från hyresrätt",
+      "Allt annat",
+    ]);
   });
 
-  it("inställningarnas rad Första ägaren säger Inte angiven när den är obesvarad, som andelen", () => {
-    // Obesvarad blockerar genomgangen och styr hela reparationsgrenen – den
-    // ar inte frivillig, och far darfor inte det frivilliga faltets ord.
-    const inteAngiven = ur(/Raden \*Ägarandel\* bär tillägget \*([^*]+)\*/);
-    const inteIfyllt = ur(/Ett tomt värde står som ett dämpat \*([^*]+)\*/);
-    const data = {
-      tilltradesdatum: "2019-06-01",
-      kopeskillingOren: null,
-      kopkostnaderOren: null,
-      arBostadsratt: false,
-      agarandelProcent: 50,
-      bostadsfragor: { upplatelseform: "fastighet", forstaAgare: null, ombildning: null },
-    } as unknown as ForvarvetData;
-    const t = text(
-      renderToStaticMarkup(
-        createElement(ForvarvetKort, {
-          data,
-          oppen: false,
-          formRef: { current: null },
-          onAndra: () => {},
-          onAvbryt: () => {},
-          onDirty: () => {},
-          onKlar: () => {},
-        }),
-      ),
-    );
-    expect(t).toContain(`|Första ägaren|${inteAngiven}|`);
-    expect(t).toContain(`|Köpkostnader|${inteIfyllt}|`);
+  it("Ägarandel obesvarad", () => {
+    const t = forvarvet({
+      agarandelProcent: null,
+      bostadsfragor: { upplatelseform: "fastighet", forstaAgare: false, ombildning: null },
+    });
+    expect(t).toContain(`|Ägarandel|${tomtOrd("Ägarandel")}|`);
+  });
+
+  it("Första ägaren obesvarad", () => {
+    const t = forvarvet({
+      bostadsfragor: { upplatelseform: "bostadsratt", forstaAgare: null, ombildning: null },
+    });
+    expect(t).toContain(`|Första ägaren|${tomtOrd("Första ägaren")}|`);
+  });
+
+  it("Ombildning från hyresrätt obesvarad, i en bostadsrätt där första ägaren är ja", () => {
+    const t = forvarvet({
+      bostadsfragor: { upplatelseform: "bostadsratt", forstaAgare: true, ombildning: null },
+    });
+    expect(t).toContain(`|Ombildning från hyresrätt|${tomtOrd("Ombildning från hyresrätt")}|`);
+  });
+
+  it("där ombildningen inte är aktuell står raden inte alls – och ordet ingenstans", () => {
+    const inteAngiven = tomtOrd("Ombildning från hyresrätt");
+    for (const bostadsfragor of [
+      { upplatelseform: "fastighet", forstaAgare: true, ombildning: null },
+      { upplatelseform: "bostadsratt", forstaAgare: false, ombildning: null },
+    ] as const) {
+      const t = forvarvet({ bostadsfragor });
+      expect(t).not.toContain("|Ombildning från hyresrätt|");
+      expect(t).not.toContain(inteAngiven);
+    }
+  });
+
+  it("allt annat behåller Inte ifyllt: köpkostnader, storlek, kapitaltillskott, identifiering", () => {
+    const ord = tomtOrd("Allt annat");
+    const etiketter: Record<string, string[]> = {
+      Köpkostnader: ["Köpkostnader"],
+      Storlek: ["Storlek"],
+      Kapitaltillskott: ["Kapitaltillskott"],
+      Identifiering: ["Föreningens namn", "Fastighetsbeteckning"],
+    };
+    expect(ALLT_ANNAT.sort()).toEqual(Object.keys(etiketter).sort());
+    const forv = forvarvet({
+      bostadsfragor: { upplatelseform: "bostadsratt", forstaAgare: true, ombildning: false },
+    });
+    const allt = forv + bostaden("bostadsratt") + bostaden("fastighet");
+    for (const etikett of ALLT_ANNAT.flatMap((f) => etiketter[f])) {
+      expect(allt).toContain(`|${etikett}|${ord}|`);
+    }
   });
 });

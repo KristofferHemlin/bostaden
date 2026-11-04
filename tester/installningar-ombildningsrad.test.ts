@@ -5,8 +5,8 @@ import { bytestext, ForvarvetKort } from "@/app/installningar/kort";
 import type { Bostadsfragesvar } from "@/doman/bostadsfragor";
 
 // Kortet Forvarvet i laslage. Ombildningsraden finns nar fragan stalls – en
-// bostadsratt dar forsta agaren ar ja – och sager "Inte ifyllt" nar den ar
-// obesvarad, som varje annan tom uppgift. En obesvarad bostadsfraga
+// bostadsratt dar forsta agaren ar ja – och sager "Inte angiven" nar den ar
+// obesvarad, som andelen och forsta agaren. En obesvarad bostadsfraga
 // blockerar hela underlaget; ett kort som ser komplett ut skulle dolja vad
 // som fattas.
 
@@ -43,9 +43,9 @@ function vardeFor(html: string, etikett: string): string | null {
 const OMBILDNING = "Ombildning från hyresrätt";
 
 describe("ombildningsraden i Forvarvet", () => {
-  it("bostadsratt, ja, ombildningen obesvarad: raden visas med Inte ifyllt", () => {
+  it("bostadsratt, ja, ombildningen obesvarad: raden visas med Inte angiven", () => {
     const html = laslage({ upplatelseform: "bostadsratt", forstaAgare: true, ombildning: null });
-    expect(vardeFor(html, OMBILDNING)).toBe("Inte ifyllt");
+    expect(vardeFor(html, OMBILDNING)).toBe("Inte angiven");
   });
 
   it("bostadsratt, ja, ombildningen besvarad: raden visar svaret", () => {

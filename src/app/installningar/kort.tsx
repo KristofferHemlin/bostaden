@@ -6,9 +6,9 @@
 // uppgiften handlar om, inte vad den beskriver. Sidan
 // visar VARDEN, inte falt: etikett till vanster, varde till hoger, samma form
 // som kvittots detaljvy (src/app/kostnad/[id]/page.tsx). Ett tomt varde star
-// som ett dampat "Inte ifyllt". En dampad "Ändra" i kortets horn oppnar just
-// det kortet som formular med falt, hjalptexter och Spara/Avbryt – hjalp-
-// texterna syns bara dar. Ovriga kort ligger kvar i lasläge.
+// som ett dampat "Inte ifyllt" – utom dar tomheten har en foljd, se Rad. En
+// dampad "Ändra" i kortets horn oppnar just det kortet som formular med falt,
+// hjalptexter och Spara/Avbryt – hjalptexterna syns bara dar. Ovriga kort ligger kvar i lasläge.
 //
 // VARJE KORT SPARAR BARA SINA EGNA FALT (den viktigaste punkten – se
 // installningar/actions.ts): tva helt fristaende server actions, en per
@@ -96,7 +96,7 @@ export interface ForvarvetData {
   /** null = inte angiven (CLAUDE.md, "Andelen ar null tills den besvarats"). */
   agarandelProcent: number | null;
   /** Las via src/doman/bostadsfragor.ts – null ar obesvarat och visas som
-   *  "Inte ifyllt", aldrig som ett "Nej" (docs/design.md: ett forval ar ett
+   *  "Inte angiven", aldrig som ett "Nej" (docs/design.md: ett forval ar ett
    *  svar anvandaren inte gav). */
   bostadsfragor: Bostadsfragesvar;
 }
@@ -223,7 +223,7 @@ function Rad({
 }: {
   etikett: string;
   varde: string | null;
-  /** Agarandelen och forsta agaren sager "Inte angiven", som i exportvyn: de
+  /** Agarandelen, forsta agaren och ombildningen sager "Inte angiven", som i exportvyn: de
    *  ar inte frivilliga pa samma satt som storlek och kopkostnader – de andrar
    *  vad deklarationen sager – och samma dampade ord placerar dem i fel klass. */
   tomtText?: string;
@@ -298,7 +298,7 @@ export function bytestext(mal: "bostadsratt" | "fastighet"): string {
 // kortet oppnades. Genom att lat- OCH redigeringslaget vara TVA SKILDA
 // komponenter monterar React av redigeringsformularets tillstand helt nar
 // `oppen` blir false, precis som ett riktigt "kasta" ska gora.
-function BostadenKort({
+export function BostadenKort({
   data,
   oppen,
   formRef,
@@ -624,20 +624,24 @@ export function ForvarvetKort({ data, oppen, formRef, onAndra, onAvbryt, onDirty
           />
           {/* Samma ord som agarandelen, av samma skal: obesvarad blockerar den
               genomgangen och styr hela reparationsgrenen, och "Inte ifyllt"
-              placerar den bland de frivilliga falten. */}
+              placerar den bland de frivilliga falten (docs/design.md,
+              "Inställningssidan"). */}
           <Rad
             etikett="Första ägaren"
             varde={jaNejText(data.bostadsfragor.forstaAgare)}
             tomtText={ANDEL_INTE_ANGIVEN}
           />
           {/* Raden finns nar fragan stalls – en bostadsratt dar forsta
-              agaren ar ja – och sager "Inte ifyllt" nar den ar obesvarad,
-              som varje annan tom uppgift. Annars syns kortet komplett medan
-              underlaget vantar pa just den har fragan. */}
+              agaren ar ja – och sager "Inte angiven" nar den ar obesvarad,
+              eftersom den da blockerar genomgangen. Annars syns kortet
+              komplett medan underlaget vantar pa just den har fragan. Visas
+              raden inte alls ar fragan inte aktuell, och da far ordet aldrig
+              sta dar (docs/design.md, "Inställningssidan"). */}
           {ombildningStalls(data.bostadsfragor.upplatelseform, data.bostadsfragor.forstaAgare) ? (
             <Rad
               etikett="Ombildning från hyresrätt"
               varde={jaNejText(data.bostadsfragor.ombildning)}
+              tomtText={ANDEL_INTE_ANGIVEN}
             />
           ) : null}
         </div>
