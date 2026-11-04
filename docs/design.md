@@ -1472,6 +1472,12 @@ Gränsen går inte vid hur viktig uppgiften är utan vid om den kräver eftertan
 
 **Kortet säger vad som är nästa, inte *Fortsätt*.** *Lägg till köpeskillingen*, *Hur stor del av bostaden äger du?*. Ett generiskt *Fortsätt* tvingar användaren att klicka för att få veta vad appen vill, och det är en klickning för att läsa en fråga.
 
+**Kortets underrubrik för köpeskillingen är:** *"Du för in den på K5 eller K6 den dag du säljer."*
+
+**Verbet bär hela meningen.** *Du för in den* säger att talet ska till blanketten. Underrubriken sa till 2026-11-03 att köpeskillingen *står på* K5 och K6, vilket är motsatt håll — blanketten är tom tills hon fyller i den, och den som läser bokstavligt tror att talet går att slå upp där. Ett fel som är lätt att göra och svårt att se, eftersom meningen låter riktig.
+
+**Underrubriken upprepar inte frågesidans hjälptext.** Kortet är en hänvisning, inte ett fält: det säger varför frågan är värd ett klick, och sidan bakom säger var talet finns. Samma innebörd, inte samma ord — och *du* gör i kortet det jobb *själv* gör i hjälptexten.
+
 **Varje svar sparas när det ges.** Den som svarar på köpeskillingen och kliver ur har lagt till en köpeskilling – inte avbrutit något. Sparas allt först när flödet är klart är det inte att kliva ur utan att förlora sitt arbete, och det är den detaljen som är lättast att bygga fel.
 
 **Att kliva ur är ett normalt sätt att använda flödet**, inte ett avbrott som ska varnas för. Nästa gång pekar kortet på samma ställe.
@@ -1695,6 +1701,26 @@ Det är ett undantag från regeln att tomma tillstånd har en primärknapp. Rege
 Här ligger allt som beskriver bostaden. Sidan ska aldrig kännas som ett formulär man måste fylla i, men tre uppgifter är obligatoriska och valideras: adressen, tillträdesdatumet och ägarandelen. De två första är grunden för alla tidsberäkningar, den tredje multiplicerar hela underlaget. Resten är valfritt.
 
 **Sidan visar värden, inte fält.** Den besöks oftast för att kontrollera en enda uppgift, och en lång rad öppna inmatningsfält med hjälptext under vart och ett gör den övermäktig. Uppgifterna visas därför i läsläge – etikett till vänster, värde till höger, samma form som kvittots detaljvy. Ett tomt värde står som ett dämpat *Inte ifyllt*.
+
+**Utom där appen väntar på ett svar. Då står det *Inte angiven*.**
+
+| Rad | Tomt värde säger | Varför |
+|---|---|---|
+| Ägarandel | *Inte angiven* | Kortet frågar efter den, och obesvarad gör att underlaget visar hela bostadens tal |
+| Köpeskilling | *Inte angiven* | Kortet frågar efter den |
+| Första ägaren | *Inte angiven* | Genomgången frågar efter den, och obesvarad blockerar hela reparationsgrenen |
+| Ombildning från hyresrätt | *Inte angiven* | Genomgången frågar efter den – men bara när raden alls visas, alltså för en bostadsrätt där första ägaren är ja |
+| Allt annat | *Inte ifyllt* | Köpkostnader, storlek, kapitaltillskott och identifiering efterfrågas ingenstans |
+
+**Kriteriet är om någon väntar, inte om ett tal ändras.** Det stod *om tomheten gör något* till 2026-11-04, vilket lästes som *om en beräkning läser fältet* — rimligt, och det placerade köpeskillingen bland de frivilliga. Men startsidan frågar aktivt efter den medan inställningarna sa *Inte ifyllt*: två motsatta besked om samma fält på samma konto.
+
+**Och kriteriet är därmed härlett, inte en lista att hålla i synk.** Raderna med *Inte angiven* är precis de som kortet eller genomgången frågar efter. Byggs en ny fråga in i något av dem hör dess rad automatiskt dit — och den dag köpeskillingen börjar räknas med ändras ingenting, eftersom den redan är med på rätt grund.
+
+*Storlek: Inte ifyllt* betyder att en valfri uppgift saknas och att ingen efterfrågar den. Två ord som ser likadana ut i småtext får inte stå för två så olika tillstånd.
+
+**Och *Inte angiven* får aldrig stå där svaret inte spelar roll.** Ombildningsraden visas bara när frågan är aktuell; dyker den upp för någon som aldrig kommer att få frågan är ordet en flagga för ett problem som inte finns.
+
+Regeln skrevs 2026-11-03, efter att den byggts från en prompt och alltså en tid levt i koden utan att stå i någon fil. **Agenten sa till om det**, vilket är rätt ordning: en regel som bara finns i en prompt finns inte.
 
 **Fyra kort med rubrik:**
 

@@ -365,6 +365,10 @@ Testa domänreglerna och de nödvändiga flödena. Skriv testet före implementa
 
 Det är tredje gången samma mönster dyker upp: tomma strängar som passerade, `document.fonts.check()` som svarar sant för ett typsnitt som inte finns, och nu en riktning i stället för ett tal. De är alla samma fel — ett test som inte kan falla — och de upptäcks bara av brytningen med flit.
 
+**Ett test som vaktar en lydelse läser den väntade texten ur `docs/design.md`, aldrig ur koden.** Läses den ur koden prövar testet att koden är lika med sig själv.
+
+**Och läsningen av filen sker inne i testet, aldrig på modulnivå.** Skriven 2026-11-04. Ett testfilsomfattande uppslag kastade när en förklaring i tabellen skrevs om, och då laddades hela filen inte alls: **tjugonio tester försvann på en gång** i stället för det enda som skulle falla. En fil som inte laddas ser i utfallet ut som en fil som inte finns — det är den tystaste formen av tappad täckning vi har haft. En omskriven mening ska fälla ett test, inte en svit.
+
 **Och det väntade talet räknas fram ur samma källa som koden använder**, inte skrivet som en konstant bredvid. En rad som visar rätt tal av en slump är ingen spärr, och en konstant följer inte med när regeln ändras. Undantaget är de avlästa talen längst ned i det här avsnittet: de **ska** stå som konstanter, eftersom de är mätningar mot Skatteverkets verktyg och inte resultat av vår egen kod.
 
 Dessa fall måste finnas och passera. De sex första är verifierade mot Skatteverkets e-tjänst 2026-09-15 och får inte ändras utan att verktyget körs om.
