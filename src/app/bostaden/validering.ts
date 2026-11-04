@@ -8,9 +8,10 @@ export const KOPESKILLING_SAKNAS = "Fyll i köpeskillingen.";
 export const KOPESKILLING_SOM_BELOPP = "Köpeskilling anges som ett belopp, t.ex. 3 250 000.";
 
 /**
- * Kopeskillingen ar obligatorisk i kortets fraga men valfri i registreringen
- * (docs/design.md, "Ägarandelen frågas från startsidan"): kravet galler
- * uppgiften, inte ogonblicket. Faltet sager varfor.
+ * Kopeskillingen ar obligatorisk i kortets fraga och, sedan 2026-11-04, i
+ * registreringen (docs/design.md, "Ägarandelen frågas från startsidan") –
+ * samma regel pa bada stallena, darfor en funktion. Kortet fragar for konton
+ * som skapades fore kravet.
  * Kortet sjalvt ar daremot inte obligatoriskt – ingenting har hindrar nagon
  * fran att lagga in ett kvitto.
  */

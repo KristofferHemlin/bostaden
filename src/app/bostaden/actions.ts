@@ -1,7 +1,7 @@
 "use server";
 
 // Fragorna fran kortet pa startsidan (docs/design.md, "Ägarandelen frågas
-// från startsidan"): kopeskilling, om den hoppades over i registreringen, och
+// från startsidan"): kopeskilling, om den saknas (konton fran fore kravet), och
 // agarandel – i den ordningen.
 //
 // Frågorna hanger ihop som ett flode, men VARJE SVAR SPARAS NAR DET GES. En
@@ -60,16 +60,26 @@ function franExport(formData: FormData): boolean {
   return formData.get("fran") === "export";
 }
 
+/** Hon valde erbjudandet under ekot (docs/design.md, "Andelsskärmen svarar
+ *  medan hon skriver") – svaret sparas lika, och vagen gar till inbjudan. */
+function villBjudaIn(formData: FormData): boolean {
+  return formData.get("bjud_in") === "1";
+}
+
 async function vidare(
   bostadId: string,
   anvandareId: string,
   nyssBesvarad: Bostadsuppgift,
-  fran: { export: boolean },
+  fran: { export: boolean; bjudIn: boolean },
 ): Promise<never> {
   revalidatePath("/");
   revalidatePath("/installningar");
   revalidatePath("/export");
-  const dit = efterSvaret({ ...(await lasLaget(bostadId, anvandareId)), nyssBesvarad });
+  const dit = efterSvaret({
+    ...(await lasLaget(bostadId, anvandareId)),
+    nyssBesvarad,
+    bjudIn: fran.bjudIn,
+  });
   if (fran.export) {
     redirect(dit === INBJUDNINGSERBJUDANDETS_SOKVAG ? `${dit}?fran=export` : "/export");
   }
@@ -93,7 +103,7 @@ export async function sparaKopeskillingen(
     where: { id: bostadId },
     data: { kopeskilling: BigInt(oren) },
   });
-  return vidare(bostadId, anvandareId, "kopeskilling", { export: false });
+  return vidare(bostadId, anvandareId, "kopeskilling", { export: false, bjudIn: false });
 }
 
 /**
@@ -119,5 +129,8 @@ export async function sparaAndelen(
   );
   if (fel) return { fel, falt: "agarandel" };
 
-  return vidare(bostadId, anvandareId, "agarandel", { export: franExport(formData) });
+  return vidare(bostadId, anvandareId, "agarandel", {
+    export: franExport(formData),
+    bjudIn: villBjudaIn(formData),
+  });
 }

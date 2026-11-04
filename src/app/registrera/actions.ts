@@ -18,9 +18,10 @@
 // authId ur i fas 2, sa den maste folja med formularet.
 //
 // Bostadssteget har fem falt: upplatelseform, tilltradesdatum, adress, ort och
-// kopeskilling. De tre forsta ar obligatoriska – adressen for att toppraden
-// aldrig ska sta tom. Kopeskillingen gar bra att fylla i senare; hoppas den
-// over fragar kortet pa startsidan efter den (src/lib/bostadsuppgifter.ts).
+// kopeskilling. Alla utom orten ar obligatoriska – adressen for att toppraden
+// aldrig ska sta tom, kopeskillingen sedan 2026-11-04. Kortet pa startsidan
+// fragar efter kopeskillingen bara for konton fran fore kravet
+// (src/lib/bostadsuppgifter.ts).
 // Agarandelen fragas inte har utan fran kortet. Storlek hor hemma pa installningssidan (docs/design.md,
 // Registreringsflodet), inte har.
 //
@@ -32,6 +33,7 @@
 // senare vore fel avvagning. Fältet finns kvar, oforandrat, i installningarna.
 
 import { redirect } from "next/navigation";
+import { KOPESKILLING_SOM_BELOPP } from "@/app/bostaden/validering";
 import { isoDatum, oreFranKronor } from "@/lib/format";
 import { INGEN_KONTAKT_MED_INLOGGNINGEN } from "@/lib/inloggning";
 import { prisma } from "@/lib/prisma";
@@ -96,22 +98,17 @@ export async function slutforRegistrering(
   const faltfel = bostadsstegetsFel(formData, isoDatum(new Date()));
   if (faltfel) return faltfel;
 
-  // Kopeskilling ar valfri (docs/design.md, Registreringsflodet). Anges i kronor
-  // i faltet, tolkas som heltal oren och lagras som BigInt – Int (Postgres int4)
-  // tar slut vid ~21,5 miljoner kr, vilket en villaforsaljning kan overstiga.
-  let kopeskillingOren: number | null = null;
-  if (kopeskillingText !== "") {
-    kopeskillingOren = oreFranKronor(kopeskillingText);
-    // Redan provat i bostadsstegetsFel – kvar for typernas skull.
-    if (kopeskillingOren === null || kopeskillingOren <= 0) {
-      return {
-        fel: "Köpeskilling anges som ett belopp, t.ex. 3 250 000.",
-        falt: "kopeskilling",
-      };
-    }
+  // Kopeskillingen ar obligatorisk sedan 2026-11-04 (docs/design.md,
+  // "Ägarandelen frågas från startsidan"), redan provad i bostadsstegetsFel.
+  // Anges i kronor i faltet, tolkas som heltal oren och lagras som BigInt –
+  // Int (Postgres int4) tar slut vid ~21,5 miljoner kr, vilket en
+  // villaforsaljning kan overstiga. Kolumnen ar nullbar for konton fran fore
+  // kravet; den kontrollen ar kvar for typernas skull.
+  const kopeskillingOren = oreFranKronor(kopeskillingText);
+  if (kopeskillingOren === null) {
+    return { fel: KOPESKILLING_SOM_BELOPP, falt: "kopeskilling" };
   }
-  const kopeskilling =
-    kopeskillingOren === null ? null : BigInt(kopeskillingOren);
+  const kopeskilling = BigInt(kopeskillingOren);
 
   let authId: string;
   let harSession: boolean;

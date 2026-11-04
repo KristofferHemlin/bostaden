@@ -35,6 +35,7 @@ export function AgarandelFalt({
   name,
   defaultValue = "",
   onVarde,
+  onBlur,
   tomtTillatet = false,
   fel: formularetsFel,
 }: {
@@ -50,6 +51,9 @@ export function AgarandelFalt({
   tomtTillatet?: boolean;
   /** Faltets text efter varje andring – for en summa som visas medan man skriver. */
   onVarde?: (text: string) => void;
+  /** Nar faltet tappar fokus – andelsskarmens eko visas da (docs/design.md,
+   *  "Andelsskärmen svarar medan hon skriver"). */
+  onBlur?: () => void;
 }) {
   const [varde, setVarde] = useState(defaultValue);
   // Ett tomt startvarde ar inte nagot anvandaren skrivit, och visar darfor
@@ -72,18 +76,32 @@ export function AgarandelFalt({
   const meddelandeId = useId();
   return (
     <div>
-      <input
-        type="text"
-        inputMode="decimal"
-        name={name}
-        aria-invalid={meddelande ? true : undefined}
-        aria-describedby={meddelande ? meddelandeId : undefined}
-        {...(meddelande ? { [FALTFEL_ATTRIBUT]: "" } : {})}
-        value={varde}
-        onChange={hanteraAndring}
-        className={INPUT_KLASS}
-        placeholder="t.ex. 50"
-      />
+      {/* Faltet bar sin enhet: "t.ex. 50" sager inte femtio vad (docs/design.md,
+          "Andelsskärmen svarar medan hon skriver"). Tecknet ar inte en del av
+          vardet – rensa() stryker ett inskrivet % – och lases inte upp, eftersom
+          etiketten och ekot redan sager procent. */}
+      <div className="relative">
+        <input
+          type="text"
+          inputMode="decimal"
+          name={name}
+          aria-invalid={meddelande ? true : undefined}
+          aria-describedby={meddelande ? meddelandeId : undefined}
+          {...(meddelande ? { [FALTFEL_ATTRIBUT]: "" } : {})}
+          value={varde}
+          onChange={hanteraAndring}
+          onBlur={onBlur}
+          className={`${INPUT_KLASS} pr-9`}
+          placeholder="t.ex. 50"
+        />
+        <span
+          aria-hidden
+          data-enhet=""
+          className="pointer-events-none absolute inset-y-0 right-3 flex items-center font-granssnitt text-base text-text-sekundar"
+        >
+          %
+        </span>
+      </div>
       {meddelande ? (
         <p id={meddelandeId} role="alert" className={`mt-1.5 ${FALTFEL_KLASS}`}>
           {meddelande}

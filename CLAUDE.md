@@ -359,6 +359,12 @@ Testa domänreglerna och de nödvändiga flödena. Skriv testet före implementa
 
 **Pröva det som renderas, inte det som räknar**, när påståendet handlar om vad användaren ser. En funktion kan ge rätt svar medan komponenten visar något annat, och det är komponenten användaren läser.
 
+**En klass är inte en layout.** Skriven 2026-11-04. Ett påstående om hur något ser ut – rader, bredd, höjd, att något ryms – prövas genom att mäta i en riktig webbläsare, aldrig genom att läsa klassnamn. jsdom räknar ingen layout, så ett test som letar efter `line-clamp-2` prövar bara att koden är lika med sig själv. Det är inte teoretiskt: när anteckningen fick två rader skrev klassen `block` över den `display` som klippningen behöver, och fas 2 visade tre rader av tre. Ett klassnamnstest hade passerat. Mätningen fällde det.
+
+**Och mätningen prövar sina egna förutsättningar.** Att texten ryms på två rader betyder ingenting om den hade rymts på en. Testet ska visa både att den korta inte ryms på en rad och att den långa inte ryms på två, annars passerar det för att texten råkade vara kort.
+
+**Ett test hittar sitt element på texten användaren läser, inte på en klass eller en omgivning.** Samma dag slutade ett test fungera därför att det letade efter `span.block`, och två andra föll därför att prosan runt ett oförändrat citat i `docs/design.md` hade skrivits om. Det är samma fel i två medier: testet var fäst vid något som inte var det det prövade. Ett test som faller av fel skäl lär oss att laga testet i stället för att läsa det.
+
 **Ett påstående om ett tal prövar elementets hela text, aldrig en delsträng.** Skriven 2026-10-20, efter att ett test som letade efter *"1 kr räknas med"* passerade medan sidan visade *"6 001 kr räknas med"*. Tal är särskilt lömska här: varje belopp som slutar på rätt siffror innehåller det rätta svaret som delsträng, så ett sådant test går igenom för nästan varje fel det skulle fånga. Agenten hittade det genom brytningen med flit — **ett test kan vara falskt utan att vara tomt, och bara brytningen skiljer dem åt.**
 
 **Ett test som prövar en riktning är ingen spärr.** Skriven 2026-10-26. `dela-kostnad.test.ts` hade ett fall som hette *"ROT drar ner bidraget även när kvittot är uppdelat"* och som bara krävde att bidraget blev mindre än beloppet och större än noll. Det gick igenom med buggen från den 2 oktober, alltså med 6 300 kr i stället för 6 000 — felet är ju också mindre än beloppet. Ett påstående om att ett tal är *lägre*, *högre*, *mindre* eller *inte noll* passerar för nästan varje fel i samma riktning. **Varje testfall i listan nedan står med sitt tal, och ett test som vaktar det ska kräva just det talet.**
@@ -368,6 +374,10 @@ Det är tredje gången samma mönster dyker upp: tomma strängar som passerade, 
 **Ett test som vaktar en lydelse läser den väntade texten ur `docs/design.md`, aldrig ur koden.** Läses den ur koden prövar testet att koden är lika med sig själv.
 
 **Och läsningen av filen sker inne i testet, aldrig på modulnivå.** Skriven 2026-11-04. Ett testfilsomfattande uppslag kastade när en förklaring i tabellen skrevs om, och då laddades hela filen inte alls: **tjugonio tester försvann på en gång** i stället för det enda som skulle falla. En fil som inte laddas ser i utfallet ut som en fil som inte finns — det är den tystaste formen av tappad täckning vi har haft. En omskriven mening ska fälla ett test, inte en svit.
+
+Samma dag, i nästa omgång, fällde en annan omskriven sats **trettio tester i en annan fil** på exakt samma sätt. Två gånger på en dag, innan regeln hunnit tillämpas överallt. Finns ett uppslag på modulnivå kvar någonstans är det inte en skönhetsfråga: det är en svit som kan försvinna tyst.
+
+**Ett test som läser `docs/` får brytas genom att filen ändras tillfälligt.** Det är undantaget från regeln att agenten aldrig rör `docs/`. Utan det går en hel klass av tester aldrig att bryta med flit, eftersom spärren de vaktar ligger i filen och inte i koden — och ett test som aldrig prövats är ett test vi inte vet något om. Villkoren är tre: ändringen är gjord bara för brytningen, filen är återställd efteråt, och rapporten säger både att det gjordes och att `git status` är ren. Allt annat i `docs/` och `CLAUDE.md` är fortsatt orört.
 
 **Och det väntade talet räknas fram ur samma källa som koden använder**, inte skrivet som en konstant bredvid. En rad som visar rätt tal av en slump är ingen spärr, och en konstant följer inte med när regeln ändras. Undantaget är de avlästa talen längst ned i det här avsnittet: de **ska** stå som konstanter, eftersom de är mätningar mot Skatteverkets verktyg och inte resultat av vår egen kod.
 

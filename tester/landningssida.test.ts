@@ -38,13 +38,16 @@ describe("oskyddade sokvagar", () => {
 //
 // Allt provas i den renderade sidan, med elementens hela text.
 
-const DESIGN = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8").split("\n");
+// Lases inne i testet, aldrig nar filen laddas: ett uppslag som kastar pa
+// modulniva tar hela filen med sig (CLAUDE.md, Tester).
+const designRader = () => readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8").split("\n");
 
 const normalisera = (t: string) => t.replace(/\s+/g, " ").trim();
 const utanFet = (t: string) => t.replace(/\*\*/g, "");
 
 /** Raderna i det citatblock som borjar forst efter raden `efter`. */
 function citat(efter: string): string[] {
+  const DESIGN = designRader();
   let i = DESIGN.findIndex((r) => r.startsWith(efter));
   expect(i, `hittar inte "${efter}" i design.md`).toBeGreaterThanOrEqual(0);
   while (!DESIGN[i].startsWith(">")) i++;
@@ -56,17 +59,18 @@ function citat(efter: string): string[] {
 const stycken = (rader: string[]) =>
   rader.join("\n").split(/\n\s*\n/).map((s) => normalisera(utanFet(s))).filter(Boolean);
 
-const HJALTEN = stycken(citat("Texten ovanför vikningen är:"));
-const SVAREN = citat("### De sju svaren")
+const hjalten = () => stycken(citat("Texten ovanför vikningen är:"));
+const svaren = () => citat("### De sju svaren")
   .join("\n")
   .split(/\n\s*\n/)
   .map((block) => {
     const [fraga, ...svar] = block.split("\n");
     return { fraga: normalisera(utanFet(fraga)), svar: normalisera(svar.join(" ")) };
   });
-const AVSNITTEN = DESIGN.filter((r) => /^\*\*[1-6]\. /.test(r)).map((r) =>
-  r.match(/^\*\*\d\. (.+?)\.?\*\*/)![1],
-);
+const avsnitten = () =>
+  designRader()
+    .filter((r) => /^\*\*[1-6]\. /.test(r))
+    .map((r) => r.match(/^\*\*\d\. (.+?)\.?\*\*/)![1]);
 
 function sida() {
   const html = renderToStaticMarkup(Landningssida());
@@ -95,14 +99,14 @@ function fore(dok: Document, mal: Element): { text: string; taggar: string[] } {
 
 describe("landningssidan – det som ligger ovanför knappen", () => {
   it("design.md gick att läsa: rubriken och fyra stycken", () => {
-    expect(HJALTEN).toHaveLength(5);
-    expect(HJALTEN[0]).toBe("Det du gjort med bostaden sänker skatten när du säljer. Om kvittot finns kvar.");
+    expect(hjalten()).toHaveLength(5);
+    expect(hjalten()[0]).toBe("Det du gjort med bostaden sänker skatten när du säljer. Om kvittot finns kvar.");
   });
 
   it("mellan toppen och Skapa konto står toppraden och hjälten, ordagrant – och ingenting annat", () => {
     const { dok } = sida();
     const knapp = forsta(dok, "a", "Skapa konto");
-    expect(fore(dok, knapp).text).toBe(normalisera(["Kvittobo", "Logga in", ...HJALTEN].join(" ")));
+    expect(fore(dok, knapp).text).toBe(normalisera(["Kvittobo", "Logga in", ...hjalten()].join(" ")));
   });
 
   it("ingen bild, ingen rubrik utöver h1 och inget blankettnamn före knappen", () => {
@@ -136,8 +140,8 @@ describe("landningssidan – under vikningen", () => {
   it("de sex avsnitten i design.md:s ordning, ett h2 vardera", () => {
     const { dok } = sida();
     const h2 = [...dok.querySelectorAll("h2")].map(text);
-    expect(AVSNITTEN).toHaveLength(6);
-    expect(h2).toEqual(AVSNITTEN);
+    expect(avsnitten()).toHaveLength(6);
+    expect(h2).toEqual(avsnitten());
   });
 
   it("de sju frågorna och svaren står på sidan ordagrant som i design.md", () => {
@@ -146,20 +150,20 @@ describe("landningssidan – under vikningen", () => {
       fraga: text(f.querySelector("h3")),
       svar: text(f.querySelector("[data-svar]")),
     }));
-    expect(SVAREN).toHaveLength(7);
-    expect(pasidan).toEqual(SVAREN);
+    expect(svaren()).toHaveLength(7);
+    expect(pasidan).toEqual(svaren());
   });
 
   it("de fyra blocken om förbättringsutgifter ordagrant", () => {
     const { dok } = sida();
-    const avsnitt = forsta(dok, "h2", AVSNITTEN[0]).parentElement!;
+    const avsnitt = forsta(dok, "h2", avsnitten()[0]).parentElement!;
     const block = [...avsnitt.querySelectorAll("p")].map(text);
     expect(block).toEqual(stycken(citat("**1. Vad räknas som förbättringsutgift?**")));
   });
 
   it("vem som står bakom, ordagrant", () => {
     const { dok } = sida();
-    const avsnitt = forsta(dok, "h2", AVSNITTEN[4]).parentElement!;
+    const avsnitt = forsta(dok, "h2", avsnitten()[4]).parentElement!;
     expect([...avsnitt.querySelectorAll("p")].map(text)).toEqual(stycken(citat("### Vem står bakom")));
   });
 
@@ -241,7 +245,7 @@ describe("avsnitten är avgränsade", () => {
     const kortKlasser = klasser(
       new DOMParser().parseFromString(renderToStaticMarkup(Kort({ children: "x" })), "text/html").body.firstElementChild!,
     );
-    const avsnitt = forsta(dok, "h2", AVSNITTEN[0]).parentElement!;
+    const avsnitt = forsta(dok, "h2", avsnitten()[0]).parentElement!;
     const block = [...avsnitt.querySelectorAll("p")].map((p) => p.parentElement!);
     expect(block).toHaveLength(4);
     for (const b of block) expect(klasser(b)).toEqual(expect.arrayContaining(kortKlasser));

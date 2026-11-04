@@ -61,7 +61,12 @@ describe("reglerna pekar ut sitt fält", () => {
 
   it("bostadssteget: upplåtelseform, tillträdesdatum, adress, köpeskilling", () => {
     const idag = "2026-10-19";
-    const bas = { upplatelseform: "fastighet", tilltradesdatum: "2016-06-01", adress: "Kvarnvägen 12" };
+    const bas = {
+      upplatelseform: "fastighet",
+      tilltradesdatum: "2016-06-01",
+      adress: "Kvarnvägen 12",
+      kopeskilling: "3 250 000",
+    };
     expect(bostadsstegetsFel(fd({ ...bas, upplatelseform: "" }), idag)?.falt).toBe("upplatelseform");
     expect(bostadsstegetsFel(fd({ ...bas, tilltradesdatum: "" }), idag)?.falt).toBe("tilltradesdatum");
     expect(bostadsstegetsFel(fd({ ...bas, tilltradesdatum: "2027-01-01" }), idag)?.falt).toBe(
@@ -70,6 +75,20 @@ describe("reglerna pekar ut sitt fält", () => {
     expect(bostadsstegetsFel(fd({ ...bas, adress: " " }), idag)?.falt).toBe("adress");
     expect(bostadsstegetsFel(fd({ ...bas, kopeskilling: "abc" }), idag)?.falt).toBe("kopeskilling");
     expect(bostadsstegetsFel(fd(bas), idag)).toBeNull();
+  });
+
+  it("köpeskillingen är obligatorisk sedan 2026-11-04: tomt fält är ett fel", () => {
+    const idag = "2026-11-04";
+    const bas = { upplatelseform: "fastighet", tilltradesdatum: "2016-06-01", adress: "Kvarnvägen 12" };
+    expect(bostadsstegetsFel(fd(bas), idag)).toEqual({
+      falt: "kopeskilling",
+      fel: "Fyll i köpeskillingen.",
+    });
+    expect(bostadsstegetsFel(fd({ ...bas, kopeskilling: "  " }), idag)).toEqual({
+      falt: "kopeskilling",
+      fel: "Fyll i köpeskillingen.",
+    });
+    expect(bostadsstegetsFel(fd({ ...bas, kopeskilling: "0" }), idag)?.falt).toBe("kopeskilling");
   });
 });
 

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   foreslaHogar,
-  fragetradetNamnForslag,
   hogVisningsnamn,
 } from "@/doman/genomgang";
 import type { GenomgangsKvitto } from "@/doman/genomgang";
@@ -100,28 +99,6 @@ describe("foreslaHogar – fas 1 i klassificeringsgenomgangen", () => {
     const forslag = foreslaHogar(kvitton);
     expect(forslag).toHaveLength(1);
     expect(forslag[0].kvitto_ider).toEqual(["a", "b"]);
-  });
-});
-
-// Hogen far inget namn i fas 1 (produktspec, "Klassificeringsgenomgangen") –
-// namnet ar svaret pa fragetradets forsta fraga, i fas 2.
-describe("fragetradetNamnForslag – forvalet for fragetradets forsta fraga", () => {
-  it("tar forsta (tidigaste) kvittots anteckning, kapad vid forsta skiljetecknet", () => {
-    expect(
-      fragetradetNamnForslag([
-        { anteckning: "Bytte köksblandaren som läckte, gammal otät" },
-        { anteckning: "Följdkvitto" },
-      ]),
-    ).toBe("Bytte köksblandaren som läckte");
-  });
-
-  it("lamnas TOMT nar anteckning saknas – faller aldrig tillbaka pa leverantoren", () => {
-    expect(fragetradetNamnForslag([{ anteckning: null }])).toBe("");
-    expect(fragetradetNamnForslag([{ anteckning: "  " }])).toBe("");
-  });
-
-  it("tom lista ger ett tomt forval", () => {
-    expect(fragetradetNamnForslag([])).toBe("");
   });
 });
 

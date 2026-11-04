@@ -47,6 +47,8 @@ function bostadssteg(falt: Record<string, string>): FormData {
     fas: "bostad",
     upplatelseform: "fastighet",
     tilltradesdatum: "2022-04-01",
+    // Obligatorisk sedan 2026-11-04.
+    kopeskilling: "3 250 000",
     ...falt,
   };
   for (const [k, v] of Object.entries(alla)) fd.set(k, v);

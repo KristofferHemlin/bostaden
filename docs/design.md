@@ -963,7 +963,7 @@ Tre exempel på texter som ska bort:
 - "Används som namn i toppen om inget annat anges." Det är vår interna logik. Ingen undrar det.
 - "Alla tidsberäkningar utgår härifrån." Sant men irrelevant för den som ska fylla i ett datum.
 
-Och en som ska vara kvar: köpeskillingens, som säger var uppgiften finns, varför den behövs och att den går att hoppa över – alla tre är verkliga frågor. Lydelsen står under *Ägarandelen frågas från startsidan*, tillsammans med regeln om vilken sats som bara gäller i registreringen.
+Och en som ska vara kvar: köpeskillingens, som säger var uppgiften finns och varför den behövs – båda är verkliga frågor. Lydelsen står under *Ägarandelen frågas från startsidan*, tillsammans med regeln om vilken del som står var.
 
 **Obligatoriskt markeras på fältet, inte i en mening under.** En liten markering vid etiketten räcker.
 
@@ -1439,7 +1439,7 @@ Förklaringsraden under rubriken är **valfri** och ritas inte som ett tomt styc
 
 **En platshållare som visar format förtjänar sin plats. En som upprepar etiketten gör det inte.** `ÅÅÅÅ / MM / DD` visar ordningen i tre rutor, *t.ex. Kvarnvägen 12 B* visar att fritext med nummer duger, och *t.ex. 3 250 000* visar storleksordning och tusentalsformat. *du@exempel.se* i ett fält som heter E-post gör ingetdera.
 
-**Bostadssteget har fem fält:** upplåtelseform, tillträdesdatum, adress, ort och köpeskilling. De tre första är obligatoriska, ort och köpeskilling valfria.
+**Bostadssteget har fem fält:** upplåtelseform, tillträdesdatum, adress, ort och köpeskilling. Alla utom orten är obligatoriska – köpeskillingen sedan 2026-11-04, av skäl som står under *Ägarandelen frågas från startsidan*.
 
 > **Adressen och köpeskillingen flyttade ut 2026-10-28 och tillbaka 2026-10-30.** Skälet att flytta ut dem var riktigt på papperet — varje fält i registreringen är ett fält mellan henne och det första kvittot — men prövat i produktionen blev det sämre, inte bättre. En registrering som säger *två steg*, tar slut, och sedan omedelbart ställer fler frågor känns längre än tre fält till i steg 2. Löftet infrias formellt och bryts i upplevelsen.
 >
@@ -1453,7 +1453,7 @@ Förklaringsraden under rubriken är **valfri** och ritas inte som ett tomt styc
 
 **Steget räknar inte upp vilka fält som är obligatoriska.** Markeringen vid varje fält säger det redan, och regeln finns sedan tidigare under *Undvik*: är obligatoriska fält markerade behövs ingen text om de andra. En rad som listade dem – *"Upplåtelseform, tillträdesdatum och adress behövs"* – prövades och togs bort 2026-10-05, eftersom den sa samma sak en andra gång.
 
-Att något går att hoppa över står där det betyder något: i hjälptexten under fältet, som köpeskillingens avslutande sats. En rad som räknar upp fält måste dessutom hållas i synk med vilka som är märkta, och det är nu andra gången en sådan rad blivit osann när ett fält ändrades.
+Att något går att hoppa över står där det betyder något: i hjälptexten under fältet, inte i en uppräkning. En rad som räknar upp fält måste dessutom hållas i synk med vilka som är märkta, och det är nu andra gången en sådan rad blivit osann när ett fält ändrades — senast när köpeskillingen blev obligatorisk.
 
 ### Ägarandelen frågas från startsidan
 
@@ -1465,10 +1465,16 @@ Gränsen går inte vid hur viktig uppgiften är utan vid om den kräver eftertan
 
 | Ordning | Vad appen frågar efter |
 |---|---|
-| 1 | Köpeskilling, om den hoppades över i registreringen |
+| 1 | Köpeskilling, för konton som skapades innan fältet blev obligatoriskt |
 | 2 | Ägarandel, och om den är under 100 % ett erbjudande om att bjuda in den andra delägaren |
 
-**Köpeskillingen står på båda ställena, och det är avsiktligt.** Fältet är valfritt i registreringen, eftersom dess svar ligger i ett papper hon kanske inte har framme — och ett obligatoriskt fält där hade blivit en vägg mitt i registreringen för den som inte minns talet. Hoppas det över tar kortet upp frågan i stället. Kravet gäller alltså uppgiften, inte ögonblicket.
+**Köpeskillingen är obligatorisk i registreringen sedan 2026-11-04.** Inget konto skapas utan ett tal.
+
+**Det river beslutet från 2026-10-05, och motskälet ska stå kvar.** Det beslutet sa att fältet skulle vara valfritt eftersom dess svar ligger i ett papper hon kanske inte har framme, och att ett krav där blir en vägg mitt i registreringen för den som inte minns talet. Det skälet är inte fel — det är vägt mot ett annat: ett fält som går att hoppa över hoppas över, och ett underlag utan köpeskilling kan aldrig visa vad bostaden är värd eller vad avdraget är värt. Talet är dessutom ett de flesta minns.
+
+**Vad som ska bevakas:** den som faktiskt inte vet talet kommer inte in alls. Syns det — registreringar som börjar och inte slutar i det steget — är vägen tillbaka inte att göra fältet valfritt igen, utan att lägga till ett uttryckligt *Jag vet inte* som lagrar null och låter kortet ta upp frågan. Skillnaden mot det gamla läget är att hon då aktivt väljer bort, i stället för att tyst passera.
+
+**Kortet behåller ändå sin fråga om köpeskillingen.** Den gäller konton som skapades före ändringen, och den gör att *Inte angiven*-kriteriet under *Inställningssidan* fortsatt stämmer: raden är en av dem appen väntar på svar om.
 
 **Kortet säger vad som är nästa, inte *Fortsätt*.** *Lägg till köpeskillingen*, *Hur stor del av bostaden äger du?*. Ett generiskt *Fortsätt* tvingar användaren att klicka för att få veta vad appen vill, och det är en klickning för att läsa en fråga.
 
@@ -1500,27 +1506,46 @@ Att adressen alltid finns gör också att erbjudandet om att bjuda in alltid gå
 
 **Ordet *själv* bär meningen.** Utan det låter raden som att vi vill ha talet; med det säger den att hon kommer att behöva det oavsett. Det är skillnaden mellan ett fält som kräver något och ett som påminner om något.
 
-**I registreringen följer en sats till: *", men det går att fylla i senare."*** Den satsen är sann bara där, eftersom fältet är valfritt i registreringen och obligatoriskt i kortet. Skrivs den in på båda ställena blir den en osanning på det ena; stryks den från båda försvinner skälet den tillkom för 2026-10-05 — köpeskillingen är det enda fältet i steget vars svar ligger i ett papper hon kanske inte har framme, och utan meningen stannar hon upp i stället för att hoppa över.
+**Satsen *", men det går att fylla i senare."* är struken 2026-11-04**, i samma beslut som gjorde fältet obligatoriskt. Den stod bara i registreringen och var sann bara där. Nu går det inte att fylla i senare, och en kvarlämnad sats hade varit en osanning på den enda plats där den fanns.
 
-**Och i inställningarna står bara den första meningen.** Hjälptexten byggs av tre delar, och varje plats använder dem som är sanna där:
+**Och i inställningarna står bara den första meningen.** Hjälptexten byggs av två delar, och varje plats använder dem som är sanna där:
 
 | Del | Var |
 |---|---|
 | *Står på köpekontraktet eller överlåtelseavtalet.* | Överallt – frågan *var hittar jag talet?* gäller alltid |
 | *Du behöver talet själv på blankett K5 eller K6 den dag du säljer.* | Där fältet möts första gången: registreringen och kortet |
-| *…, men det går att fylla i senare.* | Bara där fältet går att hoppa över: registreringen |
 
 Den som ändrar köpeskillingen i inställningarna har redan mött skälet två gånger och är där med avsikt. Att upprepa det en tredje gång är brus på den skärm vars hela poäng är att visa värden i lugn och ro.
 
-**Det är alltså inte tre lydelser utan en text i delar.** Den som senare vill harmonisera dem ska läsa tabellen först: skillnaderna är inte slarv, de är villkorade av var fältet står.
+**Det är alltså inte två lydelser utan en text i delar.** Den som senare vill harmonisera dem ska läsa tabellen först: skillnaden är inte slarv, den är villkorad av var fältet står.
 
 **Ett fält utan uttalat syfte ska inte efterfrågas alls.** Köpeskillingen frågades till 2026-10-28 utan att något läste den och utan att något sa varför, vilket är tveksamt mot dataminimering och den sortens fråga folk svarar fel på för att bli klara. Raden under fältet är det som gör frågan legitim, och den är sann även innan appen räknar något med talet.
 
 **Andelen är den fråga som har en följd.** Den multiplicerar hela underlaget, och det är följden som får henne att svara – inte en mätare. Lydelsen är densamma som bekräftelsen vid försäljningen använder: talen i ditt underlag gäller hela bostaden tills du säger vilken andel du äger.
 
-**Skriver hon mindre än 100 % kommer följdfrågan om att bjuda in.** Det ögonblicket är det enda i hela appen då *vem äger den andra halvan?* är en självklar fråga. I dag ligger delningen i inställningarna, där ingen letar.
+**Skriver hon mindre än 100 % kommer följdfrågan om att bjuda in.** Det ögonblicket är det enda i hela appen då *vem äger den andra halvan?* är en självklar fråga.
+
+**Inställningarna är vägen tillbaka, inte vägen in.** Kortet *Tillgång* har knappen *Bjud in någon till bostaden* och visas alltid. Meningen här sa till 2026-11-04 att delningen ligger *"i inställningarna, där ingen letar"* – sant när den skrevs, eftersom det då var enda stället. Nu finns ögonblicket, och inställningarna bär det som den som ändrat sig går och hämtar. **Erbjudandet ska ändå inte komma tillbaka av sig självt.** Att hoppa över är ett svar, och ett erbjudande som återkommer är ett krav i förklädnad.
 
 **Frågan är ett erbjudande och får aldrig bli ett krav.** Den andra halvan ägs ofta av någon som aldrig kommer att använda appen. Att hoppa över ska inte lämna något halvt, och **underlaget är riktigt ändå**: skriver hon 50 och stannar där visar underlaget hennes halva, vilket är precis rätt. Den andra delägaren är inte en användare, och hennes andel ska inte representeras. Utan den meningen läses den uteblivna inbjudan som en lucka.
+
+#### Andelsskärmen svarar medan hon skriver
+
+Skärmen bestod till 2026-11-04 av ett fält, en hjälptext och en knapp, med tom yta under. **Den gjorde ingenting när hon skrev.** Talet kvitterades först efter att hon sparat, i ett eget steg efteråt, och däremellan såg kortet likadant ut vad hon än skrev. Erbjudandet om att bjuda in flyttar därför in i samma kort.
+
+**Fältet bär sin enhet.** Platshållaren *t.ex. 50* säger inte femtio vad. Ett `%` i fältet gör det, och etiketten behöver då inte bära enheten.
+
+**Talet ekas tillbaka under fältet:** *"Du äger 50 %."* Det är det billigaste sättet att få kortet att svara, och det är kvittot hon annars fick vänta på till nästa skärm.
+
+**Är andelen under 100 % följer erbjudandet direkt under ekot**, i samma kort. *"Spara ägarandelen"* förblir primärknappen och inbjudan en sekundär – erbjudandet får inte ta över vägen framåt, eftersom det inte är en fråga appen behöver svar på.
+
+**Men inte vid varje tangenttryck.** Den som skriver 100 passerar 1 och 10 på vägen, och ett block som visas på tecken skulle blinka fram två gånger innan det försvinner. Ekot och erbjudandet visas när fältet tappar fokus eller när talet stått stilla en stund – aldrig mitt i en inmatning.
+
+**0 avvisas.** Regeln i `CLAUDE.md` säger att ett lagrat 0 ska avbryta beräkningen, eftersom ett nollvärde som nått fram betyder att en null lästs som tal. Fältet får därför aldrig släppa igenom ett 0.
+
+**Lydelsen är:** *"Ägarandelen måste vara mer än 0 %, t.ex. 50 eller 100."*
+
+Meddelandet säger vad som gäller och visar vad hon ska skriva i stället. Ett avvisande utan exempel lämnar henne med frågan vad appen då vill ha — och just här är den frågan rimlig, eftersom 0 inte är ett orimligt svar för den som lagts in för att hjälpa till. Att det ändå inte går är vårt skäl och inte hennes, så raden argumenterar inte, den visar vägen vidare.
 
 ### Ägarandelen har inget förval
 
@@ -1677,6 +1702,36 @@ Tomt läge här: en rad som säger att du berättat om allt du lagt in, en rad o
 **Skickfrågan vid förvärvet måste dyka upp när svaret på fråga 4 är att något byttes ut.** Den är villkorad, inte borttagen – utan den kan en reparations avdragsrätt inte avgöras, och det är hela skälet till att frågorna ställs.
 
 **ÅÄÖ i all text som användaren ser.** ASCII-translitterering gäller identifierare i koden, aldrig meddelanden. "battre skick vid forsaljningen ar inte bekraftat" ser ut som ett fel, för det är det.
+
+#### Namnfältet är tomt, och föreslår ingenting
+
+**Anteckningen och namnet svarar på olika frågor.** Anteckningen svarar på *"Vad gällde det?"* för ett kvitto och får vara en mening med detaljer och skäl. Namnet är en etikett för ett helt projekt, ofta flera kvitton, och hamnar i deklarationsunderlagets *Åtgärd*-kolumn. Det ena går inte att härleda ur det andra, och **fältet är därför tomt** med platshållaren som redan står där.
+
+Till 2026-11-04 var det förifyllt med anteckningen fram till första skiljetecknet. Tre skäl tog bort det:
+
+**Förslaget blir nästan aldrig ett namn.** Vi ber uttryckligen om *"en beskrivande mening, inte ett ord"*, så anteckningen är en mening – och en mening som klipps mitt i är ingen etikett. Mätt mot fem riktiga fall gav ingen teckengräns mer än ett av fem. Två av dem var dessutom omskrivna från verbfras till substantivfras, *"Bytte tre fönster…"* till *"Nya fönster mot gatan"*, vilket ingen gräns når fram till.
+
+**Ett ifyllt fält ser färdigt ut och godkänns utan eftertanke.** Det skälet stod redan i koden, som skäl till att lämna fältet tomt när anteckning saknas. Det gäller lika mycket ett avklippt förslag — och det som godkänns utan eftertanke hamnar i Skatteverkets blankett.
+
+**Och anteckningen syns ändå.** Kvittolistan står ovanför frågorna på samma skärm. Förslaget upprepade något hon redan läste.
+
+**Det som hände på vägen är värt att minnas.** Fem projekt i testkontot fick namn som *"Totalrenovering av badrummet – nNytt badrumytt tätskikt"*: namnet skrevs in på den teckenposition där markören hamnade vid klicket, eftersom fältet inte tömdes först. Ingenting i koden var fel. Vi byggde först en markering av hela texten vid första fokus, och tog sedan bort förifyllningen som markeringen fanns till för. **Rättningen beställdes före frågan om saken skulle finnas alls**, och det är ordningen som ska vändas nästa gång.
+
+**Inget annat fält i appen är ett förslag.** De andra förifyllda fälten är sparade svar eller avläsningar, och båda ska stå kvar som de är: ett avläst belopp som markeras vid första klicket kan ersättas av en enda siffra.
+
+#### Anteckningen får två rader där den är radens huvudtext
+
+**Kvittoraden klipper anteckningen till en rad.** `white-space: nowrap` med `text-overflow: ellipsis` ger alltid en rad oavsett skärmbredd – ungefär 60 tecken på en dator, hälften på en telefon. **Den ska i stället rymma två rader och klippas först därefter.**
+
+Det gäller där anteckningen är radens huvudtext: kvittolistan i fas 2, *Senaste kvitton* på översikten, kvittolistan och **fas 1 på alla fyra ställena** – förslagen att lägga ihop, de ihoplagda högarna, kvittona med kryssrutor och *Hör inte till bostaden*. Är leverantören huvudtext stannar raden på en rad, och deklarationsunderlaget rörs inte: det visar projektets namn, som är en etikett och kort av konstruktion.
+
+**Kryssrutelistan i fas 1 är den viktigaste av dem.** Det är där hon avgör vad som hör ihop, och det avgörandet går inte att göra på en tredjedel av varje mening.
+
+**Skälet är att vi ber om meningen och sedan döljer den.** Hjälptexten säger *"en beskrivande mening, inte ett ord – det är den som gör kvittot begripligt om flera år"*, och på telefonen visas en tredjedel. Det som klipps bort är ofta det som skiljer ett kvitto från ett annat: *"…det gamla var uppsvallat."*
+
+**Och i fas 2 är det inte längre en skönhetsfråga.** Sedan namnfältet är tomt är kvittolistan det hon namnger projektet ifrån. Att hon inte kan läsa hela sin egen anteckning just där är en lucka vi själva skapade när förifyllningen togs bort.
+
+Två rader, inte obegränsat: nästan varje anteckning ryms, och listan är fortfarande en lista.
 
 ### Projektlistan
 

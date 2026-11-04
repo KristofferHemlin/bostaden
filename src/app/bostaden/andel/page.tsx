@@ -16,7 +16,7 @@ export default async function AndelSida({
 }: {
   searchParams: Promise<{ fran?: string }>;
 }) {
-  const { bostadsnamn, egenAndel } = await lasFragesidan();
+  const { bostadsnamn, egenAndel, andraFinns } = await lasFragesidan();
   const franExport = (await searchParams)?.fran === "export";
   return (
     <Skarm
@@ -27,6 +27,7 @@ export default async function AndelSida({
       <AndelFormular
         forval={egenAndel === null ? "" : String(egenAndel).replace(".", ",")}
         franExport={franExport}
+        andraFinns={andraFinns}
       />
     </Skarm>
   );

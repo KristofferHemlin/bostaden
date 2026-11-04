@@ -128,30 +128,6 @@ export function projektnamnKarta(
   );
 }
 
-// ---- Namnforslag -----------------------------------------------------------
-
-/** Forsta meningsfulla biten av en anteckning: fram till forsta skiljetecknet, kapat. */
-function kortaNamn(text: string): string {
-  const forsta = text.split(/[\n.,;:]/)[0]!.trim().replace(/\s+/g, " ");
-  return forsta.length > 80 ? `${forsta.slice(0, 79).trimEnd()}…` : forsta;
-}
-
-/**
- * Forval for fragetradets forsta fraga, "Vad gjorde du?" – hamtas fran forsta
- * (tidigaste) kvittots anteckning. Namnet hamnar i K6A-underlagets
- * atgardskolumn, sa forslaget maste vara begripligt for nagon som inte var
- * dar. Saknas anteckning lamnas faltet TOMT i stallet for att falla tillbaka
- * pa leverantoren (produktspec, "Klassificeringsgenomgangen"): ett
- * foretagsnamn dar sager ingenting om vad som gjordes, och ett ifyllt falt
- * ser fardigt ut och godkanns utan eftertanke.
- */
-export function fragetradetNamnForslag(
-  kvitton: { anteckning: string | null }[],
-): string {
-  const anteckning = kvitton[0]?.anteckning?.trim();
-  return anteckning ? kortaNamn(anteckning) : "";
-}
-
 // ---- Forslagsmotorn ------------------------------------------------------------
 
 // Tre signaler (produktspec): samma leverantor, narhet i tid, och likhet i

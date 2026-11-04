@@ -325,6 +325,7 @@ export default async function Oversikt({
                     key={k.id}
                     href={utkast ? `/kostnad/nytt?utkast=${k.id}` : `/kostnad/${k.id}`}
                     namn={notering || k.leverantor || "Utkast"}
+                    anteckning={!!notering}
                     status={
                       utkast
                         ? "Utkast · komplettera uppgifterna"

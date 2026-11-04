@@ -115,6 +115,7 @@ export function Listrad({
   atgard,
   bild,
   slutknapp,
+  anteckning = false,
 }: {
   namn: string;
   status?: string;
@@ -177,6 +178,12 @@ export function Listrad({
    * bredvid lanken med egen luft sa den inte traffas av misstag.
    */
   slutknapp?: ReactNode;
+  /**
+   * Namnet ar kvittots anteckning. Den far tva rader och klipps forst
+   * darefter (docs/design.md, "Anteckningen får två rader där den är radens
+   * huvudtext"); ett projektnamn eller en leverantor stannar pa en.
+   */
+  anteckning?: boolean;
 }) {
   const namnInnehall =
     strackt && href ? (
@@ -197,7 +204,9 @@ export function Listrad({
         />
       ) : null}
       <div className="min-w-0 flex-1">
-        <p className="truncate font-granssnitt text-base text-text-primar">
+        <p
+          className={`${anteckning ? "line-clamp-2 break-words" : "truncate"} font-granssnitt text-base text-text-primar`}
+        >
           {namnInnehall}
         </p>
         {status ? (

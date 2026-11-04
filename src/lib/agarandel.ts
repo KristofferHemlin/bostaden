@@ -21,6 +21,12 @@ function normalisera(text: string): string {
   return text.trim().replace(/\s/g, "").replace(",", ".").replace(/%/g, "");
 }
 
+/** Meningen for 0, ordagrant ur docs/design.md ("Andelsskärmen svarar medan
+ *  hon skriver"), med hart mellanslag fore % som all procent i appen. Den sager
+ *  vad som galler, inte bara att det avvisas: ett lagrat 0 ska avbryta
+ *  berakningen, sa faltet far aldrig slappa igenom ett. */
+export const ANDEL_NOLL = "Ägarandelen måste vara mer än 0\u00a0%, t.ex. 50 eller 100.";
+
 /** Meningen for ett tomt falt. */
 export const ANDEL_SAKNAS = "Ange ägarandelen i procent, t.ex. 100 om du äger hela bostaden.";
 
@@ -32,7 +38,7 @@ export function agarandelFel(text: string): string | null {
     return "Ägarandel anges som ett tal mellan 0 och 100, t.ex. 50 eller 33,33.";
   }
   const varde = Number.parseFloat(normaliserad);
-  if (varde <= 0) return "Ägarandel kan inte vara noll.";
+  if (varde <= 0) return ANDEL_NOLL;
   if (varde > 100) return "Ägarandel kan inte vara mer än 100.";
   return null;
 }

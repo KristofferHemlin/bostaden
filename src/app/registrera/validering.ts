@@ -6,14 +6,14 @@
 
 import { epostfel } from "@/lib/epostfalt";
 import type { Faltfel } from "@/lib/formularfel";
-import { oreFranKronor } from "@/lib/format";
-import { KOPESKILLINGENS_HJALPTEXT } from "@/lib/bostadsuppgifter";
+import { kopeskillingsfel } from "@/app/bostaden/validering";
 import { losenordsfel } from "@/lib/losenord";
 
 /** Registreringens falt, som de heter i FormData. Bostadssteget har fem:
- *  upplatelseform, tilltradesdatum och adress obligatoriska, ort och
- *  kopeskilling valfria (docs/design.md, Registreringsflodet). Agarandelen
- *  fragas sedan, fran kortet pa startsidan (src/lib/bostadsuppgifter.ts). */
+ *  alla obligatoriska utom orten – kopeskillingen sedan 2026-11-04
+ *  (docs/design.md, Registreringsflodet och "Ägarandelen frågas från
+ *  startsidan"). Agarandelen fragas sedan, fran kortet pa startsidan
+ *  (src/lib/bostadsuppgifter.ts). */
 export type Registreringsfalt =
   | "epost"
   | "losenord"
@@ -27,14 +27,6 @@ export type Registreringsfalt =
 export const TILLTRADESFALTETS_ETIKETT = "När fick du nycklarna?";
 export const TILLTRADESFALTETS_HJALPTEXT = "Motsvarar tillträdesdatum.";
 
-/** Kopeskillingens hjalptext i registreringen: samma mening som i kortets
- *  fraga, plus satsen om att den gar att hoppa over – sann bara har, dar
- *  faltet ar valfritt (docs/design.md, "Ägarandelen frågas från
- *  startsidan"). En lydelse, inte tva: harmonisera dem inte. */
-export const KOPESKILLINGENS_HJALPTEXT_I_REGISTRERINGEN = `${KOPESKILLINGENS_HJALPTEXT.replace(
-  /\.$/,
-  "",
-)}, men det går att fylla i senare.`;
 
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 // Undre grans: regelparametrarna seedas med giltig_fran 1970-01-01.
@@ -102,16 +94,10 @@ export function bostadsstegetsFel(
   const adress = adressfel(las(formData, "adress"));
   if (adress) return { falt: "adress", fel: adress };
 
-  // Kopeskilling ar valfri, men ett ifyllt varde maste ga att tolka.
-  const kopeskilling = las(formData, "kopeskilling");
-  if (kopeskilling !== "") {
-    const oren = oreFranKronor(kopeskilling);
-    if (oren === null || oren <= 0) {
-      return {
-        falt: "kopeskilling",
-        fel: "Köpeskilling anges som ett belopp, t.ex. 3 250 000.",
-      };
-    }
-  }
+  // Obligatorisk sedan 2026-11-04: inget konto skapas utan ett tal. Samma
+  // regel och samma meningar som kortets fraga – kolumnen ar fortfarande
+  // nullbar, for konton som skapades fore kravet.
+  const kopeskilling = kopeskillingsfel(las(formData, "kopeskilling"));
+  if (kopeskilling) return { falt: "kopeskilling", fel: kopeskilling };
   return null;
 }

@@ -1,6 +1,6 @@
 // Kortet overst pa startsidan (docs/design.md, "Ägarandelen frågas från
 // startsidan"). Det pekar pa NASTA obesvarade fraga – kopeskilling, om den
-// hoppades over i registreringen, och agarandel – och sager vad fragan ar,
+// saknas (konton fran fore kravet i registreringen), och agarandel – och sager vad fragan ar,
 // aldrig "Fortsätt".
 // Inga stegnummer och ingen ifyllnadsmatare.
 //

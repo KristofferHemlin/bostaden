@@ -37,6 +37,7 @@ import { forsokBorjaInskickning, useDubbelinskickRef } from "@/lib/dubbelinskick
 import { lasEpostForFliken } from "@/lib/epost-for-fliken";
 import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 import { useFormularfel } from "@/lib/formularfel-klient";
+import { KOPESKILLINGENS_HJALPTEXT } from "@/lib/bostadsuppgifter";
 import { isoDatum } from "@/lib/format";
 import { slutforRegistrering, type RegistreringResultat } from "./actions";
 import { AdressFalt } from "./adress-falt";
@@ -44,7 +45,6 @@ import { Ram } from "./ram";
 import {
   bostadsstegetsFel,
   kontostegetsFel,
-  KOPESKILLINGENS_HJALPTEXT_I_REGISTRERINGEN,
   TILLTRADESFALTETS_ETIKETT,
   TILLTRADESFALTETS_HJALPTEXT,
   type Registreringsfalt,
@@ -293,12 +293,13 @@ export function RegistreraFlode({
 
         <AdressFalt obligatoriskt fel={felFor("adress")} />
 
-        {/* Valfri har – svaret ligger i ett papper hon kanske inte har framme.
-            Hoppas den over fragar kortet pa startsidan efter den
-            (src/lib/bostadsuppgifter.ts). */}
+        {/* Obligatorisk sedan 2026-11-04 – inget konto skapas utan ett tal
+            (docs/design.md, "Ägarandelen frågas från startsidan"). Samma
+            hjalptext som kortets fraga. */}
         <Falt
           etikett="Köpeskilling"
-          hjalp={KOPESKILLINGENS_HJALPTEXT_I_REGISTRERINGEN}
+          hjalp={KOPESKILLINGENS_HJALPTEXT}
+          obligatoriskt
           fel={felFor("kopeskilling")}
         >
           <BeloppFalt

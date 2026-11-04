@@ -267,10 +267,63 @@ describe("robots.txt och sitemap.xml", () => {
     for (const s of SOKBARA_SIDOR) expect(s).not.toMatch(/^\/(inbjudan|losenord|auth)/);
   });
 
-  it("robots.txt förbjuder allt och tillåter bara de sökbara sidorna, exakt", () => {
+  // Tolkar robots() som Google gor: den langsta matchande regeln vinner,
+  // Allow vinner lika langa, `$` forankrar slutet och `*` ar ett jokertecken.
+  // Provat pa sokvagar, inte pa listan – en regel som ser ratt ut men inte
+  // tillater det den ska (eller tillater for mycket) faller har.
+  function tillats(sokvag: string): boolean {
     const { rules } = robots() as { rules: { allow: string[]; disallow: string } };
+    const traff = (regel: string) => {
+      const forankrad = regel.endsWith("$");
+      const kropp = (forankrad ? regel.slice(0, -1) : regel)
+        .split("*")
+        .map((d) => d.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
+        .join(".*");
+      return new RegExp(`^${kropp}${forankrad ? "$" : ""}`).test(sokvag);
+    };
+    const langsta = (regler: string[]) => Math.max(-1, ...regler.filter(traff).map((r) => r.length));
+    return langsta(rules.allow) >= langsta([rules.disallow]);
+  }
+
+  it("robots.txt förbjuder allt utom de sökbara sidorna, exakt", () => {
+    const { rules } = robots() as { rules: { disallow: string } };
     expect(rules.disallow).toBe("/");
-    expect(rules.allow).toEqual(SOKBARA_SIDOR.map((s) => `${s}$`));
+    for (const s of SOKBARA_SIDOR) expect(tillats(s), s).toBe(true);
+    for (const s of ["/registrera/x", "/login?x=1", "/kostnad", "/installningar", "/export", `/inbjudan/${ID}`, "/losenord/glomt", "/bostaden/andel"]) {
+      expect(tillats(s), s).toBe(false);
+    }
+  });
+
+  it("robots.txt släpper fram sitemappen den själv pekar ut", () => {
+    const { sitemap: adress } = robots() as { sitemap: string };
+    expect(tillats(new URL(adress).pathname)).toBe(true);
+    expect(tillats("/sitemap.xml.bak")).toBe(false);
+  });
+
+  it("robots.txt släpper fram det som renderar sidorna – och inte mer", async () => {
+    const { metadata: layoutens } = await import("@/app/layout");
+    const { generateMetadata: startsidans } = await import("@/app/page");
+    const { HJALTEBILD } = await import("@/app/landningssida");
+    const { LOGOTYP_SOKVAG } = await import("@/lib/kontakt");
+    const bilder = (m: { openGraph?: { images?: unknown } | null }) =>
+      ([] as { url: string }[]).concat((m.openGraph?.images ?? []) as { url: string }[]).map((b) => b.url);
+    const start = await startsidans();
+    const sokvagar = [
+      ...bilder(layoutens),
+      ...bilder(start),
+      HJALTEBILD.src,
+      LOGOTYP_SOKVAG,
+      "/favicon.ico",
+      "/_next/static/css/a1b2c3.css",
+      "/_next/static/chunks/app/page-a1b2c3.js",
+      "/_next/static/media/a1b2c3.woff2",
+    ];
+    expect(bilder(layoutens)).toHaveLength(1);
+    expect(bilder(start)).toHaveLength(1);
+    for (const s of sokvagar) expect(tillats(s), s).toBe(true);
+    for (const s of ["/_next/image?url=%2Fhero-920x780.jpg", "/_next/data/x.json", "/kvittobo-logo.png", "/ikon-512.png", "/pdfjs/pdf.worker.mjs", "/favicon.ico/x"]) {
+      expect(tillats(s), s).toBe(false);
+    }
   });
 
   it("sitemap.xml innehåller de sökbara sidorna och inga andra", () => {

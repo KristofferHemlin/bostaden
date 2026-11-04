@@ -74,6 +74,16 @@ function kvittoRubrik(k: Kvitto): string {
   return kvittoradText(k).namn ?? "Utkast – komplettera uppgifterna";
 }
 
+// Ar rubriken anteckningen far den tva rader och klipps forst darefter
+// (docs/design.md, "Anteckningen får två rader där den är radens
+// huvudtext"); en leverantor stannar pa en. Inte `block` ihop med
+// line-clamp: den skriver over line-clamps display och klippningen slar
+// aldrig till.
+function rubrikKlipp(k: Kvitto, block = false): string {
+  if (k.anteckning?.trim()) return "line-clamp-2 break-words";
+  return block ? "block truncate" : "truncate";
+}
+
 function kvittoUnderrad(k: Kvitto): string {
   const { namn, underrad } = kvittoradText(k);
   return underrad || (namn ? "" : "Ännu inga uppgifter");
@@ -224,7 +234,7 @@ export function Fas1({
                         key={k.id}
                         className="flex items-baseline justify-between gap-3 font-granssnitt text-sm"
                       >
-                        <span className="min-w-0 truncate text-text-primar">
+                        <span className={`min-w-0 ${rubrikKlipp(k)} text-text-primar`}>
                           {kvittoRubrik(k)}
                         </span>
                         <span className="shrink-0 tabular-nums text-text-sekundar">
@@ -297,7 +307,7 @@ export function Fas1({
                       key={k.id}
                       className="flex items-baseline justify-between gap-3 font-granssnitt text-sm"
                     >
-                      <span className="min-w-0 truncate text-text-primar">
+                      <span className={`min-w-0 ${rubrikKlipp(k)} text-text-primar`}>
                         {kvittoRubrik(k)}
                       </span>
                       <span className="flex shrink-0 items-baseline gap-3">
@@ -389,7 +399,7 @@ export function Fas1({
                       className="mt-1 h-4 w-4 shrink-0 accent-accent"
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-granssnitt text-base text-text-primar">
+                      <span className={`${rubrikKlipp(k, true)} font-granssnitt text-base text-text-primar`}>
                         {kvittoRubrik(k)}
                       </span>
                       <span className="block font-granssnitt text-sm text-text-sekundar">
@@ -492,7 +502,7 @@ export function Fas1({
                   className="flex items-baseline justify-between gap-3 p-4"
                 >
                   <span className="min-w-0">
-                    <span className="block truncate font-granssnitt text-sm text-text-primar">
+                    <span className={`${rubrikKlipp(k, true)} font-granssnitt text-sm text-text-primar`}>
                       {kvittoRubrik(k)}
                     </span>
                     <span className="block font-granssnitt text-sm text-text-sekundar">

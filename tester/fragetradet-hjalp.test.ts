@@ -15,11 +15,13 @@ import { Fragetradet, TOMMA_SVAR } from "@/app/projekt/fragetradet";
 // Det vantade lases ur design.md, inte ur komponenten: ett test som lases ur
 // samma strang som det provar kan inte falla.
 
-const DESIGN = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8").split("\n");
+// Lases inne i testet, aldrig nar filen laddas (CLAUDE.md, Tester).
+const designRader = () => readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8").split("\n");
 const normalisera = (t: string) => t.replace(/\s+/g, " ").trim();
 
 /** Citatblocket efter stycket "Hjälprutan till fråga 5 …", ett element per del. */
 function rutansDelarEnligtDesign(): string[] {
+  const DESIGN = designRader();
   let i = DESIGN.findIndex((r) => r.startsWith("**Hjälprutan till fråga 5"));
   expect(i, "stycket om fråga 5:s hjälpruta i design.md").toBeGreaterThanOrEqual(0);
   while (!DESIGN[i].startsWith(">")) i++;

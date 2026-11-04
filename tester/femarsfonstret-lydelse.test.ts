@@ -60,7 +60,8 @@ import { slaUppRegelparameter } from "@/doman/regelparameter";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-const DESIGN = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+// Lases inne i testet, aldrig nar filen laddas (CLAUDE.md, Tester).
+const designRader = () => readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8").split("\n");
 const normalisera = (t: string) => t.replace(/\s+/g, " ").trim();
 
 // Det regelparametern ger i dag. Texterna tar talet som argument.
@@ -83,7 +84,7 @@ const ROLLANDE = [
 const arRullande = (t: string) => ROLLANDE.some((r) => r.test(t));
 
 function infoknappenEnligtDesign(): string[] {
-  const rad = DESIGN.split("\n").find((r) =>
+  const rad = designRader().find((r) =>
     r.startsWith("**En informationsknapp vid listans rubrik"),
   );
   expect(rad, "informationsknappens stycke i design.md").toBeTruthy();
@@ -93,14 +94,14 @@ function infoknappenEnligtDesign(): string[] {
 
 /** Tabellraden under "En rad som ger 0 kr måste säga varför", andra cellen. */
 function exportskaletEnligtDesign(): string {
-  const rad = DESIGN.split("\n").find((r) => r.startsWith("| Reparationen ligger utanför femårsfönstret |"));
+  const rad = designRader().find((r) => r.startsWith("| Reparationen ligger utanför femårsfönstret |"));
   expect(rad, "exportskalets tabellrad i design.md").toBeTruthy();
   return rad!.split("|")[2].trim();
 }
 
 /** Rutans hela lydelse pa exportvyn fore forsaljningen, ur punkten om sida 2. */
 function foreForsaljningEnligtDesign(): string {
-  const rad = DESIGN.split("\n").find((r) => r.startsWith("- **Sida 2 med sina rader men utan avdragsgill kolumn**"));
+  const rad = designRader().find((r) => r.startsWith("- **Sida 2 med sina rader men utan avdragsgill kolumn**"));
   expect(rad, "punkten om sida 2 fore forsaljningen i design.md").toBeTruthy();
   const traff = rad!.match(/Rutans lydelse är: \*"([^"]+)"\*/);
   expect(traff, "rutans lydelse i punkten om sida 2").toBeTruthy();

@@ -45,6 +45,8 @@ export const dynamic = "force-dynamic";
 interface KvittoRad {
   id: string;
   namn: string;
+  /** Namnet ar anteckningen – far tva rader i Listrad. */
+  anteckning: boolean;
   status: string;
   /** Dampad rad "Inget kvitto bifogat" nar bilaga saknas (produktspec 4.7).
    * Ett faktum om posten, som belopp och datum – ingen bedomning av
@@ -134,6 +136,7 @@ export default async function KvittolistaSida() {
     return {
       id: k.id,
       namn: notering || leverantor || "Kvitto",
+      anteckning: !!notering,
       status,
       underStatus: saknarBilaga ? "Inget kvitto bifogat" : undefined,
       // Raden behaller fakturans totalbelopp – summan pa pappret – och visar
@@ -214,6 +217,7 @@ export default async function KvittolistaSida() {
                   <Listrad
                     key={r.id}
                     namn={r.namn}
+                    anteckning={r.anteckning}
                     status={r.status}
                     underStatus={r.underStatus}
                     {...r.avgar}

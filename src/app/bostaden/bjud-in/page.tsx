@@ -1,6 +1,7 @@
-// Erbjudandet om att bjuda in den andra delagaren, direkt efter en andel
-// under 100 % (docs/design.md, "Ägarandelen frågas från startsidan"). Ett
-// erbjudande, aldrig ett krav: "Hoppa över" lamnar ingenting halvt, och
+// Inbjudan till den andra delagaren. Erbjudandet star sedan 2026-11-04 i
+// andelsskarmens kort, under ekot (docs/design.md, "Andelsskärmen svarar
+// medan hon skriver"); hit kommer den som valt det, med andelen redan sparad.
+// Ett erbjudande, aldrig ett krav: "Hoppa över" lamnar ingenting halvt, och
 // kortet pa startsidan kommer inte tillbaka for en utebliven inbjudan.
 //
 // Nas den utan att erbjudandet galler – andelen ar 100 % eller obesvarad, eller
@@ -8,12 +9,8 @@
 
 import { redirect } from "next/navigation";
 import { Skarm } from "@/components/skarm";
-import {
-  INBJUDNINGSERBJUDANDETS_SOKVAG,
-  efterSvaret,
-  nastaSidan,
-} from "@/lib/bostadsuppgifter";
-import { Inbjudningserbjudande } from "../formular";
+import { erbjudandetGaller, nastaSidan } from "@/lib/bostadsuppgifter";
+import { BJUD_IN_KNAPPEN, Inbjudningserbjudande } from "../formular";
 import { TILL_OVERSIKTEN, lasFragesidan } from "../sida";
 
 export const metadata = { title: "Bjud in" };
@@ -28,15 +25,14 @@ export default async function BjudInSida({
   const { bostad, bostadsnamn, egenAndel, andraFinns } = await lasFragesidan();
   const franExport = (await searchParams)?.fran === "export";
   const svar = { kopeskilling: bostad.kopeskilling, agarandel: egenAndel };
-  const efter = efterSvaret({ svar, nyssBesvarad: "agarandel", andraFinns });
   // Efter erbjudandet: nasta obesvarade fraga, eller oversikten.
   const dit = franExport ? "/export" : nastaSidan(svar);
-  if (efter !== INBJUDNINGSERBJUDANDETS_SOKVAG || egenAndel === null) redirect(dit);
+  if (egenAndel === null || !erbjudandetGaller(egenAndel, andraFinns)) redirect(dit);
 
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      rubrik="Vill du bjuda in den andra delägaren?"
+      rubrik={BJUD_IN_KNAPPEN}
       bakLank={franExport ? { href: "/export", text: "Deklarationsunderlag" } : TILL_OVERSIKTEN}
     >
       <Inbjudningserbjudande egenAndel={egenAndel} dit={dit} />

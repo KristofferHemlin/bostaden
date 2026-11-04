@@ -9,7 +9,7 @@ import { FragorTomtLage } from "./tomt-lage";
 import { Skarm } from "@/components/skarm";
 import { projektetsBelopp } from "@/doman/atgardsberakning";
 import { projektSumma } from "@/doman/berakningar";
-import { arOklassificerad, fragetradetNamnForslag } from "@/doman/genomgang";
+import { arOklassificerad } from "@/doman/genomgang";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { bostadHeader } from "@/lib/bostad-header";
 import { isoDatum } from "@/lib/format";
@@ -69,9 +69,7 @@ export default async function FragorSida() {
 
   const hogarMedKvitton = hogar.map((h) => {
     // Betaldatum/dokumentdatum-sorteringen pa kostnadRader-frageningen ovan
-    // haller sig genom filtreringen, sa forsta traffen ar hogens tidigaste
-    // kvitto – det fragetradetNamnForslag utgar fran (produktspec,
-    // "Klassificeringsgenomgangen").
+    // haller sig genom filtreringen, sa kvittona star i tidsordning.
     const hogensKvitton = kostnadRader.filter((k) =>
       k.rader.some((r) => r.fordelningar.some((f) => f.projekt_id === h.id)),
     );
@@ -80,7 +78,6 @@ export default async function FragorSida() {
       id: h.id,
       belopp: projektetsBelopp(domanKvitton, h.id),
       summa: projektSumma(domanKvitton, h.id),
-      namnforslag: fragetradetNamnForslag(hogensKvitton),
       kvitton: hogensKvitton.map((k) => {
         // Bara kopplade kostnader kommer hit – aldrig ett utkast (det har inga
         // rader). Falten ar alltsa satta; coalesce for typernas skull.
@@ -94,6 +91,7 @@ export default async function FragorSida() {
         return {
           id: k.id,
           rubrik: text.namn ?? "Kvitto",
+          anteckning: !!k.anteckning?.trim(),
           underrad: text.underrad,
           belopp: k.totalbelopp ?? 0,
         };

@@ -4,8 +4,9 @@
 // samma komponent som projektets redigering, sa de stalls ordagrant likadant
 // overallt. Fraga 1, "Vad gjorde du?", ar ett vanligt textfalt har – och satter
 // hogens namn for forsta gangen (produktspec, "Klassificeringsgenomgangen":
-// hogen far inget namn i fas 1). Forvalet ar `namnforslag`
-// (fragetradetNamnForslag, page.tsx): forsta kvittots anteckning, annars tomt.
+// hogen far inget namn i fas 1). Faltet ar tomt: anteckningen och namnet
+// svarar pa olika fragor, och anteckningen star redan i kvittolistan ovanfor
+// (docs/design.md, "Namnfältet är tomt, och föreslår ingenting").
 //
 // "Hoppa over" gar vidare till nasta hog utan att spara – hogen ligger kvar och
 // dyker upp nasta gang. "Spara och nasta" klassificerar hogen; server-actionen
@@ -38,13 +39,15 @@ const START: FragorResultat = {};
 interface HogKvitto {
   id: string;
   rubrik: string;
+  /** Rubriken ar kvittots anteckning – far tva rader (docs/design.md,
+   *  "Anteckningen får två rader där den är radens huvudtext"). */
+  anteckning: boolean;
   underrad: string;
   belopp: number;
 }
 
 interface Hog {
   id: string;
-  namnforslag: string;
   kvitton: HogKvitto[];
   /** Hogens belopp i oren, fore ROT – merkostnaden maste vara mindre. */
   belopp: number;
@@ -96,7 +99,7 @@ function HogFormular({
   onHoppaOver: () => void;
 }) {
   const [resultat, action, pagar] = useActionState(klassificeraHog, START);
-  const [namn, setNamn] = useState(hog.namnforslag);
+  const [namn, setNamn] = useState("");
   const [svar, setSvar] = useState<FragetradetUIState>(TOMMA_SVAR);
   const { formRef, hanteraSubmit, faltfel, formularfel, rensa: rensaFel } =
     useFormularfel<FragetradetFaltnamn>({
@@ -134,7 +137,11 @@ function HogFormular({
               className="flex items-baseline justify-between gap-3 px-4 py-3"
             >
               <span className="min-w-0">
-                <span className="block truncate font-granssnitt text-sm text-text-primar">
+                <span
+                  // Inte `block` ihop med line-clamp: den skriver over
+                  // line-clamps display och klippningen slar aldrig till.
+                  className={`${k.anteckning ? "line-clamp-2 break-words" : "block truncate"} font-granssnitt text-sm text-text-primar`}
+                >
                   {k.rubrik}
                 </span>
                 <span className="block font-granssnitt text-sm text-text-sekundar">

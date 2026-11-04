@@ -73,11 +73,14 @@ import { RegistreraFlode } from "@/app/registrera/flode";
 import { BostadenKort, ForvarvetKort, type BostadenData, type ForvarvetData } from "@/app/installningar/kort";
 import { UPPGIFTENS_SOKVAG } from "@/lib/bostadsuppgifter";
 
-const DESIGN = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+// design.md lases inne i testet, aldrig nar filen laddas: ett uppslag som
+// kastar pa modulniva tar hela filen med sig, och 30 tester forsvann sa
+// 2026-11-04 (CLAUDE.md, Tester).
+const design = () => readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
 
 /** Ett citat ur design.md efter en fast inledning – kastar om det inte finns. */
 function ur(monster: RegExp): string {
-  const m = DESIGN.match(monster);
+  const m = design().match(monster);
   if (!m) throw new Error(`design.md saknar ${monster}`);
   return m[1];
 }
@@ -153,8 +156,8 @@ function kvittolankar(html: string): string[] {
 
 // Kortets fragor, ur design.md: "*Lägg till köpeskillingen*, *Hur stor del
 // av bostaden äger du?*."
-const KOPESKILLINGSFRAGAN = ur(/\*\*Kortet säger vad som är nästa, inte \*Fortsätt\*\.\*\* \*([^*]+)\*, \*/);
-const ANDELSFRAGAN = ur(/\*\*Kortet säger vad som är nästa, inte \*Fortsätt\*\.\*\* \*[^*]+\*, \*([^*]+)\*/);
+const kopeskillingsfragan = () => ur(/\*\*Kortet säger vad som är nästa, inte \*Fortsätt\*\.\*\* \*([^*]+)\*, \*/);
+const andelsfragan = () => ur(/\*\*Kortet säger vad som är nästa, inte \*Fortsätt\*\.\*\* \*[^*]+\*, \*([^*]+)\*/);
 
 // ---------------------------------------------------------------------------
 // 1. Kortet blockerar aldrig "Lägg till kvitto"
@@ -164,7 +167,7 @@ describe("kortet är inte en spärr", () => {
   it("utan kvitton: kortet står överst och Lägg till kvitto finns kvar, utanför kortet", async () => {
     seeda({});
     const html = await startsidan();
-    expect(kortetsFraga(html)).toBe(KOPESKILLINGSFRAGAN);
+    expect(kortetsFraga(html)).toBe(kopeskillingsfragan());
     expect(kvittolankar(html)).toEqual(["/kostnad/nytt"]);
     expect(kortet(html)).not.toContain("/kostnad/nytt");
     // Kortet ligger ovanfor, inte i stallet for.
@@ -175,14 +178,14 @@ describe("kortet är inte en spärr", () => {
     seeda({});
     h.db.lagg("kostnad", { bostad_id: BOSTAD, leverantor: "Beijer Bygg", totalbelopp: 120000, betaldatum: datum("2025-05-02") });
     const html = await startsidan();
-    expect(kortetsFraga(html)).toBe(KOPESKILLINGSFRAGAN);
+    expect(kortetsFraga(html)).toBe(kopeskillingsfragan());
     expect(kvittolankar(html)).toEqual(["/kostnad/nytt"]);
   });
 
   it("kortet säger frågan, aldrig Fortsätt", async () => {
     seeda({ kopeskilling: 325000000n });
     const html = await startsidan();
-    expect(kortetsFraga(html)).toBe(ANDELSFRAGAN);
+    expect(kortetsFraga(html)).toBe(andelsfragan());
     expect(text(kortet(html)!)).not.toContain("Fortsätt");
   });
 });
@@ -237,18 +240,23 @@ describe("bostadssteget har fem fält", () => {
     expect(h.db.tabell("medlemskap")[0].agarandel).toBeNull();
   });
 
-  it("utan köpeskilling i registreringen tar kortet upp den", async () => {
+  it("utan köpeskilling skapas ingen bostad – fältet är obligatoriskt sedan 2026-11-04", async () => {
     h.db.nollstall();
     regelparametrar();
     h.db.lagg("anvandare", { id: ANNA, epost: "anna@exempel.se" });
     h.inloggad = { id: ANNA, email: "anna@exempel.se" };
-    await omdirigering(
-      slutforRegistrering(
-        {},
-        fd({ fas: "bostad", upplatelseform: "bostadsratt", tilltradesdatum: "2022-04-01", adress: "Storgatan 1" }),
-      ),
+    const svar = await slutforRegistrering(
+      {},
+      fd({ fas: "bostad", upplatelseform: "bostadsratt", tilltradesdatum: "2022-04-01", adress: "Storgatan 1" }),
     );
-    expect(kortetsFraga(await startsidan())).toBe(KOPESKILLINGSFRAGAN);
+    expect(svar).toEqual({ fel: "Fyll i köpeskillingen.", falt: "kopeskilling" });
+    expect(h.db.tabell("bostad")).toHaveLength(0);
+    expect(h.db.tabell("medlemskap")).toHaveLength(0);
+  });
+
+  it("ett konto från före kravet, utan köpeskilling: kortet tar upp den", async () => {
+    seeda({ kopeskilling: null });
+    expect(kortetsFraga(await startsidan())).toBe(kopeskillingsfragan());
   });
 });
 
@@ -259,7 +267,7 @@ describe("bostadssteget har fem fält", () => {
 describe("kortet frågar inte efter adressen", () => {
   it("bara köpeskillingen saknas: kortet frågar efter den", async () => {
     seeda({ adress: "Storgatan 1", kopeskilling: null, agarandel: 100 });
-    expect(kortetsFraga(await startsidan())).toBe(KOPESKILLINGSFRAGAN);
+    expect(kortetsFraga(await startsidan())).toBe(kopeskillingsfragan());
   });
 
   it("bara adressen saknas – ett konto från de två dygnen utan den: inget kort, och toppraden säger Huset", async () => {
@@ -271,7 +279,7 @@ describe("kortet frågar inte efter adressen", () => {
 
   it("adress och köpeskilling saknas: kortet frågar efter köpeskillingen, inte adressen", async () => {
     seeda({ adress: null, kopeskilling: null });
-    expect(kortetsFraga(await startsidan())).toBe(KOPESKILLINGSFRAGAN);
+    expect(kortetsFraga(await startsidan())).toBe(kopeskillingsfragan());
   });
 });
 
@@ -285,7 +293,7 @@ describe("varje svar sparas när det ges", () => {
     const dit = await omdirigering(sparaKopeskillingen({}, fd({ kopeskilling: "3 250 000" })));
     expect(dit).toBe(UPPGIFTENS_SOKVAG.agarandel);
     expect(h.db.tabell("bostad")[0].kopeskilling).toBe(325000000n);
-    expect(kortetsFraga(await startsidan())).toBe(ANDELSFRAGAN);
+    expect(kortetsFraga(await startsidan())).toBe(andelsfragan());
   });
 
   it("köpeskillingen är obligatorisk i kortets fråga: tomt sparar ingenting", async () => {
@@ -295,6 +303,18 @@ describe("varje svar sparas när det ges", () => {
       falt: "kopeskilling",
     });
     expect(h.db.tabell("bostad")[0].kopeskilling).toBeNull();
+  });
+
+  it("0 avvisas av servern och sparar ingenting – ett lagrat 0 ska avbryta beräkningen", async () => {
+    seeda({ kopeskilling: 325000000n });
+    // Lydelsen ur design.md, avsnittet om andelsskärmen – inte ur koden.
+    const avsnitt = design().slice(design().indexOf("#### Andelsskärmen svarar medan hon skriver"));
+    const lydelse = avsnitt.match(/\*\*Lydelsen är:\*\* \*"([^"]+)"\*/)?.[1];
+    expect(lydelse, "lydelsen för 0 i design.md").toBeTruthy();
+    const svar = await sparaAndelen({}, fd({ agarandel: "0", bjud_in: "1" }));
+    expect(svar.falt).toBe("agarandel");
+    expect(svar.fel?.replace(/\u00a0/g, " ")).toBe(lydelse);
+    expect(h.db.tabell("medlemskap")[0].agarandel).toBeNull();
   });
 
   it("andelsfrågans tomma fält är ett fel – formulärets enda ärende är svaret", async () => {
@@ -323,9 +343,17 @@ describe("kortet försvinner när inget är obesvarat", () => {
     expect(kortet(await startsidan())).toBeNull();
   });
 
-  it("andelen 50 %: erbjudandet kommer – och hoppas det över kommer kortet inte tillbaka", async () => {
+  it("andelen 50 % med Spara ägarandelen: svaret sparas och leder hem – erbjudandet stod redan i kortet", async () => {
     seeda({ kopeskilling: 325000000n });
-    expect(await omdirigering(sparaAndelen({}, fd({ agarandel: "50" })))).toBe("/bostaden/bjud-in");
+    expect(await omdirigering(sparaAndelen({}, fd({ agarandel: "50", bjud_in: "" })))).toBe("/");
+    expect(h.db.tabell("medlemskap")[0].agarandel).toBe(50);
+    expect(kortet(await startsidan())).toBeNull();
+  });
+
+  it("andelen 50 % med erbjudandet: svaret sparas, inbjudan följer – och hoppas den över kommer kortet inte tillbaka", async () => {
+    seeda({ kopeskilling: 325000000n });
+    expect(await omdirigering(sparaAndelen({}, fd({ agarandel: "50", bjud_in: "1" })))).toBe("/bostaden/bjud-in");
+    expect(h.db.tabell("medlemskap")[0].agarandel).toBe(50);
     const erbjudande = renderToStaticMarkup(
       (await BjudInSida({ searchParams: Promise.resolve({}) })) as ReactElement,
     );
@@ -350,17 +378,22 @@ describe("Ange ägarandelen i exportvyn öppnar andelsfrågan", () => {
     const fraga = renderToStaticMarkup(
       (await AndelSida({ searchParams: Promise.resolve({ fran: "export" }) })) as ReactElement,
     );
-    expect(fraga).toMatch(new RegExp(`<h1[^>]*>${esc(ANDELSFRAGAN)}</h1>`));
+    expect(fraga).toMatch(new RegExp(`<h1[^>]*>${esc(andelsfragan())}</h1>`));
     expect(fraga).toContain('name="fran" value="export"');
 
     expect(await omdirigering(sparaAndelen({}, fd({ agarandel: "100", fran: "export" })))).toBe("/export");
   });
 
-  it("50 % via exportlänken: erbjudandet kommer, också för en bostad utan adress", async () => {
+  it("50 % via exportlänken: erbjudandet leder till inbjudan, också för en bostad utan adress", async () => {
     seeda({ adress: null, kopeskilling: 325000000n });
-    expect(await omdirigering(sparaAndelen({}, fd({ agarandel: "50", fran: "export" })))).toBe(
+    expect(await omdirigering(sparaAndelen({}, fd({ agarandel: "50", fran: "export", bjud_in: "1" })))).toBe(
       "/bostaden/bjud-in?fran=export",
     );
+  });
+
+  it("50 % via exportlänken med Spara ägarandelen: tillbaka till underlaget", async () => {
+    seeda({ kopeskilling: 325000000n });
+    expect(await omdirigering(sparaAndelen({}, fd({ agarandel: "50", fran: "export" })))).toBe("/export");
   });
 });
 
@@ -384,25 +417,81 @@ describe("texterna läses ur design.md", () => {
   });
 
   // **Köpeskillingens hjälptext säger varför fältet finns, och den är densamma
-  // på båda ställena:** *"…"* – och **I registreringen följer en sats till:
-  // *", men det går att fylla i senare."***
-  const KOPESKILLINGENS_MENING = ur(
-    /\*\*Köpeskillingens hjälptext säger varför fältet finns, och den är densamma på båda ställena:\*\* \*"([^"]+)"\*/,
-  );
-  const SATSEN_I_REGISTRERINGEN = ur(/\*\*I registreringen följer en sats till: \*"([^"]+)"\*\*\*/);
+  // på båda ställena:** *"…"* – och tabellen "| Del | Var |" säger vilka
+  // delar som står var. Läses i testet, inte när describe samlas: en
+  // omskriven mening ska fälla ett test, inte hela filen (CLAUDE.md, Tester).
+  const kopeskillingensMening = () =>
+    ur(/\*\*Köpeskillingens hjälptext säger varför fältet finns, och den är densamma på båda ställena:\*\* \*"([^"]+)"\*/);
 
-  it("köpeskillingen i registreringen: meningen, plus satsen om att den går att fylla i senare", () => {
-    expect(SATSEN_I_REGISTRERINGEN).toBe(", men det går att fylla i senare.");
-    const hjalp = KOPESKILLINGENS_MENING.replace(/\.$/, "") + SATSEN_I_REGISTRERINGEN;
-    expect(bostadssteget()).toMatch(helText(hjalp));
+  /** Tabellen över hjälptextens delar: varje dels text och dess Var-kolumn. */
+  function hjalptextensDelar(): { del: string; var: string }[] {
+    const rubrik = "| Del | Var |";
+    const text = design();
+    const start = text.indexOf(rubrik);
+    if (start < 0) throw new Error("design.md saknar tabellen över köpeskillingens hjälptext");
+    const delar: { del: string; var: string }[] = [];
+    for (const rad of text.slice(start).split("\n").slice(2)) {
+      if (!rad.startsWith("|")) break;
+      const [del, var_] = rad.split("|").slice(1, -1).map((c) => c.trim());
+      delar.push({ del: del.replace(/^\*(.+)\*$/, "$1"), var: var_ });
+    }
+    return delar;
+  }
+
+  /** Hjälptexten för en plats: de delar vars Var-kolumn gäller där, i tabellens ordning. */
+  function hjalptextFor(galler: (var_: string) => boolean): string {
+    return hjalptextensDelar()
+      .filter((d) => galler(d.var))
+      .map((d) => d.del)
+      .join(" ");
+  }
+  const overallt = (v: string) => v.startsWith("Överallt");
+  const registreringen = (v: string) => overallt(v) || /\bregistreringen\b/.test(v);
+  const iKortet = (v: string) => overallt(v) || /\bkortet\b/.test(v);
+
+  it("hjälptexten har två delar sedan 2026-11-04, och ingen sats om att fylla i senare", () => {
+    const delar = hjalptextensDelar();
+    expect(delar).toHaveLength(2);
+    expect(delar.map((d) => d.del).join(" ")).toBe(kopeskillingensMening());
   });
 
-  it("köpeskillingen i kortets fråga: samma mening, utan satsen", async () => {
+  it("köpeskillingen i registreringen: obligatorisk, och hjälptexten är tabellens delar för registreringen", () => {
+    const steg = bostadssteget();
+    expect(steg).toMatch(helText(hjalptextFor(registreringen)));
+    expect(hjalptextFor(registreringen)).toBe(kopeskillingensMening());
+    expect(steg).not.toContain("fylla i senare");
+    // Samma markering vid etiketten som de andra obligatoriska fälten.
+    expect(steg).toMatch(/<span class="mb-1\.5[^"]*">Köpeskilling<span aria-hidden="true"[^>]*>\*<\/span><\/span>/);
+  });
+
+  it("köpeskillingen i kortets fråga: samma delar som registreringen", async () => {
     seeda({});
     const sida = renderToStaticMarkup((await KopeskillingSida()) as ReactElement);
-    expect(sida).toMatch(helText(KOPESKILLINGENS_MENING));
+    expect(sida).toMatch(helText(hjalptextFor(iKortet)));
     expect(sida).not.toContain("fylla i senare");
-    expect(sida).toMatch(new RegExp(`<h1[^>]*>${esc(KOPESKILLINGSFRAGAN)}</h1>`));
+    expect(sida).toMatch(new RegExp(`<h1[^>]*>${esc(kopeskillingsfragan())}</h1>`));
+  });
+
+  it("köpeskillingen i inställningarna: bara delen som står överallt", () => {
+    const html = renderToStaticMarkup(
+      createElement(ForvarvetKort, {
+        data: {
+          tilltradesdatum: "2019-06-01",
+          kopeskillingOren: 325000000n,
+          kopkostnaderOren: null,
+          arBostadsratt: false,
+          agarandelProcent: 50,
+          bostadsfragor: { upplatelseform: "fastighet", forstaAgare: false, ombildning: null },
+        },
+        oppen: true,
+        formRef: { current: null },
+        onAndra: ingenting,
+        onAvbryt: ingenting,
+        onDirty: ingenting,
+        onKlar: ingenting,
+      }),
+    );
+    expect(html).toMatch(helText(hjalptextFor(overallt)));
   });
 
   it("andelsfrågans hjälptext", async () => {
@@ -444,28 +533,29 @@ describe("kortets underrubrik läses ur design.md", () => {
     const lydelse = ur(/\*\*Kortets underrubrik för köpeskillingen är:\*\* \*"([^"]+)"\*/);
     seeda({});
     const html = await startsidan();
-    expect(kortetsFraga(html)).toBe(KOPESKILLINGSFRAGAN);
+    expect(kortetsFraga(html)).toBe(kopeskillingsfragan());
     expect(kortetsUnderrubrik(html)).toBe(lydelse);
   });
 });
 
 // Tabellen under "Inställningssidan": vilka rader som sager "Inte angiven"
 // och vilka som behaller "Inte ifyllt".
-const TOMMA_RADER: Map<string, { ord: string; varfor: string }> = (() => {
+function tommaRader(): Map<string, { ord: string; varfor: string }> {
   const rubrik = "| Rad | Tomt värde säger | Varför |";
-  const start = DESIGN.indexOf(rubrik);
+  const text = design();
+  const start = text.indexOf(rubrik);
   if (start < 0) throw new Error("design.md saknar tabellen över tomma rader");
   const rader = new Map<string, { ord: string; varfor: string }>();
-  for (const rad of DESIGN.slice(start).split("\n").slice(2)) {
+  for (const rad of text.slice(start).split("\n").slice(2)) {
     if (!rad.startsWith("|")) break;
     const [namn, ord, varfor] = rad.split("|").slice(1, -1).map((c) => c.trim());
     rader.set(namn, { ord: ord.replace(/^\*(.+)\*$/, "$1"), varfor });
   }
   return rader;
-})();
+}
 
 function tomtOrd(rad: string): string {
-  const r = TOMMA_RADER.get(rad);
+  const r = tommaRader().get(rad);
   if (!r) throw new Error(`tabellen i design.md saknar raden ${rad}`);
   return r.ord;
 }
@@ -474,7 +564,7 @@ function tomtOrd(rad: string): string {
 // ingenstans". Lases i testet, inte nar filen laddas: en omskriven mening ska
 // falla ett test, inte ta med sig hela filen.
 function alltAnnat(): string[] {
-  const m = TOMMA_RADER.get("Allt annat")?.varfor.match(/^(.+) efterfrågas ingenstans$/);
+  const m = tommaRader().get("Allt annat")?.varfor.match(/^(.+) efterfrågas ingenstans$/);
   if (!m) throw new Error("design.md: raden Allt annat räknar inte upp sina fält");
   return m[1].split(/, | och /).map((f) => f.charAt(0).toUpperCase() + f.slice(1));
 }
@@ -535,7 +625,7 @@ function bostaden(upplatelseform: "bostadsratt" | "fastighet"): string {
 
 describe("inställningarnas tomma rader följer tabellen i design.md", () => {
   it("tabellen har de rader testerna prövar – en ny rad behöver ett eget fall", () => {
-    expect([...TOMMA_RADER.keys()]).toEqual([
+    expect([...tommaRader().keys()]).toEqual([
       "Ägarandel",
       "Köpeskilling",
       "Första ägaren",

@@ -180,10 +180,14 @@ async function mat(bredd: number, hojd: number): Promise<Matning> {
   return m;
 }
 
-// "680 px är textens mått" – talet lases ur docs/design.md, inte ur koden.
-const TEXTENS_MATT = Number(
-  readFileSync(join(ROT, "docs/design.md"), "utf-8").match(/(\d+) px är textens mått/)![1],
-);
+// "680 px är textens mått" – talet lases ur docs/design.md, inte ur koden, och
+// inne i testet: ett uppslag som kastar nar filen laddas tar hela filen med sig
+// (CLAUDE.md, Tester).
+function textensMatt(): number {
+  const m = readFileSync(join(ROT, "docs/design.md"), "utf-8").match(/(\d+) px är textens mått/);
+  if (!m) throw new Error('design.md saknar "… px är textens mått"');
+  return Number(m[1]);
+}
 
 describe("sektionerna under knappen ligger centrerade i sidan, i textens mått", () => {
   // docs/design.md, "Sidans sektioner ska synas som sektioner". Uppmatt
@@ -195,6 +199,7 @@ describe("sektionerna under knappen ligger centrerade i sidan, i textens mått",
     [1280, 800],
   ])("vid %i × %i", async (bredd, hojd) => {
     const { sektioner: s, fonsterBredd } = await mat(bredd, hojd);
+    const TEXTENS_MATT = textensMatt();
     expect(TEXTENS_MATT).toBe(680);
     expect(s.bredd).toBeLessThanOrEqual(TEXTENS_MATT);
     // Lika mycket luft pa bada sidor, inom en pixels avrundning.

@@ -46,7 +46,7 @@ describe("frågorna visar meningen vid fältet", () => {
 
   it("ägarandelen", () => {
     h.resultat = { fel: ANDEL_SAKNAS, falt: "agarandel" };
-    const html = renderToStaticMarkup(createElement(AndelFormular, { forval: "", franExport: false }));
+    const html = renderToStaticMarkup(createElement(AndelFormular, { forval: "", franExport: false, andraFinns: false }));
     arBundet(html, "agarandel", ANDEL_SAKNAS);
   });
 });

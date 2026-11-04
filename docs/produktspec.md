@@ -53,7 +53,9 @@ Förslag är alltid förslag. Ingen hög skapas utan att användaren godkänt de
 
 Fram till dess visas högen som antal och leverantörer: `2 kvitton · BAUHAUS, Jysk`. Det är ärligare än ett påhittat namn, och det gör att listan går att känna igen medan man sorterar.
 
-Förvalet i frågeträdet hämtas från första kvittots anteckning när det finns en. Finns bara en leverantör att falla tillbaka på lämnas fältet **tomt** – "JANS MÅLERI AB" i åtgärdskolumnen säger ingenting om vad som gjordes, och ett ifyllt fält ser färdigt ut och godkänns utan eftertanke.
+**Frågeträdet har inget förval alls.** Fältet är tomt, och skälen står i `docs/design.md` under *Namnfältet är tomt, och föreslår ingenting*.
+
+Till 2026-11-04 hämtades förvalet ur första kvittots anteckning, men bara när det fanns en – fanns bara en leverantör lämnades fältet tomt, eftersom "JANS MÅLERI AB" i åtgärdskolumnen inte säger vad som gjordes och ett ifyllt fält ser färdigt ut och godkänns utan eftertanke. **Det skälet visade sig gälla anteckningen lika mycket**, eftersom vi ber om en beskrivande mening och en avklippt mening inte är ett namn.
 
 Namnet hamnar i underlagets åtgärdskolumn, så det ska vara begripligt för någon som inte var där. Etiketten säger det: *namnet hamnar i ditt deklarationsunderlag – skriv så att någon annan förstår.*
 
