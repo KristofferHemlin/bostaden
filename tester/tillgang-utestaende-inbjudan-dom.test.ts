@@ -33,7 +33,7 @@ import { formateraAndelEllerInteAngiven } from "@/lib/samagande";
 
 const vantar = () => {
   const m = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8").match(
-    /bara blivit tillfrågad\. \*([^*]+)\* säger vilket\./,
+    /bara blivit tillfrågad\. \*([^*]+)\* säger vilket/,
   );
   if (!m) throw new Error("design.md saknar raden om Väntar på svar");
   return m[1];

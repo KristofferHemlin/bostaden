@@ -97,7 +97,15 @@ describe("visaInbjudanAction", () => {
 it("raden 'Väntar på svar' star i design.md med den lydelse kortet anvander", async () => {
   const { INBJUDAN_VANTAR } = await import("@/app/installningar/dela-bostaden");
   const m = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8").match(
-    /bara blivit tillfrågad\. \*([^*]+)\* säger vilket\./,
+    /bara blivit tillfrågad\. \*([^*]+)\* säger vilket/,
   );
   expect(INBJUDAN_VANTAR).toBe(m?.[1]);
+});
+
+it("knappen tillbaka till lanken heter som i design.md, i kortet och pa startskarmen", async () => {
+  const { VISA_LANKEN_IGEN } = await import("@/app/installningar/dela-bostaden");
+  const m = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8").match(
+    /knappen tillbaka till länken heter \*\*"([^"]+)"\*\*/,
+  );
+  expect(VISA_LANKEN_IGEN).toBe(m?.[1]);
 });
