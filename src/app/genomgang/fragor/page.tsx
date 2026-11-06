@@ -121,7 +121,7 @@ export default async function FragorSida() {
       {hogarMedKvitton.length === 0 ? (
         <FragorTomtLage kvarAttLaggaIhop={kvarAttLaggaIhop} />
       ) : (
-        <Fas2 hogar={hogarMedKvitton} />
+        <Fas2 hogar={hogarMedKvitton} upplatelseform={bostad.upplatelseform} />
       )}
     </Skarm>
   );

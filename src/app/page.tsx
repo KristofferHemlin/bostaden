@@ -5,7 +5,8 @@
 //     sparas, och en primarknapp "Lagg till kvitto". Ingen rundtur, inga
 //     pahittade siffror.
 //   * Med innehall: tre sma nyckeltal pa rad (totalt inlagt, arets summa,
-//     antal kvitton), primarknappen, och till sist kvittolistan som eget kort.
+//     antal kvitton), primarknappen, projektkortet nar det finns projekt, och
+//     till sist kvittolistan som eget kort.
 //     Ingen troskelruta (docs/design.md: borttagen 2026-10-16).
 //
 // Startskarmen har ingen sidrubrik alls (docs/design.md, "Startskarmen med
@@ -30,8 +31,10 @@ import {
 import { UtkastRaderaKnapp } from "@/app/kostnad/utkast-radera";
 import {
   inlagtArsbelopp,
+  kostnaderKoppladeTillProjekt,
   samlatBelopp,
 } from "@/doman/berakningar";
+import { atgardKategoriText } from "@/doman/fragetradet";
 import { arOklassificerad } from "@/doman/genomgang";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
@@ -43,6 +46,7 @@ import {
   isoDatum,
 } from "@/lib/format";
 import { avgarForKvitto } from "@/lib/kvittolista";
+import { projektetsArText } from "@/lib/projektar";
 import { prisma } from "@/lib/prisma";
 import { Landningssida } from "@/app/landningssida";
 import {
@@ -111,7 +115,7 @@ export default async function Oversikt({
   // och den gamla nas i vaxlaren ("Att äga flera bostäder"). Inbjudningar
   // till en bostad hen redan ar medlem i visas inte (se utestaendeInbjudningar).
   const inbjudningar = await utestaendeInbjudningar(anvandare.epost, anvandare.id);
-  const { bostad, kostnader } = await hamtaBostadsdata(bostadId);
+  const { bostad, kostnader, projektRader } = await hamtaBostadsdata(bostadId);
   const { bostadsnamn } = bostadHeader(bostad);
 
   // De sex senast tillagda kvittona for listan – egen lasning eftersom domanens
@@ -172,6 +176,26 @@ export default async function Oversikt({
   const samlat = samlatBelopp({ kostnader });
 
   const tomt = kostnader.length === 0;
+
+  // Projektkortet (docs/design.md, "Startskarmen med innehall"): det hon gjort
+  // ska synas dar hon landar. Bara projekt vars fragor ar besvarade – kortet
+  // visar vad de raknas som, och en hog som vantar pa fragor har inget svar
+  // att visa. Den vore dessutom en paminnelse om nagot ogjort, och ingangen
+  // till fragorna ligger i kvittolistan, inte har. Inga belopp: summan pa
+  // sida 1 kan falla vid forsaljningen, och ett tal som sjunker ar vart an
+  // inget tal. Aret ar kvittonas betaldatum, som pa projektets sida.
+  const senasteProjekt = projektRader
+    .filter((p) => p.atgardstyp !== null)
+    .sort((a, b) => b.skapad_at.getTime() - a.skapad_at.getTime())
+    .slice(0, ANTAL_PROJEKT_PA_STARTSIDAN)
+    .map((p) => ({
+      id: p.id,
+      namn: p.namn,
+      status: `${projektetsArText(
+        kostnaderKoppladeTillProjekt(kostnader, p.id).map((k) => k.betaldatum),
+        p.ar,
+      )} · ${atgardKategoriText(p.atgardstyp, p.battre_kvalitet)}`,
+    }));
 
   return (
     // egnaKort: pa oversikten hor nyckeltal och kvittolista hemma i
@@ -286,6 +310,28 @@ export default async function Oversikt({
             Lägg till kvitto
           </Link>
 
+          {/* Projektkortet, mellan knappen och kvittolistan. Finns inga
+              projekt visas det inte alls – ett tomt kort vore en paminnelse
+              om nagot ogjort (docs/design.md, "Startskarmen med innehall"). */}
+          {senasteProjekt.length > 0 ? (
+            <Kort>
+              <div className="flex items-start justify-between gap-3 border-b border-linje p-4">
+                <h2 className="font-rubrik text-base text-text-primar">Projekt</h2>
+                <Link
+                  href="/projekt"
+                  className="shrink-0 font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar"
+                >
+                  Visa alla
+                </Link>
+              </div>
+              <div className="divide-y divide-linje">
+                {senasteProjekt.map((p) => (
+                  <Listrad key={p.id} href={`/projekt/${p.id}`} namn={p.namn} status={p.status} />
+                ))}
+              </div>
+            </Kort>
+          ) : null}
+
           {/* Kvittolistan som eget kort: rubriken "Senaste kvitton" och en
               hogerstalld lank "Visa alla" i samma rad.
               En dampad underrad forklarar urvalet – utan den ser ett kvitto
@@ -358,6 +404,11 @@ export default async function Oversikt({
     </Skarm>
   );
 }
+
+// Hur manga projekt kortet visar. design.md sager "de senaste" utan antal;
+// tre haller kortet kortare an kvittolistan under, som ar startskarmens
+// egentliga lista.
+const ANTAL_PROJEKT_PA_STARTSIDAN = 3;
 
 // Ett nyckeltal: dampad etikett over ett varde i Fraunces med tabulara siffror.
 // Litet kort, ingen statusfarg (docs/design.md, "Startskarmen med innehall").

@@ -37,6 +37,32 @@ enum inbjudningsstatus {
   aterkallad
 }
 
+// Vilken del av bostaden ett projekt rorde (docs/produktspec.md, "Projektets
+// bostadsdel"). Koden andras aldrig, etiketten far andras. Alla koder ar
+// lagringsbara oavsett upplatelseform – vilka knappar som visas avgors i
+// granssnittet (src/doman/bostadsdel.ts). Heter bostadsdel, aldrig kategori.
+enum bostadsdel {
+  KOK
+  BADRUM
+  GOLV
+  YTSKIKT
+  EL
+  VVS
+  DORRAR
+  FORVARING
+  VITVAROR
+  FONSTER
+  BALKONG
+  TAK
+  FASAD
+  VARME
+  DRANERING
+  ALTAN
+  GARAGE
+  TOMT
+  ANNAT
+}
+
 enum regelparameterenhet {
   oren
   ar
@@ -200,9 +226,27 @@ model projekt {
   klassificerad_av  String?     @db.Uuid
   skapad_at         DateTime    @default(now())
 
-  bostad         bostad          @relation(fields: [bostad_id], references: [id], onDelete: Cascade)
-  klassificerare anvandare?      @relation("projekt_klassificerad_av", fields: [klassificerad_av], references: [id], onDelete: SetNull)
+  bostad         bostad               @relation(fields: [bostad_id], references: [id], onDelete: Cascade)
+  klassificerare anvandare?           @relation("projekt_klassificerad_av", fields: [klassificerad_av], references: [id], onDelete: SetNull)
   fordelningar   radfordelning[]
+  bostadsdelar   projekt_bostadsdel[]
+}
+
+// Svaret pa "Vilken del av bostaden?" i fas 2 (docs/produktspec.md, "Projektets
+// bostadsdel"). Egen tabell eftersom flera delar kan galla samtidigt. Inga
+// rader betyder INTE TILLFRAGAD, inte "ingen del" – fragan ar frivillig och
+// aldre projekt har inga. Fritext lagras aldrig som del, bara bredvid
+// del = ANNAT. Ror ingen berakning, ingen troskel och ingen blankett.
+model projekt_bostadsdel {
+  id         String     @id @default(uuid()) @db.Uuid
+  projekt_id String     @db.Uuid
+  del        bostadsdel
+  fritext    String? // bara nar del = ANNAT
+  skapad_at  DateTime   @default(now())
+
+  projekt projekt @relation(fields: [projekt_id], references: [id], onDelete: Cascade)
+
+  @@unique([projekt_id, del])
 }
 
 // Ett kvitto eller en faktura. Tillstand (obetald/okopplad/kopplad) harleds, lagras inte.

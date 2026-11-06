@@ -22,6 +22,7 @@ import {
   merkostnadBehoverBekraftas,
   projektetsBelopp,
 } from "@/doman/atgardsberakning";
+import { bostadsdelText } from "@/doman/bostadsdel";
 import { atgardKategoriText, SKICK_ORD } from "@/doman/fragetradet";
 import {
   MERKOSTNAD_ANDRAD_FRAGA,
@@ -81,7 +82,10 @@ export default async function ProjektSida({
 
   const projekt = await prisma.projekt.findFirst({
     where: { id, bostad_id: bostadId },
-    include: { klassificerare: { select: { id: true, epost: true } } },
+    include: {
+      klassificerare: { select: { id: true, epost: true } },
+      bostadsdelar: { select: { del: true, fritext: true } },
+    },
   });
   if (!projekt) notFound();
 
@@ -119,6 +123,7 @@ export default async function ProjektSida({
       : besked === "inte_mindre_an_beloppet"
         ? merkostnadOverBeloppetText(projekt.namn, projekt.merkostnad!, belopp)
         : null;
+  const delText = bostadsdelText(projekt.bostadsdelar);
   const besvaratAv = oklassificerad
     ? null
     : upphovsrad(
@@ -141,6 +146,11 @@ export default async function ProjektSida({
         {oklassificerad ? null : (
           <Rad etikett="Räknas som" varde={kategoriText} />
         )}
+        {/* Bostadsdelen, bredvid Räknas som (docs/design.md, "Vilken del av
+            bostaden projektet rörde"). Utelamnas nar fragan inte besvarats –
+            inga rader betyder inte tillfragad, och ett tillstand ar inget
+            varde. Ingenstans annars, och i inget tal. */}
+        {delText ? <Rad etikett="Del av bostaden" varde={delText} /> : null}
         {/* Kvittonas betaldatum, inte etiketten projekt.ar – samma ar som
             underlaget (src/lib/projektar.ts). */}
         <Rad

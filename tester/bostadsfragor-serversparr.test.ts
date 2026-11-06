@@ -17,13 +17,17 @@ const h = vi.hoisted(() => ({
   kostnadFindMany: vi.fn(),
 }));
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
+vi.mock("@/lib/prisma", () => {
+  const prisma = {
     bostad: { findUniqueOrThrow: h.bostadFindUniqueOrThrow },
     projekt: { findFirst: h.projektFindFirst, update: h.projektUpdate },
     kostnad: { findMany: h.kostnadFindMany },
-  },
-}));
+    // Projektet och bostadsdelen sparas i samma transaktion.
+    projekt_bostadsdel: { deleteMany: vi.fn(), createMany: vi.fn() },
+    $transaction: async (fn: (tx: unknown) => unknown) => fn(prisma),
+  };
+  return { prisma };
+});
 
 vi.mock("@/lib/session", () => ({
   kravBostad: vi.fn(async () => ({ anvandareId: ANVANDARE, bostadId: BOSTAD })),

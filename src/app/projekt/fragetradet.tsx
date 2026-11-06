@@ -44,7 +44,10 @@ import {
   type JaNejSvar,
   type NyttEllerBigtSvar,
 } from "@/doman/fragetradet";
+import type { BostadsdelSvar } from "@/doman/bostadsdel";
+import type { Upplatelseform } from "@/doman/typer";
 import { BeloppFalt } from "@/components/belopp-falt";
+import { BostadsdelFraga } from "./bostadsdel-fraga";
 import {
   Falt,
   FALTFEL_KLASS,
@@ -483,8 +486,12 @@ export function FragetradetFalt({
   onAndring,
   helaBeloppet,
   skickForsaljning,
+  bostadsdel,
 }: {
   initial?: FragetradetVarden;
+  /** "Vilken del av bostaden?" efter namnet, med det sparade svaret. Utelamnad:
+   *  fragan visas inte och servern ror inte raderna. */
+  bostadsdel?: { upplatelseform: Upplatelseform; initial: BostadsdelSvar[] };
   /** Fraga 7, skicket vid forsaljningen – bara i projektets redigering och
    *  bara nar bostaden ar markerad som sald (da skickas det tidigare svaret,
    *  eller "" om det saknas). Utelamnad: fragan visas inte och faltet skickas
@@ -523,6 +530,10 @@ export function FragetradetFalt({
           onAndring?.();
         }}
       />
+
+      {bostadsdel ? (
+        <BostadsdelFraga upplatelseform={bostadsdel.upplatelseform} initial={bostadsdel.initial} />
+      ) : null}
 
       <Fragetradet
         varden={svar}

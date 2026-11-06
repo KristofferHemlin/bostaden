@@ -38,6 +38,7 @@ import {
 import {
   aterkallaInbjudanAction,
   skapaInbjudanAction,
+  visaInbjudanAction,
   type InbjudanResultat,
 } from "@/app/inbjudan/actions";
 
@@ -254,23 +255,62 @@ function Inbjudningskod({
   );
 }
 
+/** Raden "Väntar på svar" – skiljer en inbjudan fran ett medlemskap vid en
+ *  blick (docs/design.md, "Att bjuda in en delägare"). */
+export const INBJUDAN_VANTAR = "Väntar på svar";
+
+// En utestaende inbjudan i kortet Tillgang (docs/design.md, "Att bjuda in en
+// delägare"): adressen, "Väntar på svar", en vag tillbaka till samma lank och
+// QR-kod, och ett satt att aterkalla den. Inget mejl skickas – utan vagen
+// tillbaka har den som stangde fliken en inbjudan som finns i databasen och
+// ingenstans pa hennes skarm.
 function UtestaendeInbjudan({ id, epost, andel }: { id: string; epost: string; andel: number | null }) {
   const [resultat, action, pagar] = useActionState(aterkallaInbjudanAction, {});
   const hanteraSubmit = useForhindraDubbelinskick(pagar);
+  const [kod, visaKod, hamtar] = useActionState<InbjudanResultat, FormData>(visaInbjudanAction, {});
+  const hanteraVisa = useForhindraDubbelinskick(hamtar);
+  // Koden visas tills hon trycker Klar. Ett nytt tryck pa "Visa länken igen"
+  // visar den igen.
+  const [dold, setDold] = useState(false);
 
   return (
-    <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-1 py-1.5">
-      <input type="hidden" name="inbjudan_id" value={id} />
+    <div className="flex flex-col gap-1 py-1.5">
       <div className="flex justify-between gap-3">
-        <span className="min-w-0 break-words text-text-sekundar">{epost} (inbjuden)</span>
-        <span className="shrink-0 tabular-nums text-text-sekundar">
+        <span className="min-w-0 break-words text-text-primar">{epost}</span>
+        <span className="shrink-0 tabular-nums text-text-primar">
           {formateraAndelEllerInteAngiven(andel)}
         </span>
       </div>
-      <button type="submit" disabled={pagar} className={`${TEXTLANK_KLASS} self-start`}>
-        {pagar ? "Återkallar…" : "Återkalla"}
-      </button>
+      <p className="text-text-sekundar">{INBJUDAN_VANTAR}</p>
+
+      {kod.ok && !dold ? (
+        <div className="py-2">
+          <Inbjudningskod resultat={kod} onKlar={() => setDold(true)} />
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-x-4">
+          <form
+            action={visaKod}
+            onSubmit={(e) => {
+              hanteraVisa(e);
+              setDold(false);
+            }}
+          >
+            <input type="hidden" name="inbjudan_id" value={id} />
+            <button type="submit" disabled={hamtar} className={TEXTLANK_KLASS}>
+              {hamtar ? "Hämtar…" : "Visa länken igen"}
+            </button>
+          </form>
+          <form action={action} onSubmit={hanteraSubmit}>
+            <input type="hidden" name="inbjudan_id" value={id} />
+            <button type="submit" disabled={pagar} className={TEXTLANK_KLASS}>
+              {pagar ? "Återkallar…" : "Återkalla"}
+            </button>
+          </form>
+        </div>
+      )}
+      {!kod.ok && kod.fel ? <p role="alert" className={FALTFEL_KLASS}>{kod.fel}</p> : null}
       {resultat.fel ? <p role="alert" className={FALTFEL_KLASS}>{resultat.fel}</p> : null}
-    </form>
+    </div>
   );
 }

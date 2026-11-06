@@ -20,7 +20,8 @@ type Modell =
   | "radfordelning"
   | "bilaga"
   | "inbjudan"
-  | "regelparameter";
+  | "regelparameter"
+  | "projekt_bostadsdel";
 
 interface Relation {
   modell: Modell;
@@ -53,6 +54,7 @@ const RELATIONER: Record<Modell, Record<string, Relation>> = {
     bostad: en("bostad", "bostad_id"),
     klassificerare: en("anvandare", "klassificerad_av"),
     fordelningar: manga("radfordelning", "projekt_id"),
+    bostadsdelar: manga("projekt_bostadsdel", "projekt_id"),
   },
   kostnad: {
     bostad: en("bostad", "bostad_id"),
@@ -65,6 +67,7 @@ const RELATIONER: Record<Modell, Record<string, Relation>> = {
   bilaga: { kostnad: en("kostnad", "kostnad_id") },
   inbjudan: { bostad: en("bostad", "bostad_id"), inbjudare: en("anvandare", "inbjuden_av") },
   regelparameter: {},
+  projekt_bostadsdel: { projekt: en("projekt", "projekt_id") },
 };
 
 // ON DELETE i schemat: vad som hander med barnraderna nar foraldern raderas.
@@ -79,6 +82,7 @@ const VID_RADERING: { fran: Modell; till: Modell; falt: string; satt: "cascade" 
   { fran: "bostad", till: "projekt", falt: "bostad_id", satt: "cascade" },
   { fran: "bostad", till: "kostnad", falt: "bostad_id", satt: "cascade" },
   { fran: "projekt", till: "radfordelning", falt: "projekt_id", satt: "cascade" },
+  { fran: "projekt", till: "projekt_bostadsdel", falt: "projekt_id", satt: "cascade" },
   { fran: "kostnad", till: "kostnadsrad", falt: "kostnad_id", satt: "cascade" },
   { fran: "kostnad", till: "bilaga", falt: "kostnad_id", satt: "cascade" },
   { fran: "kostnadsrad", till: "radfordelning", falt: "kostnadsrad_id", satt: "cascade" },
@@ -116,6 +120,7 @@ const STANDARD: Record<Modell, () => Rad> = {
   }),
   inbjudan: () => ({ inbjuden_av: null, status: "utestaende", besvarad_at: null }),
   regelparameter: () => ({ giltig_till: null, kalla: null }),
+  projekt_bostadsdel: () => ({ fritext: null }),
 };
 
 export type Tabeller = Record<Modell, Rad[]>;
@@ -124,6 +129,7 @@ function tommaTabeller(): Tabeller {
   return {
     anvandare: [], bostad: [], medlemskap: [], projekt: [], kostnad: [],
     kostnadsrad: [], radfordelning: [], bilaga: [], inbjudan: [], regelparameter: [],
+    projekt_bostadsdel: [],
   };
 }
 
@@ -398,6 +404,7 @@ export function skapaFalskDatabas() {
     bilaga: delegat("bilaga"),
     inbjudan: delegat("inbjudan"),
     regelparameter: delegat("regelparameter"),
+    projekt_bostadsdel: delegat("projekt_bostadsdel"),
     // En interaktiv transaktion ar atomar: kastar den ateraterstalls tabellerna.
     $transaction: async (arg: unknown) => {
       if (typeof arg !== "function") return Promise.all(arg as Promise<unknown>[]);

@@ -45,7 +45,10 @@ export default async function RedigeraProjektSida({
   const { bostadId } = await kravBostad();
 
   const [projekt, bostad, kostnadRader] = await Promise.all([
-    prisma.projekt.findFirst({ where: { id, bostad_id: bostadId } }),
+    prisma.projekt.findFirst({
+      where: { id, bostad_id: bostadId },
+      include: { bostadsdelar: { select: { del: true, fritext: true } } },
+    }),
     prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } }),
     prisma.kostnad.findMany({
       where: { bostad_id: bostadId },
@@ -92,6 +95,9 @@ export default async function RedigeraProjektSida({
         projektetsBelopp={belopp}
         projektetsSumma={projektSumma(kostnader, id)}
         merkostnadAndrad={merkostnadAndrad}
+        // Bostadsdelen gar att ratta har – raden pa projektets sida ar
+        // nagot hon kan andra, inte bara nagot hon matat in (docs/design.md).
+        bostadsdel={{ upplatelseform: bostad.upplatelseform, initial: projekt.bostadsdelar }}
         // Fraga 7 gar att andra har, men forst nar bostaden ar sald – fore
         // forsaljningen finns inget "nar du salde" att svara om.
         skickForsaljning={

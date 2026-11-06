@@ -14,7 +14,9 @@ import { redirect } from "next/navigation";
 import { kostnaderKoppladeTillProjekt } from "@/doman/berakningar";
 import { tolkaSkickForvarv } from "@/doman/fragetradet";
 import { hamtaProjektetsBelopp, tillDomanKostnad } from "@/lib/doman-fran-db";
+import { tolkaBostadsdelar } from "@/doman/bostadsdel";
 import { kravBostadsfragorBesvarade } from "@/lib/bostadsfragor-sparr";
+import { sparaBostadsdelar } from "@/lib/bostadsdel-lagring";
 import {
   tolkaFragetradetFormData,
   type FragetradetFaltnamn,
@@ -86,21 +88,28 @@ export async function redigeraProjekt(
   const tolkat = tolkaFragetradetFormData(formData, { belopp });
   if ("fel" in tolkat) return tolkat;
 
-  await prisma.projekt.update({
-    where: { id },
-    data: {
-      namn: tolkat.namn,
-      atgardstyp: tolkat.atgardstyp,
-      battre_kvalitet: tolkat.battre_kvalitet,
-      merkostnad: tolkat.merkostnad,
-      merkostnad_bas: tolkat.merkostnad !== null ? belopp : null,
-      skick_forvarv: tolkat.skick_forvarv,
-      ...(skickForsaljning !== undefined && tolkat.atgardstyp === "utbytt"
-        ? { skick_forsaljning: skickForsaljning }
-        : {}),
-      motivering: tolkat.motivering,
-      klassificerad_av: anvandareId,
-    },
+  const bostadsdelar = tolkaBostadsdelar(formData);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.projekt.update({
+      where: { id },
+      data: {
+        namn: tolkat.namn,
+        atgardstyp: tolkat.atgardstyp,
+        battre_kvalitet: tolkat.battre_kvalitet,
+        merkostnad: tolkat.merkostnad,
+        merkostnad_bas: tolkat.merkostnad !== null ? belopp : null,
+        skick_forvarv: tolkat.skick_forvarv,
+        ...(skickForsaljning !== undefined && tolkat.atgardstyp === "utbytt"
+          ? { skick_forsaljning: skickForsaljning }
+          : {}),
+        motivering: tolkat.motivering,
+        klassificerad_av: anvandareId,
+      },
+    });
+    // Bostadsdelen (docs/design.md, "Vilken del av bostaden projektet
+    // rörde"): frivillig, och ror inga tal.
+    await sparaBostadsdelar(tx, id, bostadsdelar);
   });
 
   revalideraProjektvyer(id);

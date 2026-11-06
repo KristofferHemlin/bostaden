@@ -20,6 +20,8 @@ import {
   fragetradetsValidering,
   type FragetradetVarden,
 } from "../../fragetradet";
+import type { BostadsdelSvar } from "@/doman/bostadsdel";
+import type { Upplatelseform } from "@/doman/typer";
 import { useFormularfel } from "@/lib/formularfel-klient";
 import type { FragetradetFaltnamn } from "@/lib/fragetradet-formdata";
 import { Bekraftelsefraga } from "@/components/bekraftelsefraga";
@@ -47,6 +49,7 @@ export function RedigeraProjektForm({
   projektetsSumma,
   merkostnadAndrad,
   skickForsaljning,
+  bostadsdel,
 }: {
   projektId: string;
   blockerande: Blockerande[];
@@ -61,6 +64,8 @@ export function RedigeraProjektForm({
   merkostnadAndrad: string | null;
   /** Fraga 7 – se FragetradetFalt. Utelamnad fore forsaljningen. */
   skickForsaljning?: string;
+  /** Bostadsdelsfragan – se FragetradetFalt. */
+  bostadsdel: { upplatelseform: Upplatelseform; initial: BostadsdelSvar[] };
 }) {
   const [resultat, spara, sparar] = useActionState(redigeraProjekt, START);
   const [radera, raderaAction, raderar] = useActionState(taBortProjekt, START);
@@ -101,6 +106,7 @@ export function RedigeraProjektForm({
           onAndring={rensaFel}
           helaBeloppet={projektetsSumma}
           skickForsaljning={skickForsaljning}
+          bostadsdel={bostadsdel}
         />
 
         {/* Bara fel som inte hor till nagon fraga star har – resten star vid

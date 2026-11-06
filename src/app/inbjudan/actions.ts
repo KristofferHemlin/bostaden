@@ -16,6 +16,7 @@ import { serverfelMeddelande } from "@/lib/databas-fel";
 import {
   aterkallaInbjudan,
   hamtaInbjudningsvy,
+  hamtaUtestaendeInbjudan,
   inlosenFeltext,
   losInInbjudan,
   skapaInbjudan,
@@ -32,6 +33,21 @@ async function publikBas(): Promise<string> {
   const vard = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
   const protokoll = h.get("x-forwarded-proto") ?? (vard.startsWith("localhost") ? "http" : "https");
   return `${protokoll}://${vard}`;
+}
+
+/** Lanken och QR-koden till en inbjudan. Samma for en ny och en utestaende –
+ *  koden pekar bara ut posten, sa den kan visas igen hur manga ganger som helst. */
+async function inbjudningskod(inbjudanId: string): Promise<{ lank: string; qrSvg: string }> {
+  const lank = `${await publikBas()}/inbjudan/${inbjudanId}`;
+  // Petrolbla pa kortets yta, samma som textfargen – kontrasten racker gott
+  // for en kamera, och en vit ruta vore den enda vita ytan i appen.
+  const qrSvg = await QRCode.toString(lank, {
+    type: "svg",
+    margin: 1,
+    errorCorrectionLevel: "M",
+    color: { dark: "#0c2430", light: "#faf6f0" },
+  });
+  return { lank, qrSvg };
 }
 
 export async function skapaInbjudanAction(
@@ -52,15 +68,7 @@ export async function skapaInbjudanAction(
     });
     if (!resultat.ok) return { fel: resultat.fel };
 
-    const lank = `${await publikBas()}/inbjudan/${resultat.inbjudanId}`;
-    // Petrolbla pa kortets yta, samma som textfargen – kontrasten racker gott
-    // for en kamera, och en vit ruta vore den enda vita ytan i appen.
-    const qrSvg = await QRCode.toString(lank, {
-      type: "svg",
-      margin: 1,
-      errorCorrectionLevel: "M",
-      color: { dark: "#0c2430", light: "#faf6f0" },
-    });
+    const { lank, qrSvg } = await inbjudningskod(resultat.inbjudanId);
 
     revalidatePath("/installningar");
     revalidatePath("/export");
@@ -72,6 +80,32 @@ export async function skapaInbjudanAction(
         anrop: "skapaInbjudan",
         anvandareId: anvandare.id,
       }),
+    };
+  }
+}
+
+/**
+ * Samma lank och kod for en utestaende inbjudan (docs/design.md, "Att bjuda in
+ * en delägare"): inget mejl skickas, och den som stangde fliken innan hon
+ * skickat lanken ska kunna hitta den igen i kortet Tillgang. Bara i den
+ * aktiva bostaden, och bara medan inbjudan ar utestaende.
+ */
+export async function visaInbjudanAction(
+  _foreg: InbjudanResultat,
+  formData: FormData,
+): Promise<InbjudanResultat> {
+  const { bostadId, anvandareId } = await kravBostad();
+  try {
+    const inbjudan = await hamtaUtestaendeInbjudan({
+      bostadId,
+      inbjudanId: String(formData.get("inbjudan_id") ?? ""),
+    });
+    if (!inbjudan) return { fel: "Inbjudan är redan använd eller återkallad." };
+    const { lank, qrSvg } = await inbjudningskod(inbjudan.id);
+    return { ok: true, lank, qrSvg, epost: inbjudan.epost, harKonto: inbjudan.harKonto };
+  } catch (fel) {
+    return {
+      fel: serverfelMeddelande(fel, { sida: "installningar", anrop: "visaInbjudan", anvandareId }),
     };
   }
 }

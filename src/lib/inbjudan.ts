@@ -142,6 +142,23 @@ export async function aterkallaInbjudan(params: {
   return { ok: count === 1 };
 }
 
+/**
+ * En utestaende inbjudan i bostaden, for att visa dess lank och kod igen.
+ * Null om den inte finns, hor till en annan bostad, eller redan ar besvarad.
+ */
+export async function hamtaUtestaendeInbjudan(params: {
+  bostadId: string;
+  inbjudanId: string;
+}): Promise<{ id: string; epost: string; harKonto: boolean } | null> {
+  if (!UUID.test(params.inbjudanId)) return null;
+  const rad = await prisma.inbjudan.findFirst({
+    where: { id: params.inbjudanId, bostad_id: params.bostadId, status: "utestaende" },
+    select: { id: true, epost: true },
+  });
+  if (!rad) return null;
+  return { id: rad.id, epost: rad.epost, harKonto: await harKonto(rad.epost) };
+}
+
 export interface Inbjudningsvy {
   id: string;
   epost: string;

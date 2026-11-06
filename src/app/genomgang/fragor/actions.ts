@@ -20,7 +20,9 @@ import {
   lagringAvBostadsfragor,
   tolkaBostadsfragesvar,
 } from "@/doman/bostadsfragor";
+import { tolkaBostadsdelar } from "@/doman/bostadsdel";
 import { kravBostadsfragorBesvarade } from "@/lib/bostadsfragor-sparr";
+import { sparaBostadsdelar } from "@/lib/bostadsdel-lagring";
 import { hamtaProjektetsBelopp } from "@/lib/doman-fran-db";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import {
@@ -54,6 +56,9 @@ export async function klassificeraHog(
   const belopp = await hamtaProjektetsBelopp(bostadId, projektId);
   const tolkat = tolkaFragetradetFormData(formData, { belopp });
   if ("fel" in tolkat) return tolkat;
+  // Frivillig (docs/design.md, "Vilken del av bostaden projektet rörde"): ett
+  // obesvarat svar sparas som inga rader och kan aldrig avvisa hogen.
+  const bostadsdelar = tolkaBostadsdelar(formData);
 
   try {
     const projekt = await prisma.projekt.findFirst({
@@ -82,19 +87,22 @@ export async function klassificeraHog(
     const nyttAr =
       arKandidater.length > 0 ? Math.min(...arKandidater) : projekt.ar;
 
-    await prisma.projekt.update({
-      where: { id: projektId },
-      data: {
-        namn: tolkat.namn,
-        ar: nyttAr,
-        atgardstyp: tolkat.atgardstyp,
-        battre_kvalitet: tolkat.battre_kvalitet,
-        merkostnad: tolkat.merkostnad,
-        merkostnad_bas: tolkat.merkostnad !== null ? belopp : null,
-        skick_forvarv: tolkat.skick_forvarv,
-        motivering: tolkat.motivering,
-        klassificerad_av: anvandareId,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.projekt.update({
+        where: { id: projektId },
+        data: {
+          namn: tolkat.namn,
+          ar: nyttAr,
+          atgardstyp: tolkat.atgardstyp,
+          battre_kvalitet: tolkat.battre_kvalitet,
+          merkostnad: tolkat.merkostnad,
+          merkostnad_bas: tolkat.merkostnad !== null ? belopp : null,
+          skick_forvarv: tolkat.skick_forvarv,
+          motivering: tolkat.motivering,
+          klassificerad_av: anvandareId,
+        },
+      });
+      await sparaBostadsdelar(tx, projektId, bostadsdelar);
     });
   } catch (fel) {
     return {

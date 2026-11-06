@@ -23,6 +23,8 @@ import {
   fragetradetsValidering,
   type FragetradetUIState,
 } from "@/app/projekt/fragetradet";
+import { BostadsdelFraga } from "@/app/projekt/bostadsdel-fraga";
+import type { Upplatelseform } from "@/doman/typer";
 import { useFormularfel } from "@/lib/formularfel-klient";
 import type { FragetradetFaltnamn } from "@/lib/fragetradet-formdata";
 import {
@@ -56,7 +58,14 @@ interface Hog {
   summa: number;
 }
 
-export function Fas2({ hogar }: { hogar: Hog[] }) {
+export function Fas2({
+  hogar,
+  upplatelseform,
+}: {
+  hogar: Hog[];
+  /** Avgor vilka knappar bostadsdelsfragan visar – inget annat. */
+  upplatelseform: Upplatelseform;
+}) {
   const [index, setIndex] = useState(0);
   const hog = hogar[index];
 
@@ -82,6 +91,7 @@ export function Fas2({ hogar }: { hogar: Hog[] }) {
       hog={hog}
       antal={hogar.length}
       position={index + 1}
+      upplatelseform={upplatelseform}
       onHoppaOver={() => setIndex((i) => i + 1)}
     />
   );
@@ -91,11 +101,13 @@ function HogFormular({
   hog,
   antal,
   position,
+  upplatelseform,
   onHoppaOver,
 }: {
   hog: Hog;
   antal: number;
   position: number;
+  upplatelseform: Upplatelseform;
   onHoppaOver: () => void;
 }) {
   const [resultat, action, pagar] = useActionState(klassificeraHog, START);
@@ -173,6 +185,10 @@ function HogFormular({
             rensaFel();
           }}
         />
+
+        {/* Frivillig, efter namnet (docs/design.md, "Vilken del av bostaden
+            projektet rörde"). Ingen validering – den kan inte stoppa hogen. */}
+        <BostadsdelFraga upplatelseform={upplatelseform} />
 
         <Fragetradet
           varden={svar}

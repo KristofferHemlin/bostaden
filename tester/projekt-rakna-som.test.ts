@@ -54,6 +54,7 @@ function projektRad(over: Record<string, unknown>) {
     skick_forsaljning: null,
     motivering: null,
     klassificerare: null,
+    bostadsdelar: [],
     ...over,
   };
 }
