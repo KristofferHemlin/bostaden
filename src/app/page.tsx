@@ -118,21 +118,15 @@ export default async function Oversikt({
   const inbjudningar = await utestaendeInbjudningar(anvandare.epost, anvandare.id);
   const { bostad, kostnader, projektRader } = await hamtaBostadsdata(bostadId);
   // Inbjudningar FRAN den har bostaden som annu inte besvarats (docs/design.md,
-  // "Startskärmen med innehåll"): en rad under primarknappen, ett pastaende
-  // och ingen uppmaning. Besvarade inbjudningar visas inte – ingenting
+  // "Startskärmen med innehåll"): ett kort overst, ett pastaende och ingen
+  // uppmaning. Besvarade inbjudningar visas inte – ingenting
   // ersatter raden, vilka som har tillgang hor hemma i installningarna.
   const vantandeInbjudningar = await prisma.inbjudan.findMany({
     where: { bostad_id: bostadId, status: "utestaende" },
     orderBy: { skapad_at: "asc" },
     select: { id: true, epost: true },
   });
-  const vantande = vantandeInbjudningar.length > 0 ? (
-    <div className="flex flex-col gap-3 px-1">
-      {vantandeInbjudningar.map((i) => (
-        <VantandeInbjudan key={i.id} id={i.id} epost={i.epost} />
-      ))}
-    </div>
-  ) : null;
+
   const { bostadsnamn } = bostadHeader(bostad);
 
   // De sex senast tillagda kvittona for listan – egen lasning eftersom domanens
@@ -248,6 +242,12 @@ export default async function Oversikt({
       <Fragekort
         svar={{ kopeskilling: bostad.kopeskilling, agarandel }}
       />
+      {/* Efter fragekortet, med flit: hennes egen fraga gar fore nagon annans
+          svar (docs/design.md, "Kan båda visas samtidigt står ägarandelen
+          först"). Fore forstaskarmen och nyckeltalen. */}
+      {vantandeInbjudningar.map((i) => (
+        <VantandeInbjudan key={i.id} id={i.id} epost={i.epost} />
+      ))}
       {tomt ? (
         // Forstaskarmen: den som just skapat kontot vet inte varfor kvitton ska
         // sparas. Skarmen ska saga det, inte forutsatta det.
@@ -297,9 +297,6 @@ export default async function Oversikt({
           </div>
         </Kort>
       ) : null}
-      {/* Pa forstaskarmen ligger knappen inne i kortet, och raderna under den
-          ar kortets egna – raden star darfor direkt under kortet. */}
-      {tomt ? vantande : null}
       {tomt ? null : (
         <>
           {/* Tre sma nyckeltal pa rad, i egna kort. Pa mobil ligger de kvar i en
@@ -330,10 +327,6 @@ export default async function Oversikt({
           <Link href="/kostnad/nytt" className={PRIMARKNAPP_KLASS}>
             Lägg till kvitto
           </Link>
-
-          {/* Direkt under primarknappen (docs/design.md, "Startskärmen med
-              innehåll"). */}
-          {vantande}
 
           {/* Projektkortet, mellan knappen och kvittolistan. Finns inga
               projekt visas det inte alls – ett tomt kort vore en paminnelse

@@ -437,18 +437,23 @@ function ChevronNed({ className }: { className?: string }) {
 export function Kort({
   children,
   className,
+  som = "div",
 }: {
   children: ReactNode;
   className?: string;
+  /** "span" nar kortet ligger i en <button>, som bara far ha frasinnehall.
+   *  Anroparen satter display i className – en span ar annars inline. */
+  som?: "div" | "span";
 }) {
+  const Element = som;
   return (
-    <div
+    <Element
       className={`overflow-hidden rounded-xl border border-linje bg-yta-upphojd${
         className ? ` ${className}` : ""
       }`}
     >
       {children}
-    </div>
+    </Element>
   );
 }
 
