@@ -199,7 +199,7 @@ export function SkapaInbjudan({
   );
 }
 
-function Inbjudningskod({
+export function Inbjudningskod({
   resultat,
   onKlar,
 }: {
@@ -255,6 +255,10 @@ function Inbjudningskod({
   );
 }
 
+/** Vagen tillbaka till samma lank och kod – i kortet Tillgang och i raden pa
+ *  startskarmen (src/app/inbjudan/vantande-inbjudan.tsx). */
+export const VISA_LANKEN_IGEN = "Visa länken igen";
+
 /** Raden "Väntar på svar" – skiljer en inbjudan fran ett medlemskap vid en
  *  blick (docs/design.md, "Att bjuda in en delägare"). */
 export const INBJUDAN_VANTAR = "Väntar på svar";
@@ -298,7 +302,7 @@ function UtestaendeInbjudan({ id, epost, andel }: { id: string; epost: string; a
           >
             <input type="hidden" name="inbjudan_id" value={id} />
             <button type="submit" disabled={hamtar} className={TEXTLANK_KLASS}>
-              {hamtar ? "Hämtar…" : "Visa länken igen"}
+              {hamtar ? "Hämtar…" : VISA_LANKEN_IGEN}
             </button>
           </form>
           <form action={action} onSubmit={hanteraSubmit}>

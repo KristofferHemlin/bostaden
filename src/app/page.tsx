@@ -59,6 +59,7 @@ import { hamtaAnvandare, kravBostad } from "@/lib/session";
 import { utestaendeInbjudningar } from "@/lib/inbjudan";
 import { AnslutKnapp } from "@/app/inbjudan/anslut-knapp";
 import { Inbjudningskort } from "@/app/inbjudan/inbjudningskort";
+import { VantandeInbjudan } from "@/app/inbjudan/vantande-inbjudan";
 import { Fragekort } from "@/app/bostaden/fragekort";
 
 export const dynamic = "force-dynamic";
@@ -116,6 +117,22 @@ export default async function Oversikt({
   // till en bostad hen redan ar medlem i visas inte (se utestaendeInbjudningar).
   const inbjudningar = await utestaendeInbjudningar(anvandare.epost, anvandare.id);
   const { bostad, kostnader, projektRader } = await hamtaBostadsdata(bostadId);
+  // Inbjudningar FRAN den har bostaden som annu inte besvarats (docs/design.md,
+  // "Startskärmen med innehåll"): en rad under primarknappen, ett pastaende
+  // och ingen uppmaning. Besvarade inbjudningar visas inte – ingenting
+  // ersatter raden, vilka som har tillgang hor hemma i installningarna.
+  const vantandeInbjudningar = await prisma.inbjudan.findMany({
+    where: { bostad_id: bostadId, status: "utestaende" },
+    orderBy: { skapad_at: "asc" },
+    select: { id: true, epost: true },
+  });
+  const vantande = vantandeInbjudningar.length > 0 ? (
+    <div className="flex flex-col gap-3 px-1">
+      {vantandeInbjudningar.map((i) => (
+        <VantandeInbjudan key={i.id} id={i.id} epost={i.epost} />
+      ))}
+    </div>
+  ) : null;
   const { bostadsnamn } = bostadHeader(bostad);
 
   // De sex senast tillagda kvittona for listan – egen lasning eftersom domanens
@@ -279,7 +296,11 @@ export default async function Oversikt({
             </div>
           </div>
         </Kort>
-      ) : (
+      ) : null}
+      {/* Pa forstaskarmen ligger knappen inne i kortet, och raderna under den
+          ar kortets egna – raden star darfor direkt under kortet. */}
+      {tomt ? vantande : null}
+      {tomt ? null : (
         <>
           {/* Tre sma nyckeltal pa rad, i egna kort. Pa mobil ligger de kvar i en
               rad med mindre text, aldrig staplade (docs/design.md, "Startskarmen
@@ -309,6 +330,10 @@ export default async function Oversikt({
           <Link href="/kostnad/nytt" className={PRIMARKNAPP_KLASS}>
             Lägg till kvitto
           </Link>
+
+          {/* Direkt under primarknappen (docs/design.md, "Startskärmen med
+              innehåll"). */}
+          {vantande}
 
           {/* Projektkortet, mellan knappen och kvittolistan. Finns inga
               projekt visas det inte alls – ett tomt kort vore en paminnelse
