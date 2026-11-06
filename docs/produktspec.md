@@ -312,6 +312,30 @@ En åtgärd. Klassificeringen sitter här, inte på kostnaden.
 | motivering | text? | svaret på fråga 8 |
 | tidigare_gang_samma_del | bool? | markerar att samma byggnadsdel åtgärdats tidigare; nollar reparationsdelen |
 
+### Projektets bostadsdel
+
+Svaret på *"Vilken del av bostaden?"* i fas 2. Lydelser och vilka knappar som visas står i `docs/design.md`.
+
+**Egen tabell, inte en kolumn.** Ett projekt kan röra flera delar – ett kök och elen till det – och en kolumn med kommatecken i går inte att fråga på.
+
+| Fält | Typ | Not |
+|---|---|---|
+| projekt_id | fk | |
+| del | enum | `KOK`, `BADRUM`, `GOLV`, `YTSKIKT`, `EL`, `VVS`, `DORRAR`, `FORVARING`, `VITVAROR`, `FONSTER`, `BALKONG`, `TAK`, `FASAD`, `VARME`, `DRANERING`, `ALTAN`, `GARAGE`, `TOMT`, `ANNAT` |
+| fritext | text? | bara när `del` är `ANNAT`; aldrig som värde i `del` |
+
+**Koden ändras aldrig, etiketten får ändras.** Byter vi ord på knappen ska gamla rader följa med.
+
+**Fritext lagras aldrig som `del`.** Annars är summeringen oanvändbar inom en månad.
+
+**Alla koder är alltid lagringsbara.** Vilka knappar som visas per upplåtelseform avgörs i gränssnittet. Bakas regeln in i datan sitter dagens version fastgjuten i gamla rader den dag den ändras.
+
+**Inga rader betyder *inte tillfrågad*, inte *ingen del*.** Projekt som skapats före det här har inga rader, och frågan är dessutom frivillig. Samma fälla som `agarandel` och `Number(null)`.
+
+**Och flervalet gör summering per del omöjlig.** Ett projekt på 200 000 kr som är både `KOK` och `EL` ligger i båda. Summerar man delarna får man mer än vad som lagts ut. Frågan *hur mycket på köket* kan därför bara besvaras som **projekt som rörde köket**, aldrig som kronor som tillhör kök. Skrivs det inte ned här bygger någon ett diagram som går till 130 %.
+
+**Ordet *kategori* är upptaget** och betyder grundförbättring respektive reparation – se nästa stycke. Den här heter `bostadsdel` överallt.
+
 **Kategorierna är härledda, inte lagrade.** En åtgärd kan bidra till både grundförbättring och reparation samtidigt – ett exklusivare kök är merkostnaden i den ena kategorin och resten i den andra. Ett lagrat `kategori`-fält kan inte uttrycka det och glider dessutom isär från frågeträdets svar vid varje redigering.
 
 De tidigare fälten `kategori`, `slitet_vid_tilltrade`, `battre_skick_vid_forsaljning` och `kvarvarande_andel` är borttagna. De två sista ersätts av `skick_forvarv` och `skick_forsaljning`: i stället för att be användaren uppskatta en andel ber appen om två observationer vid tidpunkter då de går att göra.

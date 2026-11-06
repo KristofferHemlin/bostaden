@@ -511,7 +511,7 @@ De visas direkt, inte bakom en utfällning. Utfällbara sektioner är till för 
 
 Visa beloppet före avräkning i listor över kvitton – det är summan på pappret, och det är den användaren känner igen. Där ett avräknat belopp visas ska skillnaden framgå, på samma sätt som PDF-paketets rad "varav ROT 7 500 kr, avgår".
 
-**Men varje summa räknar efter ROT.** Årsrubrikens summa, metrikrutornas tre tal, progressfältet mot tröskeln – alla netto. ROT är pengar som redan betalats tillbaka, och just det beloppet får inte dras av som förbättringsutgift. En summa som räknar in det överskattar både vad man lagt ut och vad som kan dras av, och det är det ena talet i appen som aldrig får vara för högt.
+**Men varje summa räknar efter ROT.** Årsrubrikens summa och metrikrutornas tre tal – alla netto. ROT är pengar som redan betalats tillbaka, och just det beloppet får inte dras av som förbättringsutgift. En summa som räknar in det överskattar både vad man lagt ut och vad som kan dras av, och det är det ena talet i appen som aldrig får vara för högt.
 
 **Därav följer att en rad som räknas med ett annat belopp måste visa avdraget.** Annars går rubriken inte att räkna ihop av raderna under den, och en lista vars summa inte stämmer är det snabbaste sättet att förlora användarens tillit. Raden behåller fakturans totalbelopp som sitt belopp och får en dämpad rad under: *varav ROT 11 587,50 kr, avgår*. Samma lydelse som i PDF-paketet – det är samma upplysning och ska inte ha två lydelser.
 
@@ -709,9 +709,21 @@ Inget av talen heter "Totalt avdragsgillt" eller något i den stilen. Det är et
 
 På mobil ligger de tre korten i en rad med mindre text, inte staplade – tre staplade kort tar över hela skärmen och skjuter ner kvittolistan.
 
-**Tröskelraden ligger under nyckeltalen**, i full bredd: progressfältet, tröskelbeloppet, och den korta raden om att beloppet är preliminärt.
+**Ingen tröskelrad under nyckeltalen.** Här stod till 2026-11-06 att den låg där, med progressfält och tröskelbelopp – trots att *Metrikblock* sedan 2026-10-27 säger att båda är borttagna. Två avsnitt i samma fil sa emot varandra i tre veckor. Skälen att den är borta står under *Kvittolistan*.
 
-**Primärknappen ligger ovanför kvittolistan, inte under.** Att lägga till ett kvitto är skälet att appen finns och den handling som utförs oftast – den ska inte kräva att man scrollar förbi sex rader för att nås. Knappen ligger direkt under tröskelraden, i full bredd.
+**Primärknappen ligger ovanför kvittolistan, inte under.** Att lägga till ett kvitto är skälet att appen finns och den handling som utförs oftast – den ska inte kräva att man scrollar förbi sex rader för att nås. Knappen ligger direkt under nyckeltalen, i full bredd.
+
+**Projektkortet ligger mellan knappen och kvittolistan.** Rubriken "Projekt", en länk "Visa alla" högerställd i samma rad, och **de tre senast skapade** projekten med namn, år och vad de räknas som – samma rader som projektlistan.
+
+Tre, inte "de senaste": ett antal som inte står skrivet glider. Ordningen är när projektet skapades, som kvittokortet ovanför, och av samma skäl – kortet bekräftar det du nyss gjorde.
+
+**Bara projekt vars frågor är besvarade.** En hög som väntar på frågor har inget *Räknas som* att visa, och en rad som säger att något är ohanterat är precis den påminnelse regeln under *Kvittolistan* förbjuder här. Finns bara sådana högar visas inget kort alls.
+
+Skälet är att startskärmen annars ser likadan ut före och efter att hon gjort allt arbetet. Uppmätt 2026-11-05 på ett nyskapat konto: ett kvitto in, genomgången besvarad, 18 000 kr på väg till ruta 4 – och startskärmen visade tre tal, en knapp och en kvittorad, precis som innan. **Det hon gjort ska synas där hon landar.**
+
+**Kortet visar inga belopp som kan ändras.** Projektets namn, året och vad det räknas som, ingenting mer. Summan på sida 1 kan fortfarande falla när bostaden säljs, eftersom tröskeln prövas per år på båda slagen tillsammans – och ett tal på startskärmen som senare sjunker är värre än inget tal.
+
+**Finns inga projekt visas kortet inte alls.** Ett tomt projektkort på startskärmen vore en påminnelse om något ogjort, och det är precis det regeln under *Kvittolistan* förbjuder.
 
 **Kvittolistan är ett eget kort** med rubriken "Senaste kvitton" och en länk "Visa alla" högerställd i samma rad. De sex senast tillagda, senaste först. Raderna ser ut som i kvittolistan, med beloppet högerställt.
 
@@ -1719,6 +1731,27 @@ Till 2026-11-04 var det förifyllt med anteckningen fram till första skiljeteck
 
 **Inget annat fält i appen är ett förslag.** De andra förifyllda fälten är sparade svar eller avläsningar, och båda ska stå kvar som de är: ett avläst belopp som markeras vid första klicket kan ersättas av en enda siffra.
 
+#### Vilken del av bostaden projektet rörde
+
+Efter namnet i fas 2 kommer **"Vilken del av bostaden?"** – knappar att trycka på, flera går att välja, och *Annat* öppnar ett fritextfält.
+
+**Frågan är frivillig.** Ett obesvarat projekt sparas som förut. Genomgången har redan upp till sex frågor per projekt, och en sjunde som stoppar flödet vore en ny spärr i precis den väg som ska vara kort. Knappar kostar ett tryck för den som vill svara och ingenting för den som inte vill.
+
+**Vilka knappar som visas beror på upplåtelseformen, och bara på vad bostaden fysiskt har.** En lägenhet har inget eget tak, ingen fasad, ingen dränering och ingen tomt – de tillhör huset. Det är ett påstående om byggnaden, inte om avdragsrätten. `docs/regelkallor.md` säger att ansvarsfördelningen mellan förening och medlem varierar och att ingen generell regel går att koda, så **knapparna får aldrig bli ett omdöme om vad som är avdragsgillt**. Betalade hon för fönsterbytet själv är det hennes, oavsett vad stadgarna borde ha sagt.
+
+| | Knappar |
+|---|---|
+| Bostadsrätt | Kök, Badrum, Golv, Ytskikt, El, VVS, Dörrar, Förvaring, Vitvaror, Fönster, Balkong eller uteplats, Annat |
+| Fastighet | Alla ovan, plus Tak, Fasad, Värme, Dränering, Altan, Garage eller förråd, Tomt |
+
+**Svaret syns på projektets egen sida**, som raden **"Del av bostaden"** bredvid *Räknas som*. Ett fält som samlas in och visas ingenstans är precis det regeln under *Hjälptexter under fält* förbjuder – och raden gör frågan till något hon kan rätta i stället för något hon bara matat in.
+
+**Frågan finns därför också i projektets redigering.** Ett sparat svar som ligger utanför upplåtelseformens knappar visas ändå där – annars försvinner det tyst nästa gång hon sparar något helt annat. En bostad kan ha bytt form i registreringen, och ett svar hon gett ska inte raderas av en lista hon aldrig såg.
+
+**Men inte i deklarationsunderlaget och inte i något tal.** Bostadsdelen rör ingen beräkning, ingen tröskel och ingen blankett. Den dagen vi visar *hur mycket som lagts på köket* är det en egen sak att bestämma, och den vilar på data vi ännu inte har.
+
+**Den heter *bostadsdel*, aldrig *kategori*.** Ordet kategori betyder redan grundförbättring och reparation i den här appen, och ett borttaget fält hette `kategori`. Två betydelser av samma ord i samma produkt är hur en vecka av motsägelser börjar.
+
 #### Anteckningen får två rader där den är radens huvudtext
 
 **Kvittoraden klipper anteckningen till en rad.** `white-space: nowrap` med `text-overflow: ellipsis` ger alltid en rad oavsett skärmbredd – ungefär 60 tecken på en dator, hälften på en telefon. **Den ska i stället rymma två rader och klippas först därefter.**
@@ -1950,6 +1983,14 @@ En anteckning om hur den här raden blev fel i `docs/`: filen sa att texten skul
 Här stod motsatsen fram till 2026-10-20: *"Andelarna ändrar ingenting i underlaget så länge bostaden delas."* Den meningen revs under *Samägande – medlemskapet* den 19:e, men **den här kopian blev kvar ett dygn** – filen sa två saker om samma tal, och agenten hittade det i stället för jag. Det är exakt det `docs/` är till för att inte göra, och det är andra gången på en månad den här bindningen står skriven på fler ställen än den borde. **En regel som står på två ställen kommer förr eller senare att säga olika; den som river den ena ska söka efter den andra.**
 
 **Raden finns oavsett ägarandel.** Den villkorades tidigare på att andelen var under 100 %, vilket var rimligt när inbjudan handlade om ägande. Nu handlar den om åtkomst till ett arkiv, och den som äger sin bostad helt kan mycket väl vilja dela det med någon som bor där. Appen ska inte ha en åsikt om vem som får se ens egna kvitton.
+
+**En utestående inbjudan bär sin länk och sin QR-kod.** Kortet *Tillgång* visar den med adressen den ställts till och en väg tillbaka till samma länk och kod – och ett sätt att återkalla den.
+
+Skälet är att inget mejl skickas. Länken går från hand till hand, och den som stänger fliken innan hon hunnit skicka den har en inbjudan som finns i databasen och ingenstans på hennes skärm. Enda utvägen i dag är att bjuda in samma adress igen, vilket fungerar – den nya ersätter den gamla – men det är en omväg runt något som borde stå kvar.
+
+**Och den ska gå att skilja från ett medlemskap vid en blick.** En rad som bara säger en adress betyder två helt olika saker beroende på om personen har tillgång eller bara blivit tillfrågad. *Väntar på svar* säger vilket, och knappen tillbaka till länken heter **"Visa länken igen"**.
+
+**Länken hämtas, den skapas inte om.** Samma inbjudan, samma kod. En ny länk varje gång vore en ny post, och regeln om högst en utestående inbjudan per adress finns just för att slippa två koder som pekar på samma sak.
 
 **Högst en inbjudan ligger ute per adress och bostad.** Bjuds samma adress in igen till samma bostad **ersätter** den nya inbjudan den gamla i stället för att läggas till, och skriver då den nya andelen.
 

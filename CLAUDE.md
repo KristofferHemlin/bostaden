@@ -379,6 +379,8 @@ Samma dag, i nästa omgång, fällde en annan omskriven sats **trettio tester i 
 
 **Ett test som läser `docs/` får brytas genom att filen ändras tillfälligt.** Det är undantaget från regeln att agenten aldrig rör `docs/`. Utan det går en hel klass av tester aldrig att bryta med flit, eftersom spärren de vaktar ligger i filen och inte i koden — och ett test som aldrig prövats är ett test vi inte vet något om. Villkoren är tre: ändringen är gjord bara för brytningen, filen är återställd efteråt, och rapporten säger både att det gjordes och att `git status` är ren. Allt annat i `docs/` och `CLAUDE.md` är fortsatt orört.
 
+**Faller ingenting vid en brytning är det två saker det kan vara, och testet är bara den ena.** Skriven 2026-11-06, efter att en brytning av ett filter för okända koder inte fällde något – felet låg i brytningen, eftersom det verkliga skyddet satt ett steg senare. Brytningen träffade alltså inte det testet vaktade. **Fastställ vad testet faktiskt skyddar innan du dömer ut det**, annars är en lyckad brytningsrutin ett sätt att försvaga tester som var hela.
+
 **Och det väntade talet räknas fram ur samma källa som koden använder**, inte skrivet som en konstant bredvid. En rad som visar rätt tal av en slump är ingen spärr, och en konstant följer inte med när regeln ändras. Undantaget är de avlästa talen längst ned i det här avsnittet: de **ska** stå som konstanter, eftersom de är mätningar mot Skatteverkets verktyg och inte resultat av vår egen kod.
 
 Dessa fall måste finnas och passera. De sex första är verifierade mot Skatteverkets e-tjänst 2026-09-15 och får inte ändras utan att verktyget körs om.
