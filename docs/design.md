@@ -725,11 +725,25 @@ Skälet är att startskärmen annars ser likadan ut före och efter att hon gjor
 
 **Finns inga projekt visas kortet inte alls.** Ett tomt projektkort på startskärmen vore en påminnelse om något ogjort, och det är precis det regeln under *Kvittolistan* förbjuder.
 
-**En utestående inbjudan står direkt under primärknappen, som en rad utan egen knapp:** *"Inbjudan till x@y.se väntar på svar"*, med en länk till koden och länken. På förstaskärmen, där knappen ligger inne i kortet, står raden under hela kortet – att skjuta in den mellan knappen och *Så fungerar det* delar ett block som hör ihop.
+**En utestående inbjudan är ett kort överst, före nyckeltalen** – samma form, yta och färg som frågekortet om ägarandelen, hela kortet tryckbart med pil till höger, och bakom pilen ligger länken och QR-koden.
 
-**De två sidorna av en inbjudan delar inte plats, och ska inte göra det.** Här stod till 2026-11-06 att raden ligger på samma ställe som den inbjudnas anslutningskort. Det stämde inte – det kortet ligger överst, före nyckeltalen – och det var inte heller rätt önskan. Kortet är en **handling** hon måste ta ställning till och hör därför högst upp. Raden är ett **påstående** utan handling och hör under knappen. Symmetri mellan två saker av olika slag är en ordning som ser ut som en regel utan att vara det.
+Rubriken är **"Inbjudan till x@y.se väntar på svar"**, och under den en dämpad rad: *"Appen skickar ingenting – visa koden eller skicka länken själv."*
 
-**Det är ett påstående, inte en uppmaning.** Ingen orange, ingen åtgärdsprick, ingen primärknapp – hon har gjort sin del, och det som återstår är någon annans. Regeln mot påminnelser här gäller hennes eget ogjorda arbete; det här är ett faktum om bostaden, i samma klass som projektkortet.
+Att vi inte skickar något är det hon minst väntar sig och det som förklarar varför ingenting hänt. Därför står det först, före vad hon kan göra åt det.
+
+**Formen är densamma, men orden skiljer dem åt, och det är avsiktligt.** Ägarandelskortet ställer **en fråga till henne** och försvinner när hon svarat. Inbjudningskortet är **ett påstående om någon annan** – hon har redan gjort sitt. Gör vi dem identiska också i ton säger formen *här är en sak till att ta hand om*, vilket är precis det här kortet inte är. Pilen betyder *här finns mer*, inte *gör det här*.
+
+Skrivs det inte ned glider de ihop: en gemensam komponent som heter något i stil med *frågekortet* drar inbjudan in i frågeton av sig själv. Samma sammanblandning som *kategori* och som *(inbjuden)* mot *Väntar på svar*.
+
+**Kan båda visas samtidigt står ägarandelen först.** I dag krockar de aldrig, eftersom inbjudningsflödet sätter hennes andel och därmed tar bort frågekortet – men ordningen står här för den dag det ändras. Hennes egen fråga går före någon annans svar.
+
+**Ingen orange.** Nyckeltalskorten är tryckbara utan att vara orange, så mönstret finns redan, och orange är kvar för *Lägg till kvitto*.
+
+**Kortet försvinner helt när inbjudan accepteras eller återkallas**, och ingenting ersätter det – vilka som har tillgång hör hemma i inställningarna.
+
+> **Platsen var först under primärknappen, och det blev fel.** Uppmätt på skärmen 2026-11-06: en naken textrad på bakgrunden mellan två kort, på en sida där allt annat är kort, inklämd mellan primärknappen och projektkortet – en stillsam rad på den högljuddaste platsen, med länken bruten till en egen föräldralös rad.
+>
+> **Felet satt i specen.** Den sa "en rad utan egen knapp". *Utan knapp* handlade om ton och inte om form, men uttrycktes som form, och formen blev ingen alls. **Och den blandade ihop placering med påträngenhet**: att ett påstående hör längre ner stämmer inte när "längre ner" är mitt i skärmens tyngsta del. Ton och plats är två val, inte ett.
 
 **Raden finns bara medan inbjudan är utestående.** Accepteras den eller återkallas den försvinner den, och **ingenting ersätter den** – vilka som har tillgång hör hemma i inställningarna. Annars blir startskärmen en statustavla.
 
