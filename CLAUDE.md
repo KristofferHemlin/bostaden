@@ -447,6 +447,8 @@ Dessa fall måste finnas och passera. De sex första är verifierade mot Skattev
 
 Kör testerna innan du säger att ett steg är klart.
 
+**Och checka aldrig in från ett rött träd.** Skriven 2026-11-06, efter att en commit gick igenom medan tre tester föll – kommandot som körde dem stoppade inte vid fel, så utfallet lästes aldrig. **Ett kommandos exitkod är inte ett testresultat förrän någon sett det.** Rapporten ska gälla den commit som gjordes, inte en körning efteråt.
+
 ---
 
 ## Konventioner

@@ -725,6 +725,14 @@ Skälet är att startskärmen annars ser likadan ut före och efter att hon gjor
 
 **Finns inga projekt visas kortet inte alls.** Ett tomt projektkort på startskärmen vore en påminnelse om något ogjort, och det är precis det regeln under *Kvittolistan* förbjuder.
 
+**En utestående inbjudan står direkt under primärknappen, som en rad utan egen knapp:** *"Inbjudan till x@y.se väntar på svar"*, med en länk till koden och länken. På förstaskärmen, där knappen ligger inne i kortet, står raden under hela kortet – att skjuta in den mellan knappen och *Så fungerar det* delar ett block som hör ihop.
+
+**De två sidorna av en inbjudan delar inte plats, och ska inte göra det.** Här stod till 2026-11-06 att raden ligger på samma ställe som den inbjudnas anslutningskort. Det stämde inte – det kortet ligger överst, före nyckeltalen – och det var inte heller rätt önskan. Kortet är en **handling** hon måste ta ställning till och hör därför högst upp. Raden är ett **påstående** utan handling och hör under knappen. Symmetri mellan två saker av olika slag är en ordning som ser ut som en regel utan att vara det.
+
+**Det är ett påstående, inte en uppmaning.** Ingen orange, ingen åtgärdsprick, ingen primärknapp – hon har gjort sin del, och det som återstår är någon annans. Regeln mot påminnelser här gäller hennes eget ogjorda arbete; det här är ett faktum om bostaden, i samma klass som projektkortet.
+
+**Raden finns bara medan inbjudan är utestående.** Accepteras den eller återkallas den försvinner den, och **ingenting ersätter den** – vilka som har tillgång hör hemma i inställningarna. Annars blir startskärmen en statustavla.
+
 **Kvittolistan är ett eget kort** med rubriken "Senaste kvitton" och en länk "Visa alla" högerställd i samma rad. De sex senast tillagda, senaste först. Raderna ser ut som i kvittolistan, med beloppet högerställt.
 
 Anteckningen som huvudtext är avsiktligt. "Målade om sovrummet" säger vad raden är; "BAUHAUS" gör det inte.
