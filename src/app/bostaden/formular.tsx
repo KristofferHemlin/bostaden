@@ -14,7 +14,7 @@ import { ANDELENS_HJALPTEXT, KOPESKILLINGENS_HJALPTEXT, erbjudandetGaller } from
 import { agarandelFel, agarandelFranText } from "@/lib/agarandel";
 import { formateraAndel } from "@/lib/samagande";
 import { useFormularfel } from "@/lib/formularfel-klient";
-import { INBJUDAN_SER_ALLT, SkapaInbjudan } from "@/app/installningar/dela-bostaden";
+import { SkapaInbjudan } from "@/app/installningar/dela-bostaden";
 import {
   sparaAndelen,
   sparaKopeskillingen,
@@ -185,7 +185,6 @@ export function Inbjudningserbjudande({
   const router = useRouter();
   return (
     <div className="flex flex-col gap-4 p-5 font-granssnitt text-sm">
-      <p className="text-text-primar">{INBJUDAN_SER_ALLT}</p>
       <SkapaInbjudan
         egenAndel={egenAndel}
         ovriga={[]}

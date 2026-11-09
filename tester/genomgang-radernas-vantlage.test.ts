@@ -116,8 +116,13 @@ describe("Flytta ut", () => {
   it("bara raden som skickades ar i vantlage, aven i en annan hog", async () => {
     await act(async () => radensKnapp("Färg till sovrummet").click());
     expect(h.flyttaUturHog).toHaveBeenCalledTimes(1);
+    // En avstangd knapp utan ord ser ut som en knapp som slutat fungera
+    // (uppmatt pa skarmen 2026-11-09) – den sager vad som hander.
+    expect(radensKnapp("Färg till sovrummet").textContent).toBe("Flyttar ut…");
     expect(radensKnapp("Färg till sovrummet").disabled).toBe(true);
+    expect(radensKnapp("Penslar till sovrummet").textContent).toBe("Flytta ut");
     expect(radensKnapp("Penslar till sovrummet").disabled).toBe(false);
+    expect(radensKnapp("Kakel till badrummet").textContent).toBe("Flytta ut");
     expect(radensKnapp("Kakel till badrummet").disabled).toBe(false);
   });
 

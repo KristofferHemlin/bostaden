@@ -49,8 +49,9 @@ export interface TillgangData {
   inbjudningar: { id: string; epost: string; andel: number | null }[];
 }
 
-/** Texten ovanfor inbjudningsformularet: vad som delas (docs/design.md, "Att bjuda
- *  in en delägare"). Delas med erbjudandet efter andelsfragan pa startsidan. */
+/** Texten overst i inbjudningsformularet: vad som delas (docs/design.md, "Att
+ *  bjuda in en delägare"). Visas av SkapaInbjudan, och darmed bade i kortet
+ *  Tillgang och i erbjudandet efter andelsfragan pa startsidan. */
 export const INBJUDAN_SER_ALLT =
   "Den du bjuder in ser allt: varje kvitto, varje belopp, hela historiken och underlaget. Ni ser samma bostad, och båda kan lägga in nya kvitton.";
 
@@ -106,21 +107,14 @@ export function TillgangKort({ data }: { data: TillgangData }) {
             Bjud in någon till bostaden
           </button>
         ) : (
-          // Texten om vad den inbjudna ser star ovanfor falten, pa samma
-          // skarm – inte som ett eget steg med Fortsätt (docs/design.md, "Att
-          // bjuda in en delägare"). Samma form som erbjudandet efter
-          // andelsfragan pa startsidan.
-          <div className="flex flex-col gap-4">
-            <p className="text-text-primar">{INBJUDAN_SER_ALLT}</p>
-            <SkapaInbjudan
-              egenAndel={egen}
-              ovriga={[
-                ...data.medlemmar.filter((m) => !m.du).map((m) => m.andel),
-                ...data.inbjudningar.map((i) => i.andel),
-              ]}
-              onKlar={() => setSteg("vila")}
-            />
-          </div>
+          <SkapaInbjudan
+            egenAndel={egen}
+            ovriga={[
+              ...data.medlemmar.filter((m) => !m.du).map((m) => m.andel),
+              ...data.inbjudningar.map((i) => i.andel),
+            ]}
+            onKlar={() => setSteg("vila")}
+          />
         )}
       </div>
     </>
@@ -162,6 +156,13 @@ export function SkapaInbjudan({
 
   return (
     <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-4">
+      {/* Upplysningen fore beslutet, ovanfor falten pa samma skarm – inte ett
+          eget steg med Fortsätt. Den hor till formularet och forsvinner med
+          det nar inbjudan ar skapad: nar QR-koden visas ar beslutet fattat
+          (docs/design.md, "Att bjuda in en delägare"). Galler bade kortet
+          Tillgang och erbjudandet pa startsidan, som bada visar det har
+          formularet. */}
+      <p className="text-text-primar">{INBJUDAN_SER_ALLT}</p>
       <Falt
         etikett="E-postadress"
         hjalp="Adressen personen loggar in med. Bara den adressen kan använda inbjudan."

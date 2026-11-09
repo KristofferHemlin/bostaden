@@ -54,6 +54,7 @@ import { useFormularfel } from "@/lib/formularfel-klient";
 import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 import { formateraBeloppInmatning, formateraKronor } from "@/lib/format";
 import { useNarKlar } from "@/lib/nar-klar";
+import { skickaUtanNollstallning } from "@/lib/skicka-utan-nollstallning";
 import { ANDEL_INTE_ANGIVEN, formateraAndel } from "@/lib/samagande";
 import { ArkivexportKnapp } from "./arkivexport-knapp";
 import { KONTAKTADRESS } from "@/lib/kontakt";
@@ -388,10 +389,15 @@ function BostadenEditForm({
 
   return (
     <>
+      {/* Skickas fran onSubmit, inte via action-propen: React nollstaller
+          annars hela formularet till startvardena nar servern avvisar, och
+          det hon skrev forsvinner (src/lib/skicka-utan-nollstallning.ts). */}
       <form
         ref={formRef}
-        action={action}
-        onSubmit={hanteraSubmit}
+        onSubmit={(e) => {
+          hanteraSubmit(e);
+          skickaUtanNollstallning(e, action);
+        }}
         onChange={() => {
           onDirty();
           rensa();

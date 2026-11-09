@@ -510,7 +510,9 @@ function HogKvittoRad({ hogId, kvitto: k }: { hogId: string; kvitto: Kvitto }) {
               disabled={pagar}
               className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
             >
-              Flytta ut
+              {/* Sager vad som hander, som radernas andra knappar – en
+                  avstangd knapp utan ord ser ut som en som slutat fungera. */}
+              {pagar ? "Flyttar ut…" : "Flytta ut"}
             </button>
           </form>
         </span>
