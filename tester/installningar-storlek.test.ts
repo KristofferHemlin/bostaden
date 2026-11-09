@@ -54,9 +54,15 @@ beforeEach(() => {
   h.inbjudanFindMany.mockResolvedValue([]);
 });
 
-// Avvisningens lydelse. Den star inte i docs/design.md an – nar den gor det
-// ska testet lasa den darifran.
-const AVVISAD = "Skriv boarean i kvadratmeter, med högst en decimal – till exempel 72 eller 72,5.";
+// Avvisningens lydelse, ur docs/design.md ("Inställningssidan"). Lases inne
+// i testet, aldrig pa modulniva: en omskriven mening ska falla ett test, inte
+// hela filen (CLAUDE.md, "Tester").
+function avvisad(): string {
+  const design = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+  const m = design.match(/\*\*Lydelsen när fältet avvisar:\*\*\n\n> \*"([^"]+)"\*/);
+  if (!m) throw new Error("design.md saknar lydelsen nar storleksfaltet avvisar");
+  return m[1]!;
+}
 
 const TAS_EMOT: [string, string][] = [
   ["36", "36"],
@@ -75,7 +81,7 @@ describe("storleken tar ett positivt tal med hogst en decimal", () => {
 
   it.each(AVVISAS)("%s avvisas vid faltet och sparas inte", async (text) => {
     const resultat = await sparaBostaden({}, formulardata(text));
-    expect(resultat).toEqual({ fel: AVVISAD, falt: "storlek" });
+    expect(resultat).toEqual({ fel: avvisad(), falt: "storlek" });
     expect(h.bostadUpdate).not.toHaveBeenCalled();
   });
 
@@ -92,7 +98,7 @@ describe("storleken tar ett positivt tal med hogst en decimal", () => {
 
   it.each(["0,0", "36,", ",5", "12 00", "100000"])("%s avvisas ocksa", async (text) => {
     const resultat = await sparaBostaden({}, formulardata(text));
-    expect(resultat).toEqual({ fel: AVVISAD, falt: "storlek" });
+    expect(resultat).toEqual({ fel: avvisad(), falt: "storlek" });
   });
 
   it.each([

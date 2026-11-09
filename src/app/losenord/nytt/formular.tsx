@@ -9,6 +9,7 @@ import { PRIMARKNAPP_KLASS } from "@/components/skarm";
 import { useFormularfel } from "@/lib/formularfel-klient";
 import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 import { nyttLosenordFel } from "@/lib/inloggningsfalt";
+import { skickaUtanNollstallning } from "@/lib/skicka-utan-nollstallning";
 import { LOSENORD_MINSTA_LANGD } from "@/lib/losenord";
 import { sattNyttLosenord, type NyttLosenordResultat } from "../actions";
 import { OgiltigLank } from "./ogiltig-lank";
@@ -24,11 +25,16 @@ export function NyttLosenordFormular() {
 
   if (resultat.lankOgiltig) return <OgiltigLank />;
 
+  // Skickas fran onSubmit, inte via action-propen: React nollstaller annars
+  // formularet nar servern avvisar, och det lösenord hon just valt forsvinner
+  // (src/lib/skicka-utan-nollstallning.ts).
   return (
     <form
       ref={formRef}
-      action={action}
-      onSubmit={hanteraSubmit}
+      onSubmit={(e) => {
+        hanteraSubmit(e);
+        skickaUtanNollstallning(e, action);
+      }}
       noValidate
       className="flex flex-col gap-4"
     >

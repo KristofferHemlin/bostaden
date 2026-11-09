@@ -28,6 +28,7 @@ import {
 } from "@/components/skarm";
 import { agarandelFranText } from "@/lib/agarandel";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
+import { skickaUtanNollstallning } from "@/lib/skicka-utan-nollstallning";
 import {
   andelssummaNotis,
   formateraAndel,
@@ -155,7 +156,16 @@ export function SkapaInbjudan({
   const ovrigaSumma = summeraAndelar(ovriga);
 
   return (
-    <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-4">
+    // Skickas fran onSubmit, inte via action-propen: React nollstaller annars
+    // formularet nar servern avvisar, och e-postadressen forsvinner
+    // (src/lib/skicka-utan-nollstallning.ts).
+    <form
+      onSubmit={(e) => {
+        hanteraSubmit(e);
+        skickaUtanNollstallning(e, action);
+      }}
+      className="flex flex-col gap-4"
+    >
       {/* Upplysningen fore beslutet, ovanfor falten pa samma skarm – inte ett
           eget steg med Fortsätt. Den hor till formularet och forsvinner med
           det nar inbjudan ar skapad: nar QR-koden visas ar beslutet fattat

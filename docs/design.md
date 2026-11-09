@@ -1009,6 +1009,10 @@ Håll texten till en rad. Behövs mer förklaring hör den hemma bakom en inform
 
 **Ett formulär som inte sparar ska säga varför, varje gång, på samma sätt.** Skriven 2026-10-18, efter att en mätning i produktionen visade tre olika beteenden i samma app.
 
+**Ett formulär som avvisas behåller det hon skrev.** Ett `<form action={…}>` nollställs av React 19 när åtgärden är klar — **också när servern svarat med ett fel**, och då töms hela formuläret, inte bara fältet som avvisades. Uppmätt 2026-11-09: storleken avvisades och identifieringen tömdes med den. Skicka från `onSubmit` i en transition i stället, så står det inskrivna kvar.
+
+Det är **inte** samma sak som ommonteringsfällan längre ned i det här avsnittet. Där byts DOM-noden ut; här är noden densamma och värdet återställt till `defaultValue`. Två olika mekanismer med samma symptom, och den här träffar varje okontrollerat fält i formuläret.
+
 **En lista där varje rad har sin egen knapp har ett eget tillstånd per rad.** Väntläget, spärren mot dubbelinskick och felet hör till raden, inte till listan. Ett delat tillstånd gör att ett tryck sätter alla knappar i *Sparar…* samtidigt, och det blockerar dessutom tyst ett tryck på en annan rad medan den första sparas.
 
 Skriven 2026-11-09, efter att den första riktiga användaren tryckte på det ena av två sammanslagningsförslag och såg båda knapparna snurra. Utfallet var rätt och beskedet fel, i precis det steg hon redan tyckte var oklart. Agenten räknade efteråt till **fem ställen till** med samma mönster.
@@ -1869,6 +1873,14 @@ Regeln skrevs 2026-11-03, efter att den byggts från en prompt och alltså en ti
 | `36`, `36,5`, `36.5`, `1 200` | `-3`, `0`, `35,23`, `kkgkg`, `72 m2`, `ca 72` |
 
 Både komma och punkt är decimaltecken, mellanslag är tusentalsavgränsare. Allt annat avvisas med ett besked vid fältet.
+
+**Lydelsen när fältet avvisar:**
+
+> *"Skriv boarean i kvadratmeter, med högst en decimal – till exempel 72 eller 72,5."*
+
+Den säger vad som går att skriva, inte bara vad som inte gör det. Talet visas med decimalkomma: *72,5 m²*.
+
+**Fältet är `inputMode="decimal"`.** Med `numeric` saknar telefonens tangentbord decimaltecken, så *36,5* gick inte att skriva alls. Ett fält som tar decimaler och ett tangentbord utan komma är en regel som bara gäller på datorn.
 
 **Och det hon skrev står kvar när fältet avvisar.** Ett fel som pekar på ett värde som inte längre syns är ett fel hon inte kan rätta. Uppmätt 2026-11-09: fältet visade det lagrade värdet igen i stället för det hon just skrivit.
 

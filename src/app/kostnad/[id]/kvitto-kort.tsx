@@ -69,6 +69,7 @@ import {
 } from "@/lib/kvittodatum-notis";
 import type { Bilagevy } from "@/lib/lagring/bilagor";
 import { useNarKlar } from "@/lib/nar-klar";
+import { skickaUtanNollstallning } from "@/lib/skicka-utan-nollstallning";
 import { Projektalternativ, type Projektval } from "@/components/projektval";
 
 const START: KostnadRedigeraResultat = {};
@@ -351,10 +352,15 @@ export function RedigeraVy({
 
   return (
     <>
+      {/* Skickas fran onSubmit, inte via action-propen: React nollstaller
+          annars formularet till startvardena nar servern avvisar, och det hon
+          skrev forsvinner (src/lib/skicka-utan-nollstallning.ts). */}
       <form
         ref={formRef}
-        action={spara}
-        onSubmit={hanteraSparaSubmit}
+        onSubmit={(e) => {
+          hanteraSparaSubmit(e);
+          skickaUtanNollstallning(e, spara);
+        }}
         className="flex flex-col gap-5 border-t border-linje p-5"
       >
         <input type="hidden" name="kostnad_id" value={kostnadId} />

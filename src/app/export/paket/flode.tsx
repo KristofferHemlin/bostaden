@@ -16,6 +16,8 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { skapaBilagepaket } from "./actions";
+import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
+import { skickaUtanNollstallning } from "@/lib/skicka-utan-nollstallning";
 import {
   Bekraftelseruta,
   Falt,
@@ -60,6 +62,7 @@ export function BilagepaketFlode({
   upplatelseform: "bostadsratt" | "fastighet";
 }) {
   const [resultat, action, sparar] = useActionState(skapaBilagepaket, START);
+  const hanteraSubmit = useForhindraDubbelinskick(sparar);
   const [byggsteg, setByggsteg] = useState<Byggsteg>({ fas: "komplettering" });
   const senastByggd = useRef<BilagepaketData | null>(null);
 
@@ -141,7 +144,17 @@ export function BilagepaketFlode({
   }
 
   return (
-    <form action={action} className="flex flex-col gap-6 p-5">
+    // Skickas fran onSubmit, inte via action-propen: React nollstaller annars
+    // formularet nar servern avvisar (src/lib/skicka-utan-nollstallning.ts).
+    // Formularet saknade dessutom sparren mot dubbelinskick (CLAUDE.md,
+    // "Ingen knapp får skickas två gånger").
+    <form
+      onSubmit={(e) => {
+        hanteraSubmit(e);
+        skickaUtanNollstallning(e, action);
+      }}
+      className="flex flex-col gap-6 p-5"
+    >
       <Meddelanderuta>
         Innan paketet byggs, bekräfta de uppgifter som står på försättssidan.
         Ägarandelen avgör beloppen och tillträdesdatumet är baslinjen för
