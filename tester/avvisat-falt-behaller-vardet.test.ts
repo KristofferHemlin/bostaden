@@ -117,7 +117,9 @@ describe("Falt monterar inte om faltet nar ett fel kommer eller gar", () => {
 describe("serverns avvisning ger tillbaka adressen, aldrig losenordet", () => {
   it("fel e-post eller losenord: adressen i svaret, losenordet inte", async () => {
     h.signInWithPassword.mockResolvedValue({
-      error: { message: "Invalid login credentials" },
+      // Den form Supabase svarar med, uppmatt 2026-11-09 – inloggningen grenar
+      // pa koden, aldrig pa meddelandet (CLAUDE.md).
+      error: { name: "AuthApiError", status: 400, code: "invalid_credentials", message: "Invalid login credentials" },
     });
     const svar = await hanteraAuth(
       {},

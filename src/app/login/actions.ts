@@ -83,12 +83,21 @@ export async function loggaUt(): Promise<void> {
 // stallet for att visas.
 const INLOGGNINGEN_GICK_INTE = "Det gick inte att logga in just nu. Försök igen om en stund.";
 
+// Grenar pa felets kod och klass, aldrig pa meddelandets text (CLAUDE.md,
+// "koden grenar aldrig på en mening"). Uppmatt 2026-11-09: Supabase svarar
+// `code: "invalid_credentials"` vid fel uppgifter, och natverksfel och 5xx
+// kommer som AuthRetryableFetchError utan kod – med meddelandet "fetch
+// failed", statusraden ("Bad Gateway") eller serverns egen text. Textgrenarna
+// som fanns som reserv ar borttagna; tester/inloggning-orsak.test.ts faller om
+// en laggs tillbaka.
 function oversattFel(fel: Inloggningsfel): { fel: string; orsak: AuthOrsak } {
-  const m = fel.message.toLowerCase();
-  if (fel.code === "invalid_credentials" || m.includes("invalid login credentials")) {
+  if (fel.code === "invalid_credentials") {
     return { fel: "Fel e-post eller lösenord.", orsak: "uppgifter" };
   }
-  if (fel.code === "email_not_confirmed" || m.includes("email not confirmed")) {
+  // Kan inte intraffa i dag: projektet bekraftar adresser automatiskt
+  // (mailer_autoconfirm, uppmatt 2026-11-09). Star kvar for den dag
+  // bekraftelse slas pa.
+  if (fel.code === "email_not_confirmed") {
     return { fel: "E-postadressen är inte bekräftad än. Kolla mejlen.", orsak: "annat" };
   }
   // For manga forsok oversatts med avsikt (docs/design.md, Inloggningssidan):
@@ -98,11 +107,9 @@ function oversattFel(fel: Inloggningsfel): { fel: string; orsak: AuthOrsak } {
   if (fel.code === "over_request_rate_limit" || fel.status === 429) {
     return { fel: "För många försök. Vänta en stund och försök igen.", orsak: "annat" };
   }
-  // Natverksfel och 5xx fran inloggningstjansten: supabase-js ger dem som
-  // AuthRetryableFetchError. Ett 5xx utan JSON har statusraden som meddelande
-  // ("Bad Gateway"), utan "fetch" i sig – darfor namnet och inte bara texten.
-  if (fel.name === "AuthRetryableFetchError" || m.includes("supabase") || m.includes("fetch")) {
-    console.error(`Inloggningstjänsten gick inte att nå: ${fel.message}`);
+  // Natverksfel och 5xx fran inloggningstjansten.
+  if (fel.name === "AuthRetryableFetchError") {
+    console.error(`Inloggningstjänsten gick inte att nå: ${fel.status ?? "-"} ${fel.message}`);
     return { fel: INGEN_KONTAKT_MED_INLOGGNINGEN, orsak: "kontakt" };
   }
   console.error(

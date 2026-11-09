@@ -144,3 +144,21 @@ describe("ingen engelska nar anvandaren", () => {
     expect(logg).not.toHaveBeenCalled();
   });
 });
+
+// Koden grenar aldrig pa en mening (CLAUDE.md). Uppmatt 2026-11-09:
+// Supabase svarar `code: "invalid_credentials"` vid fel uppgifter, och
+// natverksfel och 5xx kommer som AuthRetryableFetchError – med meddelandet
+// "fetch failed", "Bad Gateway" eller serverns egen text. Klassen och koden
+// racker, och textgrenarna ar borttagna. Fallen nedan har ratt mening men
+// varken koden eller klassen: de ska ge reservmeningen. Lagger nagon tillbaka
+// en gren pa texten faller de.
+describe("ingen gren pa meddelandets text", () => {
+  it.each([
+    [{ name: "AuthApiError", message: "Invalid login credentials", status: 400 }, "fel uppgifter utan koden"],
+    [{ name: "AuthApiError", message: "Email not confirmed", status: 400 }, "obekraftad adress utan koden"],
+    [{ name: "AuthApiError", message: "fetch failed", status: 400 }, "\"fetch\" utan natverksklassen"],
+    [{ name: "AuthApiError", message: "Supabase is unavailable", status: 400 }, "\"supabase\" utan natverksklassen"],
+  ])("%j (%s) ger reservmeningen", async (fel) => {
+    expect(await avvisas(fel)).toEqual({ fel: reservmeningen(), orsak: "annat", epost: UPPGIFTER.epost });
+  });
+});

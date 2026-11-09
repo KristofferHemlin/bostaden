@@ -35,7 +35,10 @@ function formular(falt: Record<string, string>): FormData {
   return fd;
 }
 
-const NATVERKSFEL = { message: "TypeError: fetch failed" };
+// Den form supabase-js faktiskt ger ett natverksfel, uppmatt 2026-11-09:
+// AuthRetryableFetchError, status 0, ingen kod. Inloggningen grenar pa
+// klassen, aldrig pa meddelandet (CLAUDE.md).
+const NATVERKSFEL = { name: "AuthRetryableFetchError", status: 0, message: "TypeError: fetch failed" };
 
 beforeEach(() => {
   vi.clearAllMocks();
