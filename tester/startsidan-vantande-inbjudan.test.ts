@@ -204,7 +204,7 @@ describe("den utestaende inbjudan pa startskarmen", () => {
   it("lanken bakom kortet ar samma inbjudan som kortet Tillgang, och skapar ingen ny", async () => {
     seeda({ kvitto: true, inbjudan: "utestaende" });
     const kortetsId = inbjudanIder(kortet(await startsidan())!);
-    const installningar = renderToStaticMarkup((await InstallningarSida()) as ReactElement);
+    const installningar = renderToStaticMarkup((await InstallningarSida({ searchParams: Promise.resolve({}) })) as ReactElement);
     // Kortet Tillgang har tva formular per inbjudan: visa och aterkalla.
     expect(new Set(inbjudanIder(installningar))).toEqual(new Set(kortetsId));
 

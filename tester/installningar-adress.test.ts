@@ -122,7 +122,7 @@ describe("kortet Bostaden i installningarna", () => {
 
 describe("en bostad utan adress fungerar som forut", () => {
   it("installningssidan visas, med upplatelseformen i toppraden", async () => {
-    const sida = await InstallningarSida();
+    const sida = await InstallningarSida({ searchParams: Promise.resolve({}) });
     expect(propsFor(sida, "Skarm")[0].bostadsnamn).toBe("Huset");
     const kort = propsFor(sida, "InstallningarKort")[0] as { bostaden: { adress: string } };
     expect(kort.bostaden.adress).toBe("");

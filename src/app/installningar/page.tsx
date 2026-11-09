@@ -20,11 +20,11 @@ export const dynamic = "force-dynamic";
 export default async function InstallningarSida({
   searchParams,
 }: {
-  searchParams?: Promise<{ fran?: string }>;
-} = {}) {
+  searchParams: Promise<{ fran?: string }>;
+}) {
   // Bakatlanken leder till fliken hon kom fran och namnger den – fran
   // oversikten, eller utan ?fran=, visas ingen (src/lib/installningar-fran.ts).
-  const bakLank = tillbakaFranInstallningar((await searchParams)?.fran);
+  const bakLank = tillbakaFranInstallningar((await searchParams).fran);
   const anvandare = await kravAnvandare();
   const { bostadId, agarandel } = await kravBostad();
   const [bostad, andelar] = await Promise.all([

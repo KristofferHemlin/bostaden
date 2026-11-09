@@ -451,6 +451,12 @@ Dessa fall måste finnas och passera. De sex första är verifierade mot Skattev
 
 Kör testerna innan du säger att ett steg är klart.
 
+**En signatur lättas aldrig upp för ett tests skull.** Skriven 2026-11-09. Inställningssidans argument fick `= {}` så att testerna kunde anropa sidan utan argument. Standardvärdet gjorde hela argumentet valfritt, typen blev `… | undefined`, och Next vägrade bygga — medan sviten och `tsc` var gröna. **Testet ska skicka det den riktiga anroparen skickar.**
+
+Det är andra gången ett test format koden i stället för tvärtom. Den första var `_falsk-databas.ts`, som hårdkodade `agarandel: 100` och därmed dolde just det fel vi letade efter. **Ett test som kräver att produktionskoden blir lösare prövar något annat än produktionen.**
+
+**`tsc --noEmit` är inte ett bygge.** Skriven 2026-11-09, efter att en commit med grön svit och ren typkontroll fällde bygget hos Vercel. Next har en egen typkontroll av sidornas signaturer — `params`, `searchParams`, route handlers — som `tsc` inte kör. **Ändras hur en sida tar emot sina argument är den inte prövad förrän `next build` gått igenom.**
+
 **En körning som faller ska sparas innan nästa startas.** Skriven 2026-11-09, efter att ett test föll en gång och åtta körningar därefter gick igenom – utan att någon visste vilket test det var. Det som gick förlorat var inte flaxandet, det var beviset. Ett instabilt test är ett test som inte säger något, och det går inte att jaga utan utskriften från gången det föll.
 
 **Och checka aldrig in från ett rött träd.** Skriven 2026-11-06, efter att en commit gick igenom medan tre tester föll – kommandot som körde dem stoppade inte vid fel, så utfallet lästes aldrig. **Ett kommandos exitkod är inte ett testresultat förrän någon sett det.** Rapporten ska gälla den commit som gjordes, inte en körning efteråt.

@@ -676,7 +676,7 @@ describe("agarandelen vid inbjudan", () => {
     await losIn(id);
 
     loggaIn(ANNA);
-    const sida = await InstallningarSida();
+    const sida = await InstallningarSida({ searchParams: Promise.resolve({}) });
     const kort = propsFor(sida, "InstallningarKort")[0] as {
       tillgang: { medlemmar: { epost: string; du: boolean; andel: number }[] };
     };
