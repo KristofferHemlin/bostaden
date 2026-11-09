@@ -174,7 +174,7 @@ export default async function ExportSida() {
               <Meddelanderuta>
                 Underlaget kunde inte beräknas: {fel.message}
               </Meddelanderuta>
-              <Link href="/installningar" className={`${SEKUNDARKNAPP_KLASS} mt-4`}>
+              <Link href="/installningar?fran=deklaration" className={`${SEKUNDARKNAPP_KLASS} mt-4`}>
                 Se över ägarandelen
               </Link>
             </div>

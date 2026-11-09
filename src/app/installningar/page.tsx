@@ -10,13 +10,21 @@ import { lasBostadsfragor } from "@/doman/bostadsfragor";
 import { prisma } from "@/lib/prisma";
 import { kravAnvandare, kravBostad } from "@/lib/session";
 import { Skarm } from "@/components/skarm";
+import { tillbakaFranInstallningar } from "@/lib/installningar-fran";
 import { InstallningarKort } from "./kort";
 
 export const metadata = { title: "Inställningar" };
 
 export const dynamic = "force-dynamic";
 
-export default async function InstallningarSida() {
+export default async function InstallningarSida({
+  searchParams,
+}: {
+  searchParams?: Promise<{ fran?: string }>;
+} = {}) {
+  // Bakatlanken leder till fliken hon kom fran och namnger den – fran
+  // oversikten, eller utan ?fran=, visas ingen (src/lib/installningar-fran.ts).
+  const bakLank = tillbakaFranInstallningar((await searchParams)?.fran);
   const anvandare = await kravAnvandare();
   const { bostadId, agarandel } = await kravBostad();
   const [bostad, andelar] = await Promise.all([
@@ -30,6 +38,7 @@ export default async function InstallningarSida() {
     <Skarm
       bostadsnamn={bostadsnamn}
       rubrik="Inställningar"
+      bakLank={bakLank}
       egnaKort
     >
       <InstallningarKort

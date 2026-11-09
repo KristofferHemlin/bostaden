@@ -32,6 +32,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { installningarHref } from "@/lib/installningar-fran";
 
 interface NavPost {
   href: string;
@@ -116,12 +117,15 @@ export function Toppnavigering() {
 // tunt kugghjul i --text-sekundar, tydligt skilt fran fliktexterna. Ingen
 // etikett behovs har: i toppraden balanserar det logotypen pa motsatt sida och
 // last inte for tummen sa som en femte bottenflik hade gjort.
+//
+// Lanken skickar med vilken flik hon stod i (?fran=), sa att bakatlanken pa
+// installningssidan leder dit och namnger fliken (src/lib/installningar-fran.ts).
 export function Installningslank() {
   const sokvag = usePathname() ?? "/";
   const aktiv = INSTALLNINGAR.aktiv(sokvag);
   return (
     <Link
-      href={INSTALLNINGAR.href}
+      href={aktiv ? INSTALLNINGAR.href : installningarHref(sokvag)}
       aria-current={aktiv ? "page" : undefined}
       aria-label={INSTALLNINGAR.text}
       className={[

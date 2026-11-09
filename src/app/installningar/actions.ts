@@ -67,11 +67,17 @@ function las(formData: FormData, nyckel: string): string {
 }
 
 // Positivt heltal antal kvadratmeter, eller null vid tomt falt. Returnerar
-// undefined nar texten inte gar att tolka.
-function storlekFranText(text: string): number | null | undefined {
+// "decimal" for ett tal med komma eller punkt och undefined for annat som
+// inte gar att tolka. Bara siffror och mellanslag tas emot: till 2026-11-09
+// togs allt som inte var en siffra bort, sa "72,5" och "72 m2" sparades som
+// 725 och 722 (docs/design.md, "Storleken får aldrig tiodubblas tyst").
+// Kolumnen ar ett heltal; decimaler avvisas tills beslutet om faltet ar taget.
+function storlekFranText(text: string): number | null | "decimal" | undefined {
   if (text === "") return null;
-  const siffror = text.replace(/\D/g, "");
-  const varde = siffror ? Number.parseInt(siffror, 10) : 0;
+  const utanMellanslag = text.replace(/\s/g, "");
+  if (/^\d+[.,]\d*$/.test(utanMellanslag)) return "decimal";
+  if (!/^\d+$/.test(utanMellanslag)) return undefined;
+  const varde = Number.parseInt(utanMellanslag, 10);
   return varde > 0 ? varde : undefined;
 }
 
@@ -115,6 +121,9 @@ export async function sparaBostaden(
   }
 
   const storlek = storlekFranText(las(formData, "storlek"));
+  if (storlek === "decimal") {
+    return { fel: "Storleken anges i hela kvadratmeter, t.ex. 72.", falt: "storlek" };
+  }
   if (storlek === undefined) {
     return { fel: "Storlek anges i kvadratmeter, t.ex. 72.", falt: "storlek" };
   }

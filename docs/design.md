@@ -425,6 +425,8 @@ Vad som eventuellt ska finnas i stället är obestämt och ligger i `vad-som-ate
 
 Raderna visar **anteckningen som huvudtext**, med leverantör och datum dämpat under – samma presentation som på startskärmen. Saknas anteckning används leverantören. Att samma data presenteras olika på två skärmar får listan att se ut som en annan sorts innehåll än den är.
 
+**Primärknappen ligger överst här också, inte under listan.** Skälet är detsamma som på startskärmen – att lägga till ett kvitto är skälet att appen finns och ska inte kräva att man scrollar förbi listan – och det väger tyngre här, där listan kan vara hundratals rader och växer med åren. Regeln stod bara skriven för startskärmen och tillämpades därför inte på den här sidan. Uppmätt av den första riktiga användaren 2026-11-09.
+
 **Utkast går att ta bort direkt.** En soptunna längst till höger i listraden, med egen tryckyta på minst 44px och luft från radens klickyta så den inte träffas av misstag. Ingen bekräftelse – ett utkast har inget belopp och inget värde, och en dialog är bara i vägen. Bekräftelse gäller fortsatt för sparade kvitton.
 
 **Att ta bort en bilaga är två olika handlingar, och bara den ena ska bekräftas.** Skillnaden är om filen går att lägga tillbaka.
@@ -1006,6 +1008,14 @@ Håll texten till en rad. Behövs mer förklaring hör den hemma bakom en inform
 ### När ett formulär vägrar
 
 **Ett formulär som inte sparar ska säga varför, varje gång, på samma sätt.** Skriven 2026-10-18, efter att en mätning i produktionen visade tre olika beteenden i samma app.
+
+**En lista där varje rad har sin egen knapp har ett eget tillstånd per rad.** Väntläget, spärren mot dubbelinskick och felet hör till raden, inte till listan. Ett delat tillstånd gör att ett tryck sätter alla knappar i *Sparar…* samtidigt, och det blockerar dessutom tyst ett tryck på en annan rad medan den första sparas.
+
+Skriven 2026-11-09, efter att den första riktiga användaren tryckte på det ena av två sammanslagningsförslag och såg båda knapparna snurra. Utfallet var rätt och beskedet fel, i precis det steg hon redan tyckte var oklart. Agenten räknade efteråt till **fem ställen till** med samma mönster.
+
+**Och felet pekas ut vid raden.** Ett fel som gäller två kvitton hör hemma på de två kvittona, inte i en ruta överst som inte säger vilken rad den talar om. Det är samma regel som gäller fält: felet står vid det som gick fel.
+
+**Raden säger dessutom vad som händer, den blir inte bara avstängd.** *Sparar…*, *Lägger till…*, *Tar tillbaka…* — och *Flyttar ut…*, som var den enda av de fyra som tystnade. En avstängd knapp utan ord ser ut som en knapp som slutat fungera.
 
 Ett tomt obligatoriskt fält flyttade bara fokus och sa ingenting. Ett ogiltigt datum gav två meddelanden för samma fel, varav det ena var osant. Frågeträdet skrev en hel mening. Samma produkt, tre svar på samma fråga: *varför hände ingenting när jag tryckte?*
 
@@ -1848,6 +1858,22 @@ Här ligger allt som beskriver bostaden. Sidan ska aldrig kännas som ett formul
 
 Regeln skrevs 2026-11-03, efter att den byggts från en prompt och alltså en tid levt i koden utan att stå i någon fil. **Agenten sa till om det**, vilket är rätt ordning: en regel som bara finns i en prompt finns inte.
 
+**Storleken får aldrig tiodubblas tyst.** Fältet avvisade inte *72,5* – det sparade **725 m²**. Tolkningen tog bort allt som inte var en siffra, och kommatecknet försvann med den. Uppmätt 2026-11-09 av agenten; en enda bostad i produktionen har storleken ifylld, och värdet är 36, så ingenting är förstört.
+
+**Till dess att fältet tar decimaler ska det avvisa dem med ett besked.** Ett tal som tyst blir tio gånger för stort är värre än ett fält som säger att det bara tar hela kvadratmeter. Lydelsen är:
+
+> *"Storleken anges i hela kvadratmeter, t.ex. 72."*
+
+**Och *72 m2* blev 722.** Enheten räknades in som en siffra. Fältet tar därför bara siffror och mellanslag — *1 200* går igenom som tusental, allt annat avvisas med samma besked. Att också *ca 72* och *72kvm* avvisas är priset för en regel som går att lita på.
+
+Att faktiskt ta emot *72,5* kräver att kolumnen byter typ, och **storleken läses inte av någonting**. Den hör därför till beslutet om fälten vi frågar om utan att använda – se listan. Byggs den där frågan besvaras, inte före.
+
+**Att lämna inställningarna leder tillbaka dit man kom ifrån.** Sidan nås från kugghjulet på varje skärm, och den som går dit för att kontrollera en uppgift vill tillbaka till det hon höll på med. Kugghjulet skickar med vilken flik hon stod i, och bakåtlänken namnger den: *← Kvitton*, *← Projekt*, *← Deklaration*. Att destinationen växlar bryter inte namnregeln, den uppfyller den.
+
+**Kommer hon från översikten visas ingen länk alls.** Regeln ovan under *Navigation* gäller: Översikt är en flik, flikraden ligger alltid inom räckhåll, och *← Översikt* är därför aldrig rätt. Den här raden räknade upp den som ett giltigt mål till 2026-11-09 och sa då emot regeln tolv hundra rader tidigare i samma fil. **Agenten hittade motsägelsen och frågade i stället för att välja.**
+
+**Från en sida längre in leder länken till fliken, inte till sidan.** Står hon på ett enskilt kvitto och går till inställningarna är vägen tillbaka *← Kvitton*. Ett steg från där hon var, med ett namn som är sant – mot ett *← Tillbaka* som är exakt men namnlöst, eller ett kvittos egen rubrik som är för lång för en länk.
+
 **Fyra kort med rubrik:**
 
 | Kort | Innehåll |
@@ -2021,6 +2047,10 @@ En anteckning om hur den här raden blev fel i `docs/`: filen sa att texten skul
 Här stod motsatsen fram till 2026-10-20: *"Andelarna ändrar ingenting i underlaget så länge bostaden delas."* Den meningen revs under *Samägande – medlemskapet* den 19:e, men **den här kopian blev kvar ett dygn** – filen sa två saker om samma tal, och agenten hittade det i stället för jag. Det är exakt det `docs/` är till för att inte göra, och det är andra gången på en månad den här bindningen står skriven på fler ställen än den borde. **En regel som står på två ställen kommer förr eller senare att säga olika; den som river den ena ska söka efter den andra.**
 
 **Raden finns oavsett ägarandel.** Den villkorades tidigare på att andelen var under 100 %, vilket var rimligt när inbjudan handlade om ägande. Nu handlar den om åtkomst till ett arkiv, och den som äger sin bostad helt kan mycket väl vilja dela det med någon som bor där. Appen ska inte ha en åsikt om vem som får se ens egna kvitton.
+
+**Och den försvinner när inbjudan är skapad.** Texten är en upplysning *före* ett beslut. När QR-koden visas är beslutet fattat, och då konkurrerar den med det enda den skärmen ska säga: visa koden eller skicka länken. Gäller på båda ställena – inbjudningsformuläret och erbjudandet på startsidan.
+
+**Varningen står i formuläret, inte före det.** Att bjuda in kräver i dag två tryck innan man kan skriva något: ett på *Bjud in någon till bostaden*, ett på *Fortsätt* förbi texten om vad den inbjudna får se. **Texten ska vara kvar** – att dela hela sitt arkiv med en annan person är ett beslut som förtjänar att sägas rakt ut – men den hör hemma ovanför fälten på samma skärm, inte som ett eget steg. Då läses den fortfarande före man skickar, och vägen in är ett tryck.
 
 **En utestående inbjudan bär sin länk och sin QR-kod.** Kortet *Tillgång* visar den med adressen den ställts till och en väg tillbaka till samma länk och kod – och ett sätt att återkalla den.
 

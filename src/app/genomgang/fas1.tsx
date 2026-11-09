@@ -105,35 +105,20 @@ export function Fas1({
   const [visaRaknasInte, setVisaRaknasInte] = useState(false);
 
   const [skapaRes, skapaAction, skapaPagar] = useActionState(skapaHog, START);
-  const [laggRes, laggAction, laggPagar] = useActionState(laggIHog, START);
-  const [flyttaRes, flyttaAction, flyttaPagar] = useActionState(
-    flyttaUturHog,
-    START,
-  );
   const [raknasRes, raknasAction, raknasPagar] = useActionState(
     raknasInte,
     START,
   );
-  const [aterforRes, aterforAction, aterforPagar] = useActionState(
-    aterforFranRaknasInte,
-    START,
-  );
 
   // Skydd mot dubbel inskickning (CLAUDE.md, "Ingen knapp får skickas två
-  // gånger") – se src/lib/dubbelinskick.ts. En egen spärr per action-typ,
-  // eftersom flera av dem har egna formulär flera stallen i sidan.
+  // gånger") – se src/lib/dubbelinskick.ts. Har bara de tva handlingarna i
+  // urvalspanelen, som finns en gang pa sidan. Knappar som finns en gang per
+  // rad har ett eget tillstand i sin egen komponent (docs/design.md, "När ett
+  // formulär vägrar"): ForslagRad, HogKvittoRad, LaggValdaHar, RaknasInteRad.
   const hanteraSkapaSubmit = useForhindraDubbelinskick(skapaPagar);
-  const hanteraLaggSubmit = useForhindraDubbelinskick(laggPagar);
-  const hanteraFlyttaSubmit = useForhindraDubbelinskick(flyttaPagar);
   const hanteraRaknasSubmit = useForhindraDubbelinskick(raknasPagar);
-  const hanteraAterforSubmit = useForhindraDubbelinskick(aterforPagar);
 
-  const fel =
-    skapaRes.fel ||
-    laggRes.fel ||
-    flyttaRes.fel ||
-    raknasRes.fel ||
-    aterforRes.fel;
+  const fel = skapaRes.fel || raknasRes.fel;
 
   function vaxlaVald(id: string) {
     setValda((prev) => {
@@ -257,41 +242,7 @@ export function Fas1({
                 </p>
                 <ul className="mt-2 space-y-1.5">
                   {h.kvitton.map((k) => (
-                    <li
-                      key={k.id}
-                      className="flex items-baseline justify-between gap-3 font-granssnitt text-sm"
-                    >
-                      <span className={`min-w-0 ${rubrikKlipp(k)} text-text-primar`}>
-                        {kvittoRubrik(k)}
-                      </span>
-                      <span className="flex shrink-0 items-baseline gap-3">
-                        <span className="tabular-nums text-text-sekundar">
-                          {formateraKronorEllerStreck(k.belopp)}
-                        </span>
-                        <form
-                          action={flyttaAction}
-                          onSubmit={hanteraFlyttaSubmit}
-                        >
-                          <input
-                            type="hidden"
-                            name="projekt_id"
-                            value={h.id}
-                          />
-                          <input
-                            type="hidden"
-                            name="kostnad_id"
-                            value={k.id}
-                          />
-                          <button
-                            type="submit"
-                            disabled={flyttaPagar}
-                            className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
-                          >
-                            Flytta ut
-                          </button>
-                        </form>
-                      </span>
-                    </li>
+                    <HogKvittoRad key={k.id} hogId={h.id} kvitto={k} />
                   ))}
                   {h.kvitton.length === 0 ? (
                     <li className="font-granssnitt text-sm text-text-sekundar">
@@ -300,31 +251,11 @@ export function Fas1({
                   ) : null}
                 </ul>
                 {valda.size > 0 ? (
-                  <form
-                    action={(fd) => {
-                      laggAction(fd);
-                      nollaUrval();
-                    }}
-                    onSubmit={hanteraLaggSubmit}
-                    className="mt-3"
-                  >
-                    <input type="hidden" name="projekt_id" value={h.id} />
-                    {[...valda].map((id) => (
-                      <input
-                        key={id}
-                        type="hidden"
-                        name="kostnad_ider"
-                        value={id}
-                      />
-                    ))}
-                    <button
-                      type="submit"
-                      disabled={laggPagar}
-                      className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
-                    >
-                      {laggPagar ? "Lägger till…" : laggValdaHarText(valda.size)}
-                    </button>
-                  </form>
+                  <LaggValdaHar
+                    hogId={h.id}
+                    valda={valda}
+                    onSkickat={nollaUrval}
+                  />
                 ) : null}
               </div>
             ))}
@@ -451,34 +382,7 @@ export function Fas1({
           {visaRaknasInte ? (
             <ul className="divide-y divide-linje border-t border-linje">
               {raknasInteLista.map((k) => (
-                <li
-                  key={k.id}
-                  className="flex items-baseline justify-between gap-3 p-4"
-                >
-                  <span className="min-w-0">
-                    <span className={`${rubrikKlipp(k, true)} font-granssnitt text-sm text-text-primar`}>
-                      {kvittoRubrik(k)}
-                    </span>
-                    <span className="block font-granssnitt text-sm text-text-sekundar">
-                      {kvittoUnderrad(k)}
-                    </span>
-                  </span>
-                  <span className="flex shrink-0 items-baseline gap-3">
-                    <span className="font-granssnitt text-sm tabular-nums text-text-sekundar">
-                      {formateraKronorEllerStreck(k.belopp)}
-                    </span>
-                    <form action={aterforAction} onSubmit={hanteraAterforSubmit}>
-                      <input type="hidden" name="kostnad_id" value={k.id} />
-                      <button
-                        type="submit"
-                        disabled={aterforPagar}
-                        className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
-                      >
-                        {aterforPagar ? "Tar tillbaka…" : "Ta tillbaka"}
-                      </button>
-                    </form>
-                  </span>
-                </li>
+                <RaknasInteRad key={k.id} kvitto={k} />
               ))}
             </ul>
           ) : null}
@@ -566,12 +470,130 @@ function ForslagRad({
             Nej
           </button>
         </div>
-        {res.fel ? (
-          <p role="alert" className="font-granssnitt text-sm text-accent">
-            {res.fel}
-          </p>
-        ) : null}
+        <RadFel fel={res.fel} />
       </form>
     </div>
+  );
+}
+
+// Felet star i raden som gick fel (docs/design.md, "När ett formulär vägrar").
+function RadFel({ fel }: { fel: string | undefined }) {
+  if (!fel) return null;
+  return (
+    <p role="alert" className="font-granssnitt text-sm text-accent">
+      {fel}
+    </p>
+  );
+}
+
+// Ett kvitto i en hog, med eget sparande for "Flytta ut". Till 2026-11-09
+// delade alla rader i alla hogar en useActionState(flyttaUturHog) i Fas1
+// (tester/genomgang-radernas-vantlage.test.ts).
+function HogKvittoRad({ hogId, kvitto: k }: { hogId: string; kvitto: Kvitto }) {
+  const [res, action, pagar] = useActionState(flyttaUturHog, START);
+  const hanteraSubmit = useForhindraDubbelinskick(pagar);
+  return (
+    <li className="flex flex-col gap-1 font-granssnitt text-sm">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className={`min-w-0 ${rubrikKlipp(k)} text-text-primar`}>
+          {kvittoRubrik(k)}
+        </span>
+        <span className="flex shrink-0 items-baseline gap-3">
+          <span className="tabular-nums text-text-sekundar">
+            {formateraKronorEllerStreck(k.belopp)}
+          </span>
+          <form action={action} onSubmit={hanteraSubmit}>
+            <input type="hidden" name="projekt_id" value={hogId} />
+            <input type="hidden" name="kostnad_id" value={k.id} />
+            <button
+              type="submit"
+              disabled={pagar}
+              className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
+            >
+              Flytta ut
+            </button>
+          </form>
+        </span>
+      </div>
+      <RadFel fel={res.fel} />
+    </li>
+  );
+}
+
+// "Lägg N valda här" pa en hog, med eget sparande. Till 2026-11-09 delade
+// alla hogar en useActionState(laggIHog) i Fas1, och varje hog visade
+// "Lägger till…" samtidigt – urvalet nollas forst nar sparandet ar klart,
+// eftersom det satts inne i formularets transition.
+function LaggValdaHar({
+  hogId,
+  valda,
+  onSkickat,
+}: {
+  hogId: string;
+  valda: Set<string>;
+  onSkickat: () => void;
+}) {
+  const [res, action, pagar] = useActionState(laggIHog, START);
+  const hanteraSubmit = useForhindraDubbelinskick(pagar);
+  return (
+    <form
+      action={(fd) => {
+        action(fd);
+        onSkickat();
+      }}
+      onSubmit={hanteraSubmit}
+      className="mt-3 flex flex-col gap-1"
+    >
+      <input type="hidden" name="projekt_id" value={hogId} />
+      {[...valda].map((id) => (
+        <input key={id} type="hidden" name="kostnad_ider" value={id} />
+      ))}
+      <button
+        type="submit"
+        disabled={pagar}
+        className="self-start font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
+      >
+        {pagar ? "Lägger till…" : laggValdaHarText(valda.size)}
+      </button>
+      <RadFel fel={res.fel} />
+    </form>
+  );
+}
+
+// Ett kvitto under "Hör inte till bostaden", med eget sparande for "Ta
+// tillbaka". Till 2026-11-09 delade alla rader en
+// useActionState(aterforFranRaknasInte) i Fas1.
+function RaknasInteRad({ kvitto: k }: { kvitto: Kvitto }) {
+  const [res, action, pagar] = useActionState(aterforFranRaknasInte, START);
+  const hanteraSubmit = useForhindraDubbelinskick(pagar);
+  return (
+    <li className="flex flex-col gap-1 p-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="min-w-0">
+          <span className={`${rubrikKlipp(k, true)} font-granssnitt text-sm text-text-primar`}>
+            {kvittoRubrik(k)}
+          </span>
+          <span className="block font-granssnitt text-sm text-text-sekundar">
+            {kvittoUnderrad(k)}
+          </span>
+        </span>
+        <span className="flex shrink-0 items-baseline gap-3">
+          <span className="font-granssnitt text-sm tabular-nums text-text-sekundar">
+            {formateraKronorEllerStreck(k.belopp)}
+          </span>
+          <form action={action} onSubmit={hanteraSubmit}>
+            <input type="hidden" name="kostnad_id" value={k.id} />
+            <button
+              type="submit"
+              disabled={pagar}
+              className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar disabled:opacity-60"
+            >
+              {pagar ? "Tar tillbaka…" : "Ta tillbaka"}
+            </button>
+          </form>
+        </span>
+      </div>
+      <RadFel fel={res.fel} />
+    </li>
   );
 }
