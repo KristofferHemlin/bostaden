@@ -286,6 +286,7 @@ export function NyKostnadForm({
   const [vantandeBorttagning, setVantandeBorttagning] =
     useState<Bilageborttagning | null>(null);
   const [borttagningPagar, setBorttagningPagar] = useState(false);
+  const borttagningPagarRef = useRef(false);
   const [borttagningFel, setBorttagningFel] = useState<string | undefined>();
 
   // Skydd mot dubbel inskickning (CLAUDE.md, "Ingen knapp får skickas två
@@ -697,6 +698,9 @@ export function NyKostnadForm({
   // svarat "Ta bort" ska inte tro att det ar gjort nar det inte ar det. Samma
   // monster som bilageborttagningen i kvittots detaljvy.
   async function hanteraBorttagning({ vantar, utfor }: Borttagningsutfall) {
+    // Ett andra "Ta bort" medan det forsta pagar andrar ingenting – inte
+    // heller felet i dialogen.
+    if (borttagningPagarRef.current) return;
     setBorttagningFel(undefined);
     if (!utfor) {
       setVantandeBorttagning(vantar);
@@ -707,14 +711,23 @@ export function NyKostnadForm({
       taBortFil(utfor.index);
       return;
     }
-    setBorttagningPagar(true);
-    const fel = await taBortBefintlig(utfor.bilagaId);
-    setBorttagningPagar(false);
-    if (fel) {
-      setBorttagningFel(fel);
-      return;
+    // Sparren mot dubbelinskick (CLAUDE.md): dialogens "Ta bort" ar ingen
+    // form. Ett andra anrop svarade "Bilagan hittades inte." efter att det
+    // forsta lyckats – ett falskt fel efter en lyckad handling. Egen ref,
+    // slappt i finally (samma skal som uppladdningen i kvittots detaljvy).
+    if (!forsokBorjaInskickning(borttagningPagarRef)) return;
+    try {
+      setBorttagningPagar(true);
+      const fel = await taBortBefintlig(utfor.bilagaId);
+      setBorttagningPagar(false);
+      if (fel) {
+        setBorttagningFel(fel);
+        return;
+      }
+      setVantandeBorttagning(null);
+    } finally {
+      borttagningPagarRef.current = false;
     }
-    setVantandeBorttagning(null);
   }
 
   /** Raderar pa servern och tar bort ur vyn bara om det gick. Lamnar

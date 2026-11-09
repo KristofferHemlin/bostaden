@@ -91,6 +91,13 @@ function oversattFel(fel: Inloggningsfel): { fel: string; orsak: AuthOrsak } {
   if (fel.code === "email_not_confirmed" || m.includes("email not confirmed")) {
     return { fel: "E-postadressen är inte bekräftad än. Kolla mejlen.", orsak: "annat" };
   }
+  // For manga forsok oversatts med avsikt (docs/design.md, Inloggningssidan):
+  // det enda av de ovantade felen en vanlig anvandare kan rakna ut for.
+  // Orsaken ar annat, sa losenordet star kvar – hon har inte skrivit fel, hon
+  // har skrivit for ofta.
+  if (fel.code === "over_request_rate_limit" || fel.status === 429) {
+    return { fel: "För många försök. Vänta en stund och försök igen.", orsak: "annat" };
+  }
   // Natverksfel och 5xx fran inloggningstjansten: supabase-js ger dem som
   // AuthRetryableFetchError. Ett 5xx utan JSON har statusraden som meddelande
   // ("Bad Gateway"), utan "fetch" i sig – darfor namnet och inte bara texten.

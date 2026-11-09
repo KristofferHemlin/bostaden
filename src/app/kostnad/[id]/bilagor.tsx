@@ -72,7 +72,7 @@ import {
 } from "@/components/bilaga-sidbladdrare";
 import { BEKRAFTA_BILAGEBORTTAGNING_KVITTO } from "@/lib/bilageborttagning";
 import { bildAspekt, forhandsramStil } from "@/lib/bildaspekt";
-import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
+import { forsokBorjaInskickning, useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { avvisningVidVal } from "@/lib/lagring/bilaga-regler";
 import { laddaUppKostnadsbilaga } from "@/lib/lagring/bilaga-klient";
 import type { Bilagevy } from "@/lib/lagring/bilagor";
@@ -201,32 +201,45 @@ export function Bilagor({
     if (radera.ok) setBekraftaBilaga(null);
   }, [radera]);
 
+  // Sparren mot dubbelinskick (CLAUDE.md, "Ingen knapp får skickas två
+  // gånger") – "Försök igen" ar ingen form och hade ingen. Tva korningar
+  // laddar upp samma fil tva ganger och skapar tva bilagerader. En egen ref
+  // som slapps i finally, inte en som speglar `sparar`: den slapps bara om
+  // vantlaget hinner renderas som sant, och ett fel som kommer direkt kunde
+  // da lamna sparren last.
+  const uppladdningPagar = useRef(false);
+
   async function laddaUpp(filer: File[]) {
     if (filer.length === 0) return;
-    setLaddarUpp(true);
-    setUppladdningsfel(null);
-    setKoa(filer);
+    if (!forsokBorjaInskickning(uppladdningPagar)) return;
+    try {
+      setLaddarUpp(true);
+      setUppladdningsfel(null);
+      setKoa(filer);
 
-    const kvar = [...filer];
-    while (kvar.length > 0) {
-      const fil = kvar[0];
-      const resultat = await laddaUppKostnadsbilaga(kostnadId, fil);
-      if (!resultat.ok) {
-        setUppladdningsfel(
-          `${fil.name || "Filen"}: ${resultat.fel ?? "uppladdningen misslyckades."}`,
-        );
-        setKoa(kvar); // det som aterstar ligger kvar for nytt forsok
-        setLaddarUpp(false);
-        return;
+      const kvar = [...filer];
+      while (kvar.length > 0) {
+        const fil = kvar[0];
+        const resultat = await laddaUppKostnadsbilaga(kostnadId, fil);
+        if (!resultat.ok) {
+          setUppladdningsfel(
+            `${fil.name || "Filen"}: ${resultat.fel ?? "uppladdningen misslyckades."}`,
+          );
+          setKoa(kvar); // det som aterstar ligger kvar for nytt forsok
+          setLaddarUpp(false);
+          return;
+        }
+        kvar.shift();
+        setKoa([...kvar]);
       }
-      kvar.shift();
-      setKoa([...kvar]);
-    }
 
-    setLaddarUpp(false);
-    if (inputRef.current) inputRef.current.value = "";
-    await revalideraKostnadssida(kostnadId);
-    startaUppdatering(() => router.refresh());
+      setLaddarUpp(false);
+      if (inputRef.current) inputRef.current.value = "";
+      await revalideraKostnadssida(kostnadId);
+      startaUppdatering(() => router.refresh());
+    } finally {
+      uppladdningPagar.current = false;
+    }
   }
 
   function valjFiler(lista: FileList | null) {

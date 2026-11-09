@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Inloggningens svar bar en orsak – uppgifter, kontakt eller annat – sa att
@@ -35,6 +37,19 @@ function avvisas(fel: { name: string; message: string; status: number; code?: st
   h.signInWithPassword.mockResolvedValue({ data: { user: null, session: null }, error: fel });
   return hanteraAuth({}, formular(UPPGIFTER));
 }
+
+/** En lydelse ur docs/design.md (Inloggningssidan) – citatet efter
+ *  meningen `fore`. Lases inne i testet, aldrig pa modulniva (CLAUDE.md,
+ *  "Tester"). */
+function lydelse(fore: RegExp, vad: string): string {
+  const design = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+  const m = design.match(new RegExp(`${fore.source}[^\\n]*\\n\\n> \\*"([^"]+)"\\*`));
+  if (!m) throw new Error(`design.md saknar lydelsen ${vad}`);
+  return m[1]!;
+}
+const reservmeningen = () =>
+  lydelse(/och originalet loggas med namn, status och kod i stället för att visas:/, "for ett ooversatt fel");
+const forMangaForsok = () => lydelse(/\*\*För många försök översätts med avsikt\*\*/, "for for manga forsok");
 
 let logg: ReturnType<typeof vi.spyOn>;
 
@@ -89,14 +104,30 @@ describe("orsaken i inloggningens svar", () => {
 });
 
 describe("ingen engelska nar anvandaren", () => {
-  const OOVERSATT = { name: "AuthApiError", message: "Request rate limit reached", status: 429, code: "over_request_rate_limit" };
+  const OOVERSATT = { name: "AuthApiError", message: "User is banned", status: 403, code: "user_banned" };
 
-  it("ett ooversatt fel visas inte – meningen ar svensk och originalet finns inte i den", async () => {
+  it("ett ooversatt fel visas inte – reservmeningen ur design.md, och originalet finns inte i den", async () => {
     const svar = await avvisas(OOVERSATT);
-    expect(svar.orsak).toBe("annat");
+    expect(svar).toEqual({ fel: reservmeningen(), orsak: "annat", epost: UPPGIFTER.epost });
     expect(svar.fel).not.toContain(OOVERSATT.message);
-    expect(svar.fel).not.toContain(OOVERSATT.code);
-    expect(svar.fel).toBe("Det gick inte att logga in just nu. Försök igen om en stund.");
+  });
+
+  // Det enda av de ovantade felen en vanlig anvandare kan rakna ut for.
+  // Orsaken ar annat, sa losenordet star kvar: hon har inte skrivit fel, hon
+  // har skrivit for ofta.
+  it("for manga forsok oversatts med avsikt, med orsaken annat", async () => {
+    const svar = await avvisas({
+      name: "AuthApiError",
+      message: "Request rate limit reached",
+      status: 429,
+      code: "over_request_rate_limit",
+    });
+    expect(svar).toEqual({ fel: forMangaForsok(), orsak: "annat", epost: UPPGIFTER.epost });
+  });
+
+  it("for manga forsok loggas inte – det ar oversatt", async () => {
+    await avvisas({ name: "AuthApiError", message: "Request rate limit reached", status: 429, code: "over_request_rate_limit" });
+    expect(logg).not.toHaveBeenCalled();
   });
 
   it("originalet loggas, med kod och status", async () => {

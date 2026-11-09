@@ -1675,6 +1675,22 @@ Kortet ligger vertikalt centrerat i sidan. Klistrat mot överkanten med en halv 
 
 **Raden under logotypen säger vad appen är**, inte "Logga in för att fortsätta". Den som landar här utan konto ska förstå vad Kvittobo gör innan hen bestämmer sig – en mening räcker: spara kvittona på det du gör med bostaden, dra av dem den dag du säljer.
 
+**Lösenordet töms bara när det kan ha varit fel.** Alltså vid *"Fel e-post eller lösenord."* — där är det rimligt att skriva om. Vid allt annat, och tydligast när inloggningstjänsten inte svarar, är tömningen ren förlust: lösenordet var sannolikt rätt och felet låg någon annanstans.
+
+**Och vilket fel det var ska komma som en kod, inte utläsas ur meningen.** Servern svarar i dag med en färdig svensk mening och ingenting annat, så det enda sättet att skilja fallen åt är att jämföra text — vilket går sönder första gången någon skriver om en formulering. Svaret bär därför en orsak: *uppgifter*, *kontakt* eller *annat*.
+
+**Ingen engelska når användaren.** Översättningen av inloggningstjänstens fel föll igenom till leverantörens råa text för allt oväntat. Det som inte är översatt får en svensk reservmening, och originalet loggas med namn, status och kod i stället för att visas:
+
+> *"Det gick inte att logga in just nu. Försök igen om en stund."*
+
+**För många försök översätts med avsikt**, eftersom det är det enda av de oväntade felen en vanlig användare faktiskt kan råka ut för:
+
+> *"För många försök. Vänta en stund och försök igen."*
+
+Orsaken är *annat*, så lösenordet står kvar — hon har inte skrivit fel, hon har skrivit för ofta.
+
+**Och felet känns igen på sin klass, inte på sin text.** Ett 5xx-svar utan JSON fick statusraden som meddelande och visades rått som *"Bad Gateway"*, eftersom kontrollen letade efter ordet *fetch*.
+
 **De två vägarna in har olika tyngd, och hjälplänken en tredje.** Att ge dem samma utseende gör att den som ska skapa konto inte hittar dit.
 
 | Väg | Utseende |

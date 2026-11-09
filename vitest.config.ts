@@ -1,6 +1,20 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
+// Node 22 eller senare (CLAUDE.md). Kontrollen ligger har, i konfigurationen,
+// for att den ska kasta INNAN nagon testfil laddas: pa v21.5.0 foll tva
+// testfiler med "ReferenceError: WebSocket is not defined" – globalt WebSocket
+// finns forst i Node 22 – och felet sag ut att ligga i testerna i stallet for
+// i miljon. `engines` i package.json laser npm bara vid installation, aldrig
+// vid `npm run`.
+const nodeMajor = Number(process.versions.node.split(".")[0]);
+if (nodeMajor < 22) {
+  throw new Error(
+    `Testerna kräver Node 22 eller senare – du kör ${process.version}. ` +
+      "Byt version (nvm use läser .nvmrc) och kör igen.",
+  );
+}
+
 export default defineConfig({
   test: {
     include: ["tester/**/*.test.ts"],
