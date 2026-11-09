@@ -363,6 +363,10 @@ Testa domänreglerna och de nödvändiga flödena. Skriv testet före implementa
 
 **Och mätningen prövar sina egna förutsättningar.** Att texten ryms på två rader betyder ingenting om den hade rymts på en. Testet ska visa både att den korta inte ryms på en rad och att den långa inte ryms på två, annars passerar det för att texten råkade vara kort.
 
+**En rapport skiljer på vad som är mätt och vad som är läst.** Skriven 2026-11-09, efter att en rapport sa *"stickprovat den själv"* om något som bara var läst i koden — och efter att jag förde det vidare som *"reproducerade det själv"*. Ingen av oss ljög; orden gled, och ett påstående blev starkare för varje gång det återberättades. **Läst i koden, mätt i ett test och sett i produktionen är tre olika saker och ska heta tre olika saker.** Felet upptäcktes för att agenten gick tillbaka och mätte på riktigt, och fyndet blev då ett annat: två tryck utan rendering emellan, inte två tryck.
+
+**Och koden grenar aldrig på en mening.** En mening är skriven för en människa och skrivs om när någon formulerar bättre. Ett villkor som läser den går sönder i tysthet den dagen. Tre fall 2026-11-09: inloggningen kunde bara skilja *fel lösenord* från *ingen kontakt* genom att jämföra texten, ett 5xx-svar utan JSON visades rått på engelska eftersom kontrollen letade efter ordet `fetch`, och ett tömt lösenordsfält hängde på samma jämförelse. **Grena på en kod, en klass eller en typ — aldrig på det användaren läser.**
+
 **Ett test hittar sitt element på texten användaren läser, inte på en klass eller en omgivning.** Samma dag slutade ett test fungera därför att det letade efter `span.block`, och två andra föll därför att prosan runt ett oförändrat citat i `docs/design.md` hade skrivits om. Det är samma fel i två medier: testet var fäst vid något som inte var det det prövade. Ett test som faller av fel skäl lär oss att laga testet i stället för att läsa det.
 
 **Ett påstående om ett tal prövar elementets hela text, aldrig en delsträng.** Skriven 2026-10-20, efter att ett test som letade efter *"1 kr räknas med"* passerade medan sidan visade *"6 001 kr räknas med"*. Tal är särskilt lömska här: varje belopp som slutar på rätt siffror innehåller det rätta svaret som delsträng, så ett sådant test går igenom för nästan varje fel det skulle fånga. Agenten hittade det genom brytningen med flit — **ett test kan vara falskt utan att vara tomt, och bara brytningen skiljer dem åt.**
@@ -557,6 +561,16 @@ Inställningen bor i panelen och inte i repot, vilket är dess svaghet: den syns
 Ett byggsteg är en commit. Det är den enda återställningspunkten när en session refaktorerar något som fungerade.
 
 Testdata seedas från ett riktigt kvitto med både projektmaterial och en privat artikel – se specen, avsnitt 11. Bygg aldrig mot påhittade belopp; de döljer formateringsbuggar och gör skärmarna omöjliga att bedöma.
+
+**Node 22, och fel version ska säga att det är versionen.** Skriven 2026-11-09, efter att en körning på v21.5.0 fällde två hela testfiler med `ReferenceError: WebSocket is not defined` — layouttesterna, som mäter i en riktig webbläsare. Globalt `WebSocket` finns först i Node 22, och flera npm-skript använder `--env-file-if-exists`, som inte heller finns i v21.
+
+**Körningen var röd, inte tyst** – det stod först här att filerna tystnade, och agenten rättade det. Felet var alltså inte dolt, det var **felaktigt tillskrivet**: det såg ut att ligga i testerna när det låg i miljön. Det är en egen felklass och ska inte blandas ihop med de sviter som faktiskt försvann.
+
+**`engines` ensamt räcker inte.** `npm install` varnar bara, och vitest och bygget läser det inte alls. Golvet behöver `engine-strict` för installationen och en kontroll i `vitest.config.ts` som kastar innan någon testfil laddas — det är den senare som stänger felklassen, eftersom det är där filerna föll.
+
+**Versionen är låst, inte öppen uppåt.** `engines.node` går före projektinställningen hos Vercel, så `>=22` låter driftsättningen välja högsta major som stöds och kan flytta produktionens Node utan att någon bett om det.
+
+**Och låsningen gäller lika i alla fyra leden: installation, tester, det lokala bygget och produktionen.** `22.x` överallt, inte ett tak på installationen och ett golv i testerna. Bygget är med därför att det är **det som verifierar en commit** sedan `PageProps`-felet — ett grönt bygge på fel major säger ingenting om det som driftsätts. Går sviten på 24 medan produktionen byggs på 22 prövar den inte det som driftsätts — och ett prov som gäller en annan miljö än den riktiga är samma tomma försäkran som ett test som inte kan falla. `.nvmrc` gör bytet till ett kommando.
 
 ---
 
