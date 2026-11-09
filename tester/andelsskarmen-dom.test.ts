@@ -34,6 +34,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { AndelFormular, BJUD_IN_KNAPPEN, EKOTS_FORDROJNING_MS } from "@/app/bostaden/formular";
 import { ANDEL_NOLL } from "@/lib/agarandel";
+import { delagarlydelse } from "./_delagarlydelser";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -176,7 +177,7 @@ describe("ekot följer talet som stått stilla", () => {
     expect(eko()).toBe(ekotFor50());
   });
 
-  it("finns redan den andra delägaren erbjuds ingen inbjudan, men ekot står kvar", async () => {
+  it("finns redan en annan medlem erbjuds ingen inbjudan, men ekot står kvar", async () => {
     await rendera({ andraFinns: true });
     await skriv("50");
     await lamna();
@@ -232,5 +233,25 @@ describe("båda knapparna sparar svaret", () => {
     expect(knapp(BJUD_IN_KNAPPEN)!.type).toBe("button");
     const forstaSubmit = behallare.querySelector('button[type="submit"]');
     expect(forstaSubmit?.textContent).toBe("Spara ägarandelen");
+  });
+});
+
+// docs/design.md, "Appen räknar aldrig de andra delägarna". Knappens lydelse
+// stod inte i filen fore 2026-11-09 och vaktades inte. Texterna hittas pa det
+// anvandaren laser, och jamfors i sin helhet.
+describe("erbjudandet räknar inte de övriga delägarna", () => {
+  it("texten och knappen är design.md:s lydelser", async () => {
+    const text = delagarlydelse("Erbjudandets text");
+    const knapptext = delagarlydelse("Knappen i andelsskärmens erbjudande, och inbjudningssidans rubrik");
+    await rendera();
+    await skriv("50");
+    await lamna();
+    const e = erbjudande();
+    if (!e) throw new Error("erbjudandet renderades inte vid 50 %");
+    const stycken = [...e.querySelectorAll("p")].map((p) => p.textContent);
+    expect(stycken).toEqual([text]);
+    const k = [...e.querySelectorAll("button")].find((b) => b.textContent === knapptext);
+    if (!k) throw new Error(`erbjudandet saknar knappen "${knapptext}"`);
+    expect(k.type).toBe("button");
   });
 });

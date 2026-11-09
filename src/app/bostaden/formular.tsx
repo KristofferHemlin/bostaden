@@ -160,10 +160,12 @@ export function AndelFormular({
 /** Erbjudandets mening: underlaget ar riktigt ocksa utan inbjudan
  *  (docs/design.md, "Frågan är ett erbjudande och får aldrig bli ett krav"). */
 export const UNDERLAGET_AR_RIKTIGT_ANDA =
-  "Ditt underlag visar redan din andel, också om den andra delägaren aldrig använder appen. Vill ni dela arkivet kan du bjuda in den andra delägaren.";
+  "Ditt underlag visar redan din andel, också om ingen annan delägare använder appen. Vill ni dela arkivet kan du bjuda in en delägare.";
 
-/** Erbjudandets knapp – och rubriken pa inbjudningssidan den leder till. */
-export const BJUD_IN_KNAPPEN = "Bjud in den andra delägaren";
+/** Erbjudandets knapp – och rubriken pa inbjudningssidan den leder till.
+ *  Aldrig "den andra delagaren": appen vet inte hur manga de ovriga ar
+ *  (docs/design.md, "Appen räknar aldrig de andra delägarna"). */
+export const BJUD_IN_KNAPPEN = "Bjud in en delägare";
 
 /**
  * Inbjudan, for den som valt erbjudandet pa andelsskarmen. Ett erbjudande och

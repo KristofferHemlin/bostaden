@@ -1500,7 +1500,7 @@ Gränsen går inte vid hur viktig uppgiften är utan vid om den kräver eftertan
 | Ordning | Vad appen frågar efter |
 |---|---|
 | 1 | Köpeskilling, för konton som skapades innan fältet blev obligatoriskt |
-| 2 | Ägarandel, och om den är under 100 % ett erbjudande om att bjuda in den andra delägaren |
+| 2 | Ägarandel, och om den är under 100 % ett erbjudande om att bjuda in en delägare |
 
 **Köpeskillingen är obligatorisk i registreringen sedan 2026-11-04.** Inget konto skapas utan ett tal.
 
@@ -1561,7 +1561,23 @@ Den som ändrar köpeskillingen i inställningarna har redan mött skälet två 
 
 **Inställningarna är vägen tillbaka, inte vägen in.** Kortet *Tillgång* har knappen *Bjud in någon till bostaden* och visas alltid. Meningen här sa till 2026-11-04 att delningen ligger *"i inställningarna, där ingen letar"* – sant när den skrevs, eftersom det då var enda stället. Nu finns ögonblicket, och inställningarna bär det som den som ändrat sig går och hämtar. **Erbjudandet ska ändå inte komma tillbaka av sig självt.** Att hoppa över är ett svar, och ett erbjudande som återkommer är ett krav i förklädnad.
 
-**Frågan är ett erbjudande och får aldrig bli ett krav.** Den andra halvan ägs ofta av någon som aldrig kommer att använda appen. Att hoppa över ska inte lämna något halvt, och **underlaget är riktigt ändå**: skriver hon 50 och stannar där visar underlaget hennes halva, vilket är precis rätt. Den andra delägaren är inte en användare, och hennes andel ska inte representeras. Utan den meningen läses den uteblivna inbjudan som en lucka.
+**Frågan är ett erbjudande och får aldrig bli ett krav.** Resten ägs ofta av någon som aldrig kommer att använda appen. Att hoppa över ska inte lämna något halvt, och **underlaget är riktigt ändå**: skriver hon 50 och stannar där visar underlaget hennes halva, vilket är precis rätt. Övriga delägare är inte användare, och deras andel ska inte representeras. Utan den meningen läses den uteblivna inbjudan som en lucka.
+
+#### Appen räknar aldrig de andra delägarna
+
+**Ingen text får säga *den andra delägaren*.** Bestämd form i singular påstår att det finns precis en till, och det vet appen inte: hon kan äga 60 % medan tre personer delar på resten. Det är samma regel som gäller antal överallt annars – appen räknar bara upp sådant den vet antalet på.
+
+**Lydelserna är:**
+
+| Var | Text |
+|---|---|
+| Knappen i andelsskärmens erbjudande, och inbjudningssidans rubrik | *"Bjud in en delägare"* |
+| Erbjudandets text | *"Ditt underlag visar redan din andel, också om ingen annan delägare använder appen. Vill ni dela arkivet kan du bjuda in en delägare."* |
+| Underlaget vid andel under 100 % | *"Din ägarandel är under 100 %. Sammanställningen visar både hela bostadens belopp och din andel, så att övriga delägare kan använda samma underlag."* |
+
+*Övriga delägare* och *en delägare* är sanna vare sig de är en eller fyra. **Kortet *Tillgång* behåller sitt *Bjud in någon till bostaden*** – den raden gäller åtkomst till ett arkiv och inte ägande, och ska därför inte heller säga *delägare*.
+
+Knappens och rubrikens lydelse stod inte i den här filen förrän 2026-11-09 och vaktades därför inte av något test. Det är samma lucka som lät kortets underrubrik glida i tre veckor.
 
 #### Andelsskärmen svarar medan hon skriver
 
@@ -1896,7 +1912,7 @@ Skillnaden mot en ren upplysning är liten men avgörande: den som får veta vad
 **Och när talet rättades blev raden fel i andra riktningen.** Uppmätt i produktionen 2026-10-20, efter att multiplikationen börjat fungera. Högst upp i underlaget står nu två meningar:
 
 > Sammanställningen gäller hela bostaden. Du äger 50 % – det är den andelen du för in i din deklaration.
-> Din ägarandel är under 100 %. Sammanställningen visar både hela bostadens belopp och din andel, så att den andra delägaren kan använda samma underlag.
+> Din ägarandel är under 100 %. Sammanställningen visar både hela bostadens belopp och din andel, så att övriga delägare kan använda samma underlag.
 
 Den andra är sann. **Den första är kvar från tiden då talet var hela bostadens**, och den ber nu läsaren ta 50 % av ett tal som redan *är* hennes 50 %. Den som följer den för in 51 493 kr i stället för 102 986,71.
 

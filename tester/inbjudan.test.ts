@@ -83,6 +83,7 @@ import { raderaKonto } from "@/lib/konto/radera";
 import { summeraAndelar } from "@/lib/samagande";
 import { AVRUNDAT_TILL_HELA_KRONOR } from "@/doman/blankett";
 import { kravBostad } from "@/lib/session";
+import { delagarlydelse } from "./_delagarlydelser";
 
 const ANNA = "a0000000-0000-4000-8000-000000000001"; // ager bostaden X
 const DORIS = "a0000000-0000-4000-8000-000000000002"; // inbjuden, har ingen bostad
@@ -703,12 +704,18 @@ describe("exportvyns rad om samagandet", () => {
 
     for (const vem of [ANNA, DORIS]) {
       loggaIn(vem);
-      const t = text(await ExportSida());
+      const vy = await ExportSida();
+      const t = text(vy);
       expect(t).not.toContain("Du äger");
       expect(t).not.toContain("för in i din deklaration");
       expect(t).not.toContain(RAD_OKAND);
-      // Meningen som star kvar ar den som sager varfor bada talen visas.
-      expect(t).toContain("Sammanställningen visar både hela bostadens belopp och din andel");
+      // Meningen som star kvar ar den som sager varfor bada talen visas –
+      // ordagrant ur design.md, och utan att rakna de ovriga delagarna
+      // ("Appen räknar aldrig de andra delägarna"). Rutans hela text.
+      const lydelse = delagarlydelse("Underlaget vid andel under 100 %");
+      const rutor = propsFor(vy, "Meddelanderuta").map((p) => text(p.children));
+      if (rutor.length === 0) throw new Error("exportvyn renderade ingen Meddelanderuta");
+      expect(rutor).toContain(lydelse);
     }
   });
 

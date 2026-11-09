@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { REGELPARAMETRAR } from "./_hjalp";
+import { delagarlydelse } from "./_delagarlydelser";
 
 // Registreringen samlar in allt som beskriver bostaden; kortet pa startsidan
 // fragar om agarandelen, och om kopeskillingen nar den hoppades over
@@ -693,5 +694,23 @@ describe("inställningarnas tomma rader följer tabellen i design.md", () => {
     for (const etikett of falt.flatMap((f) => etiketter[f])) {
       expect(allt).toContain(`|${etikett}|${ord}|`);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Inbjudningssidans rubrik (docs/design.md, "Appen räknar aldrig de andra
+// delägarna"). Lydelsen stod inte i filen fore 2026-11-09 och vaktades inte.
+// ---------------------------------------------------------------------------
+
+describe("inbjudningssidans rubrik räknar inte de övriga delägarna", () => {
+  it("rubriken är design.md:s lydelse, i sin helhet", async () => {
+    const lydelse = delagarlydelse("Knappen i andelsskärmens erbjudande, och inbjudningssidans rubrik");
+    seeda({ kopeskilling: 325000000n, agarandel: 50 });
+    const html = renderToStaticMarkup(
+      (await BjudInSida({ searchParams: Promise.resolve({}) })) as ReactElement,
+    );
+    const rubriker = [...html.matchAll(/<h1[^>]*>([^<]*)<\/h1>/g)].map((m) => m[1]);
+    if (rubriker.length === 0) throw new Error("inbjudningssidan renderade ingen <h1>");
+    expect(rubriker).toEqual([lydelse]);
   });
 });

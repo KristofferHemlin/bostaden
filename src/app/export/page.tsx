@@ -294,7 +294,7 @@ export default async function ExportSida() {
           <div className="p-4">
             <Meddelanderuta>
               {gemensam
-                ? "Din ägarandel är under 100 %. Sammanställningen visar både hela bostadens belopp och din andel, så att den andra delägaren kan använda samma underlag."
+                ? "Din ägarandel är under 100 %. Sammanställningen visar både hela bostadens belopp och din andel, så att övriga delägare kan använda samma underlag."
                 : texter.inledning}
             </Meddelanderuta>
           </div>

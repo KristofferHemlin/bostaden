@@ -1,4 +1,4 @@
-// Inbjudan till den andra delagaren. Erbjudandet star sedan 2026-11-04 i
+// Inbjudan av en delagare. Erbjudandet star sedan 2026-11-04 i
 // andelsskarmens kort, under ekot (docs/design.md, "Andelsskärmen svarar
 // medan hon skriver"); hit kommer den som valt det, med andelen redan sparad.
 // Ett erbjudande, aldrig ett krav: "Hoppa över" lamnar ingenting halvt, och
