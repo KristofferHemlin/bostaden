@@ -1,10 +1,19 @@
-// En version overallt: Node 22, i installation, tester och produktion
-// (CLAUDE.md, "Node 22, och fel version ska säga att det är versionen").
-// `engines.node` ar "22.x" och .nvmrc sager 22. Gar sviten pa 24 medan
-// produktionen byggs pa 22 provar den inte det som driftsatts.
+// En version overallt: Node 22, i installation, tester, det lokala bygget och
+// produktionen (CLAUDE.md, "Node 22, och fel version ska säga att det är
+// versionen"). `engines.node` ar "22.x" och .nvmrc sager 22. Gar sviten eller
+// bygget pa 24 medan produktionen byggs pa 22 provar de inte det som
+// driftsatts.
 //
-// Anvands av vitest.config.ts, som kastar innan nagon testfil laddas. Ren
-// JavaScript, sa att den ocksa gar att kora med vanlig node.
+// Anvands pa tva satt:
+//   - av vitest.config.ts, som kastar innan nagon testfil laddas
+//   - kord direkt (`node scripts/nodeversion.mjs`) av prebuild i package.json,
+//     fore allt annat, sa att ett lokalt bygge pa fel major stoppar med samma
+//     mening som testerna. Det lokala bygget ar det som verifierar en commit.
+//
+// Ren JavaScript, sa att den gar att kora med vanlig node.
+
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 export const KRAVD_NODE_MAJOR = 22;
 
@@ -16,4 +25,19 @@ export function felNodeversion(version, vad = "Testerna") {
     `${vad} kräver Node ${KRAVD_NODE_MAJOR} – du kör ${version}. ` +
     "Byt version (nvm use läser .nvmrc) och kör igen."
   );
+}
+
+// Kord direkt, inte importerad. Jamfor verkliga sokvagar: argv[1] foljer inte
+// symboliska lankar men import.meta.url gor det, och en miss har slapper fel
+// version igenom utan ett ord.
+const kordDirekt =
+  process.argv[1] !== undefined &&
+  realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]);
+
+if (kordDirekt) {
+  const fel = felNodeversion(process.version, "Bygget");
+  if (fel) {
+    console.error(fel);
+    process.exit(1);
+  }
 }

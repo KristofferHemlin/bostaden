@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -36,5 +37,26 @@ describe("samma version i alla tre leden", () => {
 
   it(".npmrc later npm vagra fel version vid installation", () => {
     expect(las(".npmrc").split("\n").map((r) => r.trim())).toContain("engine-strict=true");
+  });
+});
+
+// Det lokala bygget far samma kontroll: prebuild kor scripts/nodeversion.mjs
+// fore allt annat. Att den stoppar pa v21 och v24 ar uppmatt i rapporten for
+// omgangen – sviten sjalv kan bara koras pa 22.
+describe("bygget", () => {
+  it.each(["v21.5.0", "v24.12.0"])("%s avvisas med byggets mening", (version) => {
+    expect(felNodeversion(version, "Bygget")).toBe(
+      `Bygget kräver Node 22 – du kör ${version}. Byt version (nvm use läser .nvmrc) och kör igen.`,
+    );
+  });
+
+  it("prebuild kor kontrollen forst, fore kopiera-pdfjs", () => {
+    const paket = JSON.parse(las("package.json")) as { scripts: Record<string, string> };
+    expect(paket.scripts.prebuild).toBe("node scripts/nodeversion.mjs && npm run kopiera-pdfjs");
+  });
+
+  it("kord direkt pa ratt version gar skriptet igenom utan att skriva nagot", () => {
+    const ut = execFileSync(process.execPath, ["scripts/nodeversion.mjs"], { encoding: "utf-8", stdio: "pipe" });
+    expect(ut).toBe("");
   });
 });
