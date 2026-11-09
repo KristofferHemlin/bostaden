@@ -66,19 +66,29 @@ function las(formData: FormData, nyckel: string): string {
   return String(formData.get(nyckel) ?? "").trim();
 }
 
-// Positivt heltal antal kvadratmeter, eller null vid tomt falt. Returnerar
-// "decimal" for ett tal med komma eller punkt och undefined for annat som
-// inte gar att tolka. Bara siffror och mellanslag tas emot: till 2026-11-09
+// Storleken: ett positivt tal med hogst en decimal (docs/design.md,
+// "Inställningssidan"). Komma och punkt ar decimaltecken, mellanslag
+// tusentalsavgransare i tregrupper – "1 200", aldrig "12 00". Till 2026-11-09
 // togs allt som inte var en siffra bort, sa "72,5" och "72 m2" sparades som
-// 725 och 722 (docs/design.md, "Storleken får aldrig tiodubblas tyst").
-// Kolumnen ar ett heltal; decimaler avvisas tills beslutet om faltet ar taget.
-function storlekFranText(text: string): number | null | "decimal" | undefined {
+// 725 och 722; allt som inte ar ett sadant tal avvisas nu i stallet.
+//
+// Returnerar talet som text for Prisma (kolumnen ar numeric(6,1), sa en
+// decimal ryms och storsta vardet ar 99 999,9), null vid tomt falt och
+// undefined nar texten inte ar ett giltigt tal.
+const STORLEK = /^(\d{1,3}(?: \d{3})+|\d+)(?:[.,](\d))?$/;
+const STORSTA_STORLEK = 99_999.9;
+
+const STORLEK_AVVISAD =
+  "Skriv boarean i kvadratmeter, med högst en decimal – till exempel 72 eller 72,5.";
+
+function storlekFranText(text: string): string | null | undefined {
   if (text === "") return null;
-  const utanMellanslag = text.replace(/\s/g, "");
-  if (/^\d+[.,]\d*$/.test(utanMellanslag)) return "decimal";
-  if (!/^\d+$/.test(utanMellanslag)) return undefined;
-  const varde = Number.parseInt(utanMellanslag, 10);
-  return varde > 0 ? varde : undefined;
+  const m = STORLEK.exec(text.replace(/\s+/g, " "));
+  if (!m) return undefined;
+  const heltal = Number(m[1]!.replace(/ /g, ""));
+  const tal = m[2] === undefined ? String(heltal) : `${heltal}.${m[2]}`;
+  const varde = Number(tal);
+  return varde > 0 && varde <= STORSTA_STORLEK ? tal : undefined;
 }
 
 // Belopp i oren som BigInt, eller null vid tomt falt. Returnerar undefined nar
@@ -121,11 +131,8 @@ export async function sparaBostaden(
   }
 
   const storlek = storlekFranText(las(formData, "storlek"));
-  if (storlek === "decimal") {
-    return { fel: "Storleken anges i hela kvadratmeter, t.ex. 72.", falt: "storlek" };
-  }
   if (storlek === undefined) {
-    return { fel: "Storlek anges i kvadratmeter, t.ex. 72.", falt: "storlek" };
+    return { fel: STORLEK_AVVISAD, falt: "storlek" };
   }
 
   // Upplatelseformen ar last efter forsaljning (produktspec 4.8): ett byte da

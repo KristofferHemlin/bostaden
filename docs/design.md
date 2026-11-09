@@ -1860,13 +1860,19 @@ Regeln skrevs 2026-11-03, efter att den byggts från en prompt och alltså en ti
 
 **Storleken får aldrig tiodubblas tyst.** Fältet avvisade inte *72,5* – det sparade **725 m²**. Tolkningen tog bort allt som inte var en siffra, och kommatecknet försvann med den. Uppmätt 2026-11-09 av agenten; en enda bostad i produktionen har storleken ifylld, och värdet är 36, så ingenting är förstört.
 
-**Till dess att fältet tar decimaler ska det avvisa dem med ett besked.** Ett tal som tyst blir tio gånger för stort är värre än ett fält som säger att det bara tar hela kvadratmeter. Lydelsen är:
+**Och *72 m2* blev 722.** Enheten räknades in som en siffra. Tre olika inmatningar gav alltså tyst fel tal i samma fält.
 
-> *"Storleken anges i hela kvadratmeter, t.ex. 72."*
+**Fältet tar ett positivt tal med högst en decimal.** Boarean anges med en decimal i svenska bostadsuppgifter, och *36,5* ska gå igenom.
 
-**Och *72 m2* blev 722.** Enheten räknades in som en siffra. Fältet tar därför bara siffror och mellanslag — *1 200* går igenom som tusental, allt annat avvisas med samma besked. Att också *ca 72* och *72kvm* avvisas är priset för en regel som går att lita på.
+| Tas emot | Avvisas |
+|---|---|
+| `36`, `36,5`, `36.5`, `1 200` | `-3`, `0`, `35,23`, `kkgkg`, `72 m2`, `ca 72` |
 
-Att faktiskt ta emot *72,5* kräver att kolumnen byter typ, och **storleken läses inte av någonting**. Den hör därför till beslutet om fälten vi frågar om utan att använda – se listan. Byggs den där frågan besvaras, inte före.
+Både komma och punkt är decimaltecken, mellanslag är tusentalsavgränsare. Allt annat avvisas med ett besked vid fältet.
+
+**Och det hon skrev står kvar när fältet avvisar.** Ett fel som pekar på ett värde som inte längre syns är ett fel hon inte kan rätta. Uppmätt 2026-11-09: fältet visade det lagrade värdet igen i stället för det hon just skrivit.
+
+Beslutet att ta emot decimaler togs 2026-11-09 och kräver att kolumnen byter typ. Att storleken ännu inte läses av någonting är inget skäl att låta den vara fel — **ett fält som finns ska stämma**, och den här har gett tre olika tysta feltal.
 
 **Att lämna inställningarna leder tillbaka dit man kom ifrån.** Sidan nås från kugghjulet på varje skärm, och den som går dit för att kontrollera en uppgift vill tillbaka till det hon höll på med. Kugghjulet skickar med vilken flik hon stod i, och bakåtlänken namnger den: *← Kvitton*, *← Projekt*, *← Deklaration*. Att destinationen växlar bryter inte namnregeln, den uppfyller den.
 

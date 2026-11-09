@@ -1,10 +1,12 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Storleken i kortet Bostaden (docs/design.md, "Installningssidan":
-// "Storleken får aldrig tiodubblas tyst"). Till 2026-11-09 tog tolkningen
-// bort allt som inte var en siffra, sa "72,5" sparades som 725 m². Tills
-// faltet tar decimaler avvisas de med ett besked – ingen migrering, storleken
-// lases inte av nagonting.
+// Storleken i kortet Bostaden (docs/design.md, "Installningssidan"). Till
+// 2026-11-09 tog tolkningen bort allt som inte var en siffra, sa "72,5"
+// sparades som 725 m² och "72 m2" som 722. Faltet tar nu ett positivt tal med
+// hogst en decimal; komma och punkt ar decimaltecken, mellanslag
+// tusentalsavgransare. Kolumnen ar numeric(6,1).
 
 const BOSTAD = "11111111-1111-1111-1111-111111111111";
 const ANVANDARE = "22222222-2222-2222-2222-222222222222";
@@ -52,30 +54,55 @@ beforeEach(() => {
   h.inbjudanFindMany.mockResolvedValue([]);
 });
 
-describe("storleken tar hela kvadratmeter", () => {
-  // Lydelsen star inte citerad i docs/design.md – bara att beskedet ska saga
-  // att faltet tar hela kvadratmeter. Det ar det som provas.
-  it.each(["72,5", "72.5", "72,0"])("%s avvisas med beskedet om hela kvadratmeter och sparas inte", async (text) => {
+// Avvisningens lydelse. Den star inte i docs/design.md an – nar den gor det
+// ska testet lasa den darifran.
+const AVVISAD = "Skriv boarean i kvadratmeter, med högst en decimal – till exempel 72 eller 72,5.";
+
+const TAS_EMOT: [string, string][] = [
+  ["36", "36"],
+  ["36,5", "36.5"],
+  ["36.5", "36.5"],
+  ["1 200", "1200"],
+];
+const AVVISAS = ["-3", "0", "35,23", "kkgkg", "72 m2", "ca 72"];
+
+describe("storleken tar ett positivt tal med hogst en decimal", () => {
+  it.each(TAS_EMOT)("%s tas emot och sparas som %s", async (text, sparat) => {
     const resultat = await sparaBostaden({}, formulardata(text));
-    expect(resultat.falt).toBe("storlek");
-    expect(resultat.fel).toMatch(/hela kvadratmeter/);
+    expect(resultat.fel).toBeUndefined();
+    expect(String(h.bostadUpdate.mock.calls[0]?.[0].data.storlek)).toBe(sparat);
+  });
+
+  it.each(AVVISAS)("%s avvisas vid faltet och sparas inte", async (text) => {
+    const resultat = await sparaBostaden({}, formulardata(text));
+    expect(resultat).toEqual({ fel: AVVISAD, falt: "storlek" });
     expect(h.bostadUpdate).not.toHaveBeenCalled();
   });
 
-  it.each(["72 m2", "ca 72", "72kvm"])("%s avvisas i stallet for att bli ett annat tal", async (text) => {
+  // Raderna ovan ar tabellen i docs/design.md ("Inställningssidan"). Lases
+  // inne i testet, aldrig pa modulniva (CLAUDE.md, "Tester").
+  it("raderna ar desamma som tabellen i design.md", () => {
+    const design = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+    const rad = design.match(/\| Tas emot \| Avvisas \|\n\|---\|---\|\n\| ([^|]+) \| ([^|]+) \|/);
+    if (!rad) throw new Error("design.md saknar tabellen Tas emot | Avvisas");
+    const lista = (cell: string) => [...cell.matchAll(/`([^`]*)`/g)].map((m) => m[1]);
+    expect(lista(rad[1]!)).toEqual(TAS_EMOT.map(([text]) => text));
+    expect(lista(rad[2]!)).toEqual(AVVISAS);
+  });
+
+  it.each(["0,0", "36,", ",5", "12 00", "100000"])("%s avvisas ocksa", async (text) => {
     const resultat = await sparaBostaden({}, formulardata(text));
-    expect(resultat.falt).toBe("storlek");
-    expect(h.bostadUpdate).not.toHaveBeenCalled();
+    expect(resultat).toEqual({ fel: AVVISAD, falt: "storlek" });
   });
 
   it.each([
-    ["72", 72],
-    [" 72 ", 72],
-    ["1 200", 1200],
-  ])("%s sparas som %i", async (text, varde) => {
+    [" 72 ", "72"],
+    ["1\u00a0200,5", "1200.5"],
+    ["99 999,9", "99999.9"],
+  ])("%j sparas som %s", async (text, sparat) => {
     const resultat = await sparaBostaden({}, formulardata(text));
     expect(resultat.fel).toBeUndefined();
-    expect(h.bostadUpdate.mock.calls[0]?.[0].data.storlek).toBe(varde);
+    expect(String(h.bostadUpdate.mock.calls[0]?.[0].data.storlek)).toBe(sparat);
   });
 
   it("ett tomt falt sparas som null", async () => {

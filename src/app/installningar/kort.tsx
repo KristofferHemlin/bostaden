@@ -501,7 +501,9 @@ function BostadenEditForm({
             type="text"
             name="storlek"
             {...markering("storlek")}
-            inputMode="numeric"
+            // "decimal" ger telefonens tangentbord ett decimaltecken –
+            // "numeric" saknar det, och 72,5 gick inte att skriva.
+            inputMode="decimal"
             defaultValue={data.storlek}
             className={INPUT_KLASS}
             placeholder="t.ex. 72"

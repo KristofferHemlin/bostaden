@@ -138,3 +138,24 @@ describe("bakatlanken pa installningssidan namnger fliken", () => {
     expect(await bakatlankar(fran)).toEqual([]);
   });
 });
+
+// Storleken visas med decimalkomma, som hon skriver den (docs/design.md,
+// "Inställningssidan"). Kolumnen ar numeric(6,1); Prisma ger en Decimal.
+describe("storleken pa installningssidan", () => {
+  it.each([
+    ["72.5", "72,5"],
+    ["36", "36"],
+  ])("ett lagrat %s visas som %s m² i kortet Bostaden", async (lagrat, visat) => {
+    const { Prisma } = await import("@prisma/client");
+    // Raden byts direkt i tabellen: den falska databasen laser ett objekt i
+    // en skrivning som en nastlad skrivning.
+    const rad = h.db.tabell("bostad").find((b) => b.id === X);
+    if (!rad) throw new Error("bostaden finns inte i den falska databasen");
+    rad.storlek = new Prisma.Decimal(lagrat);
+    h.sokvag = "/installningar";
+    const html = renderToStaticMarkup(await InstallningarSida({ searchParams: Promise.resolve({}) }));
+    const visad = html.match(/>Storlek<\/span><span[^>]*>([^<]*)<\/span>/);
+    if (!visad) throw new Error("hittade inte raden Storlek pa sidan");
+    expect(visad[1]).toBe(`${visat} m²`);
+  });
+});

@@ -1,0 +1,22 @@
+-- Storleken tar ett positivt tal med hogst en decimal (docs/design.md,
+-- "Inställningssidan"). Boarean anges med en decimal i svenska
+-- bostadsuppgifter, och 36,5 ska ga igenom. Kolumnen var ett heltal.
+--
+-- INTE additiv: byter typ pa en befintlig kolumn. Kraver ett ja innan den
+-- kors (CLAUDE.md, "Migreringar: additiva utan att fråga, allt annat med").
+--
+-- Befintliga varden: integer -> numeric(6,1) ar en exakt omvandling. 36 blir
+-- 36.0 och 404 blir 404.0. Ingenting avrundas och ingenting kan ga forlorat:
+-- numeric(6,1) rymmer heltal upp till 99 999, och det storsta lagrade vardet
+-- 2026-11-09 var 404. Migreringen gissar inte om 404 var tiodubblingsfelet
+-- (40,4) – det ratttas for hand efterat om det var det.
+--
+-- Ordning mot driftsattningen, provat mot en lokal engangsdatabas
+-- 2026-11-09 – se rapporten for omgangen. Driftsattningen kor inga
+-- migreringar.
+--
+-- Ror inte RLS – en typandring paverkar inte tabellens RLS-lage.
+-- Kontrollera anda efterat, som alltid.
+
+-- AlterTable
+ALTER TABLE "bostad" ALTER COLUMN "storlek" SET DATA TYPE DECIMAL(6,1);

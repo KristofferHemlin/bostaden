@@ -50,7 +50,8 @@ export default async function InstallningarSida({
           lng: bostad.longitud != null ? bostad.longitud.toString() : "",
           upplatelseform: bostad.upplatelseform,
           identifiering: bostad.identifiering ?? "",
-          storlek: bostad.storlek != null ? String(bostad.storlek) : "",
+          // Med decimalkomma, som hon skriver den: 72,5 – inte 72.5.
+          storlek: bostad.storlek != null ? bostad.storlek.toString().replace(".", ",") : "",
           kapitaltillskottOren: bostad.kapitaltillskott,
           sald: bostad.forsaljningsdatum != null,
         }}
