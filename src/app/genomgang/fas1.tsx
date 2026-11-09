@@ -224,61 +224,15 @@ export function Fas1({
                 .filter((k): k is Kvitto => k !== undefined);
               if (kvitton.length < 2) return null;
               return (
-                <div key={nyckel} className="p-4">
-                  <p className="font-granssnitt text-sm text-text-sekundar">
-                    {f.motiv}
-                  </p>
-                  <ul className="mt-2 space-y-1">
-                    {kvitton.map((k) => (
-                      <li
-                        key={k.id}
-                        className="flex items-baseline justify-between gap-3 font-granssnitt text-sm"
-                      >
-                        <span className={`min-w-0 ${rubrikKlipp(k)} text-text-primar`}>
-                          {kvittoRubrik(k)}
-                        </span>
-                        <span className="shrink-0 tabular-nums text-text-sekundar">
-                          {formateraKronorEllerStreck(k.belopp)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <form
-                    action={(fd) => {
-                      skapaAction(fd);
-                      nollaUrval();
-                    }}
-                    onSubmit={hanteraSkapaSubmit}
-                    className="mt-3 flex flex-col gap-2"
-                  >
-                    {f.kvitto_ider.map((id) => (
-                      <input
-                        key={id}
-                        type="hidden"
-                        name="kostnad_ider"
-                        value={id}
-                      />
-                    ))}
-                    <div className="flex gap-3">
-                      <button
-                        type="submit"
-                        disabled={skapaPagar}
-                        className={SKAPA_HOG_INLINE_KLASS}
-                      >
-                        {skapaPagar ? "Sparar…" : "Ja, lägg ihop"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setAvfardade((prev) => new Set(prev).add(nyckel))
-                        }
-                        className="shrink-0 font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
-                      >
-                        Nej
-                      </button>
-                    </div>
-                  </form>
-                </div>
+                <ForslagRad
+                  key={nyckel}
+                  forslag={f}
+                  kvitton={kvitton}
+                  onSkickat={nollaUrval}
+                  onAvfarda={() =>
+                    setAvfardade((prev) => new Set(prev).add(nyckel))
+                  }
+                />
               );
             })}
           </div>
@@ -541,6 +495,83 @@ export function Fas1({
           {hogar.length > 0 ? "Fortsätt senare" : "Tillbaka till översikten"}
         </Link>
       </div>
+    </div>
+  );
+}
+
+// Ett forslag att lagga ihop kvitton, med ETT EGET sparande. Till 2026-11-09
+// delade alla forslag – och panelen "Lägg ihop de valda" – en enda
+// useActionState(skapaHog) i Fas1, och dess pending-flagga styrde varje
+// forslags knapp: ett tryck pa ett forslag satte alla i "Sparar…", fast bara
+// det ena sparades. Uppmatt av den forsta riktiga anvandaren. Vantlaget hor
+// till raden som skickades (tester/genomgang-forslag-vantlage.test.ts).
+function ForslagRad({
+  forslag,
+  kvitton,
+  onSkickat,
+  onAvfarda,
+}: {
+  forslag: Forslag;
+  kvitton: Kvitto[];
+  onSkickat: () => void;
+  onAvfarda: () => void;
+}) {
+  const [res, action, pagar] = useActionState(skapaHog, START);
+  const hanteraSubmit = useForhindraDubbelinskick(pagar);
+
+  return (
+    <div className="p-4">
+      <p className="font-granssnitt text-sm text-text-sekundar">
+        {forslag.motiv}
+      </p>
+      <ul className="mt-2 space-y-1">
+        {kvitton.map((k) => (
+          <li
+            key={k.id}
+            className="flex items-baseline justify-between gap-3 font-granssnitt text-sm"
+          >
+            <span className={`min-w-0 ${rubrikKlipp(k)} text-text-primar`}>
+              {kvittoRubrik(k)}
+            </span>
+            <span className="shrink-0 tabular-nums text-text-sekundar">
+              {formateraKronorEllerStreck(k.belopp)}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <form
+        action={(fd) => {
+          action(fd);
+          onSkickat();
+        }}
+        onSubmit={hanteraSubmit}
+        className="mt-3 flex flex-col gap-2"
+      >
+        {forslag.kvitto_ider.map((id) => (
+          <input key={id} type="hidden" name="kostnad_ider" value={id} />
+        ))}
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={pagar}
+            className={SKAPA_HOG_INLINE_KLASS}
+          >
+            {pagar ? "Sparar…" : "Ja, lägg ihop"}
+          </button>
+          <button
+            type="button"
+            onClick={onAvfarda}
+            className="shrink-0 font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
+          >
+            Nej
+          </button>
+        </div>
+        {res.fel ? (
+          <p role="alert" className="font-granssnitt text-sm text-accent">
+            {res.fel}
+          </p>
+        ) : null}
+      </form>
     </div>
   );
 }

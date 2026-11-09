@@ -6,9 +6,9 @@
 // brus, det ar dar inbjudan bor.
 //
 // Inbjudan i tur och ordning, pa plats i kortet:
-//   1. ett informationssteg: den inbjudna ser allt
-//   2. adressen och andelarna – bada, med summan synlig medan man skriver
-//   3. QR-koden och lanken att kopiera – ingenting skickas
+//   1. texten om att den inbjudna ser allt, ovanfor adressen och andelarna –
+//      bada andelarna, med summan synlig medan man skriver. Ett tryck in.
+//   2. QR-koden och lanken att kopiera – ingenting skickas
 //
 // Steget satter BADA andelarna. Den egna kan redan vara angiven – ofta 100 %
 // – och ett steg som bara fragade efter den inbjudnas kunde da inte ge henne
@@ -49,7 +49,7 @@ export interface TillgangData {
   inbjudningar: { id: string; epost: string; andel: number | null }[];
 }
 
-/** Informationssteget fore koden: vad som delas (docs/design.md, "Att bjuda
+/** Texten ovanfor inbjudningsformularet: vad som delas (docs/design.md, "Att bjuda
  *  in en delägare"). Delas med erbjudandet efter andelsfragan pa startsidan. */
 export const INBJUDAN_SER_ALLT =
   "Den du bjuder in ser allt: varje kvitto, varje belopp, hela historiken och underlaget. Ni ser samma bostad, och båda kan lägga in nya kvitton.";
@@ -58,7 +58,7 @@ const TEXTLANK_KLASS =
   "font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar";
 
 export function TillgangKort({ data }: { data: TillgangData }) {
-  const [steg, setSteg] = useState<"vila" | "info" | "adress">("vila");
+  const [steg, setSteg] = useState<"vila" | "formular">("vila");
   const delad = data.medlemmar.length > 1 || data.inbjudningar.length > 0;
   // En andel som inte ar angiven hoppas over i summan – den ar varken noll
   // eller hundra (src/lib/samagande.ts, summeraAndelar).
@@ -102,28 +102,25 @@ export function TillgangKort({ data }: { data: TillgangData }) {
         ) : null}
 
         {steg === "vila" ? (
-          <button type="button" onClick={() => setSteg("info")} className={SEKUNDARKNAPP_KLASS}>
+          <button type="button" onClick={() => setSteg("formular")} className={SEKUNDARKNAPP_KLASS}>
             Bjud in någon till bostaden
           </button>
-        ) : steg === "info" ? (
-          <div className="flex flex-col gap-3">
-            <p className="text-text-primar">{INBJUDAN_SER_ALLT}</p>
-            <button type="button" onClick={() => setSteg("adress")} className={SEKUNDARKNAPP_KLASS}>
-              Fortsätt
-            </button>
-            <button type="button" onClick={() => setSteg("vila")} className={`${TEXTLANK_KLASS} self-start`}>
-              Avbryt
-            </button>
-          </div>
         ) : (
-          <SkapaInbjudan
-            egenAndel={egen}
-            ovriga={[
-              ...data.medlemmar.filter((m) => !m.du).map((m) => m.andel),
-              ...data.inbjudningar.map((i) => i.andel),
-            ]}
-            onKlar={() => setSteg("vila")}
-          />
+          // Texten om vad den inbjudna ser star ovanfor falten, pa samma
+          // skarm – inte som ett eget steg med Fortsätt (docs/design.md, "Att
+          // bjuda in en delägare"). Samma form som erbjudandet efter
+          // andelsfragan pa startsidan.
+          <div className="flex flex-col gap-4">
+            <p className="text-text-primar">{INBJUDAN_SER_ALLT}</p>
+            <SkapaInbjudan
+              egenAndel={egen}
+              ovriga={[
+                ...data.medlemmar.filter((m) => !m.du).map((m) => m.andel),
+                ...data.inbjudningar.map((i) => i.andel),
+              ]}
+              onKlar={() => setSteg("vila")}
+            />
+          </div>
         )}
       </div>
     </>

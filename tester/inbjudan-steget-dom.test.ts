@@ -19,7 +19,7 @@ vi.mock("@/app/inbjudan/actions", () => ({
 
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { TillgangKort, type TillgangData } from "@/app/installningar/dela-bostaden";
+import { INBJUDAN_SER_ALLT, TillgangKort, type TillgangData } from "@/app/installningar/dela-bostaden";
 import { ANDEL_SAKNAS } from "@/lib/agarandel";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -43,7 +43,6 @@ async function oppnaSteget(data: TillgangData) {
   const knapp = (text: string) =>
     [...behallare.querySelectorAll("button")].find((b) => b.textContent === text)!;
   await act(async () => knapp("Bjud in någon till bostaden").click());
-  await act(async () => knapp("Fortsätt").click());
 }
 
 const falt = (namn: string) => behallare.querySelector<HTMLInputElement>(`input[name="${namn}"]`)!;
@@ -82,5 +81,30 @@ describe("inbjudningssteget nar den egna andelen ar angiven", () => {
     expect(falt("egen_andel").value).toBe("33,33");
     expect(falt("inbjuden_andel").value).toBe("");
     expect(fel()).toEqual([]);
+  });
+});
+
+// Ett tryck in i formularet, med texten om vad den inbjudna ser ovanfor
+// falten pa samma skarm (docs/design.md, "Att bjuda in en delägare":
+// "Varningen står i formuläret, inte före det"). Till 2026-11-09 var texten
+// ett eget steg med knappen Fortsätt.
+describe("vagen in i inbjudningssteget", () => {
+  it("ett tryck visar texten och falten tillsammans, utan Fortsätt", async () => {
+    await oppnaSteget({ medlemmar: [{ epost: "anna@exempel.se", du: true, andel: null }], inbjudningar: [] });
+    const epost = behallare.querySelector<HTMLInputElement>('input[name="epost"]');
+    if (!epost) throw new Error("e-postfaltet visas inte efter ett tryck");
+    const texten = [...behallare.querySelectorAll("p")].find((p) => p.textContent === INBJUDAN_SER_ALLT);
+    if (!texten) throw new Error("texten om vad den inbjudna ser visas inte");
+    expect(texten.compareDocumentPosition(epost) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect([...behallare.querySelectorAll("button")].map((b) => b.textContent)).not.toContain("Fortsätt");
+  });
+
+  it("Avbryt tar bort bade texten och falten", async () => {
+    await oppnaSteget({ medlemmar: [{ epost: "anna@exempel.se", du: true, andel: null }], inbjudningar: [] });
+    const avbryt = [...behallare.querySelectorAll("button")].find((b) => b.textContent === "Avbryt");
+    if (!avbryt) throw new Error("ingen Avbryt i steget");
+    await act(async () => avbryt.click());
+    expect(behallare.querySelector('input[name="epost"]')).toBeNull();
+    expect([...behallare.querySelectorAll("p")].some((p) => p.textContent === INBJUDAN_SER_ALLT)).toBe(false);
   });
 });

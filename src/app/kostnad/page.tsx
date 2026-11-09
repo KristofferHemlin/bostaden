@@ -180,6 +180,16 @@ export default async function KvittolistaSida() {
         </div>
       ) : (
         <>
+          {/* Primarknappen overst, fore listan – som pa startskarmen
+              (docs/design.md, Kvittolistan). Listan kan bli hundratals rader
+              och knappen ska inte krava att man scrollar forbi dem. Lag
+              under listan till 2026-11-09. */}
+          <div className="border-b border-linje p-4">
+            <Link href="/kostnad/nytt" className={PRIMARKNAPP_KLASS}>
+              Lägg till kvitto
+            </Link>
+          </div>
+
           {/* Ingangen till klassificeringsgenomgangen – en rad overst i listan
               med atgardsprick (docs/design.md, Kvittolistan). Faller bort nar
               inget oklassificerat aterstar. */}
@@ -239,11 +249,6 @@ export default async function KvittolistaSida() {
               </div>
             </div>
           ))}
-          <div className="p-4">
-            <Link href="/kostnad/nytt" className={PRIMARKNAPP_KLASS}>
-              Lägg till kvitto
-            </Link>
-          </div>
         </>
       )}
     </Skarm>
