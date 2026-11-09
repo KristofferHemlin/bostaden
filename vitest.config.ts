@@ -1,19 +1,16 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
+import { felNodeversion } from "./scripts/nodeversion.mjs";
 
-// Node 22 eller senare (CLAUDE.md). Kontrollen ligger har, i konfigurationen,
-// for att den ska kasta INNAN nagon testfil laddas: pa v21.5.0 foll tva
-// testfiler med "ReferenceError: WebSocket is not defined" – globalt WebSocket
-// finns forst i Node 22 – och felet sag ut att ligga i testerna i stallet for
-// i miljon. `engines` i package.json laser npm bara vid installation, aldrig
-// vid `npm run`.
-const nodeMajor = Number(process.versions.node.split(".")[0]);
-if (nodeMajor < 22) {
-  throw new Error(
-    `Testerna kräver Node 22 eller senare – du kör ${process.version}. ` +
-      "Byt version (nvm use läser .nvmrc) och kör igen.",
-  );
-}
+// Node 22, och bara 22 (CLAUDE.md): samma version i installation, tester och
+// produktion. Kontrollen ligger har, i konfigurationen, for att den ska kasta
+// INNAN nagon testfil laddas: pa v21.5.0 foll tva testfiler med
+// "ReferenceError: WebSocket is not defined", och felet sag ut att ligga i
+// testerna i stallet for i miljon. Och en svit som gar pa 24 medan
+// produktionen byggs pa 22 provar inte det som driftsatts. `engines` i
+// package.json laser npm bara vid installation, aldrig vid `npm run`.
+const felVersion = felNodeversion(process.version);
+if (felVersion) throw new Error(felVersion);
 
 export default defineConfig({
   test: {
