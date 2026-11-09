@@ -9,6 +9,8 @@
 //   - kord direkt (`node scripts/nodeversion.mjs`) av prebuild i package.json,
 //     fore allt annat, sa att ett lokalt bygge pa fel major stoppar med samma
 //     mening som testerna. Det lokala bygget ar det som verifierar en commit.
+//     Pa ratt version skriver den ut versionen, sa att byggloggen visar att
+//     kontrollen kordes.
 //
 // Ren JavaScript, sa att den gar att kora med vanlig node.
 
@@ -34,10 +36,14 @@ const kordDirekt =
   process.argv[1] !== undefined &&
   realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]);
 
+// Sager ifran aven nar versionen ar ratt: i Vercels bygglogg gar en kontroll
+// som passerar tyst inte att skilja fran en kontroll som inte finns. Raden ar
+// beviset for att den kordes, och pa vilken version.
 if (kordDirekt) {
   const fel = felNodeversion(process.version, "Bygget");
   if (fel) {
     console.error(fel);
     process.exit(1);
   }
+  console.log(`Node ${process.version} – rätt version.`);
 }

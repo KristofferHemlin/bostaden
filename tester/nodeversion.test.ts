@@ -55,8 +55,24 @@ describe("bygget", () => {
     expect(paket.scripts.prebuild).toBe("node scripts/nodeversion.mjs && npm run kopiera-pdfjs");
   });
 
-  it("kord direkt pa ratt version gar skriptet igenom utan att skriva nagot", () => {
+  // Kontrollen sager ifran aven nar den gar igenom: i Vercels bygglogg gar en
+  // kontroll som passerar tyst inte att skilja fran en kontroll som inte finns.
+  // Raden ar beviset for att den kordes, och pa vilken version. Hette till
+  // 2026-11-09 "kord direkt pa ratt version gar skriptet igenom utan att skriva
+  // nagot" och kravde tystnad.
+  it("kord direkt pa ratt version skriver ut versionen och gar igenom", () => {
     const ut = execFileSync(process.execPath, ["scripts/nodeversion.mjs"], { encoding: "utf-8", stdio: "pipe" });
+    expect(ut).toBe(`Node ${process.version} – rätt version.\n`);
+  });
+
+  // vitest.config.ts importerar samma fil. Raden hor till bygget, inte till
+  // varje testkorning.
+  it("importerad skriver den ingenting", () => {
+    const ut = execFileSync(
+      process.execPath,
+      ["--input-type=module", "-e", 'await import("./scripts/nodeversion.mjs");'],
+      { encoding: "utf-8", stdio: "pipe" },
+    );
     expect(ut).toBe("");
   });
 });
