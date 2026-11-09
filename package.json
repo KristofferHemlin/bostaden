@@ -2,6 +2,9 @@
   "name": "kvittobo",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "kopiera-pdfjs": "node scripts/kopiera-pdfjs.mjs",
     "postinstall": "prisma generate && npm run kopiera-pdfjs",

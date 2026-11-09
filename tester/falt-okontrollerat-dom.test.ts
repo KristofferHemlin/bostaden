@@ -194,9 +194,12 @@ describe("inloggningen, som anvandaren moter den", () => {
     expect(epostfalt().value).toBe("kristoffer@gmail.com");
   });
 
-  it("serverns avvisning: adressen star kvar efter att formularet aterstallts, losenordet tommas", async () => {
+  // Losenordet toms for att orsaken ar uppgifter, inte for att formularet
+  // nollstalls – det gor det inte langre (tester/inloggning-losenord-tomning.test.ts).
+  it("serverns avvisning vid fel uppgifter: adressen star kvar, losenordet tommas", async () => {
     h.hanteraAuth.mockResolvedValue({
       fel: "Fel e-post eller lösenord.",
+      orsak: "uppgifter",
       epost: "kristoffer@gmail.com",
     });
     await rendera(createElement(LoginSida));

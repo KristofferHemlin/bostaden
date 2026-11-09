@@ -26,6 +26,7 @@ import { useFormularfel } from "@/lib/formularfel-klient";
 import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 import { inloggningsfelFranLank } from "@/lib/inloggning";
 import { inloggningensFel } from "@/lib/inloggningsfalt";
+import { skickaUtanNollstallning } from "@/lib/skicka-utan-nollstallning";
 
 const START: AuthResultat = {};
 
@@ -49,6 +50,17 @@ function LoginInnehall() {
   // Adressen fran registreringen, Glomt losenordet eller en inbjudan foljer
   // med i flikens tillstand – aldrig i URL:en (src/lib/epost-for-fliken.ts).
   useEffect(() => fyllEpostfaltFranFliken(formRef.current), [formRef]);
+  // Losenordet toms bara nar det kan ha varit fel (docs/design.md,
+  // Inloggningssidan) – och fallet lases ur orsaken, aldrig ur meningens
+  // text. Vid allt annat star det kvar: formularet skickar fran onSubmit, sa
+  // React nollstaller det inte (src/lib/skicka-utan-nollstallning.ts). Varje
+  // svar fran servern ar ett nytt objekt, sa tva fel i rad tommer bada
+  // gangerna.
+  useEffect(() => {
+    if (resultat.orsak !== "uppgifter") return;
+    const losenord = formRef.current?.elements.namedItem("losenord");
+    if (losenord instanceof HTMLInputElement) losenord.value = "";
+  }, [resultat, formRef]);
   const sokparametrar = useSearchParams();
   // /auth/callback skickar hit med ?fel=lank nar en lank inte gick att losa in.
   // Ett eget fel fran ett inloggningsforsok gar fore – det ar nyare.
@@ -76,8 +88,10 @@ function LoginInnehall() {
         <div className="rounded-xl border border-linje bg-yta-upphojd p-5">
           <form
             ref={formRef}
-            action={action}
-            onSubmit={hanteraSubmit}
+            onSubmit={(e) => {
+              hanteraSubmit(e);
+              skickaUtanNollstallning(e, action);
+            }}
             noValidate
             className="flex flex-col gap-4"
           >

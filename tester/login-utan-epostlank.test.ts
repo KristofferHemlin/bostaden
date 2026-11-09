@@ -57,7 +57,7 @@ describe("inloggningen skickar inga e-postlankar", () => {
     // "När ett formulär vägrar"), inte som en gemensam mening för båda.
     // Adressen kommer tillbaka sa att faltet behaller den
     // (tester/avvisat-falt-behaller-vardet.test.ts).
-    expect(svar).toEqual({ fel: "Fyll i ditt lösenord.", falt: "losenord", epost: "a@exempel.se" });
+    expect(svar).toEqual({ fel: "Fyll i ditt lösenord.", falt: "losenord", orsak: "annat", epost: "a@exempel.se" });
   });
 
   it("inloggning med losenord fungerar som forut", async () => {
