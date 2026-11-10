@@ -438,17 +438,23 @@ export function Kort({
   children,
   className,
   som = "div",
+  yta = "upphojd",
 }: {
   children: ReactNode;
   className?: string;
   /** "span" nar kortet ligger i en <button>, som bara far ha frasinnehall.
    *  Anroparen satter display i className – en span ar annars inline. */
   som?: "div" | "span";
+  /** Kortets yta. Upphojd overallt i appen; "bas" bara dar kortet ligger pa
+   *  en upphojd yta – ett kort tar alltid motsatt yta mot det det ligger pa,
+   *  annars forsvinner det in i den (docs/design.md, "Sidans sektioner ska
+   *  synas som sektioner"). */
+  yta?: "upphojd" | "bas";
 }) {
   const Element = som;
   return (
     <Element
-      className={`overflow-hidden rounded-xl border border-linje bg-yta-upphojd${
+      className={`overflow-hidden rounded-xl border border-linje ${yta === "bas" ? "bg-yta-bas" : "bg-yta-upphojd"}${
         className ? ` ${className}` : ""
       }`}
     >

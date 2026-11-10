@@ -126,13 +126,23 @@ afterAll(async () => {
     await avslutad;
   }
   server?.close();
-  if (profil) rmSync(profil, { recursive: true, force: true });
+  // Chromes hjalpprocesser skriver i profilen en kort stund efter att
+  // huvudprocessen avslutats, och en enda rmSync kan da kasta ENOTEMPTY – en
+  // rod korning dar varje matning gick igenom. Uppmatt 2026-11-10. Forsok
+  // igen i stallet for att lata stadningen falla sviten.
+  if (profil) rmSync(profil, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 });
 
 interface Matning {
   typsnittLaddade: boolean;
   fonsterBredd: number;
-  sektioner: { vanster: number; hoger: number; bredd: number; rubrikVanster: number };
+  /** Varje avsnitts textspalt, i sidans ordning. */
+  spalter: { vanster: number; hoger: number; bredd: number }[];
+  /** Menyns lankar: text och om de syns (har en yta och ar inte dolda). */
+  meny: { text: string; syns: boolean }[];
+  /** Varje band: dess bakgrund, om det har en linje overst, och korten i det. */
+  band: { bakgrund: string; linje: boolean; kort: string[] }[];
+  hjaltensBakgrund: string;
   fonsterHojd: number;
   knappOverkant: number;
   knappUnderkant: number;
@@ -149,7 +159,7 @@ async function mat(bredd: number, hojd: number): Promise<Matning> {
   });
   await cdp("Page.navigate", { url: `${adress}?${bredd}x${hojd}` });
   await vanta(500);
-  const svar = await cdp<{ result: { value: Matning } }>("Runtime.evaluate", {
+  const svar = await cdp<{ result: { value: Matning }; exceptionDetails?: { exception?: { description?: string } } }>("Runtime.evaluate", {
     awaitPromise: true,
     returnByValue: true,
     expression: `(async () => {
@@ -164,17 +174,37 @@ async function mat(bredd: number, hojd: number): Promise<Matning> {
           [...document.fonts].some(f => f.family.replace(/["']/g, '') === namn && f.status === 'loaded')),
         fonsterHojd: window.innerHeight,
         fonsterBredd: document.documentElement.clientWidth,
-        sektioner: (() => {
-          const s = document.querySelector('[data-sektioner]').getBoundingClientRect();
-          const h2 = document.querySelector('[data-sektioner] h2').getBoundingClientRect();
-          return { vanster: s.left, hoger: s.right, bredd: s.width, rubrikVanster: h2.left };
-        })(),
+        spalter: [...document.querySelectorAll('[data-spalt]')].map(e => {
+          const r = e.firstElementChild.getBoundingClientRect();
+          return { vanster: r.left, hoger: r.right, bredd: r.width };
+        }),
+        meny: [...document.querySelectorAll('[data-meny] a')].map(a => {
+          const r = a.getBoundingClientRect();
+          return { text: a.textContent.trim(), syns: r.width > 0 && r.height > 0 && getComputedStyle(a).visibility !== 'hidden' };
+        }),
+        band: [...document.querySelectorAll('section')].map(s => ({
+          bakgrund: getComputedStyle(s).backgroundColor,
+          linje: parseFloat(getComputedStyle(s).borderTopWidth) > 0,
+          // Korten hittas pa rubriken, inte pa en klass: varje stycke i
+          // regelavsnittet ligger i sitt kort.
+          kort: s.querySelector('h2').textContent.trim() === 'Vad räknas som förbättringsutgift?'
+            ? [...s.querySelectorAll('p')].map(p => getComputedStyle(p.parentElement).backgroundColor)
+            : [],
+        })),
+        hjaltensBakgrund: getComputedStyle(document.querySelector('main').parentElement).backgroundColor,
         knappOverkant: k.top + window.scrollY,
         knappUnderkant: k.bottom + window.scrollY,
         rubrikStorlek: getComputedStyle(document.querySelector('h1')).fontSize,
       };
     })()`,
   });
+  // Kastar uttrycket i webblasaren ar vardet tomt, och da skulle forsta
+  // kontrollen nedan – typsnitten – fa skulden for nagot helt annat. Uppmatt
+  // 2026-11-10: en borttagen valjare rapporterades som "typsnitten laddades
+  // inte". Felet ska fallas med sin egen text.
+  if (svar.exceptionDetails) {
+    throw new Error(`mätningen kastade i webbläsaren: ${svar.exceptionDetails.exception?.description ?? JSON.stringify(svar.exceptionDetails)}`);
+  }
   const m = svar.result.value;
   expect(m.typsnittLaddade, "Fraunces och Instrument Sans måste laddas – med reservtypsnitt mäts fel radbrytningar").toBe(true);
   return m;
@@ -198,12 +228,15 @@ describe("sektionerna under knappen ligger centrerade i sidan, i textens mått",
     [1440, 900],
     [1280, 800],
   ])("vid %i × %i", async (bredd, hojd) => {
-    const { sektioner: s, fonsterBredd } = await mat(bredd, hojd);
+    const { spalter, fonsterBredd } = await mat(bredd, hojd);
     const TEXTENS_MATT = textensMatt();
     expect(TEXTENS_MATT).toBe(680);
-    expect(s.bredd).toBeLessThanOrEqual(TEXTENS_MATT);
-    // Lika mycket luft pa bada sidor, inom en pixels avrundning.
-    expect(Math.abs(s.vanster - (fonsterBredd - s.hoger))).toBeLessThanOrEqual(1);
+    expect(spalter, "sidan ska ha sex avsnitt, vart och ett med sin spalt").toHaveLength(6);
+    for (const s of spalter) {
+      expect(s.bredd).toBeLessThanOrEqual(TEXTENS_MATT);
+      // Lika mycket luft pa bada sidor, inom en pixels avrundning.
+      expect(Math.abs(s.vanster - (fonsterBredd - s.hoger))).toBeLessThanOrEqual(1);
+    }
   }, 60_000);
 });
 
@@ -218,5 +251,52 @@ describe("Skapa konto syns utan att rulla", () => {
     const m = await mat(1280, 800);
     expect(m.fonsterHojd).toBe(800);
     expect(m.knappUnderkant).toBeLessThanOrEqual(m.fonsterHojd);
+  }, 60_000);
+});
+
+// Menyn i toppraden (docs/design.md, Landningssidan): tre ankarlankar fran
+// surfplattans brytpunkt, och inga pa telefon – dar rymmer raden tva saker.
+// Mats i webblasaren: att en klass dolj er nagot sager ingenting om vad som syns.
+describe("menyn i toppraden", () => {
+  it("syns inte vid 375 × 812", async () => {
+    const { meny } = await mat(375, 812);
+    expect(meny).toHaveLength(3);
+    expect(meny.filter((l) => l.syns)).toEqual([]);
+  }, 60_000);
+
+  it.each([
+    [768, 1024],
+    [1440, 900],
+  ])("syns vid %i × %i, alla tre", async (bredd, hojd) => {
+    const { meny } = await mat(bredd, hojd);
+    expect(meny.map((l) => l.syns)).toEqual([true, true, true]);
+  }, 60_000);
+});
+
+// Banden (docs/design.md, "Sidans sektioner ska synas som sektioner"): tva
+// band som moter varandra har olika yta, och da behovs ingen linje; linjen
+// star kvar bara mellan tva med samma yta. Ett kort tar alltid motsatt yta mot
+// sitt band. Hjaltedelen raknas som det forsta bandets granne.
+describe("avsnitten ar band", () => {
+  it.each([
+    [375, 812],
+    [1440, 900],
+  ])("vid %i × %i: varje grans ar ett ytbyte eller en linje, aldrig bada", async (bredd, hojd) => {
+    const { band, hjaltensBakgrund } = await mat(bredd, hojd);
+    expect(band).toHaveLength(6);
+    band.forEach((b, i) => {
+      const fore = i === 0 ? hjaltensBakgrund : band[i - 1].bakgrund;
+      expect({ avsnitt: i + 1, linje: b.linje }).toEqual({ avsnitt: i + 1, linje: b.bakgrund === fore });
+    });
+    // Banden vaxlar faktiskt – annars vore varje grans en linje och sidan
+    // densamma som fore banden.
+    expect(new Set(band.map((b) => b.bakgrund)).size).toBe(2);
+  }, 60_000);
+
+  it("vid 1440 × 900: varje kort har en annan yta an sitt band", async () => {
+    const { band } = await mat(1440, 900);
+    const medKort = band.filter((b) => b.kort.length > 0);
+    expect(medKort.length, "minst ett band ska ha kort").toBeGreaterThan(0);
+    for (const b of medKort) for (const k of b.kort) expect(k).not.toBe(b.bakgrund);
   }, 60_000);
 });

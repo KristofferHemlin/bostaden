@@ -135,7 +135,11 @@ afterAll(async () => {
     await avslutad;
   }
   server?.close();
-  if (profil) rmSync(profil, { recursive: true, force: true });
+  // Chromes hjalpprocesser skriver i profilen en kort stund efter att
+  // huvudprocessen avslutats, och en enda rmSync kan da kasta ENOTEMPTY – en
+  // rod korning dar varje matning gick igenom. Uppmatt 2026-11-10. Forsok
+  // igen i stallet for att lata stadningen falla sviten.
+  if (profil) rmSync(profil, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 });
 
 interface Matning {

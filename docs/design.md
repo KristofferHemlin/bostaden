@@ -1248,12 +1248,14 @@ Texten ovanför vikningen är:
 > **Det du gjort med bostaden sänker skatten när du säljer. Om kvittot finns kvar.**
 >
 > Nytt kök, omdragen el, ett tak – sådant får dras av från vinsten den dag bostaden säljs. Men avdraget vilar på att du kan göra utgiften trolig, och försäljningen kan ligga tjugo år bort. Ett kvitto är det enklaste beviset som finns – och det är därför de flesta betalar för mycket i vinstskatt: kvittona är borta.
->
-> **Fota kvittot när du har det i handen.** Appen läser av belopp, datum och leverantör. Det tar tio sekunder, och du behöver inte kunna en enda skatteregel för att göra det.
->
-> **Frågorna ställs medan du minns svaren.** Var badrummet slitet innan? Höjde du standarden eller lagade du något? Det är omöjligt att svara på om åtta år och enkelt i dag.
->
-> **Den dag du säljer är underlaget färdigt.** En sammanställning i Skatteverkets eget format, med talen du ska föra in i deklarationen. Kvittona ligger kvar om Skatteverket skulle fråga.
+
+**Hjältedelen kortades 2026-11-10, från 161 ord till omkring 60.** Här stod tidigare tre feta stycken till – *Fota kvittot…*, *Frågorna ställs…*, *Den dag du säljer…*. De sa samma tre saker som de fyra punkterna under *Så fungerar Kvittobo*, som ligger direkt under vikningen. Samma innehåll två gånger, med den längre versionen först: det var den enskilt största upprepningen på sidan, och den låg på den plats där en främling har minst tålamod.
+
+**Uppmätt vid 1440 × 900 före ändringen:** bilden slutade på 574 px medan textspalten fortsatte till 719. Sidans högra halva var alltså tom under bilden medan den vänstra fortfarande var brödtext. Med den kortare texten slutar spalten och bilden ungefär samtidigt, och knappen hamnar bredvid bilden i stället för under den.
+
+**Löftets ordning står kvar.** *Förlusten först, enkelheten som svar* gäller fortfarande – skillnaden är att svaret nu ges av det första avsnittet under vikningen i stället för av tre stycken ovanför den. Regeln handlar om i vilken ordning läsaren möter de två, inte om att båda måste rymmas på första skärmen.
+
+**Och de uppmätta marginalerna nedan gäller inte längre.** Tabellerna under *Landningssidans luft* mättes på den långa hjältetexten. De ska mätas om på den korta, och till dess är varje påstående om hur många tecken rubriken tål en uppgift om en sida som inte finns.
 
 **Meningen om beviset lovar inte för mycket.** Den tidigare lydelsen sa att avdraget *kräver* att du kan visa vad du gjort. Det motsägs av appens egen hållning: fri bevisning gäller, och ett kvitto som saknas är inget fel – det står under *Bilagor*. Att sälja in produkten med ett påstående man tillbakavisar inne i den är ett trovärdighetsfel, inte ett stavfel. Kvittot är det enklaste beviset, inte det enda.
 
@@ -1268,6 +1270,12 @@ Förstaskärmens lydelse är därför: *"Renoveringar och förbättringar sänke
 **Inget blankettnamn ovanför vikningen.** Varken K5 eller K6, och inte SKV 2197. Namnet beror på upplåtelseformen och hälften av läsarna skulle få fel – och ingen som inte redan sålt en bostad vet vad någotdera betyder. Längre ned, där reglerna förklaras, får båda namnen stå med sin upplåtelseform bredvid.
 
 **Skapa konto är den orange knappen här**, tvärtemot inloggningssidan, med Logga in som dämpad länk i toppraden. Det är den handling sidan finns för. Bär båda knapparna orange försvinner skillnaden och sidan tappar sitt ärende.
+
+**Toppraden har en meny, från 2026-11-10.** Till 2026-11-09 stod bara *Kvittobo* till vänster och *Logga in* till höger, och sidan sa därför ingenting om att den hade delar förrän man rullat genom dem. Menyn är tre ankarlänkar: **Så fungerar**, **Reglerna**, **Vanliga frågor**.
+
+**Menyns uppgift är att säga att sidan har delar**, inte att vara ett sätt att ta sig fram. Den som ändå rullar förlorar ingenting; den som vill hoppa till reglerna slipper leta. Därför är det bara tre, och därför får etiketten vara kortare än rubriken den pekar på — *Reglerna* för *Vad räknas som förbättringsutgift?* — så länge den inte går att ta för något annat.
+
+**På telefon står bara `Kvittobo` och `Logga in`.** Toppraden rymmer två saker vid 375 px, och tre länkar till skulle antingen krympa träffytorna under det som går att träffa eller tvinga fram en rad till. Ankarlänkarna visas från surfplattans brytpunkt och uppåt. Det är den enda ytan på landningssidan där telefonen får mindre än den breda skärmen, och skälet är plats, inte prioritet.
 
 ### Tre beslut som ändrades 2026-10-23
 
@@ -1285,7 +1293,17 @@ I den här ordningen. Varje avsnitt har en `<h2>` skriven som en sökfras, och s
 
 **Ordningen ändrades 2026-11-10, och reglerna flyttade ned.** Den första riktiga användaren sa att sidan blir *"väldigt faktatung i början"*, och att det därför blir *"ett tungt beslut att förstå vad man ser"*. Uppmätt på telefon samma dag: direkt efter hjältedelen låg 853 px skatteregler, innan ett enda ord om vad appen gör. Den som just läst löftet mötte alltså paragrafer i stället för produkten. **Det konkreta kommer först nu, reglerna sedan.** Skälet att reglerna står på sidan alls är oförändrat – det är dem en främling kom för – men de är det andra man läser, inte det första.
 
-**1. Så fungerar Kvittobo.** Fyra punkter, samma ordning som i appen: lägg in kvittot medan det är färskt – fota det eller ladda upp fakturan; svara på frågorna om vad som gjordes när du har tid; allt sparas per år och per bostad; den dag du säljer finns ett färdigt underlag.
+**1. Så fungerar Kvittobo.** Fyra punkter, samma ordning som i appen. De bär sedan 2026-11-10 den text som stod i hjältedelen, eftersom det var där den hörde hemma:
+
+> **Fota kvittot när du har det i handen.** Appen läser av belopp, datum och leverantör. Det tar tio sekunder, och du behöver inte kunna en enda skatteregel för att göra det.
+>
+> **Svara på frågorna medan du minns svaren.** Var badrummet slitet innan? Höjde du standarden eller lagade du något? Det är omöjligt att svara på om åtta år och enkelt i dag.
+>
+> **Allt sparas per år och per bostad.**
+>
+> **Den dag du säljer är underlaget färdigt.** En sammanställning i Skatteverkets eget format, med talen du ska föra in i deklarationen. Kvittona ligger kvar om Skatteverket skulle fråga.
+
+Punkterna var tidigare fyra korta rader utan innehåll av egen kraft – *"lägg in kvittot medan det är färskt"* och så vidare – just därför att hjältedelen redan sagt saken. Nu sägs den en gång, här.
 
 **2. Varför kvitton på renovering försvinner.** Kvittot ska finnas kvar den dag du säljer, och det kan vara tio eller tjugo år bort. Under tiden byter man e-postadress, termopapper bleknar i lådan, och ingen minns längre vilket år badrummet gjordes eller vad det kostade.
 
@@ -1307,6 +1325,14 @@ I den här ordningen. Varje avsnitt har en `<h2>` skriven som en sökfras, och s
 
 **Regeln framåt: samma mening står inte ordagrant både på ett kort och i ett svar.** Står den på båda ställena är det svaret som behåller den. Den som kortar ett svar för att det upprepar ett kort har gjort fel åt andra hållet.
 
+**Men regeln gäller förklaringar, inte definitioner** — skärpt 2026-11-10, efter att agenten hittade ett fall som den första lydelsen förbjöd av misstag. Uppräkningen *"att bygga nytt, bygga till, bygga om eller sätta in något som inte fanns"* står på grundförbättringskortet och ordagrant som inskott i svaret på *Vilka renoveringar får jag dra av?*. **Det överlappet ska vara kvar.** Uppräkningen *är* definitionen av en grundförbättring; stryks den ur kortet står kortet kvar med en ledmening och ingenting som säger vad ordet betyder, och stryks den ur svaret kan svaret inte längre läsas ensamt. Ett begrepp får återkomma ordagrant, på samma sätt som en ordlista och ett kapitel använder samma term.
+
+Det som inte får stå på båda ställena är **samma utläggning**: ett exempel, en följd eller en fullständig regelmening skriven en gång till. De tre meningar som togs bort var alla av det slaget — 2004-exemplet, femårsregelns fulla lydelse, och en ledmening upprepad i sin egen brödtext.
+
+**Testet vaktar bara en del av regeln, och det ska stå här.** `tester/landningssida-kort-och-svar.test.ts` jämför hela meningar, avgränsade av skiljetecken, från fem ord och uppåt, utan hänsyn till versaler och blanksteg. Det ser därför **inte** en mening som delats av ett tankstreck, och inte en mening som är nästan men inte exakt lika. Två av de tre meningar som föranledde regeln hade alltså gått igenom testet.
+
+Att låta testet räkna tankstreck som meningsgräns prövades och förkastades: då faller det på uppräkningen ovan, som ska vara kvar. **En grön körning betyder här att ingen hel mening dubblerats, ingenting mer.** Resten av regeln vaktas av den som läser, och det är därför den står skriven.
+
 **4. Vanliga frågor om avdrag vid bostadsförsäljning.** Sju stycken, med svaren nedan.
 
 **Frågorna kan få en egen sida, men inte ännu.** Övervägt 2026-11-10 och uppskjutet med avsikt: de sju svaren är 221 ord och tar 1 463 px på telefon, så en egen rutt skulle korta startsidan rejält. Men domänen är ny, sitemapen nyss inskickad, och vi vet ännu inte om sidan får visningar på frågeorden alls. **Att dela en ny domäns tyngd på två sidor innan mätningen säger vilken som drar är att gissa.** Beslutet tas om när Search Console har siffror, i god tid före deklarationssäsongen.
@@ -1322,6 +1348,18 @@ I den här ordningen. Varje avsnitt har en `<h2>` skriven som en sökfras, och s
 **De fyra blocken är kort, i appens eget formspråk.** `--yta-upphojd` som yta, `--linje` som ram, samma hörnradie som kvittokorten på översikten. Två i bredd på en bred skärm, staplade på telefon. Det gör dels att de läser som fyra saker i stället för fyra stycken, dels att förstasidan ser ut som produkten den säljer.
 
 **Varje avsnitt inleds med en tunn linje i `--linje`**, i innehållets bredd. Ingen ny färg, ingen ny yta, ingenting som behöver underhållas — en linje räcker för att ögat ska se var en del slutar och nästa börjar.
+
+**Linjen räckte inte, och det är mätt mot en läsare och inte mot filen.** Kristoffer läste den driftsatta sidan 2026-11-10 och sa att den fortfarande är rörig: *"tydligare sektioner så man förstår att inte allt hänger samman"*. Linjen var rätt riktning och för svag — den säger *ny rubrik*, inte *ny sak*.
+
+**Avsnitten får därför varsitt band i fullbredd**, växelvis sidans bakgrund och `--yta-upphojd`. Texten står kvar i sin läsbara spalt; det är ytan bakom som går ut till kanterna. En yta som byts är den starkaste avgränsning som finns utan att införa en enda ny färg — båda ytorna finns redan i appen.
+
+**Där två band möts behövs ingen linje.** Linjen står kvar bara om två avsnitt med samma yta skulle hamna intill varandra, vilket växlingen i normalfallet hindrar. Två avgränsningar på samma ställe läser som en ram, inte som en gräns.
+
+**Växlingen börjar med `--yta-upphojd` direkt under hjältedelen**, avgjort 2026-11-10. Hjältedelen ligger på sidans bakgrund, så varje gräns på sidan blir då ett ytbyte och ingen linje behövs någonstans.
+
+Alternativet var att börja med sidans bakgrund, så att regelkorten fick behålla `--yta-upphojd` och likna appens egna kort. Det förkastades av ett skäl: **gränsen mellan hjältedelen och första avsnittet är den som mest behöver säga att något nytt börjar**, och den hade då blivit sidans svagaste — en tunn linje, på det enda stället där läsaren lämnar löftet och går in i innehållet. Att korten byter yta är ett mindre pris än att den gränsen blir otydlig.
+
+**Och ett kort tar alltid motsatt yta mot sitt band.** De fyra blocken under *Vad räknas som förbättringsutgift?* är `--yta-upphojd`; hamnar de på ett band av samma yta försvinner de in i det och avsnittet förlorar det som gjorde det till fyra saker. Regeln gäller generellt och inte bara det avsnittet, så att växlingen kan ändras utan att någon behöver minnas undantaget.
 
 **Och luften är inte lika på båda sidor om en rubrik.** Mer utrymme ovanför rubriken än under den, så att rubriken binder nedåt till sitt innehåll i stället för att sväva mellan två avsnitt. Jämnt fördelad luft är det som får en sida att se ut som en enda löptext.
 
@@ -1347,11 +1385,31 @@ I den här ordningen. Varje avsnitt har en `<h2>` skriven som en sökfras, och s
 
 **Avvägningen är därför tre tal och inte två**, och den ska göras i den här ordningen: knappen synlig, bildens siffror läsbara, rubriken så stor som återstoden tillåter.
 
-**Utfallet 2026-10-24: rubriken 40,5 px i en spalt på 560 px.** Knappen ligger på 719–775 med 25 px marginal mot 800, bilden är 502 px bred och dess siffror går att läsa. Elva kombinationer mättes och förkastades; den bredare spalten på 720 px gav en större rubrik men krympte bilden till 342 px, där raderna *varav ROT, avgår* inte längre går att läsa.
+**Utfallet 2026-10-24: rubriken 40,5 px i en spalt på 560 px.** Bilden är 502 px bred och dess siffror går att läsa. Elva kombinationer mättes och förkastades; den bredare spalten på 720 px gav en större rubrik men krympte bilden till 342 px, där raderna *varav ROT, avgår* inte längre går att läsa. Knappens läge i den mätningen — 719–775 med 25 px marginal — gällde den långa hjältetexten och är ersatt nedan.
 
-**Och nu är texten låst på båda skärmbredderna.** På telefon är marginalen 22 px och en textrad 22 px. På bred skärm är marginalen 25 px och en rad brödtext 27 px — alltså ännu tunnare. Uppmätt utrymme innan något stycke bryter om: **rubriken tål ungefär sju tecken till**, *"Den dag du säljer …"* ungefär sexton, de övriga styckena mellan tjugofem och trettio. Spalten tål att krympa 32 px innan samma sak händer.
+**Texten var låst på båda skärmbredderna fram till 2026-11-10.** Marginalen var då 22 px på telefon och 25 px på bred skärm, mot en textrad på 22 respektive 27 px — alltså mindre än en rad. Varje tillagt ord måste mätas mot båda tabellerna, och det stod här att det var priset för en sida som håller sitt löfte på två skärmstorlekar.
 
-**Det betyder att hjältedelens text inte längre kan ändras fritt.** Varje tillagt ord ska mätas mot båda tabellerna, inte bara mot telefonens. Det är priset för en sida som håller sitt löfte på två skärmstorlekar, och det är ett pris värt att betala så länge någon minns att betala det.
+**Låsningen upphörde när hjältedelen kortades**, inte för att kravet mjukades upp. De tre feta styckena flyttade ned till *Så fungerar Kvittobo*, och knappen steg därmed flera hundra pixlar.
+
+| | Knappen | Marginal | Förut |
+|---|---|---|---|
+| 390 × 844, gräns 700 | 310–360 | **340 px** | 22 px |
+| 1280 × 800, gräns 800 | 426–482 | **318 px** | 25 px |
+
+Det är omkring femton textrader på telefon och tolv på bred skärm. **Påståendet att texten är låst gäller inte längre**, och den som läser det någon annanstans i den här filen läser en uppgift om en äldre sida.
+
+**Kravet står kvar oförändrat:** hela primärknappen ska synas utan att rulla vid 390 px och vid 1280 × 800 synlig yta. Det är marginalen som vuxit, inte regeln som flyttats.
+
+**Hur många tecken texten tål, och hur det mättes.** Metoden är att lägga till ord om fem bokstäver i slutet tills raden bryts om:
+
+| | 390 px | 1280 px |
+|---|---|---|
+| Rubriken | 11 | 9 |
+| Stycket om förlusten | 25 | 37 |
+
+Spalten på 560 px tål att krympa 33 px med samma metod.
+
+**Metoden står skriven därför att den förra inte gjorde det.** Här stod tidigare att rubriken tål *ungefär sju* tecken. Samma rubrik i samma spalt mäter nu 11, och skillnaden är inte sidan utan hur talet togs fram — den gamla metoden är okänd. **Ett mått utan sin metod går inte att jämföra med nästa mått**, och två tal som inte går att jämföra ser ut som en förändring som aldrig hände.
 
 ### Skärmbilden som ligger i hjältedelen
 
@@ -1446,7 +1504,9 @@ Där gäller avsikten i stället: **vikningen ska falla mitt i ett stycke, aldri
 
 **Sikta på 680 px eller mindre, inte 699.** En regel som klaras med en pixel går sönder nästa gång ett ord läggs till i ett av styckena. Texten ändras inte för att vinna utrymme – den är sidans ärende.
 
-**Marginalen 2026-10-02 är 22 px, och en textrad är 22 px.** Det är alltså exakt en rad kvar. Läggs en mening till i något av de fyra styckena så att det växer med en rad, faller knappen utanför gränsen igen. Rör någon texten på den här sidan ska raden mätas om – det är den enda regeln i produkten som ett ord kan bryta.
+**Marginalen var 22 px den 2026-10-02, mot en textrad på 22 px** – exakt en rad kvar, och ett tillagt stycke hade fällt knappen utanför gränsen igen. **Sedan 2026-11-10 är marginalen 340 px**, eftersom tre stycken flyttade ned till *Så fungerar Kvittobo*. De nya talen och metoden står under *Skärmbilden som ligger i hjältedelen*.
+
+**Men regeln att mäta om står kvar, och är viktigare nu.** Med en marginal på en rad märktes ett tillagt ord omedelbart; med femton rader kan hjältedelen växa länge utan att något faller, ända tills den plötsligt gör det. **Rör någon texten på den här sidan ska raden mätas om** – en stor marginal är inte samma sak som ingen gräns.
 
 **Budgeten gäller allt som ligger ovanför knappen.** När sidan fick innehåll under vikningen 2026-10-23 ändrades ingenting i den här regeln, och det är hela poängen: det nya ligger under knappen, aldrig över. Varken bilden, prisraden eller någon rubrik får hamna mellan toppen och *Skapa konto*. **Mät om vid varje ändring av hjältedelen.**
 

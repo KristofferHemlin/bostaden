@@ -2,8 +2,10 @@
 // moter pa "/". Skriven for en framling som sokt pa "far man dra av renovering
 // vid forsaljning" och aldrig hort talas om Kvittobo.
 //
-// Hjaltedelen – rubriken och de fyra styckena – star ordagrant i design.md
-// och skrivs inte om har. Inget blankettnamn ovanfor vikningen.
+// Hjaltedelen – rubriken och stycket om forlusten – star ordagrant i
+// design.md och skrivs inte om har. Inget blankettnamn ovanfor vikningen. De
+// tre feta styckena som stod har till 2026-11-10 bor nu i Sa fungerar
+// Kvittobo, dar de sa samma sak en gang.
 //
 // Skapa konto ar den orange knappen – tvartemot inloggningssidan. Logga in ar
 // en dampad lank i toppraden, pa samma rad som ordmarket, sa att den inte tar
@@ -12,9 +14,8 @@
 // Hela Skapa konto inom de forsta 700 px vid 390 px bredd, underkanten och
 // inte overkanten (docs/design.md, "Landningssidans luft"). Ingen vertikal
 // centrering: sidan ligger mot overkanten sa att knappens lage ar detsamma i
-// varje fonsterhojd. Tatare luft pa mobil an pa skrivbord (sm:). Uppmatt
-// 2026-10-02: underkanten 678 px, 22 px marginal – exakt en textrad. Texten
-// andras inte; utrymme hamtas ur luft, aldrig ur ord.
+// varje fonsterhojd. Tatare luft pa mobil an pa skrivbord (sm:). Marginalen
+// mats om vid varje andring av hjaltedelen – talen star i design.md, inte har.
 //
 // ALLT som kom till 2026-10-23 ligger under knappen: prisraden, bilden och
 // de sex avsnitten. Ingenting far hamna mellan toppen och Skapa konto –
@@ -32,8 +33,10 @@
 //
 // Uppmatt 2026-10-24: 54 px i 720 px spalt holl knappen synlig men krympte
 // bilden till 342 px, och dess siffror gick inte att lasa. 40,5 px (lg:text-4xl)
-// i 560 px ger tre rader, knappen pa 719–775 och bilden 502 px.
-// tester/landningssida-layout.test.ts mater knappen i Chrome.
+// i 560 px ger tre rader och bilden 502 px. Knappen lag da pa 719–775; efter
+// att hjaltedelen kortades 2026-11-10 ligger den pa 426–482 vid 1280 × 800,
+// bredvid bilden i stallet for under den. tester/landningssida-layout.test.ts
+// mater knappen i Chrome.
 //
 // Pa telefon ligger bilden under knappen; pa bred skarm (lg:) star texten
 // till vanster med sin egen maxbredd och bilden till hoger. DOM-ordningen ar
@@ -52,6 +55,7 @@ import {
   FORBATTRINGSUTGIFT,
   HJALTEBILDENS_ALT,
   KVITTON_FORSVINNER,
+  MENYN,
   PRISRAD,
   SA_FUNGERAR,
   VANLIGA_FRAGOR,
@@ -69,167 +73,223 @@ export const HJALTEBILD = { src: "/hero-920x780.jpg", bredd: 800, hojd: 678 };
 const BRODTEXT = "font-granssnitt text-base leading-6 text-text-sekundar";
 const FET = "font-medium text-text-primar";
 
+type Yta = "bas" | "upphojd";
+
+/** Banden, i sidans ordning (docs/design.md, "Sidans sektioner ska synas som
+ *  sektioner"): vaxelvis --yta-upphojd och sidans bakgrund. Hjaltedelen ligger
+ *  pa bakgrunden, sa det forsta bandet ar upphojt – da byts ytan redan vid
+ *  forsta avsnittet. */
+const HJALTENS_YTA: Yta = "bas";
+const bandetsYta = (i: number): Yta => (i % 2 === 0 ? "upphojd" : "bas");
+const motsatt = (yta: Yta): Yta => (yta === "bas" ? "upphojd" : "bas");
+
 export function Landningssida() {
+  // Avsnitten i ordning; ytan och linjen foljer av platsen, inte av avsnittet,
+  // sa att ordningen kan andras utan att nagon behover minnas undantag.
+  const avsnitt: { id: string; rubrik: string; innehall: (yta: Yta) => ReactNode }[] = [
+    {
+      id: "sa-fungerar",
+      rubrik: SA_FUNGERAR.rubrik,
+      innehall: () => (
+        <ol className={`list-decimal space-y-3 pl-6 ${BRODTEXT}`}>
+          {SA_FUNGERAR.punkter.map((p) => (
+            <li key={p.rubrik}>
+              <strong className={FET}>{p.rubrik}</strong>
+              {p.text ? ` ${p.text}` : null}
+            </li>
+          ))}
+        </ol>
+      ),
+    },
+    {
+      id: "kvitton-forsvinner",
+      rubrik: KVITTON_FORSVINNER.rubrik,
+      innehall: () => <p className={BRODTEXT}>{KVITTON_FORSVINNER.text}</p>,
+    },
+    {
+      id: "forbattringsutgift",
+      rubrik: FORBATTRINGSUTGIFT.rubrik,
+      // Fyra saker, inte fyra stycken: kort i appens eget formsprak. Ett kort
+      // tar alltid motsatt yta mot sitt band, annars forsvinner det in i det.
+      innehall: (yta) => (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {FORBATTRINGSUTGIFT.block.map((b) => (
+            <Kort key={b.rubrik} yta={motsatt(yta)} className="p-4 sm:p-5">
+              <p className={BRODTEXT}>
+                <strong className={`block ${FET}`}>{b.rubrik}</strong> {b.text}
+              </p>
+            </Kort>
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: "vanliga-fragor",
+      rubrik: VANLIGA_FRAGOR.rubrik,
+      // En tunn linje mellan varje fraga – sju svar i rad utan avgransning ar
+      // den langsta obrutna texten pa sidan.
+      innehall: () => (
+        <div className="divide-y divide-linje">
+          {VANLIGA_FRAGOR.fragor.map(({ fraga, svar }) => (
+            <div key={fraga} data-fraga="" className="py-5 first:pt-0 last:pb-0">
+              <h3 className="font-granssnitt text-base font-medium text-text-primar">{fraga}</h3>
+              <p data-svar="" className={`mt-1 ${BRODTEXT}`}>
+                {svar}
+              </p>
+            </div>
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: "vem-star-bakom",
+      rubrik: VEM_STAR_BAKOM.rubrik,
+      innehall: () => <p className={BRODTEXT}>{VEM_STAR_BAKOM.text}</p>,
+    },
+    {
+      id: "kom-igang",
+      rubrik: AVSLUTNING.rubrik,
+      innehall: () => (
+        <div className="flex flex-col gap-2 sm:items-start">
+          <Link href="/registrera" className={`${PRIMARKNAPP_KLASS} sm:w-auto sm:px-8`}>
+            Skapa konto
+          </Link>
+          <Link
+            href="/integritetspolicy"
+            className="flex min-h-[44px] items-center self-start px-1 font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
+          >
+            Integritetspolicy
+          </Link>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="min-h-screen w-full bg-yta-bas">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonForSkript(landningssidansSchema(webbadress())) }}
       />
-      <main className="mx-auto w-full max-w-[680px] px-4 pb-12 pt-2 sm:py-12 lg:max-w-[1152px]">
-        {/* Toppraden: ordmarket och Logga in pa EN rad. Lankens 44 px tryckyta
-            ligger utanfor texten med negativ marginal, sa raden ar lika hog
-            som ordmarket – samma hojd som innan lanken flyttade hit. */}
-        <div className="flex items-center justify-between px-1">
-          <p className="font-rubrik text-base text-text-sekundar">{TJANSTENS_NAMN}</p>
-          <Link
-            href="/login"
-            className="-mx-2 -my-3 px-2 py-3 font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
-          >
-            Logga in
-          </Link>
-        </div>
-
-        <div className="flex flex-col lg:flex-row lg:items-start lg:gap-12">
-          <div className="w-full lg:max-w-[560px] lg:shrink-0">
-            <h1 className="mt-1 px-1 sm:mt-2 font-rubrik text-2xl text-text-primar lg:mt-4 lg:text-4xl lg:leading-[1.1]">
-              Det du gjort med bostaden sänker skatten när du säljer. Om kvittot
-              finns kvar.
-            </h1>
-
-            <p className="mt-2 px-1 font-granssnitt sm:mt-3 text-base leading-snug text-text-sekundar sm:leading-6">
-              Nytt kök, omdragen el, ett tak – sådant får dras av från vinsten den
-              dag bostaden säljs. Men avdraget vilar på att du kan göra utgiften
-              trolig, och försäljningen kan ligga tjugo år bort. Ett kvitto är det
-              enklaste beviset som finns – och det är därför de flesta betalar för
-              mycket i vinstskatt: kvittona är borta.
-            </p>
-
-            <div className="mt-4 space-y-2 px-1 sm:mt-5 sm:space-y-3 font-granssnitt text-base leading-snug text-text-sekundar sm:leading-6">
-              <p>
-                <strong className="font-medium text-text-primar">
-                  Fota kvittot när du har det i handen.
-                </strong>{" "}
-                Appen läser av belopp, datum och leverantör. Det tar tio sekunder,
-                och du behöver inte kunna en enda skatteregel för att göra det.
-              </p>
-              <p>
-                <strong className="font-medium text-text-primar">
-                  Frågorna ställs medan du minns svaren.
-                </strong>{" "}
-                Var badrummet slitet innan? Höjde du standarden eller lagade du
-                något? Det är omöjligt att svara på om åtta år och enkelt i dag.
-              </p>
-              <p>
-                <strong className="font-medium text-text-primar">
-                  Den dag du säljer är underlaget färdigt.
-                </strong>{" "}
-                En sammanställning i Skatteverkets eget format, med talen du ska
-                föra in i deklarationen. Kvittona ligger kvar om Skatteverket skulle
-                fråga.
-              </p>
-            </div>
-
-            <div className="mt-4 flex flex-col sm:mt-10 sm:items-start">
-              <Link href="/registrera" className={`${PRIMARKNAPP_KLASS} sm:w-auto sm:px-8`}>
-                Skapa konto
+      <main>
+        {/* Toppraden och hjaltedelen, i sidans bredd. Luften under hjalten ar
+            densamma som avstandet mellan tva avsnitt fore banden (mt-12/14). */}
+        <div className="mx-auto w-full max-w-[680px] px-4 pb-12 pt-2 sm:pb-14 sm:pt-12 lg:max-w-[1152px]">
+          {/* Toppraden: ordmarket, menyn och Logga in pa EN rad. Lankarnas
+              44 px tryckyta ligger utanfor texten med negativ marginal, sa
+              raden ar lika hog som ordmarket. Menyn syns fran surfplattans
+              brytpunkt (md:) – vid 375 px rymmer raden tva saker, och tre
+              lankar till skulle krympa tryckytorna (docs/design.md,
+              Landningssidan). */}
+          <div className="flex items-center justify-between px-1">
+            <p className="font-rubrik text-base text-text-sekundar">{TJANSTENS_NAMN}</p>
+            <div className="flex items-center gap-6">
+              <nav aria-label="Sidans delar" data-meny="" className="hidden items-center gap-6 md:flex">
+                {MENYN.map((m) => (
+                  <a
+                    key={m.mal}
+                    href={`#${m.mal}`}
+                    className="-my-3 py-3 font-granssnitt text-sm text-text-sekundar hover:text-text-primar"
+                  >
+                    {m.text}
+                  </a>
+                ))}
+              </nav>
+              <Link
+                href="/login"
+                className="-mx-2 -my-3 px-2 py-3 font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
+              >
+                Logga in
               </Link>
             </div>
-            {/* Prisraden: direkt under knappen, dampad, ingen egen sektion. */}
-            <p className="mt-2 px-1 font-granssnitt text-sm text-text-sekundar">{PRISRAD}</p>
           </div>
 
-          <Hjaltebild />
+          <div className="flex flex-col lg:flex-row lg:items-start lg:gap-12">
+            <div className="w-full lg:max-w-[560px] lg:shrink-0">
+              <h1 className="mt-1 px-1 sm:mt-2 font-rubrik text-2xl text-text-primar lg:mt-4 lg:text-4xl lg:leading-[1.1]">
+                Det du gjort med bostaden sänker skatten när du säljer. Om kvittot
+                finns kvar.
+              </h1>
+
+              <p className="mt-2 px-1 font-granssnitt sm:mt-3 text-base leading-snug text-text-sekundar sm:leading-6">
+                Nytt kök, omdragen el, ett tak – sådant får dras av från vinsten den
+                dag bostaden säljs. Men avdraget vilar på att du kan göra utgiften
+                trolig, och försäljningen kan ligga tjugo år bort. Ett kvitto är det
+                enklaste beviset som finns – och det är därför de flesta betalar för
+                mycket i vinstskatt: kvittona är borta.
+              </p>
+
+              {/* De tre feta styckena som stod har flyttade 2026-11-10 till
+                  Sa fungerar Kvittobo: de sa samma sak som dess punkter, en
+                  gang till och langre, dar en framling har minst talamod. */}
+              <div className="mt-4 flex flex-col sm:mt-10 sm:items-start">
+                <Link href="/registrera" className={`${PRIMARKNAPP_KLASS} sm:w-auto sm:px-8`}>
+                  Skapa konto
+                </Link>
+              </div>
+              {/* Prisraden: direkt under knappen, dampad, ingen egen sektion. */}
+              <p className="mt-2 px-1 font-granssnitt text-sm text-text-sekundar">{PRISRAD}</p>
+            </div>
+
+            <Hjaltebild />
+          </div>
         </div>
 
-        {/* Sektionerna: 680 px ar textens matt, valt for lasbarhet, och
-            behallaren CENTRERAS i sidan i stallet for att sta kvar under
-            hjaltetextens vansterkant (docs/design.md, "Sidans sektioner ska
-            synas som sektioner"). Uppmatt 2026-10-24 vid 1440 px: utan
-            centrering lag 598 px tomt till hoger. Att vansterkanterna inte
-            linjerar med hjalten ar beslutat. Pa smal skarm fyller den
-            bredden, och mx-auto andrar ingenting dar. */}
-        <div data-sektioner="" className="mx-auto lg:max-w-[680px]">
-          {/* Ordningen: det konkreta forst, reglerna sedan (docs/design.md,
-              "Vad som står under vikningen"). Andrad 2026-11-10 efter att den
-              forsta riktiga anvandaren kallade sidan "väldigt faktatung i
-              början" – direkt efter hjaltedelen lag 853 px skatteregler,
-              innan ett ord om vad appen gor. */}
-          <Avsnitt id="sa-fungerar" rubrik={SA_FUNGERAR.rubrik}>
-            <ol className={`list-decimal space-y-2 pl-6 ${BRODTEXT}`}>
-              {SA_FUNGERAR.punkter.map((p) => (
-                <li key={p}>{p}</li>
-              ))}
-            </ol>
-          </Avsnitt>
-
-          <Avsnitt id="kvitton-forsvinner" rubrik={KVITTON_FORSVINNER.rubrik}>
-            <p className={BRODTEXT}>{KVITTON_FORSVINNER.text}</p>
-          </Avsnitt>
-
-          <Avsnitt id="forbattringsutgift" rubrik={FORBATTRINGSUTGIFT.rubrik}>
-            {/* Fyra saker, inte fyra stycken: kort i appens eget formsprak,
-                samma <Kort> som oversiktens kvittolista. Tva i bredd fran sm:. */}
-            <div className="grid gap-3 sm:grid-cols-2">
-              {FORBATTRINGSUTGIFT.block.map((b) => (
-                <Kort key={b.rubrik} className="p-4 sm:p-5">
-                  <p className={BRODTEXT}>
-                    <strong className={`block ${FET}`}>{b.rubrik}</strong> {b.text}
-                  </p>
-                </Kort>
-              ))}
-            </div>
-          </Avsnitt>
-
-          <Avsnitt id="vanliga-fragor" rubrik={VANLIGA_FRAGOR.rubrik}>
-            {/* En tunn linje mellan varje fraga – sju svar i rad utan
-                avgransning ar den langsta obrutna texten pa sidan. */}
-            <div className="divide-y divide-linje">
-              {VANLIGA_FRAGOR.fragor.map(({ fraga, svar }) => (
-                <div key={fraga} data-fraga="" className="py-5 first:pt-0 last:pb-0">
-                  <h3 className="font-granssnitt text-base font-medium text-text-primar">{fraga}</h3>
-                  <p data-svar="" className={`mt-1 ${BRODTEXT}`}>
-                    {svar}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </Avsnitt>
-
-          <Avsnitt id="vem-star-bakom" rubrik={VEM_STAR_BAKOM.rubrik}>
-            <p className={BRODTEXT}>{VEM_STAR_BAKOM.text}</p>
-          </Avsnitt>
-
-          <Avsnitt id="kom-igang" rubrik={AVSLUTNING.rubrik}>
-            <div className="flex flex-col gap-2 sm:items-start">
-              <Link href="/registrera" className={`${PRIMARKNAPP_KLASS} sm:w-auto sm:px-8`}>
-                Skapa konto
-              </Link>
-              <Link
-                href="/integritetspolicy"
-                className="flex min-h-[44px] items-center self-start px-1 font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
-              >
-                Integritetspolicy
-              </Link>
-            </div>
-          </Avsnitt>
-        </div>
+        {/* Avsnitten, vart och ett pa ett band i fullbredd. Texten star kvar i
+            sin spalt – 680 px, centrerad – och det ar ytan bakom som gar ut
+            till kanterna (docs/design.md, "Sidans sektioner ska synas som
+            sektioner"). Pa smal skarm fyller spalten bredden. */}
+        {avsnitt.map((a, i) => {
+          const yta = bandetsYta(i);
+          const fore = i === 0 ? HJALTENS_YTA : bandetsYta(i - 1);
+          return (
+            <Avsnitt key={a.id} id={a.id} rubrik={a.rubrik} yta={yta} linje={yta === fore}>
+              {a.innehall(yta)}
+            </Avsnitt>
+          );
+        })}
       </main>
     </div>
   );
 }
 
-// Varje avsnitt inleds med en tunn linje i --linje, i innehallets bredd, och
-// luften ar ojamn kring rubriken: mer ovanfor (pt-) an under (mb-), sa att
-// rubriken binder nedat till sitt innehall i stallet for att svava mellan
-// tva avsnitt (docs/design.md, "Sidans sektioner ska synas som sektioner").
-function Avsnitt({ id, rubrik, children }: { id: string; rubrik: string; children: ReactNode }) {
+// Ett band i fullbredd med texten i sin spalt. Luften ar ojamn kring rubriken:
+// mer ovanfor (pt-) an under (mb-), sa att rubriken binder nedat till sitt
+// innehall. Dar tva band med olika yta moter varandra behovs ingen linje; den
+// star kvar bara om tva intill varandra har samma yta (docs/design.md,
+// "Sidans sektioner ska synas som sektioner").
+//
+// Spaltens bredd ar densamma som fore banden: under lg: 680 px med px-4 pa
+// sidorna, som sidan hade; fran lg: 680 px utan sidoluft, som sektionernas
+// behallare hade. Inte 680 + 2 × 16: pa skrivbord ar grundstorleken ett steg
+// upp och px-4 ar 18 px, sa en uttrackt maxbredd hade krympt texten.
+function Avsnitt({
+  id,
+  rubrik,
+  yta,
+  linje,
+  children,
+}: {
+  id: string;
+  rubrik: string;
+  yta: Yta;
+  linje: boolean;
+  children: ReactNode;
+}) {
   return (
-    <section aria-labelledby={id} className="mt-12 border-t border-linje px-1 pt-10 sm:mt-14 sm:pt-12">
-      <h2 id={id} className="mb-3 font-rubrik text-xl text-text-primar">
-        {rubrik}
-      </h2>
-      {children}
+    <section
+      aria-labelledby={id}
+      data-band={yta}
+      className={`w-full ${yta === "upphojd" ? "bg-yta-upphojd" : "bg-yta-bas"}${linje ? " border-t border-linje" : ""}`}
+    >
+      <div data-spalt="" className="mx-auto w-full max-w-[680px] px-4 pb-12 pt-10 sm:pb-14 sm:pt-12 lg:px-0">
+        <div className="px-1">
+          <h2 id={id} className="mb-3 font-rubrik text-xl text-text-primar">
+            {rubrik}
+          </h2>
+          {children}
+        </div>
+      </div>
     </section>
   );
 }

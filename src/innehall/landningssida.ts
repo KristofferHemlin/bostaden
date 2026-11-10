@@ -54,17 +54,37 @@ export const KVITTON_FORSVINNER = {
   text: "Kvittot ska finnas kvar den dag du säljer, och det kan vara tio eller tjugo år bort. Under tiden byter man e-postadress, termopapper bleknar i lådan, och ingen minns längre vilket år badrummet gjordes eller vad det kostade.",
 };
 
-// design.md ger punkterna som en mening med semikolon emellan. Har star de
-// som en lista, var och en med stor bokstav och punkt – inga ord andrade.
-export const SA_FUNGERAR = {
+// Fyra punkter, samma ordning som i appen. Sedan 2026-11-10 bar de den text
+// som tidigare stod i hjaltedelen, som sa samma sak en gang till ovanfor
+// vikningen (docs/design.md, "Vad som står under vikningen"). Den tredje har
+// ingen brodtext.
+export const SA_FUNGERAR: { rubrik: string; punkter: Stycke[] } = {
   rubrik: "Så fungerar Kvittobo",
   punkter: [
-    "Lägg in kvittot medan det är färskt – fota det eller ladda upp fakturan.",
-    "Svara på frågorna om vad som gjordes när du har tid.",
-    "Allt sparas per år och per bostad.",
-    "Den dag du säljer finns ett färdigt underlag.",
+    {
+      rubrik: "Fota kvittot när du har det i handen.",
+      text: "Appen läser av belopp, datum och leverantör. Det tar tio sekunder, och du behöver inte kunna en enda skatteregel för att göra det.",
+    },
+    {
+      rubrik: "Svara på frågorna medan du minns svaren.",
+      text: "Var badrummet slitet innan? Höjde du standarden eller lagade du något? Det är omöjligt att svara på om åtta år och enkelt i dag.",
+    },
+    { rubrik: "Allt sparas per år och per bostad.", text: "" },
+    {
+      rubrik: "Den dag du säljer är underlaget färdigt.",
+      text: "En sammanställning i Skatteverkets eget format, med talen du ska föra in i deklarationen. Kvittona ligger kvar om Skatteverket skulle fråga.",
+    },
   ],
 };
+
+// Topprandens meny (docs/design.md, Landningssidan): tre ankarlankar som
+// sager att sidan har delar. Etiketten far vara kortare an rubriken den pekar
+// pa, sa lange den inte gar att ta for nagot annat. Malen ar avsnittens id.
+export const MENYN: { text: string; mal: string }[] = [
+  { text: "Så fungerar", mal: "sa-fungerar" },
+  { text: "Reglerna", mal: "forbattringsutgift" },
+  { text: "Vanliga frågor", mal: "vanliga-fragor" },
+];
 
 export interface Fraga {
   fraga: string;

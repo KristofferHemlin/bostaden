@@ -81,6 +81,16 @@ function avsnittet(rubrik: string): string {
   return hittad!;
 }
 const FORBATTRINGSUTGIFT_RAD = /^\*\*\d\. Vad räknas som förbättringsutgift\?\*\*/;
+const SA_FUNGERAR_RAD = /^\*\*\d\. Så fungerar Kvittobo\.\*\*/;
+
+/** Menyns tre etiketter, ur raden i design.md som namnger dem. */
+function menyn(): string[] {
+  const rad = designRader().find((r) => r.includes("Menyn är tre ankarlänkar:"));
+  expect(rad, "design.md saknar raden om menyns tre ankarlänkar").toBeDefined();
+  const etiketter = [...rad!.split("Menyn är tre ankarlänkar:")[1].matchAll(/\*\*([^*]+)\*\*/g)].map((m) => m[1]);
+  expect(etiketter).toHaveLength(3);
+  return etiketter;
+}
 
 function sida() {
   const html = renderToStaticMarkup(Landningssida());
@@ -108,15 +118,17 @@ function fore(dok: Document, mal: Element): { text: string; taggar: string[] } {
 }
 
 describe("landningssidan – det som ligger ovanför knappen", () => {
-  it("design.md gick att läsa: rubriken och fyra stycken", () => {
-    expect(hjalten()).toHaveLength(5);
+  // Hjaltedelen kortades 2026-11-10: de tre feta styckena flyttade ned till
+  // Sa fungerar Kvittobo (docs/design.md, Landningssidan).
+  it("design.md gick att läsa: rubriken och ett stycke", () => {
+    expect(hjalten()).toHaveLength(2);
     expect(hjalten()[0]).toBe("Det du gjort med bostaden sänker skatten när du säljer. Om kvittot finns kvar.");
   });
 
   it("mellan toppen och Skapa konto står toppraden och hjälten, ordagrant – och ingenting annat", () => {
     const { dok } = sida();
     const knapp = forsta(dok, "a", "Skapa konto");
-    expect(fore(dok, knapp).text).toBe(normalisera(["Kvittobo", "Logga in", ...hjalten()].join(" ")));
+    expect(fore(dok, knapp).text).toBe(normalisera(["Kvittobo", ...menyn(), "Logga in", ...hjalten()].join(" ")));
   });
 
   it("ingen bild, ingen rubrik utöver h1 och inget blankettnamn före knappen", () => {
@@ -169,6 +181,27 @@ describe("landningssidan – under vikningen", () => {
     const avsnitt = forsta(dok, "h2", avsnittet("Vad räknas som förbättringsutgift?")).parentElement!;
     const block = [...avsnitt.querySelectorAll("p")].map(text);
     expect(block).toEqual(stycken(citat(FORBATTRINGSUTGIFT_RAD)));
+  });
+
+  it("så fungerar Kvittobo: fyra punkter ordagrant, med texten som stod i hjältedelen", () => {
+    const { dok } = sida();
+    const avsnitt = forsta(dok, "h2", avsnittet("Så fungerar Kvittobo")).parentElement!;
+    const punkter = [...avsnitt.querySelectorAll("li")].map(text);
+    expect(punkter).toEqual(stycken(citat(SA_FUNGERAR_RAD)));
+    expect(punkter).toHaveLength(4);
+  });
+
+  it("menyn: tre ankarlänkar med etiketterna i design.md, var och en till ett avsnitt som finns", () => {
+    const { dok } = sida();
+    const lankar = [...dok.querySelectorAll("nav a")];
+    expect(lankar.map(text)).toEqual(menyn());
+    for (const a of lankar) {
+      const mal = a.getAttribute("href") ?? "";
+      expect(mal, `${text(a)} ska vara en ankarlänk`).toMatch(/^#/);
+      const avsnitt = dok.getElementById(mal.slice(1));
+      expect(avsnitt, `${text(a)} pekar på ${mal}, som inte finns`).not.toBeNull();
+      expect(avsnitt!.tagName).toBe("H2");
+    }
   });
 
   it("vem som står bakom, ordagrant", () => {
@@ -233,29 +266,39 @@ describe("rubriken växer bara på bred skärm", () => {
 });
 
 describe("avsnitten är avgränsade", () => {
-  const LINJE = ["border-t", "border-linje"];
 
-  it("varje avsnitt inleds med en tunn linje i --linje", () => {
+  // Linjen och ytorna provas i en riktig webblasare, dar ytan gar att lasa:
+  // tester/landningssida-layout.test.ts, "avsnitten ar band".
+  it("sex avsnitt, vart och ett med sin spalt", () => {
     const { dok } = sida();
     const avsnitt = [...dok.querySelectorAll("section")];
     expect(avsnitt).toHaveLength(6);
-    for (const s of avsnitt) expect(klasser(s)).toEqual(expect.arrayContaining(LINJE));
+    for (const s of avsnitt) expect(s.querySelector("[data-spalt]"), "avsnittet saknar sin spalt").not.toBeNull();
   });
 
   it("mer luft ovanför rubriken än under den", () => {
     const { dok } = sida();
     for (const s of dok.querySelectorAll("section")) {
+      const spalt = s.querySelector("[data-spalt]")!;
       const h2 = s.querySelector("h2")!;
-      expect(steg(s, "pt")).toBeGreaterThan(steg(h2, "mb"));
+      expect(steg(spalt, "pt")).toBeGreaterThan(steg(h2, "mb"));
     }
   });
 
-  it("de fyra blocken är kort i appens formspråk – samma klasser som <Kort>", () => {
+  // Ett kort tar alltid motsatt yta mot sitt band (docs/design.md, "Sidans
+  // sektioner ska synas som sektioner") – jamfort med <Kort> pa den ytan.
+  it("de fyra blocken är kort i appens formspråk – samma klasser som <Kort> på motsatt yta mot bandet", () => {
     const { dok } = sida();
+    const rubrik = forsta(dok, "h2", avsnittet("Vad räknas som förbättringsutgift?"));
+    const band = rubrik.closest("section")!.getAttribute("data-band");
+    expect(["bas", "upphojd"]).toContain(band);
     const kortKlasser = klasser(
-      new DOMParser().parseFromString(renderToStaticMarkup(Kort({ children: "x" })), "text/html").body.firstElementChild!,
+      new DOMParser().parseFromString(
+        renderToStaticMarkup(Kort({ children: "x", yta: band === "upphojd" ? "bas" : "upphojd" })),
+        "text/html",
+      ).body.firstElementChild!,
     );
-    const avsnitt = forsta(dok, "h2", avsnittet("Vad räknas som förbättringsutgift?")).parentElement!;
+    const avsnitt = rubrik.parentElement!;
     const block = [...avsnitt.querySelectorAll("p")].map((p) => p.parentElement!);
     expect(block).toHaveLength(4);
     for (const b of block) expect(klasser(b)).toEqual(expect.arrayContaining(kortKlasser));
