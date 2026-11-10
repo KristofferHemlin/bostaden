@@ -45,10 +45,11 @@ const designRader = () => readFileSync(join(process.cwd(), "docs", "design.md"),
 const normalisera = (t: string) => t.replace(/\s+/g, " ").trim();
 const utanFet = (t: string) => t.replace(/\*\*/g, "");
 
-/** Raderna i det citatblock som borjar forst efter raden `efter`. */
-function citat(efter: string): string[] {
+/** Raderna i det citatblock som borjar forst efter raden `efter` – en
+ *  radborjan, eller ett monster for rader vars nummer kan flytta. */
+function citat(efter: string | RegExp): string[] {
   const DESIGN = designRader();
-  let i = DESIGN.findIndex((r) => r.startsWith(efter));
+  let i = DESIGN.findIndex((r) => (typeof efter === "string" ? r.startsWith(efter) : efter.test(r)));
   expect(i, `hittar inte "${efter}" i design.md`).toBeGreaterThanOrEqual(0);
   while (!DESIGN[i].startsWith(">")) i++;
   const ut: string[] = [];
@@ -71,6 +72,15 @@ const avsnitten = () =>
   designRader()
     .filter((r) => /^\*\*[1-6]\. /.test(r))
     .map((r) => r.match(/^\*\*\d\. (.+?)\.?\*\*/)![1]);
+
+/** Avsnittets rubrik ur design.md, hittad pa texten och inte pa platsen –
+ *  ordningen andras, rubriken star kvar. Faller om rubriken saknas. */
+function avsnittet(rubrik: string): string {
+  const hittad = avsnitten().find((a) => a === rubrik);
+  expect(hittad, `design.md saknar avsnittet "${rubrik}"`).toBeDefined();
+  return hittad!;
+}
+const FORBATTRINGSUTGIFT_RAD = /^\*\*\d\. Vad räknas som förbättringsutgift\?\*\*/;
 
 function sida() {
   const html = renderToStaticMarkup(Landningssida());
@@ -156,14 +166,14 @@ describe("landningssidan – under vikningen", () => {
 
   it("de fyra blocken om förbättringsutgifter ordagrant", () => {
     const { dok } = sida();
-    const avsnitt = forsta(dok, "h2", avsnitten()[0]).parentElement!;
+    const avsnitt = forsta(dok, "h2", avsnittet("Vad räknas som förbättringsutgift?")).parentElement!;
     const block = [...avsnitt.querySelectorAll("p")].map(text);
-    expect(block).toEqual(stycken(citat("**1. Vad räknas som förbättringsutgift?**")));
+    expect(block).toEqual(stycken(citat(FORBATTRINGSUTGIFT_RAD)));
   });
 
   it("vem som står bakom, ordagrant", () => {
     const { dok } = sida();
-    const avsnitt = forsta(dok, "h2", avsnitten()[4]).parentElement!;
+    const avsnitt = forsta(dok, "h2", avsnittet("Vem står bakom Kvittobo")).parentElement!;
     expect([...avsnitt.querySelectorAll("p")].map(text)).toEqual(stycken(citat("### Vem står bakom")));
   });
 
@@ -245,7 +255,7 @@ describe("avsnitten är avgränsade", () => {
     const kortKlasser = klasser(
       new DOMParser().parseFromString(renderToStaticMarkup(Kort({ children: "x" })), "text/html").body.firstElementChild!,
     );
-    const avsnitt = forsta(dok, "h2", avsnitten()[0]).parentElement!;
+    const avsnitt = forsta(dok, "h2", avsnittet("Vad räknas som förbättringsutgift?")).parentElement!;
     const block = [...avsnitt.querySelectorAll("p")].map((p) => p.parentElement!);
     expect(block).toHaveLength(4);
     for (const b of block) expect(klasser(b)).toEqual(expect.arrayContaining(kortKlasser));

@@ -150,6 +150,23 @@ export function Landningssida() {
             linjerar med hjalten ar beslutat. Pa smal skarm fyller den
             bredden, och mx-auto andrar ingenting dar. */}
         <div data-sektioner="" className="mx-auto lg:max-w-[680px]">
+          {/* Ordningen: det konkreta forst, reglerna sedan (docs/design.md,
+              "Vad som står under vikningen"). Andrad 2026-11-10 efter att den
+              forsta riktiga anvandaren kallade sidan "väldigt faktatung i
+              början" – direkt efter hjaltedelen lag 853 px skatteregler,
+              innan ett ord om vad appen gor. */}
+          <Avsnitt id="sa-fungerar" rubrik={SA_FUNGERAR.rubrik}>
+            <ol className={`list-decimal space-y-2 pl-6 ${BRODTEXT}`}>
+              {SA_FUNGERAR.punkter.map((p) => (
+                <li key={p}>{p}</li>
+              ))}
+            </ol>
+          </Avsnitt>
+
+          <Avsnitt id="kvitton-forsvinner" rubrik={KVITTON_FORSVINNER.rubrik}>
+            <p className={BRODTEXT}>{KVITTON_FORSVINNER.text}</p>
+          </Avsnitt>
+
           <Avsnitt id="forbattringsutgift" rubrik={FORBATTRINGSUTGIFT.rubrik}>
             {/* Fyra saker, inte fyra stycken: kort i appens eget formsprak,
                 samma <Kort> som oversiktens kvittolista. Tva i bredd fran sm:. */}
@@ -162,18 +179,6 @@ export function Landningssida() {
                 </Kort>
               ))}
             </div>
-          </Avsnitt>
-
-          <Avsnitt id="kvitton-forsvinner" rubrik={KVITTON_FORSVINNER.rubrik}>
-            <p className={BRODTEXT}>{KVITTON_FORSVINNER.text}</p>
-          </Avsnitt>
-
-          <Avsnitt id="sa-fungerar" rubrik={SA_FUNGERAR.rubrik}>
-            <ol className={`list-decimal space-y-2 pl-6 ${BRODTEXT}`}>
-              {SA_FUNGERAR.punkter.map((p) => (
-                <li key={p}>{p}</li>
-              ))}
-            </ol>
           </Avsnitt>
 
           <Avsnitt id="vanliga-fragor" rubrik={VANLIGA_FRAGOR.rubrik}>

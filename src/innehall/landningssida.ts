@@ -23,20 +23,24 @@ export interface Stycke {
   text: string;
 }
 
+// Kortet sager regeln kort, fragesvaret sager den helt (docs/design.md,
+// "Vad som står under vikningen"): samma mening star inte ordagrant bade pa
+// ett kort och i ett svar, och star den pa bada stallena ar det svaret som
+// behaller den. tester/landningssida-kort-och-svar.test.ts vaktar regeln.
 export const FORBATTRINGSUTGIFT: { rubrik: string; block: Stycke[] } = {
   rubrik: "Vad räknas som förbättringsutgift?",
   block: [
     {
       rubrik: "Grundförbättringar räknas alltid.",
-      text: "Att bygga nytt, bygga till, bygga om eller sätta in något som inte fanns. Det finns ingen tidsgräns framåt – en ombyggnad från 2004 räknas lika fullt vid en försäljning i dag.",
+      text: "Att bygga nytt, bygga till, bygga om eller sätta in något som inte fanns.",
     },
     {
       rubrik: "Reparationer räknas i fem år.",
-      text: "Förbättrande reparationer och underhåll räknas bara om de gjorts under försäljningsåret eller de fem kalenderåren närmast före, och bara till den del bostaden blivit bättre än den var när du köpte den.",
+      text: "Försäljningsåret och de fem kalenderåren närmast före, och bara det som gjort bostaden bättre än när du köpte den.",
     },
     {
       rubrik: "Minst 5 000 kr per kalenderår.",
-      text: "Ett år räknas bara om utgifterna det året är minst 5 000 kr. Gränsen gäller bostaden som helhet, inte varje enskild åtgärd.",
+      text: "Gränsen gäller bostaden som helhet, inte varje enskild åtgärd.",
     },
     {
       rubrik: "K5, K6 och ROT.",

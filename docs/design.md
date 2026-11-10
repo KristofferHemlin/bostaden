@@ -1283,21 +1283,33 @@ Alla tre stod tidigare tvärtom i den här filen, och alla tre ändrades av samm
 
 I den här ordningen. Varje avsnitt har en `<h2>` skriven som en sökfras, och sidan har exakt ett `<h1>` – rubriken ovanför vikningen.
 
-**1. Vad räknas som förbättringsutgift?** Utgifterna delas i två slag, och reglerna skiljer sig åt. Fyra korta block:
+**Ordningen ändrades 2026-11-10, och reglerna flyttade ned.** Den första riktiga användaren sa att sidan blir *"väldigt faktatung i början"*, och att det därför blir *"ett tungt beslut att förstå vad man ser"*. Uppmätt på telefon samma dag: direkt efter hjältedelen låg 853 px skatteregler, innan ett enda ord om vad appen gör. Den som just läst löftet mötte alltså paragrafer i stället för produkten. **Det konkreta kommer först nu, reglerna sedan.** Skälet att reglerna står på sidan alls är oförändrat – det är dem en främling kom för – men de är det andra man läser, inte det första.
 
-> **Grundförbättringar räknas alltid.** Att bygga nytt, bygga till, bygga om eller sätta in något som inte fanns. Det finns ingen tidsgräns framåt – en ombyggnad från 2004 räknas lika fullt vid en försäljning i dag.
->
-> **Reparationer räknas i fem år.** Förbättrande reparationer och underhåll räknas bara om de gjorts under försäljningsåret eller de fem kalenderåren närmast före, och bara till den del bostaden blivit bättre än den var när du köpte den.
->
-> **Minst 5 000 kr per kalenderår.** Ett år räknas bara om utgifterna det året är minst 5 000 kr. Gränsen gäller bostaden som helhet, inte varje enskild åtgärd.
->
-> **K5, K6 och ROT.** Avdragen redovisas på blankett K5 för villa och radhus, K6 för bostadsrätt. Ett ROT-avdrag du redan fått räknas av från beloppet.
+**1. Så fungerar Kvittobo.** Fyra punkter, samma ordning som i appen: lägg in kvittot medan det är färskt – fota det eller ladda upp fakturan; svara på frågorna om vad som gjordes när du har tid; allt sparas per år och per bostad; den dag du säljer finns ett färdigt underlag.
 
 **2. Varför kvitton på renovering försvinner.** Kvittot ska finnas kvar den dag du säljer, och det kan vara tio eller tjugo år bort. Under tiden byter man e-postadress, termopapper bleknar i lådan, och ingen minns längre vilket år badrummet gjordes eller vad det kostade.
 
-**3. Så fungerar Kvittobo.** Fyra punkter, samma ordning som i appen: lägg in kvittot medan det är färskt – fota det eller ladda upp fakturan; svara på frågorna om vad som gjordes när du har tid; allt sparas per år och per bostad; den dag du säljer finns ett färdigt underlag.
+**3. Vad räknas som förbättringsutgift?** Utgifterna delas i två slag, och reglerna skiljer sig åt. Fyra korta block:
+
+> **Grundförbättringar räknas alltid.** Att bygga nytt, bygga till, bygga om eller sätta in något som inte fanns.
+>
+> **Reparationer räknas i fem år.** Försäljningsåret och de fem kalenderåren närmast före, och bara det som gjort bostaden bättre än när du köpte den.
+>
+> **Minst 5 000 kr per kalenderår.** Gränsen gäller bostaden som helhet, inte varje enskild åtgärd.
+>
+> **K5, K6 och ROT.** Avdragen redovisas på blankett K5 för villa och radhus, K6 för bostadsrätt. Ett ROT-avdrag du redan fått räknas av från beloppet.
+
+**Kortet säger regeln kort, frågesvaret säger den helt.** De fyra korten var tidigare 115 ord och är nu 64. Tre meningar togs bort, och alla tre av samma skäl: de stod redan ordagrant eller nästan ordagrant i ett av de sju svaren, där de måste stå eftersom varje svar ska gå att läsa ensamt. Kortet har ingen sådan plikt – det ska gå att ögna.
+
+- *"Det finns ingen tidsgräns framåt – en ombyggnad från 2004 räknas lika fullt vid en försäljning i dag"* stod ordagrant i *Hur långt tillbaka i tiden räknas det?*
+- Reparationskortets mening stod med 27 ord nästan ordagrant i *Vilka renoveringar får jag dra av?*
+- *"Ett år räknas bara om utgifterna det året är minst 5 000 kr"* upprepade kortets egen ledmening
+
+**Regeln framåt: samma mening står inte ordagrant både på ett kort och i ett svar.** Står den på båda ställena är det svaret som behåller den. Den som kortar ett svar för att det upprepar ett kort har gjort fel åt andra hållet.
 
 **4. Vanliga frågor om avdrag vid bostadsförsäljning.** Sju stycken, med svaren nedan.
+
+**Frågorna kan få en egen sida, men inte ännu.** Övervägt 2026-11-10 och uppskjutet med avsikt: de sju svaren är 221 ord och tar 1 463 px på telefon, så en egen rutt skulle korta startsidan rejält. Men domänen är ny, sitemapen nyss inskickad, och vi vet ännu inte om sidan får visningar på frågeorden alls. **Att dela en ny domäns tyngd på två sidor innan mätningen säger vilken som drar är att gissa.** Beslutet tas om när Search Console har siffror, i god tid före deklarationssäsongen.
 
 **5. Vem står bakom Kvittobo.**
 
