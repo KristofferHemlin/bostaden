@@ -641,7 +641,7 @@ Förstaskärmen har fortfarande exakt en sak att göra. Text som förklarar är 
 
 **Bilagan ligger överst, i stor förhandsvisning.** Sedan sammanfattningen – anteckningen, belopp, datum och leverantör. Ingenting annat.
 
-Privatfrågan hör inte hit. Den är ett fält i ändringsläget – se *Ett kvitto är en skärm, inte två*, där skälet står.
+Privatfrågan hör inte hit. Den står i inmatningen och i ändringsläget – se *Uppdelning av kvitto*.
 
 Skälet är att det är bilden man kommer för. Den som öppnar ett sparat kvitto vill se att det faktiskt ligger där och läsa av det, precis som i inmatningen, där bilagan redan ligger först.
 
@@ -679,9 +679,7 @@ Det är samma mönster som inställningssidans kort, och `design.md` har hela ti
 
 Finns det projekt står rutan där som vanligt, både för att se vilket projekt kvittot hör till och för att flytta det.
 
-**Privatfrågan är ett vanligt fält i formuläret, inte en utfällbar sektion.** Den har flyttat hit från läsläget, och blir den både flyttad och hopfälld är den osynlig. Den står bland de andra uppgifterna med sin hjälptext: *"Ange beloppet som inte hörde till bostaden. Resten räknas med."*
-
-Att den hamnade här är inte bara städning. Att avgöra vad som var privat kräver att man läser kvittoraderna, och det här är den enda skärmen där beloppet skrivs in med kvittot uppslaget bredvid. I klassificeringsgenomgången ser man högar och frågor, inte dokument.
+**Privatfrågan står här med sin hjälptext**, bland de andra uppgifterna: *"Ange beloppet som inte hörde till bostaden. Resten räknas med."* Den står också i inmatningen — regeln står under *Uppdelning av kvitto*.
 
 **Läsläget visar aldrig ett tomt formulär.** Det var det gamla felet: varje kvitto man öppnade slutade med en obesvarad fråga, ett tomt fält och en sparaknapp utan något att spara. En post ska se ut som en post.
 
@@ -1095,9 +1093,7 @@ Tre tal och ett projektnamn i en mening, och sista satsen säger att det är til
 
 ### Utfällbara sektioner
 
-Mönstret gäller de valfria delarna där de förekommer: ROT-raden i inmatningen, och betaldatum i kvittots ändringsläge.
-
-Privatfrågan hörde tidigare hit och gör det inte längre. Den är ett vanligt fält i ändringsläget – skälet står under *Ett kvitto är en skärm, inte två*.
+Mönstret gäller de valfria delarna där de förekommer: ROT-raden och privatfrågan i inmatningen, och betaldatum i kvittots ändringsläge.
 
 **De ser ut som knappar, inte som länkar.** En understruken textrad läses som navigation – tre sådana staplade ser ut som en meny. I stället: ingen understrykning, `--text-primar` i normal vikt, och en tunn chevron till höger om texten som pekar nedåt och roterar 180 grader när sektionen är öppen. Då syns både att raden gör något och vilket läge den är i.
 
@@ -1131,7 +1127,11 @@ Det är det enda stället i formuläret där en hjälptext byter lydelse, och de
 
 ### Uppdelning av kvitto
 
-Uppdelning görs i efterhand, i kvittots ändringsläge under fältet "Var något på kvittot privat?". Den finns inte i inmatningen.
+**Frågan "Var något på kvittot privat?" står på två ställen: i inmatningen och i kvittots ändringsläge.** Skälet är att säkerställa att uppgiften kommer med. En omarkerad privat del är ett tyst fel — den ger ett för högt underlag utan att något ser konstigt ut.
+
+**Formen är densamma som ROT-frågan.** Frågan syns som text; beloppsfältet fälls ut först när svaret är ja. Inget förval, ingen tom ruta att passera, och inget svar krävs för att spara. Lydelserna är desamma på båda ställena: *"Var något på kvittot privat?"* och *"Ange beloppet som inte hörde till bostaden. Resten räknas med."*
+
+I inmatningen står den efter ROT-frågan och före datum. De två hör ihop: båda minskar det belopp som räknas med.
 
 Förvalet är **två rader** – en till projektet och en privat. En "lägg till rad"-knapp finns för de sällsynta fall där ett kvitto rör två olika åtgärder, men den syns inte förrän man behöver den.
 

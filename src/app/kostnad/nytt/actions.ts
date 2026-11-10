@@ -13,11 +13,12 @@
 // vanligt. Avbryter anvandaren ligger kvittot kvar som ett utkast – det rensas
 // aldrig automatiskt.
 //
-// Ingen projektkoppling och ingen uppdelning sker har (docs/produktspec.md 6.1).
-// Klassificeringen hor till genomgangen och raduppdelningen till kvittots
-// detaljvy – bada gors i efterhand nar anvandaren sjalv vill. Sparningen skapar
-// alltid EN rad pa hela totalbeloppet, med leverantoren som artikelnamn
-// (produktspec 5: "En rad skapas alltid").
+// Ingen projektkoppling sker har (docs/produktspec.md 6.1) – klassificeringen
+// hor till genomgangen. Sparningen skapar EN rad pa hela totalbeloppet, med
+// leverantoren som artikelnamn (produktspec 5: "En rad skapas alltid"), utom
+// nar fragan "Var något på kvittot privat?" besvarats med ett belopp
+// (docs/design.md, "Uppdelning av kvitto"): da blir det samma tva rader som
+// andringslaget skapar, Privat plus resten (byggRedigeradeRader).
 //
 // BOSTADEN. Formularet bar bostaden det visades for (`bostad_id`), och ett
 // utkast bar sin egen fran den stund det skapas (docs/design.md, "Att äga
@@ -29,6 +30,7 @@
 // betaldatum sparas anda (obetald, raknas inte in) – inga floden far blockera.
 
 import { revalidatePath } from "next/cache";
+import type { Kostnadsrad } from "@/doman/typer";
 import { serverfelMeddelande } from "@/lib/databas-fel";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { tolkaKostnadsformular, type Kostnadsfalt } from "@/lib/kostnadsformular";
@@ -96,12 +98,24 @@ export async function skapaUtkast(
 
 const BOSTADEN_HITTADES_INTE = "Bostaden kvittot skulle sparas på hittades inte.";
 
-// En kostnad fran inmatningen far alltid EXAKT en rad pa hela totalbeloppet, med
-// leverantoren som artikelnamn (produktspec 5: "En rad skapas alltid"). Ingen
-// fordelning – kopplingen till en gruppering gors i genomgangen och
-// raduppdelningen pa kvittots detaljvy, bada i efterhand.
-function enRadSkapa(leverantor: string, totalbelopp: number) {
-  return { create: [{ artikel: leverantor, belopp: totalbelopp }] };
+// Raderna fran tolkaKostnadsformular: en pa hela totalbeloppet, eller Privat
+// plus resten. Ingen projektkoppling – den gors i genomgangen.
+function raderSkapa(rader: Kostnadsrad[]) {
+  return {
+    create: rader.map((rad) => ({
+      artikel: rad.artikel,
+      belopp: rad.belopp,
+      fordelningar: rad.fordelningar.length
+        ? {
+            create: rad.fordelningar.map((f) => ({
+              projekt_id: f.projekt_id,
+              privat: f.privat,
+              andel: f.andel,
+            })),
+          }
+        : undefined,
+    })),
+  };
 }
 
 /**
@@ -120,7 +134,8 @@ export async function sparaKostnad(
 
   const tolkad = tolkaKostnadsformular(formData);
   if ("felen" in tolkad) return tolkad.felen[0];
-  const { leverantor, totalbelopp, dok, bet, anteckning, rotUtnyttjat } = tolkad;
+  const { leverantor, totalbelopp, dok, bet, anteckning, rotUtnyttjat, rader } =
+    tolkad;
 
   // Sparningen far ALDRIG kasta okontrollerat har: kvittots bilaga ligger redan
   // uppladdad och kopplad till utkastet – ett kastat fel skulle bara lamna
@@ -152,7 +167,7 @@ export async function sparaKostnad(
             betaldatum: bet,
             anteckning,
             rot_utnyttjat: rotUtnyttjat,
-            rader: enRadSkapa(leverantor, totalbelopp),
+            rader: raderSkapa(rader),
           },
         }),
       ]);
@@ -170,7 +185,7 @@ export async function sparaKostnad(
         betaldatum: bet,
         anteckning,
         rot_utnyttjat: rotUtnyttjat,
-        rader: enRadSkapa(leverantor, totalbelopp),
+        rader: raderSkapa(rader),
       },
       select: { id: true },
     });

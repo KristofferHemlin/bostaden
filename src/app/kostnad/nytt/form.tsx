@@ -11,7 +11,7 @@
 //
 // Det som INTE ryms i inmatningen gors i efterhand fran kvittots detaljvy:
 //   * Betaldatum som skiljer sig fran kvittots datum -> "Andra uppgifter".
-//   * Uppdelning nar nagot var privat -> "Var nagot pa kvittot privat?".
+//   * Uppdelning pa flera rader eller projekt -> "Dela upp".
 //   * Koppling till en befintlig gruppering -> klassificeringsgenomgangen.
 // Datumfaltet satter bade dokumentdatum och betaldatum till samma dag; en
 // avvikande betaldag ar nastan bara obetalda fakturor och hor till rattningen.
@@ -76,6 +76,14 @@
 // Raden ska SE UT som nagot man kan oppna aven hopfalld (se UtfallbarSektion).
 // Fältetiketten inuti sektionen heter fortfarande "ROT-avdrag" – ett enda
 // falt, beloppet i kronor, aldrig i procent.
+//
+// PRIVATFRAGAN (docs/design.md, "Uppdelning av kvitto"): samma form som
+// ROT-raden, direkt efter den och fore datum – bada minskar det belopp som
+// raknas med. Alltid hopfalld fran start (inget forval), inget svar kravs, och
+// ett utfallt men tomt falt sparas som inget privat. Lydelserna ar desamma som
+// i andringslaget (src/app/kostnad/[id]/kvitto-kort.tsx) – ett test haller dem
+// lika med docs/design.md pa bada stallena. Ett angivet belopp ger samma tva rader som andringslaget
+// skapar (tolkaKostnadsformular -> byggRedigeradeRader).
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -313,8 +321,10 @@ export function NyKostnadForm({
     const perFalt: Partial<Record<Kostnadsfalt, string>> = {};
     for (const { falt, fel } of felen) perFalt[falt] ??= fel;
     setFaltfel(perFalt);
-    // ROT-faltet bor i en hopfallbar sektion – ett fel dar maste synas.
+    // ROT-faltet och privatfaltet bor i hopfallbara sektioner – ett fel dar
+    // maste synas.
     if (perFalt.rot_utnyttjat) setRotOppen(true);
+    if (perFalt.privatbelopp) setPrivatOppen(true);
     setFokusBegaran((n) => n + 1);
   }
 
@@ -404,6 +414,12 @@ export function NyKostnadForm({
   useEffect(() => {
     rotUtnyttjatRef.current = rotUtnyttjat;
   }, [rotUtnyttjat]);
+
+  // Privatfragan (docs/design.md, "Uppdelning av kvitto"). Hopfalld fran
+  // start – ett forval vore en gissning – och vardet ligger kvar i state om
+  // servern avvisar, precis som ROT-faltet.
+  const [privatOppen, setPrivatOppen] = useState(false);
+  const [privatbelopp, setPrivatbelopp] = useState("");
 
   // Miniatyrraden ar befintliga bilagor (fran ett aterupptaget utkast) foljda av
   // filerna som valts nu. Vilken som visas i forhandsvisningen – klick pa en
@@ -1335,7 +1351,7 @@ export function NyKostnadForm({
           value={falt.belopp}
           onValueChange={(v) => {
             setFalt((f) => ({ ...f, belopp: v }));
-            rensaFaltfel("totalbelopp", "rot_utnyttjat");
+            rensaFaltfel("totalbelopp", "rot_utnyttjat", "privatbelopp");
           }}
           className={INPUT_KLASS}
           placeholder="0,00"
@@ -1366,6 +1382,34 @@ export function NyKostnadForm({
             }}
             className={INPUT_KLASS}
             placeholder="0,00"
+          />
+        </Falt>
+      </UtfallbarSektion>
+
+      {/* Privatfragan – samma form som ROT-raden, efter den och fore datum
+          (docs/design.md, "Uppdelning av kvitto"). Samma lydelser som i
+          andringslaget. */}
+      <UtfallbarSektion
+        etikett="Var något på kvittot privat?"
+        oppen={privatOppen}
+        onToggle={() => setPrivatOppen((v) => !v)}
+      >
+        <Falt
+          etikett="Privat belopp"
+          fel={faltfel.privatbelopp}
+          hjalp="Ange beloppet som inte hörde till bostaden. Resten räknas med."
+        >
+          <BeloppFalt
+            name="privatbelopp"
+            aria-invalid={faltfel.privatbelopp ? true : undefined}
+            {...(faltfel.privatbelopp ? { [FALTFEL_ATTRIBUT]: "" } : {})}
+            value={privatbelopp}
+            onValueChange={(v) => {
+              setPrivatbelopp(v);
+              rensaFaltfel("privatbelopp", "rot_utnyttjat");
+            }}
+            className={INPUT_KLASS}
+            placeholder="t.ex. 400"
           />
         </Falt>
       </UtfallbarSektion>

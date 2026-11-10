@@ -3,19 +3,22 @@
 // det fragar om bilagan eller skickar nagot, och servern provar dem igen. En
 // enda uppsattning regler, sa att de tva aldrig kan saga olika saker.
 //
-// Alla fel samlas, i den ordning falten star pa skarmen – belopp, ROT, datum,
-// leverantor – sa att varje falt far sin egen mening och fokus hamnar pa det
+// Alla fel samlas, i den ordning falten star pa skarmen – belopp, ROT, privat
+// del, datum, leverantor – sa att varje falt far sin egen mening och fokus hamnar pa det
 // forsta (docs/design.md, "Nar ett formular vagrar"). Servern anvander det
 // forsta.
 
 import { dateratForeTilltradet } from "@/doman/atgardsberakning";
+import type { Kostnadsrad } from "@/doman/typer";
 import type { Faltfel } from "@/lib/formularfel";
 import { formateraKronor, oreFranKronor } from "@/lib/format";
+import { byggRedigeradeRader } from "@/lib/kostnadsuppdelning";
 
 /** Faltens namn i FormData. */
 export type Kostnadsfalt =
   | "totalbelopp"
   | "rot_utnyttjat"
+  | "privatbelopp"
   | "dokumentdatum"
   | "betaldatum"
   | "leverantor";
@@ -27,6 +30,9 @@ export interface TolkadKostnad {
   bet: Date | null;
   anteckning: string | null;
   rotUtnyttjat: number | null;
+  /** Kostnadens rader: en pa hela beloppet, eller Privat plus resten nar en
+   *  privat del angetts – samma rader som andringslaget bygger. */
+  rader: Kostnadsrad[];
 }
 
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
@@ -67,18 +73,49 @@ export function tolkaKostnadsformular(
     });
   }
 
-  // ROT-beloppet ar en reduktion pa arbetsdelen och alltid mindre an
-  // totalbeloppet (avdragensFel nedan). Inmatningen har ingen privat del och
-  // ingen forsakringsersattning, sa basen ar totalbeloppet.
+  // Den privata delen (docs/design.md, "Uppdelning av kvitto"). Valfri: saknas
+  // faltet (fragan hopfalld) eller ar det tomt ar inget privat. Samma regler och
+  // samma rader som andringslaget – byggRedigeradeRader ar den enda platsen som
+  // bestammer dem, och dess fel for en privat del lika stor som kvittot galler
+  // har ocksa.
+  const privatText = String(formData.get("privatbelopp") ?? "").trim();
+  let privatbelopp = 0;
+  let privatFel: string | null = null;
+  if (privatText !== "") {
+    const parsat = oreFranKronor(privatText);
+    if (parsat === null || parsat <= 0) {
+      privatFel = "Ange ett privatbelopp större än noll, t.ex. 400.";
+    } else {
+      privatbelopp = parsat;
+    }
+  }
+  const raderna =
+    giltigtBelopp && privatFel === null
+      ? byggRedigeradeRader({
+          totalbelopp,
+          artikel: leverantor,
+          projektId: null,
+          privatbelopp,
+        })
+      : null;
+  if (raderna && "fel" in raderna) {
+    privatFel = raderna.fel;
+    privatbelopp = 0;
+  }
+
+  // ROT-beloppet ar en reduktion pa arbetsdelen och alltid mindre an kvittots
+  // del som hor till bostaden (avdragensFel nedan): totalbeloppet minus den
+  // privata delen. Inmatningen har ingen forsakringsersattning.
   if (giltigtBelopp && rotUtnyttjat !== null) {
     const fel = avdragensFel({
-      bas: totalbelopp,
-      harPrivatDel: false,
+      bas: totalbelopp - privatbelopp,
+      harPrivatDel: privatbelopp > 0,
       rot: rotUtnyttjat,
       forsakring: 0,
     });
     if (fel) felen.push({ falt: "rot_utnyttjat", fel: fel.fel });
   }
+  if (privatFel) felen.push({ falt: "privatbelopp", fel: privatFel });
 
   // Inmatningen har ETT datumfalt, "Datum", som satter bade dokumentdatum och
   // betaldatum (docs/design.md, "Datum i kostnadsformularet"). Meddelandena
@@ -95,7 +132,9 @@ export function tolkaKostnadsformular(
 
   if (!leverantor) felen.push({ falt: "leverantor", fel: "Fyll i leverantör." });
 
-  if (felen.length > 0 || totalbelopp === null) return { felen };
+  if (felen.length > 0 || totalbelopp === null || !raderna || "fel" in raderna) {
+    return { felen };
+  }
 
   return {
     leverantor,
@@ -104,6 +143,7 @@ export function tolkaKostnadsformular(
     bet: betaldatum ? new Date(`${betaldatum}T00:00:00.000Z`) : null,
     anteckning: anteckning || null,
     rotUtnyttjat,
+    rader: raderna.rader,
   };
 }
 
