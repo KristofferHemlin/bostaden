@@ -140,6 +140,14 @@ function privatfaltetsHjalp(): string {
   return hjalp.textContent ?? "";
 }
 
+/** Beloppsfaltets etikett, ordagrant ur docs/design.md. */
+function faltetsEtikett(): string {
+  const design = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+  const m = design.match(/\*\*Beloppsfältet heter "([^"]+)"\.\*\*/);
+  if (!m) throw new Error('hittade inte meningen "Beloppsfältet heter …" i docs/design.md');
+  return m[1];
+}
+
 const fore = (a: Node, b: Node) =>
   Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
 
@@ -159,6 +167,8 @@ describe("privatfrågan i inmatningen", () => {
     await act(async () => privat.click());
     expect(privat.getAttribute("aria-expanded")).toBe("true");
     expect(privatfaltetsHjalp()).toBe(hjalp);
+    const etikett = faltetikett(faltetsEtikett());
+    expect(etikett.closest("label")?.querySelector('input[name="privatbelopp"]')).not.toBeNull();
   });
 });
 

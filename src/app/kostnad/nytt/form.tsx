@@ -1395,7 +1395,7 @@ export function NyKostnadForm({
         onToggle={() => setPrivatOppen((v) => !v)}
       >
         <Falt
-          etikett="Privat belopp"
+          etikett="Privat del"
           fel={faltfel.privatbelopp}
           hjalp="Ange beloppet som inte hörde till bostaden. Resten räknas med."
         >

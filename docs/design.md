@@ -1131,7 +1131,13 @@ Det är det enda stället i formuläret där en hjälptext byter lydelse, och de
 
 **Formen är densamma som ROT-frågan.** Frågan syns som text; beloppsfältet fälls ut först när svaret är ja. Inget förval, ingen tom ruta att passera, och inget svar krävs för att spara. Lydelserna är desamma på båda ställena: *"Var något på kvittot privat?"* och *"Ange beloppet som inte hörde till bostaden. Resten räknas med."*
 
-I inmatningen står den efter ROT-frågan och före datum. De två hör ihop: båda minskar det belopp som räknas med.
+I inmatningen står den efter ROT-frågan och före datum. De två hör ihop: båda minskar det belopp som räknas med. Avvisar servern beloppet fälls frågan ut av sig själv, så att felet står vid sitt fält och inte bakom en hopfälld rad.
+
+**Beloppsfältet heter "Privat del".** ROT-raden har *"ROT-avdrag"* inuti sig, och fältet här behöver samma sorts etikett — en substantivfras, inte en fråga till. *Del* är ordet därför att beloppet är en del av kvittot och inte ett eget belopp vid sidan av.
+
+**Raden som fältet skapar heter "Privat", och det är inte två namn för samma sak.** Det är samma ord med och utan sitt substantiv: etiketten står över en ruta och behöver säga vad rutan är, raden står i en uppdelning där sammanhanget redan säger det. Den som vill göra dem lika ska göra det genom att ändra båda, inte genom att anta att den ena är fel.
+
+**Och ordfamiljen är avsiktligt tvådelad.** Frågan och fältet säger *privat*, som är ordet hon tänker i. Resultatet säger *hörde inte till bostaden* — i raden *varav 1 000 kr hörde inte till bostaden, avgår* och i hjälptexten. Det vardagliga ordet frågar, det precisa redovisar.
 
 Förvalet är **två rader** – en till projektet och en privat. En "lägg till rad"-knapp finns för de sällsynta fall där ett kvitto rör två olika åtgärder, men den syns inte förrän man behöver den.
 
