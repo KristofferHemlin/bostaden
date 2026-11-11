@@ -1,14 +1,11 @@
 // @vitest-environment jsdom
-import { spawn, type ChildProcess } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { createServer, type Server } from "node:http";
-import type { AddressInfo } from "node:net";
-import { tmpdir } from "node:os";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import postcss from "postcss";
 import tailwindcss from "tailwindcss";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import tailwindKonfig from "../tailwind.config";
+import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
 
 // docs/design.md, "Anteckningen får två rader där den är radens huvudtext":
 // kvittolistan i fas 2, Senaste kvitton pa oversikten, kvittolistan pa
@@ -88,8 +85,6 @@ const { default: KvittolistaSida } = await import("@/app/kostnad/page");
 const { default: FragorSida } = await import("@/app/genomgang/fragor/page");
 const { default: GenomgangSida } = await import("@/app/genomgang/page");
 
-const CHROME =
-  process.env.CHROME_SOKVAG ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const ROT = process.cwd();
 const TYPSNITT = readFileSync(join(ROT, "src/app/layout.tsx"), "utf-8").match(
   /href="(https:\/\/fonts\.googleapis\.com\/css2[^"]+)"/,
@@ -175,21 +170,9 @@ function seeda() {
 
 const SIDOR: Record<string, string> = {};
 
-let server: Server;
-let chrome: ChildProcess;
-let profil: string;
-let ws: WebSocket;
+let webblasare: Webblasare;
 let adress: string;
-let nasta = 0;
-const vantande = new Map<number, (m: { result?: unknown; error?: unknown }) => void>();
-
-function cdp<T = unknown>(method: string, params: Record<string, unknown> = {}): Promise<T> {
-  return new Promise((losa, avvisa) => {
-    const id = ++nasta;
-    vantande.set(id, (m) => (m.error ? avvisa(new Error(JSON.stringify(m.error))) : losa(m.result as T)));
-    ws.send(JSON.stringify({ id, method, params }));
-  });
-}
+const cdp: Webblasare["cdp"] = (method, params) => webblasare.cdp(method, params);
 
 const vanta = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -221,61 +204,14 @@ beforeAll(async () => {
 <body class="font-granssnitt">${kropp}</body></html>`;
   }
 
-  server = createServer((req, res) => {
-    const namn = new URL(req.url ?? "/", "http://x").pathname.slice(1);
-    const html = SIDOR[namn];
-    if (!html) return res.writeHead(404).end();
-    res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(html);
-  });
-  await new Promise<void>((r) => server.listen(0, "127.0.0.1", () => r()));
-  adress = `http://127.0.0.1:${(server.address() as AddressInfo).port}/`;
-
-  profil = mkdtempSync(join(tmpdir(), "kvittobo-anteckning-"));
-  chrome = spawn(
-    CHROME,
-    // jsdom:s WebSocket skickar en Origin, som Chrome annars avvisar.
-    ["--headless=new", "--remote-debugging-port=0", "--remote-allow-origins=*", `--user-data-dir=${profil}`, "--no-first-run", "about:blank"],
-    { stdio: ["ignore", "ignore", "pipe"] },
-  );
-  const wsAdress = await new Promise<string>((losa, avvisa) => {
-    let logg = "";
-    const tid = setTimeout(() => avvisa(new Error(`Chrome startade inte:\n${logg}`)), 15_000);
-    chrome.stderr!.on("data", (d: Buffer) => {
-      logg += d.toString();
-      const t = logg.match(/DevTools listening on (ws:\/\/\S+)/);
-      if (t) {
-        clearTimeout(tid);
-        losa(t[1]);
-      }
-    });
-  });
-  const port = new URL(wsAdress).port;
-  const flikar = (await (await fetch(`http://127.0.0.1:${port}/json`)).json()) as { type: string; webSocketDebuggerUrl: string }[];
-  ws = new WebSocket(flikar.find((s) => s.type === "page")!.webSocketDebuggerUrl);
-  await new Promise((r) => (ws.onopen = r));
-  ws.onmessage = (e) => {
-    const m = JSON.parse(String(e.data));
-    if (m.id && vantande.has(m.id)) {
-      vantande.get(m.id)!(m);
-      vantande.delete(m.id);
-    }
-  };
+  webblasare = await startaWebblasare(SIDOR, "kvittobo-anteckning-");
+  adress = webblasare.adress;
 }, 60_000);
 
 afterAll(async () => {
-  ws?.close();
-  if (chrome && chrome.exitCode === null) {
-    const avslutad = new Promise((r) => chrome.once("exit", r));
-    chrome.kill();
-    await avslutad;
-  }
-  server?.close();
-  // Chromes hjalpprocesser skriver i profilen en kort stund efter att
-  // huvudprocessen avslutats, och en enda rmSync kan da kasta ENOTEMPTY – en
-  // rod korning dar varje matning gick igenom. Uppmatt 2026-11-10. Forsok
-  // igen i stallet for att lata stadningen falla sviten.
-  if (profil) rmSync(profil, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+  await webblasare?.stang();
 });
+
 
 /** Fas 1 renderad i en DOM, med "Hör inte till bostaden" uppfalld av ett tryck. */
 async function genomgangMedRaknasInteOppen(): Promise<string> {

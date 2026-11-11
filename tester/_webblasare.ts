@@ -29,12 +29,12 @@
 // asynkront, bada med en grans.
 
 import { execFile, spawn, type ChildProcess } from "node:child_process";
-import { mkdtempSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, statSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { extname, join } from "node:path";
 
 export const CHROME =
   process.env.CHROME_SOKVAG ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
@@ -71,13 +71,34 @@ export interface Webblasare {
   stang(): Promise<void>;
 }
 
-/** Startar servern med `sidor` (namn -> html) och en headless Chrome. */
-export async function startaWebblasare(sidor: Record<string, string>, profilprefix: string): Promise<Webblasare> {
+const FILTYPER: Record<string, string> = { ".jpg": "image/jpeg", ".png": "image/png", ".svg": "image/svg+xml" };
+
+/**
+ * Startar servern och en headless Chrome. `sidor` ar namn -> html, dar namnet
+ * ar sokvagen utan inledande snedstreck – `""` ar `/`, och en fraga efter
+ * `?` raknas inte. Ar `filkatalog` satt serveras ovriga sokvagar ur den, sa
+ * att en sida kan ladda bilder som i appen.
+ */
+export async function startaWebblasare(
+  sidor: Record<string, string>,
+  profilprefix: string,
+  { filkatalog }: { filkatalog?: string } = {},
+): Promise<Webblasare> {
   const server: Server = createServer((req, res) => {
     const namn = new URL(req.url ?? "/", "http://x").pathname.slice(1);
     const html = sidor[namn];
-    if (!html) return res.writeHead(404).end();
-    res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(html);
+    if (html !== undefined) {
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(html);
+      return;
+    }
+    if (filkatalog) {
+      const fil = join(filkatalog, namn);
+      if (fil.startsWith(filkatalog) && existsSync(fil) && statSync(fil).isFile()) {
+        res.writeHead(200, { "content-type": FILTYPER[extname(fil)] ?? "application/octet-stream" }).end(readFileSync(fil));
+        return;
+      }
+    }
+    res.writeHead(404).end();
   });
   await medGrans(new Promise<void>((r) => server.listen(0, "127.0.0.1", () => r())), 5_000, "att servern ska börja lyssna");
   const adress = `http://127.0.0.1:${(server.address() as AddressInfo).port}/`;
@@ -103,7 +124,9 @@ export async function startaWebblasare(sidor: Record<string, string>, profilpref
   );
   const port = new URL(wsAdress).port;
   const flikar = (await medGrans(
-    fetch(`http://127.0.0.1:${port}/json`, { signal: AbortSignal.timeout(10_000) }).then((r) => r.json()),
+    // Ingen AbortSignal: i jsdom-miljon ar den jsdoms egen, och Nodes fetch
+    // godtar den inte. medGrans gransar vantan anda.
+    fetch(`http://127.0.0.1:${port}/json`).then((r) => r.json()),
     10_000,
     "Chromes lista över flikar (/json)",
   )) as { type: string; webSocketDebuggerUrl: string }[];
