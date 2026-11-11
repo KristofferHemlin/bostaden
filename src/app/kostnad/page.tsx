@@ -204,19 +204,11 @@ export default async function KvittolistaSida() {
         </div>
       ) : (
         <>
-          {/* Primarknappen overst, fore listan – som pa startskarmen
-              (docs/design.md, Kvittolistan). Listan kan bli hundratals rader
-              och knappen ska inte krava att man scrollar forbi dem. Lag
-              under listan till 2026-11-09. */}
-          <div className="border-b border-linje p-4">
-            <Link href="/kostnad/nytt" className={PRIMARKNAPP_KLASS}>
-              Lägg till kvitto
-            </Link>
-          </div>
-
-          {/* Ingangen till klassificeringsgenomgangen – en rad overst i listan
-              med atgardsprick (docs/design.md, Kvittolistan). Faller bort nar
-              inget oklassificerat aterstar. */}
+          {/* Ingangen till klassificeringsgenomgangen – en rad med
+              atgardsprick, FORE knappen nar den finns (docs/design.md,
+              Kvittolistan). Den ar enda vagen till fragorna och ar latt att
+              missa under en orange knapp i full bredd. Faller bort nar inget
+              oklassificerat aterstar, och da ligger knappen overst. */}
           {antalOklassificerade > 0 ? (
             <Link
               href="/genomgang"
@@ -230,6 +222,16 @@ export default async function KvittolistaSida() {
               {antalOklassificerade === 1 ? "" : "n"}
             </Link>
           ) : null}
+          {/* Primarknappen fore listan – som pa startskarmen
+              (docs/design.md, Kvittolistan). Listan kan bli hundratals rader
+              och knappen ska inte krava att man scrollar forbi dem. Lag
+              under listan till 2026-11-09. Raden ovan ar en rad, inte
+              listan, sa att den star forst bryter inte mot regeln. */}
+          <div className="border-b border-linje p-4">
+            <Link href="/kostnad/nytt" className={PRIMARKNAPP_KLASS}>
+              Lägg till kvitto
+            </Link>
+          </div>
 
           {/* Varje ar ar en utfallbar sektion, och hela rubrikraden ar
               kontrollen (docs/design.md, Kvittolistan och "Utfällbara

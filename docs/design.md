@@ -431,6 +431,12 @@ Raderna visar **anteckningen som huvudtext**, med leverantör och datum dämpat 
 
 **Primärknappen ligger överst här också, inte under listan.** Skälet är detsamma som på startskärmen – att lägga till ett kvitto är skälet att appen finns och ska inte kräva att man scrollar förbi listan – och det väger tyngre här, där listan kan vara hundratals rader och växer med åren. Regeln stod bara skriven för startskärmen och tillämpades därför inte på den här sidan. Uppmätt av den första riktiga användaren 2026-11-09.
 
+**Men raden *"Berätta om N kvitton"* står före knappen när den finns** – ändrat 2026-11-12. **Det bryter inte mot regeln ovan**, och det ska stå skrivet så att ingen "återställer" knappen till allra överst med hänvisning till den: regeln säger *inte under listan*, och den här raden är en rad, inte listan. Knappen ligger fortfarande över varje kvitto.
+
+Skälet att raden går först är att den är det enda stället i appen där vägen till frågorna finns, och den är lätt att missa under en orange knapp som fyller bredden. Finns ingen sådan rad ligger knappen överst som förut.
+
+**Priset är två saker som drar blicken i toppen** – en dämpad rad med åtgärdsprick och därunder den orange knappen. Det accepteras därför att de ber om olika saker och bara den ena är orange: *ett orange element per skärm* gäller fortfarande, och det är knappen som har det.
+
 **Utkast går att ta bort direkt.** En soptunna längst till höger i listraden, med egen tryckyta på minst 44px och luft från radens klickyta så den inte träffas av misstag. Ingen bekräftelse – ett utkast har inget belopp och inget värde, och en dialog är bara i vägen. Bekräftelse gäller fortsatt för sparade kvitton.
 
 **Att ta bort en bilaga är två olika handlingar, och bara den ena ska bekräftas.** Skillnaden är om filen går att lägga tillbaka.

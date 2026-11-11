@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-// Primarknappen pa kvittolistan ligger overst, inte under listan
+// Primarknappen pa kvittolistan ligger fore listan, inte under den
 // (docs/design.md, Kvittolistan: "Primärknappen ligger överst här också").
 // Uppmatt av den forsta riktiga anvandaren 2026-11-09: listan kan bli
 // hundratals rader, och knappen ska inte krava att man scrollar forbi dem.
@@ -87,15 +87,16 @@ function plats(html: string, monster: RegExp, vad: string): number {
 }
 
 describe("Lägg till kvitto pa kvittolistan", () => {
-  it("ligger fore genomgangens rad, fore varje arsrubrik och fore varje kvitto", async () => {
+  // Ordningen mot raden "Berätta om N kvitton" provas i Chrome, pa det som
+  // renderas: tester/kvittolistan-ordning-layout.test.ts. Raden star fore
+  // knappen sedan 2026-11-12 (docs/design.md, Kvittolistan).
+  it("ligger fore varje arsrubrik och fore varje kvitto", async () => {
     seeda();
     const html = renderToStaticMarkup(await KvittolistaSida());
     const knapp = plats(html, /<a[^>]*href="\/kostnad\/nytt"[^>]*>Lägg till kvitto<\/a>/, "knappen Lägg till kvitto");
-    const genomgang = plats(html, /<a[^>]*href="\/genomgang"/, "raden till genomgangen");
     // Rubriken bar antalet sedan 2026-11-11 (docs/design.md, Kvittolistan).
     const arsrubrik = plats(html, />2025 · 2 kvitton</, "arsrubriken 2025");
     const forstaKvitto = plats(html, /href="\/kostnad\/d0000000-/, "nagot kvitto i listan");
-    expect(knapp).toBeLessThan(genomgang);
     expect(knapp).toBeLessThan(arsrubrik);
     expect(knapp).toBeLessThan(forstaKvitto);
   });
