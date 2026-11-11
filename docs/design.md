@@ -471,6 +471,18 @@ På startskärmen finns ingen sådan sektion. Att möta en påminnelse varje gå
 
 **Inom varje år sorteras raderna på datum, nyast först** – aldrig på när posten lades in. En årsrubrik lovar tidsordning, och en lista som under rubriken 2026 visar april, april, mars, augusti ser ut som en bugg även när den inte är det. Ett kvitto läggs ofta in långt efter att det betalades, och ett kvitto från 2016 som fotograferas i dag ska hamna under 2016.
 
+**Årssektionerna är hopfällda när bostaden har fler än fyra kvitton och de ligger på mer än ett år.** I alla andra fall står de utfällda. Beslutat 2026-11-11, efter att den första riktiga användaren beskrev listan som rörig.
+
+**Båda villkoren behövs, och vart och ett för sig vore fel.** Ett villkor bara på antal fäller ihop allt för den som lagt in tjugo kvitton från ett enda år, och då möts hon av en rubrik på en tom skärm — sämre än i dag. Ett villkor bara på antal år fäller ihop två år med tre kvitton, vilket är att gömma nästan ingenting bakom ett extra tryck.
+
+**Alla sektioner är hopfällda, också den nyaste.** Att hålla ett år öppet vore att gissa vilket hon söker, och den som kommer hit söker ofta ett gammalt kvitto — det är därför åren är skilda åt. Den som bara har ett år möter ändå ingen hopfällning alls, vilket är det fall som annars skulle störa mest.
+
+**En hopfälld rubrik måste säga hur mycket den döljer.** Årsrubriken bär därför antalet kvitton bredvid årets summa — *2024 · 12 kvitton · 75 700 kr*. Summan ensam säger vad året är värt men inte om det är ett kvitto eller trettio, och det är det senare som avgör om det är värt att öppna. Raden i sin helhet är kontrollen, med chevron enligt *Utfällbara sektioner*, och behåller sin `--yta-nedsankt`.
+
+**Sidan öppnas i samma läge varje gång.** Vilka sektioner som var öppna sparas inte. En lista som ser olika ut vid två besök av skäl hon inte kan se är värre än ett extra tryck. **Kostnaden är känd och accepterad:** den som arbetar sig igenom ett gammalt år får fälla ut det igen varje gång hon kommer tillbaka från ett kvitto. Blir det den vanligaste invändningen är det här raden att ändra.
+
+**Ingången till frågorna står kvar överst, utanför alla sektioner.** Den hör inte till ett år, och den får aldrig hamna bakom en hopfällning.
+
 **Startskärmens lista är undantaget: den sorteras på när kvittot lades in.** Den har inga årsrubriker och lovar ingen tidsordning. Dess jobb är att bekräfta att det du just sparade kom med – och ett gammalt kvitto som hamnar sist i en datumsorterad lista ser ut som om det aldrig sparades. Underrubriken "De sex senast tillagda" säger precis det, och inte mer – att förklara att listan gäller oavsett år besvarar en fråga ingen ställt.
 
 ### Listrader

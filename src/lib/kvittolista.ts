@@ -65,6 +65,27 @@ export function grupperaPerAr<T extends Kvittopost>(poster: T[]): Arsgrupp<T>[] 
     }));
 }
 
+/**
+ * Om kvittolistans arssektioner ar hopfallda nar sidan oppnas
+ * (docs/design.md, Kvittolistan): nar bostaden har fler an fyra kvitton OCH
+ * de ligger i mer an en sektion. Bada villkoren tillsammans – ett ensamt
+ * antalsvillkor faller ihop tjugo kvitton fran ett enda ar till en rubrik pa
+ * en tom skarm, ett ensamt arsvillkor gommer tre kvitton bakom ett tryck.
+ * Galler alla sektioner, ocksa den nyaste. Ingenting sparas – sidan oppnas i
+ * samma lage varje gang.
+ *
+ * "Utan betaldatum" ar en sektion som de andra: den ar en rubrik med kvitton
+ * under, och det ar sektionerna hon ser och fäller ut.
+ */
+export function arssektionerHopfallda(antalKvitton: number, antalSektioner: number): boolean {
+  return antalKvitton > 4 && antalSektioner > 1;
+}
+
+/** Antalet i arsrubriken: "1 kvitto", "12 kvitton". */
+export function antalKvittonText(antal: number): string {
+  return `${antal} ${antal === 1 ? "kvitto" : "kvitton"}`;
+}
+
 /** Den dampade raden under en rad med ROT: "varav ROT 11 587,50 kr, avgår".
  *  Samma lydelse som PDF-paketets rad. Utan ROT ingen rad. */
 export function rotAvgarRad(rotUtnyttjat: number | null): string | undefined {

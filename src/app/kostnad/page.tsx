@@ -26,14 +26,19 @@
 
 import Link from "next/link";
 import { UtkastRaderaKnapp } from "./utkast-radera";
-import { Listrad, PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
+import { ChevronNed, Listrad, PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import { arUtkast } from "@/doman/berakningar";
 import { arOklassificerad } from "@/doman/genomgang";
 import type { Kostnad } from "@/doman/typer";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
-import { avgarForKvitto, grupperaPerAr } from "@/lib/kvittolista";
+import {
+  antalKvittonText,
+  arssektionerHopfallda,
+  avgarForKvitto,
+  grupperaPerAr,
+} from "@/lib/kvittolista";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
@@ -162,6 +167,10 @@ export default async function KvittolistaSida() {
   // sorteras pa kvittots eget datum, nyast forst – ALDRIG insattningsordning
   // (docs/design.md, Kvittolistan).
   const sorterade = grupperaPerAr(rader);
+  // Hopfallda nar listan ar lang och spanner flera ar (docs/design.md,
+  // Kvittolistan). Avgors pa servern vid varje besok och sparas aldrig, sa
+  // sidan oppnas i samma lage varje gang.
+  const hopfallda = arssektionerHopfallda(rader.length, sorterade.length);
 
   return (
     <Skarm bostadsnamn={bostadsnamn} rubrik="Kvitton">
@@ -207,21 +216,34 @@ export default async function KvittolistaSida() {
             </Link>
           ) : null}
 
+          {/* Varje ar ar en utfallbar sektion, och hela rubrikraden ar
+              kontrollen (docs/design.md, Kvittolistan och "Utfällbara
+              sektioner"). <details> haller laget i webblasaren utan att det
+              sparas nagonstans – nasta besok borjar i serverns lage igen. */}
           {sorterade.map((grupp) => (
-            <div key={grupp.ar ?? "utan-betaldatum"}>
-              {/* Arsrubrik: egen rad pa --yta-nedsankt med artalet och arets
-                  summa hogerstalld (docs/design.md, Kvittolistan). */}
-              <div className="flex items-baseline justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2">
+            <details
+              key={grupp.ar ?? "utan-betaldatum"}
+              open={!hopfallda}
+              className="group"
+            >
+              {/* Arsrubrik: egen rad pa --yta-nedsankt med artalet, antalet
+                  kvitton och arets summa – "2024 · 12 kvitton · 75 700 kr".
+                  En hopfalld rubrik ar allt hon har att ga pa, och antalet
+                  sager om aret ar vart att oppna. */}
+              <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2 outline-none transition-colors hover:bg-yta-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent [&::-webkit-details-marker]:hidden">
                 <span className="font-rubrik text-sm text-text-primar">
-                  {grupp.ar ?? "Utan betaldatum"}
+                  {`${grupp.ar ?? "Utan betaldatum"} · ${antalKvittonText(grupp.poster.length)}`}
                 </span>
-                <span className="font-rubrik text-sm tabular-nums text-text-primar">
-                  {/* Samma tal som "Inlagt {ar}" (docs/design.md,
-                      Listrader): utan privat del, efter ROT. Utkast och
-                      arkiverade bidrar inte. */}
-                  {formateraKronor(grupp.summa)}
+                <span className="flex items-center gap-2">
+                  <span className="font-rubrik text-sm tabular-nums text-text-primar">
+                    {/* Samma tal som "Inlagt {ar}" (docs/design.md,
+                        Listrader): utan privat del, efter ROT. Utkast och
+                        arkiverade bidrar inte. */}
+                    {formateraKronor(grupp.summa)}
+                  </span>
+                  <ChevronNed className="h-5 w-5 shrink-0 text-text-sekundar transition-transform group-open:rotate-180" />
                 </span>
-              </div>
+              </summary>
               <div className="divide-y divide-linje border-b border-linje">
                 {grupp.poster.map((r) => (
                   <Listrad
@@ -247,7 +269,7 @@ export default async function KvittolistaSida() {
                   />
                 ))}
               </div>
-            </div>
+            </details>
           ))}
         </>
       )}

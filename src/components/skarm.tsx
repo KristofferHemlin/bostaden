@@ -409,7 +409,9 @@ export function UtfallbarSektion({
   );
 }
 
-function ChevronNed({ className }: { className?: string }) {
+/** Chevronen i en utfallbar sektion (docs/design.md, "Utfällbara sektioner"):
+ *  pekar nedat och roteras 180 grader av anroparen nar sektionen ar oppen. */
+export function ChevronNed({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"

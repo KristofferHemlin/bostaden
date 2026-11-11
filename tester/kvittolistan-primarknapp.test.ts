@@ -92,7 +92,8 @@ describe("Lägg till kvitto pa kvittolistan", () => {
     const html = renderToStaticMarkup(await KvittolistaSida());
     const knapp = plats(html, /<a[^>]*href="\/kostnad\/nytt"[^>]*>Lägg till kvitto<\/a>/, "knappen Lägg till kvitto");
     const genomgang = plats(html, /<a[^>]*href="\/genomgang"/, "raden till genomgangen");
-    const arsrubrik = plats(html, />2025</, "arsrubriken 2025");
+    // Rubriken bar antalet sedan 2026-11-11 (docs/design.md, Kvittolistan).
+    const arsrubrik = plats(html, />2025 · 2 kvitton</, "arsrubriken 2025");
     const forstaKvitto = plats(html, /href="\/kostnad\/d0000000-/, "nagot kvitto i listan");
     expect(knapp).toBeLessThan(genomgang);
     expect(knapp).toBeLessThan(arsrubrik);
