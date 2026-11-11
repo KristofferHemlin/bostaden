@@ -36,6 +36,15 @@
      utanfor rutan. Inget blatt i paletten. */
   --bg-klart: #c9d1c6;
   --text-klart: #3d5e3a;
+
+  /* Bilagemarket i kvittolistan – och ENDAST det (docs/design.md, Farger och
+     "Kvittoraden ska gå att skilja från nästa"). Dampade toner i palettens
+     egen familj, aldrig signalfarger: gront betyder "bilaga finns", aldrig
+     "klart", och tegelrott ar inget fel. Kontrast som grafiskt objekt:
+     gron 4,60 mot --yta-bas, 4,65 mot --yta-hover, 5,15 mot --yta-upphojd;
+     tegelrod 5,55, 5,60 och 6,21. */
+  --bilaga-finns: #4f7148;
+  --bilaga-saknas: #9a3f38;
 }
 
 body {

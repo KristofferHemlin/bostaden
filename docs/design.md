@@ -114,7 +114,11 @@ Förklaringsrutan är därför `--sand` mot kortets yta, och bekräftelserutan `
 
 De används **aldrig** i tröskelfältet, i listor, på knappar eller som textfärg utanför sina rutor. Tröskelfältet är alltid `--sand-mork` mot `--yta-nedsankt`, oavsett hur fullt det är.
 
-Rött förekommer inte alls. Formulärfel visas med `--accent` och en tydlig text – appen har inga tillstånd som är farliga nog att kräva en varningsfärg.
+Rött som signalfärg förekommer inte. Formulärfel visas med `--accent` och en tydlig text – appen har inga tillstånd som är farliga nog att kräva en varningsfärg.
+
+**Ett undantag, infört 2026-11-11: bilagemärket i kvittolistan bär två toner.** Här stod till den dagen att *rött förekommer inte alls*. Det gäller fortfarande signalrött — undantaget är två dämpade toner i paletten egen familj, en grön och en tegelröd, och de används **bara** i det märket. Aldrig på en knapp, aldrig som textfärg, aldrig för ett fel, aldrig för ett tillstånd som kräver åtgärd — det är `--accent` som betyder att något behöver göras, och det ska inte behöva konkurrera.
+
+**Tonerna är dämpade, inte signalfärger.** Hämtas en standardröd eller standardgrön ur ett bibliotek hamnar de utanför paletten och börjar läsa som varning respektive godkännande, vilket är precis det appen inte gör.
 
 ### Regler som gäller oavsett palett
 
@@ -461,7 +465,9 @@ Ett utkast utan både bilaga och fält räknas inte heller i "Berätta om N kvit
 
 **Appen fäller inga omdömen om bevisvärde.** Ingen etikett som graderar hur väl en post är underbyggd. Det som bär bevisningen är motiveringen i frågeträdet, och den hör hemma på grupperingens detaljvy, inte som en märkning i en lista.
 
-**Att en bilaga saknas är däremot ett faktum**, i samma klass som belopp och datum, och det ska synas. En rad utan bilaga får en dämpad text – "Inget kvitto bifogat" – utan ikon och utan varningsfärg, skild från statusraden. Den som går igenom sitt arkiv om åtta år ska kunna se vilka poster som har något bakom sig.
+**Att en bilaga saknas är däremot ett faktum**, i samma klass som belopp och datum, och det ska synas. Den som går igenom sitt arkiv om åtta år ska kunna se vilka poster som har något bakom sig. **Det är ett faktum, inte en varning** — märket säger att bilagan saknas, aldrig att något är fel.
+
+Här stod till 2026-11-11 att det visas som en dämpad text *"utan ikon"*. **I kvittolistan är det numera ett märke** — se *Kvittoraden ska gå att skilja från nästa* nedan, där skälet står. På kvittots egen skärm står meningen kvar som text.
 
 **Ingången till frågorna ligger här, inte på startskärmen.** En rad överst i listan – "Berätta om N kvitton" med åtgärdsprick – som leder vidare. Kvittolistan är där man går för att se sina kvitton, och det är där man märker att några inte hör till något projekt.
 
@@ -502,6 +508,25 @@ Kursiv i dämpad grå i liten grad är svårare att läsa än rak stil, och rade
 **Märket ligger inline, inte först på raden.** Ett märke i en egen ruta längst till vänster skulle ge ojämn vänsterkant när de flesta rader saknar det, och vänsterkanten är det listan hålls samman av.
 
 **Lydelsen försvinner inte, den flyttar.** *"Inget kvitto bifogat"* är märkets tillgänglighetsetikett och dess beskrivning vid hovring. Ett märke utan ord är en gåta för den som använder skärmläsare, och meningen står kvar på kvittots egen sida.
+
+**Men en lydelse i en etikett finns i sidans text två gånger**, och det fällde ett test 2026-11-11: en kontroll som läste sidans text hittade meningen i märkets etikett i stället för som egen rad. Flyttas en lydelse in i en `aria-label` eller en `title` ska testerna som söker efter den göras specifika — att leta efter texten *någonstans* på sidan slutar vara ett prov så fort samma ord finns på två ställen.
+
+**Märket syns på varje rad och har två lägen** — beslutat 2026-11-11. Formen är ett dokument i kontur, 16 px.
+
+- **Bilaga finns:** konturen i den dämpade gröna tonen, inget snedstreck
+- **Bilaga saknas:** konturen i den dämpade tegelröda tonen, med ett snedstreck tvärs över i samma ton
+
+Här stod först att märket visas bara när bilagan saknas. Det ändrades av Kristoffer, som ville kunna läsa båda lägena på en blick.
+
+**Formen bär betydelsen, färgen förstärker den.** Snedstrecket finns eller finns inte, och det är den skillnaden som gäller — rött mot grönt är det vanligaste färgblindhetsparet, och ett märke som bara skiljer sig i nyans är två likadana märken för en del av användarna. **Snedstrecket får därför aldrig tas bort till förmån för enbart färg.**
+
+**Snedstrecket behöver en bakgrundsfärgad understrykning för att synas.** Uppmätt 2026-11-11 i den driftsatta appen: med samma linjetjocklek som konturen, 1,5 i ett `viewBox` på 24 renderat i 16 px, blir strecket omkring en pixel och smälter ihop med hörnvikningen. **Jag läste märket som *ett dokument* vid dubbel förstoring** — alltså motsatsen till vad det betyder, vilket är värre än inget märke alls.
+
+Formen som gäller: snedstrecket i tjocklek 2, lagt ovanpå ett bredare streck i radens **bakgrundsfärg**. Bakgrundsstrecket tar sin färg ur samma variabel som ytan raden ligger på — aldrig ett hårdkodat värde, eftersom märket då blir fel den dag raden byter yta. Kvittolistans rader ligger på olika band, så det här är inte hypotetiskt.
+
+**Och det är en bedömning som görs med ögat, inte av ett test.** Ett test kan pröva att märket finns, vilket läge det är i, och att snedstrecket följer med; att det går att *uppfatta* kan bara avgöras genom att titta på det i verklig storlek. Den som ändrar märkets storlek, färg eller tjocklek ska titta igen.
+
+**Den gröna tonen betyder *bilaga finns*, aldrig *klart*.** Risken skriven samma dag: en grön markering på varje rad kan läsas som att posten är färdig, och den första riktiga användaren slutade just därför att hon trodde att hon var klar. Ett kvitto med bilaga är inte klart — det är frågorna som gör att det räknas. **Därför är tonen dämpad och formen en dokumentkontur, aldrig en bock.** Visar mätningen efter lansering att folk fortfarande slutar för tidigt är det här en av kandidaterna att pröva bort.
 
 **Märket får aldrig förväxlas med åtgärdspricken.** Den orange fyllda pricken i `--accent` betyder *något behöver göras* och står före den dämpade texten. Det här märket är dämpat, säger inget om åtgärd, och står sist. Hamnar båda på samma rad ska de gå att skilja åt på färg och placering utan att läsa dem.
 
@@ -593,7 +618,7 @@ Uppmätt i appen 2026-10-01, innan regeln fanns: kvittolistans årsrubrik stod p
 
 Att det inte finns någon summa på skärmen är inget skäl att utelämna den. Uppmätt samma dag på startskärmen: *Totalt inlagt* stod på 1 049 225 kr med två rader under sig på 1 000 000 kr och 60 812,50 kr, och ingenting förklarade de 11 587,50 kr som fattades. Det är den skärm användaren ser oftast.
 
-**Raden står under namnet, bland de övriga dämpade raderna** – samma plats och samma utseende som "Inget kvitto bifogat". Aldrig under beloppet: beloppskolumnen är högerställd, och ett andra högerställt tal under det första läses som ett andra belopp. Siffrorna i Fraunces är dessutom proportionella, så två staplade tal rättar inte ens in sig mot varandra – se *Typografi*.
+**Raden står under namnet, bland de övriga dämpade raderna** – dämpad text i radens grå, i vanlig stil, utan ikon och utan ruta. Aldrig under beloppet: beloppskolumnen är högerställd, och ett andra högerställt tal under det första läses som ett andra belopp. Siffrorna i Fraunces är dessutom proportionella, så två staplade tal rättar inte ens in sig mot varandra – se *Typografi*.
 
 En rad kan bära flera dämpade rader. Ett kvitto kan sakna bilaga *och* ha ROT.
 
@@ -999,9 +1024,9 @@ Sparas ett kvitto daterat före tillträdet ställs en fråga. En enda, med båd
 
 Den andra säger uttryckligen att det kan stämma. Utan den meningen rättar användaren ett korrekt datum, och då har notisen orsakat felet den skulle fånga.
 
-**Formen är dämpad text, ingen ikon, ingen ruta, ingen färg** – samma behandling som "Inget kvitto bifogat". Det är ett faktum, inte en varning, och appen har ingen varningsfärg.
+**Formen är dämpad text, ingen ikon, ingen ruta, ingen färg.** Det är ett faktum, inte en varning, och appen har ingen varningsfärg.
 
-**Visas där datumet matas in eller visas:** inmatningen och kvittots skärm, i både läsläge och ändringsläge. Inte i kvittolistan – den bär redan en dämpad rad om saknad bilaga, och en andra gör listan brusig. Listan grupperar dessutom per år, så ett årtal utanför innehavet syns där ändå.
+**Visas där datumet matas in eller visas:** inmatningen och kvittots skärm, i både läsläge och ändringsläge. Inte i kvittolistan – dess rader är redan tre till fem, och en till gör listan brusig. Listan grupperar dessutom per år, så ett årtal utanför innehavet syns där ändå.
 
 **Notisen utvärderas först när datumet är komplett.** Fälten är tre, med automatiskt hopp framåt, och ett halvskrivet årtal är inte ett datum. Utvärderas det löpande blinkar notisen till medan användaren skriver, vilket är värre än att den kommer en sekund senare.
 

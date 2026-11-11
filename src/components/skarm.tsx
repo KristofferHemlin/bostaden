@@ -117,7 +117,7 @@ export function Listrad({
   slutknapp,
   anteckning = false,
   kursivStatus = false,
-  saknarBilaga,
+  bilaga,
 }: {
   namn: string;
   status?: string;
@@ -194,13 +194,13 @@ export function Listrad({
    */
   kursivStatus?: boolean;
   /**
-   * Ett dampat marke sist pa statusraden nar kvittot saknar bilaga, med
-   * texten som tillganglighetsetikett och beskrivning vid hovring (samma
-   * stalle i design.md). Saknas texten finns inget marke. Det ar ingen
-   * atgardsprick: dampat, sist, och en kontur i stallet for en fylld orange
-   * prick forst.
+   * Bilagemarket sist pa statusraden (docs/design.md, "Kvittoraden ska gå att
+   * skilja från nästa"), i ett av tva lagen: bilaga finns eller saknas.
+   * `etikett` ar tillganglighetsetiketten och beskrivningen vid hovring.
+   * Utelamnat ger inget marke. Det ar ingen atgardsprick: dampat, sist, och
+   * en kontur i stallet for en fylld orange prick forst.
    */
-  saknarBilaga?: string;
+  bilaga?: { finns: boolean; etikett: string };
 }) {
   const namnInnehall =
     strackt && href ? (
@@ -237,7 +237,7 @@ export function Listrad({
               />
             ) : null}
             {status}
-            {saknarBilaga ? <SaknarBilagaMarke text={saknarBilaga} /> : null}
+            {bilaga ? <BilagaMarke {...bilaga} /> : null}
           </p>
         ) : null}
         {[
@@ -273,7 +273,7 @@ export function Listrad({
     const lank = (
       <Link
         href={href}
-        className="block min-w-0 flex-1 transition-colors hover:bg-yta-hover"
+        className="block min-w-0 flex-1 transition-colors hover:bg-yta-hover hover:[--radens-yta:var(--yta-hover)]"
       >
         {innehall}
       </Link>
@@ -430,14 +430,28 @@ export function UtfallbarSektion({
 }
 
 /**
- * Market for ett kvitto utan bilaga (docs/design.md, Kvittolistan): ett
- * dokument i kontur med ett snedstreck, i radens dampade farg. Ordet bor i
- * etiketten och i beskrivningen vid hovring – ett marke utan ord ar en gata
- * for den som anvander skarmlasare.
+ * Bilagemarket (docs/design.md, "Kvittoraden ska gå att skilja från nästa"):
+ * ett dokument i kontur, 16 px, i tva lagen. Bilaga finns: konturen i
+ * --bilaga-finns, inget snedstreck. Bilaga saknas: konturen i
+ * --bilaga-saknas, med ett snedstreck. Formen bar betydelsen och fargen
+ * forstarker den – rott mot gront ar det vanligaste fargblindhetsparet, sa
+ * snedstrecket far aldrig ersattas av enbart farg.
+ *
+ * Snedstrecket ar 2 tjockt och ligger ovanpa ett bredare streck i radens
+ * yta, sa att det skiljer sig fran konturen: med konturens 1,5 blev det
+ * omkring en pixel och smalte ihop med hornvikningen. Ytan ar variabeln
+ * --radens-yta, som satts dar raden far sin bakgrund – aldrig ett hardkodat
+ * varde, eftersom raderna ligger pa olika ytor.
  */
-function SaknarBilagaMarke({ text }: { text: string }) {
+function BilagaMarke({ finns, etikett }: { finns: boolean; etikett: string }) {
   return (
-    <span role="img" aria-label={text} title={text} className="inline-flex shrink-0 text-text-sekundar">
+    <span
+      role="img"
+      aria-label={etikett}
+      title={etikett}
+      data-bilaga={finns ? "finns" : "saknas"}
+      className={`inline-flex shrink-0 ${finns ? "text-bilaga-finns" : "text-bilaga-saknas"}`}
+    >
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -450,7 +464,12 @@ function SaknarBilagaMarke({ text }: { text: string }) {
       >
         <path d="M14 3v5h5" />
         <path d="M18 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8l6 6v10a2 2 0 0 1-2 2z" />
-        <path d="M4 4l16 16" />
+        {finns ? null : (
+          <>
+            <path d="M4 4l16 16" strokeWidth={5} style={{ stroke: "var(--radens-yta)" }} />
+            <path d="M4 4l16 16" strokeWidth={2} />
+          </>
+        )}
       </svg>
     </span>
   );

@@ -17,10 +17,10 @@
 // Kvittolistan ar dar man gar for att se sina kvitton, och det ar dar man
 // marker att nagra saknar gruppering.
 //
-// Ett sparat, icke-arkiverat kvitto utan bilaga far ett dampat marke sist pa
-// den kursiva statusraden, med "Inget kvitto bifogat" som etikett
-// (produktspec 4.7: underlaget ar svagare utan kvitto, och appen ska saga
-// det; docs/design.md, "Kvittoraden ska gå att skilja från nästa"). Det ar ett faktum om posten, inte en bedomning av
+// Varje rad bar ett bilagemarke sist pa den kursiva statusraden, i tva
+// lagen: bilaga finns eller saknas (produktspec 4.7: underlaget ar svagare
+// utan kvitto, och appen ska saga det; docs/design.md, "Kvittoraden ska gå
+// att skilja från nästa"). Det ar ett faktum om posten, inte en bedomning av
 // underlagsstyrka – den funktionen (baslinjen) togs bort ur produkten, se
 // docs/design.md, Kvittolistan. Utkast far ingen egen markering: de flaggas
 // redan som ofullstandiga.
@@ -46,6 +46,12 @@ import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 
 export const metadata = { title: "Kvitton" };
 
+// Bilagemarkets etiketter (docs/design.md, "Kvittoraden ska gå att skilja
+// från nästa"). Lydelsen for "finns" ar ett forslag som annu inte star i
+// design.md.
+const BILAGA_SAKNAS = "Inget kvitto bifogat";
+const BILAGA_FINNS = "Kvitto bifogat";
+
 export const dynamic = "force-dynamic";
 
 interface KvittoRad {
@@ -54,10 +60,10 @@ interface KvittoRad {
   /** Namnet ar anteckningen – far tva rader i Listrad. */
   anteckning: boolean;
   status: string;
-  /** Market "Inget kvitto bifogat" nar bilaga saknas (produktspec 4.7).
-   * Ett faktum om posten, som belopp och datum – ingen bedomning av
-   * underlagsstyrka (den togs bort ur produkten, se docs/design.md). */
-  saknarBilaga: string | undefined;
+  /** Bilagemarkets lage och etikett (produktspec 4.7). Ett faktum om
+   * posten, som belopp och datum – ingen bedomning av underlagsstyrka (den
+   * togs bort ur produkten, se docs/design.md). */
+  bilaga: { finns: boolean; etikett: string };
   /** Det som avgar och vad som blir kvar – ROT, privat del och "… räknas
    * med" – sprids rakt in i Listrad, som pa startskarmen. Inga falt for sig:
    * da kan ett nytt falt i avgarForKvitto inte tappas har i tysthet
@@ -133,18 +139,18 @@ export default async function KvittolistaSida() {
     }
 
     const forstaBilaga = k.bilagor[0];
-    // Markeringen galler bara sparade, aktiva kvitton. Ett utkast flaggas
-    // redan som ofullstandigt (atgard-pricken), och ett arkiverat kvitto
-    // raknas inte med oavsett bilaga – att papeka bilagan dar lagger till
-    // brus utan att saga nagot nytt.
-    const saknarBilaga = !k.arkiverad && !utkast && k.bilagor.length === 0;
+    // Market star pa varje rad (docs/design.md): ocksa utkast och kvitton
+    // som inte hor till bostaden, eftersom det sager om bilagan finns och
+    // ingenting annat.
     const kostnad = tillDomanKostnad(k);
     return {
       id: k.id,
       namn: notering || leverantor || "Kvitto",
       anteckning: !!notering,
       status,
-      saknarBilaga: saknarBilaga ? "Inget kvitto bifogat" : undefined,
+      bilaga: forstaBilaga
+        ? { finns: true, etikett: BILAGA_FINNS }
+        : { finns: false, etikett: BILAGA_SAKNAS },
       // Raden behaller fakturans totalbelopp – summan pa pappret – och visar
       // ROT-avdraget under, sa att arsrubriken (efter ROT) gar att rakna ihop
       // av raderna (docs/design.md, Listrader).
@@ -282,7 +288,9 @@ export default async function KvittolistaSida() {
  *  dem inte (uppmatt 2026-11-11). */
 function kvittorader(poster: KvittoRad[]) {
   return (
-    <div className="divide-y divide-linje border-b border-linje">
+    // Radens yta satts har, med samma variabel som bilagemarkets
+    // bakgrundsstreck laser (--radens-yta, src/components/skarm.tsx).
+    <div className="divide-y divide-linje border-b border-linje bg-yta-bas [--radens-yta:var(--yta-bas)]">
       {poster.map((r) => (
         <Listrad
           key={r.id}
@@ -290,7 +298,7 @@ function kvittorader(poster: KvittoRad[]) {
           anteckning={r.anteckning}
           status={r.status}
           kursivStatus
-          saknarBilaga={r.saknarBilaga}
+          bilaga={r.bilaga}
           {...r.avgar}
           atgard={r.atgard}
           belopp={r.belopp}

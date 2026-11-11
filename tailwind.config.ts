@@ -21,6 +21,8 @@ export default {
         linje: "var(--linje)",
         "bg-klart": "var(--bg-klart)",
         "text-klart": "var(--text-klart)",
+        "bilaga-finns": "var(--bilaga-finns)",
+        "bilaga-saknas": "var(--bilaga-saknas)",
       },
       fontFamily: {
         rubrik: ["Fraunces", "Georgia", "serif"],

@@ -12,7 +12,9 @@ import tailwindKonfig from "../tailwind.config";
 // docs/design.md, Kvittolistan, "Kvittoraden ska gå att skilja från nästa":
 // pa kvittolistan star forsta raden under rubriken – leverantor och datum – i
 // kursiv, allt darunder rakt, och ett kvitto utan bilaga far ett dampat marke
-// sist pa den kursiva raden med "Inget kvitto bifogat" som etikett.
+// sist pa den kursiva raden. Market finns pa varje rad i tva lagen: bilaga
+// finns (gron kontur, inget snedstreck) och bilaga saknas (tegelrod kontur
+// med snedstreck, etikett "Inget kvitto bifogat").
 //
 // Pa en riktig lista, inte pa en rad: tretton kvitton i ett ar, nagra med ROT,
 // nagra med privat del, nagra med bilaga och nagra utan, och ett utkast med
@@ -21,8 +23,12 @@ import tailwindKonfig from "../tailwind.config";
 //
 // Market mats som synlighet, inte som hojd (CLAUDE.md, "Mät rätt
 // egenskap"): det syns nar checkVisibility() OCH en ruta storre an noll pa
-// skarmen sager samma sak, och testet faller om de ar oense. Testet faller at
-// bada hallen – market finns dar bilagan saknas och INTE dar den finns.
+// skarmen sager samma sak, och testet faller om de ar oense. Lage, farg och
+// snedstreck provas mot kvittots bilaga, sa att ett marke i fel lage faller
+// – ett test som bara provade att ett marke finns hade passerat oavsett lage.
+// Snedstrecket mats som ett synligt diagonalt streck i markets farg, och
+// bakgrundsstrecket under det mot den yta raden faktiskt ligger pa, i vila
+// och vid hovring.
 //
 // Kursiven mats som Chromes beraknade font-style pa varje rad i kvittoraden,
 // inte som ett klassnamn: forsta raden under rubriken ska vara italic och
@@ -170,10 +176,20 @@ let adress: string;
 let nasta = 0;
 const vantande = new Map<number, (m: { result?: unknown; error?: unknown }) => void>();
 
+// Varje anrop har en egen tidsgrans som namnger anropet: ett anrop som
+// aldrig svarar ska falla dar, inte lata hela korningen sta still.
 function cdp<T = unknown>(method: string, params: Record<string, unknown> = {}): Promise<T> {
   return new Promise((losa, avvisa) => {
     const id = ++nasta;
-    vantande.set(id, (m) => (m.error ? avvisa(new Error(JSON.stringify(m.error))) : losa(m.result as T)));
+    const tid = setTimeout(() => {
+      vantande.delete(id);
+      avvisa(new Error(`Chrome svarade inte på ${method} inom 15 s`));
+    }, 15_000);
+    vantande.set(id, (m) => {
+      clearTimeout(tid);
+      if (m.error) avvisa(new Error(JSON.stringify(m.error)));
+      else losa(m.result as T);
+    });
     ws.send(JSON.stringify({ id, method, params }));
   });
 }
@@ -254,7 +270,10 @@ afterAll(async () => {
     await avslutad;
   }
   server?.close();
-  if (profil) rmSync(profil, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+  // Chromes hjalpprocesser skriver i profilen en stund efter att huvud-
+  // processen avslutats, och tio forsok pa 100 ms rackte inte har
+  // (ENOTEMPTY, 2026-11-11) – en rod korning dar varje matning gick igenom.
+  if (profil) rmSync(profil, { recursive: true, force: true, maxRetries: 40, retryDelay: 250 });
 });
 
 async function oppna(namn: string) {
@@ -265,35 +284,54 @@ async function oppna(namn: string) {
   })()`);
 }
 
+interface Marke {
+  etikett: string;
+  title: string;
+  synligt: boolean;
+  /** checkVisibility() och rutan pa skarmen var oense. */
+  oense: boolean;
+  sistPaForstaRaden: boolean;
+  /** Konturens farg som Chrome raknat ut den. */
+  farg: string;
+  /** Synliga snedstreck: diagonala streck i markets egen farg. */
+  snedstreck: { tjocklek: number; underTjocklek: number | null; underFarg: string | null }[];
+}
+
 interface Kvittorad {
   anteckning: string;
   /** Kvittoradens textrader under rubriken, uppifran. */
   rader: { text: string; stil: string }[];
   rubrikStil: string;
-  /** Market: hittat, synligt enligt bada matten, och oense matt. */
-  marke: { antal: number; synligt: boolean; oense: boolean; sistPaForstaRaden: boolean; farg: string } | null;
+  marken: Marke[];
+  /** Den yta raden ligger pa: narmaste forfaders bakgrund som inte ar genomskinlig. */
+  yta: string;
   /** Atgardsprickens placering och farg, om raden har en. */
   prick: { forstPaForstaRaden: boolean; farg: string } | null;
 }
 
 /** Mater varje kvittorad, hittad pa sin anteckning – raden vars text ar
- *  exakt anteckningen. Saknas en rad fäller testet. */
-async function matRader(anteckningar: string[], etikett: string): Promise<Kvittorad[]> {
+ *  exakt anteckningen. Saknas en rad fäller testet. Market hittas som det
+ *  en skarmlasare moter: en bild med en etikett, i radens textkolumn. */
+async function matRader(anteckningar: string[]): Promise<Kvittorad[]> {
   const svar = await utvardera<{ saknas: string[]; rader: Kvittorad[] }>(`(() => {
-    const etikett = ${JSON.stringify(etikett)};
     const saknas = [], rader = [];
+    const synlig = e => e.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true, opacityProperty: true });
+    const ytaFor = e => {
+      for (let x = e; x; x = x.parentElement) {
+        const bg = getComputedStyle(x).backgroundColor;
+        if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return bg;
+      }
+      return 'ingen';
+    };
     for (const anteckning of ${JSON.stringify(anteckningar)}) {
       const namn = [...document.body.querySelectorAll('p')].find(p => p.textContent === anteckning);
       if (!namn) { saknas.push(anteckning); continue; }
       const kolumn = namn.parentElement;
       const under = [...kolumn.children].filter(e => e !== namn);
       const forsta = under[0];
-      const marken = [...kolumn.querySelectorAll('[role="img"]')].filter(e => e.getAttribute('aria-label') === etikett);
-      let marke = null;
-      if (marken.length > 0) {
-        const m = marken[0];
+      const marken = [...kolumn.querySelectorAll('[role="img"]')].filter(e => e.getAttribute('aria-label')).map(m => {
         const r = m.getBoundingClientRect();
-        const enligtWebblasaren = m.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true, opacityProperty: true });
+        const enligtWebblasaren = synlig(m);
         const harRuta = r.width > 0 && r.height > 0;
         // Sist pa raden, matt pa tva satt som ska vara overens: market ar
         // radens sista nod (textnoder raknas, inte bara element), och det
@@ -303,20 +341,40 @@ async function matRader(anteckningar: string[], etikett: string): Promise<Kvitto
         const text = [...forsta.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim() !== '');
         const textHoger = Math.max(...text.map(n => { const rr = document.createRange(); rr.selectNodeContents(n); return rr.getBoundingClientRect().right; }));
         const tillHoger = text.length > 0 && r.left >= textHoger - 0.5;
-        marke = {
-          antal: marken.length,
+        const farg = getComputedStyle(m).color;
+        // Snedstreck: ett streck vars ruta i bildens koordinater ar lika bred
+        // som hog och diagonal (getBBox), synligt, i markets egen farg.
+        // Konturen och hornvikningen ar inte kvadratiska och raknas inte.
+        const streck = [...m.querySelectorAll('path')].map(p => ({
+          p, box: p.getBBox(), cs: getComputedStyle(p),
+        })).filter(x => x.box.width > 10 && Math.abs(x.box.width - x.box.height) < 0.5 && synlig(x.p));
+        const snedstreck = streck.filter(x => x.cs.stroke === farg).map(x => {
+          const under = streck.find(y => y !== x && y.cs.stroke !== farg
+            && Math.abs(y.box.x - x.box.x) < 0.5 && Math.abs(y.box.y - x.box.y) < 0.5
+            && (x.p.compareDocumentPosition(y.p) & Node.DOCUMENT_POSITION_PRECEDING));
+          return {
+            tjocklek: parseFloat(x.cs.strokeWidth),
+            underTjocklek: under ? parseFloat(under.cs.strokeWidth) : null,
+            underFarg: under ? under.cs.stroke : null,
+          };
+        });
+        return {
+          etikett: m.getAttribute('aria-label'),
+          title: m.getAttribute('title'),
           synligt: enligtWebblasaren && harRuta,
           oense: enligtWebblasaren !== harRuta || sistNod !== tillHoger,
-          sistPaForstaRaden: m.parentElement === forsta && sistNod && tillHoger && m.title === etikett,
-          farg: getComputedStyle(m).color,
+          sistPaForstaRaden: m.parentElement === forsta && sistNod && tillHoger,
+          farg,
+          snedstreck,
         };
-      }
-      const prickEl = forsta && [...forsta.children].find(e => e.getAttribute('aria-hidden') !== null && e.getBoundingClientRect().width > 0 && getComputedStyle(e).borderRadius !== '0px');
+      });
+      const prickEl = forsta && [...forsta.children].find(e => e.getAttribute('role') !== 'img' && e.getAttribute('aria-hidden') !== null && e.getBoundingClientRect().width > 0);
       rader.push({
         anteckning,
         rubrikStil: getComputedStyle(namn).fontStyle,
         rader: under.map(e => ({ text: e.textContent, stil: getComputedStyle(e).fontStyle })),
-        marke,
+        marken,
+        yta: ytaFor(kolumn),
         prick: prickEl ? { forstPaForstaRaden: forsta.firstElementChild === prickEl, farg: getComputedStyle(prickEl).backgroundColor } : null,
       });
     }
@@ -326,41 +384,92 @@ async function matRader(anteckningar: string[], etikett: string): Promise<Kvitto
   return svar.rader;
 }
 
+/** En palettvariabel som Chrome raknar ut den, i samma form som en beraknad farg. */
+async function palett(variabel: string): Promise<string> {
+  return utvardera<string>(`(() => {
+    const e = document.createElement('span');
+    e.style.color = 'var(${variabel})';
+    document.body.appendChild(e);
+    const c = getComputedStyle(e).color;
+    e.remove();
+    return c;
+  })()`);
+}
+
+/** Provar ett marke mot kvittots bilaga: lage, farg och snedstreck. */
+function provaMarket(rad: Kvittorad, harBilaga: boolean, saknasEtikett: string, toner: { finns: string; saknas: string }) {
+  expect(rad.marken.length, `${rad.anteckning}: ett märke per rad`).toBe(1);
+  const m = rad.marken[0];
+  expect(m.oense, `${rad.anteckning}: mätten är oense om märket`).toBe(false);
+  expect(m.synligt, `${rad.anteckning}: märket ska synas`).toBe(true);
+  expect(m.sistPaForstaRaden, `${rad.anteckning}: märket står sist på den kursiva raden`).toBe(true);
+  expect(m.title, `${rad.anteckning}: beskrivningen vid hovring är etiketten`).toBe(m.etikett);
+  if (harBilaga) {
+    expect(m.etikett, `${rad.anteckning}: har bilaga`).not.toBe(saknasEtikett);
+    expect(m.etikett.trim()).not.toBe("");
+    expect(m.farg, `${rad.anteckning}: grön ton`).toBe(toner.finns);
+    expect(m.snedstreck, `${rad.anteckning}: inget snedstreck när bilagan finns`).toEqual([]);
+  } else {
+    expect(m.etikett, `${rad.anteckning}: saknar bilaga`).toBe(saknasEtikett);
+    expect(m.farg, `${rad.anteckning}: tegelröd ton`).toBe(toner.saknas);
+    // Snedstrecket i tjocklek 2, ovanpa ett bredare streck i radens yta.
+    expect(m.snedstreck, `${rad.anteckning}: ett snedstreck när bilagan saknas`).toEqual([
+      { tjocklek: 2, underTjocklek: m.snedstreck[0]?.underTjocklek ?? null, underFarg: rad.yta },
+    ]);
+    expect(m.snedstreck[0].underTjocklek!).toBeGreaterThan(2);
+  }
+}
+
 describe("kvittoraden på /kostnad, mätt i Chrome vid 390 px", () => {
-  it("märket syns där bilagan saknas och inte där den finns", async () => {
-    const etikett = marketsEtikett();
+  it("varje rad har märket, i det läge bilagan säger, med snedstreck bara när den saknas", async () => {
+    const saknasEtikett = marketsEtikett();
     await oppna("kostnad");
-    const rader = await matRader(KVITTON.map((k) => k.anteckning), etikett);
+    const toner = { finns: await palett("--bilaga-finns"), saknas: await palett("--bilaga-saknas") };
+    expect(toner.finns, "de två tonerna ska skilja sig").not.toBe(toner.saknas);
+    const rader = await matRader(KVITTON.map((k) => k.anteckning));
     for (const [i, rad] of rader.entries()) {
       const k = KVITTON[i];
+      const m = rad.marken[0];
       console.log(
         `${k.bilaga ? "med bilaga " : "utan bilaga"} | ${[rad.anteckning, ...rad.rader.map((r) => `${r.text} [${r.stil}]`)].join(" / ")}` +
-          ` | märke: ${rad.marke ? (rad.marke.synligt ? "syns" : "finns men syns inte") : "inget"}`,
+          ` | märke: ${m ? `"${m.etikett}", ${m.farg}, ${m.snedstreck.length ? "snedstreck" : "inget snedstreck"}` : "inget"}`,
       );
-      if (rad.marke) expect(rad.marke.oense, `${k.anteckning}: mätten är oense om märket`).toBe(false);
-      if (k.bilaga) {
-        // At andra hallet: en rad med bilaga bar ingenting dar.
-        expect(rad.marke, `${k.anteckning} har bilaga och ska inte ha märket`).toBeNull();
-      } else {
-        expect(rad.marke, `${k.anteckning} saknar bilaga och ska ha märket`).toEqual({
-          antal: 1,
-          synligt: true,
-          oense: false,
-          sistPaForstaRaden: true,
-          farg: rad.marke?.farg,
-        });
-      }
-      // Meningen star inte langre som egen rad.
-      expect(rad.rader.map((r) => r.text)).not.toContain(etikett);
+      provaMarket(rad, k.bilaga, saknasEtikett, toner);
+      // Meningen star inte som egen rad.
+      expect(rad.rader.map((r) => r.text)).not.toContain(saknasEtikett);
     }
-    // Blandningen ar verklig: bada sorterna finns.
-    expect(KVITTON.filter((k) => k.bilaga).length).toBeGreaterThan(0);
-    expect(KVITTON.filter((k) => !k.bilaga).length).toBeGreaterThan(0);
+    // Blandningen ar verklig: bada lagena finns.
+    expect(KVITTON.some((k) => k.bilaga)).toBe(true);
+    expect(KVITTON.some((k) => !k.bilaga)).toBe(true);
+  }, 60_000);
+
+  it("bakgrundsstrecket följer radens yta, också vid hovring", async () => {
+    // Hovring finns bara med en pekare – en emulerad telefon har ingen, och
+    // da byts ytan aldrig. Provet gors darfor i skrivbordslage.
+    await cdp("Emulation.setDeviceMetricsOverride", { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
+    await cdp("Page.navigate", { url: `${adress}kostnad` });
+    await new Promise((r) => setTimeout(r, 500));
+    const utan = KVITTON.find((k) => !k.bilaga)!.anteckning;
+    const [vila] = await matRader([utan]);
+    expect(vila.marken[0].snedstreck[0]?.underFarg, "i vila").toBe(vila.yta);
+    // Pekaren pa raden, som hon hovrar den.
+    const punkt = await utvardera<{ x: number; y: number }>(`(() => {
+      const p = [...document.body.querySelectorAll('p')].find(p => p.textContent === ${JSON.stringify(utan)});
+      p.scrollIntoView({ block: 'center' });
+      const r = p.getBoundingClientRect();
+      return { x: r.left + 5, y: r.top + r.height / 2 };
+    })()`);
+    await cdp("Input.dispatchMouseEvent", { type: "mouseMoved", x: punkt.x, y: punkt.y });
+    await new Promise((r) => setTimeout(r, 300));
+    const [hovrad] = await matRader([utan]);
+    expect(hovrad.yta, "hovringen ska byta radens yta").not.toBe(vila.yta);
+    expect(hovrad.marken[0].snedstreck[0]?.underFarg, "vid hovring").toBe(hovrad.yta);
+    await cdp("Input.dispatchMouseEvent", { type: "mouseMoved", x: 1, y: 1 });
   }, 60_000);
 
   it("första raden under rubriken är kursiv, och ingen annan", async () => {
     await oppna("kostnad");
-    const rader = await matRader(KVITTON.map((k) => k.anteckning), marketsEtikett());
+    const rader = await matRader(KVITTON.map((k) => k.anteckning));
     for (const [i, rad] of rader.entries()) {
       const k = KVITTON[i];
       expect(rad.rubrikStil, `${k.anteckning}: rubriken`).toBe("normal");
@@ -375,36 +484,63 @@ describe("kvittoraden på /kostnad, mätt i Chrome vid 390 px", () => {
     expect(antal.size, "kvittoraderna ska ha olika många textrader").toBeGreaterThan(1);
   }, 60_000);
 
-  it("åtgärdspricken och märket går att skilja på färg och placering", async () => {
-    const etikett = marketsEtikett();
+  it("åtgärdspricken och märket på samma rad går att skilja på färg och placering", async () => {
     await oppna("kostnad");
-    const [utkast] = await matRader([UTKAST], etikett);
-    const utanBilaga = (await matRader(KVITTON.filter((k) => !k.bilaga).map((k) => k.anteckning), etikett))[0];
+    // Utkastet bar bada: pricken och, sedan market finns pa varje rad, market.
+    const [utkast] = await matRader([UTKAST]);
     expect(utkast.prick, "utkastet ska ha åtgärdspricken").not.toBeNull();
     expect(utkast.prick!.forstPaForstaRaden).toBe(true);
-    expect(utanBilaga.marke!.sistPaForstaRaden).toBe(true);
-    expect(utanBilaga.prick, "ett sparat kvitto utan bilaga har ingen åtgärdsprick").toBeNull();
-    expect(utanBilaga.marke!.farg).not.toBe(utkast.prick!.farg);
+    expect(utkast.marken.length).toBe(1);
+    expect(utkast.marken[0].sistPaForstaRaden).toBe(true);
+    expect(utkast.marken[0].farg).not.toBe(utkast.prick!.farg);
+    // Ett sparat kvitto utan bilaga har ingen atgardsprick.
+    const [utanBilaga] = await matRader([KVITTON.find((k) => !k.bilaga)!.anteckning]);
+    expect(utanBilaga.prick).toBeNull();
+  }, 60_000);
+
+  // Ingen prov pa att market GAR ATT UPPFATTA – det avgors med ogat
+  // (docs/design.md). Satts SKARMBILDER_TILL tas en bild av en rad i varje
+  // lage vid 390 px, i telefonens upplosning (3x) och i 1x, for den som ska
+  // titta.
+  it.runIf(!!process.env.SKARMBILDER_TILL)("skärmbilder av märkets två lägen", async () => {
+    const { writeFileSync } = await import("node:fs");
+    for (const skala of [3, 1]) {
+      await cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: skala, mobile: true });
+      await cdp("Page.navigate", { url: `${adress}kostnad` });
+      await new Promise((r) => setTimeout(r, 500));
+      for (const [lage, k] of [["finns", KVITTON.find((x) => x.bilaga)!], ["saknas", KVITTON.find((x) => !x.bilaga)!]] as const) {
+        const ruta = await utvardera<{ x: number; y: number; width: number; height: number }>(`(() => {
+          const p = [...document.body.querySelectorAll('p')].find(p => p.textContent === ${JSON.stringify(k.anteckning)});
+          const rad = p.closest('a');
+          rad.scrollIntoView({ block: 'center' });
+          const r = rad.getBoundingClientRect();
+          return { x: r.left + window.scrollX, y: r.top + window.scrollY, width: r.width, height: r.height };
+        })()`);
+        const bild = await cdp<{ data: string }>("Page.captureScreenshot", { format: "png", clip: { ...ruta, scale: 1 }, captureBeyondViewport: true });
+        const fil = join(process.env.SKARMBILDER_TILL!, `marke-${lage}-${skala}x.png`);
+        writeFileSync(fil, Buffer.from(bild.data, "base64"));
+        console.log(`skärmbild: ${fil}`);
+      }
+    }
   }, 60_000);
 });
 
 describe("startskärmens sex senaste rörs inte", () => {
   it("ingen kursiv och inget märke, som före den här omgången", async () => {
-    const etikett = marketsEtikett();
     await oppna("oversikt");
     // Vilka sex som visas avgors av sidan, inte av testet: den falska
     // databasen ger alla samma skapad_at. Testet tar de kvitton som star dar.
     const synliga = await utvardera<string[]>(`[...document.body.querySelectorAll('p')].map(p => p.textContent)`);
     const pa = KVITTON.map((k) => k.anteckning).filter((a) => synliga.includes(a));
     expect(pa.length, "startskärmen ska visa några av kvittona").toBeGreaterThan(0);
-    const rader = await matRader(pa, etikett);
+    const rader = await matRader(pa);
     for (const rad of rader) {
-      expect(rad.marke).toBeNull();
+      expect(rad.marken).toEqual([]);
       expect(rad.rader.every((r) => r.stil === "normal"), `${rad.anteckning}: raka rader`).toBe(true);
     }
-    // Provet galler bara om nagot av dem saknar bilaga – annars kunde
-    // markets franvaro bero pa att bilagan fanns.
-    const utan = rader.filter((r) => !KVITTON.find((k) => k.anteckning === r.anteckning)!.bilaga);
-    expect(utan.length, "minst ett av dem ska sakna bilaga").toBeGreaterThan(0);
+    // Provet galler bade rader med och utan bilaga.
+    const med = rader.filter((r) => KVITTON.find((k) => k.anteckning === r.anteckning)!.bilaga);
+    expect(med.length, "minst ett av dem ska ha bilaga").toBeGreaterThan(0);
+    expect(rader.length - med.length, "minst ett av dem ska sakna bilaga").toBeGreaterThan(0);
   }, 60_000);
 });
