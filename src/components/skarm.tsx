@@ -522,7 +522,9 @@ export function Kort({
   const Element = som;
   return (
     <Element
-      className={`overflow-hidden rounded-xl border border-linje ${yta === "bas" ? "bg-yta-bas" : "bg-yta-upphojd"}${
+      // --radens-yta foljer kortets yta: bilagemarkets bakgrundsstreck laser
+      // den (BilagaMarke nedan), och raderna ligger pa kortet.
+      className={`overflow-hidden rounded-xl border border-linje ${yta === "bas" ? "bg-yta-bas [--radens-yta:var(--yta-bas)]" : "bg-yta-upphojd [--radens-yta:var(--yta-upphojd)]"}${
         className ? ` ${className}` : ""
       }`}
     >

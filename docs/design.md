@@ -427,9 +427,13 @@ Vad som eventuellt ska finnas i stället är obestämt och ligger i `vad-som-ate
 
 ### Kvittolistan
 
-Raderna visar **anteckningen som huvudtext**, med leverantör och datum dämpat under – samma presentation som på startskärmen. Saknas anteckning används leverantören. Att samma data presenteras olika på två skärmar får listan att se ut som en annan sorts innehåll än den är.
+Raderna visar **anteckningen som huvudtext**, med leverantör och datum dämpat under – samma presentation som på startskärmen. **Det gäller också kursiven och bilagemärket:** fick kvittolistans rader dem 2026-11-11 ska startskärmens sex senaste ha dem också. De två skärmarna visar samma rader, och en rad som ser ut på två sätt läses som två sorters innehåll. Saknas anteckning används leverantören. Att samma data presenteras olika på två skärmar får listan att se ut som en annan sorts innehåll än den är.
 
 **Primärknappen ligger överst här också, inte under listan.** Skälet är detsamma som på startskärmen – att lägga till ett kvitto är skälet att appen finns och ska inte kräva att man scrollar förbi listan – och det väger tyngre här, där listan kan vara hundratals rader och växer med åren. Regeln stod bara skriven för startskärmen och tillämpades därför inte på den här sidan. Uppmätt av den första riktiga användaren 2026-11-09.
+
+**Sidan är tre block, inte ett kort.** Beslutat 2026-11-12, efter att ordningsändringen gjorde det uppenbart: *Berätta om N kvitton*, knappen och listan låg i samma kort utan något som skilde dem åt, och tre olika saker såg ut som en. **Varje del är ett eget block med sidans bakgrund emellan**, på samma sätt som landningssidans avsnitt — luft, inte linjer.
+
+Blocken behåller appens ljusa yta; ingen ny yta införs. Årsrubriken ligger kvar på `--yta-nedsankt` inuti listblocket, så listan har sin egen inre struktur medan blocken har sidans.
 
 **Men raden *"Berätta om N kvitton"* står före knappen när den finns** – ändrat 2026-11-12. **Det bryter inte mot regeln ovan**, och det ska stå skrivet så att ingen "återställer" knappen till allra överst med hänvisning till den: regeln säger *inte under listan*, och den här raden är en rad, inte listan. Knappen ligger fortfarande över varje kvitto.
 

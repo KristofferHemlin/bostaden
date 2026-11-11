@@ -45,7 +45,7 @@ import {
   formateraKronorMetrikruta,
   isoDatum,
 } from "@/lib/format";
-import { avgarForKvitto } from "@/lib/kvittolista";
+import { avgarForKvitto, bilagemarke } from "@/lib/kvittolista";
 import { projektetsArText } from "@/lib/projektar";
 import { prisma } from "@/lib/prisma";
 import { Landningssida } from "@/app/landningssida";
@@ -398,6 +398,12 @@ export default async function Oversikt({
                           : (datum ?? "")
                     }
                     atgard={utkast || oklassificeradeIder.has(k.id)}
+                    // Samma rad som i kvittolistan (docs/design.md,
+                    // Kvittolistan): kursiv forsta rad och bilagemarket.
+                    // Fragan ovan hamtar inga kvitton som inte hor till
+                    // bostaden, darav arkiverad: false.
+                    kursivStatus
+                    bilaga={bilagemarke({ arkiverad: false, utkast, antalBilagor: k._count.bilagor })}
                     belopp={utkast ? undefined : formateraKronor(k.totalbelopp ?? 0)}
                     // Hela kvittot visas: samma avgar-rader som i kvittolistan
                     // (docs/design.md, Listrader: "ROT-raden hor till

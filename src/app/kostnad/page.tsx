@@ -27,7 +27,7 @@
 
 import Link from "next/link";
 import { UtkastRaderaKnapp } from "./utkast-radera";
-import { ChevronNed, Listrad, PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
+import { ChevronNed, Kort, Listrad, PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import { arUtkast } from "@/doman/berakningar";
 import { arOklassificerad } from "@/doman/genomgang";
 import type { Kostnad } from "@/doman/typer";
@@ -38,6 +38,7 @@ import {
   antalKvittonText,
   arssektionerHopfallda,
   avgarForKvitto,
+  bilagemarke,
   grupperaPerAr,
 } from "@/lib/kvittolista";
 import { prisma } from "@/lib/prisma";
@@ -46,10 +47,6 @@ import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 
 export const metadata = { title: "Kvitton" };
 
-// Bilagemarkets etiketter (docs/design.md, "Kvittoraden ska gå att skilja
-// från nästa"): spegelvanda, sa att de hors som ett par nar de lases upp.
-const BILAGA_SAKNAS = "Inget kvitto bifogat";
-const BILAGA_FINNS = "Kvitto bifogat";
 
 export const dynamic = "force-dynamic";
 
@@ -139,22 +136,13 @@ export default async function KvittolistaSida() {
     }
 
     const forstaBilaga = k.bilagor[0];
-    // Market star inte pa rader som visar ett tillstand (docs/design.md):
-    // ett utkast och ett kvitto som inte hor till bostaden sager redan vad
-    // som galler, och ett marke till konkurrerar med texten och med
-    // atgardspricken.
     const kostnad = tillDomanKostnad(k);
     return {
       id: k.id,
       namn: notering || leverantor || "Kvitto",
       anteckning: !!notering,
       status,
-      bilaga:
-        k.arkiverad || utkast
-          ? undefined
-          : forstaBilaga
-            ? { finns: true, etikett: BILAGA_FINNS }
-            : { finns: false, etikett: BILAGA_SAKNAS },
+      bilaga: bilagemarke({ arkiverad: k.arkiverad, utkast, antalBilagor: k._count.bilagor }),
       // Raden behaller fakturans totalbelopp – summan pa pappret – och visar
       // ROT-avdraget under, sa att arsrubriken (efter ROT) gar att rakna ihop
       // av raderna (docs/design.md, Listrader).
@@ -188,9 +176,13 @@ export default async function KvittolistaSida() {
   );
 
   return (
-    <Skarm bostadsnamn={bostadsnamn} rubrik="Kvitton">
+    // Tre block med sidans bakgrund emellan, inte ett kort (docs/design.md,
+    // Kvittolistan): raden till fragorna, knappen och listan ar tre olika
+    // saker och sag ut som en nar de delade kort. Luft och ytbyte, inte
+    // linjer – samma grepp som landningssidans avsnitt.
+    <Skarm bostadsnamn={bostadsnamn} rubrik="Kvitton" egnaKort>
       {kostnadRader.length === 0 ? (
-        <div className="p-5">
+        <Kort className="p-5">
           <p className="font-rubrik text-lg text-text-primar">
             Lägg till ditt första kvitto
           </p>
@@ -201,7 +193,7 @@ export default async function KvittolistaSida() {
           <Link href="/kostnad/nytt" className={`${PRIMARKNAPP_KLASS} mt-4`}>
             Lägg till kvitto
           </Link>
-        </div>
+        </Kort>
       ) : (
         <>
           {/* Ingangen till klassificeringsgenomgangen – en rad med
@@ -210,28 +202,30 @@ export default async function KvittolistaSida() {
               missa under en orange knapp i full bredd. Faller bort nar inget
               oklassificerat aterstar, och da ligger knappen overst. */}
           {antalOklassificerade > 0 ? (
-            <Link
-              href="/genomgang"
-              className="flex items-center gap-1.5 border-b border-linje p-4 font-granssnitt text-sm text-text-primar transition-colors hover:bg-yta-hover"
-            >
-              <span
-                aria-hidden
-                className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
-              />
-              Berätta om {antalOklassificerade} kvitto
-              {antalOklassificerade === 1 ? "" : "n"}
-            </Link>
+            <Kort>
+              <Link
+                href="/genomgang"
+                className="flex items-center gap-1.5 p-4 font-granssnitt text-sm text-text-primar transition-colors hover:bg-yta-hover"
+              >
+                <span
+                  aria-hidden
+                  className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
+                />
+                Berätta om {antalOklassificerade} kvitto
+                {antalOklassificerade === 1 ? "" : "n"}
+              </Link>
+            </Kort>
           ) : null}
           {/* Primarknappen fore listan – som pa startskarmen
               (docs/design.md, Kvittolistan). Listan kan bli hundratals rader
               och knappen ska inte krava att man scrollar forbi dem. Lag
               under listan till 2026-11-09. Raden ovan ar en rad, inte
               listan, sa att den star forst bryter inte mot regeln. */}
-          <div className="border-b border-linje p-4">
+          <Kort className="p-4">
             <Link href="/kostnad/nytt" className={PRIMARKNAPP_KLASS}>
               Lägg till kvitto
             </Link>
-          </div>
+          </Kort>
 
           {/* Varje ar ar en utfallbar sektion, och hela rubrikraden ar
               kontrollen (docs/design.md, Kvittolistan och "Utfällbara
@@ -240,47 +234,52 @@ export default async function KvittolistaSida() {
               "Utan betaldatum" ar inget ar och falls aldrig ihop: dess
               kvitton raknas i ingen arssumma och blir latta att glomma bakom
               ett tryck. Den star sist, utan kontroll. */}
-          {sorterade.map((grupp) => {
-            const antal = antalKvittonText(grupp.poster.length);
-            // Samma tal som "Inlagt {ar}" (docs/design.md, Listrader): utan
-            // privat del, efter ROT. Utkast och arkiverade bidrar inte.
-            const summa = (
-              <span className="font-rubrik text-sm tabular-nums text-text-primar">
-                {formateraKronor(grupp.summa)}
-              </span>
-            );
-            if (grupp.ar === null) {
-              return (
-                <div key="utan-betaldatum">
-                  <div className="flex min-h-[44px] items-center justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2">
-                    <span className="font-rubrik text-sm text-text-primar">
-                      {`Utan betaldatum · ${antal}`}
-                    </span>
-                    {summa}
-                  </div>
-                  <Kvittorader poster={grupp.poster} />
-                </div>
+          {/* Listblocket. Den sista sektionens nedre linje skulle ligga dikt an
+              mot kortets egen ram och ge en dubbel linje; -mb-px lagger den
+              under ramen, dar overflow-hidden klipper den. */}
+          <Kort className="[&>:last-child]:-mb-px">
+            {sorterade.map((grupp) => {
+              const antal = antalKvittonText(grupp.poster.length);
+              // Samma tal som "Inlagt {ar}" (docs/design.md, Listrader): utan
+              // privat del, efter ROT. Utkast och arkiverade bidrar inte.
+              const summa = (
+                <span className="font-rubrik text-sm tabular-nums text-text-primar">
+                  {formateraKronor(grupp.summa)}
+                </span>
               );
-            }
-            return (
-              <details key={grupp.ar} open={!hopfallda} className="group">
-                {/* Arsrubrik: egen rad pa --yta-nedsankt med artalet och
-                    antalet kvitton till vanster, summan hogerstalld. En
-                    hopfalld rubrik ar allt hon har att ga pa, och antalet
-                    sager om aret ar vart att oppna. */}
-                <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2 outline-none transition-colors hover:bg-yta-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent [&::-webkit-details-marker]:hidden">
-                  <span className="font-rubrik text-sm text-text-primar">
-                    {`${grupp.ar} · ${antal}`}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    {summa}
-                    <ChevronNed className="h-5 w-5 shrink-0 text-text-sekundar transition-transform group-open:rotate-180" />
-                  </span>
-                </summary>
-                <Kvittorader poster={grupp.poster} />
-              </details>
-            );
-          })}
+              if (grupp.ar === null) {
+                return (
+                  <div key="utan-betaldatum">
+                    <div className="flex min-h-[44px] items-center justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2">
+                      <span className="font-rubrik text-sm text-text-primar">
+                        {`Utan betaldatum · ${antal}`}
+                      </span>
+                      {summa}
+                    </div>
+                    <Kvittorader poster={grupp.poster} />
+                  </div>
+                );
+              }
+              return (
+                <details key={grupp.ar} open={!hopfallda} className="group">
+                  {/* Arsrubrik: egen rad pa --yta-nedsankt med artalet och
+                      antalet kvitton till vanster, summan hogerstalld. En
+                      hopfalld rubrik ar allt hon har att ga pa, och antalet
+                      sager om aret ar vart att oppna. */}
+                  <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2 outline-none transition-colors hover:bg-yta-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent [&::-webkit-details-marker]:hidden">
+                    <span className="font-rubrik text-sm text-text-primar">
+                      {`${grupp.ar} · ${antal}`}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      {summa}
+                      <ChevronNed className="h-5 w-5 shrink-0 text-text-sekundar transition-transform group-open:rotate-180" />
+                    </span>
+                  </summary>
+                  <Kvittorader poster={grupp.poster} />
+                </details>
+              );
+            })}
+          </Kort>
         </>
       )}
     </Skarm>
@@ -291,9 +290,7 @@ export default async function KvittolistaSida() {
  *  betaldatum". */
 function Kvittorader({ poster }: { poster: KvittoRad[] }) {
   return (
-    // Radens yta satts har, med samma variabel som bilagemarkets
-    // bakgrundsstreck laser (--radens-yta, src/components/skarm.tsx).
-    <div className="divide-y divide-linje border-b border-linje bg-yta-bas [--radens-yta:var(--yta-bas)]">
+    <div className="divide-y divide-linje border-b border-linje">
       {poster.map((r) => (
         <Listrad
           key={r.id}

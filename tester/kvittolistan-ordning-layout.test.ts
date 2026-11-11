@@ -19,6 +19,14 @@ import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
 //
 // Testet provar bada fallen. Ett test som bara provade att raden star fore
 // knappen hade passerat aven om raden alltid visades.
+//
+// Och sidan ar block, inte ett kort (docs/design.md, Kvittolistan): raden,
+// knappen och listan ligger i var sitt block med sidans bakgrund emellan.
+// Blocken tas fram ur det som renderas – varje dels forfader narmast under
+// deras gemensamma forfader – och mats: glappet mellan tva block ar storre
+// an noll och visar sidans bakgrund dar Chrome sager att den syns
+// (elementFromPoint), blocken har en annan yta an sidan, och listblocket
+// borjar med arsrubriken.
 
 const h = await vi.hoisted(async () => {
   const { skapaFalskDatabas } = await import("./_falsk-databas");
@@ -171,6 +179,101 @@ async function mat(sida: string): Promise<Matning> {
     };
   })()`);
 }
+
+interface Block {
+  /** Vad blocket innehaller, for felmeddelandet. */
+  namn: string;
+  topp: number;
+  botten: number;
+  yta: string;
+}
+
+interface Blockmatning {
+  sidansYta: string;
+  block: Block[];
+  /** For varje glapp mellan tva block: hojden och ytan i dess mitt. */
+  glapp: { hojd: number; yta: string }[];
+  /** Avstandet fran listblockets innerkant till arsrubrikens overkant. */
+  rubrikFranListansKant: number | null;
+  /** Antal olika block delarna ligger i – ska vara lika med antalet delar. */
+  olikaBlock: number;
+}
+
+async function matBlock(sida: string): Promise<Blockmatning> {
+  await webblasare.cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
+  await webblasare.cdp("Page.navigate", { url: `${webblasare.adress}${sida}` });
+  return webblasare.utvardera<Blockmatning>(`(async () => {
+    for (let i = 0; i < 100 && document.readyState !== 'complete'; i++) await new Promise(r => setTimeout(r, 50));
+    const ytaFor = e => {
+      for (let x = e; x; x = x.parentElement) {
+        const bg = getComputedStyle(x).backgroundColor;
+        if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return bg;
+      }
+      return 'ingen';
+    };
+    const main = document.querySelector('main');
+    const tryckbara = [...main.querySelectorAll('a, summary')];
+    const delar = [
+      ['raden', tryckbara.find(e => e.textContent.trim().startsWith('Berätta om '))],
+      ['knappen', tryckbara.find(e => e.textContent.trim() === ${JSON.stringify(KNAPP)})],
+      ['listan', main.querySelector('summary')],
+    ].filter(([, e]) => e);
+    // Den gemensamma forfadern, och varje dels block: forfadern narmast under den.
+    let gemensam = delar[0][1];
+    while (!delar.every(([, e]) => gemensam.contains(e))) gemensam = gemensam.parentElement;
+    const blockFor = e => { let x = e; while (x.parentElement !== gemensam) x = x.parentElement; return x; };
+    const block = delar.map(([namn, e]) => {
+      const b = blockFor(e), r = b.getBoundingClientRect();
+      return { namn, el: b, topp: r.top + scrollY, botten: r.bottom + scrollY, yta: ytaFor(b) };
+    });
+    const glapp = [];
+    for (let i = 1; i < block.length; i++) {
+      const hojd = block[i].topp - block[i - 1].botten;
+      const y = (block[i - 1].botten + block[i].topp) / 2 - scrollY;
+      const x = main.getBoundingClientRect().left + main.getBoundingClientRect().width / 2;
+      const under = document.elementFromPoint(x, y);
+      glapp.push({ hojd, yta: under ? ytaFor(under) : 'ingenting' });
+    }
+    const lista = block.find(b => b.namn === 'listan');
+    const rubrik = main.querySelector('summary');
+    const kant = lista ? lista.el.getBoundingClientRect().top + parseFloat(getComputedStyle(lista.el).borderTopWidth) : null;
+    return {
+      // Sidans yta: den narmaste bakgrund som syns bakom innehallet.
+      sidansYta: ytaFor(main),
+      block: block.map(({ el, ...b }) => b),
+      glapp,
+      rubrikFranListansKant: lista && rubrik ? rubrik.getBoundingClientRect().top - kant : null,
+      olikaBlock: new Set(block.map(b => b.el)).size,
+    };
+  })()`);
+}
+
+function provaBlocken(m: Blockmatning, delar: string[]) {
+  expect(m.block.map((b) => b.namn)).toEqual(delar);
+  expect(m.olikaBlock, "varje del i ett eget block").toBe(delar.length);
+  for (const b of m.block) expect(b.yta, `${b.namn}: blockets yta skiljer sig från sidans`).not.toBe(m.sidansYta);
+  for (const [i, g] of m.glapp.entries()) {
+    const mellan = `${m.block[i].namn} och ${m.block[i + 1].namn}`;
+    expect(g.hojd, `luft mellan ${mellan}`).toBeGreaterThan(0);
+    expect(g.yta, `sidans bakgrund mellan ${mellan}`).toBe(m.sidansYta);
+  }
+  expect(m.rubrikFranListansKant, "listblocket börjar med årsrubriken").not.toBeNull();
+  expect(Math.abs(m.rubrikFranListansKant!)).toBeLessThan(0.5);
+}
+
+describe("kvittolistan är block med sidans bakgrund emellan, mätt i Chrome vid 390 px", () => {
+  it("med raden: tre block", async () => {
+    const m = await matBlock("med-rad");
+    console.log(`med rad: ${m.block.map((b) => `${b.namn} ${b.topp}–${b.botten}`).join(", ")}; glapp ${m.glapp.map((g) => `${g.hojd} px ${g.yta}`).join(", ")}; sidan ${m.sidansYta}`);
+    provaBlocken(m, ["raden", "knappen", "listan"]);
+  }, 60_000);
+
+  it("utan raden: två block, knappen först", async () => {
+    const m = await matBlock("utan-rad");
+    console.log(`utan rad: ${m.block.map((b) => `${b.namn} ${b.topp}–${b.botten}`).join(", ")}; glapp ${m.glapp.map((g) => `${g.hojd} px ${g.yta}`).join(", ")}`);
+    provaBlocken(m, ["knappen", "listan"]);
+  }, 60_000);
+});
 
 describe("raden Berätta om N kvitton och knappen, mätt i Chrome vid 390 px", () => {
   it("när raden finns står den först, sedan knappen, sedan listan", async () => {

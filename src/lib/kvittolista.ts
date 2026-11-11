@@ -82,6 +82,28 @@ export function arssektionerHopfallda(antalKvitton: number, antalAr: number): bo
   return antalKvitton > 4 && antalAr > 1;
 }
 
+// Bilagemarkets etiketter (docs/design.md, "Kvittoraden ska gå att skilja
+// från nästa"): spegelvanda, sa att de hors som ett par nar de lases upp.
+export const BILAGA_FINNS = "Kvitto bifogat";
+export const BILAGA_SAKNAS = "Inget kvitto bifogat";
+
+/**
+ * Bilagemarket pa en kvittorad – samma regel i kvittolistan och pa
+ * startskarmens sex senaste, som visar samma rader (docs/design.md,
+ * Kvittolistan). Inget marke pa en rad som visar ett tillstand: ett utkast
+ * och ett kvitto som inte hor till bostaden sager redan vad som galler.
+ */
+export function bilagemarke(k: {
+  arkiverad: boolean;
+  utkast: boolean;
+  antalBilagor: number;
+}): { finns: boolean; etikett: string } | undefined {
+  if (k.arkiverad || k.utkast) return undefined;
+  return k.antalBilagor > 0
+    ? { finns: true, etikett: BILAGA_FINNS }
+    : { finns: false, etikett: BILAGA_SAKNAS };
+}
+
 /** Antalet i arsrubriken: "1 kvitto", "12 kvitton". */
 export function antalKvittonText(antal: number): string {
   return `${antal} ${antal === 1 ? "kvitto" : "kvitton"}`;

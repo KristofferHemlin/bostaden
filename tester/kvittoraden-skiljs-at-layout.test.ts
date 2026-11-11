@@ -471,22 +471,30 @@ describe("kvittoraden på /kostnad, mätt i Chrome vid 390 px", () => {
   }, 60_000);
 });
 
-describe("startskärmens sex senaste rörs inte", () => {
-  it("ingen kursiv och inget märke, som före den här omgången", async () => {
+describe("startskärmens sex senaste har samma rader", () => {
+  // docs/design.md, Kvittolistan: de tva skarmarna visar samma rader, sa
+  // kursiven och bilagemarket galler aven har sedan 2026-11-12. Fram till
+  // dess provade det har testet att startskarmen INTE hade dem.
+  it("kursiv första rad och märket i det läge bilagan säger", async () => {
+    const etiketter = etiketterna();
     await oppna("oversikt");
+    const toner = { finns: await palett("--bilaga-finns"), saknas: await palett("--bilaga-saknas") };
     // Vilka sex som visas avgors av sidan, inte av testet: den falska
     // databasen ger alla samma skapad_at. Testet tar de kvitton som star dar.
     const synliga = await utvardera<string[]>(`[...document.body.querySelectorAll('p')].map(p => p.textContent)`);
-    const pa = KVITTON.map((k) => k.anteckning).filter((a) => synliga.includes(a));
+    const pa = KVITTON.filter((k) => synliga.includes(k.anteckning));
     expect(pa.length, "startskärmen ska visa några av kvittona").toBeGreaterThan(0);
-    const rader = await matRader(pa);
-    for (const rad of rader) {
-      expect(rad.marken).toEqual([]);
-      expect(rad.rader.every((r) => r.stil === "normal"), `${rad.anteckning}: raka rader`).toBe(true);
+    // At bada hallen: bade rader med och utan bilaga.
+    expect(pa.some((k) => k.bilaga), "minst ett av dem ska ha bilaga").toBe(true);
+    expect(pa.some((k) => !k.bilaga), "minst ett av dem ska sakna bilaga").toBe(true);
+    const rader = await matRader(pa.map((k) => k.anteckning));
+    for (const [i, rad] of rader.entries()) {
+      const k = pa[i];
+      console.log(`startskärmen, ${k.bilaga ? "med bilaga " : "utan bilaga"} | ${rad.rader.map((r) => `${r.text} [${r.stil}]`).join(" / ")} | yta ${rad.yta}`);
+      expect(rad.rader.map((r) => r.stil), `${k.anteckning}: raderna under rubriken`).toEqual(
+        rad.rader.map((_, j) => (j === 0 ? "italic" : "normal")),
+      );
+      provaMarket(rad, k.bilaga, etiketter, toner);
     }
-    // Provet galler bade rader med och utan bilaga.
-    const med = rader.filter((r) => KVITTON.find((k) => k.anteckning === r.anteckning)!.bilaga);
-    expect(med.length, "minst ett av dem ska ha bilaga").toBeGreaterThan(0);
-    expect(rader.length - med.length, "minst ett av dem ska sakna bilaga").toBeGreaterThan(0);
   }, 60_000);
 });
