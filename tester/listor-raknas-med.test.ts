@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Raden "… räknas med" i kvittolistan och pa startskarmens sex senaste
@@ -32,7 +33,9 @@ vi.mock("next/navigation", () => ({
   notFound: () => {
     throw new Error("NEXT_NOT_FOUND");
   },
-  useRouter: () => ({ push: () => {}, refresh: () => {} }),
+  useRouter: () => ({ push: () => {}, refresh: () => {}, replace: () => {} }),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ host: "bostad.test" }) }));
@@ -111,21 +114,22 @@ function seeda() {
   h.inloggad = { id: ANNA, email: "anna@exempel.se" };
 }
 
-function elementFor(nod: unknown, namn: string): ReactElement<Record<string, unknown>>[] {
-  if (nod == null || typeof nod !== "object") return [];
-  if (Array.isArray(nod)) return nod.flatMap((n) => elementFor(n, namn));
-  const el = nod as ReactElement<Record<string, unknown>> & { type?: unknown };
-  const egen = typeof el.type === "function" && (el.type as { name: string }).name === namn ? [el] : [];
-  return [...egen, ...elementFor(el.props?.children, namn)];
-}
-
-/** Varje kvittos listrad, renderad och nycklad pa kvittot den lankar till. */
-function raderPerKvitto(vy: unknown): Map<string, string> {
-  const rader = new Map<string, string>();
-  for (const el of elementFor(vy, "Listrad")) {
-    const html = renderToStaticMarkup(el);
-    const id = html.match(/href="\/kostnad\/([0-9a-f-]{36})"/)?.[1];
-    if (id) rader.set(id, html);
+/**
+ * Varje kvittos rad, nycklad pa kvittot den lankar till. Hela sidan renderas
+ * som den skulle renderas for henne, och raden ar lanken till kvittot – det
+ * hon trycker pa. Testet vet inte vilka komponenter sidan ar byggd av: fram
+ * till 2026-11-11 gick det igenom sidans orenderade elementtrad efter
+ * komponenten Listrad, och raderna fick da inte ligga i en egen komponent
+ * (CLAUDE.md, "Koden formas inte efter ett tests begränsning").
+ */
+function raderPerKvitto(vy: unknown): Map<string, string[]> {
+  const dok = new DOMParser().parseFromString(renderToStaticMarkup(vy as ReactElement), "text/html");
+  const rader = new Map<string, string[]>();
+  for (const a of dok.querySelectorAll<HTMLAnchorElement>("a[href^='/kostnad/']")) {
+    const id = a.getAttribute("href")!.match(/^\/kostnad\/([0-9a-f-]{36})$/)?.[1];
+    // Radens textrader uppifran, var och en med sin hela text – ett
+    // pastaende om ett tal provar hela raden, aldrig en delstrang.
+    if (id) rader.set(id, [...a.querySelectorAll("p")].map((p) => p.textContent ?? ""));
   }
   return rader;
 }
@@ -137,7 +141,7 @@ async function berakningensTal(id: string): Promise<string> {
     include: { rader: { include: { fordelningar: true } } },
   });
   const kostnad = tillDomanKostnad(rad as unknown as Parameters<typeof tillDomanKostnad>[0]);
-  return `>${formateraKronor(inlagtForKostnad(kostnad))} räknas med<`;
+  return `${formateraKronor(inlagtForKostnad(kostnad))} räknas med`;
 }
 
 const listor: [string, () => Promise<unknown>][] = [
@@ -155,30 +159,31 @@ describe.each(listor)("%s", (_namn, sida) => {
       expect(rader.get(id)).toContain(await berakningensTal(id));
     }
     // De uppmatta talen, ordagrant.
-    expect(rader.get(BADA)).toContain(">1 kr räknas med<");
-    expect(rader.get(PRIVAT)).toContain(">12 000 kr räknas med<");
-    expect(rader.get(ROT)).toContain(">31 000 kr räknas med<");
+    expect(rader.get(BADA)).toContain("1 kr räknas med");
+    expect(rader.get(PRIVAT)).toContain("12 000 kr räknas med");
+    expect(rader.get(ROT)).toContain("31 000 kr räknas med");
   });
 
   it("raden star sist bland beloppen, efter bada avdragen", async () => {
     const rad = raderPerKvitto(await sida()).get(BADA)!;
-    const rot = rad.indexOf("varav ROT");
-    const privat = rad.indexOf("hörde inte till bostaden");
-    const raknas = rad.indexOf("räknas med");
+    const plats = (slutar: RegExp) => rad.findIndex((t) => slutar.test(t));
+    const rot = plats(/^varav ROT .*, avgår$/);
+    const privat = plats(/^varav .* hörde inte till bostaden, avgår$/);
+    const raknas = plats(/^.* räknas med$/);
     expect(rot).toBeGreaterThan(-1);
     expect(privat).toBeGreaterThan(-1);
     expect(raknas).toBeGreaterThan(rot);
     expect(raknas).toBeGreaterThan(privat);
     // Som egen rad: pa kvittolistan ar lydelsen sedan 2026-11-11 ett markes
-    // etikett pa den kursiva raden (docs/design.md, Kvittolistan), och det
-    // market ska sta forst, inte efter beloppen.
-    const bifogat = rad.indexOf(">Inget kvitto bifogat<");
+    // etikett pa den kursiva raden (docs/design.md, Kvittolistan), inte en
+    // textrad.
+    const bifogat = rad.indexOf("Inget kvitto bifogat");
     if (bifogat > -1) expect(bifogat).toBeGreaterThan(raknas);
   });
 
   it("ingen rad nar hela beloppet raknas med", async () => {
     const rad = raderPerKvitto(await sida()).get(HELT);
     expect(rad).toBeTruthy();
-    expect(rad).not.toContain("räknas med");
+    expect(rad!.some((t) => t.endsWith("räknas med"))).toBe(false);
   });
 });

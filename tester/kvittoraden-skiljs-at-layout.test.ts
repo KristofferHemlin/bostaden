@@ -1,13 +1,10 @@
-import { spawn, type ChildProcess } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { createServer, type Server } from "node:http";
-import type { AddressInfo } from "node:net";
-import { tmpdir } from "node:os";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import postcss from "postcss";
 import tailwindcss from "tailwindcss";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import tailwindKonfig from "../tailwind.config";
+import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
 
 // docs/design.md, Kvittolistan, "Kvittoraden ska gå att skilja från nästa":
 // pa kvittolistan star forsta raden under rubriken – leverantor och datum – i
@@ -84,20 +81,18 @@ const { renderToStaticMarkup } = await import("react-dom/server");
 const { default: KvittolistaSida } = await import("@/app/kostnad/page");
 const { default: Oversikt } = await import("@/app/page");
 
-const CHROME =
-  process.env.CHROME_SOKVAG ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const ROT = process.cwd();
 
 const ANNA = "a0000000-0000-4000-8000-000000000001";
 const X = "b0000000-0000-4000-8000-00000000000a";
 const datum = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
-/** Markets etikett, ordagrant ur docs/design.md – lases inne i testet. */
-function marketsEtikett(): string {
+/** Markets tva etiketter, ordagrant ur docs/design.md – lases inne i testet. */
+function etiketterna(): { finns: string; saknas: string } {
   const design = readFileSync(join(ROT, "docs", "design.md"), "utf-8");
-  const m = design.match(/\*\*Lydelsen försvinner inte, den flyttar\.\*\* \*"([^"]+)"\* är märkets tillgänglighetsetikett/);
-  if (!m) throw new Error('hittade inte meningen om märkets etikett i docs/design.md');
-  return m[1];
+  const m = design.match(/\*\*Etiketterna är \*"([^"]+)"\* och \*"([^"]+)"\*\.\*\*/);
+  if (!m) throw new Error('hittade inte meningen "Etiketterna är …" i docs/design.md');
+  return { finns: m[1], saknas: m[2] };
 }
 
 interface Kvitto {
@@ -130,6 +125,9 @@ const KVITTON: Kvitto[] = [
   { anteckning: "Spackel och slippapper", leverantor: "Bauhaus Bromma", dag: "2025-11-05", belopp: 34_900, bilaga: true },
 ];
 const UTKAST = "Kvitto från järnhandeln, fyller i senare";
+// Ett kvitto som inte hor till bostaden, med bilaga – raden visar sitt
+// tillstand i stallet for leverantor och datum, och bar inget marke.
+const ARKIVERAT = "Ny kaffebryggare, den gamla läckte";
 
 function seeda() {
   const { db } = h;
@@ -161,6 +159,18 @@ function seeda() {
       db.lagg("radfordelning", { kostnadsrad_id: rad.id, projekt_id: null, privat: true, andel: 1 });
     }
   }
+  const arkiverat = db.lagg("kostnad", {
+    bostad_id: X,
+    leverantor: "Elgiganten",
+    anteckning: ARKIVERAT,
+    totalbelopp: 149_000,
+    dokumentdatum: datum("2025-06-10"),
+    betaldatum: datum("2025-06-10"),
+    arkiverad: true,
+    skapad_av: ANNA,
+  });
+  db.lagg("bilaga", { kostnad_id: arkiverat.id, sokvag: `x/${arkiverat.id}.jpg`, filtyp: "image/jpeg" });
+  db.lagg("kostnadsrad", { kostnad_id: arkiverat.id, artikel: "Elgiganten", belopp: 149_000 });
   // Ett utkast med en anteckning: det bar atgardspricken.
   db.lagg("kostnad", { bostad_id: X, anteckning: UTKAST, totalbelopp: null, skapad_av: ANNA });
   h.inloggad = { id: ANNA, email: "anna@exempel.se" };
@@ -168,41 +178,10 @@ function seeda() {
 
 const SIDOR: Record<string, string> = {};
 
-let server: Server;
-let chrome: ChildProcess;
-let profil: string;
-let ws: WebSocket;
+let webblasare: Webblasare;
 let adress: string;
-let nasta = 0;
-const vantande = new Map<number, (m: { result?: unknown; error?: unknown }) => void>();
-
-// Varje anrop har en egen tidsgrans som namnger anropet: ett anrop som
-// aldrig svarar ska falla dar, inte lata hela korningen sta still.
-function cdp<T = unknown>(method: string, params: Record<string, unknown> = {}): Promise<T> {
-  return new Promise((losa, avvisa) => {
-    const id = ++nasta;
-    const tid = setTimeout(() => {
-      vantande.delete(id);
-      avvisa(new Error(`Chrome svarade inte på ${method} inom 15 s`));
-    }, 15_000);
-    vantande.set(id, (m) => {
-      clearTimeout(tid);
-      if (m.error) avvisa(new Error(JSON.stringify(m.error)));
-      else losa(m.result as T);
-    });
-    ws.send(JSON.stringify({ id, method, params }));
-  });
-}
-
-async function utvardera<T>(uttryck: string): Promise<T> {
-  const svar = await cdp<{ result: { value: T }; exceptionDetails?: unknown }>("Runtime.evaluate", {
-    awaitPromise: true,
-    returnByValue: true,
-    expression: uttryck,
-  });
-  if (svar.exceptionDetails) throw new Error(`fel i sidan: ${JSON.stringify(svar.exceptionDetails)}`);
-  return svar.result.value;
-}
+const cdp: Webblasare["cdp"] = (method, params) => webblasare.cdp(method, params);
+const utvardera = <T,>(uttryck: string) => webblasare.utvardera<T>(uttryck);
 
 const sida = (css: string, kropp: string) => `<!doctype html><html lang="sv"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -222,59 +201,14 @@ beforeAll(async () => {
     renderToStaticMarkup(await Oversikt({ searchParams: Promise.resolve({}) } as Parameters<typeof Oversikt>[0])),
   );
 
-  server = createServer((req, res) => {
-    const namn = new URL(req.url ?? "/", "http://x").pathname.slice(1);
-    const html = SIDOR[namn];
-    if (!html) return res.writeHead(404).end();
-    res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(html);
-  });
-  await new Promise<void>((r) => server.listen(0, "127.0.0.1", () => r()));
-  adress = `http://127.0.0.1:${(server.address() as AddressInfo).port}/`;
-
-  profil = mkdtempSync(join(tmpdir(), "kvittobo-kvittoraden-"));
-  chrome = spawn(
-    CHROME,
-    ["--headless=new", "--remote-debugging-port=0", "--remote-allow-origins=*", `--user-data-dir=${profil}`, "--no-first-run", "about:blank"],
-    { stdio: ["ignore", "ignore", "pipe"] },
-  );
-  const wsAdress = await new Promise<string>((losa, avvisa) => {
-    let logg = "";
-    const tid = setTimeout(() => avvisa(new Error(`Chrome startade inte:\n${logg}`)), 15_000);
-    chrome.stderr!.on("data", (d: Buffer) => {
-      logg += d.toString();
-      const t = logg.match(/DevTools listening on (ws:\/\/\S+)/);
-      if (t) {
-        clearTimeout(tid);
-        losa(t[1]);
-      }
-    });
-  });
-  const port = new URL(wsAdress).port;
-  const flikar = (await (await fetch(`http://127.0.0.1:${port}/json`)).json()) as { type: string; webSocketDebuggerUrl: string }[];
-  ws = new WebSocket(flikar.find((s) => s.type === "page")!.webSocketDebuggerUrl);
-  await new Promise((r) => (ws.onopen = r));
-  ws.onmessage = (e) => {
-    const m = JSON.parse(String(e.data));
-    if (m.id && vantande.has(m.id)) {
-      vantande.get(m.id)!(m);
-      vantande.delete(m.id);
-    }
-  };
+  webblasare = await startaWebblasare(SIDOR, "kvittobo-kvittoraden-");
+  adress = webblasare.adress;
 }, 60_000);
 
 afterAll(async () => {
-  ws?.close();
-  if (chrome && chrome.exitCode === null) {
-    const avslutad = new Promise((r) => chrome.once("exit", r));
-    chrome.kill();
-    await avslutad;
-  }
-  server?.close();
-  // Chromes hjalpprocesser skriver i profilen en stund efter att huvud-
-  // processen avslutats, och tio forsok pa 100 ms rackte inte har
-  // (ENOTEMPTY, 2026-11-11) – en rod korning dar varje matning gick igenom.
-  if (profil) rmSync(profil, { recursive: true, force: true, maxRetries: 40, retryDelay: 250 });
+  await webblasare?.stang();
 });
+
 
 async function oppna(namn: string) {
   await cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
@@ -397,7 +331,7 @@ async function palett(variabel: string): Promise<string> {
 }
 
 /** Provar ett marke mot kvittots bilaga: lage, farg och snedstreck. */
-function provaMarket(rad: Kvittorad, harBilaga: boolean, saknasEtikett: string, toner: { finns: string; saknas: string }) {
+function provaMarket(rad: Kvittorad, harBilaga: boolean, etiketter: { finns: string; saknas: string }, toner: { finns: string; saknas: string }) {
   expect(rad.marken.length, `${rad.anteckning}: ett märke per rad`).toBe(1);
   const m = rad.marken[0];
   expect(m.oense, `${rad.anteckning}: mätten är oense om märket`).toBe(false);
@@ -405,12 +339,11 @@ function provaMarket(rad: Kvittorad, harBilaga: boolean, saknasEtikett: string, 
   expect(m.sistPaForstaRaden, `${rad.anteckning}: märket står sist på den kursiva raden`).toBe(true);
   expect(m.title, `${rad.anteckning}: beskrivningen vid hovring är etiketten`).toBe(m.etikett);
   if (harBilaga) {
-    expect(m.etikett, `${rad.anteckning}: har bilaga`).not.toBe(saknasEtikett);
-    expect(m.etikett.trim()).not.toBe("");
+    expect(m.etikett, `${rad.anteckning}: har bilaga`).toBe(etiketter.finns);
     expect(m.farg, `${rad.anteckning}: grön ton`).toBe(toner.finns);
     expect(m.snedstreck, `${rad.anteckning}: inget snedstreck när bilagan finns`).toEqual([]);
   } else {
-    expect(m.etikett, `${rad.anteckning}: saknar bilaga`).toBe(saknasEtikett);
+    expect(m.etikett, `${rad.anteckning}: saknar bilaga`).toBe(etiketter.saknas);
     expect(m.farg, `${rad.anteckning}: tegelröd ton`).toBe(toner.saknas);
     // Snedstrecket i tjocklek 2, ovanpa ett bredare streck i radens yta.
     expect(m.snedstreck, `${rad.anteckning}: ett snedstreck när bilagan saknas`).toEqual([
@@ -422,7 +355,7 @@ function provaMarket(rad: Kvittorad, harBilaga: boolean, saknasEtikett: string, 
 
 describe("kvittoraden på /kostnad, mätt i Chrome vid 390 px", () => {
   it("varje rad har märket, i det läge bilagan säger, med snedstreck bara när den saknas", async () => {
-    const saknasEtikett = marketsEtikett();
+    const etiketter = etiketterna();
     await oppna("kostnad");
     const toner = { finns: await palett("--bilaga-finns"), saknas: await palett("--bilaga-saknas") };
     expect(toner.finns, "de två tonerna ska skilja sig").not.toBe(toner.saknas);
@@ -434,9 +367,10 @@ describe("kvittoraden på /kostnad, mätt i Chrome vid 390 px", () => {
         `${k.bilaga ? "med bilaga " : "utan bilaga"} | ${[rad.anteckning, ...rad.rader.map((r) => `${r.text} [${r.stil}]`)].join(" / ")}` +
           ` | märke: ${m ? `"${m.etikett}", ${m.farg}, ${m.snedstreck.length ? "snedstreck" : "inget snedstreck"}` : "inget"}`,
       );
-      provaMarket(rad, k.bilaga, saknasEtikett, toner);
-      // Meningen star inte som egen rad.
-      expect(rad.rader.map((r) => r.text)).not.toContain(saknasEtikett);
+      provaMarket(rad, k.bilaga, etiketter, toner);
+      // Meningarna star inte som egna rader.
+      expect(rad.rader.map((r) => r.text)).not.toContain(etiketter.saknas);
+      expect(rad.rader.map((r) => r.text)).not.toContain(etiketter.finns);
     }
     // Blandningen ar verklig: bada lagena finns.
     expect(KVITTON.some((k) => k.bilaga)).toBe(true);
@@ -484,17 +418,29 @@ describe("kvittoraden på /kostnad, mätt i Chrome vid 390 px", () => {
     expect(antal.size, "kvittoraderna ska ha olika många textrader").toBeGreaterThan(1);
   }, 60_000);
 
-  it("åtgärdspricken och märket på samma rad går att skilja på färg och placering", async () => {
+  it("rader som visar ett tillstånd bär inget märke", async () => {
     await oppna("kostnad");
-    // Utkastet bar bada: pricken och, sedan market finns pa varje rad, market.
-    const [utkast] = await matRader([UTKAST]);
+    // Utkastet bar atgardspricken och sitt tillstand; kvittot som inte hor
+    // till bostaden bar sitt – och har en bilaga, sa att ett marke i lage
+    // "finns" hade kunnat sta dar om regeln inte holl.
+    const [utkast, arkiverat] = await matRader([UTKAST, ARKIVERAT]);
+    expect(utkast.rader[0]?.text).toBe("Utkast · komplettera uppgifterna");
     expect(utkast.prick, "utkastet ska ha åtgärdspricken").not.toBeNull();
     expect(utkast.prick!.forstPaForstaRaden).toBe(true);
-    expect(utkast.marken.length).toBe(1);
-    expect(utkast.marken[0].sistPaForstaRaden).toBe(true);
-    expect(utkast.marken[0].farg).not.toBe(utkast.prick!.farg);
-    // Ett sparat kvitto utan bilaga har ingen atgardsprick.
+    expect(utkast.marken).toEqual([]);
+    expect(arkiverat.rader[0]?.text).toBe("Hör inte till bostaden");
+    expect(arkiverat.marken).toEqual([]);
+  }, 60_000);
+
+  it("åtgärdspricken och märket går att skilja på färg och placering", async () => {
+    await oppna("kostnad");
+    const [utkast] = await matRader([UTKAST]);
     const [utanBilaga] = await matRader([KVITTON.find((k) => !k.bilaga)!.anteckning]);
+    // Pricken forst i accent, market sist i en annan farg.
+    expect(utkast.prick!.forstPaForstaRaden).toBe(true);
+    expect(utanBilaga.marken[0].sistPaForstaRaden).toBe(true);
+    expect(utanBilaga.marken[0].farg).not.toBe(utkast.prick!.farg);
+    // Ett sparat kvitto utan bilaga har ingen atgardsprick.
     expect(utanBilaga.prick).toBeNull();
   }, 60_000);
 

@@ -518,6 +518,12 @@ Kursiv i dämpad grå i liten grad är svårare att läsa än rak stil, och rade
 
 Här stod först att märket visas bara när bilagan saknas. Det ändrades av Kristoffer, som ville kunna läsa båda lägena på en blick.
 
+**Etiketterna är *"Kvitto bifogat"* och *"Inget kvitto bifogat"*.** Spegelvända, så att den som hör dem upplästa efter varandra hör skillnaden och inte två olika meningar.
+
+**Märket står inte på rader som visar ett tillstånd.** Ett utkast och ett kvitto som inte hör till bostaden bär redan *Utkast · komplettera uppgifterna* respektive *Hör inte till bostaden* i stället för leverantör och datum. De raderna säger redan vad som gäller, och ett märke till konkurrerar med den texten och med åtgärdspricken. **Regeln stod först som "varje rad" och var för grov** — den skrevs med den vanliga raden i tanken, och agenten tillämpade den korrekt på de två som inte är det.
+
+**De två lägena ska skilja sig i ljushet, inte bara i nyans.** Uppmätt 2026-11-11 var de första tonerna nästan lika mörka — 4,60 respektive 5,55 mot `--yta-bas` — så skillnaden låg nästan bara i mättnad, och vid 16 px blir två lika mörka toner två likadana märken. Ljushet är den egenskap som bär längst när ytan är liten, och den enda som också når den som är rödgrönblind. Båda tonerna ska ändå klara 3:1 mot varje yta en kvittorad kan ligga på.
+
 **Formen bär betydelsen, färgen förstärker den.** Snedstrecket finns eller finns inte, och det är den skillnaden som gäller — rött mot grönt är det vanligaste färgblindhetsparet, och ett märke som bara skiljer sig i nyans är två likadana märken för en del av användarna. **Snedstrecket får därför aldrig tas bort till förmån för enbart färg.**
 
 **Snedstrecket behöver en bakgrundsfärgad understrykning för att synas.** Uppmätt 2026-11-11 i den driftsatta appen: med samma linjetjocklek som konturen, 1,5 i ett `viewBox` på 24 renderat i 16 px, blir strecket omkring en pixel och smälter ihop med hörnvikningen. **Jag läste märket som *ett dokument* vid dubbel förstoring** — alltså motsatsen till vad det betyder, vilket är värre än inget märke alls.

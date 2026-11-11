@@ -40,11 +40,14 @@
   /* Bilagemarket i kvittolistan – och ENDAST det (docs/design.md, Farger och
      "Kvittoraden ska gå att skilja från nästa"). Dampade toner i palettens
      egen familj, aldrig signalfarger: gront betyder "bilaga finns", aldrig
-     "klart", och tegelrott ar inget fel. Kontrast som grafiskt objekt:
-     gron 4,60 mot --yta-bas, 4,65 mot --yta-hover, 5,15 mot --yta-upphojd;
-     tegelrod 5,55, 5,60 och 6,21. */
-  --bilaga-finns: #4f7148;
-  --bilaga-saknas: #9a3f38;
+     "klart", och tegelrott ar inget fel. Lagena skiljer sig i ljushet, inte
+     bara i nyans – vid 16 px bar ljushet langre, och den nar ocksa den som
+     ar rodgronblind. Kontrast som grafiskt objekt mot --yta-bas, --yta-hover
+     och --yta-upphojd: gron 3,30, 3,34 och 3,70; tegelrod 7,36, 7,43 och
+     8,24. Sinsemellan 2,23 (de forsta tonerna, #4f7148 och #9a3f38, gav
+     1,21). */
+  --bilaga-finns: #608a58;
+  --bilaga-saknas: #7c332d;
 }
 
 body {

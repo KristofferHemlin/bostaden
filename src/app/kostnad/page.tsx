@@ -47,8 +47,7 @@ import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 export const metadata = { title: "Kvitton" };
 
 // Bilagemarkets etiketter (docs/design.md, "Kvittoraden ska gå att skilja
-// från nästa"). Lydelsen for "finns" ar ett forslag som annu inte star i
-// design.md.
+// från nästa"): spegelvanda, sa att de hors som ett par nar de lases upp.
 const BILAGA_SAKNAS = "Inget kvitto bifogat";
 const BILAGA_FINNS = "Kvitto bifogat";
 
@@ -60,10 +59,11 @@ interface KvittoRad {
   /** Namnet ar anteckningen – far tva rader i Listrad. */
   anteckning: boolean;
   status: string;
-  /** Bilagemarkets lage och etikett (produktspec 4.7). Ett faktum om
-   * posten, som belopp och datum – ingen bedomning av underlagsstyrka (den
-   * togs bort ur produkten, se docs/design.md). */
-  bilaga: { finns: boolean; etikett: string };
+  /** Bilagemarkets lage och etikett (produktspec 4.7), eller undefined pa en
+   * rad som visar ett tillstand. Ett faktum om posten, som belopp och datum –
+   * ingen bedomning av underlagsstyrka (den togs bort ur produkten, se
+   * docs/design.md). */
+  bilaga: { finns: boolean; etikett: string } | undefined;
   /** Det som avgar och vad som blir kvar – ROT, privat del och "… räknas
    * med" – sprids rakt in i Listrad, som pa startskarmen. Inga falt for sig:
    * da kan ett nytt falt i avgarForKvitto inte tappas har i tysthet
@@ -139,18 +139,22 @@ export default async function KvittolistaSida() {
     }
 
     const forstaBilaga = k.bilagor[0];
-    // Market star pa varje rad (docs/design.md): ocksa utkast och kvitton
-    // som inte hor till bostaden, eftersom det sager om bilagan finns och
-    // ingenting annat.
+    // Market star inte pa rader som visar ett tillstand (docs/design.md):
+    // ett utkast och ett kvitto som inte hor till bostaden sager redan vad
+    // som galler, och ett marke till konkurrerar med texten och med
+    // atgardspricken.
     const kostnad = tillDomanKostnad(k);
     return {
       id: k.id,
       namn: notering || leverantor || "Kvitto",
       anteckning: !!notering,
       status,
-      bilaga: forstaBilaga
-        ? { finns: true, etikett: BILAGA_FINNS }
-        : { finns: false, etikett: BILAGA_SAKNAS },
+      bilaga:
+        k.arkiverad || utkast
+          ? undefined
+          : forstaBilaga
+            ? { finns: true, etikett: BILAGA_FINNS }
+            : { finns: false, etikett: BILAGA_SAKNAS },
       // Raden behaller fakturans totalbelopp – summan pa pappret – och visar
       // ROT-avdraget under, sa att arsrubriken (efter ROT) gar att rakna ihop
       // av raderna (docs/design.md, Listrader).
@@ -252,7 +256,7 @@ export default async function KvittolistaSida() {
                     </span>
                     {summa}
                   </div>
-                  {kvittorader(grupp.poster)}
+                  <Kvittorader poster={grupp.poster} />
                 </div>
               );
             }
@@ -271,7 +275,7 @@ export default async function KvittolistaSida() {
                     <ChevronNed className="h-5 w-5 shrink-0 text-text-sekundar transition-transform group-open:rotate-180" />
                   </span>
                 </summary>
-                {kvittorader(grupp.poster)}
+                <Kvittorader poster={grupp.poster} />
               </details>
             );
           })}
@@ -282,11 +286,8 @@ export default async function KvittolistaSida() {
 }
 
 /** En sektions kvittorader – samma rader i varje sektion, ocksa "Utan
- *  betaldatum". En funktion och inte en komponent: raderna ska ligga direkt i
- *  sidans elementtrad, dar tester/listor-raknas-med.test.ts letar upp varje
- *  Listrad. Som egen komponent renderades de forst senare, och testet hittade
- *  dem inte (uppmatt 2026-11-11). */
-function kvittorader(poster: KvittoRad[]) {
+ *  betaldatum". */
+function Kvittorader({ poster }: { poster: KvittoRad[] }) {
   return (
     // Radens yta satts har, med samma variabel som bilagemarkets
     // bakgrundsstreck laser (--radens-yta, src/components/skarm.tsx).
