@@ -524,6 +524,10 @@ Här stod först att märket visas bara när bilagan saknas. Det ändrades av Kr
 
 **De två lägena ska skilja sig i ljushet, inte bara i nyans.** Uppmätt 2026-11-11 var de första tonerna nästan lika mörka — 4,60 respektive 5,55 mot `--yta-bas` — så skillnaden låg nästan bara i mättnad, och vid 16 px blir två lika mörka toner två likadana märken. Ljushet är den egenskap som bär längst när ytan är liten, och den enda som också når den som är rödgrönblind. Båda tonerna ska ändå klara 3:1 mot varje yta en kvittorad kan ligga på.
 
+**Och det är *saknas* som är det mörka läget, inte *finns*.** Frånvaron är det som bär information; närvaron är normalläget. Den tyngre tonen ska därför ligga på den rad där något fattas, aldrig tvärtom — ett mörkt märke på varje rad som är i ordning gör listan tung utan att säga något.
+
+**Utfall 2026-11-11:** grön `#608A58` på 3,30 mot `--yta-bas`, tegelröd `#7C332D` på 7,36, och 2,23 mellan tonerna mot 1,21 tidigare. **Den gröna ligger nära golvet på 3:1** och tål inte att ljusas upp mer — den som vill öka skillnaden ytterligare ska mörka den röda, inte ljusa den gröna.
+
 **Formen bär betydelsen, färgen förstärker den.** Snedstrecket finns eller finns inte, och det är den skillnaden som gäller — rött mot grönt är det vanligaste färgblindhetsparet, och ett märke som bara skiljer sig i nyans är två likadana märken för en del av användarna. **Snedstrecket får därför aldrig tas bort till förmån för enbart färg.**
 
 **Snedstrecket behöver en bakgrundsfärgad understrykning för att synas.** Uppmätt 2026-11-11 i den driftsatta appen: med samma linjetjocklek som konturen, 1,5 i ett `viewBox` på 24 renderat i 16 px, blir strecket omkring en pixel och smälter ihop med hörnvikningen. **Jag läste märket som *ett dokument* vid dubbel förstoring** — alltså motsatsen till vad det betyder, vilket är värre än inget märke alls.
