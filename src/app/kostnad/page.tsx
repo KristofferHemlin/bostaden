@@ -6,8 +6,8 @@
 // Raderna visar anteckningen som huvudtext med leverantor och datum dampat
 // under – exakt samma presentation som pa startskarmen. Aret bestams av
 // betaldatum och ingenting annat; kvitton utan betaldatum hamnar i en egen
-// grupp "Utan betaldatum" overst och i ingen arssumma (docs/design.md,
-// Listrader).
+// grupp "Utan betaldatum" sist och i ingen arssumma (docs/design.md,
+// Listrader och Kvittolistan).
 //
 // Entiteten heter fortfarande `kostnad` i kod och rutter (docs/design.md,
 // "Ordval i granssnittet") – bara det anvandaren moter byter till "kvitto".
@@ -163,14 +163,18 @@ export default async function KvittolistaSida() {
   });
 
   // Aret ar betaldatumets (docs/design.md, Listrader): utan betaldatum hamnar
-  // kvittot under "Utan betaldatum" overst och i ingen arssumma. Inom gruppen
+  // kvittot under "Utan betaldatum" sist och i ingen arssumma. Inom gruppen
   // sorteras pa kvittots eget datum, nyast forst – ALDRIG insattningsordning
   // (docs/design.md, Kvittolistan).
   const sorterade = grupperaPerAr(rader);
   // Hopfallda nar listan ar lang och spanner flera ar (docs/design.md,
   // Kvittolistan). Avgors pa servern vid varje besok och sparas aldrig, sa
   // sidan oppnas i samma lage varje gang.
-  const hopfallda = arssektionerHopfallda(rader.length, sorterade.length);
+  // "Utan betaldatum" ar inget ar och raknas inte bland aren.
+  const hopfallda = arssektionerHopfallda(
+    rader.length,
+    sorterade.filter((g) => g.ar !== null).length,
+  );
 
   return (
     <Skarm bostadsnamn={bostadsnamn} rubrik="Kvitton">
@@ -219,60 +223,88 @@ export default async function KvittolistaSida() {
           {/* Varje ar ar en utfallbar sektion, och hela rubrikraden ar
               kontrollen (docs/design.md, Kvittolistan och "Utfällbara
               sektioner"). <details> haller laget i webblasaren utan att det
-              sparas nagonstans – nasta besok borjar i serverns lage igen. */}
-          {sorterade.map((grupp) => (
-            <details
-              key={grupp.ar ?? "utan-betaldatum"}
-              open={!hopfallda}
-              className="group"
-            >
-              {/* Arsrubrik: egen rad pa --yta-nedsankt med artalet, antalet
-                  kvitton och arets summa – "2024 · 12 kvitton · 75 700 kr".
-                  En hopfalld rubrik ar allt hon har att ga pa, och antalet
-                  sager om aret ar vart att oppna. */}
-              <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2 outline-none transition-colors hover:bg-yta-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent [&::-webkit-details-marker]:hidden">
-                <span className="font-rubrik text-sm text-text-primar">
-                  {`${grupp.ar ?? "Utan betaldatum"} · ${antalKvittonText(grupp.poster.length)}`}
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="font-rubrik text-sm tabular-nums text-text-primar">
-                    {/* Samma tal som "Inlagt {ar}" (docs/design.md,
-                        Listrader): utan privat del, efter ROT. Utkast och
-                        arkiverade bidrar inte. */}
-                    {formateraKronor(grupp.summa)}
+              sparas nagonstans – nasta besok borjar i serverns lage igen.
+              "Utan betaldatum" ar inget ar och falls aldrig ihop: dess
+              kvitton raknas i ingen arssumma och blir latta att glomma bakom
+              ett tryck. Den star sist, utan kontroll. */}
+          {sorterade.map((grupp) => {
+            const antal = antalKvittonText(grupp.poster.length);
+            // Samma tal som "Inlagt {ar}" (docs/design.md, Listrader): utan
+            // privat del, efter ROT. Utkast och arkiverade bidrar inte.
+            const summa = (
+              <span className="font-rubrik text-sm tabular-nums text-text-primar">
+                {formateraKronor(grupp.summa)}
+              </span>
+            );
+            if (grupp.ar === null) {
+              return (
+                <div key="utan-betaldatum">
+                  <div className="flex min-h-[44px] items-center justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2">
+                    <span className="font-rubrik text-sm text-text-primar">
+                      {`Utan betaldatum · ${antal}`}
+                    </span>
+                    {summa}
+                  </div>
+                  {kvittorader(grupp.poster)}
+                </div>
+              );
+            }
+            return (
+              <details key={grupp.ar} open={!hopfallda} className="group">
+                {/* Arsrubrik: egen rad pa --yta-nedsankt med artalet och
+                    antalet kvitton till vanster, summan hogerstalld. En
+                    hopfalld rubrik ar allt hon har att ga pa, och antalet
+                    sager om aret ar vart att oppna. */}
+                <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2 outline-none transition-colors hover:bg-yta-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent [&::-webkit-details-marker]:hidden">
+                  <span className="font-rubrik text-sm text-text-primar">
+                    {`${grupp.ar} · ${antal}`}
                   </span>
-                  <ChevronNed className="h-5 w-5 shrink-0 text-text-sekundar transition-transform group-open:rotate-180" />
-                </span>
-              </summary>
-              <div className="divide-y divide-linje border-b border-linje">
-                {grupp.poster.map((r) => (
-                  <Listrad
-                    key={r.id}
-                    namn={r.namn}
-                    anteckning={r.anteckning}
-                    status={r.status}
-                    underStatus={r.underStatus}
-                    {...r.avgar}
-                    atgard={r.atgard}
-                    belopp={r.belopp}
-                    href={r.href}
-                    bild={r.bild}
-                    slutknapp={
-                      r.utkast ? (
-                        <UtkastRaderaKnapp
-                          kostnadId={r.id}
-                          lage="ikon"
-                          antalBilagor={r.antalBilagor}
-                        />
-                      ) : undefined
-                    }
-                  />
-                ))}
-              </div>
-            </details>
-          ))}
+                  <span className="flex items-center gap-2">
+                    {summa}
+                    <ChevronNed className="h-5 w-5 shrink-0 text-text-sekundar transition-transform group-open:rotate-180" />
+                  </span>
+                </summary>
+                {kvittorader(grupp.poster)}
+              </details>
+            );
+          })}
         </>
       )}
     </Skarm>
+  );
+}
+
+/** En sektions kvittorader – samma rader i varje sektion, ocksa "Utan
+ *  betaldatum". En funktion och inte en komponent: raderna ska ligga direkt i
+ *  sidans elementtrad, dar tester/listor-raknas-med.test.ts letar upp varje
+ *  Listrad. Som egen komponent renderades de forst senare, och testet hittade
+ *  dem inte (uppmatt 2026-11-11). */
+function kvittorader(poster: KvittoRad[]) {
+  return (
+    <div className="divide-y divide-linje border-b border-linje">
+      {poster.map((r) => (
+        <Listrad
+          key={r.id}
+          namn={r.namn}
+          anteckning={r.anteckning}
+          status={r.status}
+          underStatus={r.underStatus}
+          {...r.avgar}
+          atgard={r.atgard}
+          belopp={r.belopp}
+          href={r.href}
+          bild={r.bild}
+          slutknapp={
+            r.utkast ? (
+              <UtkastRaderaKnapp
+                kostnadId={r.id}
+                lage="ikon"
+                antalBilagor={r.antalBilagor}
+              />
+            ) : undefined
+          }
+        />
+      ))}
+    </div>
   );
 }

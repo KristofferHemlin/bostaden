@@ -40,8 +40,9 @@ export interface Arsgrupp<T extends Kvittopost> {
 /**
  * Grupperar kvittolistans poster per ar. Aret ar betaldatumets; saknas
  * betaldatum hamnar posten under "Utan betaldatum" (ar null) och i ingen
- * arssumma. Den gruppen star overst, darefter aren fallande. Inom gruppen
- * sorteras pa kvittots eget datum, nyast forst.
+ * arssumma. Aren star fallande och den gruppen sist (docs/design.md,
+ * Kvittolistan) – ett saknat betaldatum ar en lucka, inte en tidpunkt. Inom
+ * gruppen sorteras pa kvittots eget datum, nyast forst.
  */
 export function grupperaPerAr<T extends Kvittopost>(poster: T[]): Arsgrupp<T>[] {
   const grupper = new Map<number | null, T[]>();
@@ -54,8 +55,8 @@ export function grupperaPerAr<T extends Kvittopost>(poster: T[]): Arsgrupp<T>[] 
   return [...grupper.entries()]
     .sort(([a], [b]) => {
       if (a === b) return 0;
-      if (a === null) return -1;
-      if (b === null) return 1;
+      if (a === null) return 1;
+      if (b === null) return -1;
       return b - a;
     })
     .map(([ar, lista]) => ({
@@ -68,17 +69,17 @@ export function grupperaPerAr<T extends Kvittopost>(poster: T[]): Arsgrupp<T>[] 
 /**
  * Om kvittolistans arssektioner ar hopfallda nar sidan oppnas
  * (docs/design.md, Kvittolistan): nar bostaden har fler an fyra kvitton OCH
- * de ligger i mer an en sektion. Bada villkoren tillsammans – ett ensamt
+ * de ligger pa mer an ett ar. Bada villkoren tillsammans – ett ensamt
  * antalsvillkor faller ihop tjugo kvitton fran ett enda ar till en rubrik pa
  * en tom skarm, ett ensamt arsvillkor gommer tre kvitton bakom ett tryck.
- * Galler alla sektioner, ocksa den nyaste. Ingenting sparas – sidan oppnas i
- * samma lage varje gang.
+ * Galler alla arssektioner, ocksa den nyaste. Ingenting sparas – sidan oppnas
+ * i samma lage varje gang.
  *
- * "Utan betaldatum" ar en sektion som de andra: den ar en rubrik med kvitton
- * under, och det ar sektionerna hon ser och fäller ut.
+ * "Utan betaldatum" ar inte ett ar och raknas inte bland aren – men dess
+ * kvitton raknas bland kvittona. Den sektionen falls aldrig ihop (anroparen).
  */
-export function arssektionerHopfallda(antalKvitton: number, antalSektioner: number): boolean {
-  return antalKvitton > 4 && antalSektioner > 1;
+export function arssektionerHopfallda(antalKvitton: number, antalAr: number): boolean {
+  return antalKvitton > 4 && antalAr > 1;
 }
 
 /** Antalet i arsrubriken: "1 kvitto", "12 kvitton". */

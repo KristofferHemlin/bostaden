@@ -477,7 +477,13 @@ På startskärmen finns ingen sådan sektion. Att möta en påminnelse varje gå
 
 **Alla sektioner är hopfällda, också den nyaste.** Att hålla ett år öppet vore att gissa vilket hon söker, och den som kommer hit söker ofta ett gammalt kvitto — det är därför åren är skilda åt. Den som bara har ett år möter ändå ingen hopfällning alls, vilket är det fall som annars skulle störa mest.
 
-**En hopfälld rubrik måste säga hur mycket den döljer.** Årsrubriken bär därför antalet kvitton bredvid årets summa — *2024 · 12 kvitton · 75 700 kr*. Summan ensam säger vad året är värt men inte om det är ett kvitto eller trettio, och det är det senare som avgör om det är värt att öppna. Raden i sin helhet är kontrollen, med chevron enligt *Utfällbara sektioner*, och behåller sin `--yta-nedsankt`.
+**En hopfälld rubrik måste säga hur mycket den döljer.** Årsrubriken bär därför antalet kvitton: *2024 · 12 kvitton* till vänster, summan högerställd som förut. Summan ensam säger vad året är värt men inte om det är ett kvitto eller trettio, och det är det senare som avgör om det är värt att öppna. Raden i sin helhet är kontrollen, med chevron enligt *Utfällbara sektioner*, och behåller sin `--yta-nedsankt`.
+
+**Antalet räknar raderna i sektionen, inte det summan räknar.** Utkast och kvitton vars hela belopp är privat ligger med i antalet, fast de inte ligger i summan. Det ser ut att bryta mot regeln att två tal bredvid varandra ska räkna samma sak — men det gör det inte, eftersom de inte är två summeringar av samma mängd. **Antalet beskriver listan, summan beskriver avdraget.** Provet är enkelt: fäller hon ut sektionen ska hon kunna räkna raderna och få talet i rubriken. Att raderna inte summerar till beloppet förklaras redan per rad, av ROT-raden och av *"X kr räknas med"*.
+
+**Sektionen *Utan betaldatum* är inte ett år**, och räknas därför inte in i villkoret om mer än ett år. Fyra kvitton från 2025 plus ett utan betaldatum är fortfarande ett år, alltså utfällt. Ett saknat betaldatum är inte en tidpunkt, det är en lucka — och `design.md` säger redan att kostnaden då inte hör till något år alls.
+
+**Och den sektionen fälls aldrig ihop.** Den står sist, efter åren, och alltid öppen. Kvittona där räknas i ingen årssumma, och att lägga dem bakom ett tryck gör dem lättare att glömma än de redan är. Med åren hopfällda är sidan ändå kort, så den öppna sektionen sist kostar ingenting.
 
 **Sidan öppnas i samma läge varje gång.** Vilka sektioner som var öppna sparas inte. En lista som ser olika ut vid två besök av skäl hon inte kan se är värre än ett extra tryck. **Kostnaden är känd och accepterad:** den som arbetar sig igenom ett gammalt år får fälla ut det igen varje gång hon kommer tillbaka från ett kvitto. Blir det den vanligaste invändningen är det här raden att ändra.
 

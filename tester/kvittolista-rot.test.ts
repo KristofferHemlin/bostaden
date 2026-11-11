@@ -91,7 +91,8 @@ describe("kvittolistans arsrubrik raknar samma sak som Inlagt {ar}", () => {
       { ...kostnad({ id: "utkast", betaldatum: "2026-03-03" }), totalbelopp: null },
     ];
     const grupper = grupperaPerAr(kostnader.map((k) => post(k)));
-    expect(grupper.map((g) => g.ar)).toEqual([null, 2026, 2025]);
+    // Utan betaldatum star sist sedan 2026-11-11 (docs/design.md, Kvittolistan).
+    expect(grupper.map((g) => g.ar)).toEqual([2026, 2025, null]);
     for (const g of grupper) {
       if (g.ar === null) continue;
       expect(g.summa).toBe(inlagtArsbelopp({ kostnader }, g.ar));

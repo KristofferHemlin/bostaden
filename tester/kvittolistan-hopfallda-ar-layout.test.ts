@@ -28,8 +28,12 @@ import tailwindKonfig from "../tailwind.config";
 // sin sektions ruta pa skarmen. Ar de oense faller testet.
 //
 // Testet faller at bada hallen: det kraver hopfallt i det enda fall dar det
-// ska vara det, och utfallt i de tre andra. Ett test som bara provade
+// ska vara det, och utfallt i de andra. Ett test som bara provade
 // hopfallningen hade passerat om allt alltid fälldes ihop.
+//
+// "Utan betaldatum" ar inte ett ar (docs/design.md, Kvittolistan): den raknas
+// inte bland aren, star sist och falls aldrig ihop. Ett kvitto utan
+// betaldatum skrivs har som en dag "utan-N".
 
 const h = await vi.hoisted(async () => {
   const { skapaFalskDatabas } = await import("./_falsk-databas");
@@ -88,6 +92,8 @@ const datum = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 /** Ett kvitto per datum. Anteckningen bar datumet, sa att varje rad gar att
  *  hitta pa sin text och ordningen gar att lasa av. */
 const anteckning = (dag: string) => `Färg och penslar ${dag}`;
+const utan = (dag: string) => dag.startsWith("utan-");
+const kvittoText = (n: number) => `${n} ${n === 1 ? "kvitto" : "kvitton"}`;
 
 interface Fall {
   namn: string;
@@ -105,9 +111,17 @@ const FALL: Fall[] = [
   { namn: "fem kvitton på två år", dagar: ["2025-03-10", "2024-06-01", "2025-08-20", "2024-02-14", "2025-05-05"], hopfallt: true },
   { namn: "tjugo kvitton på ett år", dagar: TJUGO_PA_ETT_AR, hopfallt: false },
   { namn: "fem kvitton på ett år", dagar: ["2025-03-10", "2025-06-01", "2025-08-20", "2025-02-14", "2025-05-05"], hopfallt: false },
+  { namn: "fyra kvitton från ett år och ett utan betaldatum", dagar: ["2025-03-10", "utan-1", "2025-08-20", "2025-02-14", "2025-05-05"], hopfallt: false },
 ];
 
-function seeda(dagar: string[]) {
+// Provet pa antalet i rubriken (docs/design.md, Kvittolistan): fäller hon ut
+// sektionen ska hon kunna rakna raderna och fa talet i rubriken. Ett kvitto
+// som inte hor till bostaden ligger med i antalet fast inte i summan, sa det
+// ar med har – annars kunde antalet och summans mangd sammanfalla av en slump.
+const ANTAL_DAGAR = ["2025-03-10", "2024-06-01", "2025-08-20", "2024-02-14", "2025-05-05", "2024-09-09"];
+const ANTAL_ARKIVERADE = new Set(["2025-08-20"]);
+
+function seeda(dagar: string[], arkiverade: Set<string> = new Set()) {
   const { db } = h;
   db.nollstall();
   db.lagg("anvandare", { id: ANNA, epost: "anna@exempel.se" });
@@ -126,8 +140,10 @@ function seeda(dagar: string[]) {
       leverantor: "Byggmax",
       anteckning: anteckning(dag),
       totalbelopp: 120_000,
-      dokumentdatum: datum(dag),
-      betaldatum: datum(dag),
+      // En obetald faktura: kvittot har ett datum men inget betaldatum.
+      dokumentdatum: datum(utan(dag) ? "2025-07-01" : dag),
+      betaldatum: utan(dag) ? null : datum(dag),
+      arkiverad: arkiverade.has(dag),
       skapad_av: ANNA,
     });
     db.lagg("bilaga", { kostnad_id: k.id, sokvag: `x/${k.id}.jpg`, filtyp: "image/jpeg" });
@@ -164,6 +180,10 @@ async function utvardera<T>(uttryck: string): Promise<T> {
   return svar.result.value;
 }
 
+const sida = (css: string, kropp: string) => `<!doctype html><html lang="sv"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>${css}</style></head><body class="font-granssnitt">${kropp}</body></html>`;
+
 beforeAll(async () => {
   expect(existsSync(CHROME), `Chrome behövs för att mäta vad som syns – sätt CHROME_SOKVAG (${CHROME})`).toBe(true);
 
@@ -178,10 +198,10 @@ beforeAll(async () => {
     for (const dag of fall.dagar) {
       expect(kropp, `${fall.namn}: kvittot ${dag} renderades inte`).toContain(anteckning(dag));
     }
-    SIDOR[`fall${i}`] = `<!doctype html><html lang="sv"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>${css}</style></head><body class="font-granssnitt">${kropp}</body></html>`;
+    SIDOR[`fall${i}`] = sida(css, kropp);
   }
+  seeda(ANTAL_DAGAR, ANTAL_ARKIVERADE);
+  SIDOR.antal = sida(css, renderToStaticMarkup(await KvittolistaSida()));
 
   server = createServer((req, res) => {
     const namn = new URL(req.url ?? "/", "http://x").pathname.slice(1);
@@ -245,6 +265,8 @@ async function oppna(sida: string) {
 interface Matning {
   /** Om varje kvittorad syns, i samma ordning som `texter`. */
   synliga: boolean[];
+  /** Om raden ligger i en sektion som gar att fälla ihop. */
+  iHopfallbar: boolean[];
   /** Radernas lodrata lage, for att lasa av ordningen pa skarmen. */
   toppar: number[];
 }
@@ -252,15 +274,16 @@ interface Matning {
 /** Mater raderna vars text ar exakt en av `texter` – det yttersta elementet
  *  med just den texten, inte en klass. Ett uteblivet fynd fäller testet. */
 async function matRader(texter: string[]): Promise<Matning> {
-  const m = await utvardera<{ saknas: string[]; oense: string[]; synliga: boolean[]; toppar: number[] }>(`(() => {
+  const m = await utvardera<{ saknas: string[]; oense: string[]; synliga: boolean[]; iHopfallbar: boolean[]; toppar: number[] }>(`(() => {
     const texter = ${JSON.stringify(texter)};
-    const saknas = [], oense = [], synliga = [], toppar = [];
+    const saknas = [], oense = [], synliga = [], iHopfallbar = [], toppar = [];
     for (const text of texter) {
       const el = [...document.body.querySelectorAll('*')].find(
         e => e.textContent === text && e.parentElement.textContent !== text);
       if (!el) { saknas.push(text); continue; }
-      const sektion = el.closest('details');
-      if (!sektion) { saknas.push(text + ' (utanfor en arssektion)'); continue; }
+      // Utanfor en hopfallbar sektion ar sidan sjalv det raden ska ligga inom.
+      const sektion = el.closest('details') ?? document.body;
+      iHopfallbar.push(sektion !== document.body);
       const r = el.getBoundingClientRect();
       const s = sektion.getBoundingClientRect();
       const enligtWebblasaren = el.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true, opacityProperty: true });
@@ -269,9 +292,9 @@ async function matRader(texter: string[]): Promise<Matning> {
       synliga.push(enligtWebblasaren && inomSektionen);
       toppar.push(r.top + window.scrollY);
     }
-    return { saknas, oense, synliga, toppar };
+    return { saknas, oense, synliga, iHopfallbar, toppar };
   })()`);
-  expect(m.saknas, "raderna ska finnas i sidan, i en årssektion").toEqual([]);
+  expect(m.saknas, "raderna ska finnas i sidan").toEqual([]);
   expect(m.oense, "checkVisibility och sektionens ruta ska säga samma sak").toEqual([]);
   return m;
 }
@@ -282,13 +305,14 @@ async function rubriker(): Promise<{ text: string; hojd: number }[]> {
     text: s.firstElementChild.textContent, hojd: s.getBoundingClientRect().height }))`);
 }
 
-/** Vantat antal per ar, raknat ur fallets egna datum. */
+/** Vantat antal per ar, raknat ur fallets egna datum. "Utan betaldatum" ar
+ *  inget ar och har ingen hopfallbar rubrik. */
 function vantadeRubriker(dagar: string[]): string[] {
   const perAr = new Map<string, number>();
-  for (const d of dagar) perAr.set(d.slice(0, 4), (perAr.get(d.slice(0, 4)) ?? 0) + 1);
+  for (const d of dagar.filter((d) => !utan(d))) perAr.set(d.slice(0, 4), (perAr.get(d.slice(0, 4)) ?? 0) + 1);
   return [...perAr.entries()]
     .sort(([a], [b]) => b.localeCompare(a))
-    .map(([ar, n]) => `${ar} · ${n} ${n === 1 ? "kvitto" : "kvitton"}`);
+    .map(([ar, n]) => `${ar} · ${kvittoText(n)}`);
 }
 
 describe("kvittolistans årssektioner vid 390 px, mätt i Chrome", () => {
@@ -322,6 +346,55 @@ describe("kvittolistans årssektioner vid 390 px, mätt i Chrome", () => {
     })()`);
     expect(placering).toEqual({ finns: true, iSektion: false, hojd: placering.hojd, foreForsta: true });
     expect(placering.hojd).toBeGreaterThan(0);
+
+    // Utan betaldatum: synlig, sist, och inte i nagot som gar att fälla ihop.
+    const utanDagar = fall.dagar.filter(utan);
+    if (utanDagar.length > 0) {
+      const rubrik = `Utan betaldatum · ${kvittoText(utanDagar.length)}`;
+      const u = await utvardera<{ finns: boolean; synlig: boolean; hopfallbar: boolean; efterAllaAr: boolean }>(`(() => {
+        const el = [...document.querySelectorAll('span')].find(s => s.textContent === ${JSON.stringify(rubrik)});
+        if (!el) return { finns: false, synlig: false, hopfallbar: false, efterAllaAr: false };
+        const sista = [...document.querySelectorAll('details')].pop();
+        return {
+          finns: true,
+          synlig: el.checkVisibility() && el.getBoundingClientRect().height > 0,
+          hopfallbar: el.closest('details, summary, button') !== null,
+          efterAllaAr: !sista || !!(sista.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING),
+        };
+      })()`);
+      expect(u).toEqual({ finns: true, synlig: true, hopfallbar: false, efterAllaAr: true });
+      const ur = await matRader(utanDagar.map(anteckning));
+      expect(ur.synliga.every(Boolean), "kvittona utan betaldatum ska synas").toBe(true);
+      expect(ur.iHopfallbar.some(Boolean), "kvittona utan betaldatum ska inte gå att fälla ihop").toBe(false);
+    }
+  }, 60_000);
+
+  it("antalet i rubriken är antalet rader som syns när sektionen fälls ut", async () => {
+    await oppna("antal");
+    const r = await rubriker();
+    expect(r.length, "sidan ska ha två år att fälla ut").toBe(2);
+    for (const { text } of r) {
+      const ar = text.slice(0, 4);
+      const tal = text.match(/· (\d+) kvitt/);
+      if (!tal) throw new Error(`rubriken "${text}" bär inget antal`);
+      const dagar = ANTAL_DAGAR.filter((d) => d.startsWith(ar));
+      const fore = await matRader(dagar.map(anteckning));
+      expect(fore.synliga.some(Boolean), `${ar} ska vara hopfällt före trycket`).toBe(false);
+      await utvardera(`[...document.querySelectorAll('summary')]
+        .find(s => s.firstElementChild.textContent === ${JSON.stringify(text)}).click()`);
+      // Raderna raknas som hon raknar dem: de kvittolankar i sektionen som
+      // syns, inte posterna testet sjalvt lade in.
+      const raknade = await utvardera<number>(`(() => {
+        const s = [...document.querySelectorAll('summary')]
+          .find(s => s.firstElementChild.textContent === ${JSON.stringify(text)}).parentElement;
+        return [...s.querySelectorAll('a[href^="/kostnad/"]')].filter(a => a.checkVisibility()).length;
+      })()`);
+      console.log(`${text}: ${raknade} rader syns efter trycket`);
+      expect(raknade).toBe(Number(tal[1]));
+      // Och sektionen visar alla kvitton for aret, ocksa det som inte hor
+      // till bostaden – det ar det som skiljer antalet fran summan.
+      expect(raknade).toBe(dagar.length);
+    }
   }, 60_000);
 
   it("ett år som fälls ut visar sina kvitton på datum, nyast först", async () => {
