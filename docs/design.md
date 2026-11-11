@@ -668,7 +668,13 @@ Orange bärs av den knapp som tar användaren till nästa steg. Handlingar som �
 
 Fällan uppstår när en kontroll återanvänds mellan skärmar: en raderingsknapp som navigerar tillbaka till kvittolistan är rätt *på* kvittolistan, men blir en omdirigering när samma knapp används på startskärmen. Kontrollen ska uppdatera, inte navigera – vart användaren vill gå härnäst bestämmer hen själv.
 
-**Hovringen får aldrig se ut som en årsrubrik.** Fylls en hovrad med samma `--yta-nedsankt` som årsrubrikens band ser den rad muspekaren råkar vila på ut som en ny rubrik, och listans struktur verkar ändra sig när man rör musen. Hovringen ska vara märkbart svagare än rubrikbandet. Det gäller bara skrivbord – hover finns inte på telefon.
+**Hovringen får aldrig se ut som en årsrubrik.** Fylls en hovrad med samma `--yta-nedsankt` som årsrubrikens band ser den rad muspekaren råkar vila på ut som en ny rubrik, och listans struktur verkar ändra sig när man rör musen. Hovringen ska vara märkbart svagare än rubrikbandet.
+
+**Här stod till 2026-11-12 att det "bara gäller skrivbord – hover finns inte på telefon". Det är fel, och felet kostade oss en omgång.** På en pekskärm **blir** `:hover` kvar på det man senast tryckt på, tills man trycker någon annanstans. Årsrubriken som fälldes ut såg därför ut att vara *vald*, fast koden inte har någon stil alls för öppet läge — det var hovringsytan som låg kvar efter trycket. Vi letade efter en stil som inte fanns.
+
+**Varje hovringsstil ligger därför bakom `@media (hover: hover)`.** Det gäller hela appen och inte bara den här raden: en hovringsstil på något tryckbart är ett kvarliggande tillstånd på en telefon, och ett kvarliggande tillstånd läses som *vald*.
+
+**Och ett påstående om vad en telefon visar mäts med pekskärm, inte bara med en smal skärm.** Buggen var osynlig i en vanlig webbläsarmätning vid 393 px och syntes först med emulerad pekskärm. Bredd är inte inmatningssätt.
 
 ### Tomma tillstånd
 

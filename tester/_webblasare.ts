@@ -77,12 +77,15 @@ const FILTYPER: Record<string, string> = { ".jpg": "image/jpeg", ".png": "image/
  * Startar servern och en headless Chrome. `sidor` ar namn -> html, dar namnet
  * ar sokvagen utan inledande snedstreck – `""` ar `/`, och en fraga efter
  * `?` raknas inte. Ar `filkatalog` satt serveras ovriga sokvagar ur den, sa
- * att en sida kan ladda bilder som i appen.
+ * att en sida kan ladda bilder som i appen. Ar `reserv` satt serveras den for
+ * allt annat i stallet for 404 – en lank till en sida testet inte byggt leder
+ * da till en riktig sida, inte till Chromes egen felsida (dar
+ * location.pathname ar "/"), och det gar att ga tillbaka fran den.
  */
 export async function startaWebblasare(
   sidor: Record<string, string>,
   profilprefix: string,
-  { filkatalog }: { filkatalog?: string } = {},
+  { filkatalog, reserv }: { filkatalog?: string; reserv?: string } = {},
 ): Promise<Webblasare> {
   const server: Server = createServer((req, res) => {
     const namn = new URL(req.url ?? "/", "http://x").pathname.slice(1);
@@ -97,6 +100,10 @@ export async function startaWebblasare(
         res.writeHead(200, { "content-type": FILTYPER[extname(fil)] ?? "application/octet-stream" }).end(readFileSync(fil));
         return;
       }
+    }
+    if (reserv !== undefined) {
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(reserv);
+      return;
     }
     res.writeHead(404).end();
   });

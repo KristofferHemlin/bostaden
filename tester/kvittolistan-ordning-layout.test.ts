@@ -142,7 +142,11 @@ beforeAll(async () => {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>${css}</style></head><body class="font-granssnitt">${renderToStaticMarkup(await KvittolistaSida())}</body></html>`;
   }
-  webblasare = await startaWebblasare(SIDOR, "kvittobo-ordning-");
+  // Kvittots egen sida behovs inte – bara att trycket leder nagonstans det
+  // gar att ga tillbaka fran.
+  webblasare = await startaWebblasare(SIDOR, "kvittobo-ordning-", {
+    reserv: '<!doctype html><html lang="sv"><head><meta charset="utf-8"></head><body><p>Kvittot</p></body></html>',
+  });
 }, 60_000);
 
 afterAll(async () => {
@@ -288,6 +292,59 @@ describe("kvittolistan är två kort och en knapp på sidans bakgrund, mätt i C
     const m = await matBlock("utan-rad");
     console.log(`utan rad: ${m.block.map((b) => `${b.namn} ${b.topp}–${b.botten} på ${b.yta}`).join(", ")}; glapp ${m.glapp.map((g) => `${g.hojd} px ${g.yta}`).join(", ")}; bakom knappen ${m.ytanBakomKnappen}`);
     provaBlocken(m, ["knappen", "listan"]);
+  }, 60_000);
+});
+
+describe("en kvittorad står inte kvar ljus efter ett tryck och en återgång, mätt i Chrome vid 393 px", () => {
+  // Pa en pekskarm ligger :hover kvar pa det man tryckt pa. Trycker hon pa
+  // ett kvitto och gar tillbaka kan raden da sta kvar i hovringsytan, och
+  // den lases som vald (docs/design.md). Raden jamfors med sig sjalv fore
+  // trycket, inte med ett inskrivet fargvarde.
+  it("samma rad har samma yta före trycket och efter återgången", async () => {
+    const w = webblasare;
+    await w.cdp("Emulation.setDeviceMetricsOverride", { width: 393, height: 852, deviceScaleFactor: 3, mobile: true });
+    await w.cdp("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
+    try {
+      await w.cdp("Page.navigate", { url: `${w.adress}med-rad` });
+      const ANTECKNING = "Färg till sovrummet";
+      const las = () =>
+        w.utvardera<{ sida: string; yta: string; hovrad: boolean; x: number; y: number } | null>(`(async () => {
+          for (let i = 0; i < 100 && document.readyState !== 'complete'; i++) await new Promise(r => setTimeout(r, 50));
+          const p = [...document.querySelectorAll('p')].find(p => p.textContent === ${JSON.stringify(ANTECKNING)});
+          if (!p) return null;
+          const a = p.closest('a');
+          const ytaFor = e => { for (let x = e; x; x = x.parentElement) { const bg = getComputedStyle(x).backgroundColor;
+            if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return bg; } return 'ingen'; };
+          const r = a.getBoundingClientRect();
+          return { sida: location.pathname, yta: ytaFor(a), hovrad: a.matches(':hover'), x: r.left + r.width / 3, y: r.top + r.height / 2 };
+        })()`);
+      const fore = await las();
+      expect(fore, "raden ska finnas på listan").not.toBeNull();
+      // Trycket: fingret ner och upp pa raden. Lanken leder till kvittot.
+      await w.cdp("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: fore!.x, y: fore!.y }] });
+      await w.cdp("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      let ute = "";
+      for (let i = 0; i < 40 && !ute.startsWith("/kostnad/"); i++) {
+        await new Promise((r) => setTimeout(r, 50));
+        ute = await w.utvardera<string>("location.pathname").catch(() => "");
+      }
+      expect(ute, "trycket ska leda till kvittot").toMatch(/^\/kostnad\/[0-9a-f-]{36}$/);
+      // Och tillbaka, som med webblasarens bakatknapp.
+      await w.utvardera("history.back()");
+      let efter = null as Awaited<ReturnType<typeof las>>;
+      for (let i = 0; i < 40 && efter?.sida !== "/med-rad"; i++) {
+        await new Promise((r) => setTimeout(r, 50));
+        efter = await las().catch(() => null);
+      }
+      // Langre an radens overgang (transition-colors, 150 ms).
+      await new Promise((r) => setTimeout(r, 400));
+      efter = await las();
+      console.log(`"${ANTECKNING}": före ${fore!.yta}${fore!.hovrad ? " (hovrad)" : ""}, efter återgång ${efter?.yta}${efter?.hovrad ? " (hovrad)" : ""}`);
+      expect(efter?.sida, "tillbaka på listan").toBe("/med-rad");
+      expect(efter!.yta, "samma yta som före trycket").toBe(fore!.yta);
+    } finally {
+      await w.cdp("Emulation.setTouchEmulationEnabled", { enabled: false });
+    }
   }, 60_000);
 });
 
