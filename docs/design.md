@@ -489,6 +489,26 @@ På startskärmen finns ingen sådan sektion. Att möta en påminnelse varje gå
 
 **Ingången till frågorna står kvar överst, utanför alla sektioner.** Den hör inte till ett år, och den får aldrig hamna bakom en hopfällning.
 
+#### Kvittoraden ska gå att skilja från nästa
+
+**Uppmätt i produktionen 2026-11-11, på en lista med tretton kvitton i ett år.** En rad är tre till fem textrader beroende på om kvittot har ROT eller en privat del, och **fyra av de fem är dämpade i samma grå, samma storlek och samma vikt.** Ögat får ingen hjälp att se var en rad slutar och nästa börjar. Det var det den första användaren beskrev som att raderna *"flätar samman"*.
+
+**Första raden under rubriken — leverantör och datum — sätts i kursiv.** Allt därunder är vanlig stil. Den raden är den enda som alltid finns, oavsett ROT och privat del, så den markerar var varje rad börjar och ger listan en fast rytm: rubrik, kursiv, och sedan det räkningen kräver.
+
+Kursiv i dämpad grå i liten grad är svårare att läsa än rak stil, och raden innehåller ett datum. **Det är ett medvetet pris**: raden är kort och läses sällan ord för ord, medan rytmen den skapar gäller hela listan.
+
+**Och *"Inget kvitto bifogat"* blir ett märke i stället för en mening.** Det är ett dämpat märke sist på den kursiva raden, och det visas **bara när kvittot saknar bilaga** — en rad med bilaga bär ingenting där.
+
+**Märket ligger inline, inte först på raden.** Ett märke i en egen ruta längst till vänster skulle ge ojämn vänsterkant när de flesta rader saknar det, och vänsterkanten är det listan hålls samman av.
+
+**Lydelsen försvinner inte, den flyttar.** *"Inget kvitto bifogat"* är märkets tillgänglighetsetikett och dess beskrivning vid hovring. Ett märke utan ord är en gåta för den som använder skärmläsare, och meningen står kvar på kvittots egen sida.
+
+**Märket får aldrig förväxlas med åtgärdspricken.** Den orange fyllda pricken i `--accent` betyder *något behöver göras* och står före den dämpade texten. Det här märket är dämpat, säger inget om åtgärd, och står sist. Hamnar båda på samma rad ska de gå att skilja åt på färg och placering utan att läsa dem.
+
+**Miniatyr av bilagan övervägdes och valdes bort.** En liten bild av varje kvitto först på raden hade gett tretton olika utseenden i stället för tretton likadana, och är det enda som helt löser enformigheten. Den kräver att listan hämtar bilderna och är därför dyrare; beslutet 2026-11-11 var att börja med det billiga och se om det räcker.
+
+**Och att para ihop bruttot med nettot är framskjutet, inte avfärdat.** I dag står kvittots belopp uppe till höger och *"X kr räknas med"* nere till vänster — de två tal som betyder något ligger diagonalt isär, och ögat måste gå i sicksack. Att flytta *räknas med*-raden under beloppet, högerställd, är nästa sak att pröva här om raderna fortfarande är svårlästa.
+
 **Startskärmens lista är undantaget: den sorteras på när kvittot lades in.** Den har inga årsrubriker och lovar ingen tidsordning. Dess jobb är att bekräfta att det du just sparade kom med – och ett gammalt kvitto som hamnar sist i en datumsorterad lista ser ut som om det aldrig sparades. Underrubriken "De sex senast tillagda" säger precis det, och inte mer – att förklara att listan gäller oavsett år besvarar en fråga ingen ställt.
 
 ### Listrader

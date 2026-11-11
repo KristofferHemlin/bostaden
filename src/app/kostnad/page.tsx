@@ -17,9 +17,10 @@
 // Kvittolistan ar dar man gar for att se sina kvitton, och det ar dar man
 // marker att nagra saknar gruppering.
 //
-// Ett sparat, icke-arkiverat kvitto utan bilaga far en egen dampad rad "Inget
-// kvitto bifogat" (produktspec 4.7: underlaget ar svagare utan kvitto, och
-// appen ska saga det). Det ar ett faktum om posten, inte en bedomning av
+// Ett sparat, icke-arkiverat kvitto utan bilaga far ett dampat marke sist pa
+// den kursiva statusraden, med "Inget kvitto bifogat" som etikett
+// (produktspec 4.7: underlaget ar svagare utan kvitto, och appen ska saga
+// det; docs/design.md, "Kvittoraden ska gå att skilja från nästa"). Det ar ett faktum om posten, inte en bedomning av
 // underlagsstyrka – den funktionen (baslinjen) togs bort ur produkten, se
 // docs/design.md, Kvittolistan. Utkast far ingen egen markering: de flaggas
 // redan som ofullstandiga.
@@ -53,10 +54,10 @@ interface KvittoRad {
   /** Namnet ar anteckningen – far tva rader i Listrad. */
   anteckning: boolean;
   status: string;
-  /** Dampad rad "Inget kvitto bifogat" nar bilaga saknas (produktspec 4.7).
+  /** Market "Inget kvitto bifogat" nar bilaga saknas (produktspec 4.7).
    * Ett faktum om posten, som belopp och datum – ingen bedomning av
    * underlagsstyrka (den togs bort ur produkten, se docs/design.md). */
-  underStatus: string | undefined;
+  saknarBilaga: string | undefined;
   /** Det som avgar och vad som blir kvar – ROT, privat del och "… räknas
    * med" – sprids rakt in i Listrad, som pa startskarmen. Inga falt for sig:
    * da kan ett nytt falt i avgarForKvitto inte tappas har i tysthet
@@ -143,7 +144,7 @@ export default async function KvittolistaSida() {
       namn: notering || leverantor || "Kvitto",
       anteckning: !!notering,
       status,
-      underStatus: saknarBilaga ? "Inget kvitto bifogat" : undefined,
+      saknarBilaga: saknarBilaga ? "Inget kvitto bifogat" : undefined,
       // Raden behaller fakturans totalbelopp – summan pa pappret – och visar
       // ROT-avdraget under, sa att arsrubriken (efter ROT) gar att rakna ihop
       // av raderna (docs/design.md, Listrader).
@@ -288,7 +289,8 @@ function kvittorader(poster: KvittoRad[]) {
           namn={r.namn}
           anteckning={r.anteckning}
           status={r.status}
-          underStatus={r.underStatus}
+          kursivStatus
+          saknarBilaga={r.saknarBilaga}
           {...r.avgar}
           atgard={r.atgard}
           belopp={r.belopp}

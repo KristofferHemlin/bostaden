@@ -116,6 +116,8 @@ export function Listrad({
   bild,
   slutknapp,
   anteckning = false,
+  kursivStatus = false,
+  saknarBilaga,
 }: {
   namn: string;
   status?: string;
@@ -184,6 +186,21 @@ export function Listrad({
    * huvudtext"); ett projektnamn eller en leverantor stannar pa en.
    */
   anteckning?: boolean;
+  /**
+   * Statusraden – forsta raden under namnet – i kursiv (docs/design.md,
+   * Kvittolistan, "Kvittoraden ska gå att skilja från nästa"). Den ar den
+   * enda raden som alltid finns, sa den markerar var varje rad borjar. Bara
+   * kvittolistan anvander den an.
+   */
+  kursivStatus?: boolean;
+  /**
+   * Ett dampat marke sist pa statusraden nar kvittot saknar bilaga, med
+   * texten som tillganglighetsetikett och beskrivning vid hovring (samma
+   * stalle i design.md). Saknas texten finns inget marke. Det ar ingen
+   * atgardsprick: dampat, sist, och en kontur i stallet for en fylld orange
+   * prick forst.
+   */
+  saknarBilaga?: string;
 }) {
   const namnInnehall =
     strackt && href ? (
@@ -210,7 +227,9 @@ export function Listrad({
           {namnInnehall}
         </p>
         {status ? (
-          <p className="mt-0.5 flex items-center gap-1.5 font-granssnitt text-sm text-text-sekundar">
+          <p
+            className={`mt-0.5 flex items-center gap-1.5 font-granssnitt text-sm text-text-sekundar${kursivStatus ? " italic" : ""}`}
+          >
             {atgard ? (
               <span
                 aria-hidden
@@ -218,6 +237,7 @@ export function Listrad({
               />
             ) : null}
             {status}
+            {saknarBilaga ? <SaknarBilagaMarke text={saknarBilaga} /> : null}
           </p>
         ) : null}
         {[
@@ -406,6 +426,33 @@ export function UtfallbarSektion({
       </button>
       {oppen ? <div className="mt-3">{children}</div> : null}
     </div>
+  );
+}
+
+/**
+ * Market for ett kvitto utan bilaga (docs/design.md, Kvittolistan): ett
+ * dokument i kontur med ett snedstreck, i radens dampade farg. Ordet bor i
+ * etiketten och i beskrivningen vid hovring – ett marke utan ord ar en gata
+ * for den som anvander skarmlasare.
+ */
+function SaknarBilagaMarke({ text }: { text: string }) {
+  return (
+    <span role="img" aria-label={text} title={text} className="inline-flex shrink-0 text-text-sekundar">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+        className="h-4 w-4"
+      >
+        <path d="M14 3v5h5" />
+        <path d="M18 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8l6 6v10a2 2 0 0 1-2 2z" />
+        <path d="M4 4l16 16" />
+      </svg>
+    </span>
   );
 }
 

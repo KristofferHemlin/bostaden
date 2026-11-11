@@ -169,7 +169,10 @@ describe.each(listor)("%s", (_namn, sida) => {
     expect(privat).toBeGreaterThan(-1);
     expect(raknas).toBeGreaterThan(rot);
     expect(raknas).toBeGreaterThan(privat);
-    const bifogat = rad.indexOf("Inget kvitto bifogat");
+    // Som egen rad: pa kvittolistan ar lydelsen sedan 2026-11-11 ett markes
+    // etikett pa den kursiva raden (docs/design.md, Kvittolistan), och det
+    // market ska sta forst, inte efter beloppen.
+    const bifogat = rad.indexOf(">Inget kvitto bifogat<");
     if (bifogat > -1) expect(bifogat).toBeGreaterThan(raknas);
   });
 
