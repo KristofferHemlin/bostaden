@@ -20,13 +20,19 @@ import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
 // Testet provar bada fallen. Ett test som bara provade att raden star fore
 // knappen hade passerat aven om raden alltid visades.
 //
-// Och sidan ar block, inte ett kort (docs/design.md, Kvittolistan): raden,
-// knappen och listan ligger i var sitt block med sidans bakgrund emellan.
-// Blocken tas fram ur det som renderas – varje dels forfader narmast under
-// deras gemensamma forfader – och mats: glappet mellan tva block ar storre
-// an noll och visar sidans bakgrund dar Chrome sager att den syns
-// (elementFromPoint), blocken har en annan yta an sidan, och listblocket
-// borjar med arsrubriken.
+// Och sidan ar tva kort och en knapp, inte ett kort (docs/design.md,
+// Kvittolistan): raden och listan ar kort, knappen star direkt pa sidans
+// bakgrund, och delarna skiljs at av sidans bakgrund. Delarna tas fram ur det
+// som renderas – varje dels forfader narmast under deras gemensamma forfader
+// – och mats vid 393 px: glappet mellan tva delar ar storre an noll och visar
+// sidans bakgrund dar Chrome sager att den syns (elementFromPoint), korten
+// har en annan yta an sidan, ytan bakom knappen ar sidans, och listan borjar
+// med arsrubriken.
+//
+// Arsrubriken byter inte yta nar sektionen oppnas. Testet trycker pa en
+// hopfalld rubrik med emulerad pekskarm, som hon gor pa telefonen, och
+// jamfor samma rubriks yta fore och efter med varandra – inte med ett
+// inskrivet fargvarde, eftersom det som ska vaktas ar att lagena ar lika.
 
 const h = await vi.hoisted(async () => {
   const { skapaFalskDatabas } = await import("./_falsk-databas");
@@ -83,8 +89,9 @@ const datum = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 const KNAPP = "Lägg till kvitto";
 
 /** Tre kvitton i tva ar. `kopplade` lagger dem i ett projekt – da finns inget
- *  att beratta om, och raden faller bort. */
-function seeda(kopplade: boolean) {
+ *  att beratta om, och raden faller bort. `fler` lagger till tva kvitton, sa
+ *  att listan blir fem kvitton pa tva ar och aren ar hopfallda. */
+function seeda(kopplade: boolean, fler = false) {
   const { db } = h;
   db.nollstall();
   db.lagg("anvandare", { id: ANNA, epost: "anna@exempel.se" });
@@ -101,7 +108,8 @@ function seeda(kopplade: boolean) {
     ["Färg till sovrummet", "2025-05-02"],
     ["Penslar och tejp", "2025-03-14"],
     ["Spackel till hallen", "2024-09-01"],
-  ] as const) {
+    ...(fler ? ([["Lister till vardagsrummet", "2024-06-11"], ["Fog till badrummet", "2025-08-20"]] as const) : []),
+  ]) {
     const k = db.lagg("kostnad", {
       bostad_id: X,
       leverantor: "Bauhaus Bromma",
@@ -128,8 +136,8 @@ beforeAll(async () => {
       from: join(ROT, "src/app/globals.css"),
     })
   ).css;
-  for (const [namn, kopplade] of [["med-rad", false], ["utan-rad", true]] as const) {
-    seeda(kopplade);
+  for (const [namn, kopplade, fler] of [["med-rad", false, false], ["utan-rad", true, false], ["hopfallt", false, true]] as const) {
+    seeda(kopplade, fler);
     SIDOR[namn] = `<!doctype html><html lang="sv"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>${css}</style></head><body class="font-granssnitt">${renderToStaticMarkup(await KvittolistaSida())}</body></html>`;
@@ -190,6 +198,8 @@ interface Block {
 
 interface Blockmatning {
   sidansYta: string;
+  /** Ytan bakom knappen: narmaste bakgrund som syns, knappens egen undantagen. */
+  ytanBakomKnappen: string | null;
   block: Block[];
   /** For varje glapp mellan tva block: hojden och ytan i dess mitt. */
   glapp: { hojd: number; yta: string }[];
@@ -200,7 +210,7 @@ interface Blockmatning {
 }
 
 async function matBlock(sida: string): Promise<Blockmatning> {
-  await webblasare.cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
+  await webblasare.cdp("Emulation.setDeviceMetricsOverride", { width: 393, height: 852, deviceScaleFactor: 3, mobile: true });
   await webblasare.cdp("Page.navigate", { url: `${webblasare.adress}${sida}` });
   return webblasare.utvardera<Blockmatning>(`(async () => {
     for (let i = 0; i < 100 && document.readyState !== 'complete'; i++) await new Promise(r => setTimeout(r, 50));
@@ -234,12 +244,14 @@ async function matBlock(sida: string): Promise<Blockmatning> {
       const under = document.elementFromPoint(x, y);
       glapp.push({ hojd, yta: under ? ytaFor(under) : 'ingenting' });
     }
+    const knapp = delar.find(([namn]) => namn === 'knappen');
     const lista = block.find(b => b.namn === 'listan');
     const rubrik = main.querySelector('summary');
     const kant = lista ? lista.el.getBoundingClientRect().top + parseFloat(getComputedStyle(lista.el).borderTopWidth) : null;
     return {
       // Sidans yta: den narmaste bakgrund som syns bakom innehallet.
       sidansYta: ytaFor(main),
+      ytanBakomKnappen: knapp ? ytaFor(knapp[1].parentElement) : null,
       block: block.map(({ el, ...b }) => b),
       glapp,
       rubrikFranListansKant: lista && rubrik ? rubrik.getBoundingClientRect().top - kant : null,
@@ -250,8 +262,12 @@ async function matBlock(sida: string): Promise<Blockmatning> {
 
 function provaBlocken(m: Blockmatning, delar: string[]) {
   expect(m.block.map((b) => b.namn)).toEqual(delar);
-  expect(m.olikaBlock, "varje del i ett eget block").toBe(delar.length);
-  for (const b of m.block) expect(b.yta, `${b.namn}: blockets yta skiljer sig från sidans`).not.toBe(m.sidansYta);
+  expect(m.olikaBlock, "varje del för sig").toBe(delar.length);
+  // Raden och listan ar kort; knappen star pa sidans bakgrund.
+  for (const b of m.block.filter((b) => b.namn !== "knappen")) {
+    expect(b.yta, `${b.namn}: kortets yta skiljer sig från sidans`).not.toBe(m.sidansYta);
+  }
+  expect(m.ytanBakomKnappen, "ytan bakom knappen är sidans").toBe(m.sidansYta);
   for (const [i, g] of m.glapp.entries()) {
     const mellan = `${m.block[i].namn} och ${m.block[i + 1].namn}`;
     expect(g.hojd, `luft mellan ${mellan}`).toBeGreaterThan(0);
@@ -261,17 +277,51 @@ function provaBlocken(m: Blockmatning, delar: string[]) {
   expect(Math.abs(m.rubrikFranListansKant!)).toBeLessThan(0.5);
 }
 
-describe("kvittolistan är block med sidans bakgrund emellan, mätt i Chrome vid 390 px", () => {
-  it("med raden: tre block", async () => {
+describe("kvittolistan är två kort och en knapp på sidans bakgrund, mätt i Chrome vid 393 px", () => {
+  it("med raden: kort, knapp, kort", async () => {
     const m = await matBlock("med-rad");
-    console.log(`med rad: ${m.block.map((b) => `${b.namn} ${b.topp}–${b.botten}`).join(", ")}; glapp ${m.glapp.map((g) => `${g.hojd} px ${g.yta}`).join(", ")}; sidan ${m.sidansYta}`);
+    console.log(`med rad: ${m.block.map((b) => `${b.namn} ${b.topp}–${b.botten} på ${b.yta}`).join(", ")}; glapp ${m.glapp.map((g) => `${g.hojd} px ${g.yta}`).join(", ")}; sidan ${m.sidansYta}; bakom knappen ${m.ytanBakomKnappen}`);
     provaBlocken(m, ["raden", "knappen", "listan"]);
   }, 60_000);
 
-  it("utan raden: två block, knappen först", async () => {
+  it("utan raden: knapp, kort", async () => {
     const m = await matBlock("utan-rad");
-    console.log(`utan rad: ${m.block.map((b) => `${b.namn} ${b.topp}–${b.botten}`).join(", ")}; glapp ${m.glapp.map((g) => `${g.hojd} px ${g.yta}`).join(", ")}`);
+    console.log(`utan rad: ${m.block.map((b) => `${b.namn} ${b.topp}–${b.botten} på ${b.yta}`).join(", ")}; glapp ${m.glapp.map((g) => `${g.hojd} px ${g.yta}`).join(", ")}; bakom knappen ${m.ytanBakomKnappen}`);
     provaBlocken(m, ["knappen", "listan"]);
+  }, 60_000);
+});
+
+describe("årsrubriken byter inte yta när sektionen öppnas, mätt i Chrome vid 393 px", () => {
+  it("samma rubrik har samma yta före och efter ett tryck med fingret", async () => {
+    const w = webblasare;
+    await w.cdp("Emulation.setDeviceMetricsOverride", { width: 393, height: 852, deviceScaleFactor: 3, mobile: true });
+    await w.cdp("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
+    try {
+      await w.cdp("Page.navigate", { url: `${w.adress}hopfallt` });
+      const las = () =>
+        w.utvardera<{ text: string; oppen: boolean; yta: string; x: number; y: number }>(`(async () => {
+          for (let i = 0; i < 100 && document.readyState !== 'complete'; i++) await new Promise(r => setTimeout(r, 50));
+          const s = document.querySelector('summary');
+          s.scrollIntoView({ block: 'center' });
+          const r = s.getBoundingClientRect();
+          return { text: s.firstElementChild.textContent, oppen: s.parentElement.open, yta: getComputedStyle(s).backgroundColor,
+            x: r.left + r.width / 3, y: r.top + r.height / 2 };
+        })()`);
+      const fore = await las();
+      expect(fore.oppen, "sektionen ska vara hopfälld före trycket").toBe(false);
+      // Ett tryck som pa telefonen: fingret ner och upp pa rubriken.
+      await w.cdp("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: fore.x, y: fore.y }] });
+      await w.cdp("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      // Langre an rubrikens overgang (transition-colors, 150 ms).
+      await new Promise((r) => setTimeout(r, 400));
+      const efter = await las();
+      console.log(`"${fore.text}": före ${fore.oppen ? "öppen" : "stängd"} ${fore.yta}, efter ${efter.oppen ? "öppen" : "stängd"} ${efter.yta}`);
+      expect(efter.text, "samma rubrik").toBe(fore.text);
+      expect(efter.oppen, "trycket ska öppna sektionen").toBe(true);
+      expect(efter.yta, "samma yta öppen som stängd").toBe(fore.yta);
+    } finally {
+      await w.cdp("Emulation.setTouchEmulationEnabled", { enabled: false });
+    }
   }, 60_000);
 });
 

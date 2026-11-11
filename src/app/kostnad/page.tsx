@@ -221,11 +221,14 @@ export default async function KvittolistaSida() {
               och knappen ska inte krava att man scrollar forbi dem. Lag
               under listan till 2026-11-09. Raden ovan ar en rad, inte
               listan, sa att den star forst bryter inte mot regeln. */}
-          <Kort className="p-4">
+          {/* Knappen star direkt pa sidans bakgrund, inte i ett kort
+              (docs/design.md, Kvittolistan): ett kort runt en knapp ar en ram
+              runt nagot som redan har en egen form. */}
+          <div>
             <Link href="/kostnad/nytt" className={PRIMARKNAPP_KLASS}>
               Lägg till kvitto
             </Link>
-          </Kort>
+          </div>
 
           {/* Varje ar ar en utfallbar sektion, och hela rubrikraden ar
               kontrollen (docs/design.md, Kvittolistan och "Utfällbara
@@ -265,8 +268,13 @@ export default async function KvittolistaSida() {
                   {/* Arsrubrik: egen rad pa --yta-nedsankt med artalet och
                       antalet kvitton till vanster, summan hogerstalld. En
                       hopfalld rubrik ar allt hon har att ga pa, och antalet
-                      sager om aret ar vart att oppna. */}
-                  <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2 outline-none transition-colors hover:bg-yta-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent [&::-webkit-details-marker]:hidden">
+                      sager om aret ar vart att oppna.
+                      Samma yta oppen som stangd (docs/design.md,
+                      Kvittolistan): chevronen sager att den ar oppen.
+                      Hovringsytan galler bara enheter som kan hovra – pa en
+                      pekskarm ligger :hover kvar efter trycket, och den
+                      oppnade rubriken sag da vald ut (uppmatt 2026-11-12). */}
+                  <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2 outline-none transition-colors [@media(hover:hover)]:hover:bg-yta-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent [&::-webkit-details-marker]:hidden">
                     <span className="font-rubrik text-sm text-text-primar">
                       {`${grupp.ar} · ${antal}`}
                     </span>

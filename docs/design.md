@@ -431,9 +431,13 @@ Raderna visar **anteckningen som huvudtext**, med leverantör och datum dämpat 
 
 **Primärknappen ligger överst här också, inte under listan.** Skälet är detsamma som på startskärmen – att lägga till ett kvitto är skälet att appen finns och ska inte kräva att man scrollar förbi listan – och det väger tyngre här, där listan kan vara hundratals rader och växer med åren. Regeln stod bara skriven för startskärmen och tillämpades därför inte på den här sidan. Uppmätt av den första riktiga användaren 2026-11-09.
 
-**Sidan är tre block, inte ett kort.** Beslutat 2026-11-12, efter att ordningsändringen gjorde det uppenbart: *Berätta om N kvitton*, knappen och listan låg i samma kort utan något som skilde dem åt, och tre olika saker såg ut som en. **Varje del är ett eget block med sidans bakgrund emellan**, på samma sätt som landningssidans avsnitt — luft, inte linjer.
+**Sidan är två block och en knapp, inte ett kort.** Beslutat 2026-11-12, efter att ordningsändringen gjorde det uppenbart: *Berätta om N kvitton*, knappen och listan låg i samma kort utan något som skilde dem åt, och tre olika saker såg ut som en. **Delarna skiljs åt av sidans bakgrund**, på samma sätt som landningssidans avsnitt — luft, inte linjer.
 
-Blocken behåller appens ljusa yta; ingen ny yta införs. Årsrubriken ligger kvar på `--yta-nedsankt` inuti listblocket, så listan har sin egen inre struktur medan blocken har sidans.
+Blocken behåller appens ljusa yta; ingen ny yta införs.
+
+**Knappen är inget block.** Den står direkt på sidans bakgrund mellan de två andra, som *Skapa konto* på landningssidan. Här stod först att den var ett eget block, och det var fel: **ett kort runt en knapp är en ram runt något som redan har en egen form**, och den gräddfärgade kanten läses som ännu en avgränsning att tolka. En knapp är sin egen avgränsning.
+
+Raden *Berätta om N kvitton* och listan är kort som förut.
 
 **Men raden *"Berätta om N kvitton"* står före knappen när den finns** – ändrat 2026-11-12. **Det bryter inte mot regeln ovan**, och det ska stå skrivet så att ingen "återställer" knappen till allra överst med hänvisning till den: regeln säger *inte under listan*, och den här raden är en rad, inte listan. Knappen ligger fortfarande över varje kvitto.
 
@@ -494,6 +498,8 @@ På startskärmen finns ingen sådan sektion. Att möta en påminnelse varje gå
 **Alla sektioner är hopfällda, också den nyaste.** Att hålla ett år öppet vore att gissa vilket hon söker, och den som kommer hit söker ofta ett gammalt kvitto — det är därför åren är skilda åt. Den som bara har ett år möter ändå ingen hopfällning alls, vilket är det fall som annars skulle störa mest.
 
 **En hopfälld rubrik måste säga hur mycket den döljer.** Årsrubriken bär därför antalet kvitton: *2024 · 12 kvitton* till vänster, summan högerställd som förut. Summan ensam säger vad året är värt men inte om det är ett kvitto eller trettio, och det är det senare som avgör om det är värt att öppna. Raden i sin helhet är kontrollen, med chevron enligt *Utfällbara sektioner*, och behåller sin `--yta-nedsankt`.
+
+**Och rubriken byter inte yta när sektionen öppnas.** Samma `--yta-nedsankt` i båda lägena. Chevronen som vänder sig säger redan att sektionen är öppen, och en andra signal för samma sak gör att den öppna rubriken ser **vald** ut i stället för öppen — i en lista där ingenting går att välja. Uppmätt av Kristoffer 2026-11-12 på den driftsatta sidan.
 
 **Antalet räknar raderna i sektionen, inte det summan räknar.** Utkast och kvitton vars hela belopp är privat ligger med i antalet, fast de inte ligger i summan. Det ser ut att bryta mot regeln att två tal bredvid varandra ska räkna samma sak — men det gör det inte, eftersom de inte är två summeringar av samma mängd. **Antalet beskriver listan, summan beskriver avdraget.** Provet är enkelt: fäller hon ut sektionen ska hon kunna räkna raderna och få talet i rubriken. Att raderna inte summerar till beloppet förklaras redan per rad, av ROT-raden och av *"X kr räknas med"*.
 
