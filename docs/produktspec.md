@@ -69,7 +69,9 @@ Högar som redan klassificerats visas inte alls. Genomgången blir kortare varje
 
 **Klassificeringen sker på användarens initiativ.** Vägen in startas när användaren själv vill, inte när appen tycker. Vid försäljningen ligger genomgången i flödet, men den spärrar inte underlaget – det som inte hunnit klassificeras listas i stället under *Återstår*.
 
-Appen påminner inte om klassificeringen enligt något schema. Att lägga in kvitton ska aldrig kännas som att man ådragit sig en skuld.
+Appen påminner inte om klassificeringen enligt något schema, och att lägga in kvitton ska aldrig kännas som att man ådragit sig en skuld.
+
+**Men den bjuder in en gång, på ett ställe.** Ändrat 2026-11-13. Här stod att appen inte påminner alls, och det blev fel i verkligheten: den första riktiga användaren la in tjugo kvitton, kände sig klar och hittade aldrig vidare. En regel vars utfall är att ingen når genomgången skyddar ingenting. **Inbjudan ligger på kvittolistan, säger vad det är värt att göra, och finns bara när det finns något att göra** – aldrig på översikten, aldrig efter ett schema, och aldrig som en prick per kvitto.
 
 **Anteckningen bär minnet.** Fältet "Vad gällde det?" är fritext och det enda som krävs utöver belopp och datum. Åtta år senare är det den raden plus bilden som gör klassificeringen möjlig, så gränssnittet ska uppmuntra en beskrivande mening snarare än ett ord: "målade om sovrummet, väggarna var slitna sedan vi flyttade in" är guld vid försäljningen.
 

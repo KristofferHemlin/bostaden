@@ -483,9 +483,22 @@ Ett utkast utan både bilaga och fält räknas inte heller i "Berätta om N kvit
 
 Här stod till 2026-11-11 att det visas som en dämpad text *"utan ikon"*. **I kvittolistan är det numera ett märke** — se *Kvittoraden ska gå att skilja från nästa* nedan, där skälet står. På kvittots egen skärm står meningen kvar som text.
 
-**Ingången till frågorna ligger här, inte på startskärmen.** En rad överst i listan – "Berätta om N kvitton" med åtgärdsprick – som leder vidare. Kvittolistan är där man går för att se sina kvitton, och det är där man märker att några inte hör till något projekt.
+**Ingången till frågorna ligger här, inte på startskärmen.** Kvittolistan är där man går för att se sina kvitton, och det är där man märker att några inte hör till något projekt.
 
-På startskärmen finns ingen sådan sektion. Att möta en påminnelse varje gång appen öppnas gör frågorna till en skuld man ådrar sig när man sparar ett kvitto, och det var precis vad tvåfasmodellen skulle undvika. Att en rad bland de sex senaste är oklassificerad får visas med en diskret prick på just den raden, inget mer.
+På startskärmen finns ingen sådan sektion. Att möta en påminnelse varje gång appen öppnas gör frågorna till en skuld man ådrar sig när man sparar ett kvitto, och det var precis vad tvåfasmodellen skulle undvika.
+
+**Ingången är ett kort, inte en rad** – ändrat 2026-11-13. Den var en rad med åtgärdsprick, *"Berätta om N kvitton"*, och den sa vad som väntade men inte varför någon skulle bry sig. Den första riktiga användaren la in tjugo kvitton, kände sig klar och gick aldrig vidare.
+
+Kortet har samma form som andelskortet på startskärmen – rubrik, en dämpad mening, pil åt höger – och säger konsekvensen i stället för uppmaningen:
+
+> **Berätta om 14 kvitton**
+> Tills du gjort det är talen i ditt underlag ungefärliga.
+
+**Konsekvensen är sann och står i specen:** utan klassificering visar årssumman allt som lagts in, inte bara det som är avdragsgillt, och femårshorisonten går inte att skilja ut. Kortet lovar alltså inte en känsla av ordning, det säger vad talen saknar.
+
+**Kortet finns bara när det finns något att göra.** Är allt klassificerat visas det inte. Är det **ett enda** oklassificerat kvitto visas det inte heller — ett kort som fyller skärmens topp för en post är tyngre än vad posten är värd. Det betyder att talen kan vara ungefärliga utan att något säger det, och det är ett medvetet val: ett kvitto flyttar sällan en gräns, och priset för att nämna det varje gång är högre.
+
+**Och åtgärdspricken per kvitto är borttagen från startskärmen.** Här stod att en oklassificerad rad bland de sex senaste fick bära en diskret prick. Den säger *ogjort* till någon som känner sig färdig, utan att säga vad man ska göra — och nu finns en inbjudan som gör det, på ett ställe. **Färre signaler, inte fler:** en tydlig inbjudan där frågorna hör hemma, i stället för prickar utspridda över en skärm som inte leder någonstans.
 
 **Kvitton grupperas per år med tydlig avdelare.** Tröskeln gäller per kalenderår och åren är helt skilda åt i underlaget – en lista där 2025 och 2026 glöser samman döljer produktens viktigaste struktur. Årsrubriken är en egen rad på `--yta-nedsankt` med årtalet och årets summa högerställd.
 
@@ -672,7 +685,11 @@ Fällan uppstår när en kontroll återanvänds mellan skärmar: en raderingskna
 
 **Här stod till 2026-11-12 att det "bara gäller skrivbord – hover finns inte på telefon". Det är fel, och felet kostade oss en omgång.** På en pekskärm **blir** `:hover` kvar på det man senast tryckt på, tills man trycker någon annanstans. Årsrubriken som fälldes ut såg därför ut att vara *vald*, fast koden inte har någon stil alls för öppet läge — det var hovringsytan som låg kvar efter trycket. Vi letade efter en stil som inte fanns.
 
-**Varje hovringsstil ligger därför bakom `@media (hover: hover)`.** Det gäller hela appen och inte bara den här raden: en hovringsstil på något tryckbart är ett kvarliggande tillstånd på en telefon, och ett kvarliggande tillstånd läses som *vald*.
+**Varje hovringsstil ligger därför bakom ett villkor om att enheten kan hovra.** Det gäller hela appen och inte bara den här raden: en hovringsstil på något tryckbart är ett kvarliggande tillstånd på en telefon, och ett kvarliggande tillstånd läses som *vald*.
+
+**Villkoret sätts på ett ställe, inte per regel.** `hoverOnlyWhenSupported` i Tailwinds konfiguration lägger alla `hover:`-varianter bakom det. En regel som måste upprepas vid varje nytt tillfälle missas vid det fjortonde — den första handskrivna varianten på årsrubriken är borttagen och rubriken skyddas nu av samma mekanism som allt annat.
+
+**Villkoret är `(hover: hover) and (pointer: fine)`, inte bara det första.** Det är strängare än det stod här först, och det är rätt: `hover: hover` ensamt är sant också på enheter där hovringen fastnar, och det är just det vi skyddar oss mot. En dator med pekskärm där fingret är det primära inmatningssättet får därför ingen hovring — och kopplar användaren in en mus blir pekaren fin och hovringen kommer tillbaka.
 
 **Och ett påstående om vad en telefon visar mäts med pekskärm, inte bara med en smal skärm.** Buggen var osynlig i en vanlig webbläsarmätning vid 393 px och syntes först med emulerad pekskärm. Bredd är inte inmatningssätt.
 
