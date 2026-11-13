@@ -702,6 +702,14 @@ Ett tomt tillstånd säger aldrig bara att det är tomt. Det består av en rubri
 
 Den skärmen finns inte längre, men regeln gäller varje sida som räknar: projektlistan vet inget om kvitton utan projekt, kvittolistan vet inget om vilka projekt som väntar på försäljningsfrågorna. Ingen av dem får säga att allt är gjort.
 
+**Och sedan rivningen 2026-11-13 vaktas regeln inte av något test.** Elva av de borttagna testfallen prövade fas 1:s och fas 2:s tomlägen, och agenten sa till om att inget tog deras plats. **Regeln ska därför ha ett prov på en levande skärm**, och de tre som kan bryta den är:
+
+- **Kvittolistan** när varje kvitto hör till ett projekt, men ett projekt väntar på försäljningsfrågorna
+- **Projektlistan** när varje projekt är besvarat, men kvitton står utan projekt
+- **Underlaget** när sida 1 är komplett men *Återstår* inte är tom
+
+Det räcker med ett prov per skärm. Poängen är inte täckning, utan att en skärm som bara ser en del av arbetet aldrig får formulera sig om alltihop.
+
 **I en kontroll som kapar text från höger står det som aldrig får tappas först.** Skriven 2026-10-20. I ett stängt `<select>` kortar webbläsaren texten, och stod året sist – *"Nytt kök (2025)"* – försvann just det som skiljer två annars likadana rader åt. Året ligger därför först, i varje alternativ: *"2025 · Nytt kök"*.
 
 Leverantörslistan får däremot gärna kapas. Den är lång och varierande, dess första namn är det mest igenkännliga, och den öppna listan visar hela texten. **Att korta den med en egen regel vore att hitta på information där det räcker att visa den som finns.**
@@ -2042,6 +2050,12 @@ Två rader, inte obegränsat: nästan varje anteckning ryms, och listan är fort
 
 Varje rad visar projektets namn, belopp och vad det räknas som. Etiketten heter **Räknas som**, inte *Kategori* – den säger följden i stället för taxonomin.
 
+**Ett projekt utan kvitton visar inget belopp, och aldrig *0 kr*.** Hittat av agenten 2026-11-13; raden har sagt *0 kr* sedan projektflödet byggdes. Noll kronor är ett mätt tal och påstår att åtgärden inte kostade något. Sanningen är att vi inte har kvittona. I beloppets plats står en dämpad **"Inga kvitton än"**, som säger vad som fattas och vad hon kan göra åt det.
+
+Det är samma regel som *Ett tillstånd är inte en kategori*, en rad längre ner i samma lista: ett fält med etikett måste besvaras av sitt värde, och ett belopp som inte finns utelämnas i stället för att skrivas som en nolla.
+
+**Och året i raden härleds ur kvittona när det finns några.** Det tidigaste betaldatumet avgör, inte den lagrade etiketten `ar`. Agenten hittade fallet: det gamla projektet låg under 2026 medan dess kvitton är från 2025, eftersom etiketten sätts till innevarande år för ett projekt som skapas fristående. `ar` är fortfarande etiketten och fortfarande förvalet — men en etikett som säger emot raderna under sig är värre än ingen etikett. Allt som räknas utgår sedan tidigare från betaldatumen.
+
 **Varje projekt har ett värde att visa**, eftersom frågeträdet besvaras när projektet skapas. Här stod till 2026-11-13 hur fältet skulle bete sig medan svaren saknades – det tillståndet finns inte längre.
 
 Regeln det gav upphov till gäller fortfarande och avgör fler fall än det: **ett fält med etikett måste besvaras av sitt värde. En dämpad rad utan etikett får bära vad som helst som är sant om raden.** "Räknas som" är en fråga, och ett tillstånd svarar inte på den. En dämpad andra rad ställer ingen fråga. Värdet står som ren text – "Grundförbättring" eller "Reparation" – utan färg, prick eller etikett.
@@ -2447,7 +2461,7 @@ Utan försäljningsdatum visas:
 
 Det är starkare än att hålla tillbaka hela summan: en grundförbättring vars år passerar tröskeln oavsett svaret är sann redan nu, och hon får se den. **Ingenting gissas, och ingenting döljs i onödan.** Regeln generaliserar — se *Ett okänt svar döljer bara det det ändrar* i `CLAUDE.md`.
 
-> **Inte byggt ännu, och det är mitt fel.** Jag skrev regeln ovan ur agentens rapport utan att pröva den mot koden. Vad som finns i `e1a2af2` är raderna och kolumnen *Belopp* — den beror aldrig på svaret — medan summorna och den avdragsgilla kolumnen alltid står som streck. Agenten rättade mig och säger att skillnaden är liten att bygga. **Regeln står kvar som den är skriven, för den är rätt**; det här stycket står här tills koden når den.
+Byggt 2026-11-13 i `522fd8b`: avdragsgill del, *Din andel*, förklaringen under raden och båda summorna visas där de blir lika. En summa som visas bär *Förs till* och är dämpad.
 
 **Och lydelsen *"Sammanställningen går inte att göra"* används inte.** Den säger att appen misslyckades. Appen väntar på ett svar, och ett väntande tillstånd namnger det som fattas — regeln står under *Ett tillstånd är inte en kategori*.
 

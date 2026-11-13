@@ -636,6 +636,18 @@ Fallet var det gamla grupperingsflödet: posten skapades med tomt namn, eftersom
 
 **Regeln: att ha kört vägen igenom säger ingenting om vad som syns halvvägs.** Den som prövar ett flerstegsflöde ska stanna mitt i och se sig omkring — och den som skriver prompten ska be om en läsning av *var ett halvfärdigt tillstånd visas*, inte bara om steget fungerar.
 
+### En lista som ska vara komplett får inte hållas för hand
+
+**Skriven 2026-11-13, och det här är veckans allvarligaste fynd.** Åtkomsttestet prövar att varje väg vägrar röra en annan bostads rader. Det hade 65 fall för genomgången — och **noll** för `skapaProjekt`, `laggTillKvitton`, `sattHorInteTillBostaden`, `sparaFragorOmBostaden` och de tre nya sidorna. De byggdes aldrig in i listan, eftersom listan skrivs för hand. Varje ny server-action vi lade till under omläggningen stod alltså utan medlemskapsprov, och felet de skyddar mot visar en bostads kvitton under en annan bostads adress — **och det ser riktigt ut.**
+
+Agenten hittade det genom att riva det gamla: när 65 fall försvann blev det synligt att efterträdarna inte fanns. Utan rivningen hade hålet stått kvar.
+
+**Ett test vars värde är att det är komplett ska räkna upp sitt underlag ur koden, inte ur en fil någon minns att uppdatera.** Rutter, server-actions och sidor går att hitta. En lista som växer för hand är en lista som är inaktuell i det ögonblick någon bygger nästa sak, och den är farligast när den ser heltäckande ut.
+
+**Det är samma regel som redan gäller inställningarnas *Inte angiven*** — *kriteriet är härlett, inte en lista att hålla i synk* — nu tillämpad på ett test i stället för på ett gränssnitt. Varje gång ett krav gäller *alla* av något, är den handskrivna uppräkningen felet.
+
+**Och att något prövas ska visas.** Agenten tog bort bostadsvillkoret med flit i tre av de nya fallen; 2, 10 och 5 fall föll. Ett åtkomsttest som inte kan falla är värre än inget, eftersom det används som skäl att inte titta.
+
 ### En mening i en rapport är inte en avläsning av koden
 
 **Skriven 2026-11-13, efter att jag skrev en regel ur en rapport och fick veta att koden gör något smalare.** Agentens mening löd *"underlaget räknas för båda svaren, och bara det som blir lika i båda visas"*. Den var sann om raderna och kolumnen *Belopp*, och osann om summorna. Jag läste den som en beskrivning av hela beteendet och skrev in den i `docs/design.md` och här.

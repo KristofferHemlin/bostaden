@@ -363,7 +363,9 @@ Svaret på *"Vilken del av bostaden?"* när projektet skapas. Lydelser och vilka
 
 De tidigare fälten `kategori`, `slitet_vid_tilltrade`, `battre_skick_vid_forsaljning` och `kvarvarande_andel` är borttagna. De två sista ersätts av `skick_forvarv` och `skick_forsaljning`: i stället för att be användaren uppskatta en andel ber appen om två observationer vid tidpunkter då de går att göra.
 
-**Året är en etikett, inte en sanning.** `ar` sätts som förval till betaldatumets år för den kostnad som skapade projektet, och till innevarande år om projektet skapas fristående. Det sätts när projektet skapas och används för gruppering i gränssnittet, men allt som räknas – tröskeln, femårsfönstret, exportens rader – utgår från kostnadernas `betaldatum`. Ett projekt vars kostnader spänner över ett årsskifte ger därför automatiskt två rader i exporten utan att användaren behöver dela projektet.
+**Året är en etikett, inte en sanning.** `ar` sätts som förval till betaldatumets år för den kostnad som skapade projektet, och till innevarande år om projektet skapas fristående. Allt som räknas – tröskeln, femårsfönstret, exportens rader – utgår från kostnadernas `betaldatum`.
+
+**Och i gränssnittet visas året ur kvittona när det finns några**, alltså det tidigaste betaldatumet, inte den lagrade etiketten. Ändrat 2026-11-13 efter att agenten hittade ett projekt som låg under 2026 medan dess kvitton var från 2025. Etiketten är kvar som förval och som året för ett projekt utan kvitton; en etikett som säger emot raderna under sig är värre än ingen. Ett projekt vars kostnader spänner över ett årsskifte ger därför automatiskt två rader i exporten utan att användaren behöver dela projektet.
 
 **Ingen upplysning visas när en kostnads betaldatum avviker från projektets år.** Eftersom året härleds ur betaldatumen och projektets `ar` bara är en etikett finns det ingen avvikelse att varna för.
 
