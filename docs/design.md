@@ -785,7 +785,13 @@ Finns det projekt står rutan där som vanligt, både för att se vilket projekt
 
 Platsen är given av att frågan är densamma, bara i sin hela form: *hörde det här till bostaden?* Att ha delen på ett ställe och helheten på ett annat vore två svar på en fråga.
 
-**Den bär tegeltonen och är alltid vändbar.** Den tar inte bort något – beloppet räknas inte, raden får sin tillståndstext *Hör inte till bostaden*, bilagan och beloppet ligger kvar i arkivet, och samma kontroll återför kvittot. Den ser därför ut som en markering, inte som en radering, och den står aldrig i läsläget.
+**Den bär ingen egen färg, och är alltid vändbar.** Här stod till 2026-11-13 att den skulle bära tegeltonen, och det sa emot palettregeln femhundra rader upp: de två dämpade tonerna finns **bara** i bilagemärket, aldrig på en kontroll. Agenten såg motsägelsen, valde appens neutrala länkstil och frågade. **Den neutrala stilen är rätt**, och av ett eget skäl: kontrollen tar inte bort något, så en färg som varnar skulle överdriva vad den gör. Den är en markering, inte en radering — beloppet räknas inte, raden får sin tillståndstext *Hör inte till bostaden*, bilagan och beloppet ligger kvar i arkivet, och samma kontroll återför kvittot.
+
+**Den står bara i ändringsläget, också för att ta tillbaka.** Till 2026-11-13 fanns vägen tillbaka kvar i läsläget på ett markerat kvitto. Agenten lät den stå hellre än att ta bort en fungerande väg utan att fråga, vilket var rätt. **Men läsläget visar tillstånd, det ändrar dem inte** – regeln *Allt som ändras ändras i det läget* gäller, och ett undantag för en enda kontroll är hur en regel upphör att vara en regel. Läsläget behåller tillståndstexten, så hon ser varför kvittot inte räknas; vägen ut är *Ändra*, ett tryck bort.
+
+**Markeringen lossar kvittots projektkoppling**, som grupperingen gjorde. Ett kvitto som tas tillbaka kommer alltså tillbaka utan projekt, och det är rätt: det som hörde till projektet var ett belopp vi nu sagt att vi inte räknar.
+
+**Och ett projekt som därmed blir tomt raderas inte.** Fas 1 städade bort tomma högar automatiskt. Ett projekt utan kvitton är sedan omläggningen en giltig sak — ett namn, ett år och en beskrivning i väntan på kvitton — så en automatisk radering skulle ta bort något användaren kan ha skapat med flit. Det står kvar och tas bort av henne på sin redigeringssida.
 
 **Läsläget visar aldrig ett tomt formulär.** Det var det gamla felet: varje kvitto man öppnade slutade med en obesvarad fråga, ett tomt fält och en sparaknapp utan något att spara. En post ska se ut som en post.
 
@@ -2440,6 +2446,8 @@ Utan försäljningsdatum visas:
 **Och vilka tal som hålls tillbaka avgörs genom att räkna, inte genom att bedöma.** Agentens lösning 2026-11-13, och den är bättre än regeln jag skrev. Underlaget räknas **en gång för varje möjligt svar**, och visas bara där svaren ger samma tal. Där de skiljer sig står strecket.
 
 Det är starkare än att hålla tillbaka hela summan: en grundförbättring vars år passerar tröskeln oavsett svaret är sann redan nu, och hon får se den. **Ingenting gissas, och ingenting döljs i onödan.** Regeln generaliserar — se *Ett okänt svar döljer bara det det ändrar* i `CLAUDE.md`.
+
+> **Inte byggt ännu, och det är mitt fel.** Jag skrev regeln ovan ur agentens rapport utan att pröva den mot koden. Vad som finns i `e1a2af2` är raderna och kolumnen *Belopp* — den beror aldrig på svaret — medan summorna och den avdragsgilla kolumnen alltid står som streck. Agenten rättade mig och säger att skillnaden är liten att bygga. **Regeln står kvar som den är skriven, för den är rätt**; det här stycket står här tills koden når den.
 
 **Och lydelsen *"Sammanställningen går inte att göra"* används inte.** Den säger att appen misslyckades. Appen väntar på ett svar, och ett väntande tillstånd namnger det som fattas — regeln står under *Ett tillstånd är inte en kategori*.
 

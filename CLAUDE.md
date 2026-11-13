@@ -636,6 +636,16 @@ Fallet var det gamla grupperingsflödet: posten skapades med tomt namn, eftersom
 
 **Regeln: att ha kört vägen igenom säger ingenting om vad som syns halvvägs.** Den som prövar ett flerstegsflöde ska stanna mitt i och se sig omkring — och den som skriver prompten ska be om en läsning av *var ett halvfärdigt tillstånd visas*, inte bara om steget fungerar.
 
+### En mening i en rapport är inte en avläsning av koden
+
+**Skriven 2026-11-13, efter att jag skrev en regel ur en rapport och fick veta att koden gör något smalare.** Agentens mening löd *"underlaget räknas för båda svaren, och bara det som blir lika i båda visas"*. Den var sann om raderna och kolumnen *Belopp*, och osann om summorna. Jag läste den som en beskrivning av hela beteendet och skrev in den i `docs/design.md` och här.
+
+**En regel som föds ur en rapport ska prövas mot koden innan den skrivs**, eller skrivas som ett krav i stället för som ett påstående. Skillnaden syns i tempus: *"underlaget visar"* är ett påstående om appen, *"underlaget ska visa"* är ett krav på den. Designfilen har blivit fel på just det sättet förr — sex påståenden om appen som inte stämde, i en enda genomgång.
+
+**Det här är samma familj som *Ett tal som förts vidare är inte mätt***, med en mening i stället för ett tal. Och botemedlet är detsamma: fråga vad som faktiskt mättes, eller mät själv.
+
+**Agenten som rättar berömmet gör det dyraste och nyttigaste den kan göra.** Den här rättelsen kom oombedd, mot sitt eget intresse, och den räddade en regel från att bli en lögn om produkten.
+
 ### Ett okänt svar döljer bara det det ändrar
 
 **Skriven 2026-11-13, efter agentens lösning på underlaget utan bostadsfrågor.** Ett obesvarat ja/nej som går in i beräkningen frestar till två fel: gissa det vanligaste svaret, eller hålla tillbaka hela resultatet. Det första ger ett osant tal, det andra döljer tal som är sanna oavsett svaret.
@@ -645,6 +655,14 @@ Fallet var det gamla grupperingsflödet: posten skapades med tomt namn, eftersom
 **Regeln gäller varje indata med ett litet antal möjliga värden**, inte bara bostadsfrågorna. Är antalet kombinationer stort gäller den inte — då är det hela resultatet som väntar.
 
 **Och ett sådant test måste först visa att svaret spelar roll.** Att två körningar ger samma tal bevisar ingenting om svaret inte kunde ha ändrat dem. Agenten visade 3 000 kr mot 0 kr i sitt fall innan likheten fick betyda något — det är samma regel som *En mätning som inte kan falla mäter ingenting*, tillämpad på ett värde i stället för på ett beteende.
+
+### Lika tidsstämplar är ingen ordning
+
+**Skriven 2026-11-13.** Hela sviten föll en gång på tvåradstestet. Orsaken: testdata skapade sju kvitton med samma tidsstämpel, översikten visar sex, och **vilket kvitto som föll bort avgjordes av slumpen**. Agenten framkallade felet med flit — när den korta anteckningen råkar vara äldst faller testet två av två gånger — och rättade det med en egen, äldre tidsstämpel.
+
+**En lista som sorteras på ett värde där flera rader är lika har ingen bestämd ordning.** Ett test som bygger på vilken rad som hamnar först är då en slantsingling som ser ut som ett påstående, och den faller en gång av sju eller en gång av femtio — alltså precis sällan nog för att läras bort som flakighet.
+
+**Testdata får därför aldrig vara lika i det fält som avgör ordningen.** Det gäller tidsstämplar, datum och belopp lika mycket, och det gäller också produktionskoden: sorteras något på ett fält som kan vara lika, ska en andra nyckel avgöra.
 
 ### En lydelse som ska vaktas står i regelfilen
 
