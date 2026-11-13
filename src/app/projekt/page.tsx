@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { KategoriInfo } from "./kategori-info";
-import { Avdelningsrubrik, Listrad, Skarm } from "@/components/skarm";
+import { Avdelningsrubrik, Listrad, PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import {
   beloppForKostnad,
   projektSumma,
@@ -113,29 +113,32 @@ export default async function ProjektlistaSida() {
       }
     >
       {rader.length === 0 ? (
+        // Tomlaget ar det vanliga (docs/design.md, "Projektlistan"): en
+        // rubrik som ar en uppmaning, en rad om varfor, och knappen i full
+        // bredd. Projektsidan ar vagen in – till 2026-11-13 hade den ingen
+        // knapp alls, eftersom projekt da uppstod ur grupperingen.
         <div className="p-5">
           <p className="font-rubrik text-lg text-text-primar">
-            Inga projekt än
+            Berätta vad du gjort
           </p>
-          {/* Ingen primärknapp här. En primärknapp skulle säga att det finns en
-              handling som är vägen framåt, och det gör det inte – grupperingar
-              skapas inte som en egen uppgift utan uppstår ur klassificeringen.
-              En textlänk till genomgången räcker (docs/design.md, "Tomma
-              tillstånd": ingen knapp för att skapa en gruppering). */}
           <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
             Ett projekt samlar allt du gjort med en och samma sak – till exempel
-            att måla sovrummet. Projekt blir till när du{" "}
-            <Link
-              href="/genomgang"
-              className="underline hover:text-accent-mork"
-            >
-              berättar vad du gjort
-            </Link>
-            .
+            att måla sovrummet. Du beskriver vad du gjorde och väljer sedan
+            vilka kvitton som hörde dit.
           </p>
+          <Link href="/projekt/nytt" className={`${PRIMARKNAPP_KLASS} mt-4`}>
+            Skapa projekt
+          </Link>
         </div>
       ) : (
         <>
+          {/* Primarknappen fore listan, som pa kvittolistan: listan vaxer med
+              aren och knappen ska inte krava att man scrollar forbi den. */}
+          <div className="border-b border-linje p-4">
+            <Link href="/projekt/nytt" className={PRIMARKNAPP_KLASS}>
+              Skapa projekt
+            </Link>
+          </div>
           {arSorterade.map((ar) => (
             <div key={ar} className="border-b border-linje last:border-b-0">
               <Avdelningsrubrik className="px-4 pt-4">

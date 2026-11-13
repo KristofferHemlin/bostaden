@@ -12,10 +12,11 @@
 // Entiteten heter fortfarande `kostnad` i kod och rutter (docs/design.md,
 // "Ordval i granssnittet") – bara det anvandaren moter byter till "kvitto".
 //
-// Ingangen till klassificeringsgenomgangen ligger HAR, inte pa startskarmen
-// (docs/design.md, Kvittolistan): ett kort overst i listan som sager vad
-// talen saknar tills fragorna ar besvarade. Kvittolistan ar dar man gar for
-// att se sina kvitton, och det ar dar man marker att nagra saknar gruppering.
+// Ingangen till projektet ligger HAR, inte pa startskarmen (docs/design.md,
+// Kvittolistan): ett kort overst i listan som sager vad talen saknar sa lange
+// kvitton inte hor till nagot projekt, och som leder till Skapa projekt.
+// Kvittolistan ar dar man gar for att se sina kvitton, och det ar dar man
+// marker att nagra inte hor till nagot.
 //
 // Varje rad bar ett bilagemarke sist pa den kursiva statusraden, i tva
 // lagen: bilaga finns eller saknas (produktspec 4.7: underlaget ar svagare
@@ -87,7 +88,7 @@ export default async function KvittolistaSida() {
 
   const [bostad, kostnadRader] = await Promise.all([
     prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } }),
-    // Tomma utkast visas inte och raknas inte i "Berätta om N kvitton"
+    // Tomma utkast visas inte och raknas inte i "N kvitton utan projekt"
     // (src/lib/tomt-utkast.ts).
     prisma.kostnad.findMany({
       where: { bostad_id: bostadId, ...INTE_TOMT_UTKAST },
@@ -200,17 +201,17 @@ export default async function KvittolistaSida() {
         </Kort>
       ) : (
         <>
-          {/* Ingangen till klassificeringsgenomgangen – ett kort i samma
-              form som andelskortet pa startskarmen, FORE knappen
-              (docs/design.md, Kvittolistan). Det ar enda vagen till fragorna
-              och sager konsekvensen, inte uppmaningen. Faller bort vid noll
-              och vid ett enda oklassificerat kvitto, och da ligger knappen
-              overst. */}
+          {/* Ingangen till projektet – ett kort i samma form som andelskortet
+              pa startskarmen, FORE knappen (docs/design.md, Kvittolistan).
+              Hela kortet leder till Skapa projekt och sager konsekvensen,
+              inte uppmaningen: rubriken namnger ett tillstand, inte en
+              uppgift. Faller bort vid noll och vid ett enda kvitto utan
+              projekt, och da ligger knappen overst. */}
           {antalOklassificerade >= 2 ? (
-            <Link href="/genomgang" className="block">
+            <Link href="/projekt/nytt" className="block">
               <Pilkort
-                rubrik={`Berätta om ${antalOklassificerade} kvitton`}
-                rad="Tills du gjort det är talen i ditt underlag ungefärliga."
+                rubrik={`${antalOklassificerade} kvitton utan projekt`}
+                rad="Tills du berättat vad de gällde är talen i ditt underlag ungefärliga."
               />
             </Link>
           ) : null}

@@ -129,7 +129,7 @@ function seeda(dagar: string[], arkiverade: Set<string> = new Set()) {
   });
   db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: X, agarandel: 100 });
   for (const dag of dagar) {
-    // Okopplade, sa att ingangen "Berätta om N kvitton" visas.
+    // Okopplade, sa att ingangen "N kvitton utan projekt" visas.
     const k = db.lagg("kostnad", {
       bostad_id: X,
       leverantor: "Byggmax",
@@ -266,7 +266,7 @@ describe("kvittolistans årssektioner vid 390 px, mätt i Chrome", () => {
     // Ingangen till fragorna star overst, utanfor alla sektioner, och syns.
     // Den ar ett kort sedan 2026-11-13: lanken hittas pa kortets rubrik, hela
     // rubrikens text (docs/design.md, Kvittolistan).
-    const ingang = `Berätta om ${fall.dagar.length} kvitton`;
+    const ingang = `${fall.dagar.length} kvitton utan projekt`;
     const placering = await utvardera<{ finns: boolean; iSektion: boolean; hojd: number; foreForsta: boolean }>(`(() => {
       const el = [...document.querySelectorAll('a')].find(a => [...a.querySelectorAll('h2')].some(h => h.textContent === ${JSON.stringify(ingang)}));
       if (!el) return { finns: false, iSektion: false, hojd: 0, foreForsta: false };

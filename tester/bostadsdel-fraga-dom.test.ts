@@ -27,7 +27,7 @@ window.scrollTo = () => {};
 const design = () => readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
 
 function fragan(): string {
-  const m = design().match(/Efter namnet i fas 2 kommer \*\*"([^"]+)"\*\*/);
+  const m = design().match(/Efter namnet kommer \*\*"([^"]+)"\*\*/);
   if (!m) throw new Error("design.md saknar fragan");
   return m[1];
 }

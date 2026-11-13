@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import tailwindKonfig from "../tailwind.config";
 import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
 
-// docs/design.md, Kvittolistan: kortet "Berätta om N kvitton" star fore
+// docs/design.md, Kvittolistan: kortet "N kvitton utan projekt" star fore
 // knappen Lägg till kvitto nar det finns. Finns inget kort ligger knappen
 // overst som forut. Kortet var en rad med atgardsprick till 2026-11-13.
 //
@@ -22,7 +22,7 @@ import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
 // en enda post ar tyngre an posten ar vard). Ett test som bara provade att
 // kortet star fore knappen hade passerat aven om det alltid visades. Kortets
 // rubrik och dampade mening lases ur design.md inne i testet, och ett tryck
-// pa kortet ska leda till genomgangen – med emulerad pekskarm, som pa
+// pa kortet ska leda till Skapa projekt – med emulerad pekskarm, som pa
 // telefonen.
 //
 // Och sidan ar tva kort och en knapp, inte ett kort (docs/design.md,
@@ -100,9 +100,9 @@ const KNAPP = "Lägg till kvitto";
  *  Lases har, inne i testet – aldrig pa modulniva (CLAUDE.md, Tester). */
 function kortetsOrd(antal: number): { rubrik: string; rad: string } {
   const design = readFileSync(join(ROT, "docs", "design.md"), "utf-8");
-  const m = design.match(/^> \*\*(Berätta om )\d+( kvitton)\*\*\n> (.+)$/m);
+  const m = design.match(/^> \*\*\d+( kvitton utan projekt)\*\*\n> (.+)$/m);
   if (!m) throw new Error("design.md saknar ingangskortets rubrik och mening under Kvittolistan");
-  return { rubrik: `${m[1]}${antal}${m[2]}`, rad: m[3].trim() };
+  return { rubrik: `${antal}${m[1]}`, rad: m[2].trim() };
 }
 
 /** Tre kvitton i tva ar. `okopplade` av dem ligger utanfor projekt – resten
@@ -172,7 +172,7 @@ afterAll(async () => {
 });
 
 interface Matning {
-  /** Kortet "Berätta om …": rubrikens och den dampade meningens hela text,
+  /** Kortet "N kvitton utan projekt": rubrikens och den dampade meningens hela text,
    *  lankens mal och kortets overkant, eller null nar inget syns. */
   kort: { rubrik: string; rad: string; href: string; topp: number } | null;
   /** Om ingangens ord star nagonstans i sidans innehall, synligt eller ej –
@@ -203,7 +203,7 @@ async function mat(sida: string, rad: string): Promise<Matning> {
     const topp = e => e.getBoundingClientRect().top + window.scrollY;
     const main = document.querySelector('main');
     const tryckbara = [...main.querySelectorAll('a, summary, button')].filter(synlig);
-    const kortEl = tryckbara.find(e => e.textContent.trim().startsWith('Berätta om '));
+    const kortEl = tryckbara.find(e => [...e.querySelectorAll('h2')].some(h => h.textContent.endsWith(' kvitton utan projekt')));
     const knappEl = tryckbara.find(e => e.textContent.trim() === ${JSON.stringify(KNAPP)});
     const rubrikEl = kortEl?.querySelector('h2');
     const radEl = kortEl?.querySelector('p');
@@ -214,7 +214,7 @@ async function mat(sida: string, rad: string): Promise<Matning> {
         href: kortEl.getAttribute('href'),
         topp: topp(kortEl),
       } : null,
-      namns: main.textContent.includes('Berätta om') || main.textContent.includes(${JSON.stringify(rad)}),
+      namns: main.textContent.includes('kvitton utan projekt') || main.textContent.includes(${JSON.stringify(rad)}),
       knapp: knappEl ? topp(knappEl) : null,
       ovriga: tryckbara.filter(e => e !== kortEl && e !== knappEl).map(e => ({ text: e.textContent.trim().slice(0, 40), topp: topp(e) })),
       oense,
@@ -258,7 +258,7 @@ async function matBlock(sida: string): Promise<Blockmatning> {
     const main = document.querySelector('main');
     const tryckbara = [...main.querySelectorAll('a, summary')];
     const delar = [
-      ['kortet', tryckbara.find(e => e.textContent.trim().startsWith('Berätta om '))],
+      ['kortet', tryckbara.find(e => [...e.querySelectorAll('h2')].some(h => h.textContent.endsWith(' kvitton utan projekt')))],
       ['knappen', tryckbara.find(e => e.textContent.trim() === ${JSON.stringify(KNAPP)})],
       ['listan', main.querySelector('summary')],
     ].filter(([, e]) => e);
@@ -418,7 +418,7 @@ describe("årsrubriken byter inte yta när sektionen öppnas, mätt i Chrome vid
   }, 60_000);
 });
 
-describe("kortet Berätta om N kvitton och knappen, mätt i Chrome vid 393 px", () => {
+describe("kortet N kvitton utan projekt och knappen, mätt i Chrome vid 393 px", () => {
   it("vid tre oklassificerade står kortet först, med rubriken och meningen ur design.md, sedan knappen, sedan listan", async () => {
     const ord = kortetsOrd(3);
     const m = await mat("med-rad", ord.rad);
@@ -427,7 +427,7 @@ describe("kortet Berätta om N kvitton och knappen, mätt i Chrome vid 393 px", 
     expect(m.kort, "kortet ska synas").not.toBeNull();
     expect(m.kort!.rubrik).toBe(ord.rubrik);
     expect(m.kort!.rad).toBe(ord.rad);
-    expect(m.kort!.href).toBe("/genomgang");
+    expect(m.kort!.href).toBe("/projekt/nytt");
     expect(m.knapp, "knappen ska synas").not.toBeNull();
     expect(m.ovriga.length, "listan ska ha något att trycka på").toBeGreaterThan(0);
     expect(m.kort!.topp).toBeLessThan(m.knapp!);
@@ -457,7 +457,7 @@ describe("kortet Berätta om N kvitton och knappen, mätt i Chrome vid 393 px", 
     for (const o of m.ovriga) expect(m.knapp!, `knappen före "${o.text}"`).toBeLessThan(o.topp);
   }, 60_000);
 
-  it("ett tryck med fingret på kortet leder till genomgången", async () => {
+  it("ett tryck med fingret på kortet leder till Skapa projekt", async () => {
     const w = webblasare;
     await w.cdp("Emulation.setDeviceMetricsOverride", { width: 393, height: 852, deviceScaleFactor: 3, mobile: true });
     await w.cdp("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
@@ -475,12 +475,12 @@ describe("kortet Berätta om N kvitton och knappen, mätt i Chrome vid 393 px", 
       await w.cdp("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: punkt!.x, y: punkt!.y }] });
       await w.cdp("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
       let sida = "";
-      for (let i = 0; i < 40 && sida !== "/genomgang"; i++) {
+      for (let i = 0; i < 40 && sida !== "/projekt/nytt"; i++) {
         await new Promise((r) => setTimeout(r, 50));
         sida = await w.utvardera<string>("location.pathname").catch(() => "");
       }
       console.log(`tryck på "${rubrik}" ledde till ${sida}`);
-      expect(sida, "trycket ska leda till genomgången").toBe("/genomgang");
+      expect(sida, "trycket ska leda till Skapa projekt").toBe("/projekt/nytt");
     } finally {
       await w.cdp("Emulation.setTouchEmulationEnabled", { enabled: false });
     }

@@ -87,7 +87,7 @@ function plats(html: string, monster: RegExp, vad: string): number {
 }
 
 describe("Lägg till kvitto pa kvittolistan", () => {
-  // Ordningen mot raden "Berätta om N kvitton" provas i Chrome, pa det som
+  // Ordningen mot raden "N kvitton utan projekt" provas i Chrome, pa det som
   // renderas: tester/kvittolistan-ordning-layout.test.ts. Raden star fore
   // knappen sedan 2026-11-12 (docs/design.md, Kvittolistan).
   it("ligger fore varje arsrubrik och fore varje kvitto", async () => {

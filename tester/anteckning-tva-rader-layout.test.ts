@@ -24,6 +24,13 @@ import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
 // klippningen avslagen pa en kopia – annars kunde testet passera for att
 // texten rakade rymmas pa en rad.
 //
+// Kryssrutelistan dar kvitton valjs till ett nytt projekt (src/app/projekt/
+// nytt) ar den viktigaste av listorna (docs/design.md) och syns forst i
+// flodets sista steg. Den renderas darfor i en DOM med ett utkast som star pa
+// det steget – samma vag som nar hon kommer tillbaka till flodet – och det
+// som da star skickas till Chrome. Samma sidor mats for att bara en sak ar
+// orange per steg (docs/design.md, "Orange betyder handling").
+//
 // Fas 1:s "Hör inte till bostaden" ar hopfalld tills man trycker, sa den
 // syns inte i en statisk rendering. Fas 1 renderas darfor i en DOM (darav
 // jsdom-miljon), knappen trycks som hon trycker den, och det som da star
@@ -76,6 +83,8 @@ vi.mock("@/lib/dokumentavlasning/analysera", () => ({ analyseraDokumentbuffert: 
 vi.mock("@/app/genomgang/fragor/actions", () => ({ klassificeraHog: vi.fn(async () => ({})) }));
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+// Projektflodet borjar varje steg overst; jsdom har ingen rullning.
+window.scrollTo = () => {};
 
 const { act } = await import("react");
 const { createRoot } = await import("react-dom/client");
@@ -84,6 +93,8 @@ const { default: Oversikt } = await import("@/app/page");
 const { default: KvittolistaSida } = await import("@/app/kostnad/page");
 const { default: FragorSida } = await import("@/app/genomgang/fragor/page");
 const { default: GenomgangSida } = await import("@/app/genomgang/page");
+const { default: NyttProjektSida } = await import("@/app/projekt/nytt/page");
+const { utkastNyckel } = await import("@/app/projekt/nytt/flode");
 
 const ROT = process.cwd();
 const TYPSNITT = readFileSync(join(ROT, "src/app/layout.tsx"), "utf-8").match(
@@ -104,6 +115,13 @@ const OK_KORT = "Nytt ekgolv i sovrummet och hall, det gamla var uppsvallat";
 const OK_LANG =
   "Bytte tre fönster mot gården till treglas, de gamla var tvåglas från 70-talet och drog kallt hela vintern";
 const AV_KORT = "Ny kaffebryggare, den gamla läckte vatten";
+// Projektflodets kryssrutelista har sin egen kolumnbredd. Fas 1:s korta text
+// behover tre rader dar redan utan klippning (uppmatt 2026-11-13), sa listan
+// far ett eget par. Aren och leverantorerna ligger langt fran de andra, sa att
+// fas 1 inte foreslar dem ihop med nagot.
+const NY_KORT = "Slipade parketten i hallen, den var full av repor";
+const NY_LANG =
+  "Lade nytt klinkergolv i tvättstugan eftersom det gamla hade spruckit på flera ställen och släppte in fukt";
 const AV_LANG =
   "Bytte två fönster mot gatan till treglas, de gamla var tvåglas från 70-talet och drog kallt hela vintern";
 
@@ -165,6 +183,17 @@ function seeda() {
     db.lagg("bilaga", { kostnad_id: k.id, sokvag: `x/${k.id}.jpg`, filtyp: "image/jpeg" });
     db.lagg("kostnadsrad", { kostnad_id: k.id, artikel: "Material", belopp: 1_250_000 });
   }
+  for (const [anteckning, dag, leverantor] of [
+    [NY_KORT, "2022-02-03", "Golvpoolen"],
+    [NY_LANG, "2022-09-20", "Kakelhuset"],
+  ] as const) {
+    const k = db.lagg("kostnad", {
+      bostad_id: X, leverantor, anteckning, totalbelopp: 860_000,
+      dokumentdatum: datum(dag), betaldatum: datum(dag), skapad_av: ANNA,
+    });
+    db.lagg("bilaga", { kostnad_id: k.id, sokvag: `x/${k.id}.jpg`, filtyp: "image/jpeg" });
+    db.lagg("kostnadsrad", { kostnad_id: k.id, artikel: "Material", belopp: 860_000 });
+  }
   h.inloggad = { id: ANNA, email: "anna@exempel.se" };
 }
 
@@ -194,9 +223,15 @@ beforeAll(async () => {
     Object.entries(sidor).map(([namn, vy]) => [namn, renderToStaticMarkup(vy)]),
   );
   kroppar.genomgang = await genomgangMedRaknasInteOppen();
+  for (const steg of [1, 2, 3, 4] as const) kroppar[`nytt-${steg}`] = await nyttProjektVidSteg(steg);
   for (const [namn, kropp] of Object.entries(kroppar)) {
     // Bada anteckningarna maste finnas pa sidan – annars mats ingenting.
-    const vantade = namn === "genomgang" ? [HOG_KORT, LANG, OK_KORT, OK_LANG, AV_KORT, AV_LANG] : [KORT, LANG];
+    const vantade =
+      namn === "genomgang"
+        ? [HOG_KORT, LANG, OK_KORT, OK_LANG, AV_KORT, AV_LANG]
+        : namn.startsWith("nytt-")
+          ? [NY_KORT, NY_LANG]
+          : [KORT, LANG];
     for (const t of vantade) expect(kropp, `${namn}: "${t}" renderades inte`).toContain(t);
     SIDOR[namn] = `<!doctype html><html lang="sv"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -228,6 +263,44 @@ async function genomgangMedRaknasInteOppen(): Promise<string> {
   const html = behallare.innerHTML;
   act(() => rot.unmount());
   behallare.remove();
+  return html;
+}
+
+/** Projektflodet renderat i en DOM, med ett utkast som star pa `steg`: namnet
+ *  skrivet, fragetradet besvarat (utbytt mot liknande) och ett kvitto valt. */
+async function nyttProjektVidSteg(steg: 1 | 2 | 3 | 4): Promise<string> {
+  const valt = h.db.tabell("kostnad").find((k) => k.anteckning === OK_KORT)!.id;
+  window.localStorage.setItem(
+    utkastNyckel(X),
+    JSON.stringify({
+      steg,
+      namn: "Nytt golv",
+      bostadsdelar: [],
+      svar: {
+        byggdeNytt: "nej", andradePlanlosning: "nej", nyttEllerBytt: "bytt",
+        battreEllerLiknande: "liknande", merkostnad: null, merkostnadText: "",
+        skickForvarv: "1", motivering: "",
+      },
+      valda: [valt],
+    }),
+  );
+  const vy = await NyttProjektSida();
+  const behallare = document.createElement("div");
+  document.body.appendChild(behallare);
+  const rot = createRoot(behallare);
+  await act(async () => rot.render(vy));
+  const framsteg = [...behallare.querySelectorAll("p")].find((p) => /^\d+ av \d+$/.test(p.textContent!));
+  expect(framsteg?.textContent, "utkastet ska ha ställt flödet på steget").toBe(`${steg} av 4`);
+  // React satter en kontrollerad rutas `checked` som egenskap, inte som
+  // attribut, och innerHTML bar bara attribut – utan det har ser Chrome
+  // aldrig en ikryssad ruta, och orangemätningen nedan provar ingenting.
+  const ikryssade = [...behallare.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')].filter((i) => i.checked);
+  expect(ikryssade, "det valda kvittot ska vara ikryssat").toHaveLength(1);
+  for (const i of ikryssade) i.setAttribute("checked", "");
+  const html = behallare.innerHTML;
+  act(() => rot.unmount());
+  behallare.remove();
+  window.localStorage.clear();
   return html;
 }
 
@@ -321,5 +394,56 @@ describe("anteckningen får två rader där den är radens huvudtext, vid 390 px
     ["Hör inte till bostaden", AV_KORT, AV_LANG, 0, 1],
   ] as const)("genomgang, fas 1 (%s)", async (stalle, kort, lang, plats, antal) => {
     provaParet(`fas 1, ${stalle}`, await mat("genomgang", kort, plats, antal), await mat("genomgang", lang, plats, antal));
+  }, 60_000);
+
+  it("projektflödet, kryssrutelistan där kvitton väljs till projektet", async () => {
+    provaParet("nytt projekt, kryssrutelistan", await mat("nytt-4", NY_KORT), await mat("nytt-4", NY_LANG));
+  }, 60_000);
+});
+
+describe("projektflödet har ett orange element per steg, och det är knappen vidare", () => {
+  // Varje synligt element i sidans innehall vars bakgrund, text, kant eller
+  // accentfarg (en ikryssad ruta) ar nagon av de tre orange tonerna, lasta ur
+  // sidans egna tokens. En ikryssad ruta finns i sista steget.
+  it.each([
+    [1, "Nästa"],
+    [2, "Nästa"],
+    [3, "Nästa"],
+    [4, "Spara"],
+  ] as const)("steg %s: bara %s", async (steg, knapp) => {
+    await cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
+    await cdp("Page.navigate", { url: `${adress}nytt-${steg}` });
+    await vanta(500);
+    const svar = await cdp<{ result: { value: { orange: string[]; tonerLasta: number; ikryssade: number } } }>("Runtime.evaluate", {
+      awaitPromise: true,
+      returnByValue: true,
+      expression: `(async () => {
+        for (let i = 0; i < 100 && document.readyState !== 'complete'; i++) await new Promise(r => setTimeout(r, 100));
+        const prov = document.createElement('div');
+        document.body.appendChild(prov);
+        const toner = new Set(['--accent', '--accent-mork', '--accent-ljus'].map(t => {
+          prov.style.color = 'var(' + t + ')';
+          return getComputedStyle(prov).color;
+        }));
+        prov.remove();
+        const orange = [];
+        for (const el of document.querySelectorAll('body *')) {
+          if (!el.checkVisibility({ visibilityProperty: true, opacityProperty: true })) continue;
+          const r = el.getBoundingClientRect();
+          if (r.width === 0 || r.height === 0) continue;
+          const s = getComputedStyle(el);
+          const farger = [s.backgroundColor, s.color, s.borderTopColor];
+          if (el.matches('input:checked')) farger.push(s.accentColor);
+          if (farger.some(f => toner.has(f))) orange.push(el.tagName + ': ' + el.textContent.trim().slice(0, 30));
+        }
+        return { orange, tonerLasta: toner.size, ikryssade: [...document.querySelectorAll('input:checked')].filter(i => i.checkVisibility()).length };
+      })()`,
+    });
+    const { orange, tonerLasta, ikryssade } = svar.result.value;
+    // Sista steget ska ha en synlig ikryssad ruta, annars provas inte rutans farg.
+    expect(ikryssade, "synliga ikryssade rutor").toBe(steg === 4 ? 1 : 0);
+    console.log(`nytt projekt, steg ${steg}: ${orange.length} orange – ${orange.join(" | ")}`);
+    expect(tonerLasta, "tre olika orange toner ska gå att läsa ur sidan").toBe(3);
+    expect(orange).toEqual([`BUTTON: ${knapp}`]);
   }, 60_000);
 });

@@ -150,7 +150,13 @@ export function tolkaFragetradetFormData(
 }
 
 /** Meddelandet nar merkostnaden inte ar mindre an projektets belopp – vilket
- *  projekt och vilket belopp det galler. */
+ *  projekt och vilket belopp det galler. Ett projekt utan betalda kvitton har
+ *  beloppet 0, och "mindre än 0 kr" vore en uppmaning ingen kan folja – det
+ *  hander nar projektet skapas utan kvitton, och nar ett projekt bara har
+ *  obetalda. */
 export function merkostnadOverBeloppetFel(projektnamn: string, beloppOren: number): string {
+  if (beloppOren === 0) {
+    return `Merkostnaden måste vara mindre än vad ”${projektnamn}” kostade, och projektet har inga betalda kvitton än.`;
+  }
   return `Ange en merkostnad mindre än ${formateraKronor(beloppOren)} – det är vad ”${projektnamn}” kostade.`;
 }

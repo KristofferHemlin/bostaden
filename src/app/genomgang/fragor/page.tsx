@@ -100,7 +100,7 @@ export default async function FragorSida() {
   });
 
   // Kvitton som annu inte lagts ihop ligger i fas 1 och syns inte harifran.
-  // Samma urval som fas 1 och kvittolistans "Berätta om N kvitton": tomma
+  // Samma urval som fas 1 och kvittolistans "N kvitton utan projekt": tomma
   // utkast och kvitton som satts at sidan ingar inte (src/app/genomgang/page.tsx).
   const kvarAttLaggaIhop =
     hogarMedKvitton.length === 0

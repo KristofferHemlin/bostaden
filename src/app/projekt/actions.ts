@@ -1,8 +1,9 @@
 "use server";
 
-// Steg 6.4: rattning i efterhand for ett befintligt projekt. Sjalva skapandet
-// sker inte via nagon egen sida langre (rutten /projekt/nytt ar borttagen) utan
-// i klassificeringsgenomgangen och i kostnadsformularet.
+// Projektets server-actions: skapandet (produktspec 2b, "Projektet, och
+// frågorna" – projektet skapas direkt, och kvittona hamtas till det) och
+// rattning i efterhand (produktspec 6.4). Klassificeringsgenomgangens fas 2
+// skapar inga projekt; den klassificerar hogar som fas 1 lagt ihop.
 //
 // Fragetradet (produktspec 4.1) fraga 1-6 och fraga 8 tolkas av den delade
 // hjalparen tolkaFragetradetFormData – samma tolkning som genomgangens fas 2
@@ -13,8 +14,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { kostnaderKoppladeTillProjekt } from "@/doman/berakningar";
 import { tolkaSkickForvarv } from "@/doman/fragetradet";
+import { beloppOmKopplade, kvittoGarAttKoppla } from "@/doman/kvittokoppling";
 import { hamtaProjektetsBelopp, tillDomanKostnad } from "@/lib/doman-fran-db";
 import { tolkaBostadsdelar } from "@/doman/bostadsdel";
+import { serverfelMeddelande } from "@/lib/databas-fel";
+import { arGiltigtId } from "@/lib/giltigt-id";
+import { kopplaKvittonTillProjekt } from "@/lib/kvittokoppling";
 import { kravBostadsfragorBesvarade } from "@/lib/bostadsfragor-sparr";
 import { sparaBostadsdelar } from "@/lib/bostadsdel-lagring";
 import {
@@ -38,6 +43,108 @@ function revalideraProjektvyer(projektId: string): void {
   revalidatePath("/kostnad");
   revalidatePath("/kostnad/[id]", "page");
   revalidatePath("/export");
+}
+
+export interface SkapaProjektResultat extends ProjektResultat {
+  /** Projektets id nar det sparats. Formularet tar da bort sitt utkast och
+   *  gar till projektet – en redirect harifran hade inte latit det stada. */
+  skapat?: string;
+}
+
+/** Ett valt kvitto hann kopplas nagon annanstans medan fragorna besvarades. */
+class KvittonaHannAndras extends Error {}
+
+/**
+ * Skapar ett projekt med namn, bostadsdel, fragetradets svar och de kvitton
+ * som horde hit – allt i en transaktion (docs/design.md, "Att skapa ett
+ * projekt"). Det ar hela skalet till att ingenting sparas forran har: ett
+ * projekt utan namn eller utan svar kan inte uppsta, och dar ett sadant en
+ * gang uppstod (genomgangens hog mellan fas 1 och fas 2) visades det fel pa
+ * fyra stallen (CLAUDE.md, "Tillståndet mellan två steg").
+ *
+ * Bostadsfragorna krävs inte: de stalls vid forsaljningen (produktspec 4.1)
+ * och ror inget av det som sparas har.
+ *
+ * Kvittovalet ar frivilligt. Merkostnaden provas mot det de valda kvittona
+ * bidrar med (beloppOmKopplade) – ett projekt utan kvitton har beloppet 0,
+ * och da gar "Bättre kvalitet" inte att spara, eftersom 0 < merkostnad <
+ * belopp saknar losning (CLAUDE.md, steg 2).
+ */
+export async function skapaProjekt(
+  _foreg: SkapaProjektResultat,
+  formData: FormData,
+): Promise<SkapaProjektResultat> {
+  const { bostadId, anvandareId } = await kravBostad();
+
+  const kostnadIder = [
+    ...new Set(formData.getAll("kostnad_ider").map(String).filter(arGiltigtId)),
+  ];
+  const valda = (
+    await prisma.kostnad.findMany({
+      where: { id: { in: kostnadIder }, bostad_id: bostadId },
+      include: { rader: { include: { fordelningar: true } } },
+    })
+  ).filter((k) => kvittoGarAttKoppla(tillDomanKostnad(k)));
+
+  const belopp = beloppOmKopplade(valda.map(tillDomanKostnad));
+  const tolkat = tolkaFragetradetFormData(formData, { belopp });
+  if ("fel" in tolkat) return tolkat;
+  const bostadsdelar = tolkaBostadsdelar(formData);
+
+  // Ar-etiketten ar tidigaste betaldatum bland kvittona, som nar en hog
+  // klassificeras; utan betalt kvitto aret i dag. Allt som raknas utgar anda
+  // fran kostnadernas betaldatum, inte fran den har.
+  const arKandidater = valda.flatMap((k) =>
+    k.betaldatum ? [k.betaldatum.getUTCFullYear()] : [],
+  );
+  const ar =
+    arKandidater.length > 0 ? Math.min(...arKandidater) : new Date().getUTCFullYear();
+
+  let projektId: string;
+  try {
+    projektId = await prisma.$transaction(async (tx) => {
+      const projekt = await tx.projekt.create({
+        data: {
+          bostad_id: bostadId,
+          namn: tolkat.namn,
+          ar,
+          atgardstyp: tolkat.atgardstyp,
+          battre_kvalitet: tolkat.battre_kvalitet,
+          merkostnad: tolkat.merkostnad,
+          merkostnad_bas: tolkat.merkostnad !== null ? belopp : null,
+          skick_forvarv: tolkat.skick_forvarv,
+          motivering: tolkat.motivering,
+          klassificerad_av: anvandareId,
+        },
+        select: { id: true },
+      });
+      await sparaBostadsdelar(tx, projekt.id, bostadsdelar);
+      const kopplade = await kopplaKvittonTillProjekt(
+        tx,
+        bostadId,
+        projekt.id,
+        valda.map((k) => k.id),
+      );
+      // Beloppet ovan – och darmed merkostnadens grans och bas – raknades pa
+      // just de har kvittona. Hann nagot av dem kopplas nagon annanstans
+      // stammer det inte langre, och da sparas ingenting.
+      if (kopplade.length !== valda.length) throw new KvittonaHannAndras();
+      return projekt.id;
+    });
+  } catch (fel) {
+    if (fel instanceof KvittonaHannAndras) {
+      return {
+        fel: "Ett av kvittona hann kopplas till ett annat projekt medan du svarade. Ladda om sidan och välj kvittona igen.",
+      };
+    }
+    return {
+      fel: serverfelMeddelande(fel, { sida: "projekt/nytt", anrop: "skapaProjekt", anvandareId }),
+    };
+  }
+
+  revalideraProjektvyer(projektId);
+  revalidatePath("/genomgang");
+  return { skapat: projektId };
 }
 
 // Omklassificering andrar atgardstyp/battre_kvalitet/merkostnad/skick_forvarv,

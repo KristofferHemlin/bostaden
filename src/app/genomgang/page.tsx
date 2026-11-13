@@ -54,7 +54,7 @@ export default async function GenomgangSida() {
   }
 
   const [kostnadRader, projektRader] = await Promise.all([
-    // Samma urval som kvittolistans "Berätta om N kvitton" – tomma
+    // Samma urval som kvittolistans "N kvitton utan projekt" – tomma
     // utkast ingar inte (src/lib/tomt-utkast.ts).
     prisma.kostnad.findMany({
       where: { bostad_id: bostadId, ...INTE_TOMT_UTKAST },

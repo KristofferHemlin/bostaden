@@ -4,6 +4,7 @@
 // avgor om ett avdrag haller och far inte glida isar mellan formularen, darfor
 // bor sjalva fragorna i <Fragetradet> och delas ordagrant av:
 //
+//   * projektflodet (projekt/nytt/flode.tsx), dar projektet skapas
 //   * klassificeringsgenomgangens fas 2 (genomgang/fragor/fas2.tsx)
 //   * redigeringen (produktspec 6.4, projekt/[id]/redigera)
 //
@@ -235,8 +236,11 @@ export function Fragetradet({
   /** Ett avvisat svar – visas vid den fraga det galler. */
   fel?: FragetradetFormFel | null;
   /** Projektets summa i oren, efter ROT – det som blir grundforbattring om
-   *  svaret gor hela beloppet till det. Visas under det valda svaret. */
-  helaBeloppet: number;
+   *  svaret gor hela beloppet till det. Visas under det valda svaret.
+   *  Utelamnad nar summan inte ar kand an – i projektflodet valjs kvittona
+   *  efter fragorna, och "Hela beloppet, 0 kr" vore ett pastaende om ett
+   *  projekt som inte har sitt belopp an. Raden visas da inte. */
+  helaBeloppet?: number;
 }) {
   const felFor = (falt: FragetradetFaltnamn) =>
     fel?.falt === falt ? fel.fel : undefined;
@@ -245,9 +249,10 @@ export function Fragetradet({
   // med beloppet, sa att den som har luckor med pa samma faktura ser vad som
   // hander. Ingen hanvisning till att dela upp kvittot: den vagen finns inte
   // an, och en hanvisning till en utvag som inte finns ar varre an ingen.
-  const helaBeloppetRad = (
-    <p className={HJALPTEXT_KLASS}>{helaBeloppetText(helaBeloppet)}</p>
-  );
+  const helaBeloppetRad =
+    helaBeloppet === undefined ? null : (
+      <p className={HJALPTEXT_KLASS}>{helaBeloppetText(helaBeloppet)}</p>
+    );
   return (
     <div className="flex flex-col gap-6">
       {/* Fraga 2. */}

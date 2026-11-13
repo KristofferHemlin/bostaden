@@ -14,9 +14,8 @@
 // helst utan att det som gjorts gar forlorat.
 
 import { revalidatePath } from "next/cache";
-import { arOklassificerad } from "@/doman/genomgang";
 import { serverfelMeddelande } from "@/lib/databas-fel";
-import { tillDomanKostnad } from "@/lib/doman-fran-db";
+import { kopplaKvittonTillProjekt } from "@/lib/kvittokoppling";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
@@ -35,52 +34,20 @@ function revalidera(): void {
   revalidatePath("/export");
 }
 
-const kostnadMedRader = {
-  rader: { include: { fordelningar: true } },
-} as const;
-
 /** Kalenderaret ur ett Date, eller null. */
 function ar(datum: Date | null): number | null {
   return datum ? datum.getUTCFullYear() : null;
 }
 
-/**
- * Kopplar oklassificerade kvitton till en hog: en radfordelning (andel 1) pa
- * varje icke-privat rad som annu saknar projektkoppling. Returnerar de
- * kvitto-id som faktiskt kopplades. Kvitton som inte ar oklassificerade (redan
- * i en hog, eller i "Raknas inte") hoppas tyst over.
- */
-async function kopplaKvittonTillHog(
+// Kopplingen av kvitton till hogen delas med projektflodet
+// (src/lib/kvittokoppling.ts) – samma regel som har alltid galt: varje rad som
+// varken ar privat eller redan kopplad far andel 1.
+function kopplaKvittonTillHog(
   bostadId: string,
   projektId: string,
   kostnadIder: string[],
 ): Promise<string[]> {
-  if (kostnadIder.length === 0) return [];
-
-  const kostnader = await prisma.kostnad.findMany({
-    where: { id: { in: kostnadIder }, bostad_id: bostadId },
-    include: kostnadMedRader,
-  });
-
-  const kopplade: string[] = [];
-  for (const kostnad of kostnader) {
-    if (!arOklassificerad(tillDomanKostnad(kostnad))) continue;
-    const nyaFordelningar = kostnad.rader
-      .filter(
-        (rad) =>
-          !rad.fordelningar.some((f) => f.privat || f.projekt_id !== null),
-      )
-      .map((rad) => ({
-        kostnadsrad_id: rad.id,
-        projekt_id: projektId,
-        privat: false,
-        andel: 1,
-      }));
-    if (nyaFordelningar.length === 0) continue;
-    await prisma.radfordelning.createMany({ data: nyaFordelningar });
-    kopplade.push(kostnad.id);
-  }
-  return kopplade;
+  return kopplaKvittonTillProjekt(prisma, bostadId, projektId, kostnadIder);
 }
 
 /** Tar bort en hog om den inte langre har nagra kopplade rader OCH inte ar

@@ -1,7 +1,7 @@
 "use client";
 
 // "Vilken del av bostaden?" (docs/design.md, "Vilken del av bostaden projektet
-// rörde"). Efter namnet i fas 2, och i projektets redigering – raden pa
+// rörde"). Efter namnet nar projektet skapas och i fas 2, och i projektets redigering – raden pa
 // projektets sida ar nagot hon kan ratta, inte bara nagot hon matat in.
 //
 // Frivillig: ingen markering vid rubriken, ingen hjalptext som sager valfritt
@@ -13,7 +13,7 @@
 // ar sparad visas alltid – annars skulle ett byte av upplatelseform tyst ta
 // bort ett svar vid nasta sparande.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Kortval } from "./fragetradet";
 import { INPUT_KLASS } from "@/components/skarm";
 import {
@@ -32,14 +32,31 @@ import type { Upplatelseform } from "@/doman/typer";
 export function BostadsdelFraga({
   upplatelseform,
   initial = [],
+  onAndring,
 }: {
   upplatelseform: Upplatelseform;
   initial?: BostadsdelSvar[];
+  /** Anropas med hela svaret nar det andras – for projektflodet, som sparar
+   *  ett utkast av det som skrivits. Svaret till servern gar som forut genom
+   *  de dolda falten nedan. */
+  onAndring?: (svar: BostadsdelSvar[]) => void;
 }) {
   const [valda, setValda] = useState<Set<Bostadsdel>>(() => new Set(initial.map((s) => s.del)));
   const [fritext, setFritext] = useState(
     () => initial.find((s) => s.del === "ANNAT")?.fritext ?? "",
   );
+  const forstaRendering = useRef(true);
+  useEffect(() => {
+    if (forstaRendering.current) {
+      forstaRendering.current = false;
+      return;
+    }
+    onAndring?.(
+      [...valda].map((del) => ({ del, fritext: del === "ANNAT" ? fritext : null })),
+    );
+    // onAndring ar en ny funktion vid varje rendering hos foraldern.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [valda, fritext]);
 
   const visade = new Set<Bostadsdel>([...bostadsdelarFor(upplatelseform), ...initial.map((s) => s.del)]);
   // ANNAT sist, ovriga i kodlistans ordning.
