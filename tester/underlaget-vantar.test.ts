@@ -57,7 +57,7 @@ import FragorSida from "@/app/bostaden/fragor/page";
 import { byggK6aExport, VantarPaBostadsfragor, type K6aIndata } from "@/doman/export-k6a";
 import { sammaRader, vantandeUnderlag } from "@/doman/vantande-underlag";
 import { VANTAR_PA_BOSTADSFRAGOR_TEXT } from "@/doman/export-k6a";
-import { formateraKronor } from "@/lib/format";
+import { formateraKronor, formateraKronorEllerStreck } from "@/lib/format";
 import {
   tillDomanBostad,
   tillDomanKostnad,
@@ -69,6 +69,7 @@ const ANNA = "a0000000-0000-4000-8000-000000000091";
 const X = "b0000000-0000-4000-8000-000000000091";
 const ALTAN = "c0000000-0000-4000-8000-000000000091";
 const FONSTER = "c0000000-0000-4000-8000-000000000092";
+const FORRAD = "c0000000-0000-4000-8000-000000000093";
 const datum = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
 const design = () => readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
@@ -84,8 +85,12 @@ function aterstarRaden(): { rubrik: string; rad: string; lank: string } {
  * En såld bostad med en altan (sida 1) och ett fönsterbyte (sida 2) samma år.
  * Altanen ensam ligger under tröskeln; med fönstren passerar året. Svaret om
  * nybyggd avgör alltså om altanen räknas – precis det som inte får gissas.
+ *
+ * Ett förråd 2024 på 6 000 kr passerar tröskeln ensamt, vilket svaret än
+ * blir: det är talet som ska synas redan nu. Utan altanen (medAltan: false)
+ * beror summan på sida 1 inte heller av svaret – men sida 2 gör det fortfarande.
  */
-function seeda({ nybyggd = null as boolean | null, sald = true } = {}) {
+function seeda({ nybyggd = null as boolean | null, sald = true, medAltan = true, agarandel = 100 } = {}) {
   const { db } = h;
   db.nollstall();
   for (const r of REGELPARAMETRAR) {
@@ -96,13 +101,19 @@ function seeda({ nybyggd = null as boolean | null, sald = true } = {}) {
     id: X, adress: "Storgatan 1", upplatelseform: "fastighet", tilltradesdatum: datum("2019-06-01"),
     nybyggd_vid_forvarv: nybyggd, ...(sald ? { forsaljningsdatum: datum("2026-09-15") } : {}),
   });
-  db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: X, agarandel: 100 });
+  db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: X, agarandel });
   db.lagg("projekt", { id: ALTAN, bostad_id: X, namn: "Ny altan", ar: 2025, atgardstyp: "nybyggnad" });
+  db.lagg("projekt", { id: FORRAD, bostad_id: X, namn: "Nytt förråd", ar: 2024, atgardstyp: "nybyggnad" });
   db.lagg("projekt", {
     id: FONSTER, bostad_id: X, namn: "Nya fönster", ar: 2025, atgardstyp: "utbytt",
     battre_kvalitet: false, skick_forvarv: 1, skick_forsaljning: 4,
   });
-  for (const [projekt, belopp, dag] of [[ALTAN, 300_000, "2025-05-02"], [FONSTER, 900_000, "2025-06-10"]] as const) {
+  const kostnader: [string, number, string][] = [
+    [FORRAD, 600_000, "2024-04-12"],
+    [FONSTER, 900_000, "2025-06-10"],
+  ];
+  if (medAltan) kostnader.push([ALTAN, 300_000, "2025-05-02"]);
+  for (const [projekt, belopp, dag] of kostnader) {
     const k = db.lagg("kostnad", {
       bostad_id: X, leverantor: "Byggmax", totalbelopp: belopp,
       dokumentdatum: datum(dag), betaldatum: datum(dag),
@@ -142,28 +153,78 @@ async function sidan(): Promise<HTMLDivElement> {
 
 beforeEach(() => seeda());
 
-describe("ingenting gissas", () => {
-  it("förutsättningen: svaret ändrar summorna i det här fallet", async () => {
-    const i = await indata();
-    const med = (nybyggd: boolean) => byggK6aExport({ ...i, bostad: { ...i.bostad, nybyggd_vid_forvarv: nybyggd } });
-    expect(() => byggK6aExport(i)).toThrow(VantarPaBostadsfragor);
-    expect(med(false).ruta4_brutto, "inte nybyggd: året passerar tröskeln").toBe(300_000);
-    expect(med(true).ruta4_brutto, "nybyggd: altanen ensam under tröskeln").toBe(0);
+/** Underlaget för ett av de två möjliga svaren. */
+async function svaret(nybyggd: boolean) {
+  const i = await indata();
+  return byggK6aExport({ ...i, bostad: { ...i.bostad, nybyggd_vid_forvarv: nybyggd, ombildning_fran_hyresratt: false } });
+}
+const rad = (ex: Awaited<ReturnType<typeof svaret>>, sida: 1 | 2, atgard: string) =>
+  (sida === 1 ? ex.sida1 : ex.sida2).rader.find((r) => r.atgard === atgard)!;
+
+describe("ingenting gissas, och ingenting döljs i onödan", () => {
+  // Förutsättningen för varje tal som släpps fram: svaret ändrar andra tal i
+  // samma underlag. Annars jämför testet två likadana körningar, och likheten
+  // bevisar ingenting.
+  it("förutsättningen: svaret ändrar altanen, fönstren och båda summorna", async () => {
+    const obesvarad = await indata();
+    expect(() => byggK6aExport(obesvarad)).toThrow(VantarPaBostadsfragor);
+    const nej = await svaret(false);
+    const ja = await svaret(true);
+    expect([rad(nej, 1, "Ny altan").avdragsgill_del_brutto, rad(ja, 1, "Ny altan").avdragsgill_del_brutto]).toEqual([300_000, 0]);
+    expect([rad(nej, 2, "Nya fönster").avdragsgill_del_brutto, rad(ja, 2, "Nya fönster").avdragsgill_del_brutto]).toEqual([540_000, 0]);
+    expect([nej.ruta4_brutto, ja.ruta4_brutto]).toEqual([900_000, 600_000]);
+    expect([nej.ruta5_brutto, ja.ruta5_brutto]).toEqual([540_000, 0]);
+    // Och förrådet är detsamma i båda – det som ska synas.
+    expect([rad(nej, 1, "Nytt förråd").avdragsgill_del_brutto, rad(ja, 1, "Nytt förråd").avdragsgill_del_brutto]).toEqual([600_000, 600_000]);
   });
 
-  // Skyddsnätet: skulle en rad skilja sig mellan svaren får den inget belopp.
-  // Beräkningen kan inte framkalla det, så det prövas med rader för hand.
-  it("en rad vars belopp beror av svaret får inget belopp", () => {
-    const a = [{ atgard: "Nya fönster", ar: 2025, kostnad_brutto: 900_000 }];
-    expect(sammaRader(a, [{ ...a[0], kostnad_brutto: 0 }])).toEqual([{ atgard: "Nya fönster", ar: 2025, belopp: null }]);
-    expect(sammaRader(a, [])).toEqual([{ atgard: "Nya fönster", ar: 2025, belopp: null }]);
-    expect(sammaRader(a, a)).toEqual([{ atgard: "Nya fönster", ar: 2025, belopp: 900_000 }]);
+  it("det som är lika visas, det som skiljer sig står som streck", async () => {
+    const v = vantandeUnderlag(await indata(), "fastighet", true);
+    const tal = (r: { atgard: string; belopp: number | null; avdragsgill: number | null }) => [r.atgard, r.belopp, r.avdragsgill];
+    expect(v.sida1.map(tal)).toEqual([
+      ["Nytt förråd", 600_000, 600_000],
+      ["Ny altan", 300_000, null],
+    ]);
+    expect(v.sida2.map(tal)).toEqual([["Nya fönster", 900_000, null]]);
+    expect(v.ruta4, "summan på sida 1 beror av altanen").toBeNull();
+    expect(v.ruta5).toBeNull();
   });
 
-  it("raderna och vad de kostade är desamma för båda svaren, och visas", async () => {
-    const v = vantandeUnderlag(await indata());
-    expect(v.sida1).toEqual([{ atgard: "Ny altan", ar: 2025, belopp: 300_000 }]);
-    expect(v.sida2).toEqual([{ atgard: "Nya fönster", ar: 2025, belopp: 900_000 }]);
+  it("när summan på sida 1 inte beror av svaret visas den, med Förs till", async () => {
+    seeda({ medAltan: false });
+    // Förutsättningen i det här fallet: svaret ändrar fortfarande sida 2.
+    expect([(await svaret(false)).ruta5_brutto, (await svaret(true)).ruta5_brutto]).toEqual([540_000, 0]);
+    expect([(await svaret(false)).ruta4_brutto, (await svaret(true)).ruta4_brutto]).toEqual([600_000, 600_000]);
+    const v = vantandeUnderlag(await indata(), "fastighet", true);
+    expect(v.ruta4).toEqual({ ruta: { etikett: "Förs till K5, ruta 4", belopp: 600_000, avrundat: false }, brutto: 600_000 });
+    expect(v.ruta5).toBeNull();
+  });
+
+  // Förklaringen under raden följer samma regel som talen. I fallet ovan har
+  // bara det ena svaret en förklaring (tröskeln för altanen), så en förklaring
+  // ur det andra svaret råkar se rätt ut. Därför också rader där båda svaren
+  // har en förklaring, och de skiljer sig.
+  it("en förklaring visas bara när den är densamma för båda svaren", async () => {
+    const nej = await svaret(false);
+    const ja = await svaret(true);
+    const altanJa = rad(ja, 1, "Ny altan");
+    expect(altanJa.forklaring, "förutsättningen: svaret ger altanen en förklaring").not.toBeNull();
+    expect(rad(nej, 1, "Ny altan").forklaring).toBeNull();
+    const medForklaring = (r: typeof altanJa, forklaring: string) => ({ ...r, forklaring });
+    const a = nej.sida1.rader.map((r) => medForklaring(r, "Föll på tröskeln"));
+    const b = ja.sida1.rader.map((r) => medForklaring(r, "Var nybyggd vid förvärvet"));
+    expect(sammaRader(a, b, true).map((r) => r.forklaring)).toEqual([null, null]);
+    expect(sammaRader(a, a, true).map((r) => r.forklaring)).toEqual(["Föll på tröskeln", "Föll på tröskeln"]);
+  });
+
+  // Skyddsnätet: skulle raderna inte motsvara varandra får ingen rad ett tal.
+  // Beräkningen kan inte framkalla det, så det prövas med rader från två olika
+  // bostäder.
+  it("rader som inte motsvarar varandra får inga tal", async () => {
+    const nej = await svaret(false);
+    const v = sammaRader(nej.sida1.rader, nej.sida1.rader.slice(1), true);
+    expect(v.map((r) => [r.belopp, r.avdragsgill, r.individuellt])).toEqual([[null, null, null], [null, null, null]]);
+    expect(sammaRader(nej.sida1.rader, nej.sida1.rader, true).map((r) => r.belopp)).toEqual([600_000, 300_000]);
   });
 });
 
@@ -181,26 +242,61 @@ describe("underlaget väntar i stället för att misslyckas", () => {
     expect(s.textContent).not.toMatch(/kunde inte beräknas/);
   });
 
-  it("visar raderna med sina belopp, och ingen avdragsgill kolumn", async () => {
+  const tabeller = (s: HTMLElement) =>
+    [...s.querySelectorAll("table")].map((t) => [...t.querySelectorAll("tbody tr")].map((tr) => [...tr.querySelectorAll("td")].map((td) => td.textContent)));
+  const STRECK = formateraKronorEllerStreck(null);
+
+  it("visar varje tal som är lika för båda svaren, och streck där de skiljer sig", async () => {
     const s = await sidan();
-    const rader = [...s.querySelectorAll("tbody tr")].map((tr) => [...tr.querySelectorAll("td")].map((td) => td.textContent));
-    expect(rader).toEqual([
-      ["Ny altan", "2025", formateraKronor(300_000)],
-      ["Nya fönster", "2025", formateraKronor(900_000)],
+    expect(tabeller(s)).toEqual([
+      [
+        ["Nytt förråd", "2024", formateraKronor(600_000), formateraKronor(600_000)],
+        ["Ny altan", "2025", formateraKronor(300_000), STRECK],
+      ],
+      [["Nya fönster", "2025", formateraKronor(900_000), STRECK]],
     ]);
-    expect([...s.querySelectorAll("th")].map((t) => t.textContent)).not.toContain("Avdragsgill del");
   });
 
-  it("håller tillbaka summorna – inget tal och ingen Förs till", async () => {
+  // Kolumnen Din andel, när hon äger halva bostaden: samma regel som de
+  // andra talen. Förutsättningen först – att svaret ändrar andelen för altanen.
+  it("Din andel visas där den är lika för båda svaren, och streck där den skiljer sig", async () => {
+    seeda({ agarandel: 50 });
+    const i = await indata();
+    const andel = async (nybyggd: boolean, atgard: string) =>
+      byggK6aExport({ ...i, medlemskap: { agarandel: 50 }, bostad: { ...i.bostad, nybyggd_vid_forvarv: nybyggd, ombildning_fran_hyresratt: false } })
+        .sida1.rader.find((r) => r.atgard === atgard)!.avdragsgill_del_individuellt;
+    expect([await andel(false, "Ny altan"), await andel(true, "Ny altan")]).toEqual([150_000, 0]);
+    expect([await andel(false, "Nytt förråd"), await andel(true, "Nytt förråd")]).toEqual([300_000, 300_000]);
+
+    const s = await sidan();
+    expect([...s.querySelectorAll("th")].map((t) => t.textContent)).toContain("Din andel");
+    expect(tabeller(s)[0]).toEqual([
+      ["Nytt förråd", "2024", formateraKronor(600_000), formateraKronor(600_000), formateraKronor(300_000)],
+      ["Ny altan", "2025", formateraKronor(300_000), STRECK, STRECK],
+    ]);
+  });
+
+  it("en summa som beror av svaret står som streck, utan Förs till och dämpad", async () => {
     const s = await sidan();
     expect(s.textContent).not.toMatch(/Förs till/);
     const summor = [...s.querySelectorAll("section")].filter((e) => e.textContent?.startsWith("Summa sida"));
     expect(summor.map((e) => e.textContent)).toEqual([
-      "Summa sida 1 – grundförbättringar–",
-      "Summa sida 2 – avdragsgill del efter förslitning–",
+      `Summa sida 1 – grundförbättringar${STRECK}`,
+      `Summa sida 2 – avdragsgill del efter förslitning${STRECK}`,
     ]);
-    // Dämpade som varje ofullständig summa.
     for (const e of summor) expect(e.querySelector(".font-rubrik")!.className).toContain("text-text-sekundar");
+  });
+
+  it("en summa som är lika för båda svaren visas med Förs till, dämpad", async () => {
+    seeda({ medAltan: false });
+    const s = await sidan();
+    const forsTill = [...s.querySelectorAll("section")].filter((e) => e.textContent?.startsWith("Förs till"));
+    expect(forsTill).toHaveLength(1);
+    const [etikett, tal] = [...forsTill[0].querySelectorAll("span")].map((e) => e.textContent);
+    expect([etikett, tal]).toEqual(["Förs till K5, ruta 4", formateraKronor(600_000)]);
+    expect(forsTill[0].querySelector(".font-rubrik")!.className).toContain("text-text-sekundar");
+    const streck = [...s.querySelectorAll("section")].filter((e) => e.textContent?.startsWith("Summa sida"));
+    expect(streck.map((e) => e.textContent)).toEqual([`Summa sida 2 – avdragsgill del efter förslitning${STRECK}`]);
   });
 
   it("Återstår börjar med designens rad och leder till Frågor om bostaden", async () => {
@@ -225,7 +321,7 @@ describe("underlaget väntar i stället för att misslyckas", () => {
     seeda({ sald: false });
     const s = await sidan();
     const summor = [...s.querySelectorAll("section")].filter((e) => e.textContent?.startsWith("Summa sida"));
-    expect(summor.map((e) => e.textContent)).toEqual(["Summa sida 1 – grundförbättringar–"]);
+    expect(summor.map((e) => e.textContent)).toEqual([`Summa sida 1 – grundförbättringar${formateraKronorEllerStreck(null)}`]);
     expect(s.querySelector("ul li")!.textContent).toContain(aterstarRaden().rubrik);
   });
 

@@ -1,11 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Serverns skyddsnat (src/lib/bostadsfragor-sparr.ts): klassificeraHog
-// vagrar sa lange bostadsfragorna ar obesvarade. redigeraProjekt gor det inte
-// langre – se nedan. Sidspärren
-// hindrar redan vagen dit, men ett granssnitt gar att ga forbi. Spärren ger
-// samma vag vidare som sidspärren – fragorna pa /genomgang/fragor – och
-// ingen egen felskarm.
+// Att redigera ett projekt kraver inte bostadsfragorna (produktspec 4.1):
+// de stalls vid forsaljningen och nar underlaget behover dem. Till 2026-11-13
+// fanns en spärr har och i genomgangens fas 2, som skickade till
+// /genomgang/fragor. Genomgangen ar riven; det som provas har ar att
+// redigeringen sparar med och utan svaren.
 
 const BOSTAD = "11111111-1111-1111-1111-111111111111";
 const ANVANDARE = "22222222-2222-2222-2222-222222222222";
@@ -43,7 +42,6 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-import { klassificeraHog } from "@/app/genomgang/fragor/actions";
 import { redigeraProjekt } from "@/app/projekt/actions";
 
 // Kolumnerna ar nullbara sedan 2026-10-28: null ar obesvarat, false ett
@@ -70,22 +68,6 @@ beforeEach(() => {
   h.projektFindFirst.mockResolvedValue({ id: PROJEKT, atgardstyp: null, ar: 2026 });
   h.projektUpdate.mockResolvedValue({});
   h.kostnadFindMany.mockResolvedValue([]);
-});
-
-describe("klassificeraHog", () => {
-  it("vagrar mot en bostad med obesvarade fragor och skickar till fragorna", async () => {
-    h.bostadFindUniqueOrThrow.mockResolvedValue(OBESVARAD);
-    await expect(klassificeraHog({}, klassificering())).rejects.toThrow(
-      "NEXT_REDIRECT /genomgang/fragor",
-    );
-    expect(h.projektUpdate).not.toHaveBeenCalled();
-  });
-
-  it("klassificerar nar fragorna ar besvarade", async () => {
-    h.bostadFindUniqueOrThrow.mockResolvedValue(BESVARAD);
-    await expect(klassificeraHog({}, klassificering())).rejects.toThrow("NEXT_REDIRECT");
-    expect(h.projektUpdate).toHaveBeenCalledTimes(1);
-  });
 });
 
 // redigeraProjekt kravde fragorna till 2026-11-13 och skickade till

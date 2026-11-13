@@ -143,7 +143,6 @@ export async function skapaProjekt(
   }
 
   revalideraProjektvyer(projektId);
-  revalidatePath("/genomgang");
   return { skapat: projektId };
 }
 

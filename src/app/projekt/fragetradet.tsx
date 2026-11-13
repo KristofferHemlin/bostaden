@@ -5,8 +5,8 @@
 // bor sjalva fragorna i <Fragetradet> och delas ordagrant av:
 //
 //   * projektflodet (projekt/nytt/flode.tsx), dar projektet skapas
-//   * klassificeringsgenomgangens fas 2 (genomgang/fragor/fas2.tsx)
-//   * redigeringen (produktspec 6.4, projekt/[id]/redigera)
+//   * redigeringen (produktspec 6.4, projekt/[id]/redigera), som ocksa
+//     besvarar tradet for ett projekt skapat fore omlaggningen
 //
 // <Fragetradet> ar fraga 2-6 och fraga 8, helt kontrollerat. Fraga 1 (namnet)
 // och sjalva formulartaggen agas av den omslutande sidan – i fas 2 ar namnet
@@ -89,7 +89,7 @@ export const TOMMA_SVAR: FragetradetUIState = {
   motivering: "",
 };
 
-/** Exporterad sa att bostadsfragorna (genomgang/fragor/bostadsfragor.tsx,
+/** Exporterad sa att bostadsfragorna (src/components/bostadsfragor-formular.tsx,
  *  installningar/form.tsx) kan atervanda exakt samma klickbara kort – "korta
  *  alternativ ... inga underrubriker" (docs/design.md, "Projektfragorna"). */
 export function Kortval({

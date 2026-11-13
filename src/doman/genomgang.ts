@@ -1,68 +1,36 @@
-// Klassificeringsgenomgangen (produktspec, avsnittet "Klassificeringsgenomgangen").
-// Tva faser: gruppera forst, klassificera sedan. Skattefragorna hor till atgarden,
-// inte till kvittot – med hundra kvitton och tio atgarder stalls fragorna tio
-// ganger, inte hundra.
+// Det som lever kvar av klassificeringsgenomgangen, som revs 2026-11-13
+// (docs/produktspec.md 2b). Ren doman, inga DB-anrop.
 //
-// Den har modulen ar ren doman – inga DB-anrop – sa forslagslogiken kan testas
-// fristaende. Sjalva grupperingen och klassificeringen sker via server-actions i
-// src/app/genomgang/.
+//   * arOklassificerad – ett kvitto som varken hor till nagot projekt eller
+//     ar markerat som utanfor bostaden. Raknas av kvittolistans kort och
+//     avgor vilka kvitton som gar att hamta till ett projekt
+//     (src/doman/kvittokoppling.ts).
+//   * hogVisningsnamn / projektnamnKarta – ett projekt utan namn heter som
+//     sina kvitton. Sedan omlaggningen far varje nytt projekt ett namn, sa det
+//     galler bara projekt skapade fore den (docs/design.md, "Projekt som
+//     skapades före omläggningen").
 //
-// Modellen:
-//   * En hog ar ett projekt. Fas 1 skapar projektet med atgardstyp = null; fas 2
-//     kor fragetradet och satter atgardstyp (m.fl. svar).
-//     `hogBehoverKlassificeras` = atgardstyp null.
-//   * "Raknas inte" ar INGEN hog – det ar kostnad.arkiverad = true. De kvittona
-//     faller ur `arOklassificerad` och dyker aldrig upp i genomgangen igen.
-//     Ordet "arkiverad" visas aldrig for anvandaren; hogen heter "Raknas inte".
-//
-// Forslag ar ALLTID forslag: `foreslaHogar` pekar ut mojliga hogar men ingen hog
-// skapas utan att anvandaren bekraftat.
+// Sammanslagningsforslagen (foreslaHogar) togs bort med genomgangen, med flit.
 
 import { harledKostnadstillstand } from "./berakningar";
-import type { Atgardstyp, Kostnad } from "./typer";
-
-/** Ett kvitto som visas i fas 1, tillplattat till det forslagen behover. */
-export interface GenomgangsKvitto {
-  id: string;
-  /** null for ett utkast som annu inte fatt sina uppgifter. */
-  leverantor: string | null;
-  anteckning: string | null;
-  /** Narhets- och sorteringsdatum: betaldatum om det finns, annars dokumentdatum.
-   *  "YYYY-MM-DD", eller null for ett utkast utan datum. */
-  datum: string | null;
-}
-
-export interface Hogforslag {
-  /** Kvitto-id i datumordning. Alltid minst tva. */
-  kvitto_ider: string[];
-  /** Kort forklaring till varfor kvittona foreslas ihop. */
-  motiv: string;
-}
+import type { Kostnad } from "./typer";
 
 /**
- * Ett kvitto ingar i genomgangen sa lange det varken ar arkiverat ("Raknas
- * inte") eller redan kopplat till en hog. Privat-markerade rader raknas inte som
- * en koppling – ett kvitto med bara en privat rad ar fortfarande oklassificerat.
+ * Ett kvitto ar "utan projekt" sa lange det varken ar markerat som utanfor
+ * bostaden (arkiverat) eller redan kopplat till ett projekt. Privat-markerade
+ * rader raknas inte som en koppling – ett kvitto med bara en privat rad ar fortfarande oklassificerat.
  */
 export function arOklassificerad(kostnad: Kostnad): boolean {
   if (kostnad.arkiverad) return false;
   return harledKostnadstillstand(kostnad).okopplad;
 }
 
-/** En hog behover klassificeras (fas 2) sa lange dess atgardstyp inte ar satt. */
-export function hogBehoverKlassificeras(projekt: {
-  atgardstyp: Atgardstyp | null;
-}): boolean {
-  return projekt.atgardstyp === null;
-}
-
-// ---- Visning i fas 1 --------------------------------------------------------
+// ---- Ett projekt utan namn --------------------------------------------------
 
 /**
- * Hogen far inget namn i fas 1 (produktspec, "Klassificeringsgenomgangen") –
- * namnet ar svaret pa fragetradets forsta fraga och stalls forst i fas 2. Fram
- * till dess visas hogen som antal och leverantorer: "2 kvitton · BAUHAUS,
- * Jysk". Leverantorer listas i den ordning de forst forekommer, utan
+ * Ett projekt skapat fore omlaggningen kan sakna namn – genomgangens hog fick
+ * sitt forst nar fragorna besvarades. Det visas da som antal och leverantorer:
+ * "2 kvitton · BAUHAUS, Jysk". Leverantorer listas i den ordning de forst forekommer, utan
  * dubbletter; saknar alla kvitton leverantor (t.ex. utkast) blir det bara
  * antalet.
  */
@@ -91,14 +59,19 @@ export interface KvittoForHognamn {
   rader: { fordelningar: { projekt_id: string | null }[] }[];
 }
 
-// Samma ordning som fas 1 (src/app/genomgang/page.tsx): betaldatum, sedan
-// dokumentdatum, tomma sist – sa att leverantorerna star i samma ordning har
-// som dar hogen lades ihop.
+// Betaldatum, sedan dokumentdatum, tomma sist – den ordning hogen en gang
+// lades ihop i. Leverantoren sist, sa att tva kvitton med samma datum alltid
+// ger samma namn: lika datum ar ingen ordning (CLAUDE.md, "Lika tidsstämplar
+// är ingen ordning").
 function tid(d: Date | null): number {
   return d ? d.getTime() : Number.POSITIVE_INFINITY;
 }
-function fas1Ordning(a: KvittoForHognamn, b: KvittoForHognamn): number {
-  return tid(a.betaldatum) - tid(b.betaldatum) || tid(a.dokumentdatum) - tid(b.dokumentdatum);
+function kvittoordning(a: KvittoForHognamn, b: KvittoForHognamn): number {
+  return (
+    tid(a.betaldatum) - tid(b.betaldatum) ||
+    tid(a.dokumentdatum) - tid(b.dokumentdatum) ||
+    (a.leverantor ?? "").localeCompare(b.leverantor ?? "", "sv")
+  );
 }
 
 /**
@@ -116,7 +89,7 @@ export function projektnamnKarta(
   projekt: { id: string; namn: string }[],
   kvitton: KvittoForHognamn[],
 ): Map<string, string> {
-  const sorterade = [...kvitton].sort(fas1Ordning);
+  const sorterade = [...kvitton].sort(kvittoordning);
   return new Map(
     projekt.map((p) => {
       if (p.namn.trim() !== "") return [p.id, p.namn];
@@ -126,163 +99,4 @@ export function projektnamnKarta(
       return [p.id, hogVisningsnamn(hogens)];
     }),
   );
-}
-
-// ---- Forslagsmotorn ------------------------------------------------------------
-
-// Tre signaler (produktspec): samma leverantor, narhet i tid, och likhet i
-// anteckningarnas text. Trosklarna ar medvetet forsiktiga – ett forslag som
-// bryts isar kostar mer an ett som missas, eftersom det forra ser ut som en bugg.
-const SAMMA_LEVERANTOR_DAGAR = 60;
-const LIKNANDE_TEXT_DAGAR = 120;
-const TEXTLIKHET_TROSKEL = 0.34;
-
-const STOPPORD = new Set([
-  "och",
-  "att",
-  "det",
-  "den",
-  "som",
-  "var",
-  "med",
-  "for",
-  "till",
-  "pa",
-  "av",
-  "en",
-  "ett",
-  "har",
-  "vid",
-  "efter",
-  "samt",
-]);
-
-function normaleraLeverantor(namn: string): string {
-  return namn.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
-function tokenisera(text: string | null): Set<string> {
-  if (!text) return new Set();
-  const ord = text
-    .toLowerCase()
-    .split(/[^0-9a-zà-öø-ÿ]+/i)
-    .map((o) => o.trim())
-    .filter((o) => o.length >= 3 && !STOPPORD.has(o));
-  return new Set(ord);
-}
-
-function jaccard(a: Set<string>, b: Set<string>): number {
-  if (a.size === 0 || b.size === 0) return 0;
-  let snitt = 0;
-  for (const x of a) if (b.has(x)) snitt += 1;
-  return snitt / (a.size + b.size - snitt);
-}
-
-function dagarMellan(a: string | null, b: string | null): number {
-  if (!a || !b) return Number.POSITIVE_INFINITY; // utkast utan datum – ingen narhet
-  const ta = Date.parse(`${a}T00:00:00.000Z`);
-  const tb = Date.parse(`${b}T00:00:00.000Z`);
-  if (!Number.isFinite(ta) || !Number.isFinite(tb)) return Number.POSITIVE_INFINITY;
-  return Math.abs(ta - tb) / 86_400_000;
-}
-
-interface Berikat {
-  kvitto: GenomgangsKvitto;
-  index: number;
-  leverantor: string;
-  tokens: Set<string>;
-}
-
-/** Knyts tva kvitton ihop? Samma leverantor OCH nara i tid, eller lika text OCH nara i tid. */
-function harBand(x: Berikat, y: Berikat): boolean {
-  const dagar = dagarMellan(x.kvitto.datum, y.kvitto.datum);
-  const sammaLeverantor =
-    x.leverantor !== "" && x.leverantor === y.leverantor;
-  if (sammaLeverantor && dagar <= SAMMA_LEVERANTOR_DAGAR) return true;
-  if (
-    jaccard(x.tokens, y.tokens) >= TEXTLIKHET_TROSKEL &&
-    dagar <= LIKNANDE_TEXT_DAGAR
-  ) {
-    return true;
-  }
-  return false;
-}
-
-/**
- * Foreslar hogar ur oklassificerade kvitton. Kvitton knyts ihop transitivt
- * (union-find) sa att tre kvitton dar A-B och B-C har band hamnar i samma hog
- * aven om A-C inte gor det. Bara grupper med minst tva kvitton returneras.
- * Grupperna sorteras pa tidigaste datum; kvittona i en grupp pa datum sedan id.
- */
-export function foreslaHogar(kvitton: GenomgangsKvitto[]): Hogforslag[] {
-  const berikade: Berikat[] = kvitton.map((kvitto, index) => ({
-    kvitto,
-    index,
-    leverantor: normaleraLeverantor(kvitto.leverantor ?? ""),
-    tokens: tokenisera(kvitto.anteckning),
-  }));
-
-  // Union-find.
-  const foralder = berikade.map((_, i) => i);
-  const rot = (i: number): number => {
-    let r = i;
-    while (foralder[r] !== r) r = foralder[r];
-    while (foralder[i] !== r) {
-      const nasta = foralder[i];
-      foralder[i] = r;
-      i = nasta;
-    }
-    return r;
-  };
-  const forena = (i: number, j: number) => {
-    const ri = rot(i);
-    const rj = rot(j);
-    if (ri !== rj) foralder[ri] = rj;
-  };
-
-  for (let i = 0; i < berikade.length; i += 1) {
-    for (let j = i + 1; j < berikade.length; j += 1) {
-      if (harBand(berikade[i], berikade[j])) forena(i, j);
-    }
-  }
-
-  const grupper = new Map<number, Berikat[]>();
-  for (let i = 0; i < berikade.length; i += 1) {
-    const r = rot(i);
-    const lista = grupper.get(r) ?? [];
-    lista.push(berikade[i]);
-    grupper.set(r, lista);
-  }
-
-  const sorteraKvitton = (a: Berikat, b: Berikat) =>
-    (a.kvitto.datum ?? "").localeCompare(b.kvitto.datum ?? "") ||
-    a.kvitto.id.localeCompare(b.kvitto.id);
-
-  const forslag: Hogforslag[] = [];
-  for (const medlemmar of grupper.values()) {
-    if (medlemmar.length < 2) continue;
-    medlemmar.sort(sorteraKvitton);
-
-    const allaSammaLeverantor = medlemmar.every(
-      (m) => m.leverantor !== "" && m.leverantor === medlemmar[0].leverantor,
-    );
-    const motiv = allaSammaLeverantor
-      ? `Samma leverantör, inom ${SAMMA_LEVERANTOR_DAGAR} dagar`
-      : "Liknande anteckningar, inom kort tid";
-
-    forslag.push({
-      kvitto_ider: medlemmar.map((m) => m.kvitto.id),
-      motiv,
-    });
-  }
-
-  forslag.sort((a, b) => {
-    const da =
-      kvitton.find((k) => k.id === a.kvitto_ider[0])?.datum ?? "";
-    const db =
-      kvitton.find((k) => k.id === b.kvitto_ider[0])?.datum ?? "";
-    return da.localeCompare(db);
-  });
-
-  return forslag;
 }

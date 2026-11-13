@@ -160,7 +160,7 @@ export default async function ExportSida() {
       // gissning om svaret (src/doman/vantande-underlag.ts).
       if (fel instanceof VantarPaBostadsfragor) {
         try {
-          return renderaVantande(vantandeUnderlag(indata));
+          return renderaVantande(vantandeUnderlag(indata, bostad.upplatelseform, andelarnaGarIhop));
         } catch (fel2) {
           if (!(fel2 instanceof OgiltigAgarandel)) throw fel2;
           fel = fel2;
@@ -473,9 +473,10 @@ export default async function ExportSida() {
   }
 
   /** Underlaget medan bostadsfragorna ar obesvarade (docs/design.md,
-   *  Exportvyn). Raderna och vad de kostade, aldrig en summa: summan beror
-   *  av svaret, och ett tal som bara ar sant for ett av svaren vore en
-   *  gissning. Återstår borjar med det som fattas och vagen dit. */
+   *  Exportvyn; CLAUDE.md, "Ett okänt svar döljer bara det det ändrar"):
+   *  samma rader, kolumner och summor som annars, men varje tal ar ett som
+   *  blir lika vilket svaret an blir – dar talen skiljer sig star strecket.
+   *  Återstår borjar med det som fattas och vagen dit. */
   function renderaVantande(v: VantandeUnderlag) {
     const kvittoNamn = new Map(kostnadRader.map((k) => [k.id, kvittonamn(k)]));
     const projektnamn = projektnamnKarta(projektRader, kostnadRader);
@@ -493,18 +494,50 @@ export default async function ExportSida() {
           <VantandeSidaBlock
             etikett="Sida 1 · Grundförbättringar"
             rader={v.sida1}
+            gemensam={v.gemensam}
+            visaAvdragsgill
             tomtText="Inga grundförbättringar registrerade."
           />
-          <VantandeSumma underrad="Summa sida 1 – grundförbättringar" />
+          {v.ruta4 ? (
+            <RutaCallout
+              ruta={v.ruta4.ruta}
+              underrad="Summa sida 1 – grundförbättringar"
+              brutto={v.ruta4.brutto}
+              gemensam={v.gemensam}
+              agarandel={v.agarandel_procent}
+              andelInteAngiven={andelslage.slag === "inte_angiven"}
+              // Återstår har alltid en rad har – frågorna – sa summan ar
+              // ofullstandig och dampas som varje sadan.
+              dampad
+            />
+          ) : (
+            <VantandeSumma underrad="Summa sida 1 – grundförbättringar" />
+          )}
         </Kort>
 
         <Kort className="divide-y divide-linje">
           <VantandeSidaBlock
             etikett="Sida 2 · Förbättrande reparationer"
             rader={v.sida2}
+            gemensam={v.gemensam}
+            visaAvdragsgill={v.sald}
             tomtText="Inga förbättrande reparationer registrerade."
           />
-          {v.sald ? <VantandeSumma underrad="Summa sida 2 – avdragsgill del efter förslitning" /> : null}
+          {v.sald ? (
+            v.ruta5 ? (
+              <RutaCallout
+                ruta={v.ruta5.ruta}
+                underrad="Summa sida 2 – avdragsgill del efter förslitning"
+                brutto={v.ruta5.brutto}
+                gemensam={v.gemensam}
+                agarandel={v.agarandel_procent}
+                andelInteAngiven={andelslage.slag === "inte_angiven"}
+                dampad
+              />
+            ) : (
+              <VantandeSumma underrad="Summa sida 2 – avdragsgill del efter förslitning" />
+            )
+          ) : null}
         </Kort>
 
         <Kort className="divide-y divide-linje">
@@ -570,15 +603,19 @@ export default async function ExportSida() {
   }
 }
 
-/** Raderna medan bostadsfragorna ar obesvarade: atgard, ar och vad den
- *  kostade. Ingen avdragsgill kolumn – den beror av svaret. */
+/** Raderna medan bostadsfragorna ar obesvarade: samma kolumner som
+ *  SidaBlock, men ett tal som beror av svaret star som streck. */
 function VantandeSidaBlock({
   etikett,
   rader,
+  gemensam,
+  visaAvdragsgill,
   tomtText,
 }: {
   etikett: string;
   rader: VantandeRad[];
+  gemensam: boolean;
+  visaAvdragsgill: boolean;
   tomtText: string;
 }) {
   return (
@@ -594,16 +631,42 @@ function VantandeSidaBlock({
                 <th className="px-4 py-2 font-normal">Åtgärd</th>
                 <th className="px-4 py-2 font-normal">År</th>
                 <th className="px-4 py-2 text-right font-normal">Belopp</th>
+                {visaAvdragsgill ? (
+                  <th className="px-4 py-2 text-right font-normal">Avdragsgill del</th>
+                ) : null}
+                {gemensam ? <th className="px-4 py-2 text-right font-normal">Din andel</th> : null}
               </tr>
             </thead>
             <tbody className="divide-y divide-linje border-t border-linje">
               {rader.map((r, i) => (
                 <tr key={`${r.atgard}-${r.ar}-${i}`} className="align-top">
-                  <td className="px-4 py-3 text-text-primar">{r.atgard}</td>
+                  <td className="px-4 py-3">
+                    <span className="flex items-center gap-1.5 text-text-primar">{r.atgard}</span>
+                    {r.varningar.map((v) => (
+                      <span key={v} className="mt-0.5 block text-sm text-text-sekundar">
+                        {v}
+                      </span>
+                    ))}
+                    {r.forklaring ? (
+                      <span className="mt-0.5 block text-sm text-text-sekundar">{r.forklaring}</span>
+                    ) : null}
+                  </td>
                   <td className="px-4 py-3 text-text-sekundar">{r.ar}</td>
                   <td className="px-4 py-3 text-right text-text-primar">
                     {formateraKronorEllerStreck(r.belopp)}
                   </td>
+                  {visaAvdragsgill ? (
+                    <td
+                      className={`px-4 py-3 text-right ${r.avdragsgill === null ? "text-text-sekundar" : "text-text-primar"}`}
+                    >
+                      {formateraKronorEllerStreck(r.avdragsgill)}
+                    </td>
+                  ) : null}
+                  {gemensam ? (
+                    <td className="px-4 py-3 text-right text-text-sekundar">
+                      {formateraKronorEllerStreck(r.individuellt)}
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>

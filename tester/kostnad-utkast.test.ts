@@ -8,8 +8,7 @@ import {
   inlagtArsbelopp,
   reduktionsfaktor,
 } from "@/doman/berakningar";
-import { arOklassificerad, foreslaHogar } from "@/doman/genomgang";
-import type { GenomgangsKvitto } from "@/doman/genomgang";
+import { arOklassificerad } from "@/doman/genomgang";
 import type { Kostnad } from "@/doman/typer";
 import { kostnad, projekt } from "./_hjalp";
 
@@ -17,7 +16,7 @@ import { kostnad, projekt } from "./_hjalp";
 // som ett UTKAST nar en fil valts: en kostnad utan belopp, utan rader och utan
 // betaldatum. Ett utkast
 //   - raknas inte in i nagon summa (arssumma, troskel, "Inlagt", export),
-//   - dyker upp i klassificeringsgenomgangen som allt annat oklassificerat,
+//   - räknas som ett kvitto utan projekt, som allt annat okopplat,
 //   - rensas aldrig automatiskt (ingen kod har rensar det – det testas genom att
 //     ingen berakningsfunktion tar bort eller kraver bort det).
 
@@ -92,30 +91,8 @@ describe("ett utkast far inte krascha berakningarna", () => {
   });
 });
 
-describe("ett utkast syns i klassificeringsgenomgangen", () => {
+describe("ett utkast räknas som ett kvitto utan projekt", () => {
   it("arOklassificerad ar sant", () => {
     expect(arOklassificerad(utkast())).toBe(true);
-  });
-
-  it("foreslaHogar tal ett utkast utan datum och leverantor utan att krascha", () => {
-    const kvitton: GenomgangsKvitto[] = [
-      { id: "utkast-1", leverantor: null, anteckning: null, datum: null },
-      {
-        id: "k2",
-        leverantor: "Bauhaus",
-        anteckning: "målade om sovrummet",
-        datum: "2026-04-01",
-      },
-      {
-        id: "k3",
-        leverantor: "Bauhaus",
-        anteckning: "målade om sovrummet, andra vändan",
-        datum: "2026-04-10",
-      },
-    ];
-    const forslag = foreslaHogar(kvitton);
-    // De tva riktiga kvittona foreslas ihop; utkastet dras aldrig in i en hog.
-    expect(forslag).toHaveLength(1);
-    expect(forslag[0].kvitto_ider).toEqual(["k2", "k3"]);
   });
 });

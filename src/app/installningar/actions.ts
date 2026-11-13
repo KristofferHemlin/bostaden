@@ -105,8 +105,6 @@ function revalideraBostadssidor() {
   revalidatePath("/");
   // Tilltradesdatum ar baslinjen for fraga 3 och femarsfonstret, och
   // upplatelseform styr blankettnamnet – bada paverkar dessa sidor.
-  revalidatePath("/genomgang");
-  revalidatePath("/genomgang/fragor");
   revalidatePath("/export");
 }
 

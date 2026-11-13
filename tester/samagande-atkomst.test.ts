@@ -88,16 +88,17 @@ import NyKostnadSida from "@/app/kostnad/nytt/page";
 import ProjektlistaSida from "@/app/projekt/page";
 import ProjektSida from "@/app/projekt/[id]/page";
 import RedigeraProjektSida from "@/app/projekt/[id]/redigera/page";
-import GenomgangSida from "@/app/genomgang/page";
-import FragorSida from "@/app/genomgang/fragor/page";
+import NyttProjektSida from "@/app/projekt/nytt/page";
+import LaggTillKvittonSida from "@/app/projekt/[id]/kvitton/page";
+import FragorOmBostadenSida from "@/app/bostaden/fragor/page";
 import ExportSida from "@/app/export/page";
 import BilagepaketSida from "@/app/export/paket/page";
 import ForsaljningSida from "@/app/forsaljning/page";
 import SkickForsaljningSida from "@/app/forsaljning/skick/page";
 import InstallningarSida from "@/app/installningar/page";
 import {
-  aterforTillGenomgang,
   delaUppKostnad,
+  sattHorInteTillBostaden,
   redigeraKostnad,
   revalideraKostnadssida,
   taBortBilagaAction,
@@ -111,15 +112,9 @@ import {
   taBortBilaga,
 } from "@/app/kostnad/bilaga-actions";
 import { skapaUtkast, sparaKostnad } from "@/app/kostnad/nytt/actions";
-import {
-  aterforFranRaknasInte,
-  flyttaUturHog,
-  laggIHog,
-  raknasInte,
-  skapaHog,
-} from "@/app/genomgang/actions";
-import { klassificeraHog, sparaBostadsfragor } from "@/app/genomgang/fragor/actions";
-import { redigeraProjekt, taBortProjekt } from "@/app/projekt/actions";
+import { redigeraProjekt, skapaProjekt, taBortProjekt } from "@/app/projekt/actions";
+import { laggTillKvitton } from "@/app/projekt/[id]/kvitton/actions";
+import { sparaFragorOmBostaden } from "@/app/bostaden/fragor/actions";
 import { sparaSkickForsaljning } from "@/app/forsaljning/skick/actions";
 import { markeraSald } from "@/app/forsaljning/actions";
 import { sparaBostaden, sparaForvarvet } from "@/app/installningar/actions";
@@ -369,7 +364,9 @@ const VAGAR_MED_ID: Vag[] = [
   },
   { vag: "taBortKostnad", anrop: () => taBortKostnad(START, formular({ kostnad_id: KX })), avslag: "fel" },
   { vag: "taBortUtkastRad", anrop: () => taBortUtkastRad(START, formular({ kostnad_id: UX })), avslag: "fel" },
-  { vag: "aterforTillGenomgang", anrop: () => aterforTillGenomgang(formular({ kostnad_id: AX })), avslag: "ingen verkan" },
+  // "Hör inte till bostaden" och vägen tillbaka – en action, två riktningar.
+  { vag: "sattHorInteTillBostaden (markera)", anrop: () => sattHorInteTillBostaden(KX, true), avslag: "fel" },
+  { vag: "sattHorInteTillBostaden (ta tillbaka)", anrop: () => sattHorInteTillBostaden(AX, false), avslag: "fel" },
   {
     vag: "sparaKostnad (slutfor utkast)",
     anrop: () =>
@@ -413,40 +410,6 @@ const VAGAR_MED_ID: Vag[] = [
     foljer: "egen",
   },
 
-  // Klassificeringsgenomgangen
-  { vag: "skapaHog", anrop: () => skapaHog(START, formular({ kostnad_ider: K3X })), avslag: "fel" },
-  {
-    vag: "laggIHog (annans hog)",
-    anrop: () => laggIHog(START, formular({ projekt_id: HX, kostnad_ider: K3X })),
-    avslag: "fel",
-  },
-  {
-    vag: "laggIHog (egen hog, annans kvitto)",
-    anrop: () => laggIHog(START, formular({ projekt_id: HY, kostnad_ider: K3X })),
-    avslag: "ingen verkan",
-  },
-  {
-    vag: "flyttaUturHog",
-    anrop: () => flyttaUturHog(START, formular({ projekt_id: HX, kostnad_id: K2X })),
-    avslag: "fel",
-  },
-  {
-    vag: "flyttaUturHog (egen hog, annans kvitto)",
-    anrop: () => flyttaUturHog(START, formular({ projekt_id: HY, kostnad_id: K2X })),
-    avslag: "ingen verkan",
-  },
-  { vag: "raknasInte", anrop: () => raknasInte(START, formular({ kostnad_ider: [KX, K2X] })), avslag: "ingen verkan" },
-  {
-    vag: "aterforFranRaknasInte",
-    anrop: () => aterforFranRaknasInte(START, formular({ kostnad_id: AX })),
-    avslag: "ingen verkan",
-  },
-  {
-    vag: "klassificeraHog",
-    anrop: () => klassificeraHog(START, formular({ projekt_id: HX, namn: "Kapat", byggde_nytt: "ja" })),
-    avslag: "fel",
-  },
-
   // Projekten
   {
     vag: "redigeraProjekt",
@@ -454,6 +417,18 @@ const VAGAR_MED_ID: Vag[] = [
     avslag: "fel",
   },
   { vag: "taBortProjekt", anrop: () => taBortProjekt(START, formular({ projekt_id: PX })), avslag: "fel" },
+  // Lägg till kvitton – efterträdaren till genomgångens laggIHog.
+  { vag: "sida /projekt/[id]/kvitton", anrop: () => LaggTillKvittonSida(params(PX)), avslag: "sidan finns inte" },
+  {
+    vag: "laggTillKvitton (annans projekt)",
+    anrop: () => laggTillKvitton(START, formular({ projekt_id: PX, kostnad_ider: K3X })),
+    avslag: "fel",
+  },
+  {
+    vag: "laggTillKvitton (eget projekt, annans kvitto)",
+    anrop: () => laggTillKvitton(START, formular({ projekt_id: HY, kostnad_ider: K3X })),
+    avslag: "fel",
+  },
   {
     vag: "sparaSkickForsaljning",
     anrop: () => sparaSkickForsaljning(START, formular({ projekt_id: PX, skick_forsaljning: "4" })),
@@ -528,8 +503,8 @@ const VAGAR_UTAN_ID: Vag[] = [
   { vag: "sida /kostnad", anrop: () => KvittolistaSida(), avslag: "fel" },
   { vag: "sida /kostnad/nytt", anrop: () => NyKostnadSida({ searchParams: Promise.resolve({}) }), avslag: "fel" },
   { vag: "sida /projekt", anrop: () => ProjektlistaSida(), avslag: "fel" },
-  { vag: "sida /genomgang", anrop: () => GenomgangSida(), avslag: "fel" },
-  { vag: "sida /genomgang/fragor", anrop: () => FragorSida(), avslag: "fel" },
+  { vag: "sida /projekt/nytt", anrop: () => NyttProjektSida(), avslag: "fel" },
+  { vag: "sida /bostaden/fragor", anrop: () => FragorOmBostadenSida({ searchParams: Promise.resolve({}) }), avslag: "fel" },
   { vag: "sida /export", anrop: () => ExportSida(), avslag: "fel" },
   { vag: "sida /export/paket", anrop: () => BilagepaketSida(), avslag: "fel" },
   { vag: "sida /forsaljning", anrop: () => ForsaljningSida(), avslag: "fel" },
@@ -541,8 +516,13 @@ const VAGAR_UTAN_ID: Vag[] = [
   { vag: "sparaBostaden", anrop: () => sparaBostaden(START, formular({ adress: "Kapat" })), avslag: "fel" },
   { vag: "sparaForvarvet", anrop: () => sparaForvarvet(START, formular({ tilltradesdatum: "2019-06-01", agarandel: "50" })), avslag: "fel" },
   {
-    vag: "sparaBostadsfragor",
-    anrop: () => sparaBostadsfragor(START, formular({ forsta_agare: "ja", ombildning: "nej" })),
+    vag: "sparaFragorOmBostaden",
+    anrop: () => sparaFragorOmBostaden(START, formular({ forsta_agare: "ja", ombildning: "nej" })),
+    avslag: "fel",
+  },
+  {
+    vag: "skapaProjekt",
+    anrop: () => skapaProjekt(START, formular({ namn: "Kapat", byggde_nytt: "ja", kostnad_ider: K3X })),
     avslag: "fel",
   },
   { vag: "markeraSald", anrop: () => markeraSald(START, formular({ forsaljningsdatum: "2026-09-01" })), avslag: "fel" },
@@ -641,7 +621,9 @@ describe("tva medlemmar i samma bostad ser samma data", () => {
 
   it("Doris kan skriva i den gemensamma bostaden", async () => {
     loggaIn(DORIS);
-    await aterforFranRaknasInte(START, formular({ kostnad_id: AX }));
+    // Ta tillbaka ett kvitto som inte hörde till bostaden – på kvittots sida
+    // sedan genomgången revs.
+    expect(await sattHorInteTillBostaden(AX, false)).toEqual({});
     expect(h.db.tabell("kostnad").find((k) => k.id === AX)?.arkiverad).toBe(false);
 
     const utkast = await skapaUtkast();
@@ -693,10 +675,14 @@ describe("vem som lade in och vem som besvarade", () => {
     const nytt = h.db.tabell("kostnad").find((k) => k.leverantor === "Byggmax" && k.id !== K2X);
     expect(nytt?.skapad_av).toBe(DORIS);
 
+    // Ett projekt utan svar besvaras i redigeringen sedan genomgången revs.
     await kor(() =>
-      klassificeraHog(START, formular({ projekt_id: HX, namn: "Altanen", byggde_nytt: "ja" })),
+      redigeraProjekt(START, formular({ projekt_id: HX, namn: "Altanen", byggde_nytt: "ja" })),
     );
     expect(h.db.tabell("projekt").find((p) => p.id === HX)?.klassificerad_av).toBe(DORIS);
+
+    await kor(() => skapaProjekt(START, formular({ namn: "Förrådet", byggde_nytt: "ja", kostnad_ider: K3X })));
+    expect(h.db.tabell("projekt").find((p) => p.namn === "Förrådet")?.klassificerad_av).toBe(DORIS);
 
     await kor(() => redigeraProjekt(START, formular({ projekt_id: PX, namn: "Badrummet", byggde_nytt: "ja" })));
     expect(h.db.tabell("projekt").find((p) => p.id === PX)?.klassificerad_av).toBe(DORIS);

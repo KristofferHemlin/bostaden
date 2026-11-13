@@ -421,27 +421,11 @@ export async function delaUppKostnad(
   redirect(`/kostnad/${id}`);
 }
 
-// Ett kvitto som hamnat i "Raknas inte med" (arkiverad) foras tillbaka till
-// klassificeringsgenomgangen. Ordet "arkiverad" visas aldrig for anvandaren.
-export async function aterforTillGenomgang(formData: FormData): Promise<void> {
-  const { bostadId } = await kravBostad();
-  const id = String(formData.get("kostnad_id") ?? "");
-
-  await prisma.kostnad.updateMany({
-    where: { id, bostad_id: bostadId },
-    data: { arkiverad: false },
-  });
-
-  revalideraKostnadsvyer(id);
-  revalidatePath("/genomgang");
-  redirect(`/kostnad/${id}`);
-}
-
 /**
  * "Hör inte till bostaden" i kvittots andringslage (docs/design.md, direkt
  * under privatfaltet): markerar hela kvittot som utanfor underlaget, eller
  * for tillbaka det. Fas 1 i genomgangen var till 2026-11-13 det enda stallet
- * markeringen gick att satta.
+ * markeringen gick att satta, och genomgangen ar riven sedan dess.
  *
  * Den tar inte bort nagot: bilagan och beloppet ligger kvar, och samma
  * kontroll for tillbaka kvittot. En koppling till ett projekt lossas daremot,

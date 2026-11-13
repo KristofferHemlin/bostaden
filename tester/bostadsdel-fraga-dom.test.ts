@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// "Vilken del av bostaden?" i fas 2, provat i en DOM (docs/design.md, "Vilken
+// "Vilken del av bostaden?", provat i en DOM (docs/design.md, "Vilken
 // del av bostaden projektet rörde"): efter namnet, knappar per
 // upplatelseform, flerval, och Annat som oppnar ett fritextfalt. Det formularet
 // skickar ar det servern tolkar – raden i tester/bostadsdel.test.ts provar
@@ -13,11 +13,10 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: () => {}, refresh: () => {} }),
 }));
-vi.mock("@/app/genomgang/fragor/actions", () => ({ klassificeraHog: vi.fn(async () => ({})) }));
 
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { Fas2 } from "@/app/genomgang/fragor/fas2";
+import { FragetradetFalt } from "@/app/projekt/fragetradet";
 import { BostadsdelFraga } from "@/app/projekt/bostadsdel-fraga";
 import { tolkaBostadsdelar } from "@/doman/bostadsdel";
 
@@ -54,13 +53,6 @@ afterEach(() => {
   behallare.remove();
 });
 
-const HOG = {
-  id: "c0000000-0000-4000-8000-0000000000a1",
-  kvitton: [{ id: "k1", rubrik: "Nytt kök", anteckning: true, underrad: "Beijer Bygg · 2025-05-02", belopp: 1_800_000 }],
-  belopp: 1_800_000,
-  summa: 1_800_000,
-};
-
 /** Fragans faltgrupp, hittad pa sin rubrik. */
 function grupp(): HTMLFieldSetElement {
   const legend = [...behallare.querySelectorAll("legend")].find((l) => l.textContent === fragan());
@@ -71,9 +63,19 @@ function grupp(): HTMLFieldSetElement {
 const knappar = () => [...grupp().querySelectorAll("button")].map((b) => b.textContent);
 const knapp = (text: string) => [...grupp().querySelectorAll("button")].find((b) => b.textContent === text)!;
 
-describe("bostadsdelsfragan i fas 2", () => {
+describe("bostadsdelsfragan", () => {
+  // I redigeringen, där namnet, bostadsdelen och frågeträdet står på samma
+  // sida. Till 2026-11-13 prövades ordningen i genomgångens fas 2, som är
+  // riven; projektflödets egna steg prövas i tester/projekt-nytt-flode.test.ts.
   it("star efter namnet och fore fragetradet", async () => {
-    await act(async () => rot.render(createElement(Fas2, { hogar: [HOG], upplatelseform: "bostadsratt" })));
+    await act(async () =>
+      rot.render(
+        createElement(FragetradetFalt, {
+          helaBeloppet: 0,
+          bostadsdel: { upplatelseform: "bostadsratt", initial: [] },
+        }),
+      ),
+    );
     const namn = [...behallare.querySelectorAll("label span")].find((s) => s.textContent?.startsWith("Vad gjorde du?"))!;
     const del = grupp();
     const nasta = [...behallare.querySelectorAll("legend")].find((l) => l.textContent !== fragan())!;

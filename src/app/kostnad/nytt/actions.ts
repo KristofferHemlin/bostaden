@@ -52,7 +52,6 @@ export interface KostnadResultat {
 function revalideraKostnadsvyer(): void {
   revalidatePath("/");
   revalidatePath("/kostnad");
-  revalidatePath("/genomgang");
   revalidatePath("/projekt");
   revalidatePath("/projekt/[id]", "page");
   revalidatePath("/export");
@@ -84,7 +83,6 @@ export async function skapaUtkast(
     });
     revalidatePath("/");
     revalidatePath("/kostnad");
-    revalidatePath("/genomgang");
     return { kostnadId: skapad.id };
   } catch (fel) {
     // Utan ett utkast finns ingen plats att ladda upp bilagan till – filvalet

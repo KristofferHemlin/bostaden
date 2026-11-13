@@ -218,6 +218,19 @@ describe("ordningen och framsteget", () => {
   });
 });
 
+// docs/design.md, "Namnfältet är tomt, och föreslår ingenting". Prövades
+// till 2026-11-13 i genomgångens fas 2, som är riven; regeln gäller här.
+describe("namnfältet", () => {
+  it("är tomt och föreslår ingenting, fast kvittot har en anteckning", async () => {
+    await rendera();
+    // Förutsättningen: det finns en anteckning att föreslå ur.
+    expect(behallare.textContent).toContain(FARG);
+    const falt = behallare.querySelector<HTMLInputElement>('input[type="text"]')!;
+    expect(falt.value).toBe("");
+    expect(behallare.querySelector<HTMLInputElement>('input[type="hidden"][name="namn"]')!.value).toBe("");
+  });
+});
+
 describe("varje steg prövas innan nästa", () => {
   it("ett tomt namn stoppar vid namnet, med serverns lydelse", async () => {
     await rendera();

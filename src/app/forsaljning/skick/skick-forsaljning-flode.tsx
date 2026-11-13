@@ -1,7 +1,7 @@
 "use client";
 
 // Steg 4: fraga 7, en atgard i taget – samma monster som klassificerings-
-// genomgangens fas 2 (src/app/genomgang/fragor/fas2.tsx). "Hoppa over" gar
+// den gamla genomgangens fas 2 (riven 2026-11-13). "Hoppa over" gar
 // vidare till nasta atgard utan att spara – den ligger kvar obesvarad och
 // dyker upp nasta gang sidan oppnas. "Spara och nasta" satter
 // skick_forsaljning; server-actionen redirectar tillbaka hit med en atgard

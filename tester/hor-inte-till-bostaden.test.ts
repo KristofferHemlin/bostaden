@@ -178,13 +178,16 @@ describe("var kontrollen står", () => {
     s.stang();
   });
 
-  // Läsläget på ett markerat kvitto har sin befintliga väg tillbaka – och
-  // bara den, inte kontrollen också.
-  it("läsläget på ett markerat kvitto har en väg tillbaka, inte två", async () => {
+  // Läsläget visar tillståndet, det ändrar det inte (docs/design.md, "Den
+  // står bara i ändringsläget, också för att ta tillbaka"). Till 2026-11-13
+  // fanns vägen tillbaka kvar i läsläget; den är borta, tillståndstexten står.
+  it("läsläget på ett markerat kvitto säger varför, och har ingen väg tillbaka", async () => {
     seeda({ arkiverad: true });
     const s = await kvittosidan();
-    expect(kontrollen(s.div).map((b) => b.textContent)).toEqual(["Hör till bostaden ändå"]);
-    expect(s.div.querySelector("[data-hor-inte-till-bostaden]"), "kontrollen hör till ändringsläget").toBeNull();
+    expect(s.div.textContent, "förutsättningen: sidan är kvittots läsläge").toContain("Ändra");
+    expect(s.div.textContent).toContain("Det här kvittot hör inte till bostaden. Bild och belopp ligger kvar.");
+    expect(kontrollen(s.div)).toEqual([]);
+    expect(s.div.querySelector("[data-hor-inte-till-bostaden]")).toBeNull();
     s.stang();
   });
 

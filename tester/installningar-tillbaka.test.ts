@@ -113,7 +113,7 @@ describe("kugghjulet skickar med fliken hon stod i", () => {
     expect(kugghjuletsHref(sokvag)).toBe(href);
   });
 
-  it.each(["/", "/genomgang", "/bostaden/andel", "/kostnadsfri"])(
+  it.each(["/", "/bostaden/andel", "/bostaden/fragor", "/kostnadsfri"])(
     "fran %s skickas ingen flik med",
     (sokvag) => {
       expect(kugghjuletsHref(sokvag)).toBe("/installningar");

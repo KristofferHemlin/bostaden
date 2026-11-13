@@ -1,9 +1,8 @@
 // Tolkar fragetradets FormData (falten som src/app/projekt/fragetradet.tsx
 // serialiserar till dolda falt) till de varden som ska lagras pa projektet.
-// Delas mellan de tva server-actions som klassificerar/omklassificerar en
-// atgard – src/app/genomgang/fragor/actions.ts (fas 2) och
-// src/app/projekt/actions.ts (rattning i efterhand, produktspec 6.4) – sa att
-// validering och tolkning aldrig glider isar mellan dem.
+// Delas mellan skapandet och rattningen av ett projekt (src/app/projekt/
+// actions.ts: skapaProjekt och redigeraProjekt) – sa att validering och
+// tolkning aldrig glider isar mellan dem.
 
 import {
   fraga3Relevant,

@@ -40,7 +40,6 @@ import {
   taBortKostnad,
   type KostnadRedigeraResultat,
 } from "./actions";
-import { AterforKnapp } from "./aterfor-knapp";
 import { HorInteTillBostaden } from "./hor-inte-till-bostaden";
 import { Bilagor } from "./bilagor";
 import { BeloppFalt } from "@/components/belopp-falt";
@@ -257,12 +256,14 @@ function LasVy({
         ) : null}
       </section>
 
+      {/* Lasläget visar tillstandet, det andrar det inte (docs/design.md,
+          "Den står bara i ändringsläget, också för att ta tillbaka"). Vagen
+          tillbaka ar Ändra, ett tryck bort. */}
       {arkiverad ? (
         <section className="border-t border-linje p-4">
           <p className="font-granssnitt text-sm text-text-sekundar">
             Det här kvittot hör inte till bostaden. Bild och belopp ligger kvar.
           </p>
-          <AterforKnapp kostnadId={kostnadId} />
         </section>
       ) : null}
     </>

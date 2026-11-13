@@ -8,13 +8,14 @@ import tailwindKonfig from "../tailwind.config";
 import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
 
 // docs/design.md, "Anteckningen får två rader där den är radens huvudtext":
-// kvittolistan i fas 2, Senaste kvitton pa oversikten, kvittolistan pa
-// /kostnad och fas 1:s fyra listor. Fore 2026-11-04 var raden `truncate` – en
+// kryssrutelistan dar kvitton valjs till ett projekt, Senaste kvitton pa
+// oversikten och kvittolistan pa /kostnad. Genomgangens listor (fas 1 och
+// fas 2) mattes har tills den revs 2026-11-13. Fore 2026-11-04 var raden `truncate` – en
 // rad oavsett bredd, och pa en telefon syntes en tredjedel av anteckningen.
 //
 // Det gar inte i jsdom, som inte raknar ut layout: ett test dar skulle bara
 // kunna lasa klassnamnen, alltsa prova att koden ar lika med sig sjalv. Har
-// renderas de tre riktiga sidorna mot en falsk databas, appens CSS byggs med
+// renderas de riktiga sidorna mot en falsk databas, appens CSS byggs med
 // Tailwind, och raderna mats i Chrome med appens typsnitt vid telefonbredd.
 // Saknas Chrome eller laddas inte typsnitten FALLER testet, som i
 // tester/adressforslag-layout.test.ts.
@@ -30,12 +31,8 @@ import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
 // det steget – samma vag som nar hon kommer tillbaka till flodet – och det
 // som da star skickas till Chrome. Samma sidor mats for att bara en sak ar
 // orange per steg (docs/design.md, "Orange betyder handling").
-//
-// Fas 1:s "Hör inte till bostaden" ar hopfalld tills man trycker, sa den
-// syns inte i en statisk rendering. Fas 1 renderas darfor i en DOM (darav
-// jsdom-miljon), knappen trycks som hon trycker den, och det som da star
-// skickas till Chrome. jsdom raknar fortfarande ingenting – den bar bara
-// tillstandet fram till webblasaren som mater.
+// jsdom raknar ingenting – den bar bara tillstandet fram till webblasaren
+// som mater.
 
 const h = await vi.hoisted(async () => {
   const { skapaFalskDatabas } = await import("./_falsk-databas");
@@ -80,7 +77,6 @@ vi.mock("@/lib/lagring/klient", () => ({
   lagringsklient: () => ({ auth: { admin: { deleteUser: vi.fn() } } }),
 }));
 vi.mock("@/lib/dokumentavlasning/analysera", () => ({ analyseraDokumentbuffert: vi.fn() }));
-vi.mock("@/app/genomgang/fragor/actions", () => ({ klassificeraHog: vi.fn(async () => ({})) }));
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 // Projektflodet borjar varje steg overst; jsdom har ingen rullning.
@@ -91,8 +87,6 @@ const { createRoot } = await import("react-dom/client");
 const { renderToStaticMarkup } = await import("react-dom/server");
 const { default: Oversikt } = await import("@/app/page");
 const { default: KvittolistaSida } = await import("@/app/kostnad/page");
-const { default: FragorSida } = await import("@/app/genomgang/fragor/page");
-const { default: GenomgangSida } = await import("@/app/genomgang/page");
 const { default: NyttProjektSida } = await import("@/app/projekt/nytt/page");
 const { utkastNyckel } = await import("@/app/projekt/nytt/flode");
 
@@ -105,20 +99,18 @@ const TYPSNITT = readFileSync(join(ROT, "src/app/layout.tsx"), "utf-8").match(
 const KORT = "Nytt ekgolv i vardagsrum och hall, det gamla var uppsvallat";
 const LANG =
   "Bytte tre fönster mot gatan till treglas, de gamla var tvåglas från 70-talet och drog kallt hela vintern";
-// Fas 1: kvitton som inte lagts ihop an (forslagen och kryssrutorna – samma
-// kvitton star i bada) och kvitton som inte hor till bostaden. Egna texter, sa
-// att varje matning hittar sin rad pa texten. Hogarna och "Hör inte till
-// bostaden" har en smalare kolumn – knappar bredvid beloppet – sa dar behovs
-// en kortare text for att den ska rymmas pa tva rader och inte pa en.
+// Fler kvitton i testdatan: ett i ett projekt utan svar, tva utan projekt och
+// tva som inte hor till bostaden. De mattes i genomgangens listor, som ar
+// rivna; de star kvar for att oversiktens sex senaste beror av hur manga
+// kvitton som finns (se tidsstampeln pa paret nedan).
 const HOG_KORT = "Nytt ekgolv i hallen, det gamla var uppsvallat";
 const OK_KORT = "Nytt ekgolv i sovrummet och hall, det gamla var uppsvallat";
 const OK_LANG =
   "Bytte tre fönster mot gården till treglas, de gamla var tvåglas från 70-talet och drog kallt hela vintern";
 const AV_KORT = "Ny kaffebryggare, den gamla läckte vatten";
-// Projektflodets kryssrutelista har sin egen kolumnbredd. Fas 1:s korta text
-// behover tre rader dar redan utan klippning (uppmatt 2026-11-13), sa listan
-// far ett eget par. Aren och leverantorerna ligger langt fran de andra, sa att
-// fas 1 inte foreslar dem ihop med nagot.
+// Projektflodets kryssrutelista har sin egen kolumnbredd. Den korta texten
+// ovan behover tre rader dar redan utan klippning (uppmatt 2026-11-13), sa
+// listan far ett eget par.
 const NY_KORT = "Slipade parketten i hallen, den var full av repor";
 const NY_LANG =
   "Lade nytt klinkergolv i tvättstugan eftersom det gamla hade spruckit på flera ställen och släppte in fukt";
@@ -142,7 +134,7 @@ function seeda() {
     nybyggd_vid_forvarv: false,
   });
   db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: X, agarandel: 100 });
-  // En hog fran fas 1, sa att fas 2 visar kvittona.
+  // Ett projekt utan svar, som de som skapades fore omlaggningen.
   db.lagg("projekt", { id: HOG, bostad_id: X, namn: "", ar: 2025, atgardstyp: null });
   for (const [anteckning, dag] of [
     [KORT, "2025-03-14"],
@@ -222,19 +214,15 @@ beforeAll(async () => {
   const sidor = {
     oversikt: await Oversikt({ searchParams: Promise.resolve({}) } as Parameters<typeof Oversikt>[0]),
     kostnad: await KvittolistaSida(),
-    fragor: await FragorSida(),
   };
   const kroppar: Record<string, string> = Object.fromEntries(
     Object.entries(sidor).map(([namn, vy]) => [namn, renderToStaticMarkup(vy)]),
   );
-  kroppar.genomgang = await genomgangMedRaknasInteOppen();
   for (const steg of [1, 2, 3, 4] as const) kroppar[`nytt-${steg}`] = await nyttProjektVidSteg(steg);
   for (const [namn, kropp] of Object.entries(kroppar)) {
     // Bada anteckningarna maste finnas pa sidan – annars mats ingenting.
     const vantade =
-      namn === "genomgang"
-        ? [HOG_KORT, LANG, OK_KORT, OK_LANG, AV_KORT, AV_LANG]
-        : namn.startsWith("nytt-")
+      namn.startsWith("nytt-")
           ? [NY_KORT, NY_LANG]
           : [KORT, LANG];
     for (const t of vantade) expect(kropp, `${namn}: "${t}" renderades inte`).toContain(t);
@@ -252,24 +240,6 @@ afterAll(async () => {
   await webblasare?.stang();
 });
 
-
-/** Fas 1 renderad i en DOM, med "Hör inte till bostaden" uppfalld av ett tryck. */
-async function genomgangMedRaknasInteOppen(): Promise<string> {
-  const vy = await GenomgangSida();
-  const behallare = document.createElement("div");
-  document.body.appendChild(behallare);
-  const rot = createRoot(behallare);
-  await act(async () => rot.render(vy));
-  const knapp = [...behallare.querySelectorAll("button")].find((b) =>
-    b.textContent!.startsWith("Hör inte till bostaden"),
-  );
-  expect(knapp, "fas 1 visar inte Hör inte till bostaden").toBeTruthy();
-  await act(async () => knapp!.click());
-  const html = behallare.innerHTML;
-  act(() => rot.unmount());
-  behallare.remove();
-  return html;
-}
 
 /** Projektflodet renderat i en DOM, med ett utkast som star pa `steg`: namnet
  *  skrivet, fragetradet besvarat (utbytt mot liknande) och ett kvitto valt. */
@@ -384,21 +354,8 @@ describe("anteckningen får två rader där den är radens huvudtext, vid 390 px
   it.each([
     ["oversikt", "Senaste kvitton"],
     ["kostnad", "kvittolistan"],
-    ["fragor", "fas 2, Kvittona"],
   ])("%s (%s)", async (sida) => {
     provaParet(sida, await mat(sida, KORT), await mat(sida, LANG));
-  }, 60_000);
-
-  // Fas 1. De ej ihoplagda kvittona star tva ganger, i forslaget och vid
-  // kryssrutorna, och forslagen kommer forst pa sidan – det ar dokumentets
-  // ordning, inte en klass, som skiljer dem at.
-  it.each([
-    ["förslagen att lägga ihop", OK_KORT, OK_LANG, 0, 2],
-    ["de ihoplagda högarna", HOG_KORT, LANG, 0, 1],
-    ["kvittona med kryssrutor", OK_KORT, OK_LANG, 1, 2],
-    ["Hör inte till bostaden", AV_KORT, AV_LANG, 0, 1],
-  ] as const)("genomgang, fas 1 (%s)", async (stalle, kort, lang, plats, antal) => {
-    provaParet(`fas 1, ${stalle}`, await mat("genomgang", kort, plats, antal), await mat("genomgang", lang, plats, antal));
   }, 60_000);
 
   it("projektflödet, kryssrutelistan där kvitton väljs till projektet", async () => {

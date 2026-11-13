@@ -9,7 +9,7 @@ import { REGELPARAMETRAR } from "./_hjalp";
 //
 //   1. Koderna ar specens, etiketterna och knapparna per upplatelseform ar
 //      design.md:s – lasta ur filerna inne i testet.
-//   2. Fragan ar frivillig: en hog utan svar klassificeras som forut och far
+//   2. Fragan ar frivillig: ett projekt utan svar klassificeras som forut och far
 //      inga rader.
 //   3. Fritext lagras aldrig som del, bara bredvid ANNAT.
 //   4. Varje kod ar lagringsbar oavsett upplatelseform.
@@ -45,7 +45,6 @@ vi.mock("@sentry/nextjs", () => ({ setUser: vi.fn(), captureException: vi.fn() }
 
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { klassificeraHog } from "@/app/genomgang/fragor/actions";
 import { redigeraProjekt } from "@/app/projekt/actions";
 import ProjektSida from "@/app/projekt/[id]/page";
 import {
@@ -101,7 +100,7 @@ function seeda(upplatelseform: "bostadsratt" | "fastighet" = "bostadsratt") {
   h.anvandareId = ANNA;
 }
 
-/** Fas 2:s formular: namnet, fraga 2 = ja, och bostadsdelens falt. */
+/** Redigeringens formular: namnet, fraga 2 = ja, och bostadsdelens falt. */
 function svar(delar: string[] | null, fritext?: string): FormData {
   const f = new FormData();
   f.set("projekt_id", PROJEKT);
@@ -193,10 +192,13 @@ describe("tolkningen", () => {
   });
 });
 
-describe("fas 2 sparar svaret", () => {
+// Projektet i testdatan saknar svar, som ett projekt skapat före omläggningen:
+// redigeringen besvarar trädet och sparar bostadsdelen. Fallen sparades till
+// 2026-11-13 genom genomgångens fas 2, som är riven; beteendet lever vidare här.
+describe("svaret sparas när frågorna besvaras", () => {
   it("flera delar och Annat med fritext", async () => {
-    expect(await sparat(klassificeraHog({}, svar(["KOK", "EL", "ANNAT"], "Trappan")))).toBe(
-      "/genomgang/fragor",
+    expect(await sparat(redigeraProjekt({}, svar(["KOK", "EL", "ANNAT"], "Trappan")))).toBe(
+      `/projekt/${PROJEKT}`,
     );
     expect(rader()).toEqual([
       { projekt_id: PROJEKT, del: "KOK", fritext: null },
@@ -206,13 +208,13 @@ describe("fas 2 sparar svaret", () => {
   });
 
   it("varje lagrad del ar en kod, aldrig fritexten", async () => {
-    await sparat(klassificeraHog({}, svar(["ANNAT"], "Garderoben i hallen")));
+    await sparat(redigeraProjekt({}, svar(["ANNAT"], "Garderoben i hallen")));
     for (const r of rader()) expect(BOSTADSDELAR).toContain(r.del);
     expect(rader()).toEqual([{ projekt_id: PROJEKT, del: "ANNAT", fritext: "Garderoben i hallen" }]);
   });
 
   it("frivillig: utan svar klassificeras hogen anda, och inga rader skapas", async () => {
-    expect(await sparat(klassificeraHog({}, svar([])))).toBe("/genomgang/fragor");
+    expect(await sparat(redigeraProjekt({}, svar([])))).toBe(`/projekt/${PROJEKT}`);
     const projekt = h.db.tabell("projekt").find((p) => p.id === PROJEKT)!;
     expect(projekt.atgardstyp).toBe("nybyggnad");
     expect(projekt.namn).toBe("Nytt kök");
@@ -221,14 +223,14 @@ describe("fas 2 sparar svaret", () => {
 
   it("tak gar att lagra for en bostadsratt – filtret ligger i granssnittet", async () => {
     seeda("bostadsratt");
-    await sparat(klassificeraHog({}, svar(["TAK"])));
+    await sparat(redigeraProjekt({}, svar(["TAK"])));
     expect(rader()).toEqual([{ projekt_id: PROJEKT, del: "TAK", fritext: null }]);
   });
 });
 
 describe("redigeringen", () => {
   beforeEach(async () => {
-    await sparat(klassificeraHog({}, svar(["KOK", "ANNAT"], "Trappan")));
+    await sparat(redigeraProjekt({}, svar(["KOK", "ANNAT"], "Trappan")));
   });
 
   it("ersatter svaret med det nya urvalet", async () => {
@@ -244,7 +246,7 @@ describe("redigeringen", () => {
 
 describe("projektets sida", () => {
   it("visar svaret som en rad, med fritexten dar Annat star", async () => {
-    await sparat(klassificeraHog({}, svar(["KOK", "EL", "ANNAT"], "Trappan")));
+    await sparat(redigeraProjekt({}, svar(["KOK", "EL", "ANNAT"], "Trappan")));
     const rad = (await projektsidan()).match(
       /<div class="flex justify-between gap-3"><span[^>]*>Del av bostaden<\/span><span[^>]*>(.*?)<\/span><\/div>/,
     );
@@ -252,7 +254,7 @@ describe("projektets sida", () => {
   });
 
   it("raden finns inte nar fragan aldrig besvarats", async () => {
-    await sparat(klassificeraHog({}, svar([])));
+    await sparat(redigeraProjekt({}, svar([])));
     const html = await projektsidan();
     // Forutsattningen: sidan ar renderad med sina rader.
     expect(html).toContain(">Räknas som</span>");
