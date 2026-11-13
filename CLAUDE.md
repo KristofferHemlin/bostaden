@@ -347,7 +347,7 @@ Men **raden som bär talet säger att andelen inte är angiven**, intill talet o
 
 Att tillåta 0 för en medlem som lagts in för att hjälpa till utan att äga något är beslutat i sak, men ligger i en egen omgång efter att null är byggd och prövad. Till dess är 0 kanariefågeln.
 
-**Samma sak gäller bostadsfrågorna.** `nybyggd_vid_forvarv` och `ombildning_fran_hyresratt` blir nullbara utan förval, och flaggan `bostadsfragor_besvarade` försvinner med dem. Båda kolumnerna måste med: vaktar flaggan båda och bara den ena blir nullbar, läses ett obesvarat ombildningssvar som nej, reparationsdelen blir noll och genomgången släpper igenom. **Domänen är redan nullbar** – beräkningen kastar `VantarPaBostadsfragor` vid null – så ändringen lägger inte till ett begrepp, den tar bort en översättning. Frågorna flyttar inte: de ställs i genomgången som i dag.
+**Samma sak gäller bostadsfrågorna.** `nybyggd_vid_forvarv` och `ombildning_fran_hyresratt` blir nullbara utan förval, och flaggan `bostadsfragor_besvarade` försvinner med dem. Båda kolumnerna måste med: vaktar flaggan båda och bara den ena blir nullbar, läses ett obesvarat ombildningssvar som nej, reparationsdelen blir noll och beräkningen släpper igenom. **Domänen är redan nullbar** – beräkningen kastar `VantarPaBostadsfragor` vid null – så ändringen lägger inte till ett begrepp, den tar bort en översättning. Frågorna ställs vid försäljningen; de flyttade dit 2026-11-13.
 
 ---
 
@@ -359,7 +359,13 @@ Testa domänreglerna och de nödvändiga flödena. Skriv testet före implementa
 
 **Pröva det som renderas, inte det som räknar**, när påståendet handlar om vad användaren ser. En funktion kan ge rätt svar medan komponenten visar något annat, och det är komponenten användaren läser.
 
-**En klass är inte en layout.** Skriven 2026-11-04. Ett påstående om hur något ser ut – rader, bredd, höjd, att något ryms – prövas genom att mäta i en riktig webbläsare, aldrig genom att läsa klassnamn. jsdom räknar ingen layout, så ett test som letar efter `line-clamp-2` prövar bara att koden är lika med sig själv. Det är inte teoretiskt: när anteckningen fick två rader skrev klassen `block` över den `display` som klippningen behöver, och fas 2 visade tre rader av tre. Ett klassnamnstest hade passerat. Mätningen fällde det.
+**En klass är inte en layout.** Skriven 2026-11-04. Ett påstående om hur något ser ut – rader, bredd, höjd, att något ryms – prövas genom att mäta i en riktig webbläsare, aldrig genom att läsa klassnamn. jsdom räknar ingen layout, så ett test som letar efter `line-clamp-2` prövar bara att koden är lika med sig själv. Det är inte teoretiskt: när anteckningen fick två rader skrev klassen `block` över den `display` som klippningen behöver, och listan visade tre rader av tre. Ett klassnamnstest hade passerat. Mätningen fällde det.
+
+**Emulering är inte en enhet.** Skriven 2026-11-13. En sond som läste en kvittorads yta var 20:e millisekund efter en återgång såg raden börja i hovringsfärgen och tona ut på ungefär 150 ms — i två körningar av tre. I den tredje syntes ingenting, och villkoret `(hover: hover) and (pointer: fine)` var falskt hela tiden. Den troliga förklaringen är att sidan en kort stund efter navigeringen bedöms som en musenhet innan pekskärmsemuleringen slår till. **Ett tillstånd som bara finns i emuleringen är inget en telefon visar**, och ett fynd därifrån är ett fynd om verktyget tills någon sett det på en riktig enhet. Emuleringen är ändå rätt verktyg för det mesta — den är bara inte ett bevis om själva enheten.
+
+**Och ett återskapat fel är beviset, inte antalet gröna körningar.** Samma dag: det ursprungliga felet gick inte att framkalla igen, 0 av 30 både före och efter rättningen, så trettio gröna sa ingenting om det. Beviset blev i stället ett eget test som framkallar **mekanismen** med flit — en sida med en två sekunder lång övergång — där tre av fyra fall föll före rättningen och tjugo körningar av tjugo gick igenom efter. **Bygg om felet du tror dig ha rättat; går det inte, säg att det inte gjordes.**
+
+**Ett misstag som upprepas rättas i kommandot, inte i uppmärksamheten.** Samma skalfel gav noll körda tester två gånger på tre dagar — filnamnen hamnade som ett enda argument och den tomma utskriften såg ut som ett resultat. Regeln nedan hjälpte: det upptäcktes på exitkoden. **Men en regel som kräver vaksamhet varje gång kommer att missas**, så skriv kommandot så att felet inte kan uppstå i stället för att minnas att leta efter det.
 
 **Mät aldrig mitt i en övergång.** Skriven 2026-11-13. Ett test som läser en rads färg efter ett tryck föll en gång av sju: färgen var mitt i sin `transition-colors` när den lästes, och kom ut som `oklab(… / 0.457)` — varken före- eller eftervärdet. Det hände när två webbläsarfiler kördes parallellt och allt blev långsammare. **En animerad egenskap har inget värde under tiden den ändras**, och ett test som läser där mäter tajming i stället för utseende. Vänta på att övergången är klar, eller stäng av övergångar i mätningen — och gör det i riggen, så att det gäller varje mätning och inte den som råkade falla.
 
@@ -467,7 +473,7 @@ Dessa fall måste finnas och passera. De sex första är verifierade mot Skattev
 - **Obesvarad andel ger samma tal som 100 %**, med etiketten *Förs till* kvar och avrundningen uppåt – och raden säger att andelen inte är angiven
 - **Ett lagrat 0 i `agarandel` avbryter beräkningen**, i stället för att ge ett underlag på 0 kr. Noll är ogiltigt, så ett nollvärde som nått fram betyder att en null lästs som ett tal
 - Ett tomt andelsfält i inställningarna avvisas och ändrar ingenting
-- **Obesvarad `nybyggd_vid_forvarv` blockerar genomgången; ett besvarat nej gör det inte.** Testet ska skilja de två, inte bara pröva att något blockerar
+- **Obesvarad `nybyggd_vid_forvarv` blockerar beräkningen; ett besvarat nej gör det inte.** Testet ska skilja de två, inte bara pröva att något blockerar
 - Obesvarad `ombildning_fran_hyresratt` blockerar när bostaden är en bostadsrätt och första ägaren är ja, men inte annars
 - Rad fördelad till 60 % på ett projekt bidrar med 60 % av beloppet, inte hela
 - Kvittorad markerad som privat ingår inte i något projekt
@@ -622,9 +628,9 @@ Använd riktig testdata från början – ett faktiskt byggvarukvitto med både 
 
 **Ett flöde i flera steg har tillstånd som bara finns mellan stegen, och den som går igenom hela flödet i ett svep ser dem aldrig.** Skriven 2026-10-20, efter att jag förklarade en känd bugg för avhjälpt därför att vägen jag körde fungerade.
 
-Högen som tas "för sig" skapas med tomt namn, eftersom namnet sätts av första frågan i nästa steg. Jag körde båda stegen efter varandra, fick ett namn, och drog slutsatsen att posten var rättad. Agenten läste koden och hittade **fyra nåbara ställen** där det tomma namnet skrivs ut rakt av: projektlistan, kvittots sida (*"Hör till "* och sedan ingenting), valen *Koppla till projekt* och *Dela upp*, och *Återstår* i underlaget.
+Fallet var det gamla grupperingsflödet: posten skapades med tomt namn, eftersom namnet sattes av första frågan i nästa steg. Jag körde båda stegen efter varandra, fick ett namn, och drog slutsatsen att posten var rättad. Agenten läste koden och hittade **fyra nåbara ställen** där det tomma namnet skrevs ut rakt av: projektlistan, kvittots sida (*"Hör till "* och sedan ingenting), valen *Koppla till projekt* och *Dela upp*, och *Återstår* i underlaget.
 
-**Det är inte ett hörn, det är normalfallet.** Genomgången skriver själv *"Du kan avbryta när som helst – det du lagt ihop ligger kvar"*, alltså bjuder appen uttryckligen in till just det tillstånd den sedan visar fel. Den som lägger in kvitton en kväll och svarar på frågorna en annan lever där hela tiden.
+**Det var inte ett hörn, det var normalfallet.** Flödet bjöd självt in till att avbryta mitt i, och visade sedan det tillståndet fel. Flödet finns inte längre; regeln gäller varje flerstegsflöde som ersätter det.
 
 **Regeln: att ha kört vägen igenom säger ingenting om vad som syns halvvägs.** Den som prövar ett flerstegsflöde ska stanna mitt i och se sig omkring — och den som skriver prompten ska be om en läsning av *var ett halvfärdigt tillstånd visas*, inte bara om steget fungerar.
 

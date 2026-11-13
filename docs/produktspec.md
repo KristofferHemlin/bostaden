@@ -25,33 +25,45 @@ Det svåra är inte att spara kvitton. Det svåra är att avgörandet om avdrags
 3. Klassificerar allt vid försäljningen, i en guide som går igenom det sparade
 4. Producerar ett deklarationsunderlag i hjälpblankett SKV 2197:s form
 
-## 2b. Två faser, inte en
+## 2b. Fakta tidigt, domen sent
 
 Detta är produktens viktigaste designbeslut och det som skiljer den från en kvittoapp med kategorier.
 
-**Under ägandet gör appen en enda sak: sparar kvitton.** Fota eller ladda upp, låt avläsningen fylla i belopp och datum, skriv en rad om vad det gällde. Klart på tio sekunder. Inga kategorier, inga skattefrågor, inget som måste bli rätt.
+**Under ägandet gör inmatningen en enda sak: sparar kvittot.** Fota eller ladda upp, låt avläsningen fylla i belopp och datum, skriv en rad om vad det gällde. Klart på tio sekunder. Inga kategorier, inga skattefrågor, inget som måste bli rätt.
 
-**Vid försäljningen gör appen den svåra delen.** Då går en guide igenom allt som sparats och ställer klassificeringsfrågorna – en gång, i lugn och ro, när användaren har tid och ser hela bilden.
+Konsekvensen av att fråga för tidigt **där** är inte att svaren blir fel. Konsekvensen är att kvittot aldrig läggs in. En app som fångar allt oklassificerat är oändligt mycket mer värd än en app som klassificerar perfekt men används tre gånger.
 
-Skälet är att klassificeringen inte behövs förrän vid försäljningen. Femårsregeln, skickbedömningen, gränsen mellan grundförbättring och reparation – allt det används först i deklarationen. Att fråga vid inköpet innebär att ställa den svåraste frågan i produktens sämsta ögonblick: när användaren står i en butik, inte vet om hen ska sälja, och bara vill bli klar.
+**Men det hon gjorde beskriver hon när hon vill, i ett projekt.** Omlagt 2026-11-13. Här stod till dess att *all* klassificering hör till försäljningen, och det visade sig vara två olika saker hopslagna:
 
-Konsekvensen av att fråga för tidigt är inte att svaren blir fel. Konsekvensen är att kvittot aldrig läggs in. En app som fångar allt oklassificerat är oändligt mycket mer värd än en app som klassificerar perfekt men används tre gånger.
+**Fakta** – vad gjorde du, byggde du något nytt, ändrade du planlösningen, var det bättre kvalitet, hur var skicket innan. Det vet hon **nu**, och det är precis det som blir omöjligt att minnas. Avsnitt 4.1 har alltid sagt det om skicket vid förvärvet: *det ska fångas medan det går.*
+
+**Domen** – är det avdragsgillt, faller det ut med femårsfönstret, passerar året tröskeln. Det **går inte** att räkna förrän bostaden är såld, eftersom allt hänger på försäljningsåret.
+
+**Det gamla skälet gällde butiken, inte skrivbordet.** Argumentet mot att fråga tidigt var att användaren står i en affär och bara vill bli klar. Det är fortfarande sant om inmatningen. Men den första riktiga användaren la in tjugo kvitton i en sittning vid ett skrivbord, kände sig klar och hittade aldrig vidare — och då är en modell som sparar alla frågor till försäljningen inte skonsam, den är tom.
+
+**Och en retroaktiv sortering är det dyraste sättet att fråga.** Till 2026-11-13 fanns en genomgång i två faser: först lägga ihop kvitton i högar, sedan svara per hög. Att be någon hitta grupperna i en lista med fjorton rader är att be henne minnas vad varje kvitto gällde, långt efteråt. **Projektet skapas i stället direkt, och kvittona hämtas till det** — då är frågan *"vilka av de här hörde till badrummet?"* i stället för *"vilka av de här hör ihop?"*, och den första går att svara på.
 
 **Klassificering är alltid möjlig, aldrig obligatorisk.** Den som vill gruppera och svara på frågorna under ägandet kan göra det när som helst, och får då exakta siffror. Den som inte gör det får ungefärliga siffror under tiden och guidas igenom allt vid försäljningen.
 
 **Vad som blir ungefärligt utan klassificering:** årssumman visar allt som lagts in, inte bara det som är avdragsgillt, och femårshorisonten kan inte skiljas ut. Gränssnittet ska vara ärligt med det – "du har lagt in 4 210 kr i år" är ett annat påstående än "4 210 kr är avdragsgilla", och tröskelraden ska säga att beloppet är preliminärt tills allt klassificerats.
 
-### Klassificeringsgenomgången
+### Projektet, och frågorna
 
-Genomgången är två faser: gruppera först, klassificera sedan. Skälet är att skattefrågorna hör till åtgärden, inte till kvittot – med hundra kvitton och tio åtgärder ska frågorna ställas tio gånger, inte hundra.
+Skattefrågorna hör till åtgärden, inte till kvittot – med hundra kvitton och tio åtgärder ska de ställas tio gånger, inte hundra. **Det uppnås genom att projektet skapas först och kvittona hämtas till det**, inte genom att kvitton sorteras i högar i efterhand.
 
-**Fas 1: gruppera.** Alla oklassificerade kvitton visas sorterade på datum, med anteckning, leverantör och belopp. Användaren drar ihop dem i högar. Appen föreslår grupper utifrån tre signaler: samma leverantör, närhet i tid, och likhet i anteckningarnas text. Tre Bauhaus-kvitton inom en månad med liknande anteckning blir ett förslag som bekräftas eller bryts isär.
+**Ett projekt skapas direkt, från projektsidan.** Omlagt 2026-11-13; dessförinnan kunde ett projekt bara uppstå ur en gruppering. Flödet är: *vad gjorde du* → *vilken del av bostaden* → frågeträdet → spara.
 
-Förslag är alltid förslag. Ingen hög skapas utan att användaren godkänt den.
+**Hela frågeträdet besvaras här, utom det som kräver försäljningen.** Byggde du något nytt, ändrade du planlösningen, satte du in något som aldrig funnits eller bytte du ut något, var det nya av bättre kvalitet, hur var skicket vid förvärvet — allt är fakta om vad hon gjorde. **Följdfrågorna gäller fullt ut:** trädet grenar som förut, och ett *nej* leder vidare precis som i dag.
 
-**Högen får inget namn i fas 1.** Namnet är svaret på frågeträdets första fråga, "Vad gjorde du?", och ställs en gång – i fas 2. Att be om det vid grupperingen är att ställa samma fråga två gånger, i ett ögonblick där användaren bara vill sortera.
+**Kvar till försäljningen:** skicket vid försäljningen, motiveringen när gapet mellan skickvärdena är stort, de två frågorna om bostaden, och själva räkningen — femårsfönstret och tröskeln per år.
 
-Fram till dess visas högen som antal och leverantörer: `2 kvitton · BAUHAUS, Jysk`. Det är ärligare än ett påhittat namn, och det gör att listan går att känna igen medan man sorterar.
+**Kvittona hämtas till projektet, inte tvärtom.** När projektet sparas visas de kvitton som ännu inte hör till något projekt, och hon väljer vilka som hörde hit. Frågan är då *"vilka av de här hörde till badrummet?"* — till skillnad från den gamla grupperingens *"vilka av de här hör ihop?"*, som krävde att hon hittade grupperna själv ur en lista.
+
+Två andra vägar in är beslutade men byggs senare: en överblick på kvittosidan över kvitton utan projekt, och möjligheten att välja projekt när ett kvitto läggs in.
+
+**Ett projekt utan kvitton har inget belopp.** Det är ett namn, ett år och en beskrivning; summan uppstår när kvitton kopplas till det. Det gör det möjligt att skriva upp *kök 2022* innan kvittona är framletade — men **det är inte den retroaktiva listan**, som är en fråga appen ställer och ligger efter lansering.
+
+**"Räknas inte" är inte ett projekt.** Ett kvitto som var privat eller av annat skäl inte hör till underlaget markeras på kvittot självt – se *Uppdelning av kvitto* i `design.md`. Bilaga och belopp ligger kvar i arkivet; det är en klassificering, inte en radering.
 
 **Frågeträdet har inget förval alls.** Fältet är tomt, och skälen står i `docs/design.md` under *Namnfältet är tomt, och föreslår ingenting*.
 
@@ -59,19 +71,13 @@ Till 2026-11-04 hämtades förvalet ur första kvittots anteckning, men bara nä
 
 Namnet hamnar i underlagets åtgärdskolumn, så det ska vara begripligt för någon som inte var där. Etiketten säger det: *namnet hamnar i ditt deklarationsunderlag – skriv så att någon annan förstår.*
 
-**"Räknas inte" är en egen hög.** Dit dras kvitton som var privata eller av annat skäl inte hör till underlaget. Den högen ställer inga frågor, och de kvittona dyker aldrig upp i genomgången igen. Bilaga och belopp ligger kvar i arkivet – det är en klassificering, inte en radering.
+**Att skapa ett projekt går att avbryta när som helst.** Det som skrivits sparas; kvitton som inte kopplats ligger kvar utan projekt. Hundra kvitton ska inte kräva en obruten session.
 
-**Fas 2: klassificera.** För varje hög ställs frågeträdet en gång, med högens kvitton synliga bredvid. Det är först här skatteterminologin blir relevant, och då har användaren redan bestämt vad högen är.
-
-Högar som redan klassificerats visas inte alls. Genomgången blir kortare varje gång och slutar med en tom lista för den som gör den löpande.
-
-**Genomgången går att avbryta när som helst.** Det som grupperats och besvarats sparas; resten ligger kvar som oklassificerat. Hundra kvitton ska inte kräva en obruten session.
-
-**Klassificeringen sker på användarens initiativ.** Vägen in startas när användaren själv vill, inte när appen tycker. Vid försäljningen ligger genomgången i flödet, men den spärrar inte underlaget – det som inte hunnit klassificeras listas i stället under *Återstår*.
+**Arbetet sker på användarens initiativ.** Appen bestämmer inte när hon ska beskriva något. Vid försäljningen ligger frågorna i flödet, men de **spärrar inte underlaget** – det som inte hunnit beskrivas listas i stället under *Återstår*, med sitt skäl per rad.
 
 Appen påminner inte om klassificeringen enligt något schema, och att lägga in kvitton ska aldrig kännas som att man ådragit sig en skuld.
 
-**Men den bjuder in en gång, på ett ställe.** Ändrat 2026-11-13. Här stod att appen inte påminner alls, och det blev fel i verkligheten: den första riktiga användaren la in tjugo kvitton, kände sig klar och hittade aldrig vidare. En regel vars utfall är att ingen når genomgången skyddar ingenting. **Inbjudan ligger på kvittolistan, säger vad det är värt att göra, och finns bara när det finns något att göra** – aldrig på översikten, aldrig efter ett schema, och aldrig som en prick per kvitto.
+**Men den bjuder in en gång, på ett ställe.** Ändrat 2026-11-13. Här stod att appen inte påminner alls, och det blev fel i verkligheten: den första riktiga användaren la in tjugo kvitton, kände sig klar och hittade aldrig vidare. En regel vars utfall är att ingen når frågorna skyddar ingenting. **Inbjudan ligger på kvittolistan, säger vad det är värt att göra, och finns bara när det finns något att göra** – aldrig på översikten, aldrig efter ett schema, och aldrig som en prick per kvitto.
 
 **Anteckningen bär minnet.** Fältet "Vad gällde det?" är fritext och det enda som krävs utöver belopp och datum. Åtta år senare är det den raden plus bilden som gör klassificeringen möjlig, så gränssnittet ska uppmuntra en beskrivande mening snarare än ett ord: "målade om sovrummet, väggarna var slitna sedan vi flyttade in" är guld vid försäljningen.
 
@@ -99,13 +105,13 @@ Reglerna stod en gång i båda filerna. De gled isär, och den felaktiga version
 
 Trädet står under *Frågeträdet per åtgärd* i `CLAUDE.md`. Här står varför det ser ut som det gör.
 
-**Frågorna hör till åtgärden, inte till kvittot.** Det är hela skälet till att klassificeringsgenomgången grupperar först och frågar sedan; räkneexemplet står i 2b och upprepas inte här.
+**Frågorna hör till åtgärden, inte till kvittot.** Det är hela skälet till att projektet skapas först och kvittona hämtas till det; räkneexemplet står i 2b och upprepas inte här.
 
 **Skicket vid förvärvet fångas tidigt, skicket vid försäljningen sent.** Det förstnämnda är det som blir omöjligt att minnas och ska fångas medan det går; det andra handlar om hur något ser ut efter års användning och kan inte besvaras i förväg. Samma tidsdelning som produktens två faser i övrigt.
 
 **Motiveringen är inte pynt.** Reparationsavdraget hänger helt på två subjektiva skattningar – samma kvitto kan ge noll eller hela beloppet beroende på skickbedömningen. Ingen annan del av beräkningen har den hävstången. Motiveringen är det som gör en sådan siffra möjlig att försvara, och när kvitto saknas är den dessutom en del av bevisningen.
 
-Att den bara efterfrågas i den nedre delen av skickskalan är ett gränssnittsbeslut med samma skäl: genomgången är produktens tyngsta moment, ett tomt textfält efter sex frågor är där folk ger upp, och ett fält som bara syns när det spelar roll blir också ett fält man faktiskt fyller i. Villkoret står hos regeln.
+Att den bara efterfrågas i den nedre delen av skickskalan är ett gränssnittsbeslut med samma skäl: att beskriva ett projekt är produktens tyngsta moment, ett tomt textfält efter sex frågor är där folk ger upp, och ett fält som bara syns när det spelar roll blir också ett fält man faktiskt fyller i. Villkoret står hos regeln.
 
 **Gränsen ska läsas som aritmetik, inte som en beskrivning.** Sedan skalan fick Skatteverkets ord 2026-10-19 heter ett av stegen i intervallet *Ganska bra skick*, vilket inte låter som något att försvara — men ett lågt tal vid förvärvet är just det som gör skillnaden mot försäljningen stor, och därmed avdraget stort. Det är beloppet som avgör behovet av en motivering, inte etiketten. **Vilka steg som ingår och vilka faktorer de ger står i `CLAUDE.md`.**
 
@@ -115,15 +121,11 @@ Skälet är att uppgiften behövs först på bilagepaketets försättssida, där
 
 Fältet har därför ingen synlig efterfrågan just nu – paketet är dolt, och kompletteringssteget som annars skulle fråga körs aldrig. Det är avsiktligt. Kravet vaknar samma dag som paketet slås på, eftersom kompletteringssteget redan är byggt och redan frågar efter identifieringen när den saknas.
 
-**Frågorna om bostaden ställs en gång, först i genomgången.** `nybyggd_vid_forvarv` och `ombildning_fran_hyresratt` hör till bostaden, inte till åtgärden, och ställs därför en gång per bostad innan den första högen klassificeras.
+**Frågorna om bostaden ställs en gång, vid försäljningen.** `nybyggd_vid_forvarv` och `ombildning_fran_hyresratt` hör till bostaden, inte till åtgärden. Flyttade hit 2026-11-13; de ställdes tidigare i genomgången och blockerade den.
 
-De hör inte hemma i registreringen. Den är avsiktligt kort, frågorna är svåra att svara på innan man vet varför de ställs, och de påverkar ingenting förrän något klassificeras. I genomgången finns tid och sammanhanget är uppenbart – det är redan appens enda skärm där svåra frågor hör hemma.
+De hör inte hemma i registreringen. Den är avsiktligt kort, frågorna är svåra att svara på innan man vet varför de ställs, och de påverkar ingenting förrän något ska räknas. **Och de hör inte heller hemma i projektskapandet** — de gäller bostaden, inte åtgärden, och en fråga om bostaden mitt i en beskrivning av ett badrum är på fel ställe.
 
-**De blockerar genomgången tills de besvarats.** Utan svaret går reparationsdelen inte att räkna. Det är rätt plats för ett krav; inmatningen är det inte.
-
-**Efter frågorna hamnar man i grupperingen**, oavsett vilken ingång som utlöste grinden. Den som just svarat för första gången har per definition inget grupperat, och att skicka hen till frågeträdet ger en skärm som säger att allt är klart medan kvittona ligger osorterade.
-
-Undantaget är ingången från ett enskilt projekt: där finns en hög att klassificera, och efter bostadsfrågorna fortsätter man till just den högens frågor.
+**Vid försäljningen är de obligatoriska.** Utan svaret går reparationsdelen inte att räkna, och där är sammanhanget uppenbart: hon har just sagt att hon sålt. Det är rätt plats för ett krav; inmatningen och projektskapandet är det inte.
 
 Frågorna ska gå att ändra i inställningarna efteråt, som allt annat om bostaden.
 
@@ -248,7 +250,7 @@ Det är inte brådskande för en lansering till vänner och familj, men det ska 
 
 **Frågan ställs bara när användaren inte var första ägaren**, på samma grund som Skatteverkets egen ordning: man ärver inte ett hus man själv byggt.
 
-**Men då kan den inte ställas vid registreringen, och ingenting av det här är byggt.** Frågan om första ägaren ställs i genomgången och inte vid registreringen – se 4.1 – så villkoret går inte att pröva där stycket ovan placerar frågan. Arvsfrågan, upplysningen och placeringen är alltså ett öppet krav, inte ett genomfört val.
+**Men då kan den inte ställas vid registreringen, och ingenting av det här är byggt.** Frågan om första ägaren ställs vid försäljningen och inte vid registreringen – se 4.1 – så villkoret går inte att pröva där stycket ovan placerar frågan. Arvsfrågan, upplysningen och placeringen är alltså ett öppet krav, inte ett genomfört val.
 
 **Kartlagt, inte gissat.** Skatteverkets modell för fallet är kontinuitet, och deras enda följdfråga är *"Var den tidigare ägaren den första ägaren av bostaden?"* – nybyggd-testet flyttas alltså bakåt i arvsledet. Det är den form en framtida implementation ska ha. Se ändringsloggen i `docs/regelkallor.md` 2026-10-18.
 
@@ -316,7 +318,7 @@ En åtgärd. Klassificeringen sitter här, inte på kostnaden.
 
 ### Projektets bostadsdel
 
-Svaret på *"Vilken del av bostaden?"* i fas 2. Lydelser och vilka knappar som visas står i `docs/design.md`.
+Svaret på *"Vilken del av bostaden?"* när projektet skapas. Lydelser och vilka knappar som visas står i `docs/design.md`.
 
 **Egen tabell, inte en kolumn.** Ett projekt kan röra flera delar – ett kök och elen till det – och en kolumn med kommatecken i går inte att fråga på.
 
@@ -454,7 +456,7 @@ Ingången är alltid en och samma knapp. Fråga aldrig användaren om dokumentty
 
 **Flödet har fem fält och ingenting mer:** bilaga, belopp, datum, leverantör, anteckning. ROT-raden är det enda undantaget och innehåller ett enda fält, beloppet i kronor – se `docs/design.md`. Arbetskostnad och materialkostnad efterfrågas inte; det enda som påverkar underlaget är hur stor skattereduktion som faktiskt utnyttjats, och detaljerna finns på fakturan som ligger sparad som bilaga.
 
-**Ingen projektkoppling sker här.** Klassificeringen hör till genomgången, som användaren startar när hen själv vill. Ett kvitto som just sparats är oklassificerat, och det är det normala tillståndet.
+**Ingen projektkoppling sker här.** Kopplingen görs från projektet, som användaren skapar när hen själv vill. Ett kvitto som just sparats är oklassificerat, och det är det normala tillståndet.
 
 **Datumfältet heter "Datum" överallt.** I inmatningen finns ett fält, i redigeringsvyn två – men det gemensamma fältet ska ha samma etikett på båda ställena, annars undrar användaren vilket av dem hen fyllde i.
 
@@ -468,7 +470,7 @@ Ställs en gång per åtgärd, aldrig per kvitto. Trädet självt står under *F
 
 Formuleringarna följer Skatteverkets egna, av två skäl: de är prövade på riktiga användare, och den som sedan öppnar Skatteverkets verktyg möter samma frågor och kan jämföra.
 
-**Var inte rädd för att förklara.** Skatteverket lägger en hjälpruta med konkreta exempel vid varje fråga – vad som räknas som ändrad planlösning, vad bättre kvalitet betyder, hur merkostnaden uppskattas. Det gör frågorna långa men begripliga. Genomgången är produktens tyngsta moment och tål det; inmatningen gör det inte.
+**Var inte rädd för att förklara.** Skatteverket lägger en hjälpruta med konkreta exempel vid varje fråga – vad som räknas som ändrad planlösning, vad bättre kvalitet betyder, hur merkostnaden uppskattas. Det gör frågorna långa men begripliga. Frågeträdet är produktens tyngsta moment och tål det; inmatningen gör det inte.
 
 **Tidsankaret i skickfrågorna är kritiskt.** "Hur var skicket?" utan "när du köpte bostaden" ger fel svar, eftersom användare annars jämför med hur det såg ut dagen innan åtgärden.
 
@@ -485,7 +487,7 @@ Att fånga kostnaden är brådskande, att klassificera den är det inte. Kostnad
 
 Betaldatumet styr året även om klassificeringen sker senare.
 
-> **Inkorgen är inte byggd.** Svepning i klump, senast använda projekt som förval och raden *"4 210 kr klart, 792 kr oklassificerat"* finns inte; det som finns är genomgången i avsnitt 2b. Steg 11 i byggordningen är alltså inte gjort.
+> **Inkorgen är inte byggd.** Svepning i klump, senast använda projekt som förval och raden *"4 210 kr klart, 792 kr oklassificerat"* finns inte; det som finns är projektflödet i avsnitt 2b. Steg 11 i byggordningen är alltså inte gjort.
 
 ### 6.4 Rättning i efterhand
 
@@ -504,9 +506,9 @@ Rubrik som inbjuder, en rad förklaring, en knapp. Ingenting annat.
 - Siffran heter **"Inlagt 2026"**, aldrig "underlag" och aldrig "avdrag". Den visar summan av allt som lagts in, klassificerat eller ej. Att kalla den något annat vore ett påstående appen inte kan stå för innan klassificeringen är gjord
 - Under progressfältet en rad som förklarar tröskeln och att beloppet är preliminärt tills allt klassificerats. När inget oklassificerat återstår faller den bort
 - Lista över det som lagts in, senaste först, med anteckningen som radtext
-- Klassificerade kostnader visas grupperade under sin gruppering med kategori. Ingen markering av underlagsstyrka
+- Kostnader som hör till ett projekt visas grupperade under det, med kategori. Ingen markering av underlagsstyrka
 
-**Skärmen har ingen klassificeringssektion och ingen tröskelruta.** Vägen in i genomgången går via knappen *Berätta om N kvitton*; tröskelrutan togs bort 2026-10-16. Skälen står i `docs/design.md`.
+**Skärmen har ingen klassificeringssektion och ingen tröskelruta.** Vägen vidare går via kvittosidans kort *N kvitton utan projekt* och dess knapp *Skapa projekt*; tröskelrutan togs bort 2026-10-16. Skälen står i `docs/design.md`.
 
 ### Notiser
 
@@ -564,7 +566,7 @@ Rader grupperas per åtgärd och år, aldrig per kvitto. Kvittona ligger under s
 
 Regeln som gäller står längre ned om bilagepaketets hål: *ett paket med ett tyst hål är värre än ett paket som säger var hålet finns.* Ett underlag som ser komplett ut är dessutom farligare än ett som är synligt ofullständigt, eftersom ingen går tillbaka för att leta efter det som inte syns saknas.
 
-**Den ligger på en egen sida efter sammanställningen, inte på försättssidan.** Då står PDF:en i samma ordning som exportvyn – varningar, sida 1, sida 2, *Återstår* – och den som läst det ena känner igen det andra. De högar som väntar på frågor flyttade dit från försättssidan och står därmed på ett enda ställe i dokumentet.
+**Den ligger på en egen sida efter sammanställningen, inte på försättssidan.** Då står PDF:en i samma ordning som exportvyn – varningar, sida 1, sida 2, *Återstår* – och den som läst det ena känner igen det andra. Det som återstår flyttade dit från försättssidan och står därmed på ett enda ställe i dokumentet.
 
 **Raderna, rubriken, inledningen och skälen kommer från en gemensam modul** som både exportvyn och PDF:en använder. Samma upplysning kan alltså inte få två lydelser – samma skäl som ROT-raden har en lydelse och inte två.
 
@@ -576,7 +578,7 @@ Regeln som gäller står längre ned om bilagepaketets hål: *ett paket med ett 
 
 Här är det rätt att kräva något. Regeln om att inget får blockera gäller inmatningen – kvittot ska sparas även när allt inte är känt, annars läggs det aldrig in. Här är läget det motsatta: användaren sitter med deklarationen framför sig och vill ha ett riktigt underlag.
 
-**Det är inte den enda punkten i appen där något krävs.** Bostadsfrågorna blockerar genomgången, tillträdet och adressen krävs vid registreringen, och andelen måste bekräftas vid försäljningen. Alla fyra är medvetna och står beskrivna i den här filen eller i `docs/design.md`.
+**Det är inte den enda punkten i appen där något krävs.** Bostadsfrågorna krävs vid försäljningen, tillträdet och adressen krävs vid registreringen, och andelen måste bekräftas vid försäljningen. Alla fyra är medvetna och står beskrivna i den här filen eller i `docs/design.md`.
 
 **Gränsen går mellan uppgifter som ändrar talen och uppgifter som beskriver objektet.**
 
@@ -593,7 +595,7 @@ Här är det rätt att kräva något. Regeln om att inget får blockera gäller 
 
 **Det som gör en deklaration fel är en obesvarad skickfråga, inte ett tomt fält på en försättssida.**
 
-**Genomgången spärrar inte underlaget.** Försäljningsflödet går andel, skick, samma byggnadsdel, export, och det oklassificerade listas under *Återstår*. Underlaget blir till och säger själv vad som saknas, i stället för att vägra bli till. `docs/design.md` beskriver det.
+**Frågorna spärrar inte underlaget.** Försäljningsflödet går andel, skick, samma byggnadsdel, export, och det oklassificerade listas under *Återstår*. Underlaget blir till och säger själv vad som saknas, i stället för att vägra bli till. `docs/design.md` beskriver det.
 
 **Byggs i webbläsaren**, av samma skäl som zip-arkivet: en serverfunktion som drar alla bilagor genom sig slår i storleks- och tidsgränser. `pdfjs-dist` tål inte webpack och laddas som ren ES-modul från `public/`.
 
@@ -637,7 +639,7 @@ Alternativet – en tillfällig plats som städas i efterhand – ger dubbel upp
 
 **Utkastet är en verklig funktion, inte en teknisk biprodukt.** Avbryter användaren mitt i inmatningen ligger kvittot kvar med sin bild. Att fånga kvittot är det brådskande; belopp och anteckning kan fyllas i senare. Ett utkast utan belopp visas i listan med sin bild och en uppmaning att komplettera, och räknas inte in i någon summa.
 
-Utkast som blivit liggande utan att kompletteras hör hemma i samma genomgång som allt annat – de är oklassificerade kostnader som saknar uppgifter, inte skräp att rensa bort automatiskt.
+Utkast som blivit liggande utan att kompletteras hör hemma i kvittolistan som allt annat – de är kostnader som saknar uppgifter, inte skräp att rensa bort automatiskt.
 
 **HEIC måste konverteras före analys.** Språkmodellen kan inte läsa formatet, och det är standardformatet på iPhone – alltså exakt de bilder produkten finns till för. Samma konvertering som används för miniatyrer körs i minnet före anropet. Att hoppa över HEIC tyst innebär att funktionen inte fungerar för majoriteten av kvittofoton.
 
@@ -697,7 +699,7 @@ Byggordningen är en **tunn skiva genom hela produkten först**, inte lager för
 
 ### Etapp A – genomgående flöde
 
-**Listan beskriver ordningen, inte läget.** 2026-10-27 var allt till och med steg 14 byggt och synligt i koden utom steg 11, inkorgen, som ersattes av genomgången i avsnitt 2b. Vad som är gjort syns i koden och i `docs/design.md`.
+**Listan beskriver ordningen, inte läget.** 2026-10-27 var allt till och med steg 14 byggt och synligt i koden utom steg 11, inkorgen, som ersattes av flödet i avsnitt 2b. Vad som är gjort syns i koden och i `docs/design.md`.
 
 1. **Datamodell och exportformat** – definiera K6A-utdata först, låt schemat följa
 2. **Inloggning** – Supabase Auth med e-post, ingen registreringsdesign, bara fungerande
