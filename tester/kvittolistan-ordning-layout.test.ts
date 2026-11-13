@@ -368,7 +368,9 @@ describe("en kvittorad står inte kvar ljus efter ett tryck och en återgång, m
         await new Promise((r) => setTimeout(r, 50));
         efter = await las().catch(() => null);
       }
-      // Langre an radens overgang (transition-colors, 150 ms).
+      // Overgangar ar avstangda i riggen (tester/_webblasare.ts), sa vantan
+      // ar inte till for radens transition-colors – den later sidan landa
+      // efter aterkomsten innan ytan lases.
       await new Promise((r) => setTimeout(r, 400));
       efter = await las();
       console.log(`"${ANTECKNING}": före ${fore!.yta}${fore!.hovrad ? " (hovrad)" : ""}, efter återgång ${efter?.yta}${efter?.hovrad ? " (hovrad)" : ""}`);
@@ -401,7 +403,9 @@ describe("årsrubriken byter inte yta när sektionen öppnas, mätt i Chrome vid
       // Ett tryck som pa telefonen: fingret ner och upp pa rubriken.
       await w.cdp("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: fore.x, y: fore.y }] });
       await w.cdp("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-      // Langre an rubrikens overgang (transition-colors, 150 ms).
+      // Overgangar ar avstangda i riggen (tester/_webblasare.ts), sa vantan
+      // ar inte till for rubrikens transition-colors – den later trycket
+      // landa innan ytan lases.
       await new Promise((r) => setTimeout(r, 400));
       const efter = await las();
       console.log(`"${fore.text}": före ${fore.oppen ? "öppen" : "stängd"} ${fore.yta}, efter ${efter.oppen ? "öppen" : "stängd"} ${efter.yta}`);

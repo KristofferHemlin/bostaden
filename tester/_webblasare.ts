@@ -27,6 +27,18 @@
 // filen ar klar, sa loggen var tom under tiden. Stadningen vantar nu tills
 // ingen process har profilen pa sin kommandorad, och tar bort katalogen
 // asynkront, bada med en grans.
+//
+// CSS-OVERGANGAR AR AVSTANGDA I VARJE SIDA RIGGEN OPPNAR (CLAUDE.md, "Mät
+// aldrig mitt i en övergång"). En animerad egenskap har inget varde medan den
+// andras: 2026-11-13 lastes en kvittorads yta 400 ms efter en aterkomst och
+// kom ut som oklab(… / 0.457) – mitt i en transition-colors som borjat sent.
+// En vantan pa overgangen kan inte losas har en gang for alla, eftersom
+// lasningen sker inne i varje tests eget uttryck och overgangen kan borja
+// efter att en vantan fore uttrycket ar klar. Utan overgangar finns bara
+// fore- och eftervarden, oavsett nar de lases. Priset: ingen matning kan
+// pastå nagot om sjalva overgangen. Skyddet sitter i ett stilark som laggs
+// till innan sidans eget innehall laddas, och foljer med nar en sida
+// aterstalls med bakatknappen. Provat i tester/riggen-overgangar.test.ts.
 
 import { execFile, spawn, type ChildProcess } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, statSync } from "node:fs";
@@ -70,6 +82,13 @@ export interface Webblasare {
   utvardera<T>(uttryck: string): Promise<T>;
   stang(): Promise<void>;
 }
+
+/** Stilarket som stanger av overgangar – se overst. */
+const UTAN_OVERGANGAR = `(() => {
+  const ark = new CSSStyleSheet();
+  ark.replaceSync('*, *::before, *::after { transition: none !important; }');
+  document.adoptedStyleSheets = [...document.adoptedStyleSheets, ark];
+})()`;
 
 const FILTYPER: Record<string, string> = { ".jpg": "image/jpeg", ".png": "image/png", ".svg": "image/svg+xml" };
 
@@ -158,6 +177,10 @@ export async function startaWebblasare(
     });
     return medGrans(svar, 15_000, `Chromes svar på ${method}`).finally(() => vantande.delete(id));
   }
+
+  // Varje sida som laddas i fliken far stilarket innan sitt eget innehall.
+  await cdp("Page.enable");
+  await cdp("Page.addScriptToEvaluateOnNewDocument", { source: UTAN_OVERGANGAR });
 
   async function utvardera<T>(uttryck: string): Promise<T> {
     const svar = await cdp<{ result: { value: T }; exceptionDetails?: unknown }>("Runtime.evaluate", {
