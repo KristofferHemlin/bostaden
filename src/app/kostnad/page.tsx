@@ -13,9 +13,9 @@
 // "Ordval i granssnittet") – bara det anvandaren moter byter till "kvitto".
 //
 // Ingangen till klassificeringsgenomgangen ligger HAR, inte pa startskarmen
-// (docs/design.md, Kvittolistan): en rad overst i listan med atgardsprick.
-// Kvittolistan ar dar man gar for att se sina kvitton, och det ar dar man
-// marker att nagra saknar gruppering.
+// (docs/design.md, Kvittolistan): ett kort overst i listan som sager vad
+// talen saknar tills fragorna ar besvarade. Kvittolistan ar dar man gar for
+// att se sina kvitton, och det ar dar man marker att nagra saknar gruppering.
 //
 // Varje rad bar ett bilagemarke sist pa den kursiva statusraden, i tva
 // lagen: bilaga finns eller saknas (produktspec 4.7: underlaget ar svagare
@@ -27,6 +27,7 @@
 
 import Link from "next/link";
 import { UtkastRaderaKnapp } from "./utkast-radera";
+import { Pilkort } from "@/components/pilkort";
 import { ChevronNed, Kort, Listrad, PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import { arUtkast } from "@/doman/berakningar";
 import { arOklassificerad } from "@/doman/genomgang";
@@ -107,7 +108,10 @@ export default async function KvittolistaSida() {
   const { bostadsnamn } = bostadHeader(bostad);
 
   // Ingangen till genomgangen: antal kvitton som varken ar arkiverade eller
-  // kopplade till en hog. Visas som en rad overst i listan nar det finns nagra.
+  // kopplade till en hog. Kortet visas forst nar de ar tva eller fler
+  // (docs/design.md, Kvittolistan): ett kort som fyller skarmens topp for en
+  // enda post ar tyngre an vad posten ar vard. Medvetet val – med ett kvar kan
+  // talen vara ungefarliga utan att nagot sager det.
   const antalOklassificerade = kostnadRader.filter((k) =>
     arOklassificerad(tillDomanKostnad(k)),
   ).length;
@@ -177,7 +181,7 @@ export default async function KvittolistaSida() {
 
   return (
     // Tre block med sidans bakgrund emellan, inte ett kort (docs/design.md,
-    // Kvittolistan): raden till fragorna, knappen och listan ar tre olika
+    // Kvittolistan): kortet till fragorna, knappen och listan ar tre olika
     // saker och sag ut som en nar de delade kort. Luft och ytbyte, inte
     // linjer – samma grepp som landningssidans avsnitt.
     <Skarm bostadsnamn={bostadsnamn} rubrik="Kvitton" egnaKort>
@@ -196,31 +200,25 @@ export default async function KvittolistaSida() {
         </Kort>
       ) : (
         <>
-          {/* Ingangen till klassificeringsgenomgangen – en rad med
-              atgardsprick, FORE knappen nar den finns (docs/design.md,
-              Kvittolistan). Den ar enda vagen till fragorna och ar latt att
-              missa under en orange knapp i full bredd. Faller bort nar inget
-              oklassificerat aterstar, och da ligger knappen overst. */}
-          {antalOklassificerade > 0 ? (
-            <Kort>
-              <Link
-                href="/genomgang"
-                className="flex items-center gap-1.5 p-4 font-granssnitt text-sm text-text-primar transition-colors hover:bg-yta-hover"
-              >
-                <span
-                  aria-hidden
-                  className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
-                />
-                Berätta om {antalOklassificerade} kvitto
-                {antalOklassificerade === 1 ? "" : "n"}
-              </Link>
-            </Kort>
+          {/* Ingangen till klassificeringsgenomgangen – ett kort i samma
+              form som andelskortet pa startskarmen, FORE knappen
+              (docs/design.md, Kvittolistan). Det ar enda vagen till fragorna
+              och sager konsekvensen, inte uppmaningen. Faller bort vid noll
+              och vid ett enda oklassificerat kvitto, och da ligger knappen
+              overst. */}
+          {antalOklassificerade >= 2 ? (
+            <Link href="/genomgang" className="block">
+              <Pilkort
+                rubrik={`Berätta om ${antalOklassificerade} kvitton`}
+                rad="Tills du gjort det är talen i ditt underlag ungefärliga."
+              />
+            </Link>
           ) : null}
           {/* Primarknappen fore listan – som pa startskarmen
               (docs/design.md, Kvittolistan). Listan kan bli hundratals rader
               och knappen ska inte krava att man scrollar forbi dem. Lag
-              under listan till 2026-11-09. Raden ovan ar en rad, inte
-              listan, sa att den star forst bryter inte mot regeln. */}
+              under listan till 2026-11-09. Kortet ovan ar inte listan, sa
+              att det star forst bryter inte mot regeln. */}
           {/* Knappen star direkt pa sidans bakgrund, inte i ett kort
               (docs/design.md, Kvittolistan): ett kort runt en knapp ar en ram
               runt nagot som redan har en egen form. */}

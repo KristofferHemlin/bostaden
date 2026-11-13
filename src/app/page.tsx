@@ -35,7 +35,6 @@ import {
   samlatBelopp,
 } from "@/doman/berakningar";
 import { atgardKategoriText } from "@/doman/fragetradet";
-import { arOklassificerad } from "@/doman/genomgang";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
 import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
@@ -172,13 +171,10 @@ export default async function Oversikt({
 
   // Ingen klassificeringssektion pa startskarmen (docs/design.md, Kvittolistan):
   // en paminnelse vid varje oppning gor klassificeringen till en skuld man adrar
-  // sig nar man sparar ett kvitto. Ingangen ligger i stallet i kvittolistan. Att
-  // en av de sex senaste raderna ar oklassificerad far dock visas med en diskret
-  // prick pa just den raden – inget mer.
+  // sig nar man sparar ett kvitto. Ingangen ligger i stallet i kvittolistan –
+  // och en oklassificerad rad bland de sex senaste bar ingen prick heller (togs
+  // bort 2026-11-13): den sa "ogjort" utan att saga vad man ska gora.
   const domanKostnadPerId = new Map(kostnader.map((k) => [k.id, k]));
-  const oklassificeradeIder = new Set(
-    kostnader.filter(arOklassificerad).map((k) => k.id),
-  );
 
   // "Totalt inlagt": allt som lagts in pa bostaden, oavsett ar, datum och
   // klassificering (docs/design.md, Metrikblock). Arssumman nollstalls varje
@@ -397,7 +393,11 @@ export default async function Oversikt({
                           ? `${k.leverantor} · ${datum ?? ""}`
                           : (datum ?? "")
                     }
-                    atgard={utkast || oklassificeradeIder.has(k.id)}
+                    // Bara utkastet bar atgardsprick: det ar ofullstandigt.
+                    // Oklassificerad ar inget att atgarda har (docs/design.md,
+                    // Kvittolistan) – inbjudan till fragorna ligger pa
+                    // kvittolistan.
+                    atgard={utkast}
                     // Samma rad som i kvittolistan (docs/design.md,
                     // Kvittolistan): kursiv forsta rad och bilagemarket.
                     // Fragan ovan hamtar inga kvitton som inte hor till

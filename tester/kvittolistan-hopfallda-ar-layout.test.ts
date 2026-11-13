@@ -264,9 +264,11 @@ describe("kvittolistans årssektioner vid 390 px, mätt i Chrome", () => {
     for (const x of r) expect(x.hojd, `rubriken "${x.text}" ska synas`).toBeGreaterThan(0);
 
     // Ingangen till fragorna star overst, utanfor alla sektioner, och syns.
+    // Den ar ett kort sedan 2026-11-13: lanken hittas pa kortets rubrik, hela
+    // rubrikens text (docs/design.md, Kvittolistan).
     const ingang = `Berätta om ${fall.dagar.length} kvitton`;
     const placering = await utvardera<{ finns: boolean; iSektion: boolean; hojd: number; foreForsta: boolean }>(`(() => {
-      const el = [...document.querySelectorAll('a')].find(a => a.textContent === ${JSON.stringify(ingang)});
+      const el = [...document.querySelectorAll('a')].find(a => [...a.querySelectorAll('h2')].some(h => h.textContent === ${JSON.stringify(ingang)}));
       if (!el) return { finns: false, iSektion: false, hojd: 0, foreForsta: false };
       const forsta = document.querySelector('details');
       return {

@@ -6,28 +6,36 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import tailwindKonfig from "../tailwind.config";
 import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
 
-// docs/design.md, Kvittolistan: raden "Berätta om N kvitton" star fore
-// knappen Lägg till kvitto nar den finns. Finns ingen sadan rad ligger
-// knappen overst som forut.
+// docs/design.md, Kvittolistan: kortet "Berätta om N kvitton" star fore
+// knappen Lägg till kvitto nar det finns. Finns inget kort ligger knappen
+// overst som forut. Kortet var en rad med atgardsprick till 2026-11-13.
 //
 // Ett pastaende om vad som star forst ar ett pastaende om vad som syns, sa
 // ordningen mats pa det som renderas: kvittolistan renderas mot en falsk
 // databas, appens CSS byggs med Tailwind, och elementens lagen pa skarmen
-// mats i Chrome vid 390 px. Ett element raknas bara om det syns – det mats
+// mats i Chrome vid 393 px. Ett element raknas bara om det syns – det mats
 // med checkVisibility() och en ruta storre an noll, och de tva ska vara
 // overens (CLAUDE.md, "Mät rätt egenskap").
 //
-// Testet provar bada fallen. Ett test som bara provade att raden star fore
-// knappen hade passerat aven om raden alltid visades.
+// Villkoret provas at bada hallen, i tre fall: tre oklassificerade kvitton
+// ger kortet, noll och exakt ett ger det inte (docs/design.md: ett kort for
+// en enda post ar tyngre an posten ar vard). Ett test som bara provade att
+// kortet star fore knappen hade passerat aven om det alltid visades. Kortets
+// rubrik och dampade mening lases ur design.md inne i testet, och ett tryck
+// pa kortet ska leda till genomgangen – med emulerad pekskarm, som pa
+// telefonen.
 //
 // Och sidan ar tva kort och en knapp, inte ett kort (docs/design.md,
-// Kvittolistan): raden och listan ar kort, knappen star direkt pa sidans
+// Kvittolistan): ingangen och listan ar kort, knappen star direkt pa sidans
 // bakgrund, och delarna skiljs at av sidans bakgrund. Delarna tas fram ur det
 // som renderas – varje dels forfader narmast under deras gemensamma forfader
 // – och mats vid 393 px: glappet mellan tva delar ar storre an noll och visar
 // sidans bakgrund dar Chrome sager att den syns (elementFromPoint), korten
 // har en annan yta an sidan, ytan bakom knappen ar sidans, och listan borjar
-// med arsrubriken.
+// med arsrubriken. Ett blocks yta ar den som syns strax innanfor blockets
+// overkant (elementFromPoint), inte blockets egen bakgrund: ingangen ar en lank runt
+// ett kort, och lanken sjalv har ingen yta – att lasa fran lanken och uppat
+// gav sidans yta fast kortet syns.
 //
 // Arsrubriken byter inte yta nar sektionen oppnas. Testet trycker pa en
 // hopfalld rubrik med emulerad pekskarm, som hon gor pa telefonen, och
@@ -88,10 +96,20 @@ const datum = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
 const KNAPP = "Lägg till kvitto";
 
-/** Tre kvitton i tva ar. `kopplade` lagger dem i ett projekt – da finns inget
- *  att beratta om, och raden faller bort. `fler` lagger till tva kvitton, sa
- *  att listan blir fem kvitton pa tva ar och aren ar hopfallda. */
-function seeda(kopplade: boolean, fler = false) {
+/** Kortets rubrik for N kvitton och dess dampade mening, ur design.md.
+ *  Lases har, inne i testet – aldrig pa modulniva (CLAUDE.md, Tester). */
+function kortetsOrd(antal: number): { rubrik: string; rad: string } {
+  const design = readFileSync(join(ROT, "docs", "design.md"), "utf-8");
+  const m = design.match(/^> \*\*(Berätta om )\d+( kvitton)\*\*\n> (.+)$/m);
+  if (!m) throw new Error("design.md saknar ingangskortets rubrik och mening under Kvittolistan");
+  return { rubrik: `${m[1]}${antal}${m[2]}`, rad: m[3].trim() };
+}
+
+/** Tre kvitton i tva ar. `okopplade` av dem ligger utanfor projekt – resten
+ *  kopplas till ett, och dem finns inget att beratta om. `fler` lagger till
+ *  tva okopplade kvitton, sa att listan blir fem kvitton pa tva ar och aren
+ *  ar hopfallda. */
+function seeda(okopplade: number, fler = false) {
   const { db } = h;
   db.nollstall();
   db.lagg("anvandare", { id: ANNA, epost: "anna@exempel.se" });
@@ -103,13 +121,13 @@ function seeda(kopplade: boolean, fler = false) {
     nybyggd_vid_forvarv: false,
   });
   db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: X, agarandel: 100 });
-  if (kopplade) db.lagg("projekt", { id: P, bostad_id: X, namn: "Målade om", ar: 2025, atgardstyp: "utbytt" });
-  for (const [anteckning, dag] of [
+  if (okopplade < 3) db.lagg("projekt", { id: P, bostad_id: X, namn: "Målade om", ar: 2025, atgardstyp: "utbytt" });
+  for (const [i, [anteckning, dag]] of ([
     ["Färg till sovrummet", "2025-05-02"],
     ["Penslar och tejp", "2025-03-14"],
     ["Spackel till hallen", "2024-09-01"],
     ...(fler ? ([["Lister till vardagsrummet", "2024-06-11"], ["Fog till badrummet", "2025-08-20"]] as const) : []),
-  ]) {
+  ] as const).entries()) {
     const k = db.lagg("kostnad", {
       bostad_id: X,
       leverantor: "Bauhaus Bromma",
@@ -121,7 +139,7 @@ function seeda(kopplade: boolean, fler = false) {
     });
     db.lagg("bilaga", { kostnad_id: k.id, sokvag: `x/${k.id}.jpg`, filtyp: "image/jpeg" });
     const rad = db.lagg("kostnadsrad", { kostnad_id: k.id, artikel: "Färg", belopp: 465_800 });
-    if (kopplade) db.lagg("radfordelning", { kostnadsrad_id: rad.id, projekt_id: P, andel: 1 });
+    if (i >= okopplade && i < 3) db.lagg("radfordelning", { kostnadsrad_id: rad.id, projekt_id: P, andel: 1 });
   }
   h.inloggad = { id: ANNA, email: "anna@exempel.se" };
 }
@@ -136,14 +154,14 @@ beforeAll(async () => {
       from: join(ROT, "src/app/globals.css"),
     })
   ).css;
-  for (const [namn, kopplade, fler] of [["med-rad", false, false], ["utan-rad", true, false], ["hopfallt", false, true]] as const) {
-    seeda(kopplade, fler);
+  for (const [namn, okopplade, fler] of [["med-rad", 3, false], ["utan-rad", 0, false], ["ett-kvar", 1, false], ["hopfallt", 3, true]] as const) {
+    seeda(okopplade, fler);
     SIDOR[namn] = `<!doctype html><html lang="sv"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>${css}</style></head><body class="font-granssnitt">${renderToStaticMarkup(await KvittolistaSida())}</body></html>`;
   }
-  // Kvittots egen sida behovs inte – bara att trycket leder nagonstans det
-  // gar att ga tillbaka fran.
+  // Kvittots egen sida och genomgangen behovs inte – bara att trycket leder
+  // nagonstans det gar att ga tillbaka fran, och vart.
   webblasare = await startaWebblasare(SIDOR, "kvittobo-ordning-", {
     reserv: '<!doctype html><html lang="sv"><head><meta charset="utf-8"></head><body><p>Kvittot</p></body></html>',
   });
@@ -154,8 +172,12 @@ afterAll(async () => {
 });
 
 interface Matning {
-  /** Raden "Berätta om …": dess text och overkant, eller null nar ingen syns. */
-  rad: { text: string; topp: number } | null;
+  /** Kortet "Berätta om …": rubrikens och den dampade meningens hela text,
+   *  lankens mal och kortets overkant, eller null nar inget syns. */
+  kort: { rubrik: string; rad: string; href: string; topp: number } | null;
+  /** Om ingangens ord star nagonstans i sidans innehall, synligt eller ej –
+   *  sa att ett kort som bytt form inte raknas som borta. */
+  namns: boolean;
   /** Knappens overkant, eller null nar den inte syns. */
   knapp: number | null;
   /** Overkanten pa varje annat synligt element man kan trycka pa i sidans
@@ -165,8 +187,8 @@ interface Matning {
   oense: string[];
 }
 
-async function mat(sida: string): Promise<Matning> {
-  await webblasare.cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
+async function mat(sida: string, rad: string): Promise<Matning> {
+  await webblasare.cdp("Emulation.setDeviceMetricsOverride", { width: 393, height: 852, deviceScaleFactor: 3, mobile: true });
   await webblasare.cdp("Page.navigate", { url: `${webblasare.adress}${sida}` });
   return webblasare.utvardera<Matning>(`(async () => {
     for (let i = 0; i < 100 && document.readyState !== 'complete'; i++) await new Promise(r => setTimeout(r, 50));
@@ -181,12 +203,20 @@ async function mat(sida: string): Promise<Matning> {
     const topp = e => e.getBoundingClientRect().top + window.scrollY;
     const main = document.querySelector('main');
     const tryckbara = [...main.querySelectorAll('a, summary, button')].filter(synlig);
-    const radEl = tryckbara.find(e => e.textContent.trim().startsWith('Berätta om '));
+    const kortEl = tryckbara.find(e => e.textContent.trim().startsWith('Berätta om '));
     const knappEl = tryckbara.find(e => e.textContent.trim() === ${JSON.stringify(KNAPP)});
+    const rubrikEl = kortEl?.querySelector('h2');
+    const radEl = kortEl?.querySelector('p');
     return {
-      rad: radEl ? { text: radEl.textContent.trim(), topp: topp(radEl) } : null,
+      kort: kortEl ? {
+        rubrik: rubrikEl ? rubrikEl.textContent : '(ingen rubrik)',
+        rad: radEl ? radEl.textContent : '(ingen mening)',
+        href: kortEl.getAttribute('href'),
+        topp: topp(kortEl),
+      } : null,
+      namns: main.textContent.includes('Berätta om') || main.textContent.includes(${JSON.stringify(rad)}),
       knapp: knappEl ? topp(knappEl) : null,
-      ovriga: tryckbara.filter(e => e !== radEl && e !== knappEl).map(e => ({ text: e.textContent.trim().slice(0, 40), topp: topp(e) })),
+      ovriga: tryckbara.filter(e => e !== kortEl && e !== knappEl).map(e => ({ text: e.textContent.trim().slice(0, 40), topp: topp(e) })),
       oense,
     };
   })()`);
@@ -228,7 +258,7 @@ async function matBlock(sida: string): Promise<Blockmatning> {
     const main = document.querySelector('main');
     const tryckbara = [...main.querySelectorAll('a, summary')];
     const delar = [
-      ['raden', tryckbara.find(e => e.textContent.trim().startsWith('Berätta om '))],
+      ['kortet', tryckbara.find(e => e.textContent.trim().startsWith('Berätta om '))],
       ['knappen', tryckbara.find(e => e.textContent.trim() === ${JSON.stringify(KNAPP)})],
       ['listan', main.querySelector('summary')],
     ].filter(([, e]) => e);
@@ -238,7 +268,9 @@ async function matBlock(sida: string): Promise<Blockmatning> {
     const blockFor = e => { let x = e; while (x.parentElement !== gemensam) x = x.parentElement; return x; };
     const block = delar.map(([namn, e]) => {
       const b = blockFor(e), r = b.getBoundingClientRect();
-      return { namn, el: b, topp: r.top + scrollY, botten: r.bottom + scrollY, yta: ytaFor(b) };
+      // Ytan som syns innanfor blockets overkant, mitt pa bredden.
+      const punkt = document.elementFromPoint(r.left + r.width / 2, r.top + 8);
+      return { namn, el: b, topp: r.top + scrollY, botten: r.bottom + scrollY, yta: punkt && b.contains(punkt) ? ytaFor(punkt) : 'punkten är inte blockets' };
     });
     const glapp = [];
     for (let i = 1; i < block.length; i++) {
@@ -267,7 +299,7 @@ async function matBlock(sida: string): Promise<Blockmatning> {
 function provaBlocken(m: Blockmatning, delar: string[]) {
   expect(m.block.map((b) => b.namn)).toEqual(delar);
   expect(m.olikaBlock, "varje del för sig").toBe(delar.length);
-  // Raden och listan ar kort; knappen star pa sidans bakgrund.
+  // Ingangen och listan ar kort; knappen star pa sidans bakgrund.
   for (const b of m.block.filter((b) => b.namn !== "knappen")) {
     expect(b.yta, `${b.namn}: kortets yta skiljer sig från sidans`).not.toBe(m.sidansYta);
   }
@@ -282,15 +314,15 @@ function provaBlocken(m: Blockmatning, delar: string[]) {
 }
 
 describe("kvittolistan är två kort och en knapp på sidans bakgrund, mätt i Chrome vid 393 px", () => {
-  it("med raden: kort, knapp, kort", async () => {
+  it("med ingangen: kort, knapp, kort", async () => {
     const m = await matBlock("med-rad");
-    console.log(`med rad: ${m.block.map((b) => `${b.namn} ${b.topp}–${b.botten} på ${b.yta}`).join(", ")}; glapp ${m.glapp.map((g) => `${g.hojd} px ${g.yta}`).join(", ")}; sidan ${m.sidansYta}; bakom knappen ${m.ytanBakomKnappen}`);
-    provaBlocken(m, ["raden", "knappen", "listan"]);
+    console.log(`med kortet: ${m.block.map((b) => `${b.namn} ${b.topp}–${b.botten} på ${b.yta}`).join(", ")}; glapp ${m.glapp.map((g) => `${g.hojd} px ${g.yta}`).join(", ")}; sidan ${m.sidansYta}; bakom knappen ${m.ytanBakomKnappen}`);
+    provaBlocken(m, ["kortet", "knappen", "listan"]);
   }, 60_000);
 
-  it("utan raden: knapp, kort", async () => {
+  it("utan ingangen: knapp, kort", async () => {
     const m = await matBlock("utan-rad");
-    console.log(`utan rad: ${m.block.map((b) => `${b.namn} ${b.topp}–${b.botten} på ${b.yta}`).join(", ")}; glapp ${m.glapp.map((g) => `${g.hojd} px ${g.yta}`).join(", ")}; bakom knappen ${m.ytanBakomKnappen}`);
+    console.log(`utan kortet: ${m.block.map((b) => `${b.namn} ${b.topp}–${b.botten} på ${b.yta}`).join(", ")}; glapp ${m.glapp.map((g) => `${g.hojd} px ${g.yta}`).join(", ")}; bakom knappen ${m.ytanBakomKnappen}`);
     provaBlocken(m, ["knappen", "listan"]);
   }, 60_000);
 });
@@ -382,26 +414,71 @@ describe("årsrubriken byter inte yta när sektionen öppnas, mätt i Chrome vid
   }, 60_000);
 });
 
-describe("raden Berätta om N kvitton och knappen, mätt i Chrome vid 390 px", () => {
-  it("när raden finns står den först, sedan knappen, sedan listan", async () => {
-    const m = await mat("med-rad");
-    console.log(`med rad: raden ${m.rad?.topp} px, knappen ${m.knapp} px, listan från ${Math.min(...m.ovriga.map((o) => o.topp))} px`);
+describe("kortet Berätta om N kvitton och knappen, mätt i Chrome vid 393 px", () => {
+  it("vid tre oklassificerade står kortet först, med rubriken och meningen ur design.md, sedan knappen, sedan listan", async () => {
+    const ord = kortetsOrd(3);
+    const m = await mat("med-rad", ord.rad);
+    console.log(`tre kvar: kortet ${m.kort?.topp} px, knappen ${m.knapp} px, listan från ${Math.min(...m.ovriga.map((o) => o.topp))} px`);
     expect(m.oense).toEqual([]);
-    expect(m.rad, "raden ska synas").not.toBeNull();
-    expect(m.rad!.text).toBe("Berätta om 3 kvitton");
+    expect(m.kort, "kortet ska synas").not.toBeNull();
+    expect(m.kort!.rubrik).toBe(ord.rubrik);
+    expect(m.kort!.rad).toBe(ord.rad);
+    expect(m.kort!.href).toBe("/genomgang");
     expect(m.knapp, "knappen ska synas").not.toBeNull();
     expect(m.ovriga.length, "listan ska ha något att trycka på").toBeGreaterThan(0);
-    expect(m.rad!.topp).toBeLessThan(m.knapp!);
+    expect(m.kort!.topp).toBeLessThan(m.knapp!);
     for (const o of m.ovriga) expect(m.knapp!, `knappen före "${o.text}"`).toBeLessThan(o.topp);
   }, 60_000);
 
-  it("när raden inte finns står knappen överst", async () => {
-    const m = await mat("utan-rad");
-    console.log(`utan rad: knappen ${m.knapp} px, listan från ${Math.min(...m.ovriga.map((o) => o.topp))} px`);
+  it("vid noll oklassificerade finns inget kort, och knappen står överst", async () => {
+    const m = await mat("utan-rad", kortetsOrd(0).rad);
+    console.log(`noll kvar: knappen ${m.knapp} px, listan från ${Math.min(...m.ovriga.map((o) => o.topp))} px`);
     expect(m.oense).toEqual([]);
-    expect(m.rad, "raden ska inte synas när allt är kopplat").toBeNull();
+    expect(m.kort, "kortet ska inte synas när allt är kopplat").toBeNull();
+    expect(m.namns, "ingångens ord ska inte stå någonstans på sidan").toBe(false);
     expect(m.knapp, "knappen ska synas").not.toBeNull();
     expect(m.ovriga.length, "listan ska ha något att trycka på").toBeGreaterThan(0);
     for (const o of m.ovriga) expect(m.knapp!, `knappen före "${o.text}"`).toBeLessThan(o.topp);
+  }, 60_000);
+
+  it("vid exakt ett oklassificerat finns inget kort, och knappen står överst", async () => {
+    const m = await mat("ett-kvar", kortetsOrd(1).rad);
+    console.log(`ett kvar: knappen ${m.knapp} px, listan från ${Math.min(...m.ovriga.map((o) => o.topp))} px`);
+    expect(m.oense).toEqual([]);
+    expect(m.kort, "kortet ska inte synas för ett enda kvitto").toBeNull();
+    expect(m.namns, "ingångens ord ska inte stå någonstans på sidan").toBe(false);
+    expect(m.knapp, "knappen ska synas").not.toBeNull();
+    // Alla tre kvitton star i listan – sidan ar inte tom, den saknar kortet.
+    expect(m.ovriga.filter((o) => o.text.startsWith("Färg till") || o.text.startsWith("Penslar") || o.text.startsWith("Spackel")).length).toBe(3);
+    for (const o of m.ovriga) expect(m.knapp!, `knappen före "${o.text}"`).toBeLessThan(o.topp);
+  }, 60_000);
+
+  it("ett tryck med fingret på kortet leder till genomgången", async () => {
+    const w = webblasare;
+    await w.cdp("Emulation.setDeviceMetricsOverride", { width: 393, height: 852, deviceScaleFactor: 3, mobile: true });
+    await w.cdp("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
+    try {
+      await w.cdp("Page.navigate", { url: `${w.adress}med-rad` });
+      const { rubrik } = kortetsOrd(3);
+      const punkt = await w.utvardera<{ x: number; y: number } | null>(`(async () => {
+        for (let i = 0; i < 100 && document.readyState !== 'complete'; i++) await new Promise(r => setTimeout(r, 50));
+        const h2 = [...document.querySelectorAll('main a h2')].find(h => h.textContent === ${JSON.stringify(rubrik)});
+        if (!h2) return null;
+        const r = h2.closest('a').getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      })()`);
+      expect(punkt, `kortet "${rubrik}" ska finnas att trycka på`).not.toBeNull();
+      await w.cdp("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: punkt!.x, y: punkt!.y }] });
+      await w.cdp("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      let sida = "";
+      for (let i = 0; i < 40 && sida !== "/genomgang"; i++) {
+        await new Promise((r) => setTimeout(r, 50));
+        sida = await w.utvardera<string>("location.pathname").catch(() => "");
+      }
+      console.log(`tryck på "${rubrik}" ledde till ${sida}`);
+      expect(sida, "trycket ska leda till genomgången").toBe("/genomgang");
+    } finally {
+      await w.cdp("Emulation.setTouchEmulationEnabled", { enabled: false });
+    }
   }, 60_000);
 });
