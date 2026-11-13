@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { join, relative, sep } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { REGELPARAMETRAR } from "./_hjalp";
@@ -91,6 +93,11 @@ import RedigeraProjektSida from "@/app/projekt/[id]/redigera/page";
 import NyttProjektSida from "@/app/projekt/nytt/page";
 import LaggTillKvittonSida from "@/app/projekt/[id]/kvitton/page";
 import FragorOmBostadenSida from "@/app/bostaden/fragor/page";
+import BostadenAndelSida from "@/app/bostaden/andel/page";
+import BjudInSida from "@/app/bostaden/bjud-in/page";
+import KopeskillingSida from "@/app/bostaden/kopeskilling/page";
+import ForsaljningAndelSida from "@/app/forsaljning/andel/page";
+import SammaDelSida from "@/app/forsaljning/samma-del/page";
 import ExportSida from "@/app/export/page";
 import BilagepaketSida from "@/app/export/paket/page";
 import ForsaljningSida from "@/app/forsaljning/page";
@@ -115,12 +122,15 @@ import { skapaUtkast, sparaKostnad } from "@/app/kostnad/nytt/actions";
 import { redigeraProjekt, skapaProjekt, taBortProjekt } from "@/app/projekt/actions";
 import { laggTillKvitton } from "@/app/projekt/[id]/kvitton/actions";
 import { sparaFragorOmBostaden } from "@/app/bostaden/fragor/actions";
+import { sparaAndelen, sparaKopeskillingen } from "@/app/bostaden/actions";
+import { bekraftaAndel } from "@/app/forsaljning/andel/actions";
+import { sparaSammaDel } from "@/app/forsaljning/samma-del/actions";
 import { sparaSkickForsaljning } from "@/app/forsaljning/skick/actions";
 import { markeraSald } from "@/app/forsaljning/actions";
 import { sparaBostaden, sparaForvarvet } from "@/app/installningar/actions";
 import { hamtaArkivexportlista } from "@/app/installningar/arkivexport-actions";
 import { skapaBilagepaket } from "@/app/export/paket/actions";
-import { aterkallaInbjudanAction, skapaInbjudanAction } from "@/app/inbjudan/actions";
+import { aterkallaInbjudanAction, skapaInbjudanAction, visaInbjudanAction } from "@/app/inbjudan/actions";
 import { raderaKonto } from "@/lib/konto/radera";
 import { bytBostad, hamtaBostadsval } from "@/app/bostadsval/actions";
 import RootLayout from "@/app/layout";
@@ -450,6 +460,12 @@ const VAGAR_MED_ID: Vag[] = [
     anrop: () => aterkallaInbjudanAction({}, formular({ inbjudan_id: IX })),
     avslag: "fel",
   },
+  // Lämnar ut inbjudningslänken – får aldrig göra det för en annans inbjudan.
+  {
+    vag: "visaInbjudanAction",
+    anrop: () => visaInbjudanAction({}, formular({ inbjudan_id: IX })),
+    avslag: "fel",
+  },
 ];
 
 function forvantaAvslag(utfall: Utfall, avslag: Avslag) {
@@ -505,6 +521,17 @@ const VAGAR_UTAN_ID: Vag[] = [
   { vag: "sida /projekt", anrop: () => ProjektlistaSida(), avslag: "fel" },
   { vag: "sida /projekt/nytt", anrop: () => NyttProjektSida(), avslag: "fel" },
   { vag: "sida /bostaden/fragor", anrop: () => FragorOmBostadenSida({ searchParams: Promise.resolve({}) }), avslag: "fel" },
+  // Hittade 2026-11-13 när underlaget började räknas upp ur koden: de här
+  // vägarna fanns före omläggningen och stod aldrig i listan.
+  { vag: "sida /bostaden/andel", anrop: () => BostadenAndelSida({ searchParams: Promise.resolve({}) }), avslag: "fel" },
+  { vag: "sida /bostaden/bjud-in", anrop: () => BjudInSida({ searchParams: Promise.resolve({}) }), avslag: "fel" },
+  { vag: "sida /bostaden/kopeskilling", anrop: () => KopeskillingSida(), avslag: "fel" },
+  { vag: "sida /forsaljning/andel", anrop: () => ForsaljningAndelSida({ searchParams: Promise.resolve({}) }), avslag: "fel" },
+  { vag: "sida /forsaljning/samma-del", anrop: () => SammaDelSida(), avslag: "fel" },
+  { vag: "sparaKopeskillingen", anrop: () => sparaKopeskillingen(START, formular({ kopeskilling: "3 450 000" })), avslag: "fel" },
+  { vag: "sparaAndelen", anrop: () => sparaAndelen(START, formular({ agarandel: "50" })), avslag: "fel" },
+  { vag: "bekraftaAndel", anrop: () => bekraftaAndel(START, formular({ agarandel: "50" })), avslag: "fel" },
+  { vag: "sparaSammaDel", anrop: () => sparaSammaDel(START, formular({ svar: "nej" })), avslag: "fel" },
   { vag: "sida /export", anrop: () => ExportSida(), avslag: "fel" },
   { vag: "sida /export/paket", anrop: () => BilagepaketSida(), avslag: "fel" },
   { vag: "sida /forsaljning", anrop: () => ForsaljningSida(), avslag: "fel" },
@@ -1130,6 +1157,15 @@ describe("vaxlaren", () => {
     expect(h.db.ogonblick()).toEqual(fore);
   });
 
+  // Växlarens lista följer den inloggades egna medlemskap och tar inget id –
+  // den kan alltså inte provas med ett främmande id. Det som ska gälla är att
+  // den aldrig visar en bostad hon inte är medlem i.
+  it("listan visar bara bostäder hon är medlem i", async () => {
+    loggaIn(BERTIL);
+    const lista = await hamtaBostadsval();
+    expect(lista?.bostader.map((b) => b.id)).toEqual([Y]);
+  });
+
   it("den farska listan foljer ett byte som gjorts nagon annanstans", async () => {
     bertilIBada();
     loggaIn(BERTIL);
@@ -1139,12 +1175,119 @@ describe("vaxlaren", () => {
   });
 
   it.each(
-    VAGAR_UTAN_ID.filter((v) => v.vag.startsWith("sida ") && !["sida /export/paket", "sida /forsaljning/skick"].includes(v.vag)).map((v) => [v.vag, v] as const),
+    // Försäljningsstegen skickar en osåld bostad till /forsaljning, och
+    // inbjudan skickar till köpeskillingen när den saknas – de har ingen
+    // topprad att visa i det läget.
+    VAGAR_UTAN_ID.filter((v) => v.vag.startsWith("sida ") && !["sida /export/paket", "sida /forsaljning/skick", "sida /forsaljning/andel", "sida /forsaljning/samma-del", "sida /bostaden/bjud-in"].includes(v.vag)).map((v) => [v.vag, v] as const),
   )("toppraden visar den aktiva bostadens adress: %s", async (_vag, v) => {
     bertilIBada();
     loggaIn(BERTIL);
     const utfall = await kor(v.anrop);
     expect("varde" in utfall, "kastat" in utfall ? String((utfall.kastat as Error)?.stack ?? JSON.stringify(utfall.kastat)) : "").toBe(true);
     expect(hittaProp((utfall as { varde: unknown }).varde, "bostadsnamn")).toBe("Lillgatan 2");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Underlaget är komplett (CLAUDE.md, "En lista som ska vara komplett får inte
+// hållas för hand"). Varje server-action, sida och route i src/app räknas upp
+// ur koden. Var och en ska vara antingen prövad ovan – en rad i
+// VAGAR_MED_ID, VAGAR_UTAN_ID eller ett eget fall i EGNA_PROV – eller stå i
+// UNDANTAG med sitt skäl. Står något utanför båda faller testet och säger vad.
+//
+// Valet: testet faller hellre än att pröva nya vägar av sig själv. Varje väg
+// behöver ett eget anrop med ett främmande id och ett eget väntat avslag, och
+// det går inte att härleda ur en signatur. Det en automatik kan göra – säga
+// att något saknas – är det som gör listan komplett.
+// ---------------------------------------------------------------------------
+
+/** Vägar som prövas i egna fall i den här filen, inte genom listorna. */
+const EGNA_PROV: Record<string, string> = {
+  "action hamtaBostadsval": "växlarens lista – 'listan visar bara bostäder hon är medlem i'",
+};
+
+/**
+ * Vägar som medvetet inte prövas här, och varför. Ett giltigt skäl är att
+ * vägen inte rör någon bostads rader, eller att den prövas mot något annat än
+ * medlemskapet. "Ingen hann skriva ett prov" är inte ett skäl.
+ */
+const UNDANTAG: Record<string, string> = {
+  "action hanteraAuth": "inloggningen – rör inga bostadsrader, och det finns ingen bostad innan den",
+  "action loggaUt": "utloggningen – rör inga bostadsrader",
+  "action begarAterstallning": "lösenordsåterställningen – rör inga bostadsrader",
+  "action sattNyttLosenord": "lösenordsåterställningen – rör inga bostadsrader",
+  "action slutforRegistrering": "skapar en ny bostad åt den inloggade; tar inget id och rör ingen befintlig bostads rader",
+  "action losInInbjudanAction": "inlösen följer inbjudans adress, inte ett medlemskap – prövas i tester/inbjudan.test.ts",
+  "sida /inbjudan/[id]": "inbjudningslänken följer adressen, inte ett medlemskap – prövas i tester/inbjudan.test.ts",
+  "sida /login": "publik – innan inloggning",
+  "sida /registrera": "skapar den första bostaden – det finns ingen bostad att skydda",
+  "sida /losenord/glomt": "publik – innan inloggning",
+  "sida /losenord/nytt": "lösenordsåterställningen – rör inga bostadsrader",
+  "sida /integritetspolicy": "publik text",
+  "GET /auth/callback": "inloggningens återkomst från Supabase – rör inga bostadsrader",
+};
+
+/** Nyckeln för en rad i listorna: "action namn", "sida /väg" eller "GET /väg". */
+function nyckelFor(vag: string): string {
+  if (vag.startsWith("sida ")) return `sida ${vag.slice(5).split(/[?\s]/)[0]}`;
+  if (vag.startsWith("GET ")) return `GET ${vag.slice(4).split(/[?\s]/)[0]}`;
+  return `action ${vag.split(" ")[0]}`;
+}
+
+/** Varje server-action, sida och route under src/app, ur källkoden. */
+function vagarIKoden(): string[] {
+  const rot = join(process.cwd(), "src", "app");
+  const filer = (readdirSync(rot, { recursive: true }) as string[]).map((f) => join(rot, f));
+  // src/app/projekt/[id]/page.tsx -> /projekt/[id]; src/app/page.tsx -> /
+  const vagFor = (fil: string) => "/" + relative(rot, fil).split(sep).slice(0, -1).join("/");
+  const ut: string[] = [];
+  for (const fil of filer) {
+    if (!/\.(ts|tsx)$/.test(fil)) continue;
+    const kod = readFileSync(fil, "utf-8");
+    const bas = fil.split(sep).pop()!;
+    if (/^\s*"use server";/m.test(kod.split("\n").slice(0, 3).join("\n"))) {
+      for (const m of kod.matchAll(/^export (?:async function|const) ([A-Za-z0-9_]+)/gm)) ut.push(`action ${m[1]}`);
+    }
+    if (bas === "page.tsx") ut.push(`sida ${vagFor(fil)}`);
+    if (bas === "route.ts") {
+      for (const m of kod.matchAll(/^export (?:async function|const) (GET|POST|PUT|PATCH|DELETE)\b/gm)) {
+        ut.push(`${m[1]} ${vagFor(fil)}`);
+      }
+    }
+  }
+  return [...new Set(ut)].sort();
+}
+
+describe("åtkomsttestets underlag är komplett", () => {
+  const provade = () =>
+    new Set([...[...VAGAR_MED_ID, ...VAGAR_UTAN_ID].map((v) => nyckelFor(v.vag)), ...Object.keys(EGNA_PROV)]);
+
+  it("förutsättningen: uppräkningen hittar vägarna, av alla tre slagen", () => {
+    const koden = vagarIKoden();
+    expect(koden).toContain("action skapaProjekt");
+    expect(koden).toContain("sida /projekt/[id]/kvitton");
+    expect(koden).toContain("sida /");
+    expect(koden).toContain("GET /bilaga/[id]");
+    expect(koden.length).toBeGreaterThan(60);
+  });
+
+  it("varje väg i koden är prövad eller undantagen med skäl", () => {
+    const p = provade();
+    const oklassade = vagarIKoden().filter((v) => !p.has(v) && !(v in UNDANTAG));
+    expect(oklassade, "Lägg till ett prov i VAGAR_MED_ID/VAGAR_UTAN_ID, eller ett undantag med skäl i UNDANTAG").toEqual([]);
+  });
+
+  it("inget är både prövat och undantaget, och inget undantag eller prov pekar på något som inte finns", () => {
+    const koden = new Set(vagarIKoden());
+    const p = provade();
+    expect(Object.keys(UNDANTAG).filter((u) => p.has(u))).toEqual([]);
+    expect(Object.keys(UNDANTAG).filter((u) => !koden.has(u)), "undantag för en väg som inte finns").toEqual([]);
+    expect([...p].filter((v) => !koden.has(v)), "prov för en väg som inte finns").toEqual([]);
+  });
+
+  it("varje undantag har ett skäl", () => {
+    for (const [vag, skal] of Object.entries({ ...UNDANTAG, ...EGNA_PROV })) {
+      expect(skal.trim().length, vag).toBeGreaterThan(10);
+    }
   });
 });

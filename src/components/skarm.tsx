@@ -110,6 +110,7 @@ export function Listrad({
   privat,
   raknasMed,
   belopp,
+  beloppSaknas,
   href,
   strackt,
   atgard,
@@ -130,6 +131,12 @@ export function Listrad({
    * Listrader) pa ett kvitto som ocksa saknar bilaga.
    */
   underStatus?: string | string[];
+  /**
+   * Text i beloppets plats nar raden inte har nagot belopp – dampad, aldrig
+   * en nolla (docs/design.md, Projektlistan: "Ett projekt utan kvitton visar
+   * inget belopp, och aldrig 0 kr"). Ignoreras nar belopp ar satt.
+   */
+  beloppSaknas?: string;
   /**
    * ROT i oren som avgar fran radens belopp. Ger den dampade raden "varav ROT
    * … kr, avgår" overst bland underraderna (docs/design.md, Listrader: "ROT-
@@ -256,6 +263,10 @@ export function Listrad({
       {belopp ? (
         <span className="shrink-0 font-rubrik text-base tabular-nums text-text-primar">
           {belopp}
+        </span>
+      ) : beloppSaknas ? (
+        <span className="shrink-0 font-granssnitt text-sm text-text-sekundar">
+          {beloppSaknas}
         </span>
       ) : null}
     </div>
