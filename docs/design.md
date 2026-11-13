@@ -2048,6 +2048,16 @@ Förklaringen ligger bakom knappen, inte som brödtext ovanför listan. Den som 
 
 Tomläget är alltså det vanliga: en rubrik som är en uppmaning, en till två rader om varför, och knappen i full bredd.
 
+#### Att lägga kvitton till ett projekt som redan finns
+
+**Ett projekt är inte färdigt när det sparas.** Hon skapar *Badrum 2022*, hittar tre kvitton till en vecka senare, och ska kunna lägga dit dem i ett svep. Att göra det ett kvitto i taget från varje kvittos egen sida är tre besök för en handling.
+
+**Kontrollen heter "Lägg till kvitton" och står under rubriken *Kvittona* på projektets sida.** Den öppnar samma kryssrutelista som sista steget i projektskapandet, med samma två rader anteckning och samma urval: de kvitton som ännu inte hör till något projekt.
+
+**Vägen från kvittot finns kvar och är den andra riktningen av samma sak.** Ett kvitto öppnas, kopplas till ett projekt ur rullistan. Den passar när hon står vid kvittot; listan passar när hon står vid projektet. Båda skriver samma koppling.
+
+**Och den här kontrollen är skälet till att fas 1 går att riva.** Den var det enda stället där flera kvitton kunde kopplas i ett svep.
+
 #### Projekt som skapades före omläggningen
 
 **Ett projekt utan svar på frågeträdet kan bara vara gammalt.** Den nya vägen besvarar trädet innan projektet sparas, så `atgardstyp` null betyder *skapad före 2026-11-13*. Agenten läste databasen och hittade ett sådant projekt, utan namn men med kvitton. **Det ska inte röras i databasen** – det är en riktig rad i en riktig bostad, och gränssnittet får klara den.
@@ -2422,10 +2432,14 @@ Utan försäljningsdatum visas:
 
 **Det löses inte genom att gissa.** Att räkna som om bostaden inte var nybyggd låter reparationsbeloppen lyfta år över tröskeln som inte skulle passera, och felet går mot ett för högt tal. Att hoppa över reparationerna i tröskelprövningen ändrar vad talet på sida 1 betyder. Båda vägarna byter ett väntande tillstånd mot ett osant tal.
 
-**Underlaget frågar i stället, på sitt eget sätt.** Raderna visas, summorna hålls tillbaka och dämpas som varje ofullständig summa, och *Återstår* får en rad som säger vad som fattas och leder till frågorna:
+**Underlaget frågar i stället, på sitt eget sätt.** Raderna visas med vad de kostade, de tal svaret skulle ha ändrat står som ett dämpat **–** utan *Förs till*, och *Återstår* inleds med en rad som säger vad som fattas och leder till frågorna:
 
 > **Vi vet inte om bostaden var nybyggd när du köpte den**
 > Svaret avgör om reparationer räknas med. **Svara på två frågor**
+
+**Och vilka tal som hålls tillbaka avgörs genom att räkna, inte genom att bedöma.** Agentens lösning 2026-11-13, och den är bättre än regeln jag skrev. Underlaget räknas **en gång för varje möjligt svar**, och visas bara där svaren ger samma tal. Där de skiljer sig står strecket.
+
+Det är starkare än att hålla tillbaka hela summan: en grundförbättring vars år passerar tröskeln oavsett svaret är sann redan nu, och hon får se den. **Ingenting gissas, och ingenting döljs i onödan.** Regeln generaliserar — se *Ett okänt svar döljer bara det det ändrar* i `CLAUDE.md`.
 
 **Och lydelsen *"Sammanställningen går inte att göra"* används inte.** Den säger att appen misslyckades. Appen väntar på ett svar, och ett väntande tillstånd namnger det som fattas — regeln står under *Ett tillstånd är inte en kategori*.
 

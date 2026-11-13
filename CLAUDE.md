@@ -636,6 +636,16 @@ Fallet var det gamla grupperingsflödet: posten skapades med tomt namn, eftersom
 
 **Regeln: att ha kört vägen igenom säger ingenting om vad som syns halvvägs.** Den som prövar ett flerstegsflöde ska stanna mitt i och se sig omkring — och den som skriver prompten ska be om en läsning av *var ett halvfärdigt tillstånd visas*, inte bara om steget fungerar.
 
+### Ett okänt svar döljer bara det det ändrar
+
+**Skriven 2026-11-13, efter agentens lösning på underlaget utan bostadsfrågor.** Ett obesvarat ja/nej som går in i beräkningen frestar till två fel: gissa det vanligaste svaret, eller hålla tillbaka hela resultatet. Det första ger ett osant tal, det andra döljer tal som är sanna oavsett svaret.
+
+**Räkna i stället en gång per möjligt svar, och visa det som blir lika.** Ett år som passerar tröskeln med båda svaren passerar den. Ett tal som skiljer sig hålls tillbaka och märks som väntande. Det kräver att beräkningen går att köra flera gånger utan sidoeffekter, vilket den ska kunna ändå.
+
+**Regeln gäller varje indata med ett litet antal möjliga värden**, inte bara bostadsfrågorna. Är antalet kombinationer stort gäller den inte — då är det hela resultatet som väntar.
+
+**Och ett sådant test måste först visa att svaret spelar roll.** Att två körningar ger samma tal bevisar ingenting om svaret inte kunde ha ändrat dem. Agenten visade 3 000 kr mot 0 kr i sitt fall innan likheten fick betyda något — det är samma regel som *En mätning som inte kan falla mäter ingenting*, tillämpad på ett värde i stället för på ett beteende.
+
 ### En lydelse som ska vaktas står i regelfilen
 
 **Skriven 2026-11-13.** Jag skrev en lydelse i en prompt och inte i `docs/design.md`. Agenten byggde den, märkte att inget test kunde läsa den därifrån, och lade den som en konstant — och sa till.
