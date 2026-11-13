@@ -1963,7 +1963,19 @@ Här stod tidigare att skärmen också skulle säga *"N kvitton kvar"* och *"N p
 
 **Merkostnaden är den enda fråga i trädet som behöver ett belopp**, och den ställs därför bara när det finns ett. Spärren `0 < merkostnad < belopp` är Skatteverkets gräns och lättas inte – men på ett projekt utan kvitton finns inget belopp att väga mot, och en avvisning som säger *mindre än 0 kr* är en uppmaning ingen kan följa.
 
-Frågan skjuts då upp i stället för att stoppa sparandet. Projektet sparas med sitt slag — *bättre kvalitet* betyder grundförbättring och reparation oavsett hur de två delarna fördelas — och **en upplysning på projektets rad bär sanningen tills frågan besvarats**, på samma sätt som när ett projekt krymper efter att svaret getts (`CLAUDE.md`, *Spärren och taket*). Frågan blir aktuell i samma stund ett kvitto kopplas till projektet.
+Frågan skjuts då upp i stället för att stoppa sparandet. Projektet sparas med sitt slag — *bättre kvalitet* betyder grundförbättring och reparation oavsett hur de två delarna fördelas — och **en upplysning på projektets sida bär sanningen tills frågan besvarats**, på samma sätt som när ett projekt krymper efter att svaret getts (`CLAUDE.md`, *Spärren och taket*).
+
+**Fältet ligger därför i kvittosteget, inte i frågeträdet.** Agenten flyttade det dit 2026-11-13 och frågade om det var rätt läst. Det var det, och skälet är starkare än ordningen: frågan *"hur mycket av beloppet var merkostnad"* går inte att svara på utan beloppet, och avvisningen ska skriva ut det riktiga talet i stället för att gissa en gräns. Fältet visas när ett valt kvitto har ett belopp.
+
+Upplysningens två lydelser delar första meningen:
+
+> Hur mycket som var merkostnad är inte angivet än. Frågan kommer när projektet har ett belopp.
+
+> Hur mycket som var merkostnad är inte angivet än. **Svara på frågan**
+
+**Villkoret är att projektet har ett belopp, inte att ett kvitto är kopplat.** Den första lydelsen sa till 2026-11-13 *"koppla ett kvitto"*, och agenten hittade kantfallet: ett projekt vars enda kvitton saknar betaldatum har ett kopplat kvitto och ändå inget belopp, och fick då en uppmaning den redan följt.
+
+**Och underlaget får ingen egen rad för det.** Varningen överst säger redan att merkostnaden inte är ifylld. Samma sak sägs en gång.
 
 **Utkastet lever i webbläsaren, och säger inte mer än det kan hålla.** Det som skrivits ligger kvar mellan besöken, men bara i den webbläsaren och på den enheten — börjar hon på telefonen och öppnar datorn finns det inte. Länken heter därför **"Fortsätt senare"** och lovar ingenting om var. Ingenting halvfärdigt sparas i databasen; projektet, bostadsdelen och kvittokopplingarna skrivs i en transaktion eller inte alls.
 
@@ -2035,6 +2047,20 @@ Förklaringen ligger bakom knappen, inte som brödtext ovanför listan. Den som 
 **Primärknappen heter *Skapa projekt*, och den står både i listan och i det tomma tillståndet.** Omlagt 2026-11-13. Här stod att sidan inte skulle ha någon knapp alls, med skälet att projekt uppstod ur grupperingen och inte som en egen uppgift. Nu är det precis tvärtom: projektsidan **är** vägen in, och ett tomt tillstånd utan knapp vore en skärm som beskriver en handling man inte kan utföra därifrån.
 
 Tomläget är alltså det vanliga: en rubrik som är en uppmaning, en till två rader om varför, och knappen i full bredd.
+
+#### Projekt som skapades före omläggningen
+
+**Ett projekt utan svar på frågeträdet kan bara vara gammalt.** Den nya vägen besvarar trädet innan projektet sparas, så `atgardstyp` null betyder *skapad före 2026-11-13*. Agenten läste databasen och hittade ett sådant projekt, utan namn men med kvitton. **Det ska inte röras i databasen** – det är en riktig rad i en riktig bostad, och gränssnittet får klara den.
+
+**Vägen in är projektets redigering, inte en egen skärm.** Redigeringen ställer redan hela trädet och klassificerar ett sådant projekt rätt. Projektsidans *Svara på frågorna* och underlagets *Återstår* pekar dit.
+
+**Rubriken följer vad som saknas.** Har projektet inget svar heter sidan **"Berätta vad du gjort"**; har det ett heter den **"Ändra projekt"**. En rubrik som säger *ändra* om något som aldrig besvarats påstår att det finns ett svar.
+
+**Och ett projekt utan namn visas som sina kvitton.** *"2 kvitton · BAUHAUS, Byggmax"*, leverantörerna i datumordning, året först där texten kan kapas. Regeln stod här till 2026-11-13 och ströks som överflödig eftersom nya projekt alltid har ett namn. Den gäller fortfarande – för de gamla raderna, och bara för dem. Ett tomt namn skrivs aldrig ut rakt av.
+
+**Årsetiketten sätts när svaren ges**, till det tidigaste betaldatumet bland projektets kvitton, som den gamla genomgången gjorde. `ar` är en etikett och allt som räknas utgår från betaldatumen, men en etikett som saknas syns i sorteringen.
+
+**Och *Väntar på frågor* finns kvar i projektlistan, bara för dem.** Jag skrev 2026-11-13 att tillståndet inte finns längre, och det var sant om nya projekt och osant om de gamla. Raden behåller sin text och sin åtgärdsprick så länge någon rad faktiskt väntar — det är så man ser vilka som återstår. Det är ett tillstånd på väg ut, inte ett tillstånd som ska byggas vidare på.
 
 ### Inställningssidan
 
@@ -2391,6 +2417,19 @@ Utan försäljningsdatum visas:
 
 **Och rutan ska säga vad som inte går att räkna ut, och när det går.** Min första rättelse 2026-10-23 bytte *"bakåt från försäljningsdatumet"* mot *"så det går inte att räkna ut ännu"* — precist om fönstret, men den tappade både vad det är som inte går att beräkna och vad som krävs för att det ska gå. **En rättelse av ett ord får inte kosta en mening.** Rutan säger därför båda sakerna, och den andra meningen om sida 1 hör till lydelsen och står med här i stället för att bara finnas i koden.
 - **Kvitton som inte hör till något projekt** som vanligt, under *Återstår*, med sitt skäl per rad.
+
+**Och sidan väntar på bostadsfrågorna också före försäljningen.** Hittat av agenten 2026-11-13, efter att frågorna flyttat till försäljningen: beräkningen kräver `nybyggd_vid_forvarv` oavsett om bostaden är såld, eftersom tröskeln prövas på båda slagen tillsammans och reparationsdelen nollas av nybyggd-regeln innan tröskeln. Den som aldrig svarat möter därför ett underlag som inte går att göra — **under ägandet, i precis den väg lanseringsvillkoret beskriver.**
+
+**Det löses inte genom att gissa.** Att räkna som om bostaden inte var nybyggd låter reparationsbeloppen lyfta år över tröskeln som inte skulle passera, och felet går mot ett för högt tal. Att hoppa över reparationerna i tröskelprövningen ändrar vad talet på sida 1 betyder. Båda vägarna byter ett väntande tillstånd mot ett osant tal.
+
+**Underlaget frågar i stället, på sitt eget sätt.** Raderna visas, summorna hålls tillbaka och dämpas som varje ofullständig summa, och *Återstår* får en rad som säger vad som fattas och leder till frågorna:
+
+> **Vi vet inte om bostaden var nybyggd när du köpte den**
+> Svaret avgör om reparationer räknas med. **Svara på två frågor**
+
+**Och lydelsen *"Sammanställningen går inte att göra"* används inte.** Den säger att appen misslyckades. Appen väntar på ett svar, och ett väntande tillstånd namnger det som fattas — regeln står under *Ett tillstånd är inte en kategori*.
+
+**Frågorna ligger på en egen sida, inte i försäljningsflödet.** Samma två frågor, samma lydelser, nådd från två ställen: först av allt när bostaden markeras som såld, och från underlaget när ett tal kräver dem. Sidans rubrik är **"Frågor om bostaden"** – en sida som heter *försäljning* och frågar den som inte sålt säger fel sak om varför den finns.
 
 "Markera som såld" ligger som en knapp längst ned på sidan, aldrig som en spärr framför den.
 

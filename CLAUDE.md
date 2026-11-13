@@ -349,7 +349,7 @@ Men **raden som bär talet säger att andelen inte är angiven**, intill talet o
 
 Att tillåta 0 för en medlem som lagts in för att hjälpa till utan att äga något är beslutat i sak, men ligger i en egen omgång efter att null är byggd och prövad. Till dess är 0 kanariefågeln.
 
-**Samma sak gäller bostadsfrågorna.** `nybyggd_vid_forvarv` och `ombildning_fran_hyresratt` blir nullbara utan förval, och flaggan `bostadsfragor_besvarade` försvinner med dem. Båda kolumnerna måste med: vaktar flaggan båda och bara den ena blir nullbar, läses ett obesvarat ombildningssvar som nej, reparationsdelen blir noll och beräkningen släpper igenom. **Domänen är redan nullbar** – beräkningen kastar `VantarPaBostadsfragor` vid null – så ändringen lägger inte till ett begrepp, den tar bort en översättning. Frågorna ställs vid försäljningen; de flyttade dit 2026-11-13.
+**Samma sak gäller bostadsfrågorna.** `nybyggd_vid_forvarv` och `ombildning_fran_hyresratt` blir nullbara utan förval, och flaggan `bostadsfragor_besvarade` försvinner med dem. Båda kolumnerna måste med: vaktar flaggan båda och bara den ena blir nullbar, läses ett obesvarat ombildningssvar som nej, reparationsdelen blir noll och beräkningen släpper igenom. **Domänen är redan nullbar** – beräkningen kastar `VantarPaBostadsfragor` vid null – så ändringen lägger inte till ett begrepp, den tar bort en översättning. Frågorna ställs på en egen sida, nådd från försäljningsflödet och från underlaget när ett tal kräver dem; de flyttade ut ur genomgången 2026-11-13. Se `docs/produktspec.md` 4.1.
 
 ---
 
@@ -635,6 +635,14 @@ Fallet var det gamla grupperingsflödet: posten skapades med tomt namn, eftersom
 **Det var inte ett hörn, det var normalfallet.** Flödet bjöd självt in till att avbryta mitt i, och visade sedan det tillståndet fel. Flödet finns inte längre; regeln gäller varje flerstegsflöde som ersätter det.
 
 **Regeln: att ha kört vägen igenom säger ingenting om vad som syns halvvägs.** Den som prövar ett flerstegsflöde ska stanna mitt i och se sig omkring — och den som skriver prompten ska be om en läsning av *var ett halvfärdigt tillstånd visas*, inte bara om steget fungerar.
+
+### En lydelse som ska vaktas står i regelfilen
+
+**Skriven 2026-11-13.** Jag skrev en lydelse i en prompt och inte i `docs/design.md`. Agenten byggde den, märkte att inget test kunde läsa den därifrån, och lade den som en konstant — och sa till.
+
+**En lydelse som bara står i en prompt kan inte vaktas.** Prompten är borta när nästa omgång börjar; filen är kvar. Det är samma regel som att en regel som bara finns i en prompt inte finns, och den gäller ord för ord lika mycket som den gäller beslut.
+
+**Och det är prompten som är felet, inte konstanten.** Agenten gjorde rätt som byggde det den fick och sa var hålet satt. Lydelsen flyttar till filen, inte till nästa prompt.
 
 ### En mätning som inte kan falla mäter ingenting
 

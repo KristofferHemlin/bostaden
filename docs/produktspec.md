@@ -129,9 +129,15 @@ De hör inte hemma i registreringen. Den är avsiktligt kort, frågorna är svå
 
 **Vid försäljningen är de obligatoriska.** Utan svaret går reparationsdelen inte att räkna, och där är sammanhanget uppenbart: hon har just sagt att hon sålt. Det är rätt plats för ett krav; inmatningen och projektskapandet är det inte.
 
+**Under ägandet är de inte ett krav, utan ett väntande tillstånd i underlaget.** Raderna visas, summorna hålls tillbaka, och *Återstår* säger vad som fattas och leder till frågorna. Lydelsen står i `docs/design.md` under *Exportvyn*.
+
 Frågorna ska gå att ändra i inställningarna efteråt, som allt annat om bostaden.
 
-**De ställs först av allt vid försäljningen, och ordningen är härledd.** Är svaret att bostaden var nybyggd släcks hela reparationsgrenen, och då ska skickfrågan vid försäljningen inte ställas alls. Att fråga om skicket först och sedan upptäcka att svaret saknar verkan är att be om arbete i onödan. Sekvensen är därför:
+**De ställs när ett tal kräver dem, och det är alltid vid försäljningen — men inte bara då.** Rättat 2026-11-13, samma dag som flytten, efter att agenten såg konsekvensen: beräkningen kräver `nybyggd_vid_forvarv` oavsett om bostaden är såld, eftersom tröskeln prövas på båda slagen tillsammans och nybyggd-regeln nollar reparationsdelen innan tröskeln. Den som aldrig svarat får alltså inget underlag under ägandet heller.
+
+Frågorna ligger därför på **en egen sida med rubriken "Frågor om bostaden"**, nådd från två ställen: först av allt i försäljningsflödet, och från underlaget när ett tal kräver dem. De hör fortfarande inte hemma i registreringen eller i projektskapandet, av skälen ovan.
+
+**Vid försäljningen är ordningen härledd.** Är svaret att bostaden var nybyggd släcks hela reparationsgrenen, och då ska skickfrågan vid försäljningen inte ställas alls. Att fråga om skicket först och sedan upptäcka att svaret saknar verkan är att be om arbete i onödan. Sekvensen är därför:
 
 1. Försäljningsdatumet
 2. **Bostadsfrågorna** — första ägaren, och ombildningen när den är aktuell
