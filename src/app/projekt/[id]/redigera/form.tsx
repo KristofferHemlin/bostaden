@@ -105,6 +105,9 @@ export function RedigeraProjektForm({
           fel={faltfel}
           onAndring={rensaFel}
           helaBeloppet={projektetsSumma}
+          // Utan belopp att vaga den mot skjuts merkostnadsfragan upp
+          // (docs/design.md, "Att skapa ett projekt"); ett givet svar star kvar.
+          visaMerkostnad={projektetsBelopp > 0}
           skickForsaljning={skickForsaljning}
           bostadsdel={bostadsdel}
         />

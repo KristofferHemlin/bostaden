@@ -13,6 +13,7 @@ import { redirect } from "next/navigation";
 import { sammaDelSvarsfel } from "@/doman/samma-del";
 import { serverfelMeddelande } from "@/lib/databas-fel";
 import { prisma } from "@/lib/prisma";
+import { nastaSidaIForsaljningen } from "@/lib/forsaljningsflode";
 import { hamtaSammaDelVy } from "@/lib/samma-del-vy";
 import { kravBostad } from "@/lib/session";
 
@@ -47,7 +48,9 @@ export async function sparaSammaDel(
   }
   // Inget svar kan andra ett tal langre (t.ex. en atgard har klassats om
   // sedan sidan oppnades): inget att spara, underlaget ar klart.
-  if (!vy || vy.status === "visas_inte") redirect("/export");
+  if (!vy || vy.status === "visas_inte") {
+    redirect(await nastaSidaIForsaljningen(bostadId, anvandareId, "samma_del"));
+  }
   const kandidater = vy.kandidater.map((k) => k.id);
 
   const fel = sammaDelSvarsfel({ ja, markerade, kandidater });
@@ -80,5 +83,5 @@ export async function sparaSammaDel(
   revalidatePath("/export");
   revalidatePath("/forsaljning/samma-del");
   revalidatePath("/projekt", "layout");
-  redirect("/export");
+  redirect(await nastaSidaIForsaljningen(bostadId, anvandareId, "samma_del"));
 }

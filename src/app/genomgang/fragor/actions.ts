@@ -14,15 +14,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { serverfelMeddelande } from "@/lib/databas-fel";
-import {
-  bostadsfragornaBesvarade,
-  FEL_FORSTA_AGARE,
-  lagringAvBostadsfragor,
-  tolkaBostadsfragesvar,
-} from "@/doman/bostadsfragor";
 import { tolkaBostadsdelar } from "@/doman/bostadsdel";
 import { kravBostadsfragorBesvarade } from "@/lib/bostadsfragor-sparr";
 import { sparaBostadsdelar } from "@/lib/bostadsdel-lagring";
+import { skrivBostadsfragor } from "@/lib/bostadsfragor-lagring";
 import { hamtaProjektetsBelopp } from "@/lib/doman-fran-db";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import {
@@ -140,35 +135,14 @@ export async function sparaBostadsfragor(
 ): Promise<BostadsfragorResultat> {
   const { bostadId, anvandareId } = await kravBostad();
 
-  // Tolkning och villkor delas med installningarna (src/doman/bostadsfragor.ts).
-  // Upplatelseformen avgor om ombildningsfragan stalls, och lases fran
-  // bostaden – aldrig fran formularet.
-  const { upplatelseform } = await prisma.bostad.findUniqueOrThrow({
-    where: { id: bostadId },
-    select: { upplatelseform: true },
+  // Tolkning och skrivning delas med forsaljningsflodet
+  // (src/lib/bostadsfragor-lagring.ts).
+  const fel = await skrivBostadsfragor(bostadId, formData, {
+    sida: "genomgang/fragor",
+    anrop: "sparaBostadsfragor",
+    anvandareId,
   });
-  const tolkat = tolkaBostadsfragesvar(
-    String(formData.get("forsta_agare") ?? ""),
-    String(formData.get("ombildning") ?? ""),
-    upplatelseform,
-  );
-  if ("fel" in tolkat) return tolkat;
-  if (!bostadsfragornaBesvarade(tolkat.svar)) return { fel: FEL_FORSTA_AGARE };
-
-  try {
-    await prisma.bostad.update({
-      where: { id: bostadId },
-      data: lagringAvBostadsfragor(tolkat.svar),
-    });
-  } catch (fel) {
-    return {
-      fel: serverfelMeddelande(fel, {
-        sida: "genomgang/fragor",
-        anrop: "sparaBostadsfragor",
-        anvandareId,
-      }),
-    };
-  }
+  if (fel) return { fel };
 
   revalidatePath("/genomgang");
   revalidatePath("/genomgang/fragor");

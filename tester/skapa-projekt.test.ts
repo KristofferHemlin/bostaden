@@ -268,18 +268,34 @@ describe("merkostnaden prövas mot de valda kvittonas belopp", () => {
     });
   });
 
-  it("utan kvitton finns inget belopp, och bättre kvalitet går inte att spara", async () => {
-    const fore = h.db.ogonblick();
-    const svar = await skapaProjekt({}, formular(battre("500")));
-    expect(svar).toEqual({ fel: merkostnadOverBeloppetFel("Måla sovrummet", 0), falt: "merkostnad" });
-    expect(h.db.ogonblick()).toEqual(fore);
+  // Utan kvitton finns inget belopp att väga merkostnaden mot, och frågan
+  // skjuts upp (docs/design.md, "Att skapa ett projekt"): projektet sparas som
+  // bättre kvalitet med merkostnaden obesvarad. Spärren lättas inte – ett
+  // svar som ändå skickats sparas inte, eftersom det inte gick att pröva.
+  it.each([
+    ["utan svar", ""],
+    ["med ett svar som inte gick att pröva", "500"],
+  ])("utan kvitton skjuts merkostnaden upp, %s", async (_fall, merkostnad) => {
+    const svar = await skapaProjekt({}, formular(battre(merkostnad)));
+    const [p] = nyaProjekt();
+    expect(svar).toEqual({ skapat: p.id });
+    expect(p).toMatchObject({
+      atgardstyp: "utbytt",
+      battre_kvalitet: true,
+      merkostnad: null,
+      merkostnad_bas: null,
+    });
   });
 
-  // "Ange en merkostnad mindre än 0 kr" vore en uppmaning ingen kan följa.
-  it("meddelandet vid noll kronor säger varför, inte ett belopp att underskrida", () => {
-    expect(merkostnadOverBeloppetFel("Måla sovrummet", 0)).toBe(
-      "Merkostnaden måste vara mindre än vad ”Måla sovrummet” kostade, och projektet har inga betalda kvitton än.",
-    );
+  it("med ett obetalt kvitto finns inget belopp heller, och frågan skjuts upp", async () => {
+    const obetald = h.db.lagg("kostnad", {
+      bostad_id: BOSTAD, leverantor: "Fönsterfabriken", anteckning: "Faktura för nya fönster",
+      totalbelopp: 4_800_000, dokumentdatum: datum("2026-10-01"), betaldatum: null, skapad_av: ANNA,
+    });
+    h.db.lagg("kostnadsrad", { kostnad_id: obetald.id, artikel: "Fönster", belopp: 4_800_000 });
+    await skapaProjekt({}, formular(battre(""), [obetald.id as string]));
+    expect(nyaProjekt()[0]).toMatchObject({ battre_kvalitet: true, merkostnad: null });
+    expect(fordelningarTill(nyaProjekt()[0].id)).toHaveLength(1);
   });
 });
 

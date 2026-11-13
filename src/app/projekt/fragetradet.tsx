@@ -223,6 +223,42 @@ const HJALP_MERKOSTNAD =
 const HJALP_SKICK_FORVARV =
   "Jämför med hur det såg ut den dag du tillträdde bostaden, inte dagen innan du åtgärdade det här. Skicket vid försäljningen jämförs mot detta värde när bostaden säljs.";
 
+/** Merkostnaden, fraga 5:s foljd – ett eget falt sa att projektflodet kan
+ *  stalla den dar beloppet finns, med samma etikett och hjalptext. */
+export function MerkostnadFalt({
+  varde,
+  fel,
+  onChange,
+}: {
+  varde: string;
+  fel?: string;
+  onChange: (delvis: Partial<FragetradetUIState>) => void;
+}) {
+  return (
+    <Falt
+      etikett="Merkostnaden för den högre kvaliteten"
+      obligatoriskt
+      hjalp={HJALP_MERKOSTNAD}
+      fel={fel}
+    >
+      <BeloppFalt
+        aria-invalid={fel ? true : undefined}
+        {...(fel ? { [FALTFEL_ATTRIBUT]: "" } : {})}
+        value={varde}
+        onValueChange={(text) => {
+          const formaterat = formateraBeloppInmatning(text);
+          onChange({
+            merkostnadText: formaterat,
+            merkostnad: oreFranKronor(formaterat),
+          });
+        }}
+        className={INPUT_KLASS}
+        placeholder="t.ex. 500"
+      />
+    </Falt>
+  );
+}
+
 /** Fraga 2-6 och fraga 8, helt kontrollerade. Fraga 1 (namnet) hor till den
  *  omslutande sidan. */
 export function Fragetradet({
@@ -230,7 +266,11 @@ export function Fragetradet({
   onChange,
   fel,
   helaBeloppet,
+  visaMerkostnad = true,
 }: {
+  /** Merkostnadsfaltet efter "Bättre kvalitet". Falskt nar det inte finns ett
+   *  belopp att vaga den mot, eller nar flodet staller den pa annat stalle. */
+  visaMerkostnad?: boolean;
   varden: FragetradetUIState;
   onChange: (delvis: Partial<FragetradetUIState>) => void;
   /** Ett avvisat svar – visas vid den fraga det galler. */
@@ -369,29 +409,16 @@ export function Fragetradet({
         </Fraga>
       ) : null}
 
-      {/* Fraga 5:s foljd – merkostnaden, obligatorisk och > 0 nar "battre". */}
-      {varden.battreEllerLiknande === "battre" ? (
-        <Falt
-          etikett="Merkostnaden för den högre kvaliteten"
-          obligatoriskt
-          hjalp={HJALP_MERKOSTNAD}
+      {/* Fraga 5:s foljd – merkostnaden, obligatorisk och > 0 nar "battre".
+          Bara nar det finns ett belopp att vaga den mot: utan skjuts fragan
+          upp (docs/design.md, "Att skapa ett projekt"). Projektflodet staller
+          den i kvittosteget i stallet, nar kvittona ar valda. */}
+      {visaMerkostnad && varden.battreEllerLiknande === "battre" ? (
+        <MerkostnadFalt
+          varde={varden.merkostnadText}
           fel={felFor("merkostnad")}
-        >
-          <BeloppFalt
-            aria-invalid={felFor("merkostnad") ? true : undefined}
-            {...(felFor("merkostnad") ? { [FALTFEL_ATTRIBUT]: "" } : {})}
-            value={varden.merkostnadText}
-            onValueChange={(text) => {
-              const formaterat = formateraBeloppInmatning(text);
-              onChange({
-                merkostnadText: formaterat,
-                merkostnad: oreFranKronor(formaterat),
-              });
-            }}
-            className={INPUT_KLASS}
-            placeholder="t.ex. 500"
-          />
-        </Falt>
+          onChange={onChange}
+        />
       ) : null}
 
       {/* Fraga 6 – bara nar atgarden har en reparationsdel. */}
@@ -492,7 +519,10 @@ export function FragetradetFalt({
   helaBeloppet,
   skickForsaljning,
   bostadsdel,
+  visaMerkostnad,
 }: {
+  /** Se <Fragetradet>. */
+  visaMerkostnad?: boolean;
   initial?: FragetradetVarden;
   /** "Vilken del av bostaden?" efter namnet, med det sparade svaret. Utelamnad:
    *  fragan visas inte och servern ror inte raderna. */
@@ -544,6 +574,7 @@ export function FragetradetFalt({
         varden={svar}
         fel={fel}
         helaBeloppet={helaBeloppet}
+        visaMerkostnad={visaMerkostnad}
         onChange={(delvis) => {
           setSvar((s) => ({ ...s, ...delvis }));
           onAndring?.();

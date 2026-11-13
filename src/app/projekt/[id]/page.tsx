@@ -25,8 +25,7 @@ import {
 import { bostadsdelText } from "@/doman/bostadsdel";
 import { atgardKategoriText, SKICK_ORD } from "@/doman/fragetradet";
 import {
-  MERKOSTNAD_ANDRAD_FRAGA,
-  merkostnadOverBeloppetText,
+  merkostnadUpplysning,
 } from "@/doman/regeltext";
 import { SAMMA_DEL_SKAL } from "@/doman/samma-del";
 import type { Atgardstyp } from "@/doman/typer";
@@ -118,11 +117,7 @@ export default async function ProjektSida({
   const belopp = projektetsBelopp(kostnader, id);
   const besked = merkostnadBehoverBekraftas(tillDomanProjekt(projekt), belopp);
   const merkostnadFraga =
-    besked === "projektet_andrat"
-      ? MERKOSTNAD_ANDRAD_FRAGA
-      : besked === "inte_mindre_an_beloppet"
-        ? merkostnadOverBeloppetText(projekt.namn, projekt.merkostnad!, belopp)
-        : null;
+    besked === null ? null : merkostnadUpplysning(besked, projekt, belopp, "fraga");
   const delText = bostadsdelText(projekt.bostadsdelar);
   const besvaratAv = oklassificerad
     ? null
@@ -168,7 +163,11 @@ export default async function ProjektSida({
                 etikett="Kvalitet"
                 varde={
                   projekt.battre_kvalitet
-                    ? `Bättre – merkostnad ${formateraKronor(projekt.merkostnad ?? 0)}`
+                    ? // En uppskjuten merkostnad ar inte 0 kr – upplysningen
+                      // nedan sager att den inte ar angiven.
+                      projekt.merkostnad === null
+                      ? "Bättre"
+                      : `Bättre – merkostnad ${formateraKronor(projekt.merkostnad)}`
                     : "Liknande som tidigare"
                 }
                 atgard={merkostnadFraga !== null}
@@ -176,13 +175,20 @@ export default async function ProjektSida({
             ) : null}
             {merkostnadFraga ? (
               <p className="pt-1 text-text-sekundar">
-                {merkostnadFraga}{" "}
-                <Link
-                  href={`/projekt/${id}/redigera`}
-                  className="underline underline-offset-2 hover:text-text-primar"
-                >
-                  Svara igen
-                </Link>
+                {merkostnadFraga}
+                {/* Utan belopp gar fragan inte att besvara – upplysningen
+                    sager att den kommer nar ett kvitto kopplas. */}
+                {besked === "merkostnad_saknas" && belopp === 0 ? null : (
+                  <>
+                    {" "}
+                    <Link
+                      href={`/projekt/${id}/redigera`}
+                      className="underline underline-offset-2 hover:text-text-primar"
+                    >
+                      {besked === "merkostnad_saknas" ? "Svara på frågan" : "Svara igen"}
+                    </Link>
+                  </>
+                )}
               </p>
             ) : null}
             {harReparationsdel ? (

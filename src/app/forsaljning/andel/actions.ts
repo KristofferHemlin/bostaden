@@ -17,7 +17,8 @@ import { agarandelFel, agarandelFranText } from "@/lib/agarandel";
 import { skrivEgenAndel } from "@/lib/egen-andel";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
-import { NASTA_SIDA, nastaFran } from "./nasta";
+import { nastaSidaIForsaljningen } from "@/lib/forsaljningsflode";
+import { nastaFran } from "./nasta";
 
 export interface BekraftaAndelResultat {
   fel?: string;
@@ -51,5 +52,9 @@ export async function bekraftaAndel(
 
   revalidatePath("/export");
   revalidatePath("/installningar");
-  redirect(NASTA_SIDA[nastaFran(formData.get("nasta"))]);
+  redirect(
+    nastaFran(formData.get("nasta")) === "export"
+      ? "/export"
+      : await nastaSidaIForsaljningen(bostadId, anvandareId, "andel"),
+  );
 }

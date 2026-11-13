@@ -14,8 +14,7 @@ import {
 } from "@/doman/atgardsberakning";
 import { kostnaderKoppladeTillProjekt, projektSumma } from "@/doman/berakningar";
 import {
-  MERKOSTNAD_ANDRAD_FRAGA,
-  merkostnadOverBeloppetText,
+  merkostnadUpplysning,
 } from "@/doman/regeltext";
 import { harledFragetradetSvar } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
@@ -67,11 +66,7 @@ export default async function RedigeraProjektSida({
   const belopp = projektetsBelopp(kostnader, id);
   const besked = merkostnadBehoverBekraftas(tillDomanProjekt(projekt), belopp);
   const merkostnadAndrad =
-    besked === "projektet_andrat"
-      ? MERKOSTNAD_ANDRAD_FRAGA
-      : besked === "inte_mindre_an_beloppet"
-        ? merkostnadOverBeloppetText(projekt.namn, projekt.merkostnad!, belopp)
-        : null;
+    besked === null ? null : merkostnadUpplysning(besked, projekt, belopp, "fraga");
 
   const blockerande = kostnaderKoppladeTillProjekt(kostnader, id).map((k) => {
     const original = kostnadRader.find((x) => x.id === k.id)!;

@@ -29,6 +29,7 @@ import { BostadsdelFraga } from "../bostadsdel-fraga";
 import {
   Fragetradet,
   FragetradetDoldaFalt,
+  MerkostnadFalt,
   NamnFalt,
   TOMMA_SVAR,
   fragetradetsValidering,
@@ -39,6 +40,7 @@ import {
   FALTFEL_KLASS,
   Friskrivning,
   HJALPTEXT_KLASS,
+  Meddelanderuta,
   PRIMARKNAPP_KLASS,
 } from "@/components/skarm";
 import { BOSTADSDELAR, type BostadsdelSvar } from "@/doman/bostadsdel";
@@ -63,7 +65,8 @@ const STEG_FOR_FALT: Record<FragetradetFaltnamn, Steg> = {
   andrade_planlosning: 3,
   nytt_eller_bytt: 3,
   battre_eller_liknande: 3,
-  merkostnad: 3,
+  // Merkostnaden stalls i kvittosteget, nar beloppet finns.
+  merkostnad: 4,
   skick_forvarv: 3,
 };
 
@@ -188,6 +191,9 @@ export function NyttProjektFlode({
   // gang; ett aterlast utkast ger den en ny instans.
   const [instans, setInstans] = useState(0);
   const [utkastLast, setUtkastLast] = useState(false);
+  // Flodet borjade pa ett sparat utkast. Da sager skarmen det och erbjuder
+  // Börja om (docs/design.md, "Och ett utkast går alltid att kasta").
+  const [franUtkast, setFranUtkast] = useState(false);
 
   const valtBelopp = kvitton
     .filter((k) => valda.has(k.id))
@@ -215,6 +221,7 @@ export function NyttProjektFlode({
       setSvar(u.svar);
       setValda(new Set(u.valda));
       setInstans((n) => n + 1);
+      setFranUtkast(!arTomt(u));
     }
     setUtkastLast(true);
     // Bara vid start: ett utkast som andras medan flodet ar oppet ar vart eget.
@@ -278,6 +285,19 @@ export function NyttProjektFlode({
     }
   }
 
+  /** Kastar utkastet och borjar fran forsta steget med tomma falt. */
+  function borjaOm() {
+    glomUtkast(nyckel);
+    setSteg(1);
+    setNamn("");
+    setBostadsdelar([]);
+    setSvar(TOMMA_SVAR);
+    setValda(new Set());
+    setInstans((n) => n + 1);
+    setFranUtkast(false);
+    rensa();
+  }
+
   function vaxla(id: string) {
     setValda((f) => {
       const ny = new Set(f);
@@ -311,6 +331,10 @@ export function NyttProjektFlode({
       </div>
 
       <div className="flex flex-col gap-6 p-5">
+        {franUtkast ? (
+          <Meddelanderuta>Det här är ett utkast du började på tidigare.</Meddelanderuta>
+        ) : null}
+
         <div hidden={steg !== 1}>
           <NamnFalt
             varde={namn}
@@ -339,6 +363,8 @@ export function NyttProjektFlode({
           <Fragetradet
             varden={svar}
             fel={faltfel}
+            // Merkostnaden behover ett belopp, och kvittona valjs i steg 4.
+            visaMerkostnad={false}
             onChange={(delvis) => {
               setSvar((s) => ({ ...s, ...delvis }));
               rensa();
@@ -400,6 +426,21 @@ export function NyttProjektFlode({
           )}
         </fieldset>
 
+        {/* Merkostnaden, fraga 5:s foljd, stalls bara nar de valda kvittona
+            har ett belopp att vaga den mot. Utan skjuts den upp, och
+            projektet bar en upplysning tills ett kvitto kopplats
+            (docs/design.md, "Att skapa ett projekt"). */}
+        {steg === ANTAL_STEG && svar.battreEllerLiknande === "battre" && valtBelopp > 0 ? (
+          <MerkostnadFalt
+            varde={svar.merkostnadText}
+            fel={faltfel?.falt === "merkostnad" ? faltfel.fel : undefined}
+            onChange={(delvis) => {
+              setSvar((s) => ({ ...s, ...delvis }));
+              rensa();
+            }}
+          />
+        ) : null}
+
         <input type="hidden" name="namn" value={namn} />
         <FragetradetDoldaFalt svar={svar} />
         {[...valda].map((id) => (
@@ -433,9 +474,18 @@ export function NyttProjektFlode({
           </button>
         ) : null}
 
-        <Link href="/projekt" className={TEXTLANK_KLASS}>
-          Fortsätt senare
-        </Link>
+        {/* Fortsatt senare lovar ingenting om var: utkastet ligger i den har
+            webblasaren, pa den har enheten (docs/design.md). */}
+        <div className="flex justify-center gap-6">
+          <Link href="/projekt" className={TEXTLANK_KLASS}>
+            Fortsätt senare
+          </Link>
+          {franUtkast ? (
+            <button type="button" onClick={borjaOm} className={TEXTLANK_KLASS}>
+              Börja om
+            </button>
+          ) : null}
+        </div>
 
         {/* Avskild langst ned, nar fragorna star pa skarmen (docs/design.md,
             "Projektfrågorna"). */}

@@ -158,7 +158,9 @@ export default async function ExportSida() {
           <Kort>
             <div className="p-5">
               <Meddelanderuta>{VANTAR_PA_BOSTADSFRAGOR_TEXT}</Meddelanderuta>
-              <Link href="/genomgang" className={`${PRIMARKNAPP_KLASS} mt-4`}>
+              {/* Fragorna bor i forsaljningsflodet sedan 2026-11-13
+                  (produktspec 4.1); fore forsaljningen leder svaret tillbaka hit. */}
+              <Link href="/forsaljning/bostaden" className={`${PRIMARKNAPP_KLASS} mt-4`}>
                 Svara på frågorna
               </Link>
             </div>

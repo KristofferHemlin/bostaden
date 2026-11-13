@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Serverns skyddsnat (src/lib/bostadsfragor-sparr.ts): klassificeraHog och
-// redigeraProjekt vagrar sa lange bostadsfragorna ar obesvarade. Sidspärren
+// Serverns skyddsnat (src/lib/bostadsfragor-sparr.ts): klassificeraHog
+// vagrar sa lange bostadsfragorna ar obesvarade. redigeraProjekt gor det inte
+// langre – se nedan. Sidspärren
 // hindrar redan vagen dit, men ett granssnitt gar att ga forbi. Spärren ger
 // samma vag vidare som sidspärren – fragorna pa /genomgang/fragor – och
 // ingen egen felskarm.
@@ -87,13 +88,17 @@ describe("klassificeraHog", () => {
   });
 });
 
+// redigeraProjekt kravde fragorna till 2026-11-13 och skickade till
+// /genomgang/fragor. Att ratta ett projekt under agandet har ingenting med
+// bostadens egenskaper att gora – fragorna stalls vid forsaljningen
+// (produktspec 4.1) – sa spärren ar borta har, och bara har.
 describe("redigeraProjekt", () => {
-  it("vagrar mot en bostad med obesvarade fragor och skickar till fragorna", async () => {
+  it("sparar aven nar fragorna ar obesvarade, och skickar till projektet", async () => {
     h.bostadFindUniqueOrThrow.mockResolvedValue(OBESVARAD);
     await expect(redigeraProjekt({}, klassificering())).rejects.toThrow(
-      "NEXT_REDIRECT /genomgang/fragor",
+      `NEXT_REDIRECT /projekt/${PROJEKT}`,
     );
-    expect(h.projektUpdate).not.toHaveBeenCalled();
+    expect(h.projektUpdate).toHaveBeenCalledTimes(1);
   });
 
   it("sparar nar fragorna ar besvarade", async () => {

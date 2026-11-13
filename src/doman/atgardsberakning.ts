@@ -159,18 +159,27 @@ export function projektetsBelopp(
  *     projektets belopp. Taket galler tills svaret andrats.
  *   * "projektet_andrat" – projektets belopp ar ett annat i dag an nar fragan
  *     besvarades. Fragan stalls igen; ingenting skalas om eller nollas.
+ *   * "merkostnad_saknas" – svaret ar battre kvalitet men merkostnaden ar inte
+ *     angiven: fragan skots upp nar projektet skapades utan ett belopp att
+ *     dela (docs/design.md, "Att skapa ett projekt"). Berakningen raknar den
+ *     som noll tills den besvarats – en upplysning bar sanningen sa lange.
  *
  * Ett svar fran innan beloppet sparades (merkostnad_bas null) gar inte att
  * jamfora och markeras inte – men taket galler for det ocksa.
  */
+export type MerkostnadBesked =
+  | "inte_mindre_an_beloppet"
+  | "projektet_andrat"
+  | "merkostnad_saknas";
+
 export function merkostnadBehoverBekraftas(
   projekt: Pick<Projekt, "atgardstyp" | "battre_kvalitet" | "merkostnad" | "merkostnad_bas">,
   belopp: number,
-): "inte_mindre_an_beloppet" | "projektet_andrat" | null {
+): MerkostnadBesked | null {
   if (projekt.atgardstyp !== "utbytt" || projekt.battre_kvalitet !== true) {
     return null;
   }
-  if (projekt.merkostnad === null) return null;
+  if (projekt.merkostnad === null) return "merkostnad_saknas";
   if (projekt.merkostnad >= belopp) return "inte_mindre_an_beloppet";
   const bas = projekt.merkostnad_bas ?? null;
   if (bas !== null && bas !== belopp) return "projektet_andrat";

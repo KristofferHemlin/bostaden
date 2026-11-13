@@ -13,9 +13,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 //   3. Tillstandet mellan stegen (CLAUDE.md): ingenting skickas forran
 //      Spara, och det som skrivits ligger kvar om hon gar darifran.
 //   4. Ett fel som hor till ett tidigare steg visas dar fragan star.
+//   5. Merkostnaden stalls i kvittosteget, och bara nar det finns ett belopp.
+//   6. Ett aterupptaget utkast sager att det ar ett, och gar att kasta.
 //
 // Hur anteckningen ryms pa tva rader och att bara en sak ar orange mats i
-// Chrome, i tester/projekt-nytt-layout.test.ts – jsdom raknar ingen layout.
+// Chrome, i tester/anteckning-tva-rader-layout.test.ts – jsdom raknar ingen
+// layout.
 
 const h = await vi.hoisted(async () => {
   const { skapaFalskDatabas } = await import("./_falsk-databas");
@@ -301,34 +304,184 @@ describe("tillståndet mellan stegen", () => {
   });
 });
 
-describe("ett fel i ett tidigare steg visas där frågan står", () => {
-  it("en merkostnad som inte är mindre än de valda kvittonas belopp skickar tillbaka till frågan", async () => {
+/** Svarar fram till fråga 5 = bättre kvalitet och skick 1, med namnet satt. */
+async function svaraBattre() {
+  await skrivNamn("Måla sovrummet");
+  await tryck("Nästa");
+  await tryck("Nästa");
+  await tryck("Nej");
+  const nej = [...behallare.querySelectorAll("button")].filter((b) => synlig(b) && b.textContent === "Nej");
+  await act(async () => nej[1].click());
+  await tryck("Jag bytte ut något som fanns");
+  await tryck("Bättre kvalitet");
+  await tryck("1 – Dåligt skick");
+}
+
+/** Det synliga merkostnadsfältet, eller null. */
+function merkostnadsfalt(): HTMLInputElement | null {
+  return (
+    [...behallare.querySelectorAll<HTMLInputElement>("input")].find(
+      (i) => synlig(i) && i.placeholder === "t.ex. 500",
+    ) ?? null
+  );
+}
+
+async function skriv(falt: HTMLInputElement, text: string) {
+  const satt = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+  await act(async () => {
+    satt.call(falt, text);
+    falt.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+}
+
+async function kryssa() {
+  await act(async () => behallare.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
+}
+
+async function spara() {
+  await act(async () => knapp("Spara").closest("form")!.requestSubmit(knapp("Spara")));
+}
+
+// Merkostnaden är den enda frågan som behöver ett belopp, och den ställs
+// därför bara när det finns ett (docs/design.md, "Att skapa ett projekt").
+// I flödet finns beloppet först när kvittona valts, i sista steget.
+describe("merkostnaden ställs när det finns ett belopp att dela", () => {
+  it("inte i frågeträdet, och i kvittosteget först när ett kvitto med belopp är valt", async () => {
+    await rendera();
+    await svaraBattre();
+    expect(framsteg()).toBe("3 av 4");
+    expect(merkostnadsfalt(), "inget merkostnadsfält i frågeträdet").toBeNull();
+    await tryck("Nästa");
+    expect(framsteg()).toBe("4 av 4");
+    expect(merkostnadsfalt(), "inget fält utan valt kvitto").toBeNull();
+    await kryssa();
+    expect(merkostnadsfalt(), "fältet ska komma när kvittot valts").not.toBeNull();
+    await kryssa();
+    expect(merkostnadsfalt(), "och gå när kvittot väljs bort").toBeNull();
+  });
+
+  it("utan kvitton skjuts den upp, och projektet sparas", async () => {
+    await rendera();
+    await svaraBattre();
+    await tryck("Nästa");
+    await spara();
+    expect(synligaLarm()).toEqual([]);
+    expect(h.skapaProjekt).toHaveBeenCalledTimes(1);
+    const data = h.skapaProjekt.mock.calls[0][1];
+    expect(data.get("battre_eller_liknande")).toBe("battre");
+    expect(data.getAll("kostnad_ider")).toEqual([]);
+  });
+
+  it("med ett valt kvitto krävs den, och spärren gäller vid fältet", async () => {
+    await rendera();
+    await svaraBattre();
+    await tryck("Nästa");
+    await kryssa();
+    await spara();
+    expect(h.skapaProjekt).not.toHaveBeenCalled();
+    expect(framsteg()).toBe("4 av 4");
+    expect(synligaLarm()).toEqual([
+      "Ange en merkostnad större än 0 kr – bättre kvalitet innebär att bytet kostade mer.",
+    ]);
+
+    // 791,95 kr är vad målningsraderna kostade – torkstället var privat.
+    await skriv(merkostnadsfalt()!, "791,95");
+    await spara();
+    expect(h.skapaProjekt).not.toHaveBeenCalled();
+    expect(framsteg()).toBe("4 av 4");
+    expect(synligaLarm()).toEqual([merkostnadOverBeloppetFel("Måla sovrummet", 79_195)]);
+
+    await skriv(merkostnadsfalt()!, "791,94");
+    await spara();
+    expect(h.skapaProjekt).toHaveBeenCalledTimes(1);
+    expect(h.skapaProjekt.mock.calls[0][1].get("merkostnad")).toBe("791,94");
+  });
+});
+
+// docs/design.md, "Och ett utkast går alltid att kasta".
+describe("ett utkast går att kasta", () => {
+  const UTKASTET = "Det här är ett utkast du började på tidigare.";
+
+  async function lamnaOchKomTillbaka() {
+    act(() => rot.unmount());
+    rot = createRoot(behallare);
+    await rendera();
+  }
+
+  it("ett flöde utan utkast säger ingenting om utkast och har ingen Börja om", async () => {
+    await rendera();
+    expect(synligText()).not.toContain(UTKASTET);
+    expect(() => knapp("Börja om")).toThrow();
+  });
+
+  // Ett tomt utkast sparas aldrig, men kan ligga kvar från en äldre version
+  // eller en annan flik. Det är inget påbörjat projekt, och skärmen ska inte
+  // påstå att det är ett.
+  it("ett tomt utkast i lagringen säger ingenting om utkast", async () => {
+    window.localStorage.setItem(
+      utkastNyckel(X),
+      JSON.stringify({ steg: 1, namn: "", bostadsdelar: [], svar: {}, valda: [] }),
+    );
+    expect(window.localStorage.getItem(utkastNyckel(X)), "förutsättningen: ett tomt utkast ligger där").not.toBeNull();
+    await rendera();
+    expect(synligText()).not.toContain(UTKASTET);
+    expect(() => knapp("Börja om")).toThrow();
+  });
+
+  it("ett återupptaget utkast säger att det är ett, och Börja om tömmer allt", async () => {
     await rendera();
     await skrivNamn("Måla sovrummet");
     await tryck("Nästa");
+    await tryck("Ytskikt");
     await tryck("Nästa");
-    await tryck("Nej");
-    const nej = [...behallare.querySelectorAll("button")].filter((b) => synlig(b) && b.textContent === "Nej");
-    await act(async () => nej[1].click());
-    await tryck("Jag bytte ut något som fanns");
-    await tryck("Bättre kvalitet");
-    const merkostnad = [...behallare.querySelectorAll<HTMLInputElement>("input")].find(
-      (i) => synlig(i) && i.placeholder === "t.ex. 500",
-    )!;
-    const satt = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
-    await act(async () => {
-      satt.call(merkostnad, "791,95");
-      merkostnad.dispatchEvent(new Event("input", { bubbles: true }));
-    });
-    await tryck("1 – Dåligt skick");
-    await tryck("Nästa");
-    expect(framsteg()).toBe("4 av 4");
-    await act(async () => behallare.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
-    await act(async () => knapp("Spara").closest("form")!.requestSubmit(knapp("Spara")));
+    await tryck("Ja, det är helt nytt");
+    await lamnaOchKomTillbaka();
 
-    // 791,95 kr är vad målningsraderna kostade – torkstället var privat.
+    expect(synligText()).toContain(UTKASTET);
+    expect(framsteg()).toBe("3 av 4");
+    await tryck("Börja om");
+
+    expect(framsteg()).toBe("1 av 4");
+    expect(behallare.querySelector<HTMLInputElement>('input[type="text"]')!.value).toBe("");
+    expect(synligText()).not.toContain(UTKASTET);
+    expect(window.localStorage.getItem(utkastNyckel(X))).toBeNull();
+    // Inget av de gamla svaren ligger kvar dolt.
+    await skrivNamn("Ny altan");
+    await tryck("Nästa");
+    expect(knapp("Ytskikt").getAttribute("aria-pressed")).toBe("false");
+    await tryck("Nästa");
+    expect(knapp("Ja, det är helt nytt").getAttribute("aria-pressed")).toBe("false");
+    expect(h.skapaProjekt).not.toHaveBeenCalled();
+
+    // Och en ny omgång börjar utan utkastets rad.
+    await lamnaOchKomTillbaka();
+    expect(synligText()).toContain(UTKASTET);
+  });
+});
+
+describe("ett fel i ett tidigare steg visas där frågan står", () => {
+  // Ett utkast som står på sista steget utan skicket vid förvärvet – som när
+  // ett äldre utkast läses in. Spara ska då leda tillbaka till frågan.
+  it("ett saknat skick vid förvärvet skickar tillbaka till frågeträdet", async () => {
+    window.localStorage.setItem(
+      utkastNyckel(X),
+      JSON.stringify({
+        steg: 4,
+        namn: "Måla sovrummet",
+        bostadsdelar: [],
+        svar: {
+          byggdeNytt: "nej", andradePlanlosning: "nej", nyttEllerBytt: "bytt",
+          battreEllerLiknande: "liknande", merkostnad: null, merkostnadText: "",
+          skickForvarv: "", motivering: "",
+        },
+        valda: [],
+      }),
+    );
+    await rendera();
+    expect(framsteg()).toBe("4 av 4");
+    await spara();
     expect(h.skapaProjekt).not.toHaveBeenCalled();
     expect(framsteg()).toBe("3 av 4");
-    expect(synligaLarm()).toEqual([merkostnadOverBeloppetFel("Måla sovrummet", 79_195)]);
+    expect(synligaLarm()).toEqual(["Ange skicket vid förvärvet, 0–5."]);
   });
 });

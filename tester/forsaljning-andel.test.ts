@@ -10,7 +10,7 @@ import { REGELPARAMETRAR } from "./_hjalp";
 // Bara andelen. Anskaffningsdatum och inkopspris hor till vinstberakningen,
 // som appen inte gor – ingenting i berakningen laser dem.
 //
-// Steget ligger efter datum och pris och fore skickfragorna. Den som inte
+// Steget ligger sist fore underlaget (produktspec 4.1). Den som inte
 // bekraftat stoppas inte: underlaget visar den lagrade andelen och sager att
 // den inte ar bekraftad. Andras andelen efterat ar den obekraftad igen – samma
 // monster som merkostnad_bas.
@@ -140,7 +140,10 @@ async function underlagetsUppgifter(): Promise<string> {
 
 beforeEach(() => seeda());
 
-describe("steget ligger i flodet, efter datum och pris och fore skickfragorna", () => {
+// Ordningen sedan 2026-11-13 (produktspec 4.1): datum, bostadsfragorna,
+// skicket, samma del, andelen, underlaget. Andelen ar sista steget fore
+// underlaget. Hela ordningen provas i tester/forsaljningsflode.test.ts.
+describe("steget ligger i flodet, sist fore underlaget", () => {
   it("markera som sald leder till bekraftelsen nar andelen inte ar bekraftad", async () => {
     loggaIn(ANNA);
     const till = await omdirigeringFran(() =>
@@ -149,20 +152,20 @@ describe("steget ligger i flodet, efter datum och pris och fore skickfragorna", 
     expect(till).toBe("/forsaljning/andel");
   });
 
-  it("ar andelen redan bekraftad gar flodet direkt till skickfragorna", async () => {
+  it("ar andelen redan bekraftad gar flodet forbi den, till underlaget", async () => {
     medlemskap(ANNA).bekraftad_andel = 50;
     loggaIn(ANNA);
     const till = await omdirigeringFran(() =>
       markeraSald({}, fd({ forsaljningsdatum: "2026-09-15", forsaljningspris: "" })),
     );
-    expect(till).toBe("/forsaljning/skick");
+    expect(till).toBe("/export");
   });
 
-  it("bekraftelsen lagrar andelen och gar vidare till skickfragorna", async () => {
+  it("bekraftelsen lagrar andelen och gar vidare till underlaget", async () => {
     seeda({ sald: true });
     loggaIn(ANNA);
     const till = await omdirigeringFran(() => bekraftaAndel({}, fd({ agarandel: "50" })));
-    expect(till).toBe("/forsaljning/skick");
+    expect(till).toBe("/export");
     expect(Number(medlemskap(ANNA).bekraftad_andel)).toBe(50);
     // Den andras bekraftelse ror den inte.
     expect(medlemskap(DORIS).bekraftad_andel).toBeNull();

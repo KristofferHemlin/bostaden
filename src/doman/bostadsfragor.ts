@@ -85,6 +85,19 @@ export function bostadsfragorForBerakning(b: LagradeBostadsfragor): {
   };
 }
 
+/**
+ * Ar reparationsgrenen slackt for bostaden? Ja nar den var nybyggd vid
+ * forvarvet och inte kom ur en ombildning – samma villkor som berakningen
+ * provar i steg 3 (src/doman/export-k6a.ts, nybyggdUtanOmbildning), pa samma
+ * varden som den far. Obesvarade fragor slacker ingenting: da vet appen inte.
+ * Avgor att forsaljningsflodet hoppar over skicket vid forsaljningen
+ * (produktspec 4.1).
+ */
+export function reparationsgrenenSlackt(b: LagradeBostadsfragor): boolean {
+  const { nybyggd_vid_forvarv, ombildning_fran_hyresratt } = bostadsfragorForBerakning(b);
+  return nybyggd_vid_forvarv === true && !ombildning_fran_hyresratt;
+}
+
 function jaNej(text: string): boolean | null {
   if (text === "ja") return true;
   if (text === "nej") return false;

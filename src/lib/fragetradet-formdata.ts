@@ -113,7 +113,19 @@ export function tolkaFragetradetFormData(
     };
   }
 
-  const resultat = tolkaFragetradet(svar);
+  // Merkostnaden ar den enda fragan som vager ett svar mot en summa, och
+  // spärren 0 < merkostnad < belopp gar inte att prova mot noll. Utan ett
+  // belopp att dela skjuts fragan upp i stallet for att stoppa sparandet
+  // (docs/design.md, "Att skapa ett projekt"): projektet sparas med sitt
+  // slag och merkostnaden obesvarad, och en upplysning bar sanningen tills
+  // ett kvitto kopplats och fragan besvarats. Ett svar som anda skickats
+  // vags inte mot noll och sparas inte – det finns inget att vaga det mot.
+  // Spärren lattas inte: sa snart beloppet finns galler den.
+  const uppskjuten =
+    fraga5Relevant(svar) && svar.battreEllerLiknande === "battre" && projekt.belopp === 0;
+  const resultat = uppskjuten
+    ? { atgardstyp: "utbytt" as const, battre_kvalitet: true, merkostnad: null }
+    : tolkaFragetradet(svar);
   if (!resultat) {
     return {
       fel: "Ange en merkostnad större än 0 kr – bättre kvalitet innebär att bytet kostade mer.",
@@ -150,13 +162,8 @@ export function tolkaFragetradetFormData(
 }
 
 /** Meddelandet nar merkostnaden inte ar mindre an projektets belopp – vilket
- *  projekt och vilket belopp det galler. Ett projekt utan betalda kvitton har
- *  beloppet 0, och "mindre än 0 kr" vore en uppmaning ingen kan folja – det
- *  hander nar projektet skapas utan kvitton, och nar ett projekt bara har
- *  obetalda. */
+ *  projekt och vilket belopp det galler. Beloppet ar aldrig 0 har: utan
+ *  belopp skjuts fragan upp i stallet (tolkaFragetradetFormData ovan). */
 export function merkostnadOverBeloppetFel(projektnamn: string, beloppOren: number): string {
-  if (beloppOren === 0) {
-    return `Merkostnaden måste vara mindre än vad ”${projektnamn}” kostade, och projektet har inga betalda kvitton än.`;
-  }
   return `Ange en merkostnad mindre än ${formateraKronor(beloppOren)} – det är vad ”${projektnamn}” kostade.`;
 }

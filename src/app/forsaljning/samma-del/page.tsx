@@ -12,6 +12,8 @@ import { redirect } from "next/navigation";
 import { Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
 import { prisma } from "@/lib/prisma";
+import { FORSALJNINGSSTEG_SIDA } from "@/doman/forsaljningsflode";
+import { nastaSidaIForsaljningen } from "@/lib/forsaljningsflode";
 import { hamtaSammaDelVy } from "@/lib/samma-del-vy";
 import { kravBostad } from "@/lib/session";
 import { SammaDelFormular } from "./formular";
@@ -21,14 +23,19 @@ export const metadata = { title: "Samma del av bostaden" };
 export const dynamic = "force-dynamic";
 
 export default async function SammaDelSida() {
-  const { bostadId } = await kravBostad();
+  const { bostadId, anvandareId } = await kravBostad();
 
   const bostad = await prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } });
   if (bostad.forsaljningsdatum === null) redirect("/forsaljning");
   const { bostadsnamn } = bostadHeader(bostad);
 
+  // Utan bostadsfragorna gar urvalet inte att rakna – de kommer forst i
+  // flodet. Kan fragan inte andra ett tal gar sidan till nasta steg.
   const vy = await hamtaSammaDelVy(bostadId);
-  if (!vy || vy.status === "visas_inte") redirect("/export");
+  if (!vy) redirect(FORSALJNINGSSTEG_SIDA.bostadsfragor);
+  if (vy.status === "visas_inte") {
+    redirect(await nastaSidaIForsaljningen(bostadId, anvandareId, "samma_del"));
+  }
 
   return (
     <Skarm

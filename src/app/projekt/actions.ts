@@ -20,7 +20,6 @@ import { tolkaBostadsdelar } from "@/doman/bostadsdel";
 import { serverfelMeddelande } from "@/lib/databas-fel";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { kopplaKvittonTillProjekt } from "@/lib/kvittokoppling";
-import { kravBostadsfragorBesvarade } from "@/lib/bostadsfragor-sparr";
 import { sparaBostadsdelar } from "@/lib/bostadsdel-lagring";
 import {
   tolkaFragetradetFormData,
@@ -66,9 +65,10 @@ class KvittonaHannAndras extends Error {}
  * och ror inget av det som sparas har.
  *
  * Kvittovalet ar frivilligt. Merkostnaden provas mot det de valda kvittona
- * bidrar med (beloppOmKopplade) – ett projekt utan kvitton har beloppet 0,
- * och da gar "Bättre kvalitet" inte att spara, eftersom 0 < merkostnad <
- * belopp saknar losning (CLAUDE.md, steg 2).
+ * bidrar med (beloppOmKopplade). Ett projekt utan kvitton har beloppet 0, och
+ * da skjuts merkostnadsfragan upp: projektet sparas som battre kvalitet med
+ * merkostnaden obesvarad, och en upplysning bar det tills ett kvitto kopplats
+ * (docs/design.md, "Att skapa ett projekt"; tolkaFragetradetFormData).
  */
 export async function skapaProjekt(
   _foreg: SkapaProjektResultat,
@@ -161,8 +161,11 @@ export async function redigeraProjekt(
   _foreg: ProjektResultat,
   formData: FormData,
 ): Promise<ProjektResultat> {
+  // Bostadsfragorna kravs inte: att ratta ett projekt under agandet har
+  // ingenting med bostadens egenskaper att gora, och fragorna stalls vid
+  // forsaljningen (produktspec 4.1). Till 2026-11-13 skickade en spärr har
+  // till /genomgang/fragor.
   const { bostadId, anvandareId } = await kravBostad();
-  await kravBostadsfragorBesvarade(bostadId);
   const id = String(formData.get("projekt_id") ?? "");
 
   const projekt = await prisma.projekt.findFirst({
@@ -197,6 +200,13 @@ export async function redigeraProjekt(
 
   const bostadsdelar = tolkaBostadsdelar(formData);
 
+  // Utan belopp stalls merkostnadsfragan inte (docs/design.md, "Att skapa ett
+  // projekt"), och tolkningen ger den obesvarad. Ett svar som redan finns –
+  // givet nar projektet hade kvitton – ska da sta kvar, inte nollas av att
+  // hon rattar nagot annat: taket och upplysningen bar det tills fragan
+  // stalls igen (CLAUDE.md, "Spärren och taket").
+  const merkostnadOrord = belopp === 0 && tolkat.battre_kvalitet === true;
+
   await prisma.$transaction(async (tx) => {
     await tx.projekt.update({
       where: { id },
@@ -204,8 +214,12 @@ export async function redigeraProjekt(
         namn: tolkat.namn,
         atgardstyp: tolkat.atgardstyp,
         battre_kvalitet: tolkat.battre_kvalitet,
-        merkostnad: tolkat.merkostnad,
-        merkostnad_bas: tolkat.merkostnad !== null ? belopp : null,
+        ...(merkostnadOrord
+          ? {}
+          : {
+              merkostnad: tolkat.merkostnad,
+              merkostnad_bas: tolkat.merkostnad !== null ? belopp : null,
+            }),
         skick_forvarv: tolkat.skick_forvarv,
         ...(skickForsaljning !== undefined && tolkat.atgardstyp === "utbytt"
           ? { skick_forsaljning: skickForsaljning }

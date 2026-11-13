@@ -44,8 +44,7 @@ import {
   bakreGransForklaring,
   FORSAKRING_HELA_KOSTNADEN,
   MERKOSTNAD_TAK_SIDA2,
-  merkostnadAndratText,
-  merkostnadOverBeloppetText,
+  merkostnadUpplysning,
   reparationsfonsterForklaring,
   troskelForklaring,
 } from "./regeltext";
@@ -684,13 +683,12 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
     if (!rader || rader.length === 0) continue;
     const belopp = projektetsBelopp(kostnader, p.id);
     const besked = merkostnadBehoverBekraftas(p, belopp);
-    if (!besked) continue;
+    // En merkostnad som saknas star redan i varningslistan ("merkostnaden ar
+    // inte ifylld", ovan) – samma information star aldrig tva ganger
+    // (docs/design.md, Exportvyn). Upplysningen bor pa projektets sida.
+    if (!besked || besked === "merkostnad_saknas") continue;
     const forsta = rader.reduce((a, b) => (b.ar < a.ar ? b : a));
-    forsta.varningar.push(
-      besked === "projektet_andrat"
-        ? merkostnadAndratText(p.namn)
-        : merkostnadOverBeloppetText(p.namn, p.merkostnad!, belopp),
-    );
+    forsta.varningar.push(merkostnadUpplysning(besked, p, belopp, "rad"));
   }
 
   const sortera = (a: K6aExportrad, b: K6aExportrad) =>

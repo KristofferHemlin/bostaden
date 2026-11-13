@@ -20,7 +20,8 @@ import { PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import { behoverSkickForsaljning } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { prisma } from "@/lib/prisma";
-import { hamtaSammaDelVy } from "@/lib/samma-del-vy";
+import { FORSALJNINGSSTEG_SIDA, nastaForsaljningssteg } from "@/doman/forsaljningsflode";
+import { hamtaForsaljningslage } from "@/lib/forsaljningsflode";
 import { kravBostad } from "@/lib/session";
 
 export const metadata = { title: "Skick vid försäljningen" };
@@ -28,13 +29,22 @@ export const metadata = { title: "Skick vid försäljningen" };
 export const dynamic = "force-dynamic";
 
 export default async function SkickForsaljningSida() {
-  const { bostadId } = await kravBostad();
+  const { bostadId, anvandareId } = await kravBostad();
 
   const bostad = await prisma.bostad.findUniqueOrThrow({
     where: { id: bostadId },
   });
   if (bostad.forsaljningsdatum === null) redirect("/forsaljning");
   const { bostadsnamn } = bostadHeader(bostad);
+
+  // Bostadsfragorna kommer fore skicket (produktspec 4.1): utan dem gar det
+  // inte att veta om reparationsgrenen ar slackt. Ar den det stalls fragan
+  // inte alls, och flodet gar vidare till nasta steg – aven nar atgarder
+  // saknar svar, eftersom inget svar kan andra deras tal.
+  const lage = await hamtaForsaljningslage(bostadId, anvandareId);
+  if (!lage.bostadsfragorBesvarade) redirect(FORSALJNINGSSTEG_SIDA.bostadsfragor);
+  const nasta = FORSALJNINGSSTEG_SIDA[nastaForsaljningssteg("skick", lage)];
+  if (lage.reparationsgrenenSlackt) redirect(nasta);
 
   const kandidater = await prisma.projekt.findMany({
     where: { bostad_id: bostadId, atgardstyp: "utbytt" },
@@ -52,13 +62,11 @@ export default async function SkickForsaljningSida() {
     .filter(behoverSkickForsaljning)
     .map((p) => ({ id: p.id, namn: p.namn, ar: p.ar, skickForvarv: p.skick_forvarv }));
 
-  // Efter skickfragorna: fragan om samma del av bostaden, nar den kan andra
-  // ett tal (CLAUDE.md, "Samma byggnadsdel reparerad två gånger"). Den sidan
-  // fyller i ett tidigare svar, sa kedjan fran Försäljningsuppgifter gar
-  // genom den aven nar den redan ar besvarad.
-  const sammaDel = await hamtaSammaDelVy(bostadId);
-  const sammaDelVisas = sammaDel !== null && sammaDel.status !== "visas_inte";
-  if (atgarder.length === 0 && sammaDelVisas) redirect("/forsaljning/samma-del");
+  // Efter skickfragorna: nasta steg som galler bostaden – samma del, nar den
+  // kan andra ett tal, och agarandelen nar den inte ar bekraftad
+  // (src/doman/forsaljningsflode.ts). Ar allt bedomt och nasta steg ett av
+  // dem gar sidan dit direkt; ar det underlaget stannar den pa sitt slut.
+  if (atgarder.length === 0 && nasta !== FORSALJNINGSSTEG_SIDA.export) redirect(nasta);
 
   return (
     <Skarm
@@ -84,9 +92,9 @@ export default async function SkickForsaljningSida() {
         <SkickForsaljningFlode
           atgarder={atgarder}
           nasta={
-            sammaDelVisas
-              ? { href: "/forsaljning/samma-del", text: "Nästa fråga" }
-              : { href: "/export", text: "Till deklarationsunderlaget" }
+            nasta === FORSALJNINGSSTEG_SIDA.export
+              ? { href: nasta, text: "Till deklarationsunderlaget" }
+              : { href: nasta, text: "Nästa fråga" }
           }
         />
       )}

@@ -109,6 +109,16 @@ export function foreForsaljningForklaring(fonsterAr: number, troskelbeloppOren: 
 }
 
 
+/** Upplysningen nar merkostnaden skots upp for att projektet saknade ett
+ *  belopp att dela (docs/design.md, "Att skapa ett projekt"). Lydelsen ar
+ *  promptens 2026-11-13, ordagrant – den star inte i design.md. */
+export const MERKOSTNAD_SAKNAS_UTAN_BELOPP =
+  "Hur mycket som var merkostnad är inte angivet än. Koppla ett kvitto, så kommer frågan.";
+
+/** Samma upplysning nar ett betalt kvitto kopplats och fragan alltsa gar att
+ *  besvara: den forsta meningen, utan uppmaningen att koppla ett kvitto. */
+export const MERKOSTNAD_SAKNAS = "Hur mycket som var merkostnad är inte angivet än.";
+
 /** Fragan ovanfor projektets fragor nar projektet andrats sedan merkostnaden
  *  besvarades – CLAUDE.md:s lydelse, ordagrant. */
 export const MERKOSTNAD_ANDRAD_FRAGA =
@@ -126,6 +136,26 @@ export function merkostnadAndratText(projektnamn: string): string {
  * Upplysningen nar merkostnaden inte langre ar mindre an projektets belopp
  * (CLAUDE.md, steg 2): taket galler tills svaret andrats.
  */
+/**
+ * Upplysningen for ett projekt vars merkostnad behover ett svar
+ * (merkostnadBehoverBekraftas) – en lydelse per besked, delad av projektets
+ * sida, redigeringen och underlaget.
+ */
+export function merkostnadUpplysning(
+  besked: "inte_mindre_an_beloppet" | "projektet_andrat" | "merkostnad_saknas",
+  projekt: { namn: string; merkostnad: number | null },
+  beloppOren: number,
+  form: "fraga" | "rad",
+): string {
+  if (besked === "merkostnad_saknas") {
+    return beloppOren > 0 ? MERKOSTNAD_SAKNAS : MERKOSTNAD_SAKNAS_UTAN_BELOPP;
+  }
+  if (besked === "projektet_andrat") {
+    return form === "fraga" ? MERKOSTNAD_ANDRAD_FRAGA : merkostnadAndratText(projekt.namn);
+  }
+  return merkostnadOverBeloppetText(projekt.namn, projekt.merkostnad ?? 0, beloppOren);
+}
+
 export function merkostnadOverBeloppetText(
   projektnamn: string,
   merkostnadOren: number,
