@@ -36,6 +36,7 @@ import {
   taBortAllaBilagorForKostnad,
   taBortBilaga,
 } from "@/lib/lagring/bilagor";
+import { serverfelMeddelande } from "@/lib/databas-fel";
 import { oreFranKronor } from "@/lib/format";
 import {
   byggRedigeradeRader,
@@ -434,6 +435,50 @@ export async function aterforTillGenomgang(formData: FormData): Promise<void> {
   revalideraKostnadsvyer(id);
   revalidatePath("/genomgang");
   redirect(`/kostnad/${id}`);
+}
+
+/**
+ * "Hör inte till bostaden" i kvittots andringslage (docs/design.md, direkt
+ * under privatfaltet): markerar hela kvittot som utanfor underlaget, eller
+ * for tillbaka det. Fas 1 i genomgangen var till 2026-11-13 det enda stallet
+ * markeringen gick att satta.
+ *
+ * Den tar inte bort nagot: bilagan och beloppet ligger kvar, och samma
+ * kontroll for tillbaka kvittot. En koppling till ett projekt lossas daremot,
+ * som i fas 1 – ett kvitto som inte hor till bostaden hor inte till nagon av
+ * dess atgarder, och star det kvar under projektet ser det ut att raknas dar.
+ * Privata rader rors inte. Ingen omdirigering: en andring pa sidan byter
+ * aldrig sida (docs/design.md, "En åtgärd på en rad byter aldrig sida").
+ */
+export async function sattHorInteTillBostaden(
+  kostnadId: string,
+  horInte: boolean,
+): Promise<{ fel?: string }> {
+  const { bostadId, anvandareId } = await kravBostad();
+  const kostnad = await prisma.kostnad.findFirst({
+    where: { id: kostnadId, bostad_id: bostadId },
+    select: { id: true },
+  });
+  if (!kostnad) return { fel: "Kvittot hittades inte." };
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (horInte) {
+        await tx.radfordelning.deleteMany({
+          where: { projekt_id: { not: null }, kostnadsrad: { kostnad_id: kostnadId, kostnad: { bostad_id: bostadId } } },
+        });
+      }
+      await tx.kostnad.updateMany({
+        where: { id: kostnadId, bostad_id: bostadId },
+        data: { arkiverad: horInte },
+      });
+    });
+  } catch (fel) {
+    return { fel: serverfelMeddelande(fel, { sida: "kostnad/[id]", anrop: "sattHorInteTillBostaden", anvandareId }) };
+  }
+
+  revalideraKostnadsvyer(kostnadId);
+  return {};
 }
 
 // Delad raderingslogik för taBortKostnad och taBortUtkastRad nedan – bara

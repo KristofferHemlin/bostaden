@@ -166,6 +166,8 @@ describe("en hog utan namn heter som i fas 1, overallt", () => {
     const p = kort.props;
     const html = rendera(
       createElement(RedigeraVy, {
+        // Som KvittoKort skickar det: kvittot hör till bostaden.
+        arkiverad: false,
         kostnadId: p.kostnadId as string,
         projekt: p.projekt as never,
         varden: p.redigeraVarden as never,

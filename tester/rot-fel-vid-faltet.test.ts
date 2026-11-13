@@ -37,6 +37,8 @@ function rendera(resultat: { fel?: string; falt?: string }): string {
   h.resultat = resultat;
   return renderToStaticMarkup(
     createElement(RedigeraVy, {
+      // Som KvittoKort skickar det: kvittot hör till bostaden.
+      arkiverad: false,
       kostnadId: "k1",
       projekt: [],
       varden: {

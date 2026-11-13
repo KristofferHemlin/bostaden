@@ -209,6 +209,8 @@ describe("kvittots ändringsläge: resten av fälten", () => {
   const redigera = (resultat: Record<string, unknown>) =>
     rendera(
       createElement(RedigeraVy, {
+        // Som KvittoKort skickar det: kvittot hör till bostaden.
+        arkiverad: false,
         kostnadId: "k1",
         projekt: [{ id: "p1", namn: "Badrummet", ar: 2026 }],
         varden: {

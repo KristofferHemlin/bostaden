@@ -126,6 +126,8 @@ describe("redigera kvitto", () => {
   it("leverantoren och projektvalet star kvar nar servern avvisar", async () => {
     await rendera(
       createElement(RedigeraVy, {
+        // Som KvittoKort skickar det: kvittot hör till bostaden.
+        arkiverad: false,
         kostnadId: "d0000000-0000-4000-8000-000000000001",
         projekt: [
           { id: "c0000000-0000-4000-8000-000000000001", namn: "Badrummet", ar: 2025 },

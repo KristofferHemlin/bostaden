@@ -95,6 +95,8 @@ function inmatningen() {
 
 function andringslaget() {
   return createElement(RedigeraVy, {
+    // Som KvittoKort skickar det: kvittot hör till bostaden.
+    arkiverad: false,
     kostnadId: "c0000000-0000-4000-8000-00000000000a",
     projekt: [],
     varden: {

@@ -64,3 +64,21 @@ export function beloppOmKopplade(kostnader: readonly Kostnad[]): number {
     OSPARAT_PROJEKT,
   );
 }
+
+/**
+ * Stalls merkostnadsfragan nar kvitton laggs till ett projekt? Bara for
+ * battre kvalitet utan svar, och bara nar projektet da far ett belopp att
+ * vaga den mot (docs/design.md, "Att skapa ett projekt": fragan stalls bara
+ * nar det finns ett belopp att dela).
+ */
+export function merkostnadFragasVid(
+  projekt: { atgardstyp: string | null; battre_kvalitet: boolean | null; merkostnad: number | null },
+  beloppEfter: number,
+): boolean {
+  return (
+    projekt.atgardstyp === "utbytt" &&
+    projekt.battre_kvalitet === true &&
+    projekt.merkostnad === null &&
+    beloppEfter > 0
+  );
+}

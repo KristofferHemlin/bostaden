@@ -127,10 +127,7 @@ export function tolkaFragetradetFormData(
     ? { atgardstyp: "utbytt" as const, battre_kvalitet: true, merkostnad: null }
     : tolkaFragetradet(svar);
   if (!resultat) {
-    return {
-      fel: "Ange en merkostnad större än 0 kr – bättre kvalitet innebär att bytet kostade mer.",
-      falt: "merkostnad",
-    };
+    return { fel: MERKOSTNAD_MASTE_ANGES, falt: "merkostnad" };
   }
   // Och mindre an vad projektet kostade (CLAUDE.md, steg 2). Strangt: lika
   // med beloppet avvisas ocksa – da hade det likvardiga bytet varit gratis.
@@ -159,6 +156,22 @@ export function tolkaFragetradetFormData(
     skick_forvarv: harReparationsdel(svar) ? skick_forvarv : null,
     motivering: motivering || null,
   };
+}
+
+/** Meddelandet nar merkostnaden saknas eller ar noll trots bättre kvalitet. */
+export const MERKOSTNAD_MASTE_ANGES =
+  "Ange en merkostnad större än 0 kr – bättre kvalitet innebär att bytet kostade mer.";
+
+/**
+ * Spärren 0 < merkostnad < belopp (CLAUDE.md, steg 2) for ett svar som ges
+ * utanfor fragetradet – nar kvitton laggs till ett projekt som vantat pa
+ * fragan. Samma tva meddelanden som tolkaFragetradetFormData. Beloppet ar
+ * alltid storre an noll har: utan belopp stalls fragan inte.
+ */
+export function provaMerkostnad(merkostnad: number | null, belopp: number, projektnamn: string): string | null {
+  if (merkostnad === null || merkostnad <= 0) return MERKOSTNAD_MASTE_ANGES;
+  if (merkostnad >= belopp) return merkostnadOverBeloppetFel(projektnamn, belopp);
+  return null;
 }
 
 /** Meddelandet nar merkostnaden inte ar mindre an projektets belopp – vilket

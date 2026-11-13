@@ -187,9 +187,14 @@ function seeda() {
     [NY_KORT, "2022-02-03", "Golvpoolen"],
     [NY_LANG, "2022-09-20", "Kakelhuset"],
   ] as const) {
+    // Tillagda långt före de andra: översikten visar de sex senast tillagda,
+    // och med det här paret är kvittona sju. Utan en egen tidsstämpel skapas
+    // alla i samma ögonblick och vilka sex som visas avgörs av slumpen – den
+    // korta anteckningen föll bort i en körning av flera, 2026-11-13.
     const k = db.lagg("kostnad", {
       bostad_id: X, leverantor, anteckning, totalbelopp: 860_000,
       dokumentdatum: datum(dag), betaldatum: datum(dag), skapad_av: ANNA,
+      skapad_at: datum(dag),
     });
     db.lagg("bilaga", { kostnad_id: k.id, sokvag: `x/${k.id}.jpg`, filtyp: "image/jpeg" });
     db.lagg("kostnadsrad", { kostnad_id: k.id, artikel: "Material", belopp: 860_000 });

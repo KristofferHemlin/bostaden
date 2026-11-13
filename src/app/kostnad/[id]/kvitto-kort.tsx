@@ -41,6 +41,7 @@ import {
   type KostnadRedigeraResultat,
 } from "./actions";
 import { AterforKnapp } from "./aterfor-knapp";
+import { HorInteTillBostaden } from "./hor-inte-till-bostaden";
 import { Bilagor } from "./bilagor";
 import { BeloppFalt } from "@/components/belopp-falt";
 import { Bekraftelsefraga } from "@/components/bekraftelsefraga";
@@ -159,6 +160,7 @@ export function KvittoKort({
           varden={redigeraVarden}
           innehav={innehav}
           privatDel={privatDel}
+          arkiverad={arkiverad}
           onAvbryt={() => setRedigerar(false)}
           onSparat={() => setRedigerar(false)}
         />
@@ -280,6 +282,7 @@ export function RedigeraVy({
   varden,
   innehav,
   privatDel,
+  arkiverad,
   onAvbryt,
   onSparat,
 }: {
@@ -288,6 +291,9 @@ export function RedigeraVy({
   varden: RedigeraVarden;
   innehav: Innehavsgranser;
   privatDel: { forvalt: string } | null;
+  /** Kvittot ar markerat som utanfor bostaden – styr kontrollen under
+   *  privatfaltet. */
+  arkiverad: boolean;
   onAvbryt: () => void;
   onSparat: () => void;
 }) {
@@ -545,6 +551,12 @@ export function RedigeraVy({
           </Falt>
         ) : null}
 
+        {/* Handlingen for hela kvittot, direkt under privatfaltet
+            (docs/design.md): samma fraga i sin hela form. Utan privatfalt –
+            ett flerprojektfall – star den i stallet under lanken till
+            uppdelningen, nedan. */}
+        {privatDel ? <HorInteTillBostaden kostnadId={kostnadId} arkiverad={arkiverad} /> : null}
+
         {/* Bara ett fel som inte hor till nagot falt star har – ovriga star
             vid sitt falt. */}
         {formularfel ? (
@@ -585,6 +597,9 @@ export function RedigeraVy({
           >
             Var något på kvittot privat?
           </Link>
+          <div className="mt-3">
+            <HorInteTillBostaden kostnadId={kostnadId} arkiverad={arkiverad} />
+          </div>
         </div>
       ) : null}
 

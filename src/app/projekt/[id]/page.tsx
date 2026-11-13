@@ -36,6 +36,7 @@ import type { Metadata } from "next";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { projektnamnKarta } from "@/doman/genomgang";
 import { hamtaProjektnamn } from "@/lib/projektnamn";
+import { hamtaValbaraKvitton } from "@/lib/valbara-kvitton";
 import { prisma } from "@/lib/prisma";
 import { upphovsrad } from "@/lib/samagande";
 import { antalMedlemmar, kravBostad } from "@/lib/session";
@@ -106,6 +107,9 @@ export default async function ProjektSida({
     orderBy: { betaldatum: "asc" },
   });
   const kostnader = kostnadRader.map(tillDomanKostnad);
+  // Kvitton som annu inte hor till nagot projekt – lanken "Lägg till
+  // kvitton" visas bara nar de finns.
+  const antalValbara = (await hamtaValbaraKvitton(bostadId)).length;
 
   const oklassificerad = projekt.atgardstyp === null;
   const kategoriText = atgardKategoriText(
@@ -276,6 +280,19 @@ export default async function ProjektSida({
             </p>
           ) : null}
         </div>
+        {/* Flera kvitton i ett svep (docs/design.md, "Att lägga kvitton till
+            ett projekt som redan finns"). Bara nar det finns kvitton att
+            valja – annars leder lanken till en tom lista. */}
+        {antalValbara > 0 ? (
+          <div className="px-4 pt-2">
+            <Link
+              href={`/projekt/${id}/kvitton`}
+              className="font-granssnitt text-sm text-text-primar underline underline-offset-2 hover:text-accent-mork"
+            >
+              Lägg till kvitton
+            </Link>
+          </div>
+        ) : null}
         {kostnader.length === 0 ? (
           <p className="px-4 py-3 font-granssnitt text-sm text-text-sekundar">
             Inga kvitton i projektet än.

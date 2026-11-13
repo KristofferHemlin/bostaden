@@ -106,6 +106,8 @@ describe("ändringsläget för ett kvitto med privat del", () => {
   it("visar Totalbelopp och projektlistan, med projektet förvalt", () => {
     const html = renderToStaticMarkup(
       createElement(RedigeraVy, {
+        // Som KvittoKort skickar det: kvittot hör till bostaden.
+        arkiverad: false,
         kostnadId: KOSTNAD,
         projekt: [{ id: PROJEKT, namn: "Målade sovrummet", ar: 2026 }],
         varden: {
