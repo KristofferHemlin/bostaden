@@ -439,11 +439,11 @@ Blocken behåller appens ljusa yta; ingen ny yta införs.
 
 Raden *Berätta om N kvitton* och listan är kort som förut.
 
-**Men raden *"Berätta om N kvitton"* står före knappen när den finns** – ändrat 2026-11-12. **Det bryter inte mot regeln ovan**, och det ska stå skrivet så att ingen "återställer" knappen till allra överst med hänvisning till den: regeln säger *inte under listan*, och den här raden är en rad, inte listan. Knappen ligger fortfarande över varje kvitto.
+**Men ingången till frågorna står före knappen när den finns** – ändrat 2026-11-12, och den är sedan 2026-11-13 ett kort och inte en rad. **Det bryter inte mot regeln ovan**, och det ska stå skrivet så att ingen "återställer" knappen till allra överst med hänvisning till den: regeln säger *inte under listan*, och ingången är ett kort, inte listan. Knappen ligger fortfarande över varje kvitto.
 
-Skälet att raden går först är att den är det enda stället i appen där vägen till frågorna finns, och den är lätt att missa under en orange knapp som fyller bredden. Finns ingen sådan rad ligger knappen överst som förut.
+Skälet att den går först är att den är det enda stället i appen där vägen till frågorna finns, och den är lätt att missa under en orange knapp som fyller bredden. Finns ingen sådan ingång ligger knappen överst som förut.
 
-**Priset är två saker som drar blicken i toppen** – en dämpad rad med åtgärdsprick och därunder den orange knappen. Det accepteras därför att de ber om olika saker och bara den ena är orange: *ett orange element per skärm* gäller fortfarande, och det är knappen som har det.
+**Priset är två saker som drar blicken i toppen** – ingångskortet och därunder den orange knappen. Det accepteras därför att de ber om olika saker och bara den ena är orange: *ett orange element per skärm* gäller fortfarande, och det är knappen som har det.
 
 **Utkast går att ta bort direkt.** En soptunna längst till höger i listraden, med egen tryckyta på minst 44px och luft från radens klickyta så den inte träffas av misstag. Ingen bekräftelse – ett utkast har inget belopp och inget värde, och en dialog är bara i vägen. Bekräftelse gäller fortsatt för sparade kvitton.
 
