@@ -7,8 +7,8 @@ import { REGELPARAMETRAR } from "./_hjalp";
 // slag, och en upplysning bär sanningen tills ett kvitto kopplats och frågan
 // besvarats. Spärren 0 < merkostnad < belopp lättas inte.
 //
-// Upplysningens lydelse är promptens 2026-11-13 – den står inte i design.md,
-// så testet kan inte läsa den därifrån.
+// Upplysningens två lydelser läses ur docs/design.md, inne i testet
+// (CLAUDE.md, Tester).
 
 const h = await vi.hoisted(async () => {
   const { skapaFalskDatabas } = await import("./_falsk-databas");
@@ -70,8 +70,18 @@ const X = "b0000000-0000-4000-8000-0000000000a1";
 const P = "c0000000-0000-4000-8000-0000000000a1";
 const datum = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
-const PROMPTENS_LYDELSE =
-  "Hur mycket som var merkostnad är inte angivet än. Koppla ett kvitto, så kommer frågan.";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+/** De två lydelserna under "Att skapa ett projekt" i design.md: utan belopp,
+ *  och med – den andra som texten före länken och länkens text. */
+function designensLydelser(): { utanBelopp: string; medBelopp: string; lank: string } {
+  const d = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+  const utan = d.match(/^> (Hur mycket som var merkostnad är inte angivet än\. [^*\n]+)$/m);
+  const med = d.match(/^> (Hur mycket som var merkostnad är inte angivet än\.) \*\*([^*]+)\*\*$/m);
+  if (!utan || !med) throw new Error("design.md saknar merkostnadens två lydelser");
+  return { utanBelopp: utan[1], medBelopp: med[1], lank: med[2] };
+}
 
 function seeda({ kvitto = false, merkostnad = null as number | null } = {}) {
   const { db } = h;
@@ -128,8 +138,10 @@ async function exporten() {
 beforeEach(() => seeda());
 
 describe("upplysningen", () => {
-  it("är promptens lydelse, ordagrant, när projektet saknar belopp", () => {
-    expect(MERKOSTNAD_SAKNAS_UTAN_BELOPP).toBe(PROMPTENS_LYDELSE);
+  it("är designens två lydelser, ordagrant", () => {
+    const l = designensLydelser();
+    expect(MERKOSTNAD_SAKNAS_UTAN_BELOPP).toBe(l.utanBelopp);
+    expect(MERKOSTNAD_SAKNAS).toBe(l.medBelopp);
   });
 
   it("ett obesvarat bättre är ett eget besked, skilt från ett ändrat projekt", () => {
@@ -147,7 +159,7 @@ describe("projektets sida", () => {
     expect(varden).toContain("Bättre");
     expect(sida.textContent).not.toContain("merkostnad 0 kr");
     const rad = [...sida.querySelectorAll("p")].find((p) => p.textContent?.startsWith("Hur mycket"));
-    expect(rad?.textContent).toBe(PROMPTENS_LYDELSE);
+    expect(rad?.textContent).toBe(designensLydelser().utanBelopp);
     expect(rad?.querySelector("a")).toBeNull();
   });
 
@@ -155,7 +167,8 @@ describe("projektets sida", () => {
     seeda({ kvitto: true });
     const sida = await dom(ProjektSida({ params: Promise.resolve({ id: P }) }));
     const rad = [...sida.querySelectorAll("p")].find((p) => p.textContent?.startsWith("Hur mycket"));
-    expect(rad?.textContent).toBe(`${MERKOSTNAD_SAKNAS} Svara på frågan`);
+    const l = designensLydelser();
+    expect(rad?.textContent).toBe(`${l.medBelopp} ${l.lank}`);
     expect(rad?.querySelector("a")?.getAttribute("href")).toBe(`/projekt/${P}/redigera`);
   });
 });

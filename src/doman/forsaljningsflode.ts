@@ -2,7 +2,7 @@
 // vid försäljningen, och ordningen är härledd"):
 //
 //   1. Forsaljningsdatumet          /forsaljning
-//   2. Bostadsfragorna              /forsaljning/bostaden
+//   2. Bostadsfragorna              /bostaden/fragor
 //   3. Skicket vid forsaljningen    /forsaljning/skick
 //   4. Samma byggnadsdel            /forsaljning/samma-del
 //   5. Agarandelen bekraftas        /forsaljning/andel
@@ -29,7 +29,7 @@ export const FORSALJNINGSSTEG: readonly Forsaljningssteg[] = [
 ];
 
 export const FORSALJNINGSSTEG_SIDA: Record<Forsaljningssteg, string> = {
-  bostadsfragor: "/forsaljning/bostaden",
+  bostadsfragor: "/bostaden/fragor",
   skick: "/forsaljning/skick",
   samma_del: "/forsaljning/samma-del",
   andel: "/forsaljning/andel",

@@ -51,7 +51,6 @@ import {
   beloppIKolumnen,
   byggK6aExport,
   type K6aExport,
-  VANTAR_PA_BOSTADSFRAGOR_TEXT,
   VantarPaBostadsfragor,
   type K6aExportrad,
   type K6aIndata,
@@ -70,7 +69,7 @@ import { behoverSkickForsaljning } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { BILAGEPAKET_SYNLIGT } from "@/lib/bilagepaket/flagga";
 import { hamtaBostadsdata, hamtaKostnaderMedBilaga, tillDomanBostad } from "@/lib/doman-fran-db";
-import { formateraKronor, isoDatum } from "@/lib/format";
+import { formateraKronor, formateraKronorEllerStreck, isoDatum } from "@/lib/format";
 import { hamtaAndelar } from "@/lib/andelar";
 import { UPPGIFTENS_SOKVAG } from "@/lib/bostadsuppgifter";
 import {
@@ -87,9 +86,12 @@ import { UnderlagetsVarningar } from "./underlagets-varningar";
 import {
   ATERSTAR_INLEDNING,
   ATERSTAR_RUBRIK,
+  BOSTADSFRAGOR_ATERSTAR,
   aterstarRader,
   kvittonamn,
+  type Aterstarrad,
 } from "@/lib/aterstar";
+import { vantandeUnderlag, type VantandeRad, type VantandeUnderlag } from "@/doman/vantande-underlag";
 
 const ANDELSFRAGAN_FRAN_EXPORT = `${UPPGIFTENS_SOKVAG.agarandel}?fran=export`;
 
@@ -150,22 +152,19 @@ export default async function ExportSida() {
     let ex: K6aExport;
     try {
       ex = byggK6aExport(indata);
-    } catch (fel) {
-      // Obesvarade bostadsfragor med nagot klassificerat att rakna pa: hela
-      // underlaget vantar, varken sida 1 eller sida 2 (src/doman/export-k6a.ts).
+    } catch (forstaFel) {
+      let fel = forstaFel;
+      // Obesvarade bostadsfragor med nagot klassificerat att rakna pa:
+      // underlaget vantar (docs/design.md, Exportvyn). Raderna visas,
+      // summorna halls tillbaka, och Återstår namnger det som fattas – ingen
+      // gissning om svaret (src/doman/vantande-underlag.ts).
       if (fel instanceof VantarPaBostadsfragor) {
-        return (
-          <Kort>
-            <div className="p-5">
-              <Meddelanderuta>{VANTAR_PA_BOSTADSFRAGOR_TEXT}</Meddelanderuta>
-              {/* Fragorna bor i forsaljningsflodet sedan 2026-11-13
-                  (produktspec 4.1); fore forsaljningen leder svaret tillbaka hit. */}
-              <Link href="/forsaljning/bostaden" className={`${PRIMARKNAPP_KLASS} mt-4`}>
-                Svara på frågorna
-              </Link>
-            </div>
-          </Kort>
-        );
+        try {
+          return renderaVantande(vantandeUnderlag(indata));
+        } catch (fel2) {
+          if (!(fel2 instanceof OgiltigAgarandel)) throw fel2;
+          fel = fel2;
+        }
       }
       // En ogiltig andel (i praktiken 0: en null som lasts som ett tal) –
       // ingen siffra alls hellre an ett underlag pa 0 kr.
@@ -207,11 +206,10 @@ export default async function ExportSida() {
     // sidorna – sa att blicken gar till listan over det som aterstar.
     const harAterstaende =
       ex.oklassificerade_hogar.length > 0 || ex.aterstaende_kvitton.length > 0;
-    // Klassificeringen ar vagen framat for hogar och for kvitton utan hog. Ett
-    // kvitto utan betaldatum behover i stallet sitt datum, pa kvittots skarm.
-    const behoverKlassificering =
-      ex.oklassificerade_hogar.length > 0 ||
-      ex.aterstaende_kvitton.some((k) => k.orsak === "utan_hog");
+    // Kvitton utan projekt behover ett projekt – vagen dit ar Skapa projekt.
+    // En hog som vantar pa fragor har en egen lank pa sin rad (aterstarHref),
+    // och ett kvitto utan betaldatum behover sitt datum, pa kvittots skarm.
+    const behoverKlassificering = ex.aterstaende_kvitton.some((k) => k.orsak === "utan_hog");
     const kvittoNamn = new Map(kostnadRader.map((k) => [k.id, kvittonamn(k)]));
     // En hog utan namn heter som i fas 1 (src/doman/genomgang.ts).
     const projektnamn = projektnamnKarta(projektRader, kostnadRader);
@@ -379,21 +377,12 @@ export default async function ExportSida() {
                     orsak={r.orsak}
                     ar={r.ar}
                     belopp={r.belopp}
-                    href={
-                      // Ett datum som saknas eller kan vara feltypat
-                      // rattas pa kvittots skarm.
-                      r.orsakKod === "utan_betaldatum" ||
-                      r.orsakKod === "fore_tilltradet"
-                        ? `/kostnad/${r.kostnadId}`
-                        : r.orsakKod === "utan_belopp"
-                          ? `/kostnad/nytt?utkast=${r.kostnadId}`
-                          : undefined
-                    }
+                    href={aterstarHref(r)}
                   />
                 ))}
               </ul>
               {behoverKlassificering ? (
-                <Link href="/genomgang" className={`${SEKUNDARKNAPP_KLASS} mt-3`}>
+                <Link href="/projekt/nytt" className={`${SEKUNDARKNAPP_KLASS} mt-3`}>
                   Berätta vad du gjort
                 </Link>
               ) : null}
@@ -482,6 +471,176 @@ export default async function ExportSida() {
       </>
     );
   }
+
+  /** Underlaget medan bostadsfragorna ar obesvarade (docs/design.md,
+   *  Exportvyn). Raderna och vad de kostade, aldrig en summa: summan beror
+   *  av svaret, och ett tal som bara ar sant for ett av svaren vore en
+   *  gissning. Återstår borjar med det som fattas och vagen dit. */
+  function renderaVantande(v: VantandeUnderlag) {
+    const kvittoNamn = new Map(kostnadRader.map((k) => [k.id, kvittonamn(k)]));
+    const projektnamn = projektnamnKarta(projektRader, kostnadRader);
+    const aterstar = aterstarRader(
+      v,
+      (id) => kvittoNamn.get(id) ?? "Kvitto",
+      (id) => projektnamn.get(id) ?? "Projekt",
+    );
+    const behoverProjekt = v.aterstaende_kvitton.some((k) => k.orsak === "utan_hog");
+    return (
+      <>
+        <UnderlagetsVarningar varningar={v.varningar} />
+
+        <Kort className="divide-y divide-linje">
+          <VantandeSidaBlock
+            etikett="Sida 1 · Grundförbättringar"
+            rader={v.sida1}
+            tomtText="Inga grundförbättringar registrerade."
+          />
+          <VantandeSumma underrad="Summa sida 1 – grundförbättringar" />
+        </Kort>
+
+        <Kort className="divide-y divide-linje">
+          <VantandeSidaBlock
+            etikett="Sida 2 · Förbättrande reparationer"
+            rader={v.sida2}
+            tomtText="Inga förbättrande reparationer registrerade."
+          />
+          {v.sald ? <VantandeSumma underrad="Summa sida 2 – avdragsgill del efter förslitning" /> : null}
+        </Kort>
+
+        <Kort className="divide-y divide-linje">
+          <section className="p-4">
+            <p className="font-granssnitt text-sm font-medium text-text-primar">
+              {ATERSTAR_RUBRIK}
+            </p>
+            <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
+              {ATERSTAR_INLEDNING}
+            </p>
+            <ul className="mt-2 divide-y divide-linje border-t border-linje">
+              <li className="py-2 font-granssnitt text-sm">
+                <span className="flex items-center gap-1.5 font-medium text-text-primar">
+                  <span
+                    aria-hidden
+                    className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
+                  />
+                  {BOSTADSFRAGOR_ATERSTAR.rubrik}
+                </span>
+                <span className="mt-0.5 block text-sm text-text-sekundar">
+                  {BOSTADSFRAGOR_ATERSTAR.rad}{" "}
+                  <Link
+                    href="/bostaden/fragor?fran=export"
+                    className="font-medium text-text-primar underline underline-offset-2 hover:text-accent-mork"
+                  >
+                    {BOSTADSFRAGOR_ATERSTAR.lank}
+                  </Link>
+                </span>
+              </li>
+              {aterstar.map((r) => (
+                <AterstarRad
+                  key={r.nyckel}
+                  namn={r.namn}
+                  orsak={r.orsak}
+                  ar={r.ar}
+                  belopp={r.belopp}
+                  href={aterstarHref(r)}
+                />
+              ))}
+            </ul>
+            {behoverProjekt ? (
+              <Link href="/projekt/nytt" className={`${SEKUNDARKNAPP_KLASS} mt-3`}>
+                Berätta vad du gjort
+              </Link>
+            ) : null}
+          </section>
+
+          <div className="space-y-4 p-4">
+            {v.sald ? (
+              <Link href="/forsaljning" className={SEKUNDARKNAPP_KLASS}>
+                Ändra försäljningsuppgifter
+              </Link>
+            ) : (
+              <Link href="/forsaljning" className={PRIMARKNAPP_KLASS}>
+                Markera som såld
+              </Link>
+            )}
+            <Friskrivning />
+          </div>
+        </Kort>
+      </>
+    );
+  }
+}
+
+/** Raderna medan bostadsfragorna ar obesvarade: atgard, ar och vad den
+ *  kostade. Ingen avdragsgill kolumn – den beror av svaret. */
+function VantandeSidaBlock({
+  etikett,
+  rader,
+  tomtText,
+}: {
+  etikett: string;
+  rader: VantandeRad[];
+  tomtText: string;
+}) {
+  return (
+    <section>
+      <Avdelningsrubrik className="px-4 pt-4">{etikett}</Avdelningsrubrik>
+      {rader.length === 0 ? (
+        <p className="px-4 py-3 font-granssnitt text-sm text-text-sekundar">{tomtText}</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse font-granssnitt text-sm tabular-nums">
+            <thead>
+              <tr className="text-left text-text-sekundar">
+                <th className="px-4 py-2 font-normal">Åtgärd</th>
+                <th className="px-4 py-2 font-normal">År</th>
+                <th className="px-4 py-2 text-right font-normal">Belopp</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-linje border-t border-linje">
+              {rader.map((r, i) => (
+                <tr key={`${r.atgard}-${r.ar}-${i}`} className="align-top">
+                  <td className="px-4 py-3 text-text-primar">{r.atgard}</td>
+                  <td className="px-4 py-3 text-text-sekundar">{r.ar}</td>
+                  <td className="px-4 py-3 text-right text-text-primar">
+                    {formateraKronorEllerStreck(r.belopp)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Summans plats medan svaret saknas: ingen siffra, dampad som varje
+ *  ofullstandig summa (docs/design.md, Exportvyn). Ingen "Förs till" – den
+ *  etiketten star bara bredvid ett tal. */
+function VantandeSumma({ underrad }: { underrad: string }) {
+  return (
+    <section className="p-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="font-granssnitt text-sm text-text-sekundar">{underrad}</span>
+        <span className="font-rubrik text-3xl tabular-nums text-text-sekundar">
+          {formateraKronorEllerStreck(null)}
+        </span>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Vart en rad i Återstår leder. En hog som vantar pa fragor leder till
+ * projektets redigering, som staller hela tradet (docs/design.md, "Projekt
+ * som skapades före omläggningen"). Ett datum som saknas eller kan vara
+ * feltypat rattas pa kvittots skarm, ett utkast i kompletteringen.
+ */
+function aterstarHref(r: Aterstarrad): string | undefined {
+  if (r.orsakKod === "vantar_pa_fragor" && r.projektId) return `/projekt/${r.projektId}/redigera`;
+  if (r.orsakKod === "utan_betaldatum" || r.orsakKod === "fore_tilltradet") return `/kostnad/${r.kostnadId}`;
+  if (r.orsakKod === "utan_belopp") return `/kostnad/nytt?utkast=${r.kostnadId}`;
+  return undefined;
 }
 
 function SidaBlock({

@@ -170,9 +170,27 @@ export async function redigeraProjekt(
 
   const projekt = await prisma.projekt.findFirst({
     where: { id, bostad_id: bostadId },
-    select: { id: true },
+    select: { id: true, atgardstyp: true },
   });
   if (!projekt) return { fel: "Projektet hittades inte." };
+
+  // Ett projekt utan svar ar skapat fore omlaggningen. Nar svaren ges sats
+  // arsetiketten till tidigaste betaldatum bland kvittona, som den gamla
+  // genomgangen gjorde (docs/design.md, "Projekt som skapades före
+  // omläggningen"). Ett projekt som redan har svar behaller sin etikett.
+  let nyttAr: number | undefined;
+  if (projekt.atgardstyp === null) {
+    const betalda = await prisma.kostnad.findMany({
+      where: {
+        bostad_id: bostadId,
+        betaldatum: { not: null },
+        rader: { some: { fordelningar: { some: { projekt_id: id } } } },
+      },
+      select: { betaldatum: true },
+    });
+    const ar = betalda.flatMap((k) => (k.betaldatum ? [k.betaldatum.getUTCFullYear()] : []));
+    if (ar.length > 0) nyttAr = Math.min(...ar);
+  }
 
   // Fraga 7: bara nar faltet skickats, bostaden ar sald och atgarden har en
   // reparationsdel. Ett tomt falt lamnar vardet orort – en obesvarad fraga
@@ -212,6 +230,7 @@ export async function redigeraProjekt(
       where: { id },
       data: {
         namn: tolkat.namn,
+        ...(nyttAr !== undefined ? { ar: nyttAr } : {}),
         atgardstyp: tolkat.atgardstyp,
         battre_kvalitet: tolkat.battre_kvalitet,
         ...(merkostnadOrord

@@ -39,7 +39,20 @@ export interface Aterstarrad {
   belopp: number | null;
   /** Kvittot raden galler, eller null for en hog. */
   kostnadId: string | null;
+  /** Hogen raden galler, eller null for ett kvitto. */
+  projektId: string | null;
 }
+
+/**
+ * Raden overst i Återstår nar bostadsfragorna ar obesvarade (docs/design.md,
+ * Exportvyn) – ordagrant. Underlaget vantar pa ett svar; det har inte
+ * misslyckats, och raden namnger det som fattas.
+ */
+export const BOSTADSFRAGOR_ATERSTAR = {
+  rubrik: "Vi vet inte om bostaden var nybyggd när du köpte den",
+  rad: "Svaret avgör om reparationer räknas med.",
+  lank: "Svara på två frågor",
+} as const;
 
 /** Ett kvittos namn i listan: anteckningen, annars leverantoren. */
 export function kvittonamn(k: {
@@ -72,6 +85,7 @@ export function aterstarRader(
       ar: h.ar,
       belopp: h.belopp_brutto,
       kostnadId: null,
+      projektId: h.projekt_id,
     })),
     ...ex.aterstaende_kvitton.map((k) => ({
       nyckel: `kvitto-${k.kostnad_id}`,
@@ -81,6 +95,7 @@ export function aterstarRader(
       ar: k.ar,
       belopp: k.belopp_brutto,
       kostnadId: k.kostnad_id,
+      projektId: null,
     })),
   ];
 }

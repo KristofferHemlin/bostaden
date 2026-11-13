@@ -109,14 +109,15 @@ export function foreForsaljningForklaring(fonsterAr: number, troskelbeloppOren: 
 }
 
 
-/** Upplysningen nar merkostnaden skots upp for att projektet saknade ett
- *  belopp att dela (docs/design.md, "Att skapa ett projekt"). Lydelsen ar
- *  promptens 2026-11-13, ordagrant – den star inte i design.md. */
+/** Upplysningen nar merkostnaden skots upp for att projektet saknar ett
+ *  belopp att dela (docs/design.md, "Att skapa ett projekt"), ordagrant.
+ *  Villkoret ar beloppet, inte att ett kvitto ar kopplat: ett projekt vars
+ *  kvitton saknar betaldatum har kvitton men inget belopp. */
 export const MERKOSTNAD_SAKNAS_UTAN_BELOPP =
-  "Hur mycket som var merkostnad är inte angivet än. Koppla ett kvitto, så kommer frågan.";
+  "Hur mycket som var merkostnad är inte angivet än. Frågan kommer när projektet har ett belopp.";
 
-/** Samma upplysning nar ett betalt kvitto kopplats och fragan alltsa gar att
- *  besvara: den forsta meningen, utan uppmaningen att koppla ett kvitto. */
+/** Samma upplysning nar projektet har ett belopp och fragan gar att besvara:
+ *  forsta meningen, foljd av lanken "Svara på frågan" pa projektets sida. */
 export const MERKOSTNAD_SAKNAS = "Hur mycket som var merkostnad är inte angivet än.";
 
 /** Fragan ovanfor projektets fragor nar projektet andrats sedan merkostnaden

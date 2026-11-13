@@ -34,6 +34,8 @@ import { tillDomanKostnad, tillDomanProjekt } from "@/lib/doman-fran-db";
 import { formateraKronor } from "@/lib/format";
 import type { Metadata } from "next";
 import { arGiltigtId } from "@/lib/giltigt-id";
+import { projektnamnKarta } from "@/doman/genomgang";
+import { hamtaProjektnamn } from "@/lib/projektnamn";
 import { prisma } from "@/lib/prisma";
 import { upphovsrad } from "@/lib/samagande";
 import { antalMedlemmar, kravBostad } from "@/lib/session";
@@ -54,10 +56,12 @@ export async function generateMetadata({
   const { bostadId } = await kravBostad();
   const p = await prisma.projekt.findFirst({
     where: { id, bostad_id: bostadId },
-    select: { namn: true },
+    select: { id: true, namn: true },
   });
   if (!p) notFound();
-  return { title: p.namn?.trim() || "Projekt" };
+  // Ett projekt fran fore omlaggningen kan sakna namn; det heter da som sina
+  // kvitton (docs/design.md, "Projekt som skapades före omläggningen").
+  return { title: (await hamtaProjektnamn(bostadId, [p])).get(p.id) || "Projekt" };
 }
 
 // Fraga 2-4:s svar, sammanfattat till en rad (produktspec 4.1).
@@ -131,7 +135,10 @@ export default async function ProjektSida({
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      rubrik={projekt.namn}
+      // Ett tomt namn skrivs aldrig ut rakt av: ett projekt fran fore
+      // omlaggningen heter som sina kvitton (docs/design.md, "Projekt som
+      // skapades före omläggningen").
+      rubrik={projektnamnKarta([projekt], kostnadRader).get(id) ?? projekt.namn}
       bakLank={{ href: "/projekt", text: "Projekt" }}
     >
       <section className="space-y-2 border-b border-linje p-4 font-granssnitt text-sm">
@@ -308,26 +315,32 @@ export default async function ProjektSida({
           </div>
         )}
         <div className="flex flex-col gap-2 p-4">
+          {/* Ett projekt utan svar kan bara vara skapat fore omlaggningen.
+              Vagen till svaren ar redigeringen, som staller hela tradet
+              (docs/design.md, "Projekt som skapades före omläggningen"). */}
           {oklassificerad ? (
-            <Link href="/genomgang/fragor" className={PRIMARKNAPP_KLASS}>
+            <Link href={`/projekt/${id}/redigera`} className={PRIMARKNAPP_KLASS}>
               Svara på frågorna
             </Link>
           ) : null}
-          {/* Inmatningen kopplar inte till en gruppering (docs/design.md,
-              "Inmatningen har fem falt, inget mer"); kvittot hamnar i
-              genomgangen dar det kopplas. */}
+          {/* Inmatningen kopplar inte till ett projekt (docs/design.md,
+              "Inmatningen har fem falt, inget mer"); kvittot kopplas fran
+              projektet eller pa kvittots egen sida. */}
           <Link
             href="/kostnad/nytt"
             className={oklassificerad ? SEKUNDARKNAPP_KLASS : PRIMARKNAPP_KLASS}
           >
             Lägg till kvitto
           </Link>
-          <Link
-            href={`/projekt/${id}/redigera`}
-            className={SEKUNDARKNAPP_KLASS}
-          >
-            Ändra projektet
-          </Link>
+          {/* Utan svar finns inget att andra – knappen ovan leder dit. */}
+          {oklassificerad ? null : (
+            <Link
+              href={`/projekt/${id}/redigera`}
+              className={SEKUNDARKNAPP_KLASS}
+            >
+              Ändra projektet
+            </Link>
+          )}
         </div>
       </section>
     </Skarm>

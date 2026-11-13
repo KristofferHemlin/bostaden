@@ -1,10 +1,11 @@
-// Bostadsfragorna, forst av allt vid forsaljningen (produktspec 4.1, "De
-// ställs först av allt vid försäljningen, och ordningen är härledd"). Ar
-// bostaden nybyggd slacks hela reparationsgrenen, och da ska skickfragan vid
-// forsaljningen inte stallas – darfor kommer de har fore skicket.
+// Frågor om bostaden (produktspec 4.1; docs/design.md, Exportvyn). Samma två
+// frågor och samma lydelser från båda ingångarna: försäljningsflödet, där de
+// ställs först av allt, och underlaget, som väntar på svaren också under
+// ägandet. Sidan heter inte försäljning – en sida som heter så och frågar den
+// som inte sålt säger fel sak om varför den finns.
 //
-// Redan givna svar visas som valda, sa att sidan ocksa gar att anvanda for
-// att ratta dem. I flodet hoppas steget over nar svaren redan finns.
+// Redan givna svar visas som valda, så att sidan också går att använda för att
+// rätta dem.
 
 import { BostadsfragorFormular } from "@/components/bostadsfragor-formular";
 import { Skarm } from "@/components/skarm";
@@ -12,25 +13,31 @@ import { lasBostadsfragor } from "@/doman/bostadsfragor";
 import { bostadHeader } from "@/lib/bostad-header";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
-import { sparaBostadsfragorVidForsaljning } from "./actions";
+import { sparaFragorOmBostaden } from "./actions";
 
-export const metadata = { title: "Om bostaden" };
+export const metadata = { title: "Frågor om bostaden" };
 
 export const dynamic = "force-dynamic";
 
-export default async function BostadsfragorVidForsaljningSida() {
+export default async function FragorOmBostadenSida({
+  searchParams,
+}: {
+  searchParams: Promise<{ fran?: string }>;
+}) {
   const { bostadId } = await kravBostad();
   const bostad = await prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } });
   const { bostadsnamn } = bostadHeader(bostad);
+  const franExport = (await searchParams)?.fran === "export";
 
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      rubrik="Om bostaden"
+      rubrik="Frågor om bostaden"
       bakLank={{ href: "/export", text: "Deklarationsunderlag" }}
     >
       <BostadsfragorFormular
-        action={sparaBostadsfragorVidForsaljning}
+        action={sparaFragorOmBostaden}
+        nasta={franExport ? "export" : undefined}
         givna={lasBostadsfragor(bostad)}
       />
     </Skarm>

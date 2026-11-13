@@ -5,7 +5,9 @@
 // revalideras. Ett projekt med kopplade kostnader gar inte att ta bort –
 // sidan visar vilka kostnader som blockerar i stallet for att bara neka.
 
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { projektnamnKarta } from "@/doman/genomgang";
 import { RedigeraProjektForm } from "./form";
 import { Skarm } from "@/components/skarm";
 import {
@@ -28,7 +30,27 @@ import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
-export const metadata = { title: "Ändra projekt" };
+/** Rubriken foljer vad som saknas (docs/design.md, "Projekt som skapades
+ *  före omläggningen"): ett projekt utan svar har inget att andra. */
+function rubrikFor(atgardstyp: string | null): string {
+  return atgardstyp === null ? "Berätta vad du gjort" : "Ändra projekt";
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  if (!arGiltigtId(id)) notFound();
+  const { bostadId } = await kravBostad();
+  const p = await prisma.projekt.findFirst({
+    where: { id, bostad_id: bostadId },
+    select: { atgardstyp: true },
+  });
+  if (!p) notFound();
+  return { title: rubrikFor(p.atgardstyp) };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -81,8 +103,10 @@ export default async function RedigeraProjektSida({
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
-      rubrik="Ändra projekt"
-      bakLank={{ href: `/projekt/${id}`, text: projekt.namn }}
+      rubrik={rubrikFor(projekt.atgardstyp)}
+      // Ett tomt namn skrivs aldrig ut rakt av (docs/design.md, "Projekt som
+      // skapades före omläggningen").
+      bakLank={{ href: `/projekt/${id}`, text: projektnamnKarta([projekt], kostnadRader).get(id) ?? projekt.namn }}
     >
       <RedigeraProjektForm
         projektId={id}

@@ -2,7 +2,7 @@
 
 // Bostadsfragornas formular (produktspec 4.1, 4.6) – forsta agaren, och for en
 // bostadsratt med ja aven ombildningen (src/doman/bostadsfragor.ts). Delat av
-// forsaljningsflodet (src/app/forsaljning/bostaden), dar fragorna stalls
+// sidan Frågor om bostaden (src/app/bostaden/fragor), dar fragorna stalls
 // sedan 2026-11-13, och klassificeringsgenomgangen, som star kvar tills den
 // rivs. Var svaret sparas och vart flodet gar efterat avgor actionen.
 //

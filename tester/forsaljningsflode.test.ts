@@ -58,8 +58,9 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { markeraSald } from "@/app/forsaljning/actions";
-import { sparaBostadsfragorVidForsaljning } from "@/app/forsaljning/bostaden/actions";
-import BostadsfragorSida from "@/app/forsaljning/bostaden/page";
+import { sparaFragorOmBostaden as sparaBostadsfragorVidForsaljning } from "@/app/bostaden/fragor/actions";
+import BostadsfragorSidaMedParam from "@/app/bostaden/fragor/page";
+const BostadsfragorSida = () => BostadsfragorSidaMedParam({ searchParams: Promise.resolve({}) });
 import SammaDelSida from "@/app/forsaljning/samma-del/page";
 import SkickSida from "@/app/forsaljning/skick/page";
 import ExportSida from "@/app/export/page";
@@ -181,7 +182,7 @@ describe("ordningen, som ren funktion", () => {
 
 describe("stegen, mot databasen", () => {
   it("markera som såld leder först till bostadsfrågorna när de är obesvarade", async () => {
-    expect(await omdirigeringFran(salj)).toBe("/forsaljning/bostaden");
+    expect(await omdirigeringFran(salj)).toBe("/bostaden/fragor");
   });
 
   it("besvarade bostadsfrågor hoppas över – datumet leder till skicket", async () => {
@@ -246,12 +247,12 @@ describe("stegen, mot databasen", () => {
 
   it("skickfrågorna utan bostadsfrågorna går till bostadsfrågorna", async () => {
     seeda({ sald: true });
-    expect(await omdirigeringFran(() => SkickSida())).toBe("/forsaljning/bostaden");
+    expect(await omdirigeringFran(() => SkickSida())).toBe("/bostaden/fragor");
   });
 
   it("frågan om samma del utan bostadsfrågorna går till bostadsfrågorna", async () => {
     seeda({ sald: true });
-    expect(await omdirigeringFran(() => SammaDelSida())).toBe("/forsaljning/bostaden");
+    expect(await omdirigeringFran(() => SammaDelSida())).toBe("/bostaden/fragor");
   });
 
   it("skickfrågorna, med grenen tänd, ställs för åtgärden som saknar svar", async () => {
@@ -304,12 +305,6 @@ describe("bostadsfrågornas sida", () => {
     behallare.remove();
   });
 
-  it("underlaget som väntar på svaren leder hit, inte till genomgången", async () => {
-    seeda({ sald: true });
-    const html = renderToStaticMarkup(await ExportSida());
-    const div = document.createElement("div");
-    div.innerHTML = html;
-    const lank = [...div.querySelectorAll("a")].find((a) => a.textContent === "Svara på frågorna");
-    expect(lank?.getAttribute("href")).toBe("/forsaljning/bostaden");
-  });
+  // Underlagets väntande läge, och vägen därifrån, provas i
+  // tester/underlaget-vantar.test.ts.
 });
