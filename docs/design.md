@@ -694,7 +694,9 @@ Ett tomt tillstånd säger aldrig bara att det är tomt. Det består av en rubri
 
 **Handlingen heter "Lägg till kvitto", inte kostnad eller utgift.** Kvitto är det konkreta – det man håller i handen och det appen läser av. Utgift och kostnad låter som bokföring, och bokföring är inte vad någon vill ägna sin söndag åt.
 
-**En enda primärknapp.** Ingen knapp för att skapa ett projekt – det är inte vägen in i produkten, och ordet hör inte hemma på en landningsskärm. Två jämnstora knappar tvingar fram ett val innan användaren vet vad alternativen betyder.
+**En enda primärknapp, och det gäller översikten och kvittolistan.** Där heter den *Lägg till kvitto*, och ingen knapp för att skapa ett projekt står bredvid: den som ännu inte lagt in ett kvitto har inget att beskriva, och två jämnstora knappar tvingar fram ett val innan användaren vet vad alternativen betyder.
+
+**Projektsidans tomläge är undantaget**, och det är inte en motsägelse: där är *Skapa projekt* den enda handling sidan har. Regeln säger en knapp per tomt tillstånd, inte en knapp i hela appen. Till 2026-11-13 stod här att projektknappen inte hörde hemma någonstans, och det gällde en modell där projekt uppstod ur grupperingen.
 
 **Ett tomt tillstånd får bara säga "klart" om helheten är klar.** Skriven 2026-10-20, efter att frågesidan skrev *"Inget väntar på frågor"* medan två kvitton låg kvar osorterade. Påståendet var sant om det sidan kände till och osant om det användaren menar. **En skärm som bara ser en del av arbetet ska formulera sig om sin del, inte om alltihop.**
 
@@ -1949,11 +1951,23 @@ Skärmens rubrik är **"Berätta vad du gjort"**. Flödet är *vad gjorde du* �
 
 **Kvittona väljs sist, inte först.** När projektet är beskrivet visas de kvitton som ännu inte hör till något projekt, och hon väljer vilka som hörde hit. Frågan är då *"vilka av de här hörde till badrummet?"* — hon vet vad hon letar efter, eftersom hon just skrivit namnet.
 
-**Framsteget räknas i frågor, inte i kvitton.** *"1 av 4"* räcker, utan ordet före. Här stod tidigare att skärmen också skulle säga *"N kvitton kvar"* och *"N projekt väntar på frågor"* — två räknare för två faser, från en modell som inte finns längre.
+**Framsteget räknas i steg, inte i frågor och inte i kvitton.** *"1 av 4"* räcker, utan ordet före. Stegen är alltid fyra; frågorna inuti steg tre varierar med grenen, och **det antalet sägs aldrig** – regeln under *Frågeträdet* gäller oförändrad. Rättat 2026-11-13 efter att agenten såg att orden sa *frågor* medan räknaren räknade steg.
+
+Här stod tidigare att skärmen också skulle säga *"N kvitton kvar"* och *"N projekt väntar på frågor"* — två räknare för två faser, från en modell som inte finns längre.
 
 **Ett projekt ska gå att skapa av ett enda kvitto, och av inget kvitto alls.** Allt man gör består inte av flera inköp, och ordet får inte göra ett bytt blandare till något större än det var. Ett projekt utan kvitton har inget belopp; summan uppstår när kvitton kopplas till det.
 
 **Skickfrågan vid förvärvet måste dyka upp när svaret på fråga 4 är att något byttes ut.** Den är villkorad, inte borttagen – utan den kan en reparations avdragsrätt inte avgöras, och det är hela skälet till att frågorna ställs.
+
+**Och den ställs nu utan att först veta om bostaden var nybyggd.** Till 2026-11-13 släcktes hela reparationsgrenen av ett nej på bostadsfrågan, som ställdes före. Nu ställs bostadsfrågorna vid försäljningen, så frågan om skicket kommer först. **Det är avsiktligt och ändrar inget tal:** var bostaden nybyggd vid förvärvet nollas reparationsunderlaget ändå i steg 3 av beräkningen, oavsett vad skicket säger. Priset är en fråga som visar sig ha varit onödig för de få som köpt nyproduktion. Alternativet vore att dra tillbaka en bostadsfråga in i projektflödet, vilket är precis det omläggningen gjorde sig av med.
+
+**Merkostnaden är den enda fråga i trädet som behöver ett belopp**, och den ställs därför bara när det finns ett. Spärren `0 < merkostnad < belopp` är Skatteverkets gräns och lättas inte – men på ett projekt utan kvitton finns inget belopp att väga mot, och en avvisning som säger *mindre än 0 kr* är en uppmaning ingen kan följa.
+
+Frågan skjuts då upp i stället för att stoppa sparandet. Projektet sparas med sitt slag — *bättre kvalitet* betyder grundförbättring och reparation oavsett hur de två delarna fördelas — och **en upplysning på projektets rad bär sanningen tills frågan besvarats**, på samma sätt som när ett projekt krymper efter att svaret getts (`CLAUDE.md`, *Spärren och taket*). Frågan blir aktuell i samma stund ett kvitto kopplas till projektet.
+
+**Utkastet lever i webbläsaren, och säger inte mer än det kan hålla.** Det som skrivits ligger kvar mellan besöken, men bara i den webbläsaren och på den enheten — börjar hon på telefonen och öppnar datorn finns det inte. Länken heter därför **"Fortsätt senare"** och lovar ingenting om var. Ingenting halvfärdigt sparas i databasen; projektet, bostadsdelen och kvittokopplingarna skrivs i en transaktion eller inte alls.
+
+**Och ett utkast går alltid att kasta.** Möts hon av ett påbörjat projekt hon inte minns ska skärmen säga att det är ett utkast och erbjuda **"Börja om"** bredvid. Ett utkast som bara går att slutföra är inte ett utkast, det är en skärm man sitter fast i.
 
 **ÅÄÖ i all text som användaren ser.** ASCII-translitterering gäller identifierare i koden, aldrig meddelanden. "battre skick vid forsaljningen ar inte bekraftat" ser ut som ett fel, för det är det.
 

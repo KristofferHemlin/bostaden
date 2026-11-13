@@ -281,7 +281,9 @@ Skicket frågas **per åtgärd, inte per bostad** – deras lydelse är *"hur va
 
 Faktorn är skillnaden delat med fem. Är skicket lika eller sämre vid försäljningen blir avdraget noll – åtgärden har då inte förbättrat bostaden jämfört med förvärvet.
 
-**Båda delarna är mätta mot Skatteverkets e-tjänst 2026-10-18, inte härledda.** En reparation på 10 000 kr med skick 1 vid köpet och 4 vid försäljningen gav där **6 000 kr**, alltså exakt `(4 − 1) / 5`. Samma post med skick 4 → 1 gav **0 kr**, med skälet *"Det du har bytt ut var av sämre eller i liknande skick när du sålde bostaden, jämfört med när du köpte den"* – vilket bekräftar att även lika skick ger noll. Skickfrågorna ställs bara när bostaden inte var nybyggd vid förvärvet; är den det släcks hela reparationsgrenen och frågan ställs aldrig.
+**Båda delarna är mätta mot Skatteverkets e-tjänst 2026-10-18, inte härledda.** En reparation på 10 000 kr med skick 1 vid köpet och 4 vid försäljningen gav där **6 000 kr**, alltså exakt `(4 − 1) / 5`. Samma post med skick 4 → 1 gav **0 kr**, med skälet *"Det du har bytt ut var av sämre eller i liknande skick när du sålde bostaden, jämfört med när du köpte den"* – vilket bekräftar att även lika skick ger noll. Skickfrågan vid **försäljningen** ställs bara när bostaden inte var nybyggd vid förvärvet; är den det släcks hela reparationsgrenen.
+
+**Skickfrågan vid förvärvet ställs däremot alltid när något bytts ut** – ändrat 2026-11-13, när bostadsfrågorna flyttade till försäljningen. Den ställs när projektet skapas, alltså innan appen vet om bostaden var nybyggd. **Talet påverkas inte:** nybyggd-regeln nollar reparationsunderlaget i steg 3, oavsett vad skicket säger. Den som köpt nyproduktion svarar alltså på en fråga som visar sig sakna verkan, och det är det billigare av två fel – alternativet vore att ställa en bostadsfråga mitt i ett projektflöde den medvetet lyfts ur.
 
 **Tabellen ovan är också appens etiketter, sedan 2026-10-19.** Dessförinnan visade appen *2 Slitet, 3 Normalt, 4 Gott* – ändpunkterna stämde, de tre i mitten inte. Den som kallar sitt badrum slitet landade på 2 hos oss och närmare 1 hos Skatteverket, och eftersom talet går rakt in i faktorn skilde sig avdraget. Det spelade roll just för att vi tänker uppmuntra kontroll mot deras verktyg: samma siffra måste betyda samma sak i båda, annars ger kontrollen falskt larm eller döljer ett verkligt fel.
 
@@ -633,6 +635,14 @@ Fallet var det gamla grupperingsflödet: posten skapades med tomt namn, eftersom
 **Det var inte ett hörn, det var normalfallet.** Flödet bjöd självt in till att avbryta mitt i, och visade sedan det tillståndet fel. Flödet finns inte längre; regeln gäller varje flerstegsflöde som ersätter det.
 
 **Regeln: att ha kört vägen igenom säger ingenting om vad som syns halvvägs.** Den som prövar ett flerstegsflöde ska stanna mitt i och se sig omkring — och den som skriver prompten ska be om en läsning av *var ett halvfärdigt tillstånd visas*, inte bara om steget fungerar.
+
+### En mätning som inte kan falla mäter ingenting
+
+**Skriven 2026-11-13.** Agenten bröt varje nytt beteende med flit, som regeln ovan kräver, och två av brytningarna fällde inte sitt test. Båda gångerna låg felet i mätningen, inte i koden: den ena prövade tvåradsklippning på en anteckning som behövde tre rader redan utan klippning, den andra mätte en ikryssad ruta vars ikryssade läge aldrig nådde webbläsaren.
+
+**Ett test som inte faller när beteendet bryts är inte ett grönt test, det är ett oskrivet test.** Och det syns bara på ett sätt: genom att bryta beteendet med flit och se testet falla. Att det passerar säger ingenting alls.
+
+**Förutsättningen prövas före slutsatsen.** En mätning av att något klipps kräver ett fall som utan klippning skulle svämma över. En mätning av ett tillstånd kräver att tillståndet verkligen är satt där mätningen läser. Går förutsättningen inte att visa är mätningen en tautologi med extra steg.
 
 ### Vem skriver reglerna
 

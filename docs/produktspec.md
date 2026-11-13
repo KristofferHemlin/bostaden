@@ -22,7 +22,7 @@ Det svåra är inte att spara kvitton. Det svåra är att avgörandet om avdrags
 
 1. Samlar kostnader (kvitton och fakturor) med bild eller PDF som permanent arkiv
 2. Bevakar den årliga tröskeln medan året fortfarande går att påverka
-3. Klassificerar allt vid försäljningen, i en guide som går igenom det sparade
+3. Låter henne beskriva varje åtgärd som ett projekt när hon vill, och avgör domen vid försäljningen
 4. Producerar ett deklarationsunderlag i hjälpblankett SKV 2197:s form
 
 ## 2b. Fakta tidigt, domen sent
@@ -43,25 +43,27 @@ Konsekvensen av att fråga för tidigt **där** är inte att svaren blir fel. Ko
 
 **Och en retroaktiv sortering är det dyraste sättet att fråga.** Till 2026-11-13 fanns en genomgång i två faser: först lägga ihop kvitton i högar, sedan svara per hög. Att be någon hitta grupperna i en lista med fjorton rader är att be henne minnas vad varje kvitto gällde, långt efteråt. **Projektet skapas i stället direkt, och kvittona hämtas till det** — då är frågan *"vilka av de här hörde till badrummet?"* i stället för *"vilka av de här hör ihop?"*, och den första går att svara på.
 
-**Klassificering är alltid möjlig, aldrig obligatorisk.** Den som vill gruppera och svara på frågorna under ägandet kan göra det när som helst, och får då exakta siffror. Den som inte gör det får ungefärliga siffror under tiden och guidas igenom allt vid försäljningen.
+**Att beskriva är alltid möjligt, aldrig obligatoriskt.** Den som vill skapa projekt och svara på frågorna under ägandet kan göra det när som helst, och får då exakta siffror så snart bostaden är såld. Den som inte gör det får ungefärliga siffror under tiden, och vid försäljningen står kvittona utan projekt kvar som det som återstår.
 
-**Vad som blir ungefärligt utan klassificering:** årssumman visar allt som lagts in, inte bara det som är avdragsgillt, och femårshorisonten kan inte skiljas ut. Gränssnittet ska vara ärligt med det – "du har lagt in 4 210 kr i år" är ett annat påstående än "4 210 kr är avdragsgilla", och tröskelraden ska säga att beloppet är preliminärt tills allt klassificerats.
+**Vad som blir ungefärligt utan projekt:** årssumman visar allt som lagts in, inte bara det som är avdragsgillt, och femårshorisonten kan inte skiljas ut. Gränssnittet ska vara ärligt med det – "du har lagt in 4 210 kr i år" är ett annat påstående än "4 210 kr är avdragsgilla", och raden ska säga att beloppet är preliminärt tills varje kvitto hör till ett projekt.
 
 ### Projektet, och frågorna
 
 Skattefrågorna hör till åtgärden, inte till kvittot – med hundra kvitton och tio åtgärder ska de ställas tio gånger, inte hundra. **Det uppnås genom att projektet skapas först och kvittona hämtas till det**, inte genom att kvitton sorteras i högar i efterhand.
 
-**Ett projekt skapas direkt, från projektsidan.** Omlagt 2026-11-13; dessförinnan kunde ett projekt bara uppstå ur en gruppering. Flödet är: *vad gjorde du* → *vilken del av bostaden* → frågeträdet → spara.
+**Ett projekt skapas direkt, från projektsidan.** Omlagt 2026-11-13; dessförinnan kunde ett projekt bara uppstå ur en gruppering. Flödet är fyra steg och ett enda sparande: *vad gjorde du* → *vilken del av bostaden* → frågeträdet → **vilka kvitton hörde hit** → spara.
 
 **Hela frågeträdet besvaras här, utom det som kräver försäljningen.** Byggde du något nytt, ändrade du planlösningen, satte du in något som aldrig funnits eller bytte du ut något, var det nya av bättre kvalitet, hur var skicket vid förvärvet — allt är fakta om vad hon gjorde. **Följdfrågorna gäller fullt ut:** trädet grenar som förut, och ett *nej* leder vidare precis som i dag.
 
 **Kvar till försäljningen:** skicket vid försäljningen, motiveringen när gapet mellan skickvärdena är stort, de två frågorna om bostaden, och själva räkningen — femårsfönstret och tröskeln per år.
 
-**Kvittona hämtas till projektet, inte tvärtom.** När projektet sparas visas de kvitton som ännu inte hör till något projekt, och hon väljer vilka som hörde hit. Frågan är då *"vilka av de här hörde till badrummet?"* — till skillnad från den gamla grupperingens *"vilka av de här hör ihop?"*, som krävde att hon hittade grupperna själv ur en lista.
+**Kvittona hämtas till projektet, inte tvärtom.** I sista steget, innan projektet sparas, visas de kvitton som ännu inte hör till något projekt, och hon väljer vilka som hörde hit. Frågan är då *"vilka av de här hörde till badrummet?"* — till skillnad från den gamla grupperingens *"vilka av de här hör ihop?"*, som krävde att hon hittade grupperna själv ur en lista.
 
 Två andra vägar in är beslutade men byggs senare: en överblick på kvittosidan över kvitton utan projekt, och möjligheten att välja projekt när ett kvitto läggs in.
 
 **Ett projekt utan kvitton har inget belopp.** Det är ett namn, ett år och en beskrivning; summan uppstår när kvitton kopplas till det. Det gör det möjligt att skriva upp *kök 2022* innan kvittona är framletade — men **det är inte den retroaktiva listan**, som är en fråga appen ställer och ligger efter lansering.
+
+**Därför ställs merkostnadsfrågan bara när det finns ett belopp.** Den är den enda frågan i trädet som väger ett svar mot en summa, och spärren `0 < merkostnad < belopp` går inte att pröva mot noll. Utan kvitton skjuts frågan upp och bärs av en upplysning tills ett kvitto kopplas till projektet — se `docs/design.md` under *Att skapa ett projekt*. Spärren lättas inte.
 
 **"Räknas inte" är inte ett projekt.** Ett kvitto som var privat eller av annat skäl inte hör till underlaget markeras på kvittot självt – se *Uppdelning av kvitto* i `design.md`. Bilaga och belopp ligger kvar i arkivet; det är en klassificering, inte en radering.
 
@@ -128,6 +130,17 @@ De hör inte hemma i registreringen. Den är avsiktligt kort, frågorna är svå
 **Vid försäljningen är de obligatoriska.** Utan svaret går reparationsdelen inte att räkna, och där är sammanhanget uppenbart: hon har just sagt att hon sålt. Det är rätt plats för ett krav; inmatningen och projektskapandet är det inte.
 
 Frågorna ska gå att ändra i inställningarna efteråt, som allt annat om bostaden.
+
+**De ställs först av allt vid försäljningen, och ordningen är härledd.** Är svaret att bostaden var nybyggd släcks hela reparationsgrenen, och då ska skickfrågan vid försäljningen inte ställas alls. Att fråga om skicket först och sedan upptäcka att svaret saknar verkan är att be om arbete i onödan. Sekvensen är därför:
+
+1. Försäljningsdatumet
+2. **Bostadsfrågorna** — första ägaren, och ombildningen när den är aktuell
+3. Skicket vid försäljningen per åtgärd med en reparationsdel, och motiveringen när gapet är stort — hoppas över helt när bostaden var nybyggd
+4. Frågan om samma byggnadsdel gjorts om mer än en gång, på villkoret i `CLAUDE.md`
+5. Ägarandelen bekräftas
+6. Underlaget
+
+**Skicket vid förvärvet frågas inte här.** Det hör till åtgärden och fångades när projektet skapades, medan hon mindes det.
 
 Formuleringarna följer Skatteverkets:
 
