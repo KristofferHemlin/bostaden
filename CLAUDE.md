@@ -638,15 +638,29 @@ Fallet var det gamla grupperingsflödet: posten skapades med tomt namn, eftersom
 
 ### En lista som ska vara komplett får inte hållas för hand
 
-**Skriven 2026-11-13, och det här är veckans allvarligaste fynd.** Åtkomsttestet prövar att varje väg vägrar röra en annan bostads rader. Det hade 65 fall för genomgången — och **noll** för `skapaProjekt`, `laggTillKvitton`, `sattHorInteTillBostaden`, `sparaFragorOmBostaden` och de tre nya sidorna. De byggdes aldrig in i listan, eftersom listan skrivs för hand. Varje ny server-action vi lade till under omläggningen stod alltså utan medlemskapsprov, och felet de skyddar mot visar en bostads kvitton under en annan bostads adress — **och det ser riktigt ut.**
+**Skriven 2026-11-13.** Åtkomsttestet prövar att varje väg vägrar röra en annan bostads rader. Det hade 65 fall för genomgången och inga för de nya vägarna, eftersom listan skrivs för hand.
 
-Agenten hittade det genom att riva det gamla: när 65 fall försvann blev det synligt att efterträdarna inte fanns. Utan rivningen hade hålet stått kvar.
+**Här stod först att de nya actionerna "stod utan medlemskapsprov", och det var fel.** Agenten rättade det: alla anropar `kravBostad()` och filtrerar på `bostad_id`, och tre av dem hade egna prov mot en annan bostads kvitto. Det som saknades var deras poster i det test vars hela värde är att det är heltäckande. **Ingenting i appen var öppet** — och felet var ändå allvarligt, eftersom ett heltäckande prov som inte är heltäckande används som skäl att inte titta.
+
+**Det verkliga beviset kom i nästa omgång.** När uppräkningen gjordes ur koden hittades **nio vägar som aldrig stått i listan**, alla äldre än omläggningen: `sparaKopeskillingen`, `sparaAndelen`, `bekraftaAndel`, `sparaSammaDel`, `visaInbjudanAction` — som lämnar ut inbjudningslänken — och fem sidor. Den handskrivna listan hade alltså varit ofullständig i veckor utan att någon märkte det.
 
 **Ett test vars värde är att det är komplett ska räkna upp sitt underlag ur koden, inte ur en fil någon minns att uppdatera.** Rutter, server-actions och sidor går att hitta. En lista som växer för hand är en lista som är inaktuell i det ögonblick någon bygger nästa sak, och den är farligast när den ser heltäckande ut.
 
 **Det är samma regel som redan gäller inställningarnas *Inte angiven*** — *kriteriet är härlett, inte en lista att hålla i synk* — nu tillämpad på ett test i stället för på ett gränssnitt. Varje gång ett krav gäller *alla* av något, är den handskrivna uppräkningen felet.
 
-**Och att något prövas ska visas.** Agenten tog bort bostadsvillkoret med flit i tre av de nya fallen; 2, 10 och 5 fall föll. Ett åtkomsttest som inte kan falla är värre än inget, eftersom det används som skäl att inte titta.
+**Och att något prövas ska visas.** Agenten tog bort bostadsvillkoret med flit i tre av de nya fallen; 2, 10 och 5 fall föll.
+
+**Automatiken säger att något saknas; den skriver inte provet.** Ett medlemskapsprov behöver ett anrop med ett främmande id och ett väntat avslag för just den vägen, och det går inte att läsa ur en signatur. Uppräkningen ur koden faller därför med besked när en väg varken är prövad eller undantagen — och **varje undantag bär ett skrivet skäl.** Att ingen hann skriva ett prov är inget skäl.
+
+**Jag bröt den här regeln dagen efter att jag skrev den.** Agenten skrev att posterna saknades i testet; jag skrev att koden saknade skydd. Det är *En mening i en rapport är inte en avläsning av koden*, en dag gammal, och jag var den som bröt den. Ett fel som upprepas snabbt är inte otur, det är en vana — och vanan är att läsa en rapport som en starkare historia än den berättar.
+
+### Ett mått på text måste bevara ordgränsen
+
+**Skriven 2026-11-13.** Två brytningar fällde inte sina tester: att kvittolistan och projektlistan säger *"klart"* gick igenom fast beteendet var brutet. Felet låg i mätningen. `textContent` fogar ihop intilliggande element utan mellanrum, så *"Allt är klart"* intill *"Lägg till kvitto"* blev `klartLägg`, och ett mönster med ordgräns hittade ingenting. **Ett test som läser texten så kan aldrig falla, och det ser grönt ut för alltid.**
+
+Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar ordgränsen — ett mått på ett mått, och det är befogat just här, eftersom felet är osynligt i utfallet.
+
+**Och när en mätmetod visar sig trasig ska varje annat mått som använt den prövas om.** Agenten gjorde det oombedd och kunde visa att dess tidigare negativa prov söker hela fraser utan ordgränser, alltså träffar även när orden fogats ihop. **Ett fel i ett mätsätt är aldrig ett fel på ett ställe** — det är ett fel överallt där metoden använts, tills någon visat annat.
 
 ### En mening i en rapport är inte en avläsning av koden
 

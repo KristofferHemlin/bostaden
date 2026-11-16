@@ -501,6 +501,8 @@ Kortet har samma form som andelskortet på startskärmen – rubrik, en dämpad 
 
 **Kvitton grupperas per år med tydlig avdelare.** Tröskeln gäller per kalenderår och åren är helt skilda åt i underlaget – en lista där 2025 och 2026 glöser samman döljer produktens viktigaste struktur. Årsrubriken är en egen rad på `--yta-nedsankt` med årtalet och årets summa högerställd.
 
+**Avdelaren *Utan betaldatum* fälls som ett år.** Uppmätt 2026-11-16: de tre årsrubrikerna hade varsin pil och gick att fälla, medan *Utan betaldatum* saknade pil och stod öppen. Fyra avdelare där tre beter sig lika och en inte gör det läses som att den fjärde är vald — precis den förväxling hovringsrättningen tog bort. Den följer samma regel som åren: hopfälld när det finns fler än en avdelare.
+
 **Inom varje år sorteras raderna på datum, nyast först** – aldrig på när posten lades in. En årsrubrik lovar tidsordning, och en lista som under rubriken 2026 visar april, april, mars, augusti ser ut som en bugg även när den inte är det. Ett kvitto läggs ofta in långt efter att det betalades, och ett kvitto från 2016 som fotograferas i dag ska hamna under 2016.
 
 **Årssektionerna är hopfällda när bostaden har fler än fyra kvitton och de ligger på mer än ett år.** I alla andra fall står de utfällda. Beslutat 2026-11-11, efter att den första riktiga användaren beskrev listan som rörig.
@@ -734,8 +736,12 @@ Kortet inleds med en rubrik i stil med "Spara kvittona nu, dra av dem när du s�
 
 > **Så fungerar det**
 > Fota kvittot eller ladda upp fakturan. Appen läser av belopp, datum och leverantör.
-> Skattefrågorna kommer senare, inte nu. Du svarar på dem när du vill, och senast när du säljer.
+> Berätta vad du gjorde när du har tid. Kvitton som hörde ihop samlas i ett projekt, och några frågor om det gör talen i underlaget exakta.
 > Allt ligger kvar tills du behöver det. Även om det dröjer tjugo år.
+
+**Mittenraden löd till 2026-11-16: *"Skattefrågorna kommer senare, inte nu. Du svarar på dem när du vill, och senast när du säljer."*** Den är den enskilda mening vi har starkast skäl att tro skadade oss: den första riktiga användaren la in tjugo kvitton, kände sig klar och gick aldrig vidare, och appen hade uttryckligen gett henne lov att sluta. Efter omläggningen var den dessutom inte längre sann — frågorna kommer när hon skapar ett projekt, inte vid försäljningen.
+
+**Skillnaden är *vänta* i stället för *strunta i*.** Den nya raden skjuter fortfarande upp arbetet — inmatningen ska vara tom på frågor — men den namnger nästa steg och säger vad det ger. Den lovar inget avdrag, bara exakta tal.
 
 Raderna är dämpad brödtext i samma kort, under knappen. Inget eget kort, ingen egen rubriknivå som konkurrerar med kortets, och framför allt ingen andra knapp.
 
@@ -799,6 +805,10 @@ Platsen är given av att frågan är densamma, bara i sin hela form: *hörde det
 
 **Markeringen lossar kvittots projektkoppling**, som grupperingen gjorde. Ett kvitto som tas tillbaka kommer alltså tillbaka utan projekt, och det är rätt: det som hörde till projektet var ett belopp vi nu sagt att vi inte räknar.
 
+**Raden visar tillståndet i stället för talet, inte utöver det.** Uppmätt 2026-11-16: ett markerat kvitto stod kvar som *"Bytte avloppsstammen under köksbänken · 28 500 kr"* med raderna *Hör inte till bostaden* och *varav ROT 8 500 kr, avgår* under sig — tre rader där andra har två, ett belopp i full tyngd som inte ingår i någon summa på sidan, och en ROT-upplysning som saknar betydelse när ingenting räknas. Leverantör och datum hade samtidigt försvunnit, alltså just det som skiljer kvittot från ett annat.
+
+Raden ska i stället bära leverantör och datum som varje annan rad, tillståndstexten *Hör inte till bostaden*, och beloppet dämpat. Ingen ROT-rad, ingen privatrad: när ingenting räknas finns inget att dra av från.
+
 **Och ett projekt som därmed blir tomt raderas inte.** Fas 1 städade bort tomma högar automatiskt. Ett projekt utan kvitton är sedan omläggningen en giltig sak — ett namn, ett år och en beskrivning i väntan på kvitton — så en automatisk radering skulle ta bort något användaren kan ha skapat med flit. Det står kvar och tas bort av henne på sin redigeringssida.
 
 **Läsläget visar aldrig ett tomt formulär.** Det var det gamla felet: varje kvitto man öppnade slutade med en obesvarad fråga, ett tomt fält och en sparaknapp utan något att spara. En post ska se ut som en post.
@@ -840,6 +850,10 @@ Tre, inte "de senaste": ett antal som inte står skrivet glider. Ordningen är n
 **Varje sparat projekt har ett *Räknas som* att visa.** Frågeträdet besvaras när projektet skapas, och det är trädet som avgör slaget – skicket skalar bara reparationens belopp vid försäljningen. Ett projekt utan den uppgiften kan alltså inte uppstå, och raden behöver ingen tom variant.
 
 Skälet att kortet alls finns är att startskärmen annars ser likadan ut före och efter att hon gjort arbetet. Uppmätt 2026-11-05 på ett nyskapat konto: ett kvitto in, frågorna besvarade, 18 000 kr på väg till ruta 4 – och startskärmen visade tre tal, en knapp och en kvittorad, precis som innan. **Det hon gjort ska synas där hon landar.**
+
+**Året härleds på varje skärm som nämner det, inte bara i listan.** Uppmätt 2026-11-16: projektsidan och projektlistan sade 2024 medan kvittots rullista *Koppla till projekt* sade *"2026 · Nya fönster på framsidan"*. Ett projekt som heter två saker i samma app går inte att känna igen. Härledningen hör till projektets namnform, inte till en av sidorna.
+
+**Året i kortet härleds som i projektlistan**, ur det tidigaste betaldatumet bland projektets kvitton. Agenten påpekade 2026-11-13 att kortet visade den lagrade etiketten medan listan hade bytt — och samma uppgift som ser olika ut på två skärmar läses som två olika uppgifter. Det är samma regel som gav startskärmens sex senaste kvitton kursiven och bilagemärket när kvittolistan fick dem.
 
 **Kortet visar inga belopp som kan ändras.** Projektets namn, året och vad det räknas som, ingenting mer. Summan på sida 1 kan fortfarande falla när bostaden säljs, eftersom tröskeln prövas per år på båda slagen tillsammans – och ett tal på startskärmen som senare sjunker är värre än inget tal.
 
@@ -1722,6 +1736,10 @@ Gränsen går inte vid hur viktig uppgiften är utan vid om den kräver eftertan
 
 **Kortet behåller ändå sin fråga om köpeskillingen.** Den gäller konton som skapades före ändringen, och den gör att *Inte angiven*-kriteriet under *Inställningssidan* fortsatt stämmer: raden är en av dem appen väntar på svar om.
 
+**Ett kort som frågar efter något som rör talen visas inte innan det finns tal.** Uppmätt 2026-11-16 på ett nyskapat konto: det allra första som mötte henne var *"Hur stor del av bostaden äger du?"* med motiveringen *"Talen i ditt underlag gäller hela bostaden tills du säger vilken andel du äger"* — till någon som hade noll kvitton och inget underlag. Kortet står över kortet som berättar vad appen är till för.
+
+Det är samma fel som att fråga efter andelar vid inbjudan: ett besked om något som ännu inte hänt. **Korten av det slaget visas först när bostaden har minst ett kvitto**, och aldrig över välkomstkortet på en tom startskärm.
+
 **Kortet säger vad som är nästa, inte *Fortsätt*.** *Lägg till köpeskillingen*, *Hur stor del av bostaden äger du?*. Ett generiskt *Fortsätt* tvingar användaren att klicka för att få veta vad appen vill, och det är en klickning för att läsa en fråga.
 
 **Kortets underrubrik för köpeskillingen är:** *"Du för in den på K5 eller K6 den dag du säljer."*
@@ -2073,6 +2091,10 @@ Tomläget är alltså det vanliga: en rubrik som är en uppmaning, en till två 
 **Ett projekt är inte färdigt när det sparas.** Hon skapar *Badrum 2022*, hittar tre kvitton till en vecka senare, och ska kunna lägga dit dem i ett svep. Att göra det ett kvitto i taget från varje kvittos egen sida är tre besök för en handling.
 
 **Kontrollen heter "Lägg till kvitton" och står under rubriken *Kvittona* på projektets sida.** Den öppnar samma kryssrutelista som sista steget i projektskapandet, med samma två rader anteckning och samma urval: de kvitton som ännu inte hör till något projekt.
+
+**Kryssrutelistan visar vad som räknas, inte bara vad som står på kvittot.** Uppmätt 2026-11-16: listan gav *Bytte avloppsstammen under köksbänken · 28 500 kr*, medan projektet sedan räknade 20 000 kr — ROT-avdraget nämndes inte. Hon väljer kvitton efter beloppet, så det är i listan skillnaden betyder mest. Raden bär därför samma två rader som projektlistan redan har rätt: *"varav ROT 13 000 kr, avgår"* och *"33 000 kr räknas med"*. Samma sak gäller en privat del.
+
+**Och två kontroller på samma skärm får inte skilja sig på en bokstav.** *Lägg till kvitto* (ett nytt kvitto) och *Lägg till kvitton* (välj bland befintliga) står båda på projektets sida. Den som läser snabbt ser samma ord. Den som väljer bland befintliga heter **"Välj bland dina kvitton"**.
 
 **Vägen från kvittot finns kvar och är den andra riktningen av samma sak.** Ett kvitto öppnas, kopplas till ett projekt ur rullistan. Den passar när hon står vid kvittot; listan passar när hon står vid projektet. Båda skriver samma koppling.
 
@@ -2461,6 +2483,14 @@ Utan försäljningsdatum visas:
 
 Det är starkare än att hålla tillbaka hela summan: en grundförbättring vars år passerar tröskeln oavsett svaret är sann redan nu, och hon får se den. **Ingenting gissas, och ingenting döljs i onödan.** Regeln generaliserar — se *Ett okänt svar döljer bara det det ändrar* i `CLAUDE.md`.
 
+**Men ett väntläge tar bort det som är ovisst, aldrig sidans ram.** Uppmätt 2026-11-16 på ett nyskapat konto: med bostadsfrågorna obesvarade började underlaget rakt på SIDA 1. Borta var *Försäljningsdatum*, *Ägarandel · Ange ägarandelen*, meningen om SKV 2197 och sida 2:s förklaringsruta. Svaret på frågan tog tillbaka alla fyra, så det var väntläget som släckte dem.
+
+Två av dem var inte bara utsmyckning. **Raden med ägarandelen är den enda vägen till att ange den**, och under summan stod samtidigt *"Talet gäller hela bostaden, eftersom din ägarandel inte är angiven"* — en mening som pekar på en rad som inte finns. **Och förklaringsrutan är det enda stället som säger varför sida 2 saknar avdragsgill kolumn.**
+
+Utfallet är bakvänt: **den som har minst sammanhang får minst sammanhang.** Rubriker, ram, försäljningsdatum, ägarandel och förklaringar hör till dokumentet och står alltid. Det som väntar är ett tal, och det är talet som blir ett streck.
+
+**Och ett underlag utan en enda post skriver ingen nolla.** Samma mätning: ett tomt konto fick *"Förs till K6, ruta 4 — 0 kr"*. Noll kronor är ett räknat svar på en fråga ingen ställt, och det får ett dokument att se färdigt och tomt ut i stället för outnyttjat. Finns ingen post alls visar sidan sitt tomma tillstånd — vad underlaget är till för och vad hon gör först — enligt regeln under *Tomma tillstånd*.
+
 Byggt 2026-11-13 i `522fd8b`: avdragsgill del, *Din andel*, förklaringen under raden och båda summorna visas där de blir lika. En summa som visas bär *Förs till* och är dämpad.
 
 **Och lydelsen *"Sammanställningen går inte att göra"* används inte.** Den säger att appen misslyckades. Appen väntar på ett svar, och ett väntande tillstånd namnger det som fattas — regeln står under *Ett tillstånd är inte en kategori*.
@@ -2470,6 +2500,10 @@ Byggt 2026-11-13 i `522fd8b`: avdragsgill del, *Din andel*, förklaringen under 
 "Markera som såld" ligger som en knapp längst ned på sidan, aldrig som en spärr framför den.
 
 Poängen är att sidan ska vara meningsfull under hela ägandet i stället för en tom skärm i tio år som plötsligt blir viktig.
+
+**Knappen under *Återstår* heter *Skapa projekt*.** Den hette *Berätta vad du gjort* till 2026-11-16, vilket är rubriken på skärmen den leder till och inte namnet på handlingen. *Ett ord, inga synonymer* gäller också knappar: handlingen heter *Skapa projekt* på kvittosidan och på projektsidan, och då heter den det här också.
+
+**Och inledningsmeningen gäller inte varje rad.** *"Det här har du lagt in, men det ingår inte i talen ovan"* stämmer för ett kvitto och inte för raden om bostadsfrågorna, som är något hon **inte** lagt in. Meningen lyder i stället *"Det här ingår inte i talen ovan än."*
 
 **Samma information står aldrig två gånger.** Det som inte räknas med redovisas i en enda lista med namn, år och belopp, en åtgärdsprick och vägen dit. Ingen andra lista som upprepar samma rader i längre meningar – konsekvensen sägs en gång, i en rad ovanför listan.
 
