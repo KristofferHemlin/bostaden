@@ -724,6 +724,10 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Förutsättningen prövas före slutsatsen.** En mätning av att något klipps kräver ett fall som utan klippning skulle svämma över. En mätning av ett tillstånd kräver att tillståndet verkligen är satt där mätningen läser. Går förutsättningen inte att visa är mätningen en tautologi med extra steg.
 
+**Och ett test kan bli tomt långt efter att det skrevs, utan att någon rör det.** Skriven 2026-11-16. När korten doldes på en startskärm utan kvitton blev tre tester som kräver *"inget kort"* sanna av fel skäl — de prövade inte längre kortets villkor utan bara att skärmen saknade kvitton. Agenten misstänkte det själv, hämtade den förra committens testfil, bröt kortet så att det alltid visades och såg de tre gå igenom. Sedan gav den dem varsitt kvitto, och samma brytning fällde dem.
+
+**Varje gång ett villkor läggs till som gör något osynligt, blir varje test som kräver dess frånvaro misstänkt.** Ett negativt påstående — *syns inte*, *står inte där*, *kastar inte* — vilar på att det fanns en chans att det skulle synas. Tas den chansen bort någon annanstans dör testet tyst och fortsätter lysa grönt. Leta upp dem i samma omgång, och visa att de fortfarande kan falla.
+
 ### Vem skriver reglerna
 
 **Agenten rör inga md-filer — inte heller den här.** Regeln har alltid varit att `docs/` är mitt, och `CLAUDE.md` ligger utanför `docs/` men lyder under samma ordning: den som skriver prompten skriver reglerna, agenten läser dem och säger emot dem. Skriven 2026-10-21 efter att agenten frågade, vilket var befogat eftersom regeln bara stått som *"ändra ingenting i `docs/`"*.
