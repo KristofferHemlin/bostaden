@@ -698,6 +698,24 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Och det är prompten som är felet, inte konstanten.** Agenten gjorde rätt som byggde det den fick och sa var hålet satt. Lydelsen flyttar till filen, inte till nästa prompt.
 
+### Ett simulerat klick är inte ett tryck
+
+**Skriven 2026-11-16, efter det dyraste testhålet hittills.** Projektflödets steg fyra hoppades över i produktionen i flera veckor medan testerna var gröna. Orsaken satt i mätsättet: `element.click()` i jsdom kör skriptet vidare utan att lämna över till webbläsaren, så Reacts uppdatering skjuts upp och hinner inte ändra knappen innan dess förvalda handling körs. Vid ett **riktigt** musklick sker det omvända — uppdateringen körs mellan klicklyssnaren och den förvalda handlingen, och då var knappen redan en annan.
+
+**Ett simulerat klick prövar vad koden gör, inte vad webbläsaren gör med den.** Varje fel som handlar om *ordning* — vad som hinner ändras mellan ett tryck och dess följd, vad som hinner renderas om, vad som hinner skickas — är osynligt för det. Testet går igenom för alltid, vilket är värre än att det fattas.
+
+**Ett flöde med flera steg där en knapp byter roll prövas med riktiga klick i en riktig webbläsare.** Inte hela sviten, men flödet. Agenten byggde provet, såg det falla med *"steg 4: 4 av 4 · skickat 1"* före rättelsen och gå igenom tre av tre efter.
+
+**Det här är samma familj som *Bredd är inte inmatningssätt* och *En klass är inte en layout*:** ett mått som liknar verkligheten tillräckligt för att kännas som den, och som saknar just den egenskap felet bor i.
+
+### Två kontroller på samma plats i trädet är samma kontroll
+
+**Skriven 2026-11-16, orsaken till felet ovan.** *Nästa* och *Spara* stod på samma position i komponentträdet utan egna nycklar. React återanvände då samma `<button>` och bytte bara dess `type` från `button` till `submit` — en knapp som bytte roll mitt i ett tryck, i stället för två knappar.
+
+**Två kontroller som gör olika saker får egna nycklar**, också när bara den ena syns åt gången. Villkorad rendering på samma plats är den vanligaste formen, och den ser oskyldig ut i koden.
+
+**Och en brytning måste träffa villkoret.** Att ta bort *en* av de två nycklarna fäller inget test, och ska inte göra det: olika nycklar — även "nasta" mot ingen alls — ger fortfarande två knappar. Felet uppstår bara när båda saknas. Agenten konstaterade det i stället för att tvinga fram ett fall, vilket är rätt: **en brytning som inte fäller något är ibland ett riktigt svar om villkoret, inte ett hål i provet.**
+
 ### En mätning som inte kan falla mäter ingenting
 
 **Skriven 2026-11-13.** Agenten bröt varje nytt beteende med flit, som regeln ovan kräver, och två av brytningarna fällde inte sitt test. Båda gångerna låg felet i mätningen, inte i koden: den ena prövade tvåradsklippning på en anteckning som behövde tre rader redan utan klippning, den andra mätte en ikryssad ruta vars ikryssade läge aldrig nådde webbläsaren.

@@ -853,7 +853,7 @@ Skälet att kortet alls finns är att startskärmen annars ser likadan ut före 
 
 **Året härleds på varje skärm som nämner det, inte bara i listan.** Uppmätt 2026-11-16: projektsidan och projektlistan sade 2024 medan kvittots rullista *Koppla till projekt* sade *"2026 · Nya fönster på framsidan"*. Ett projekt som heter två saker i samma app går inte att känna igen. Härledningen hör till projektets namnform, inte till en av sidorna.
 
-**Året i kortet härleds som i projektlistan**, ur det tidigaste betaldatumet bland projektets kvitton. Agenten påpekade 2026-11-13 att kortet visade den lagrade etiketten medan listan hade bytt — och samma uppgift som ser olika ut på två skärmar läses som två olika uppgifter. Det är samma regel som gav startskärmens sex senaste kvitton kursiven och bilagemärket när kvittolistan fick dem.
+**Året i kortet härleds som i projektlistan**, ur det tidigaste betaldatumet bland projektets kvitton. **Ett enda år, aldrig ett spann** – ett projekt vars kvitton korsar ett årsskifte visas under det tidigaste. Att skriva *2024–2025* i en lista som grupperar per år gör raden omöjlig att placera, och delningen som faktiskt betyder något sker ändå i exporten, där varje år får sin egen rad. Agenten påpekade 2026-11-13 att kortet visade den lagrade etiketten medan listan hade bytt — och samma uppgift som ser olika ut på två skärmar läses som två olika uppgifter. Det är samma regel som gav startskärmens sex senaste kvitton kursiven och bilagemärket när kvittolistan fick dem.
 
 **Kortet visar inga belopp som kan ändras.** Projektets namn, året och vad det räknas som, ingenting mer. Summan på sida 1 kan fortfarande falla när bostaden säljs, eftersom tröskeln prövas per år på båda slagen tillsammans – och ett tal på startskärmen som senare sjunker är värre än inget tal.
 
@@ -1740,6 +1740,8 @@ Gränsen går inte vid hur viktig uppgiften är utan vid om den kräver eftertan
 
 Det är samma fel som att fråga efter andelar vid inbjudan: ett besked om något som ännu inte hänt. **Korten av det slaget visas först när bostaden har minst ett kvitto**, och aldrig över välkomstkortet på en tom startskärm.
 
+**Det gäller båda korten: ägarandelen och köpeskillingen.** Jag namngav bara andelskortet i prompten 2026-11-16 och agenten byggde det jag bad om, så köpeskillingskortet står kvar på den tomma startskärmen. Regeln här var redan skriven i plural; det var prompten som var smalare än regeln.
+
 **Kortet säger vad som är nästa, inte *Fortsätt*.** *Lägg till köpeskillingen*, *Hur stor del av bostaden äger du?*. Ett generiskt *Fortsätt* tvingar användaren att klicka för att få veta vad appen vill, och det är en klickning för att läsa en fråga.
 
 **Kortets underrubrik för köpeskillingen är:** *"Du för in den på K5 eller K6 den dag du säljer."*
@@ -2090,7 +2092,9 @@ Tomläget är alltså det vanliga: en rubrik som är en uppmaning, en till två 
 
 **Ett projekt är inte färdigt när det sparas.** Hon skapar *Badrum 2022*, hittar tre kvitton till en vecka senare, och ska kunna lägga dit dem i ett svep. Att göra det ett kvitto i taget från varje kvittos egen sida är tre besök för en handling.
 
-**Kontrollen heter "Lägg till kvitton" och står under rubriken *Kvittona* på projektets sida.** Den öppnar samma kryssrutelista som sista steget i projektskapandet, med samma två rader anteckning och samma urval: de kvitton som ännu inte hör till något projekt.
+**Kontrollen heter "Välj bland dina kvitton" och står under rubriken *Kvittona* på projektets sida.** Den öppnar samma kryssrutelista som sista steget i projektskapandet, med samma två rader anteckning och samma urval: de kvitton som ännu inte hör till något projekt. **Sidan den leder till bär samma rubrik** – agentens val 2026-11-16, och rätt: en kontroll och dess destination som heter olika tvingar läsaren att kontrollera att hon hamnade rätt.
+
+Här stod till 2026-11-16 *Lägg till kvitton*, en bokstav från *Lägg till kvitto* på samma skärm. Jag skrev om namnet på ett ställe och lät det gamla stå kvar här.
 
 **Kryssrutelistan visar vad som räknas, inte bara vad som står på kvittot.** Uppmätt 2026-11-16: listan gav *Bytte avloppsstammen under köksbänken · 28 500 kr*, medan projektet sedan räknade 20 000 kr — ROT-avdraget nämndes inte. Hon väljer kvitton efter beloppet, så det är i listan skillnaden betyder mest. Raden bär därför samma två rader som projektlistan redan har rätt: *"varav ROT 13 000 kr, avgår"* och *"33 000 kr räknas med"*. Samma sak gäller en privat del.
 
@@ -2489,7 +2493,17 @@ Två av dem var inte bara utsmyckning. **Raden med ägarandelen är den enda vä
 
 Utfallet är bakvänt: **den som har minst sammanhang får minst sammanhang.** Rubriker, ram, försäljningsdatum, ägarandel och förklaringar hör till dokumentet och står alltid. Det som väntar är ett tal, och det är talet som blir ett streck.
 
-**Och ett underlag utan en enda post skriver ingen nolla.** Samma mätning: ett tomt konto fick *"Förs till K6, ruta 4 — 0 kr"*. Noll kronor är ett räknat svar på en fråga ingen ställt, och det får ett dokument att se färdigt och tomt ut i stället för outnyttjat. Finns ingen post alls visar sidan sitt tomma tillstånd — vad underlaget är till för och vad hon gör först — enligt regeln under *Tomma tillstånd*.
+**Och ett underlag utan en enda post skriver ingen nolla.** Samma mätning: ett tomt konto fick *"Förs till K6, ruta 4 — 0 kr"*. Noll kronor är ett räknat svar på en fråga ingen ställt, och det får ett dokument att se färdigt och tomt ut i stället för outnyttjat.
+
+Finns ingen post alls visar sidan sitt tomma tillstånd, och lydelsen är:
+
+> **Här blir ditt deklarationsunderlag**
+> Sidan följer Skatteverkets hjälpblankett SKV 2197. Lägg in kvitton och berätta vad de gällde, så står talen här den dag du säljer.
+> **Lägg till kvitto**
+
+**Inga summor, ingen K6-rad, inga sidrubriker.** En tom tabell med sina kolumnnamn är fortfarande ett påstående om att det finns något att redovisa.
+
+**Rubriken är ett undantag från att ett tomt tillstånd inleds med en uppmaning**, och undantaget är skrivet så att ingen tar bort det igen: handlingen som fyller den här sidan utförs någon annanstans, så rubriken namnger vad sidan blir i stället för att befalla något som inte går att göra härifrån. Knappen bär uppmaningen.
 
 Byggt 2026-11-13 i `522fd8b`: avdragsgill del, *Din andel*, förklaringen under raden och båda summorna visas där de blir lika. En summa som visas bär *Förs till* och är dämpad.
 
