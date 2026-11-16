@@ -9,7 +9,8 @@ import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
 
 // docs/design.md, "Anteckningen får två rader där den är radens huvudtext":
 // kryssrutelistan dar kvitton valjs till ett projekt, Senaste kvitton pa
-// oversikten och kvittolistan pa /kostnad. Genomgangens listor (fas 1 och
+// oversikten, kvittolistan pa /kostnad och projektets egen kvittolista (fran
+// 2026-11-16 – den visade leverantoren som huvudtext, och fanns inte med har). Genomgangens listor (fas 1 och
 // fas 2) mattes har tills den revs 2026-11-13. Fore 2026-11-04 var raden `truncate` – en
 // rad oavsett bredd, och pa en telefon syntes en tredjedel av anteckningen.
 //
@@ -88,6 +89,7 @@ const { renderToStaticMarkup } = await import("react-dom/server");
 const { default: Oversikt } = await import("@/app/page");
 const { default: KvittolistaSida } = await import("@/app/kostnad/page");
 const { default: NyttProjektSida } = await import("@/app/projekt/nytt/page");
+const { default: ProjektSida } = await import("@/app/projekt/[id]/page");
 const { utkastNyckel } = await import("@/app/projekt/nytt/flode");
 
 const ROT = process.cwd();
@@ -214,6 +216,7 @@ beforeAll(async () => {
   const sidor = {
     oversikt: await Oversikt({ searchParams: Promise.resolve({}) } as Parameters<typeof Oversikt>[0]),
     kostnad: await KvittolistaSida(),
+    projekt: await ProjektSida({ params: Promise.resolve({ id: HOG }) }),
   };
   const kroppar: Record<string, string> = Object.fromEntries(
     Object.entries(sidor).map(([namn, vy]) => [namn, renderToStaticMarkup(vy)]),
@@ -354,8 +357,33 @@ describe("anteckningen får två rader där den är radens huvudtext, vid 390 px
   it.each([
     ["oversikt", "Senaste kvitton"],
     ["kostnad", "kvittolistan"],
+    ["projekt", "projektets egen kvittolista"],
   ])("%s (%s)", async (sida) => {
     provaParet(sida, await mat(sida, KORT), await mat(sida, LANG));
+  }, 60_000);
+
+  // Och raden under anteckningen är leverantör och datum, som i kvittolistan
+  // – samma kvitto, samma rad (docs/design.md, Kvittolistan). Raden läses i
+  // Chrome, hela texten: elementet efter anteckningens.
+  it.each(["oversikt", "kostnad", "projekt"])("%s: leverantör och datum under anteckningen", async (sida) => {
+    await cdp("Page.navigate", { url: `${adress}${sida}` });
+    await vanta(300);
+    const svar = await cdp<{ result: { value: (string | null)[] } }>("Runtime.evaluate", {
+      returnByValue: true,
+      expression: `(() => {
+        const texter = ${JSON.stringify([KORT, LANG])};
+        return texter.map((text) => {
+          const el = [...document.body.querySelectorAll('p')].find((p) => p.textContent === text);
+          return el ? (el.nextElementSibling ? el.nextElementSibling.textContent : "") : null;
+        });
+      })()`,
+    });
+    const tabell = h.db.tabell("kostnad");
+    const vantat = [KORT, LANG].map((t) => {
+      const k = tabell.find((x) => x.anteckning === t)!;
+      return `${k.leverantor} · ${(k.betaldatum as Date).toISOString().slice(0, 10)}`;
+    });
+    expect(svar.result.value).toEqual(vantat);
   }, 60_000);
 
   it("projektflödet, kryssrutelistan där kvitton väljs till projektet", async () => {

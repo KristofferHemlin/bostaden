@@ -31,7 +31,7 @@ import { SAMMA_DEL_SKAL } from "@/doman/samma-del";
 import type { Atgardstyp } from "@/doman/typer";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad, tillDomanProjekt } from "@/lib/doman-fran-db";
-import { formateraKronor } from "@/lib/format";
+import { formateraKronor, isoDatum } from "@/lib/format";
 import type { Metadata } from "next";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { projektnamnKarta } from "@/doman/genomgang";
@@ -301,21 +301,27 @@ export default async function ProjektSida({
           <div className="divide-y divide-linje">
             {kostnader.map((k) => {
               const original = kostnadRader.find((x) => x.id === k.id)!;
+              // Samma rad som i kvittolistan och Senaste kvitton
+              // (docs/design.md, "Anteckningen får två rader där den är
+              // radens huvudtext"): anteckningen overst pa tva rader,
+              // leverantor och datum dampat under. Saknas anteckning ar
+              // leverantoren huvudtext och andraraden bara datumet.
+              const notering = original.anteckning?.trim();
+              const leverantor = original.leverantor?.trim();
+              const datumRad = original.betaldatum ?? original.dokumentdatum;
+              const datum = datumRad ? isoDatum(datumRad) : null;
               return (
                 <Listrad
                   key={k.id}
-                  namn={original.leverantor ?? "Kvitto"}
+                  namn={notering || leverantor || "Kvitto"}
+                  anteckning={!!notering}
                   // Till kvittot, som i kvittolistan – dar ratta man ett
                   // belopp utan att leta upp kvittot via Kvitton.
                   href={`/kostnad/${k.id}`}
-                  status={
-                    k.betaldatum
-                      ? `Betald ${k.betaldatum}`
-                      : // Projektets summa ovan raknar kvittot; det ar
-                        // underlaget (exporten, troskeln) som vantar pa
-                        // betaldatumet.
-                        "Obetald – räknas i underlaget när den är betald"
-                  }
+                  status={notering ? [leverantor, datum].filter(Boolean).join(" · ") : (datum ?? "")}
+                  // Projektets summa ovan raknar kvittot; det ar underlaget
+                  // (exporten, troskeln) som vantar pa betaldatumet.
+                  underStatus={k.betaldatum ? undefined : "Obetald – räknas i underlaget när den är betald"}
                   atgard={!k.betaldatum}
                   // Beloppet pa pappret, inte det ROT-reducerade bidraget
                   // (docs/design.md, "Samma belopp ska se likadant ut
