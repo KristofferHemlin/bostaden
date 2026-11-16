@@ -173,8 +173,9 @@ const andelsfragan = () => ur(/\*\*Kortet säger vad som är nästa, inte \*Fort
 // ---------------------------------------------------------------------------
 
 describe("kortet är inte en spärr", () => {
-  it("utan kvitton: kortet står överst och Lägg till kvitto finns kvar, utanför kortet", async () => {
+  it("med kvitton: kortet står överst och Lägg till kvitto finns kvar, utanför kortet", async () => {
     seeda({});
+    ettKvitto();
     const html = await startsidan();
     expect(kortetsFraga(html)).toBe(kopeskillingsfragan());
     expect(kvittolankar(html)).toEqual(["/kostnad/nytt"]);
@@ -183,26 +184,24 @@ describe("kortet är inte en spärr", () => {
     expect(html.indexOf("data-fragekort")).toBeLessThan(html.indexOf('href="/kostnad/nytt"'));
   });
 
-  it("med kvitton: samma sak", async () => {
-    seeda({});
-    h.db.lagg("kostnad", { bostad_id: BOSTAD, leverantor: "Beijer Bygg", totalbelopp: 120000, betaldatum: datum("2025-05-02") });
-    const html = await startsidan();
-    expect(kortetsFraga(html)).toBe(kopeskillingsfragan());
-    expect(kvittolankar(html)).toEqual(["/kostnad/nytt"]);
-  });
-
   // Uppmätt 2026-11-16 på ett nyskapat konto: det första som mötte henne var
   // andelsfrågan, med motiveringen om talen i ett underlag som inte fanns.
-  it("utan kvitton visas andelsfrågan inte – välkomstkortet står först", async () => {
-    seeda({ kopeskilling: 325000000n });
-    // Förutsättningen: andelen är det enda som är obesvarat.
-    expect(h.db.tabell("medlemskap")[0].agarandel).toBeNull();
-    const html = await startsidan();
-    expect(kortetsFraga(html)).toBeNull();
-    expect(html).toContain("Spara kvittona nu, dra av dem när du säljer");
-    ettKvitto();
-    expect(kortetsFraga(await startsidan()), "med ett kvitto kommer frågan").toBe(andelsfragan());
-  });
+  // Regeln i design.md står i plural – köpeskillingen rör också talen.
+  for (const [namn, bostad, fragan] of [
+    ["andelsfrågan", { kopeskilling: 325000000n }, andelsfragan],
+    ["köpeskillingsfrågan", {}, kopeskillingsfragan],
+  ] as const) {
+    it(`utan kvitton visas ${namn} inte – välkomstkortet står först`, async () => {
+      seeda(bostad);
+      const html = await startsidan();
+      expect(kortetsFraga(html)).toBeNull();
+      expect(html).toContain("Spara kvittona nu, dra av dem när du säljer");
+      expect(kvittolankar(html)).toEqual(["/kostnad/nytt"]);
+      // Förutsättningen: frågan är obesvarad – med ett kvitto kommer den.
+      ettKvitto();
+      expect(kortetsFraga(await startsidan()), "med ett kvitto kommer frågan").toBe(fragan());
+    });
+  }
 
   // Raderna under knappen, ordagrant ur design.md. Mittenraden byttes
   // 2026-11-16: den gamla gav henne lov att sluta.
@@ -298,6 +297,7 @@ describe("bostadssteget har fem fält", () => {
 
   it("ett konto från före kravet, utan köpeskilling: kortet tar upp den", async () => {
     seeda({ kopeskilling: null });
+    ettKvitto();
     expect(kortetsFraga(await startsidan())).toBe(kopeskillingsfragan());
   });
 });
@@ -309,11 +309,13 @@ describe("bostadssteget har fem fält", () => {
 describe("kortet frågar inte efter adressen", () => {
   it("bara köpeskillingen saknas: kortet frågar efter den", async () => {
     seeda({ adress: "Storgatan 1", kopeskilling: null, agarandel: 100 });
+    ettKvitto();
     expect(kortetsFraga(await startsidan())).toBe(kopeskillingsfragan());
   });
 
   it("bara adressen saknas – ett konto från de två dygnen utan den: inget kort, och toppraden säger Huset", async () => {
     seeda({ adress: null, kopeskilling: 325000000n, agarandel: 100 });
+    ettKvitto();
     const html = await startsidan();
     expect(kortet(html)).toBeNull();
     expect(text(html.slice(0, html.indexOf("<main")))).toContain("|Huset|");
@@ -321,6 +323,7 @@ describe("kortet frågar inte efter adressen", () => {
 
   it("adress och köpeskilling saknas: kortet frågar efter köpeskillingen, inte adressen", async () => {
     seeda({ adress: null, kopeskilling: null });
+    ettKvitto();
     expect(kortetsFraga(await startsidan())).toBe(kopeskillingsfragan());
   });
 });
@@ -375,6 +378,7 @@ describe("varje svar sparas när det ges", () => {
 describe("kortet försvinner när inget är obesvarat", () => {
   it("köpeskilling och andel besvarade – som kontot som redan finns: inget kort", async () => {
     seeda({ kopeskilling: 325000000n, agarandel: 50 });
+    ettKvitto();
     const html = await startsidan();
     expect(kortet(html)).toBeNull();
     expect(kvittolankar(html)).toEqual(["/kostnad/nytt"]);
@@ -382,12 +386,14 @@ describe("kortet försvinner när inget är obesvarat", () => {
 
   it("andelen 100 %: sista svaret leder hem, och kortet är borta", async () => {
     seeda({ kopeskilling: 325000000n });
+    ettKvitto();
     expect(await omdirigering(sparaAndelen({}, fd({ agarandel: "100" })))).toBe("/");
     expect(kortet(await startsidan())).toBeNull();
   });
 
   it("andelen 50 % med Spara ägarandelen: svaret sparas och leder hem – erbjudandet stod redan i kortet", async () => {
     seeda({ kopeskilling: 325000000n });
+    ettKvitto();
     expect(await omdirigering(sparaAndelen({}, fd({ agarandel: "50", bjud_in: "" })))).toBe("/");
     expect(h.db.tabell("medlemskap")[0].agarandel).toBe(50);
     expect(kortet(await startsidan())).toBeNull();
@@ -395,6 +401,7 @@ describe("kortet försvinner när inget är obesvarat", () => {
 
   it("andelen 50 % med erbjudandet: svaret sparas, inbjudan följer – och hoppas den över kommer kortet inte tillbaka", async () => {
     seeda({ kopeskilling: 325000000n });
+    ettKvitto();
     expect(await omdirigering(sparaAndelen({}, fd({ agarandel: "50", bjud_in: "1" })))).toBe("/bostaden/bjud-in");
     expect(h.db.tabell("medlemskap")[0].agarandel).toBe(50);
     const erbjudande = renderToStaticMarkup(
@@ -576,6 +583,7 @@ describe("kortets underrubrik läses ur design.md", () => {
     // **Kortets underrubrik för köpeskillingen är:** *"Du för in den på K5 eller K6 den dag du säljer."*
     const lydelse = ur(/\*\*Kortets underrubrik för köpeskillingen är:\*\* \*"([^"]+)"\*/);
     seeda({});
+    ettKvitto();
     const html = await startsidan();
     expect(kortetsFraga(html)).toBe(kopeskillingsfragan());
     expect(kortetsUnderrubrik(html)).toBe(lydelse);

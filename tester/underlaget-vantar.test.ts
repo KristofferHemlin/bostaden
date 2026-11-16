@@ -58,7 +58,6 @@ import { byggK6aExport, VantarPaBostadsfragor, type K6aIndata } from "@/doman/ex
 import { sammaRader, vantandeUnderlag } from "@/doman/vantande-underlag";
 import { VANTAR_PA_BOSTADSFRAGOR_TEXT } from "@/doman/export-k6a";
 import { formateraKronor, formateraKronorEllerStreck } from "@/lib/format";
-import { TOMT_UNDERLAG } from "@/lib/tomt-underlag";
 import {
   tillDomanBostad,
   tillDomanKostnad,
@@ -380,19 +379,27 @@ describe("väntläget tar bort det som är ovisst, aldrig sidans ram", () => {
 
 // Ett underlag utan en enda post skriver ingen nolla (docs/design.md,
 // Exportvyn). Uppmätt 2026-11-16 på ett nyskapat konto: "Förs till K6,
-// ruta 4 — 0 kr".
+// ruta 4 — 0 kr". Lydelsen läses ur design.md.
 describe("ett tomt underlag", () => {
+  function tomtLaget(): { rubrik: string; rad: string; knapp: string } {
+    const m = design().match(/^Finns ingen post alls visar sidan sitt tomma tillstånd, och lydelsen är:\n\n> \*\*([^*]+)\*\*\n> ([^\n]+)\n> \*\*([^*]+)\*\*$/m);
+    if (!m) throw new Error("design.md saknar det tomma underlagets lydelse under Exportvyn");
+    return { rubrik: m[1], rad: m[2], knapp: m[3] };
+  }
+
   for (const nybyggd of [false, null]) {
     it(`visar sitt tomma tillstånd, inget tal (nybyggd: ${nybyggd})`, async () => {
       seeda({ kvitton: false, nybyggd });
       const s = await sidan();
-      const texter = [...s.querySelectorAll("p")].map((p) => p.textContent);
-      expect(texter).toContain(TOMT_UNDERLAG.rubrik);
-      expect(texter).toContain(TOMT_UNDERLAG.rad);
-      expect(s.textContent).not.toMatch(/Förs till|Summa sida/);
+      const { rubrik, rad, knapp } = tomtLaget();
+      const texter = [...s.querySelectorAll("p")].map((p) => p.textContent!.replace(/\s+/g, " ").trim());
+      expect(texter).toContain(rubrik);
+      expect(texter).toContain(rad);
+      // Inga summor, ingen K-rad, inga sidrubriker.
+      expect(s.textContent).not.toMatch(/Förs till|Summa sida|Sida 1|Sida 2|ruta \d/);
       expect(s.textContent).not.toContain(formateraKronor(0));
       expect(s.querySelectorAll("table")).toHaveLength(0);
-      const lank = [...s.querySelectorAll("a")].find((a) => a.textContent === "Lägg till kvitto");
+      const lank = [...s.querySelectorAll("a")].find((a) => a.textContent === knapp);
       expect(lank?.getAttribute("href")).toBe("/kostnad/nytt");
     });
   }

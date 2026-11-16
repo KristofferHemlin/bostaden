@@ -83,7 +83,6 @@ import {
 import { kravBostad } from "@/lib/session";
 import { SAMMA_DEL_ANDRAD, SAMMA_DEL_OBESVARAD } from "@/doman/samma-del";
 import { UnderlagetsVarningar } from "./underlagets-varningar";
-import { TOMT_UNDERLAG } from "@/lib/tomt-underlag";
 import {
   ATERSTAR_INLEDNING,
   ATERSTAR_RUBRIK,
@@ -150,8 +149,13 @@ export default async function ExportSida() {
       return (
         <Kort>
           <div className="p-5">
-            <p className="font-rubrik text-lg text-text-primar">{TOMT_UNDERLAG.rubrik}</p>
-            <p className="mt-1 font-granssnitt text-sm text-text-sekundar">{TOMT_UNDERLAG.rad}</p>
+            <p className="font-rubrik text-lg text-text-primar">
+              Här blir ditt deklarationsunderlag
+            </p>
+            <p className="mt-1 font-granssnitt text-sm text-text-sekundar">
+              Sidan följer Skatteverkets hjälpblankett SKV 2197. Lägg in kvitton
+              och berätta vad de gällde, så står talen här den dag du säljer.
+            </p>
             <Link href="/kostnad/nytt" className={`${PRIMARKNAPP_KLASS} mt-4`}>
               Lägg till kvitto
             </Link>

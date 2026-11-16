@@ -59,7 +59,6 @@ import { AnslutKnapp } from "@/app/inbjudan/anslut-knapp";
 import { Inbjudningskort } from "@/app/inbjudan/inbjudningskort";
 import { VantandeInbjudan } from "@/app/inbjudan/vantande-inbjudan";
 import { Fragekort } from "@/app/bostaden/fragekort";
-import { nastaUppgift } from "@/lib/bostadsuppgifter";
 
 export const dynamic = "force-dynamic";
 
@@ -237,14 +236,11 @@ export default async function Oversikt({
       ))}
       {/* Overst, fore bade forstaskarmen och nyckeltalen – men aldrig i
           stallet for "Lägg till kvitto", som star kvar dar den alltid star. */}
-      {/* Andelsfragan galler talen i underlaget, och visas forst nar det
-          finns ett kvitto – aldrig over valkomstkortet pa en tom startskarm
-          (docs/design.md, "Ett kort som frågar efter något som rör talen
-          visas inte innan det finns tal"). Kopeskillingens fraga ror inte
-          talen och visas som forut. */}
-      {tomt && nastaUppgift({ kopeskilling: bostad.kopeskilling, agarandel }) === "agarandel" ? null : (
-        <Fragekort svar={{ kopeskilling: bostad.kopeskilling, agarandel }} />
-      )}
+      {/* Kortets fragor – kopeskillingen och andelen – galler bada talen i
+          underlaget, och visas forst nar bostaden har ett kvitto: aldrig over
+          valkomstkortet pa en tom startskarm (docs/design.md, "Ett kort som
+          frågar efter något som rör talen visas inte innan det finns tal"). */}
+      {tomt ? null : <Fragekort svar={{ kopeskilling: bostad.kopeskilling, agarandel }} />}
       {/* Efter fragekortet, med flit: hennes egen fraga gar fore nagon annans
           svar (docs/design.md, "Kan båda visas samtidigt står ägarandelen
           först"). Fore forstaskarmen och nyckeltalen. */}
