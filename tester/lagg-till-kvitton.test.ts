@@ -49,6 +49,7 @@ import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { laggTillKvitton } from "@/app/projekt/[id]/kvitton/actions";
 import LaggTillSida from "@/app/projekt/[id]/kvitton/page";
+import KvittolistaSida from "@/app/kostnad/page";
 import ProjektSida from "@/app/projekt/[id]/page";
 import NyttProjektSida from "@/app/projekt/nytt/page";
 import { utkastNyckel } from "@/app/projekt/nytt/flode";
@@ -227,11 +228,44 @@ describe("sidan", () => {
     s.stang();
   });
 
+  // Uppmätt 2026-11-16: kryssrutelistan visade bara beloppet, medan
+  // kvittolistan sade vad som avgår och vad som räknas med. Det är samma
+  // kvitto och samma tal (avgarForKvitto), så raderna jämförs med
+  // kvittolistans – hela texten, rad för rad.
+  it("kryssrutelistan säger vad som avgår och vad som räknas med, som kvittolistan", async () => {
+    seeda();
+    const id = "d0000000-0000-4000-8000-000000000061";
+    h.db.lagg("kostnad", {
+      id, bostad_id: X, leverantor: "Hantverkarna AB", anteckning: "Kvitto med avdrag", totalbelopp: 1_800_000,
+      rot_utnyttjat: 300_000, dokumentdatum: datum("2026-04-02"), betaldatum: datum("2026-04-02"),
+    });
+    h.db.lagg("kostnadsrad", { kostnad_id: id, artikel: "Arbete", belopp: 1_200_000 });
+    const egen = h.db.lagg("kostnadsrad", { kostnad_id: id, artikel: "Privat", belopp: 600_000 });
+    h.db.lagg("radfordelning", { kostnadsrad_id: egen.id, projekt_id: null, privat: true, andel: 1 });
+
+    const avdrag = (t: string) => /, avgår$| räknas med$/.test(t);
+    const lista = document.createElement("div");
+    lista.innerHTML = renderToStaticMarkup(await KvittolistaSida());
+    const iListan = [...lista.querySelector(`a[href="/kostnad/${id}"]`)!.querySelectorAll("p")]
+      .map((p) => p.textContent ?? "").filter(avdrag);
+    // Förutsättningen: kvittolistan har alla tre raderna.
+    expect(iListan).toHaveLength(3);
+
+    const s = await rendera(LaggTillSida({ params: Promise.resolve({ id: P }) }));
+    const etikett = [...s.div.querySelectorAll("label")].find((l) => l.textContent?.includes("Kvitto med avdrag"));
+    expect(etikett, "kvittot i kryssrutelistan").toBeTruthy();
+    const iRutan = [...etikett!.querySelectorAll("span")]
+      .filter((e) => e.children.length === 0)
+      .map((e) => e.textContent ?? "").filter(avdrag);
+    expect(iRutan).toEqual(iListan);
+    s.stang();
+  });
+
   it("projektets sida har länken under Kvitton när det finns kvitton att välja, annars inte", async () => {
     const lankar = async () => {
       const div = document.createElement("div");
       div.innerHTML = renderToStaticMarkup(await ProjektSida({ params: Promise.resolve({ id: P }) }));
-      return [...div.querySelectorAll("a")].filter((a) => a.textContent === "Lägg till kvitton").map((a) => a.getAttribute("href"));
+      return [...div.querySelectorAll("a")].filter((a) => a.textContent === "Välj bland dina kvitton").map((a) => a.getAttribute("href"));
     };
     expect(await lankar()).toEqual([`/projekt/${P}/kvitton`]);
     for (const k of ["parkett", "lister", "obetald"]) {

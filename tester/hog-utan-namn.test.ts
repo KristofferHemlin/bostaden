@@ -34,7 +34,9 @@ vi.mock("next/navigation", () => ({
   notFound: () => {
     throw new Error("NEXT_NOT_FOUND");
   },
-  useRouter: () => ({ push: () => {}, refresh: () => {} }),
+  useRouter: () => ({ push: () => {}, refresh: () => {}, replace: () => {} }),
+  usePathname: () => "/projekt",
+  useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ host: "bostad.test" }) }));
@@ -63,6 +65,7 @@ import ProjektlistaSida from "@/app/projekt/page";
 import KostnadSida from "@/app/kostnad/[id]/page";
 import DelaUppSida from "@/app/kostnad/[id]/dela/page";
 import ExportSida from "@/app/export/page";
+import Oversikt from "@/app/page";
 import { RedigeraVy } from "@/app/kostnad/[id]/kvitto-kort";
 
 const ANNA = "a0000000-0000-4000-8000-000000000001";
@@ -208,5 +211,67 @@ describe("Återstår ger varje hog en egen nyckel", () => {
     const nycklar = elementFor(vy, "AterstarRad").map((e) => e.key);
     expect(nycklar.length).toBeGreaterThanOrEqual(2);
     expect(new Set(nycklar).size).toBe(nycklar.length);
+  });
+});
+
+// Samma år för ett projekt överallt (docs/design.md, Listrader). Uppmätt
+// 2026-11-16: projektlistan visade året ur kvittona, rullistan Koppla till
+// projekt projektets etikett – "2026 · Fönstren" på kvittot, 2024 i listan.
+// Året räknas ur kvittona på ett ställe (projektarKarta), och varje vy ska
+// visa det.
+describe("ett projekt har samma år i listan och i rullistorna", () => {
+  const FONSTER = "c0000000-0000-4000-8000-00000000000f";
+  const K_FONSTER = "d0000000-0000-4000-8000-00000000000f";
+
+  function seedaFonster() {
+    h.db.lagg("projekt", { id: FONSTER, bostad_id: X, namn: "Fönstren", ar: 2026, atgardstyp: "nybyggnad" });
+    kvitto(K_FONSTER, "Fönsterbolaget", "2024-09-10", FONSTER);
+  }
+
+  /** Projektlistans år för projektet: årsrubriken närmast före dess länk. */
+  async function aretIListan(): Promise<string> {
+    const html = renderToStaticMarkup((await ProjektlistaSida()) as ReactElement);
+    const fore = html.slice(0, html.indexOf(`href="/projekt/${FONSTER}"`));
+    expect(fore.length, "projektet saknas i listan").toBeLessThan(html.length);
+    const ar = [...fore.matchAll(/>(\d{4})</g)].at(-1)?.[1];
+    if (!ar) throw new Error("ingen årsrubrik före projektet");
+    return ar;
+  }
+
+  it("Koppla till projekt och Dela upp säger listans år, inte etiketten", async () => {
+    seedaFonster();
+    const ar = await aretIListan();
+    // Förutsättningen: kvittonas år och etiketten skiljer sig.
+    expect(ar).toBe("2024");
+    expect(h.db.tabell("projekt").find((p) => p.id === FONSTER)!.ar).toBe(2026);
+
+    const vy = await KostnadSida({ params: Promise.resolve({ id: K_BAUHAUS }) });
+    const [kort] = elementFor(vy, "KvittoKort");
+    const p = kort.props;
+    const redigera = rendera(
+      createElement(RedigeraVy, {
+        arkiverad: false,
+        kostnadId: p.kostnadId as string,
+        projekt: p.projekt as never,
+        varden: p.redigeraVarden as never,
+        innehav: p.innehav as never,
+        privatDel: p.privatDel as never,
+        onAvbryt: () => {},
+        onSparat: () => {},
+      }),
+    );
+    expect(projektalternativ(redigera).filter((t) => t.endsWith("Fönstren"))).toEqual([`${ar} · Fönstren`]);
+
+    const [form] = elementFor(await DelaUppSida({ params: Promise.resolve({ id: K_BAUHAUS }) }), "DelaUppForm");
+    // Dela upp har en rullista per del – varje ska säga samma år.
+    const delar = projektalternativ(rendera(form)).filter((t) => t.endsWith("Fönstren"));
+    expect(delar.length).toBeGreaterThanOrEqual(1);
+    expect(new Set(delar)).toEqual(new Set([`${ar} · Fönstren`]));
+
+    // Startskärmens projektkort: statusraden börjar med året.
+    const start = renderToStaticMarkup((await Oversikt({ searchParams: Promise.resolve({}) })) as ReactElement);
+    const projektkort = start.slice(start.indexOf(`href="/projekt/${FONSTER}"`));
+    expect(projektkort.length, "projektet saknas på startskärmen").toBeLessThan(start.length);
+    expect(projektkort.match(/>(\d{4}) · [^<]+</)?.[1]).toBe(ar);
   });
 });

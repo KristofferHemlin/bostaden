@@ -123,6 +123,13 @@ beforeEach(() => {
     tilltradesdatum: datum("2019-06-01"), nybyggd_vid_forvarv: false,
   });
   h.db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: OSALD, agarandel: 100 });
+  // Ett kvitto, så att underlaget har en post: utan någon visar sidan sitt
+  // tomma tillstånd i stället för rutan (docs/design.md, Exportvyn).
+  const k = h.db.lagg("kostnad", {
+    bostad_id: OSALD, leverantor: "Byggmax", totalbelopp: 120_000,
+    dokumentdatum: datum("2025-05-02"), betaldatum: datum("2025-05-02"),
+  });
+  h.db.lagg("kostnadsrad", { kostnad_id: k.id, artikel: "Material", belopp: 120_000 });
   h.inloggad = { id: ANNA, email: "anna@exempel.se" };
 });
 

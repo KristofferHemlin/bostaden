@@ -100,3 +100,25 @@ export function projektnamnKarta(
     }),
   );
 }
+
+/**
+ * Aret i projektets namnform: det tidigaste betaldatumet bland projektets
+ * kvitton, och den lagrade etiketten `ar` bara for ett projekt utan betalda
+ * kvitton (docs/design.md, Projektlistan och "Året härleds på varje skärm som
+ * nämner det"). Projektlistan, startsidans kort och kvittots rullistor anvander
+ * alla den har – ett projekt som heter tva saker i samma app gar inte att kanna
+ * igen.
+ */
+export function projektarKarta(
+  projekt: { id: string; ar: number }[],
+  kvitton: Pick<KvittoForHognamn, "betaldatum" | "rader">[],
+): Map<string, number> {
+  return new Map(
+    projekt.map((p) => {
+      const ar = kvitton
+        .filter((k) => k.betaldatum && k.rader.some((r) => r.fordelningar.some((f) => f.projekt_id === p.id)))
+        .map((k) => k.betaldatum!.getUTCFullYear());
+      return [p.id, ar.length > 0 ? Math.min(...ar) : p.ar];
+    }),
+  );
+}

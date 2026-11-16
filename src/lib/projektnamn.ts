@@ -3,7 +3,7 @@
 // (src/doman/genomgang.ts, projektnamnKarta).
 
 import "server-only";
-import { projektnamnKarta } from "@/doman/genomgang";
+import { projektarKarta, projektnamnKarta } from "@/doman/genomgang";
 import { prisma } from "@/lib/prisma";
 
 export async function hamtaProjektnamn(
@@ -26,4 +26,34 @@ export async function hamtaProjektnamn(
       })
     : [];
   return projektnamnKarta(projekt, kvitton);
+}
+
+/**
+ * Projektens namnform for en rullista: namnet (som projektnamnKarta) och aret
+ * ur kvittona (projektarKarta), senaste ar forst. Det ar den form "2024 · Nya
+ * fönster" skrivs i, och den ska saga samma ar som projektlistan.
+ */
+export async function hamtaProjektval(
+  bostadId: string,
+  projekt: { id: string; namn: string; ar: number }[],
+): Promise<{ id: string; namn: string; ar: number }[]> {
+  const kvitton = await prisma.kostnad.findMany({
+    where: {
+      bostad_id: bostadId,
+      rader: { some: { fordelningar: { some: { projekt_id: { in: projekt.map((p) => p.id) } } } } },
+    },
+    select: {
+      leverantor: true,
+      betaldatum: true,
+      dokumentdatum: true,
+      rader: { select: { fordelningar: { select: { projekt_id: true } } } },
+    },
+  });
+  const namn = projektnamnKarta(projekt, kvitton);
+  const ar = projektarKarta(projekt, kvitton);
+  // Ordningen i listan foljer det visade aret; lika ar behaller den ordning
+  // projekten kom i, som redan ar bestamd (ar, sedan skapad_at).
+  return projekt
+    .map((p) => ({ id: p.id, namn: namn.get(p.id) ?? p.namn, ar: ar.get(p.id) ?? p.ar }))
+    .sort((a, b) => b.ar - a.ar);
 }

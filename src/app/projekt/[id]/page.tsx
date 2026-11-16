@@ -289,7 +289,7 @@ export default async function ProjektSida({
               href={`/projekt/${id}/kvitton`}
               className="font-granssnitt text-sm text-text-primar underline underline-offset-2 hover:text-accent-mork"
             >
-              Lägg till kvitton
+              Välj bland dina kvitton
             </Link>
           </div>
         ) : null}

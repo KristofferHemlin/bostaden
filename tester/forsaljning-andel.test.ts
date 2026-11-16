@@ -91,6 +91,13 @@ function seeda({ doris = true, sald = false }: { doris?: boolean; sald?: boolean
     db.lagg("anvandare", { id: DORIS, epost: EPOST[DORIS] });
     db.lagg("medlemskap", { anvandare_id: DORIS, bostad_id: X, agarandel: 50 });
   }
+  // Ett kvitto, så att underlaget har en post och visar sin ram – utan någon
+  // visar det sitt tomma tillstånd (docs/design.md, Exportvyn).
+  const k = db.lagg("kostnad", {
+    bostad_id: X, leverantor: "Byggmax", totalbelopp: 120_000,
+    dokumentdatum: datum("2025-05-02"), betaldatum: datum("2025-05-02"),
+  });
+  db.lagg("kostnadsrad", { kostnad_id: k.id, artikel: "Material", belopp: 120_000 });
 }
 
 function loggaIn(id: string) {

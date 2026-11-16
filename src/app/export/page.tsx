@@ -83,6 +83,7 @@ import {
 import { kravBostad } from "@/lib/session";
 import { SAMMA_DEL_ANDRAD, SAMMA_DEL_OBESVARAD } from "@/doman/samma-del";
 import { UnderlagetsVarningar } from "./underlagets-varningar";
+import { TOMT_UNDERLAG } from "@/lib/tomt-underlag";
 import {
   ATERSTAR_INLEDNING,
   ATERSTAR_RUBRIK,
@@ -140,6 +141,25 @@ export default async function ExportSida() {
   );
 
   function renderaInnehall() {
+    // Ett underlag utan en enda post skriver ingen nolla (docs/design.md,
+    // Exportvyn): "0 kr" ar ett raknat svar pa en fraga ingen stallt. Sidan
+    // visar i stallet sitt tomma tillstand – vad underlaget ar till for och
+    // vad hon gor forst (docs/design.md, Tomma tillstånd). Tomma utkast ar
+    // redan bortsorterade (hamtaBostadsdata).
+    if (kostnadRader.length === 0) {
+      return (
+        <Kort>
+          <div className="p-5">
+            <p className="font-rubrik text-lg text-text-primar">{TOMT_UNDERLAG.rubrik}</p>
+            <p className="mt-1 font-granssnitt text-sm text-text-sekundar">{TOMT_UNDERLAG.rad}</p>
+            <Link href="/kostnad/nytt" className={`${PRIMARKNAPP_KLASS} mt-4`}>
+              Lägg till kvitto
+            </Link>
+          </div>
+        </Kort>
+      );
+    }
+
     const indata: K6aIndata = {
       bostad: tillDomanBostad(bostad),
       medlemskap: { agarandel: andelAttMultiplicera(andelslage) },
@@ -233,72 +253,7 @@ export default async function ExportSida() {
             varningar) – overst, fore talen. */}
         <UnderlagetsVarningar varningar={ex.varningar} />
 
-        <Kort className="divide-y divide-linje">
-          {delad && !andelarnaGarIhop ? (
-            <p className="p-4 font-granssnitt text-sm text-text-primar">
-              Sammanställningen gäller{" "}
-              <span className="font-medium">hela bostaden</span> – var och en
-              deklarerar sin andel av den.
-            </p>
-          ) : null}
-          <section className="space-y-1 p-4 font-granssnitt text-sm text-text-sekundar">
-            <div className="flex justify-between gap-3">
-              <span>Försäljningsdatum</span>
-              <span className="tabular-nums text-text-primar">
-                {ex.genererad_for_datum ?? "Inte såld än"}
-              </span>
-            </div>
-            {andelslage.slag === "andel" ? (
-              <div className="flex justify-between gap-3">
-                <span>Ägarandel</span>
-                <span className="tabular-nums text-text-primar">
-                  {formateraAndel(andelslage.andel)}
-                </span>
-              </div>
-            ) : null}
-            {/* Inte angiven: ingen spärr, men raden säger det och visar vägen
-                dit (docs/design.md, "Ägarandelen har inget förval"). */}
-            {andelInteAngiven ? (
-              <div className="flex justify-between gap-3">
-                <span>Ägarandel</span>
-                <span className="text-text-primar">
-                  {ANDEL_INTE_ANGIVEN} ·{" "}
-                  {/* Oppnar andelsfragan sjalv, inte installningarna eller
-                      startsidan i allmanhet – och vagen tillbaka gar hit. */}
-                  <Link
-                    href={ANDELSFRAGAN_FRAN_EXPORT}
-                    className="underline underline-offset-2 hover:text-accent-mork"
-                  >
-                    Ange ägarandelen
-                  </Link>
-                </span>
-              </div>
-            ) : null}
-            {/* Bekraftelsen hor till forsaljningen. Den som inte bekraftat
-                stoppas inte – talen raknas med den lagrade andelen – men far
-                veta det, och vagen dit (docs/design.md, "Att bjuda in en
-                delägare"). */}
-            {ex.sald && andelslage.slag === "andel" && !egenBekraftad ? (
-              <div className="flex justify-between gap-3">
-                <span>Inte bekräftad</span>
-                <Link
-                  href="/forsaljning/andel?nasta=export"
-                  className="text-text-primar underline underline-offset-2 hover:text-accent-mork"
-                >
-                  Bekräfta ägarandelen
-                </Link>
-              </div>
-            ) : null}
-          </section>
-
-          <div className="p-4">
-            <Meddelanderuta>
-              {gemensam
-                ? "Din ägarandel är under 100 %. Sammanställningen visar både hela bostadens belopp och din andel, så att övriga delägare kan använda samma underlag."
-                : texter.inledning}
-            </Meddelanderuta>
-          </div>
-        </Kort>
+        {uppgifterKort(ex.genererad_for_datum, ex.sald, gemensam)}
 
         <Kort className="divide-y divide-linje">
           <SidaBlock
@@ -350,11 +305,7 @@ export default async function ExportSida() {
         </Kort>
 
         <Kort className="divide-y divide-linje">
-          {ex.sald ? null : (
-            <div className="p-4">
-              <Meddelanderuta>{foreForsaljningForklaring(fonsterAr, troskelbelopp)}</Meddelanderuta>
-            </div>
-          )}
+          {ex.sald ? null : foreForsaljningRuta()}
 
           {/* Det som aterstar (docs/design.md, Exportvyn: "redovisar varje
               krona som lagts in"). En enda lista – hogar och kvitton – och
@@ -383,7 +334,7 @@ export default async function ExportSida() {
               </ul>
               {behoverKlassificering ? (
                 <Link href="/projekt/nytt" className={`${SEKUNDARKNAPP_KLASS} mt-3`}>
-                  Berätta vad du gjort
+                  Skapa projekt
                 </Link>
               ) : null}
             </section>
@@ -472,6 +423,92 @@ export default async function ExportSida() {
     );
   }
 
+  /** Dokumentets ram overst: forsaljningsdatum, agarandel och inledningen.
+   *  Den star i varje lage, ocksa medan underlaget vantar pa
+   *  bostadsfragorna – raden med agarandelen ar den enda vagen att ange
+   *  den (docs/design.md, Exportvyn: "ett väntläge tar bort det som är
+   *  ovisst, aldrig sidans ram"). */
+  function uppgifterKort(forsaljningsdatum: string | null, sald: boolean, gemensam: boolean) {
+    return (
+        <Kort className="divide-y divide-linje">
+          {delad && !andelarnaGarIhop ? (
+            <p className="p-4 font-granssnitt text-sm text-text-primar">
+              Sammanställningen gäller{" "}
+              <span className="font-medium">hela bostaden</span> – var och en
+              deklarerar sin andel av den.
+            </p>
+          ) : null}
+          <section className="space-y-1 p-4 font-granssnitt text-sm text-text-sekundar">
+            <div className="flex justify-between gap-3">
+              <span>Försäljningsdatum</span>
+              <span className="tabular-nums text-text-primar">
+                {forsaljningsdatum ?? "Inte såld än"}
+              </span>
+            </div>
+            {andelslage.slag === "andel" ? (
+              <div className="flex justify-between gap-3">
+                <span>Ägarandel</span>
+                <span className="tabular-nums text-text-primar">
+                  {formateraAndel(andelslage.andel)}
+                </span>
+              </div>
+            ) : null}
+            {/* Inte angiven: ingen spärr, men raden säger det och visar vägen
+                dit (docs/design.md, "Ägarandelen har inget förval"). */}
+            {andelslage.slag === "inte_angiven" ? (
+              <div className="flex justify-between gap-3">
+                <span>Ägarandel</span>
+                <span className="text-text-primar">
+                  {ANDEL_INTE_ANGIVEN} ·{" "}
+                  {/* Oppnar andelsfragan sjalv, inte installningarna eller
+                      startsidan i allmanhet – och vagen tillbaka gar hit. */}
+                  <Link
+                    href={ANDELSFRAGAN_FRAN_EXPORT}
+                    className="underline underline-offset-2 hover:text-accent-mork"
+                  >
+                    Ange ägarandelen
+                  </Link>
+                </span>
+              </div>
+            ) : null}
+            {/* Bekraftelsen hor till forsaljningen. Den som inte bekraftat
+                stoppas inte – talen raknas med den lagrade andelen – men far
+                veta det, och vagen dit (docs/design.md, "Att bjuda in en
+                delägare"). */}
+            {sald && andelslage.slag === "andel" && !egenBekraftad ? (
+              <div className="flex justify-between gap-3">
+                <span>Inte bekräftad</span>
+                <Link
+                  href="/forsaljning/andel?nasta=export"
+                  className="text-text-primar underline underline-offset-2 hover:text-accent-mork"
+                >
+                  Bekräfta ägarandelen
+                </Link>
+              </div>
+            ) : null}
+          </section>
+
+          <div className="p-4">
+            <Meddelanderuta>
+              {gemensam
+                ? "Din ägarandel är under 100 %. Sammanställningen visar både hela bostadens belopp och din andel, så att övriga delägare kan använda samma underlag."
+                : texter.inledning}
+            </Meddelanderuta>
+          </div>
+        </Kort>
+    );
+  }
+
+  /** Rutan om varfor sida 2 saknar avdragsgill kolumn fore forsaljningen –
+   *  det enda stallet som sager det, sa den star ocksa i vantlaget. */
+  function foreForsaljningRuta() {
+    return (
+      <div className="p-4">
+        <Meddelanderuta>{foreForsaljningForklaring(fonsterAr, troskelbelopp)}</Meddelanderuta>
+      </div>
+    );
+  }
+
   /** Underlaget medan bostadsfragorna ar obesvarade (docs/design.md,
    *  Exportvyn; CLAUDE.md, "Ett okänt svar döljer bara det det ändrar"):
    *  samma rader, kolumner och summor som annars, men varje tal ar ett som
@@ -489,6 +526,8 @@ export default async function ExportSida() {
     return (
       <>
         <UnderlagetsVarningar varningar={v.varningar} />
+
+        {uppgifterKort(bostad.forsaljningsdatum ? isoDatum(bostad.forsaljningsdatum) : null, v.sald, v.gemensam)}
 
         <Kort className="divide-y divide-linje">
           <VantandeSidaBlock
@@ -541,6 +580,7 @@ export default async function ExportSida() {
         </Kort>
 
         <Kort className="divide-y divide-linje">
+          {v.sald ? null : foreForsaljningRuta()}
           <section className="p-4">
             <p className="font-granssnitt text-sm font-medium text-text-primar">
               {ATERSTAR_RUBRIK}
@@ -580,7 +620,7 @@ export default async function ExportSida() {
             </ul>
             {behoverProjekt ? (
               <Link href="/projekt/nytt" className={`${SEKUNDARKNAPP_KLASS} mt-3`}>
-                Berätta vad du gjort
+                Skapa projekt
               </Link>
             ) : null}
           </section>

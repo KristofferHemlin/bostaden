@@ -2,7 +2,7 @@ import "server-only";
 // Kvittona som gar att hamta till ett projekt: de som annu inte hor till
 // nagot projekt och som gar att koppla. Ett utkast utan rader gar inte, och
 // kvitton som inte hor till bostaden ar inte med. Senaste forst, som
-// kvittolistan. Delas av projektskapandets sista steg och "Lägg till kvitton"
+// kvittolistan. Delas av projektskapandets sista steg och "Välj bland dina kvitton"
 // pa ett befintligt projekt (docs/design.md, "Att lägga kvitton till ett
 // projekt som redan finns") – samma urval pa bada stallena.
 
@@ -10,7 +10,12 @@ import type { ValbartKvitto } from "@/components/kvitto-kryssruta";
 import { beloppOmKopplade, kvittoGarAttKoppla } from "@/doman/kvittokoppling";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { isoDatum } from "@/lib/format";
-import { kvittoradText } from "@/lib/kvittolista";
+import { avgarForKvitto, kvittoradText, privatAvgarRad, rotAvgarRad } from "@/lib/kvittolista";
+
+/** Raderna i samma ordning som Listrad skriver dem: ROT, privat, räknas med. */
+function avgarRader(a: ReturnType<typeof avgarForKvitto>): string[] {
+  return [rotAvgarRad(a.rot), privatAvgarRad(a.privat), a.raknasMed].filter((r): r is string => !!r);
+}
 import { prisma } from "@/lib/prisma";
 import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 
@@ -40,6 +45,9 @@ export async function hamtaValbaraKvitton(bostadId: string): Promise<ValbartKvit
         // Det kvittot bidrar med till projektets belopp om det valjs – for
         // merkostnadens grans innan nagot skickats. Servern raknar om.
         bidrag: beloppOmKopplade([doman]),
+        // Hon valjer efter beloppet, sa det ar har skillnaden mellan kvittot
+        // och det som raknas betyder mest.
+        avgar: avgarRader(avgarForKvitto(doman)),
         sortering: datum ? datum.getTime() : 0,
       };
     })

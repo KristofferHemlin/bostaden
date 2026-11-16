@@ -1,6 +1,6 @@
 "use client";
 
-// "Lägg till kvitton" (docs/design.md, "Att lägga kvitton till ett projekt
+// "Välj bland dina kvitton" (docs/design.md, "Att lägga kvitton till ett projekt
 // som redan finns"): samma kryssrutelista som projektskapandets sista steg
 // (src/components/kvitto-kryssruta.tsx), och samma merkostnadsfalt – som
 // visas nar projektet vantar pa fragan och de valda kvittona ger det ett

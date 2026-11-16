@@ -10,7 +10,7 @@ import { Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
-import { hamtaProjektnamn } from "@/lib/projektnamn";
+import { hamtaProjektnamn, hamtaProjektval } from "@/lib/projektnamn";
 import { kravBostad } from "@/lib/session";
 
 export const metadata = { title: "Dela upp kvittot" };
@@ -54,7 +54,9 @@ export default async function DelaUppSida({
 
   // En hog utan namn heter som i fas 1 (src/doman/genomgang.ts, projektnamnKarta).
   const projektnamn = await hamtaProjektnamn(bostadId, projektRader);
-  const projekt = projektRader.map((p) => ({ ...p, namn: projektnamn.get(p.id) ?? p.namn }));
+  // Namnformen – namn och ar ur kvittona – som projektlistan visar den
+  // (src/lib/projektnamn.ts, hamtaProjektval).
+  const projekt = await hamtaProjektval(bostadId, projektRader);
   // Ett utkast har inga rader att dela – det kompletteras i inmatningsformularet.
   if (kostnad.totalbelopp === null) redirect(`/kostnad/nytt?utkast=${id}`);
 

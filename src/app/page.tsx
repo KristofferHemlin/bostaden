@@ -31,12 +31,12 @@ import {
 import { UtkastRaderaKnapp } from "@/app/kostnad/utkast-radera";
 import {
   inlagtArsbelopp,
-  kostnaderKoppladeTillProjekt,
   samlatBelopp,
 } from "@/doman/berakningar";
 import { atgardKategoriText } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
+import { projektarKarta } from "@/doman/genomgang";
 import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 import {
   formateraAntal,
@@ -45,7 +45,6 @@ import {
   isoDatum,
 } from "@/lib/format";
 import { avgarForKvitto, bilagemarke } from "@/lib/kvittolista";
-import { projektetsArText } from "@/lib/projektar";
 import { prisma } from "@/lib/prisma";
 import { Landningssida } from "@/app/landningssida";
 import {
@@ -60,6 +59,7 @@ import { AnslutKnapp } from "@/app/inbjudan/anslut-knapp";
 import { Inbjudningskort } from "@/app/inbjudan/inbjudningskort";
 import { VantandeInbjudan } from "@/app/inbjudan/vantande-inbjudan";
 import { Fragekort } from "@/app/bostaden/fragekort";
+import { nastaUppgift } from "@/lib/bostadsuppgifter";
 
 export const dynamic = "force-dynamic";
 
@@ -115,7 +115,8 @@ export default async function Oversikt({
   // och den gamla nas i vaxlaren ("Att äga flera bostäder"). Inbjudningar
   // till en bostad hen redan ar medlem i visas inte (se utestaendeInbjudningar).
   const inbjudningar = await utestaendeInbjudningar(anvandare.epost, anvandare.id);
-  const { bostad, kostnader, projektRader } = await hamtaBostadsdata(bostadId);
+  const { bostad, kostnader, projektRader, kostnadRader } = await hamtaBostadsdata(bostadId);
+  const projektar = projektarKarta(projektRader, kostnadRader);
   // Inbjudningar FRAN den har bostaden som annu inte besvarats (docs/design.md,
   // "Startskärmen med innehåll"): ett kort overst, ett pastaende och ingen
   // uppmaning. Besvarade inbjudningar visas inte – ingenting
@@ -198,10 +199,11 @@ export default async function Oversikt({
     .map((p) => ({
       id: p.id,
       namn: p.namn,
-      status: `${projektetsArText(
-        kostnaderKoppladeTillProjekt(kostnader, p.id).map((k) => k.betaldatum),
-        p.ar,
-      )} · ${atgardKategoriText(p.atgardstyp, p.battre_kvalitet)}`,
+      // Aret harleds som i projektlistan – tidigaste betaldatum bland
+      // kvittona (docs/design.md, "Året i kortet härleds som i
+      // projektlistan"). Samma uppgift som ser olika ut pa tva skarmar
+      // lases som tva uppgifter.
+      status: `${projektar.get(p.id) ?? p.ar} · ${atgardKategoriText(p.atgardstyp, p.battre_kvalitet)}`,
     }));
 
   return (
@@ -235,9 +237,14 @@ export default async function Oversikt({
       ))}
       {/* Overst, fore bade forstaskarmen och nyckeltalen – men aldrig i
           stallet for "Lägg till kvitto", som star kvar dar den alltid star. */}
-      <Fragekort
-        svar={{ kopeskilling: bostad.kopeskilling, agarandel }}
-      />
+      {/* Andelsfragan galler talen i underlaget, och visas forst nar det
+          finns ett kvitto – aldrig over valkomstkortet pa en tom startskarm
+          (docs/design.md, "Ett kort som frågar efter något som rör talen
+          visas inte innan det finns tal"). Kopeskillingens fraga ror inte
+          talen och visas som forut. */}
+      {tomt && nastaUppgift({ kopeskilling: bostad.kopeskilling, agarandel }) === "agarandel" ? null : (
+        <Fragekort svar={{ kopeskilling: bostad.kopeskilling, agarandel }} />
+      )}
       {/* Efter fragekortet, med flit: hennes egen fraga gar fore nagon annans
           svar (docs/design.md, "Kan båda visas samtidigt står ägarandelen
           först"). Fore forstaskarmen och nyckeltalen. */}
@@ -281,9 +288,15 @@ export default async function Oversikt({
                 Fota kvittot eller ladda upp fakturan. Appen läser av belopp,
                 datum och leverantör.
               </p>
+              {/* Till 2026-11-16: "Skattefrågorna kommer senare, inte nu. Du
+                  svarar på dem när du vill, och senast när du säljer." Den gav
+                  henne lov att sluta, och var inte längre sann efter
+                  omläggningen (docs/design.md, "Förstaskärmen för en ny
+                  användare"). Den nya säger vänta, inte strunta i. */}
               <p className="font-granssnitt text-sm text-text-sekundar">
-                Skattefrågorna kommer senare, inte nu. Du svarar på dem när du
-                vill, och senast när du säljer.
+                Berätta vad du gjorde när du har tid. Kvitton som hörde ihop
+                samlas i ett projekt, och några frågor om det gör talen i
+                underlaget exakta.
               </p>
               <p className="font-granssnitt text-sm text-text-sekundar">
                 Allt ligger kvar tills du behöver det. Även om det dröjer

@@ -12,8 +12,11 @@ import type { AterstaendeKvitto, K6aExport } from "@/doman/export-k6a";
 
 export const ATERSTAR_RUBRIK = "Återstår";
 
-export const ATERSTAR_INLEDNING =
-  "Det här har du lagt in, men det ingår inte i talen ovan.";
+// Galler varje rad, ocksa raden om bostadsfragorna – som ar nagot hon inte
+// lagt in (docs/design.md, Exportvyn: "Och inledningsmeningen gäller inte
+// varje rad"). Till 2026-11-16: "Det här har du lagt in, men det ingår inte i
+// talen ovan."
+export const ATERSTAR_INLEDNING = "Det här ingår inte i talen ovan än.";
 
 /** Skalet under varje rad – samma ord i exportvyn och i PDF:en. */
 export const ATERSTAR_ORSAK: Record<

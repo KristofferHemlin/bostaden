@@ -10,7 +10,7 @@ import {
   rotForBelopp,
 } from "@/doman/berakningar";
 import { atgardKategoriText } from "@/doman/fragetradet";
-import { projektnamnKarta } from "@/doman/genomgang";
+import { projektarKarta, projektnamnKarta } from "@/doman/genomgang";
 import { slaUppRegelparameter } from "@/doman/regelparameter";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
@@ -45,6 +45,7 @@ export default async function ProjektlistaSida() {
   const domanKostnadPerId = new Map(kostnader.map((k) => [k.id, k]));
   // En hog utan namn heter som i fas 1 (src/doman/genomgang.ts).
   const projektnamn = projektnamnKarta(projektRader, kostnadRader);
+  const projektar = projektarKarta(projektRader, kostnadRader);
 
   const rader = projektRader.map((p) => {
     // Allt som kopplats hit, aven utan betaldatum – samma tal som projektets
@@ -83,19 +84,12 @@ export default async function ProjektlistaSida() {
         };
       });
 
-    // Aret ur kvittona nar det finns betalda – det tidigaste betaldatumet –
-    // och etiketten bara for ett projekt utan dem (docs/design.md,
-    // Projektlistan: "Och året i raden härleds ur kvittona"). En etikett som
-    // sager emot raderna under sig ar varre an ingen.
-    const betalda = kvitton
-      .map((k) => kostnadRader.find((x) => x.id === k.id)?.betaldatum)
-      .filter((d): d is Date => !!d)
-      .map((d) => d.getUTCFullYear());
-
     return {
       id: p.id,
       namn: projektnamn.get(p.id) ?? p.namn,
-      ar: betalda.length > 0 ? Math.min(...betalda) : p.ar,
+      // Aret ur kvittona (projektarKarta) – samma som pa startsidan och i
+      // kvittots rullistor.
+      ar: projektar.get(p.id) ?? p.ar,
       harKvitton: kvitton.length > 0,
       belopp,
       // En hog fran klassificeringsgenomgangens fas 1 (atgardstyp = null) har

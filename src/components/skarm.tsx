@@ -110,6 +110,7 @@ export function Listrad({
   privat,
   raknasMed,
   belopp,
+  beloppDampat = false,
   beloppSaknas,
   href,
   strackt,
@@ -137,6 +138,12 @@ export function Listrad({
    * inget belopp, och aldrig 0 kr"). Ignoreras nar belopp ar satt.
    */
   beloppSaknas?: string;
+  /**
+   * Beloppet star kvar men raknas inte – ett kvitto som inte hor till
+   * bostaden (docs/design.md, "Raden visar tillståndet i stället för talet").
+   * Samma typsnitt, dampad farg.
+   */
+  beloppDampat?: boolean;
   /**
    * ROT i oren som avgar fran radens belopp. Ger den dampade raden "varav ROT
    * … kr, avgår" overst bland underraderna (docs/design.md, Listrader: "ROT-
@@ -261,7 +268,9 @@ export function Listrad({
           ))}
       </div>
       {belopp ? (
-        <span className="shrink-0 font-rubrik text-base tabular-nums text-text-primar">
+        <span
+          className={`shrink-0 font-rubrik text-base tabular-nums ${beloppDampat ? "text-text-sekundar" : "text-text-primar"}`}
+        >
           {belopp}
         </span>
       ) : beloppSaknas ? (

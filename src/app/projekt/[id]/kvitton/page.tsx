@@ -1,4 +1,4 @@
-// "Lägg till kvitton" pa ett projekt som redan finns (docs/design.md, "Att
+// "Välj bland dina kvitton" pa ett projekt som redan finns (docs/design.md, "Att
 // lägga kvitton till ett projekt som redan finns"). Nas fran rubriken Kvitton
 // pa projektets sida. Samma urval och samma lista som projektskapandets sista
 // steg (src/lib/valbara-kvitton.ts, src/components/kvitto-kryssruta.tsx).
@@ -14,7 +14,7 @@ import { hamtaProjektnamn } from "@/lib/projektnamn";
 import { kravBostad } from "@/lib/session";
 import { hamtaValbaraKvitton } from "@/lib/valbara-kvitton";
 
-export const metadata = { title: "Lägg till kvitton" };
+export const metadata = { title: "Välj bland dina kvitton" };
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +44,7 @@ export default async function LaggTillKvittonSida({
   return (
     <Skarm
       bostadsnamn={bostadHeader(bostad).bostadsnamn}
-      rubrik="Lägg till kvitton"
+      rubrik="Välj bland dina kvitton"
       bakLank={{ href: `/projekt/${id}`, text: visningsnamn }}
     >
       <LaggTillKvittonFormular

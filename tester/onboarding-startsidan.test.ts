@@ -131,6 +131,14 @@ async function omdirigering(p: Promise<unknown>): Promise<string> {
   throw new Error("ingen omdirigering");
 }
 
+/** Ett kvitto i bostaden. Andelsfrågan rör talen och visas först när det
+ *  finns ett (docs/design.md, "Ett kort som frågar efter något som rör talen
+ *  visas inte innan det finns tal"); underlaget likaså. */
+function ettKvitto() {
+  const k = h.db.lagg("kostnad", { bostad_id: BOSTAD, leverantor: "Beijer Bygg", totalbelopp: 120000, dokumentdatum: datum("2025-05-02"), betaldatum: datum("2025-05-02") });
+  h.db.lagg("kostnadsrad", { kostnad_id: k.id, artikel: "Material", belopp: 120000 });
+}
+
 async function startsidan(): Promise<string> {
   return renderToStaticMarkup((await OversiktSida({ searchParams: Promise.resolve({}) })) as ReactElement);
 }
@@ -183,8 +191,41 @@ describe("kortet är inte en spärr", () => {
     expect(kvittolankar(html)).toEqual(["/kostnad/nytt"]);
   });
 
+  // Uppmätt 2026-11-16 på ett nyskapat konto: det första som mötte henne var
+  // andelsfrågan, med motiveringen om talen i ett underlag som inte fanns.
+  it("utan kvitton visas andelsfrågan inte – välkomstkortet står först", async () => {
+    seeda({ kopeskilling: 325000000n });
+    // Förutsättningen: andelen är det enda som är obesvarat.
+    expect(h.db.tabell("medlemskap")[0].agarandel).toBeNull();
+    const html = await startsidan();
+    expect(kortetsFraga(html)).toBeNull();
+    expect(html).toContain("Spara kvittona nu, dra av dem när du säljer");
+    ettKvitto();
+    expect(kortetsFraga(await startsidan()), "med ett kvitto kommer frågan").toBe(andelsfragan());
+  });
+
+  // Raderna under knappen, ordagrant ur design.md. Mittenraden byttes
+  // 2026-11-16: den gamla gav henne lov att sluta.
+  it("Så fungerar det: designens tre rader, i ordning", async () => {
+    seeda({});
+    const text = design();
+    const start = text.indexOf("> **Så fungerar det**\n");
+    expect(start, "design.md saknar blocket Så fungerar det").toBeGreaterThan(-1);
+    const vantade: string[] = [];
+    for (const rad of text.slice(start).split("\n").slice(1)) {
+      if (!rad.startsWith("> ")) break;
+      vantade.push(rad.slice(2));
+    }
+    expect(vantade).toHaveLength(3);
+    const block = (await startsidan()).match(/<h2[^>]*>Så fungerar det<\/h2><div[^>]*>(.*?)<\/div>/)?.[1];
+    expect(block, "ingen rubrik Så fungerar det med sina rader").toBeTruthy();
+    const rader = [...block!.matchAll(/<p[^>]*>(.*?)<\/p>/g)].map((m) => m[1].replace(/\s+/g, " ").trim());
+    expect(rader).toEqual(vantade);
+  });
+
   it("kortet säger frågan, aldrig Fortsätt", async () => {
     seeda({ kopeskilling: 325000000n });
+    ettKvitto();
     const html = await startsidan();
     expect(kortetsFraga(html)).toBe(andelsfragan());
     expect(text(kortet(html)!)).not.toContain("Fortsätt");
@@ -294,6 +335,7 @@ describe("varje svar sparas när det ges", () => {
     const dit = await omdirigering(sparaKopeskillingen({}, fd({ kopeskilling: "3 250 000" })));
     expect(dit).toBe(UPPGIFTENS_SOKVAG.agarandel);
     expect(h.db.tabell("bostad")[0].kopeskilling).toBe(325000000n);
+    ettKvitto();
     expect(kortetsFraga(await startsidan())).toBe(andelsfragan());
   });
 
@@ -372,6 +414,7 @@ describe("kortet försvinner när inget är obesvarat", () => {
 describe("Ange ägarandelen i exportvyn öppnar andelsfrågan", () => {
   it("länken pekar på frågan, frågan renderas, och svaret leder tillbaka till underlaget", async () => {
     seeda({ kopeskilling: 325000000n });
+    ettKvitto();
     const exp = renderToStaticMarkup((await ExportSida()) as ReactElement);
     const href = exp.match(/<a[^>]*href="([^"]*)"[^>]*>Ange ägarandelen<\/a>/)?.[1];
     expect(href).toBe(`${UPPGIFTENS_SOKVAG.agarandel}?fran=export`);

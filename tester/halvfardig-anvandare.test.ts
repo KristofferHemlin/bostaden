@@ -165,7 +165,7 @@ describe("vad en halvfärdig användare ser", () => {
     inget(s, "projektet utan kvitton");
     expect(s.textContent).toContain(MERKOSTNAD_SAKNAS_UTAN_BELOPP);
     expect(s.textContent).toContain("Inga kvitton i projektet än.");
-    const lagg = [...s.querySelectorAll("a")].find((a) => a.textContent === "Lägg till kvitton");
+    const lagg = [...s.querySelectorAll("a")].find((a) => a.textContent === "Välj bland dina kvitton");
     expect(lagg?.getAttribute("href")).toBe(`/projekt/${TOMT}/kvitton`);
   });
 
@@ -174,7 +174,7 @@ describe("vad en halvfärdig användare ser", () => {
     inget(s, "underlaget");
     const lankar = [...s.querySelectorAll("a")].map((a) => [a.textContent, a.getAttribute("href")]);
     expect(lankar).toContainEqual([NAMNET, `/projekt/${GAMMAL}/redigera`]);
-    expect(lankar).toContainEqual(["Berätta vad du gjort", "/projekt/nytt"]);
+    expect(lankar).toContainEqual(["Skapa projekt", "/projekt/nytt"]);
     expect(s.textContent).toContain("Färg till sovrummet");
   });
 });

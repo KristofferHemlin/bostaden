@@ -39,7 +39,7 @@ import {
 import { kvittodatumNotis } from "@/lib/kvittodatum-notis";
 import type { Metadata } from "next";
 import { arGiltigtId } from "@/lib/giltigt-id";
-import { hamtaProjektnamn } from "@/lib/projektnamn";
+import { hamtaProjektnamn, hamtaProjektval } from "@/lib/projektnamn";
 import { prisma } from "@/lib/prisma";
 import { upphovsrad } from "@/lib/samagande";
 import { antalMedlemmar, kravBostad } from "@/lib/session";
@@ -103,7 +103,9 @@ export default async function KostnadSida({
   // En hog utan namn heter som i fas 1 – i "Hör till" och i valet "Koppla
   // till projekt" (src/doman/genomgang.ts, projektnamnKarta).
   const projektnamn = await hamtaProjektnamn(bostadId, projektRader);
-  const projekt = projektRader.map((p) => ({ ...p, namn: projektnamn.get(p.id) ?? p.namn }));
+  // Namnformen – namn och ar ur kvittona – som projektlistan visar den
+  // (src/lib/projektnamn.ts, hamtaProjektval).
+  const projekt = await hamtaProjektval(bostadId, projektRader);
 
   // Ett utkast har inga uppgifter att visa – dess plats ar kompletteringsformularet.
   if (kostnad.totalbelopp === null) redirect(`/kostnad/nytt?utkast=${kostnad.id}`);

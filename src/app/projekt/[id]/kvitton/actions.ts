@@ -1,6 +1,6 @@
 "use server";
 
-// "Lägg till kvitton" pa ett projekt som redan finns (docs/design.md, "Att
+// "Välj bland dina kvitton" pa ett projekt som redan finns (docs/design.md, "Att
 // lägga kvitton till ett projekt som redan finns"): flera kvitton i ett svep,
 // med samma koppling som projektskapandet (src/lib/kvittokoppling.ts).
 //

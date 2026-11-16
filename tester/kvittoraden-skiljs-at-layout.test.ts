@@ -216,6 +216,21 @@ async function oppna(namn: string) {
   await utvardera(`(async () => {
     for (let i = 0; i < 100 && document.readyState !== 'complete'; i++) await new Promise(r => setTimeout(r, 50));
   })()`);
+  if (namn === "kostnad") await fallUt();
+}
+
+/**
+ * Fäller ut årssektionerna. Testet gäller raderna, inte fällningen – och
+ * sedan Utan betaldatum räknas som en avdelare (2026-11-16) är den här listan
+ * hopfälld från början, eftersom utkastet ger den en andra avdelare.
+ */
+async function fallUt() {
+  const antal = await utvardera<number>(`(() => {
+    const d = [...document.querySelectorAll('details')];
+    d.forEach((e) => { e.open = true; });
+    return d.length;
+  })()`);
+  expect(antal, "listan ska ha avdelare att fälla ut").toBeGreaterThan(1);
 }
 
 interface Marke {
@@ -383,6 +398,7 @@ describe("kvittoraden på /kostnad, mätt i Chrome vid 390 px", () => {
     await cdp("Emulation.setDeviceMetricsOverride", { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
     await cdp("Page.navigate", { url: `${adress}kostnad` });
     await new Promise((r) => setTimeout(r, 500));
+    await fallUt();
     const utan = KVITTON.find((k) => !k.bilaga)!.anteckning;
     const [vila] = await matRader([utan]);
     expect(vila.marken[0].snedstreck[0]?.underFarg, "i vila").toBe(vila.yta);
@@ -428,8 +444,35 @@ describe("kvittoraden på /kostnad, mätt i Chrome vid 390 px", () => {
     expect(utkast.prick, "utkastet ska ha åtgärdspricken").not.toBeNull();
     expect(utkast.prick!.forstPaForstaRaden).toBe(true);
     expect(utkast.marken).toEqual([]);
-    expect(arkiverat.rader[0]?.text).toBe("Hör inte till bostaden");
     expect(arkiverat.marken).toEqual([]);
+  }, 60_000);
+
+  // docs/design.md, "Raden visar tillståndet i stället för talet, inte utöver
+  // det": leverantör och datum som varje annan rad, tillståndstexten, och
+  // beloppet dämpat – ingen ROT-rad och ingen privatrad.
+  it("kvittot som inte hör till bostaden: leverantör och datum, tillståndet, och beloppet dämpat", async () => {
+    await oppna("kostnad");
+    const [arkiverat] = await matRader([ARKIVERAT]);
+    expect(arkiverat.rader.map((r) => r.text)).toEqual(["Elgiganten · 2025-06-10", "Hör inte till bostaden"]);
+    const farger = await utvardera<{ arkiverat: string; annat: string; sekundar: string; primar: string }>(`(() => {
+      const prov = document.createElement('span');
+      document.body.appendChild(prov);
+      const ton = (t) => { prov.style.color = 'var(' + t + ')'; return getComputedStyle(prov).color; };
+      const sekundar = ton('--text-sekundar'), primar = ton('--text-primar');
+      prov.remove();
+      const belopp = (text) => {
+        const p = [...document.body.querySelectorAll('p')].find((e) => e.textContent === text);
+        // Beloppet står inne i radens länk – inte i föräldern, som är hela listan.
+        const rad = p.closest('a');
+        const tal = [...rad.querySelectorAll('span')].find((e) => /kr$/.test(e.textContent.trim()) && e.className.includes('font-rubrik'));
+        return getComputedStyle(tal).color;
+      };
+      return { arkiverat: belopp(${JSON.stringify(ARKIVERAT)}), annat: belopp(${JSON.stringify(KVITTON[0].anteckning)}), sekundar, primar };
+    })()`);
+    // Förutsättningen: de två tonerna skiljer sig, och ett vanligt kvitto har den mörka.
+    expect(farger.sekundar).not.toBe(farger.primar);
+    expect(farger.annat).toBe(farger.primar);
+    expect(farger.arkiverat).toBe(farger.sekundar);
   }, 60_000);
 
   it("åtgärdspricken och märket går att skilja på färg och placering", async () => {

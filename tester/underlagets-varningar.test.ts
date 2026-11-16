@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { inflateSync } from "node:zlib";
 import { createElement } from "react";
@@ -204,7 +206,12 @@ describe("PDF:en har Återstår", () => {
   it("ett kvitto utan projekt nämns, med namn, skäl, år och belopp", async () => {
     const text = await textFor({ okopplat: "Bauhaus Bromma" });
     expect(text).toContain("Återstår");
-    expect(text).toContain("Det här har du lagt in, men det ingår inte i talen ovan.");
+    // Inledningsmeningen ur design.md, Exportvyn – den gäller varje rad, också
+    // raden om bostadsfrågorna.
+    const design = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+    const inledning = design.match(/Meningen lyder i stället \*"([^"]+)"\*/)?.[1];
+    expect(inledning, "inledningsmeningen för Återstår i design.md").toBeTruthy();
+    expect(text).toContain(inledning!);
     expect(text).toContain("Bauhaus Bromma");
     expect(text).toContain("Hör inte till något projekt än");
     expect(text).toContain("2024");

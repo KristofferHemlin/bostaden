@@ -68,6 +68,9 @@ interface KvittoRad {
    * da kan ett nytt falt i avgarForKvitto inte tappas har i tysthet
    * (docs/design.md, Listrader: inga undantag per skarm). */
   avgar: ReturnType<typeof avgarForKvitto>;
+  /** Tillstandet pa en egen rad, eller undefined. Bara "Hör inte till
+   *  bostaden" i dag; beloppet dampas da. */
+  tillstand: string | undefined;
   atgard: boolean;
   utkast: boolean;
   /** Bilagor sparade pa kostnaden – avgor om utkastets soptunna fragar. */
@@ -129,9 +132,7 @@ export default async function KvittolistaSida() {
     // bara datumet.
     let status: string;
     let atgard = false;
-    if (k.arkiverad) {
-      status = "Hör inte till bostaden";
-    } else if (utkast) {
+    if (utkast) {
       status = "Utkast · komplettera uppgifterna";
       atgard = true;
     } else if (notering) {
@@ -151,7 +152,12 @@ export default async function KvittolistaSida() {
       // Raden behaller fakturans totalbelopp – summan pa pappret – och visar
       // ROT-avdraget under, sa att arsrubriken (efter ROT) gar att rakna ihop
       // av raderna (docs/design.md, Listrader).
-      avgar: avgarForKvitto(kostnad),
+      // Ett kvitto som inte hor till bostaden: ingenting raknas, sa ingen
+      // ROT-rad och ingen privatrad (docs/design.md, "Raden visar tillståndet
+      // i stället för talet"). Tillstandet star pa en egen rad under
+      // leverantor och datum.
+      avgar: k.arkiverad ? { rot: 0, privat: 0, raknasMed: null } : avgarForKvitto(kostnad),
+      tillstand: k.arkiverad ? "Hör inte till bostaden" : undefined,
       atgard,
       utkast,
       antalBilagor: k._count.bilagor,
@@ -174,11 +180,9 @@ export default async function KvittolistaSida() {
   // Hopfallda nar listan ar lang och spanner flera ar (docs/design.md,
   // Kvittolistan). Avgors pa servern vid varje besok och sparas aldrig, sa
   // sidan oppnas i samma lage varje gang.
-  // "Utan betaldatum" ar inget ar och raknas inte bland aren.
-  const hopfallda = arssektionerHopfallda(
-    rader.length,
-    sorterade.filter((g) => g.ar !== null).length,
-  );
+  // "Utan betaldatum" ar en avdelare som aren och raknas med dem: den falls
+  // som ett ar (docs/design.md, "Avdelaren Utan betaldatum fälls som ett år").
+  const hopfallda = arssektionerHopfallda(rader.length, sorterade.length);
 
   return (
     // Tre block med sidans bakgrund emellan, inte ett kort (docs/design.md,
@@ -233,9 +237,9 @@ export default async function KvittolistaSida() {
               kontrollen (docs/design.md, Kvittolistan och "Utfällbara
               sektioner"). <details> haller laget i webblasaren utan att det
               sparas nagonstans – nasta besok borjar i serverns lage igen.
-              "Utan betaldatum" ar inget ar och falls aldrig ihop: dess
-              kvitton raknas i ingen arssumma och blir latta att glomma bakom
-              ett tryck. Den star sist, utan kontroll. */}
+              "Utan betaldatum" star sist och falls som ett ar sedan
+              2026-11-16 – till dess stod den alltid oppen och utan kontroll,
+              och lastes darfor som vald bland de hopfallda aren. */}
           {/* Listblocket. Den sista sektionens nedre linje skulle ligga dikt an
               mot kortets egen ram och ge en dubbel linje; -mb-px lagger den
               under ramen, dar overflow-hidden klipper den. */}
@@ -249,21 +253,12 @@ export default async function KvittolistaSida() {
                   {formateraKronor(grupp.summa)}
                 </span>
               );
-              if (grupp.ar === null) {
-                return (
-                  <div key="utan-betaldatum">
-                    <div className="flex min-h-[44px] items-center justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2">
-                      <span className="font-rubrik text-sm text-text-primar">
-                        {`Utan betaldatum · ${antal}`}
-                      </span>
-                      {summa}
-                    </div>
-                    <Kvittorader poster={grupp.poster} />
-                  </div>
-                );
-              }
+              // Utan betaldatum falls som ett ar, med samma rubrikrad och pil:
+              // fyra avdelare dar tre beter sig lika och en inte gor det
+              // laste den fjarde som vald (uppmatt 2026-11-16).
+              const etikett = grupp.ar === null ? `Utan betaldatum · ${antal}` : `${grupp.ar} · ${antal}`;
               return (
-                <details key={grupp.ar} open={!hopfallda} className="group">
+                <details key={grupp.ar ?? "utan-betaldatum"} open={!hopfallda} className="group">
                   {/* Arsrubrik: egen rad pa --yta-nedsankt med artalet och
                       antalet kvitton till vanster, summan hogerstalld. En
                       hopfalld rubrik ar allt hon har att ga pa, och antalet
@@ -274,7 +269,7 @@ export default async function KvittolistaSida() {
                       future.hoverOnlyWhenSupported i tailwind.config.ts. */}
                   <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2 outline-none transition-colors hover:bg-yta-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent [&::-webkit-details-marker]:hidden">
                     <span className="font-rubrik text-sm text-text-primar">
-                      {`${grupp.ar} · ${antal}`}
+                      {etikett}
                     </span>
                     <span className="flex items-center gap-2">
                       {summa}
@@ -306,8 +301,10 @@ function Kvittorader({ poster }: { poster: KvittoRad[] }) {
           kursivStatus
           bilaga={r.bilaga}
           {...r.avgar}
+          underStatus={r.tillstand}
           atgard={r.atgard}
           belopp={r.belopp}
+          beloppDampat={r.tillstand !== undefined}
           href={r.href}
           bild={r.bild}
           slutknapp={

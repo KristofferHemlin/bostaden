@@ -106,7 +106,9 @@ const FALL: Fall[] = [
   { namn: "fem kvitton på två år", dagar: ["2025-03-10", "2024-06-01", "2025-08-20", "2024-02-14", "2025-05-05"], hopfallt: true },
   { namn: "tjugo kvitton på ett år", dagar: TJUGO_PA_ETT_AR, hopfallt: false },
   { namn: "fem kvitton på ett år", dagar: ["2025-03-10", "2025-06-01", "2025-08-20", "2025-02-14", "2025-05-05"], hopfallt: false },
-  { namn: "fyra kvitton från ett år och ett utan betaldatum", dagar: ["2025-03-10", "utan-1", "2025-08-20", "2025-02-14", "2025-05-05"], hopfallt: false },
+  // Utan betaldatum är en avdelare som åren sedan 2026-11-16: fem kvitton och
+  // två avdelare fälls (docs/design.md, "Avdelaren Utan betaldatum fälls som ett år").
+  { namn: "fyra kvitton från ett år och ett utan betaldatum", dagar: ["2025-03-10", "utan-1", "2025-08-20", "2025-02-14", "2025-05-05"], hopfallt: true },
 ];
 
 // Provet pa antalet i rubriken (docs/design.md, Kvittolistan): fäller hon ut
@@ -237,14 +239,16 @@ async function rubriker(): Promise<{ text: string; hojd: number }[]> {
     text: s.firstElementChild.textContent, hojd: s.getBoundingClientRect().height }))`);
 }
 
-/** Vantat antal per ar, raknat ur fallets egna datum. "Utan betaldatum" ar
- *  inget ar och har ingen hopfallbar rubrik. */
+/** Vantat antal per ar, raknat ur fallets egna datum, och "Utan betaldatum"
+ *  sist – den har en fallbar rubrik som aren sedan 2026-11-16. */
 function vantadeRubriker(dagar: string[]): string[] {
   const perAr = new Map<string, number>();
   for (const d of dagar.filter((d) => !utan(d))) perAr.set(d.slice(0, 4), (perAr.get(d.slice(0, 4)) ?? 0) + 1);
-  return [...perAr.entries()]
-    .sort(([a], [b]) => b.localeCompare(a))
-    .map(([ar, n]) => `${ar} · ${kvittoText(n)}`);
+  const utanAntal = dagar.filter(utan).length;
+  return [
+    ...[...perAr.entries()].sort(([a], [b]) => b.localeCompare(a)).map(([ar, n]) => `${ar} · ${kvittoText(n)}`),
+    ...(utanAntal > 0 ? [`Utan betaldatum · ${kvittoText(utanAntal)}`] : []),
+  ];
 }
 
 describe("kvittolistans årssektioner vid 390 px, mätt i Chrome", () => {
@@ -281,25 +285,28 @@ describe("kvittolistans årssektioner vid 390 px, mätt i Chrome", () => {
     expect(placering).toEqual({ finns: true, iSektion: false, hojd: placering.hojd, foreForsta: true });
     expect(placering.hojd).toBeGreaterThan(0);
 
-    // Utan betaldatum: synlig, sist, och inte i nagot som gar att fälla ihop.
+    // Utan betaldatum: rubriken synlig, sist, och fälls som ett år – med
+    // samma rubrikrad som åren. Till 2026-11-16 stod den alltid öppen och utan
+    // kontroll, och lästes därför som vald bland de hopfällda åren.
     const utanDagar = fall.dagar.filter(utan);
     if (utanDagar.length > 0) {
       const rubrik = `Utan betaldatum · ${kvittoText(utanDagar.length)}`;
-      const u = await utvardera<{ finns: boolean; synlig: boolean; hopfallbar: boolean; efterAllaAr: boolean }>(`(() => {
+      const u = await utvardera<{ finns: boolean; synlig: boolean; iSummary: boolean; sist: boolean }>(`(() => {
         const el = [...document.querySelectorAll('span')].find(s => s.textContent === ${JSON.stringify(rubrik)});
-        if (!el) return { finns: false, synlig: false, hopfallbar: false, efterAllaAr: false };
-        const sista = [...document.querySelectorAll('details')].pop();
+        if (!el) return { finns: false, synlig: false, iSummary: false, sist: false };
+        const egen = el.closest('details');
+        const alla = [...document.querySelectorAll('details')];
         return {
           finns: true,
           synlig: el.checkVisibility() && el.getBoundingClientRect().height > 0,
-          hopfallbar: el.closest('details, summary, button') !== null,
-          efterAllaAr: !sista || !!(sista.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING),
+          iSummary: el.closest('summary') !== null,
+          sist: egen !== null && alla[alla.length - 1] === egen,
         };
       })()`);
-      expect(u).toEqual({ finns: true, synlig: true, hopfallbar: false, efterAllaAr: true });
+      expect(u).toEqual({ finns: true, synlig: true, iSummary: true, sist: true });
       const ur = await matRader(utanDagar.map(anteckning));
-      expect(ur.synliga.every(Boolean), "kvittona utan betaldatum ska synas").toBe(true);
-      expect(ur.iHopfallbar.some(Boolean), "kvittona utan betaldatum ska inte gå att fälla ihop").toBe(false);
+      expect(ur.synliga.every((v) => v === !fall.hopfallt), "kvittona utan betaldatum följer avdelarens läge").toBe(true);
+      expect(ur.iHopfallbar.every(Boolean), "kvittona utan betaldatum ligger i det som fälls").toBe(true);
     }
   }, 60_000);
 

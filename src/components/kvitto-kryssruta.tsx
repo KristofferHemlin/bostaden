@@ -3,7 +3,7 @@
 // Kryssrutelistan dar kvitton valjs till ett projekt (docs/design.md,
 // "Anteckningen får två rader där den är radens huvudtext": den viktigaste
 // av listorna). En komponent, anvand av projektskapandets sista steg och av
-// "Lägg till kvitton" pa ett befintligt projekt – tva listor som ska vara lika
+// "Välj bland dina kvitton" pa ett befintligt projekt – tva listor som ska vara lika
 // blir annars olika inom en manad.
 
 import { formateraKronorEllerStreck } from "@/lib/format";
@@ -20,6 +20,11 @@ export interface ValbartKvitto {
   /** Det kvittot bidrar med till projektets belopp om det valjs, i oren –
    *  merkostnaden ska vara mindre an summan av de valda. */
   bidrag: number;
+  /** Det som avgar och vad som blir kvar – "varav ROT … kr, avgår", en
+   *  privat del, "… kr räknas med" – med samma lydelser som kvittolistan och
+   *  projektlistan (docs/design.md, "Kryssrutelistan visar vad som räknas").
+   *  Tom nar inget avgar. */
+  avgar: string[];
 }
 
 export function KvittoKryssLista({
@@ -56,6 +61,11 @@ export function KvittoKryssLista({
               <span className="block font-granssnitt text-sm text-text-sekundar">
                 {k.underrad}
               </span>
+              {k.avgar.map((rad) => (
+                <span key={rad} className="block font-granssnitt text-sm text-text-sekundar">
+                  {rad}
+                </span>
+              ))}
             </span>
             <span className="shrink-0 font-rubrik text-base tabular-nums text-text-primar">
               {formateraKronorEllerStreck(k.belopp)}

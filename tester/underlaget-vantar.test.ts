@@ -58,6 +58,7 @@ import { byggK6aExport, VantarPaBostadsfragor, type K6aIndata } from "@/doman/ex
 import { sammaRader, vantandeUnderlag } from "@/doman/vantande-underlag";
 import { VANTAR_PA_BOSTADSFRAGOR_TEXT } from "@/doman/export-k6a";
 import { formateraKronor, formateraKronorEllerStreck } from "@/lib/format";
+import { TOMT_UNDERLAG } from "@/lib/tomt-underlag";
 import {
   tillDomanBostad,
   tillDomanKostnad,
@@ -90,7 +91,7 @@ function aterstarRaden(): { rubrik: string; rad: string; lank: string } {
  * blir: det är talet som ska synas redan nu. Utan altanen (medAltan: false)
  * beror summan på sida 1 inte heller av svaret – men sida 2 gör det fortfarande.
  */
-function seeda({ nybyggd = null as boolean | null, sald = true, medAltan = true, agarandel = 100 } = {}) {
+function seeda({ nybyggd = null as boolean | null, sald = true, medAltan = true, agarandel = 100 as number | null, kvitton = true } = {}) {
   const { db } = h;
   db.nollstall();
   for (const r of REGELPARAMETRAR) {
@@ -108,6 +109,10 @@ function seeda({ nybyggd = null as boolean | null, sald = true, medAltan = true,
     id: FONSTER, bostad_id: X, namn: "Nya fönster", ar: 2025, atgardstyp: "utbytt",
     battre_kvalitet: false, skick_forvarv: 1, skick_forsaljning: 4,
   });
+  if (!kvitton) {
+    h.inloggad = { id: ANNA, email: "anna@exempel.se" };
+    return;
+  }
   const kostnader: [string, number, string][] = [
     [FORRAD, 600_000, "2024-04-12"],
     [FONSTER, 900_000, "2025-06-10"],
@@ -313,7 +318,7 @@ describe("underlaget väntar i stället för att misslyckas", () => {
     const s = await sidan();
     const texter = [...s.querySelectorAll("ul li")].map((li) => li.textContent);
     expect(texter.some((t) => t?.startsWith("Färg till hallen"))).toBe(true);
-    const knapp = [...s.querySelectorAll("a")].find((a) => a.textContent === "Berätta vad du gjort");
+    const knapp = [...s.querySelectorAll("a")].find((a) => a.textContent === "Skapa projekt");
     expect(knapp?.getAttribute("href")).toBe("/projekt/nytt");
   });
 
@@ -331,6 +336,66 @@ describe("underlaget väntar i stället för att misslyckas", () => {
     expect(s.textContent).not.toContain(aterstarRaden().rubrik);
     expect(s.textContent).toMatch(/Förs till/);
   });
+});
+
+// Sidans ram – försäljningsdatum, ägarandel, inledningen och rutan om sida 2
+// före försäljningen – beror inte av svaret och står kvar medan underlaget
+// väntar (docs/design.md, Exportvyn). Uppmätt 2026-11-16: väntläget visade
+// ingen av dem, och raden med ägarandelen är den enda vägen att ange den.
+describe("väntläget tar bort det som är ovisst, aldrig sidans ram", () => {
+  /** Ramens rader som hon läser dem: varje rad med en av ramens etiketter,
+   *  och varje förklaring med ramens lydelser – hela texten. */
+  function ram(s: HTMLElement): string[] {
+    const rader = [...s.querySelectorAll("span")]
+      .filter((e) => e.textContent === "Försäljningsdatum" || e.textContent === "Ägarandel")
+      .map((e) => e.parentElement!.textContent!);
+    const rutor = [...s.querySelectorAll("div")]
+      .filter((e) => [...e.children].length === 0 && /SKV 2197|går inte att beräkna förrän bostaden är markerad som såld/.test(e.textContent ?? ""))
+      .map((e) => e.textContent!);
+    return [...rader, ...rutor];
+  }
+
+  for (const [namn, fall] of [
+    ["såld, andelen angiven", { sald: true, agarandel: 100 }],
+    ["före försäljningen, andelen inte angiven", { sald: false, agarandel: null }],
+  ] as const) {
+    it(namn, async () => {
+      seeda({ ...fall, nybyggd: false });
+      const besvarad = ram(await sidan());
+      // Förutsättningen: ramen finns i det besvarade underlaget, med det som
+      // hör till fallet.
+      expect(besvarad.some((t) => t.startsWith("Försäljningsdatum"))).toBe(true);
+      expect(besvarad.some((t) => t.startsWith("Ägarandel"))).toBe(true);
+      expect(besvarad.some((t) => t.includes("SKV 2197"))).toBe(true);
+      expect(besvarad.some((t) => t.includes("markerad som såld"))).toBe(!fall.sald);
+      if (fall.agarandel === null) expect(besvarad.find((t) => t.startsWith("Ägarandel"))).toContain("Ange ägarandelen");
+
+      seeda({ ...fall, nybyggd: null });
+      const s = await sidan();
+      expect(s.textContent, "förutsättningen: underlaget väntar").toContain(aterstarRaden().rubrik);
+      expect(ram(s)).toEqual(besvarad);
+    });
+  }
+});
+
+// Ett underlag utan en enda post skriver ingen nolla (docs/design.md,
+// Exportvyn). Uppmätt 2026-11-16 på ett nyskapat konto: "Förs till K6,
+// ruta 4 — 0 kr".
+describe("ett tomt underlag", () => {
+  for (const nybyggd of [false, null]) {
+    it(`visar sitt tomma tillstånd, inget tal (nybyggd: ${nybyggd})`, async () => {
+      seeda({ kvitton: false, nybyggd });
+      const s = await sidan();
+      const texter = [...s.querySelectorAll("p")].map((p) => p.textContent);
+      expect(texter).toContain(TOMT_UNDERLAG.rubrik);
+      expect(texter).toContain(TOMT_UNDERLAG.rad);
+      expect(s.textContent).not.toMatch(/Förs till|Summa sida/);
+      expect(s.textContent).not.toContain(formateraKronor(0));
+      expect(s.querySelectorAll("table")).toHaveLength(0);
+      const lank = [...s.querySelectorAll("a")].find((a) => a.textContent === "Lägg till kvitto");
+      expect(lank?.getAttribute("href")).toBe("/kostnad/nytt");
+    });
+  }
 });
 
 describe("Frågor om bostaden", () => {

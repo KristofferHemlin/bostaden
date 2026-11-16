@@ -414,12 +414,20 @@ export function NyttProjektFlode({
           </p>
         ) : null}
 
+        {/* Nasta och Spara ar tva olika knappar, och nycklarna gor att React
+            aldrig ateranvander den ena som den andra. Utan dem stod de pa
+            samma plats i tradet, och React bytte bara type pa samma <button>:
+            vid ett riktigt klick pa Nasta i steg 3 hann uppdateringen till
+            steg 4 koras fore knappens standardhandling, knappen var da redan
+            type="submit", och formularet skickades – projektet sparades utan
+            att kvittosteget visats. Uppmatt i produktionen 2026-11-16;
+            framkallat i tester/projekt-nytt-steg4-webblasare.test.ts. */}
         {steg < ANTAL_STEG ? (
-          <button type="button" onClick={vidare} className={PRIMARKNAPP_KLASS}>
+          <button key="nasta" type="button" onClick={vidare} className={PRIMARKNAPP_KLASS}>
             Nästa
           </button>
         ) : (
-          <button type="submit" disabled={pagar || klar} className={PRIMARKNAPP_KLASS}>
+          <button key="spara" type="submit" disabled={pagar || klar} className={PRIMARKNAPP_KLASS}>
             {pagar || klar ? "Sparar…" : "Spara"}
           </button>
         )}
