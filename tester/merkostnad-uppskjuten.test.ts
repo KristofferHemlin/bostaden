@@ -50,6 +50,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { redigeraProjekt } from "@/app/projekt/actions";
+import { LIKVARDIGT_ETIKETT } from "@/app/projekt/fragetradet";
 import ProjektSida from "@/app/projekt/[id]/page";
 import RedigeraSida from "@/app/projekt/[id]/redigera/page";
 import { merkostnadBehoverBekraftas } from "@/doman/atgardsberakning";
@@ -195,7 +196,11 @@ describe("redigeringen", () => {
     document.body.appendChild(div);
     const rot = createRoot(div);
     await act(async () => rot.render(await RedigeraSida({ params: Promise.resolve({ id: P }) })));
-    const falt = [...div.querySelectorAll<HTMLInputElement>("input")].find((i) => i.placeholder === "t.ex. 500") ?? null;
+    // Faltet hittas pa etiketten hon laser, inte pa en platshallare.
+    const falt =
+      [...div.querySelectorAll("label")]
+        .find((l) => l.textContent?.startsWith(LIKVARDIGT_ETIKETT))
+        ?.querySelector<HTMLInputElement>("input") ?? null;
     act(() => rot.unmount());
     div.remove();
     return falt;
@@ -210,11 +215,13 @@ describe("redigeringen", () => {
     expect(await merkostnadsfaltet()).not.toBeNull();
   });
 
-  function redigering(merkostnad: string): FormData {
+  /** Svaret ar vad ett likvardigt byte hade kostat (docs/design.md, "Och
+   *  frågan ställs bakvänt"). */
+  function redigering(likvardigt: string): FormData {
     const f = new FormData();
     for (const [k, v] of Object.entries({
       projekt_id: P, namn: "Nytt golv i hallen", byggde_nytt: "nej", andrade_planlosning: "nej",
-      nytt_eller_bytt: "bytt", battre_eller_liknande: "battre", merkostnad, skick_forvarv: "1",
+      nytt_eller_bytt: "bytt", battre_eller_liknande: "battre", likvardigt_byte: likvardigt, skick_forvarv: "1",
     })) f.set(k, v);
     return f;
   }

@@ -13,7 +13,8 @@ import {
 } from "@/doman/regeltext";
 import type { Kostnad, Projekt } from "@/doman/typer";
 import {
-  merkostnadOverBeloppetFel,
+  LIKVARDIGT_MASTE_ANGES,
+  likvardigtOverBeloppetFel,
   tolkaFragetradetFormData,
 } from "@/lib/fragetradet-formdata";
 import { REGELPARAMETRAR, kostnad, projekt } from "./_hjalp";
@@ -28,7 +29,12 @@ import { REGELPARAMETRAR, kostnad, projekt } from "./_hjalp";
 
 const NAMN = "Bytte fönster";
 
-function fragetradet(merkostnad: string): FormData {
+// Fragan ar vand sedan 2026-11-18 (docs/design.md, "Och frågan ställs
+// bakvänt"): hon svarar vad ett likvardigt byte hade kostat, och merkostnaden
+// ar beloppet minus svaret. Spärren 0 < merkostnad < belopp ar exakt
+// 0 < svar < belopp. Avvisningarna lases ur design.md i
+// tester/likvardigt-byte.test.ts.
+function fragetradet(likvardigt: string): FormData {
   const f = new FormData();
   for (const [k, v] of Object.entries({
     namn: NAMN,
@@ -36,7 +42,7 @@ function fragetradet(merkostnad: string): FormData {
     andrade_planlosning: "nej",
     nytt_eller_bytt: "bytt",
     battre_eller_liknande: "battre",
-    merkostnad,
+    likvardigt_byte: likvardigt,
     skick_forvarv: "1",
   })) {
     f.set(k, v);
@@ -44,32 +50,31 @@ function fragetradet(merkostnad: string): FormData {
   return f;
 }
 
-describe("frågeträdet vägrar en merkostnad som inte är mindre än projektets belopp", () => {
-  const PROJEKT_10_000 = { belopp: 1_000_000 };
+describe("frågeträdet vägrar ett svar som inte ger en merkostnad mindre än projektets belopp", () => {
+  const PROJEKT_10_000 = { belopp: 1_000_000, harRot: false };
 
-  it("12 000 kr mot ett projekt på 10 000 kr vägras, vid merkostnaden", () => {
-    expect(tolkaFragetradetFormData(fragetradet("12 000"), PROJEKT_10_000)).toEqual({
-      fel: merkostnadOverBeloppetFel(NAMN, 1_000_000),
+  it("svaret 0 kr – merkostnaden hade varit hela beloppet – vägras, vid merkostnadsfrågan", () => {
+    expect(tolkaFragetradetFormData(fragetradet("0"), PROJEKT_10_000)).toEqual({
+      fel: LIKVARDIGT_MASTE_ANGES,
       falt: "merkostnad",
     });
   });
 
-  it("exakt 10 000 kr vägras också – med samma mening", () => {
+  it("svaret 10 000 kr – ingen merkostnad alls – vägras", () => {
     expect(tolkaFragetradetFormData(fragetradet("10 000"), PROJEKT_10_000)).toEqual({
-      fel: merkostnadOverBeloppetFel(NAMN, 1_000_000),
+      fel: likvardigtOverBeloppetFel(1_000_000, false),
       falt: "merkostnad",
     });
   });
 
-  it("9 999,99 kr går igenom", () => {
-    const t = tolkaFragetradetFormData(fragetradet("9 999,99"), PROJEKT_10_000);
-    expect("fel" in t).toBe(false);
+  it("svaret 0,01 kr går igenom och ger merkostnaden 9 999,99 kr", () => {
+    const t = tolkaFragetradetFormData(fragetradet("0,01"), PROJEKT_10_000);
+    expect("fel" in t ? t.fel : t.merkostnad).toBe(999_999);
   });
 
-  it("meningen säger vilket projekt och vilket belopp", () => {
-    expect(merkostnadOverBeloppetFel(NAMN, 1_000_000)).toBe(
-      "Ange en merkostnad mindre än 10 000 kr – det är vad ”Bytte fönster” kostade.",
-    );
+  it("svaret 9 999,99 kr går igenom och ger merkostnaden 0,01 kr", () => {
+    const t = tolkaFragetradetFormData(fragetradet("9 999,99"), PROJEKT_10_000);
+    expect("fel" in t ? t.fel : t.merkostnad).toBe(1);
   });
 });
 

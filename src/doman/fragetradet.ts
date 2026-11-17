@@ -242,6 +242,36 @@ export function atgardKategoriText(
   return battre_kvalitet ? "Grundförbättring och reparation" : "Reparation";
 }
 
+/** Fraga 2-4:s svar, sammanfattat till en rad (produktspec 4.1) – samma
+ *  lydelse pa projektets sida och i projektflodets sammanfattning. */
+export const ATGARDSTYP_TEXT: Record<Atgardstyp, string> = {
+  nybyggnad: "Byggde något nytt",
+  planlosning: "Ändrade planlösningen",
+  nytt_tillagg: "Satte in något nytt",
+  utbytt: "Bytte ut något som fanns",
+};
+
+/**
+ * Atgardens slag ur svaren, utan merkostnaden – for att visa vad svaren
+ * raknas som innan merkostnaden ar besvarad (projektflodets sammanfattning,
+ * docs/design.md: "Sista steget sammanfattar innan det sparar"). Null nar
+ * tradet inte ar fardigsvarat. Lagrar ingenting: det ar tolkaFragetradet som
+ * avgor vad som sparas.
+ */
+export function atgardFranSvar(
+  svar: FragetradetSvar,
+): { atgardstyp: Atgardstyp; battre_kvalitet: boolean | null } | null {
+  if (svar.byggdeNytt === "ja") return { atgardstyp: "nybyggnad", battre_kvalitet: null };
+  if (svar.byggdeNytt !== "nej") return null;
+  if (svar.andradePlanlosning === "ja") return { atgardstyp: "planlosning", battre_kvalitet: null };
+  if (svar.andradePlanlosning !== "nej") return null;
+  if (svar.nyttEllerBytt === "nytt") return { atgardstyp: "nytt_tillagg", battre_kvalitet: null };
+  if (svar.nyttEllerBytt !== "bytt") return null;
+  if (svar.battreEllerLiknande === "battre") return { atgardstyp: "utbytt", battre_kvalitet: true };
+  if (svar.battreEllerLiknande === "liknande") return { atgardstyp: "utbytt", battre_kvalitet: false };
+  return null;
+}
+
 /** Fraga 7 – samma lydelse i forsaljningsflodet och i projektets
  *  redigering, sa att de inte kan glida isar. */
 export const SKICK_FORSALJNING_FRAGA =

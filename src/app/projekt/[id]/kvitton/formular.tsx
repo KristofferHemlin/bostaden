@@ -15,31 +15,33 @@ import { FALTFEL_KLASS, HJALPTEXT_KLASS, PRIMARKNAPP_KLASS } from "@/components/
 import { merkostnadFragasVid } from "@/doman/kvittokoppling";
 import { FALTFEL_ATTRIBUT, FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 import { useFormularfel } from "@/lib/formularfel-klient";
-import { provaMerkostnad } from "@/lib/fragetradet-formdata";
+import { provaLikvardigtByte } from "@/lib/fragetradet-formdata";
 import { oreFranKronor } from "@/lib/format";
 
 const START: LaggTillKvittonResultat = {};
 
 export function LaggTillKvittonFormular({
   projektId,
-  projektnamn,
   projekt,
   beloppFore,
+  rotFore,
   kvitton,
 }: {
   projektId: string;
-  /** Namnet merkostnadens avvisning namner – projektets eget. */
-  projektnamn: string;
   projekt: { atgardstyp: string | null; battre_kvalitet: boolean | null; merkostnad: number | null };
   /** Projektets belopp innan nagot lagts till, i oren. */
   beloppFore: number;
+  /** Bar projektets kvitton redan ROT? Valjer bara merkostnadsfragans lydelse. */
+  rotFore: boolean;
   kvitton: ValbartKvitto[];
 }) {
   const [resultat, action, pagar] = useActionState(laggTillKvitton, START);
   const [valda, setValda] = useState<Set<string>>(new Set());
-  const [merkostnadText, setMerkostnadText] = useState("");
+  const [likvardigtText, setLikvardigtText] = useState("");
 
-  const beloppEfter = beloppFore + kvitton.filter((k) => valda.has(k.id)).reduce((s, k) => s + k.bidrag, 0);
+  const valdaKvitton = kvitton.filter((k) => valda.has(k.id));
+  const beloppEfter = beloppFore + valdaKvitton.reduce((s, k) => s + k.bidrag, 0);
+  const harRot = rotFore || valdaKvitton.some((k) => k.rot);
   const fragas = merkostnadFragasVid(projekt, beloppEfter);
 
   const { formRef, hanteraSubmit, faltfel, formularfel, rensa } = useFormularfel<"kvitton" | "merkostnad">({
@@ -48,8 +50,8 @@ export function LaggTillKvittonFormular({
     validera: () => {
       if (valda.size === 0) return { fel: "Välj minst ett kvitto.", falt: "kvitton" };
       if (!fragas) return null;
-      const fel = provaMerkostnad(oreFranKronor(merkostnadText), beloppEfter, projektnamn);
-      return fel ? { fel, falt: "merkostnad" } : null;
+      const svar = provaLikvardigtByte(oreFranKronor(likvardigtText), beloppEfter, harRot);
+      return "fel" in svar ? { fel: svar.fel, falt: "merkostnad" } : null;
     },
   });
 
@@ -97,14 +99,16 @@ export function LaggTillKvittonFormular({
       {fragas ? (
         <>
           <MerkostnadFalt
-            varde={merkostnadText}
+            varde={likvardigtText}
             fel={faltfel?.falt === "merkostnad" ? faltfel.fel : undefined}
+            belopp={beloppEfter}
+            harRot={harRot}
             onChange={(d) => {
-              setMerkostnadText(d.merkostnadText ?? "");
+              setLikvardigtText(d.likvardigtText ?? "");
               rensa();
             }}
           />
-          <input type="hidden" name="merkostnad" value={merkostnadText} />
+          <input type="hidden" name="likvardigt_byte" value={likvardigtText} />
         </>
       ) : null}
 

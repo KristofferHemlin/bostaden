@@ -49,9 +49,9 @@ export default async function LaggTillKvittonSida({
     >
       <LaggTillKvittonFormular
         projektId={id}
-        projektnamn={projekt.namn || visningsnamn}
         projekt={projekt}
-        beloppFore={beloppFore}
+        beloppFore={beloppFore.belopp}
+        rotFore={beloppFore.harRot}
         kvitton={kvitton}
       />
     </Skarm>

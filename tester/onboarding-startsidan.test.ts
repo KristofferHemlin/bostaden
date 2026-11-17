@@ -66,6 +66,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import OversiktSida from "@/app/page";
 import ExportSida from "@/app/export/page";
 import { sparaAndelen, sparaKopeskillingen } from "@/app/bostaden/actions";
+import { sparaFragorOmBostaden } from "@/app/bostaden/fragor/actions";
+import FragorOmBostadenSida from "@/app/bostaden/fragor/page";
 import KopeskillingSida from "@/app/bostaden/kopeskilling/page";
 import AndelSida from "@/app/bostaden/andel/page";
 import BjudInSida from "@/app/bostaden/bjud-in/page";
@@ -98,7 +100,13 @@ function regelparametrar() {
   }
 }
 
-function seeda(bostad: { adress?: string | null; kopeskilling?: bigint | null; agarandel?: number | null }) {
+function seeda(bostad: {
+  adress?: string | null;
+  kopeskilling?: bigint | null;
+  agarandel?: number | null;
+  /** null = bostadsfragorna obesvarade. Utelamnad: besvarade (nej). */
+  nybyggd?: boolean | null;
+}) {
   h.db.nollstall();
   regelparametrar();
   h.db.lagg("anvandare", { id: ANNA, epost: "anna@exempel.se" });
@@ -108,7 +116,7 @@ function seeda(bostad: { adress?: string | null; kopeskilling?: bigint | null; a
     kopeskilling: bostad.kopeskilling ?? null,
     upplatelseform: "fastighet",
     tilltradesdatum: datum("2019-06-01"),
-    nybyggd_vid_forvarv: false,
+    nybyggd_vid_forvarv: bostad.nybyggd === undefined ? false : bostad.nybyggd,
   });
   h.db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: BOSTAD, agarandel: bostad.agarandel ?? null });
   h.inloggad = { id: ANNA, email: "anna@exempel.se" };
@@ -763,5 +771,62 @@ describe("inbjudningssidans rubrik räknar inte de övriga delägarna", () => {
     const rubriker = [...html.matchAll(/<h1[^>]*>([^<]*)<\/h1>/g)].map((m) => m[1]);
     if (rubriker.length === 0) throw new Error("inbjudningssidan renderade ingen <h1>");
     expect(rubriker).toEqual([lydelse]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Bostadsfrågorna följer på ägarandelen (docs/design.md, "Att de följer på
+// ägarandelen är det som gör dem besvarade"; produktspec 4.1, beslutat
+// 2026-11-18). Andelen sparas för sig – svaret på den hänger aldrig på att
+// hon svarar på de följande.
+// ---------------------------------------------------------------------------
+
+describe("bostadsfrågorna följer på ägarandelen", () => {
+  it("obesvarade frågor: andelen sparas, och hon fortsätter till Frågor om bostaden", async () => {
+    seeda({ kopeskilling: 325000000n, nybyggd: null });
+    ettKvitto();
+    expect(await omdirigering(sparaAndelen({}, fd({ agarandel: "100" })))).toBe("/bostaden/fragor?fran=andel");
+    // Andelen är sparad redan nu – kedjan kan avbrytas här.
+    expect(h.db.tabell("medlemskap")[0].agarandel).toBe(100);
+    expect(kortet(await startsidan())).toBeNull();
+  });
+
+  it("besvarade frågor: ingen omväg, hem som förut", async () => {
+    // Förutsättningen för att föregående fall säger något: samma svar, bara
+    // bostadsfrågorna besvarade, ger en annan väg.
+    seeda({ kopeskilling: 325000000n, nybyggd: false });
+    ettKvitto();
+    expect(await omdirigering(sparaAndelen({}, fd({ agarandel: "100" })))).toBe("/");
+  });
+
+  it("från exportvyn: till frågorna, och därifrån tillbaka till underlaget", async () => {
+    seeda({ kopeskilling: 325000000n, nybyggd: null });
+    expect(await omdirigering(sparaAndelen({}, fd({ agarandel: "100", fran: "export" })))).toBe(
+      "/bostaden/fragor?fran=export",
+    );
+  });
+
+  it("ett valt erbjudande om att bjuda in går före – det valde hon själv", async () => {
+    seeda({ kopeskilling: 325000000n, nybyggd: null });
+    expect(await omdirigering(sparaAndelen({}, fd({ agarandel: "50", bjud_in: "1" })))).toBe("/bostaden/bjud-in");
+  });
+
+  it("ett avvisat andelssvar leder ingenstans", async () => {
+    seeda({ kopeskilling: 325000000n, nybyggd: null });
+    const svar = await sparaAndelen({}, fd({ agarandel: "" }));
+    expect(svar.falt).toBe("agarandel");
+  });
+
+  it("frågesidan efter andelen leder tillbaka till översikten, och svaret leder dit", async () => {
+    seeda({ kopeskilling: 325000000n, agarandel: 100, nybyggd: null });
+    const html = renderToStaticMarkup(
+      (await FragorOmBostadenSida({ searchParams: Promise.resolve({ fran: "andel" }) })) as ReactElement,
+    );
+    expect(html).toContain('name="nasta" value="oversikt"');
+    expect(html).toMatch(/<a[^>]*href="\/"[^>]*>[^<]*Översikt/);
+    expect(
+      await omdirigering(sparaFragorOmBostaden({}, fd({ forsta_agare: "nej", nasta: "oversikt" }))),
+    ).toBe("/");
+    expect(h.db.tabell("bostad")[0].nybyggd_vid_forvarv).toBe(false);
   });
 });

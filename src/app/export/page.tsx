@@ -86,7 +86,7 @@ import { UnderlagetsVarningar } from "./underlagets-varningar";
 import {
   ATERSTAR_INLEDNING,
   ATERSTAR_RUBRIK,
-  BOSTADSFRAGOR_ATERSTAR,
+  BOSTADSFRAGOR_BESKED,
   aterstarRader,
   kvittonamn,
   type Aterstarrad,
@@ -517,7 +517,9 @@ export default async function ExportSida() {
    *  Exportvyn; CLAUDE.md, "Ett okänt svar döljer bara det det ändrar"):
    *  samma rader, kolumner och summor som annars, men varje tal ar ett som
    *  blir lika vilket svaret an blir – dar talen skiljer sig star strecket.
-   *  Återstår borjar med det som fattas och vagen dit. */
+   *  Det som fattas, och vagen dit, star i ett band overst – inte i
+   *  Återstår, dar varje annan rad ar nagot hon lagt in (docs/design.md,
+   *  "Beskedet står i ett band överst"). Ett band, aldrig en spärr. */
   function renderaVantande(v: VantandeUnderlag) {
     const kvittoNamn = new Map(kostnadRader.map((k) => [k.id, kvittonamn(k)]));
     const projektnamn = projektnamnKarta(projektRader, kostnadRader);
@@ -530,6 +532,21 @@ export default async function ExportSida() {
     return (
       <>
         <UnderlagetsVarningar varningar={v.varningar} />
+
+        <Meddelanderuta>
+          <p className="font-medium" data-bostadsfragor-band="">
+            {BOSTADSFRAGOR_BESKED.rubrik}
+          </p>
+          <p className="mt-0.5">
+            {BOSTADSFRAGOR_BESKED.rad}{" "}
+            <Link
+              href="/bostaden/fragor?fran=export"
+              className="font-medium underline underline-offset-2 hover:text-accent-mork"
+            >
+              {BOSTADSFRAGOR_BESKED.lank}
+            </Link>
+          </p>
+        </Meddelanderuta>
 
         {uppgifterKort(bostad.forsaljningsdatum ? isoDatum(bostad.forsaljningsdatum) : null, v.sald, v.gemensam)}
 
@@ -549,8 +566,8 @@ export default async function ExportSida() {
               gemensam={v.gemensam}
               agarandel={v.agarandel_procent}
               andelInteAngiven={andelslage.slag === "inte_angiven"}
-              // Återstår har alltid en rad har – frågorna – sa summan ar
-              // ofullstandig och dampas som varje sadan.
+              // Bostadsfragorna fattas – bandet overst sager det – sa summan
+              // ar ofullstandig och dampas som varje sadan.
               dampad
             />
           ) : (
@@ -585,6 +602,7 @@ export default async function ExportSida() {
 
         <Kort className="divide-y divide-linje">
           {v.sald ? null : foreForsaljningRuta()}
+          {aterstar.length > 0 ? (
           <section className="p-4">
             <p className="font-granssnitt text-sm font-medium text-text-primar">
               {ATERSTAR_RUBRIK}
@@ -593,24 +611,6 @@ export default async function ExportSida() {
               {ATERSTAR_INLEDNING}
             </p>
             <ul className="mt-2 divide-y divide-linje border-t border-linje">
-              <li className="py-2 font-granssnitt text-sm">
-                <span className="flex items-center gap-1.5 font-medium text-text-primar">
-                  <span
-                    aria-hidden
-                    className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
-                  />
-                  {BOSTADSFRAGOR_ATERSTAR.rubrik}
-                </span>
-                <span className="mt-0.5 block text-sm text-text-sekundar">
-                  {BOSTADSFRAGOR_ATERSTAR.rad}{" "}
-                  <Link
-                    href="/bostaden/fragor?fran=export"
-                    className="font-medium text-text-primar underline underline-offset-2 hover:text-accent-mork"
-                  >
-                    {BOSTADSFRAGOR_ATERSTAR.lank}
-                  </Link>
-                </span>
-              </li>
               {aterstar.map((r) => (
                 <AterstarRad
                   key={r.nyckel}
@@ -628,6 +628,7 @@ export default async function ExportSida() {
               </Link>
             ) : null}
           </section>
+          ) : null}
 
           <div className="space-y-4 p-4">
             {v.sald ? (

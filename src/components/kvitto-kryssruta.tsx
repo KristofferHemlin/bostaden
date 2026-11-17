@@ -20,6 +20,9 @@ export interface ValbartKvitto {
   /** Det kvittot bidrar med till projektets belopp om det valjs, i oren –
    *  merkostnaden ska vara mindre an summan av de valda. */
   bidrag: number;
+  /** Bar kvittots bidrag ett ROT-avdrag? Avgor bara lydelsen i
+   *  merkostnadsfragan – "fore ROT-avdraget" ar brus utan ROT. */
+  rot: boolean;
   /** Det som avgar och vad som blir kvar – "varav ROT … kr, avgår", en
    *  privat del, "… kr räknas med" – med samma lydelser som kvittolistan och
    *  projektlistan (docs/design.md, "Kryssrutelistan visar vad som räknas").

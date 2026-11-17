@@ -1,7 +1,7 @@
 // Frågor om bostaden (produktspec 4.1; docs/design.md, Exportvyn). Samma två
-// frågor och samma lydelser från båda ingångarna: försäljningsflödet, där de
-// ställs först av allt, och underlaget, som väntar på svaren också under
-// ägandet. Sidan heter inte försäljning – en sida som heter så och frågar den
+// frågor och samma lydelser från alla tre ingångarna: försäljningsflödet, där
+// de ställs först av allt, underlaget, som väntar på svaren också under
+// ägandet, och direkt efter ägarandelen. Sidan heter inte försäljning – en sida som heter så och frågar den
 // som inte sålt säger fel sak om varför den finns.
 //
 // Redan givna svar visas som valda, så att sidan också går att använda för att
@@ -13,6 +13,7 @@ import { lasBostadsfragor } from "@/doman/bostadsfragor";
 import { bostadHeader } from "@/lib/bostad-header";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
+import { TILL_OVERSIKTEN } from "../sida";
 import { sparaFragorOmBostaden } from "./actions";
 
 export const metadata = { title: "Frågor om bostaden" };
@@ -27,17 +28,23 @@ export default async function FragorOmBostadenSida({
   const { bostadId } = await kravBostad();
   const bostad = await prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } });
   const { bostadsnamn } = bostadHeader(bostad);
-  const franExport = (await searchParams)?.fran === "export";
+  const fran = (await searchParams)?.fran;
+  const franExport = fran === "export";
+  // Direkt efter agarandelen pa startsidan (docs/design.md, "Att de följer på
+  // ägarandelen"): vagen tillbaka – och vidare efter svaret – ar oversikten,
+  // dit andelsfragan annars hade lett. Andelen ar redan sparad, sa att ga
+  // darifran ar att kliva ur kedjan, inte att tappa nagot.
+  const franAndel = fran === "andel";
 
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
       rubrik="Frågor om bostaden"
-      bakLank={{ href: "/export", text: "Deklarationsunderlag" }}
+      bakLank={franAndel ? TILL_OVERSIKTEN : { href: "/export", text: "Deklarationsunderlag" }}
     >
       <BostadsfragorFormular
         action={sparaFragorOmBostaden}
-        nasta={franExport ? "export" : undefined}
+        nasta={franExport ? "export" : franAndel ? "oversikt" : undefined}
         givna={lasBostadsfragor(bostad)}
       />
     </Skarm>

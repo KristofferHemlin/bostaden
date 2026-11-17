@@ -24,11 +24,14 @@ import {
   efterSvaret,
   type Bostadsuppgift,
 } from "@/lib/bostadsuppgifter";
+import { bostadsfragornaBesvarade, lasBostadsfragor } from "@/doman/bostadsfragor";
 import { skrivEgenAndel } from "@/lib/egen-andel";
 import { oreFranKronor } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 import { KOPESKILLING_SOM_BELOPP, kopeskillingsfel } from "./validering";
+
+const BOSTADSFRAGORNAS_SOKVAG = "/bostaden/fragor";
 
 export interface UppgiftResultat {
   fel?: string;
@@ -44,7 +47,12 @@ async function lasLaget(bostadId: string, anvandareId: string) {
   const [bostad, andelar] = await Promise.all([
     prisma.bostad.findUniqueOrThrow({
       where: { id: bostadId },
-      select: { kopeskilling: true },
+      select: {
+        kopeskilling: true,
+        upplatelseform: true,
+        nybyggd_vid_forvarv: true,
+        ombildning_fran_hyresratt: true,
+      },
     }),
     hamtaAndelar(bostadId),
   ]);
@@ -52,6 +60,7 @@ async function lasLaget(bostadId: string, anvandareId: string) {
   return {
     svar: { kopeskilling: bostad.kopeskilling, agarandel: egen?.andel ?? null },
     andraFinns: andelar.medlemmar.length > 1 || andelar.inbjudningar.length > 0,
+    bostadsfragorBesvarade: bostadsfragornaBesvarade(lasBostadsfragor(bostad)),
   };
 }
 
@@ -75,14 +84,22 @@ async function vidare(
   revalidatePath("/");
   revalidatePath("/installningar");
   revalidatePath("/export");
-  const dit = efterSvaret({
-    ...(await lasLaget(bostadId, anvandareId)),
-    nyssBesvarad,
-    bjudIn: fran.bjudIn,
-  });
+  const laget = await lasLaget(bostadId, anvandareId);
+  const dit = efterSvaret({ ...laget, nyssBesvarad, bjudIn: fran.bjudIn });
+  // Bostadsfragorna foljer pa agarandelen (docs/design.md, "Att de följer på
+  // ägarandelen är det som gör dem besvarade"): tre fragor om bostaden blir
+  // ett arende i stallet for tre avbrott. Andelen ar redan sparad har – svaret
+  // pa den hanger aldrig pa att hon svarar pa de foljande. Ett valt
+  // erbjudande om att bjuda in gar fore: det valde hon sjalv.
+  const tillBostadsfragorna =
+    nyssBesvarad === "agarandel" &&
+    !laget.bostadsfragorBesvarade &&
+    dit !== INBJUDNINGSERBJUDANDETS_SOKVAG;
   if (fran.export) {
+    if (tillBostadsfragorna) redirect(`${BOSTADSFRAGORNAS_SOKVAG}?fran=export`);
     redirect(dit === INBJUDNINGSERBJUDANDETS_SOKVAG ? `${dit}?fran=export` : "/export");
   }
+  if (tillBostadsfragorna) redirect(`${BOSTADSFRAGORNAS_SOKVAG}?fran=andel`);
   redirect(dit);
 }
 

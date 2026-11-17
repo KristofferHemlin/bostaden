@@ -119,7 +119,7 @@ import {
   taBortBilaga,
 } from "@/app/kostnad/bilaga-actions";
 import { skapaUtkast, sparaKostnad } from "@/app/kostnad/nytt/actions";
-import { redigeraProjekt, skapaProjekt, taBortProjekt } from "@/app/projekt/actions";
+import { redigeraProjekt, skapaProjekt, sparaMotivering, taBortProjekt } from "@/app/projekt/actions";
 import { laggTillKvitton } from "@/app/projekt/[id]/kvitton/actions";
 import { sparaFragorOmBostaden } from "@/app/bostaden/fragor/actions";
 import { sparaAndelen, sparaKopeskillingen } from "@/app/bostaden/actions";
@@ -427,6 +427,13 @@ const VAGAR_MED_ID: Vag[] = [
     avslag: "fel",
   },
   { vag: "taBortProjekt", anrop: () => taBortProjekt(START, formular({ projekt_id: PX })), avslag: "fel" },
+  // Fraga 8 fran projektets sida (docs/design.md, "Hur vet du det?" hör inte
+  // till flödet).
+  {
+    vag: "sparaMotivering",
+    anrop: () => sparaMotivering(START, formular({ projekt_id: PX, motivering: "Kapad" })),
+    avslag: "fel",
+  },
   // Lägg till kvitton – efterträdaren till genomgångens laggIHog.
   { vag: "sida /projekt/[id]/kvitton", anrop: () => LaggTillKvittonSida(params(PX)), avslag: "sidan finns inte" },
   {

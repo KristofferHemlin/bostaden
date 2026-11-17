@@ -74,7 +74,19 @@ const datum = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
 const design = () => readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
 
-/** Raden i Återstår, ur design.md under Exportvyn. */
+/** Bandet överst: det element vars första barn är rubriken – och som inte
+ *  ligger i en lista. Stannar när det inte hittas (CLAUDE.md, "Ett test som
+ *  letar efter något ska stanna när det inte hittas"). */
+function bandet(s: HTMLElement): HTMLElement {
+  const { rubrik } = aterstarRaden();
+  const rubriker = [...s.querySelectorAll("p")].filter((p) => p.textContent === rubrik);
+  expect(rubriker, "bandets rubrik ska stå en gång").toHaveLength(1);
+  const band = rubriker[0].parentElement!;
+  expect(band.closest("ul"), "bandet ligger inte i en lista").toBeNull();
+  return band;
+}
+
+/** Beskedet om bostadsfrågorna, ur design.md under Exportvyn. */
 function aterstarRaden(): { rubrik: string; rad: string; lank: string } {
   const m = design().match(/^> \*\*(Vi vet inte om bostaden var nybyggd[^*]+)\*\*\n> ([^*\n]+?) \*\*([^*]+)\*\*$/m);
   if (!m) throw new Error("design.md saknar raden om bostadsfrågorna under Exportvyn");
@@ -303,14 +315,35 @@ describe("underlaget väntar i stället för att misslyckas", () => {
     expect(streck.map((e) => e.textContent)).toEqual([`Summa sida 2 – avdragsgill del efter förslitning${STRECK}`]);
   });
 
-  it("Återstår börjar med designens rad och leder till Frågor om bostaden", async () => {
+  // docs/design.md, "Beskedet står i ett band överst, inte under Återstår"
+  // (flyttat 2026-11-18): varje annan rad i Återstår är något hon lagt in,
+  // och en fråga bland kvitton läses som ett kvitto.
+  it("beskedet står i ett band överst, ovanför tabellerna, och leder till Frågor om bostaden", async () => {
     const { rubrik, rad, lank } = aterstarRaden();
     const s = await sidan();
-    const forsta = s.querySelector("ul li")!;
-    const delar = [...forsta.children].map((e) => e.textContent);
-    expect(delar).toEqual([rubrik, `${rad} ${lank}`]);
-    const a = [...forsta.querySelectorAll("a")];
+    const band = bandet(s);
+    expect([...band.children].map((e) => e.textContent)).toEqual([rubrik, `${rad} ${lank}`]);
+    const a = [...band.querySelectorAll("a")];
     expect(a.map((x) => [x.textContent, x.getAttribute("href")])).toEqual([[lank, "/bostaden/fragor?fran=export"]]);
+    // Ovanför tabellerna: före sida 1:s rubrik i dokumentet.
+    const sida1 = [...s.querySelectorAll("*")].find((e) => e.textContent === "Sida 1 · Grundförbättringar");
+    expect(sida1, "sida 1:s rubrik").toBeTruthy();
+    expect(band.compareDocumentPosition(sida1!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("och inte längre i Återstår, där bara det hon lagt in står", async () => {
+    const { rubrik } = aterstarRaden();
+    const s = await sidan();
+    const rader = [...s.querySelectorAll("ul li")].map((li) => li.textContent ?? "");
+    // Förutsättningen: Återstår finns och har sin rad om kvittot.
+    expect(rader.some((t) => t.startsWith("Färg till hallen"))).toBe(true);
+    expect(rader.filter((t) => t.includes(rubrik))).toEqual([]);
+  });
+
+  it("och raderna visas ändå – ett band, inte en spärr", async () => {
+    const s = await sidan();
+    expect(s.textContent).toContain("Sida 1 · Grundförbättringar");
+    expect(s.textContent).toContain("Sida 2 · Förbättrande reparationer");
   });
 
   it("och kvittot utan projekt står kvar, med vägen till Skapa projekt", async () => {
@@ -326,7 +359,7 @@ describe("underlaget väntar i stället för att misslyckas", () => {
     const s = await sidan();
     const summor = [...s.querySelectorAll("section")].filter((e) => e.textContent?.startsWith("Summa sida"));
     expect(summor.map((e) => e.textContent)).toEqual([`Summa sida 1 – grundförbättringar${formateraKronorEllerStreck(null)}`]);
-    expect(s.querySelector("ul li")!.textContent).toContain(aterstarRaden().rubrik);
+    expect([...bandet(s).children][0].textContent).toBe(aterstarRaden().rubrik);
   });
 
   it("med besvarade frågor ser underlaget ut som vanligt", async () => {

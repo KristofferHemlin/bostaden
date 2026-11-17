@@ -256,7 +256,7 @@ async function nyttProjektVidSteg(steg: 1 | 2 | 3 | 4): Promise<string> {
       bostadsdelar: [],
       svar: {
         byggdeNytt: "nej", andradePlanlosning: "nej", nyttEllerBytt: "bytt",
-        battreEllerLiknande: "liknande", merkostnad: null, merkostnadText: "",
+        battreEllerLiknande: "liknande", merkostnad: null, likvardigtText: "",
         skickForvarv: "1", motivering: "",
       },
       valda: [valt],
@@ -399,7 +399,7 @@ describe("projektflödet har ett orange element per steg, och det är knappen vi
     [1, "Nästa"],
     [2, "Nästa"],
     [3, "Nästa"],
-    [4, "Spara"],
+    [4, "Spara projektet"],
   ] as const)("steg %s: bara %s", async (steg, knapp) => {
     await cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
     await cdp("Page.navigate", { url: `${adress}nytt-${steg}` });

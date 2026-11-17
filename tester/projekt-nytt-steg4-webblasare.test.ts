@@ -210,7 +210,7 @@ describe("projektflödets fjärde steg, med riktiga klick i Chrome", () => {
     await vanta(150);
     expect((await lage()).inskickat, "att välja ett kvitto skickar ingenting").toBe(0);
 
-    await tryck("Spara");
+    await tryck("Spara projektet");
     const skickat = await webblasare.utvardera<Record<string, string[]>[]>("window.__inskickat");
     expect(skickat).toHaveLength(1);
     expect(skickat[0].kostnad_ider).toEqual([KVITTO.id]);

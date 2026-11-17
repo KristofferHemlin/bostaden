@@ -189,7 +189,7 @@ describe("dialoger om sparandet körs efter valideringen", () => {
 describe("frågeträdet – felet står vid frågan det gäller", () => {
   // Projektets belopp spelar ingen roll for de har fallen – stort nog att
   // taket for merkostnaden aldrig slar till.
-  const STORT_PROJEKT = { belopp: 100_000_000 };
+  const STORT_PROJEKT = { belopp: 100_000_000, harRot: false };
 
   function fd(falt: Record<string, string>): FormData {
     const f = new FormData();
@@ -218,7 +218,7 @@ describe("frågeträdet – felet står vid frågan det gäller", () => {
         andrade_planlosning: "nej",
         nytt_eller_bytt: "bytt",
         battre_eller_liknande: "battre",
-        merkostnad: "",
+        likvardigt_byte: "",
       }),
       STORT_PROJEKT,
     );

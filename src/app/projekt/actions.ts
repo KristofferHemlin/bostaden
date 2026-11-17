@@ -14,7 +14,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { kostnaderKoppladeTillProjekt } from "@/doman/berakningar";
 import { tolkaSkickForvarv } from "@/doman/fragetradet";
-import { beloppOmKopplade, kvittoGarAttKoppla } from "@/doman/kvittokoppling";
+import { beloppOmKopplade, harRotOmKopplade, kvittoGarAttKoppla } from "@/doman/kvittokoppling";
 import { hamtaProjektetsBelopp, tillDomanKostnad } from "@/lib/doman-fran-db";
 import { tolkaBostadsdelar } from "@/doman/bostadsdel";
 import { serverfelMeddelande } from "@/lib/databas-fel";
@@ -87,7 +87,8 @@ export async function skapaProjekt(
   ).filter((k) => kvittoGarAttKoppla(tillDomanKostnad(k)));
 
   const belopp = beloppOmKopplade(valda.map(tillDomanKostnad));
-  const tolkat = tolkaFragetradetFormData(formData, { belopp });
+  const harRot = harRotOmKopplade(valda.map(tillDomanKostnad));
+  const tolkat = tolkaFragetradetFormData(formData, { belopp, harRot });
   if ("fel" in tolkat) return tolkat;
   const bostadsdelar = tolkaBostadsdelar(formData);
 
@@ -113,7 +114,11 @@ export async function skapaProjekt(
           merkostnad: tolkat.merkostnad,
           merkostnad_bas: tolkat.merkostnad !== null ? belopp : null,
           skick_forvarv: tolkat.skick_forvarv,
-          motivering: tolkat.motivering,
+          // Fraga 8 stalls inte i flodet langre, men ett utkast fran fore
+          // flytten kan bara ett svar – det sparas, sa att ingen tappar det
+          // hon skrivit (docs/design.md, "Hur vet du det?" hör inte till
+          // flödet). Annars besvaras den pa projektets sida.
+          motivering: String(formData.get("motivering") ?? "").trim() || null,
           klassificerad_av: anvandareId,
         },
         select: { id: true },
@@ -211,8 +216,8 @@ export async function redigeraProjekt(
   // Projektets belopp: merkostnaden maste vara mindre (CLAUDE.md, steg 2).
   // Att spara svaret – aven oforandrat – ar att bekrafta det: beloppet sparas
   // pa nytt, och en tidigare upplysning om att projektet andrats forsvinner.
-  const belopp = await hamtaProjektetsBelopp(bostadId, id);
-  const tolkat = tolkaFragetradetFormData(formData, { belopp });
+  const { belopp, harRot } = await hamtaProjektetsBelopp(bostadId, id);
+  const tolkat = tolkaFragetradetFormData(formData, { belopp, harRot });
   if ("fel" in tolkat) return tolkat;
 
   const bostadsdelar = tolkaBostadsdelar(formData);
@@ -242,7 +247,8 @@ export async function redigeraProjekt(
         ...(skickForsaljning !== undefined && tolkat.atgardstyp === "utbytt"
           ? { skick_forsaljning: skickForsaljning }
           : {}),
-        motivering: tolkat.motivering,
+        // motivering rors inte: fraga 8 besvaras pa projektets sida
+        // (sparaMotivering nedan), och redigeringen ar inte dess vag.
         klassificerad_av: anvandareId,
       },
     });
@@ -293,4 +299,46 @@ export async function taBortProjekt(
   revalidatePath("/kostnad/[id]", "page");
   revalidatePath("/export");
   redirect("/projekt");
+}
+
+export interface MotiveringResultat {
+  fel?: string;
+  /** Satt nar svaret sparats – faltet sager det tills nasta andring. */
+  sparat?: boolean;
+}
+
+/**
+ * Fraga 8, "Hur vet du det?", fran projektets sida (docs/design.md, "Hur vet
+ * du det?" hör inte till flödet). Fritext, valfri, blockerar aldrig. Ett tomt
+ * falt tar bort ett tidigare svar: det ar en anteckning, inte ett tal, och
+ * den som skrivit fel ska kunna stryka det.
+ */
+export async function sparaMotivering(
+  _foreg: MotiveringResultat,
+  formData: FormData,
+): Promise<MotiveringResultat> {
+  const { bostadId, anvandareId } = await kravBostad();
+  const id = String(formData.get("projekt_id") ?? "");
+  if (!arGiltigtId(id)) return { fel: "Projektet hittades inte." };
+
+  const projekt = await prisma.projekt.findFirst({
+    where: { id, bostad_id: bostadId },
+    select: { id: true },
+  });
+  if (!projekt) return { fel: "Projektet hittades inte." };
+
+  const motivering = String(formData.get("motivering") ?? "").trim();
+  try {
+    await prisma.projekt.update({
+      where: { id },
+      data: { motivering: motivering || null },
+    });
+  } catch (fel) {
+    return {
+      fel: serverfelMeddelande(fel, { sida: "projekt/[id]", anrop: "sparaMotivering", anvandareId }),
+    };
+  }
+
+  revalidatePath(`/projekt/${id}`);
+  return { sparat: true };
 }

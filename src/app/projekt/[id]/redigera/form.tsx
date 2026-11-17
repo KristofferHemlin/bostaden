@@ -46,6 +46,7 @@ export function RedigeraProjektForm({
   blockerande,
   varden,
   projektetsBelopp,
+  projektetHarRot,
   projektetsSumma,
   merkostnadAndrad,
   skickForsaljning,
@@ -56,6 +57,8 @@ export function RedigeraProjektForm({
   varden: FragetradetVarden;
   /** Projektets belopp i oren, fore ROT – merkostnaden maste vara mindre. */
   projektetsBelopp: number;
+  /** Bar nagot av projektets kvitton ROT? Valjer merkostnadsfragans lydelse. */
+  projektetHarRot: boolean;
   /** Projektets summa i oren, efter ROT – visas under ett svar som gor hela
    *  beloppet till grundforbattring. */
   projektetsSumma: number;
@@ -79,7 +82,7 @@ export function RedigeraProjektForm({
   } = useFormularfel<FragetradetFaltnamn>({
     pagar: sparar,
     resultat,
-    validera: fragetradetsValidering(projektetsBelopp),
+    validera: fragetradetsValidering(projektetsBelopp, projektetHarRot),
   });
   const hanteraRaderaSubmit = useForhindraDubbelinskick(raderar);
 
@@ -107,7 +110,11 @@ export function RedigeraProjektForm({
           helaBeloppet={projektetsSumma}
           // Utan belopp att vaga den mot skjuts merkostnadsfragan upp
           // (docs/design.md, "Att skapa ett projekt"); ett givet svar star kvar.
-          visaMerkostnad={projektetsBelopp > 0}
+          merkostnadsfragan={
+            projektetsBelopp > 0
+              ? { belopp: projektetsBelopp, harRot: projektetHarRot }
+              : undefined
+          }
           skickForsaljning={skickForsaljning}
           bostadsdel={bostadsdel}
         />

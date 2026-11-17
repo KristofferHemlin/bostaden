@@ -7,7 +7,7 @@ import "server-only";
 // projekt som redan finns") – samma urval pa bada stallena.
 
 import type { ValbartKvitto } from "@/components/kvitto-kryssruta";
-import { beloppOmKopplade, kvittoGarAttKoppla } from "@/doman/kvittokoppling";
+import { beloppOmKopplade, harRotOmKopplade, kvittoGarAttKoppla } from "@/doman/kvittokoppling";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { isoDatum } from "@/lib/format";
 import { avgarForKvitto, kvittoradText, privatAvgarRad, rotAvgarRad } from "@/lib/kvittolista";
@@ -45,6 +45,7 @@ export async function hamtaValbaraKvitton(bostadId: string): Promise<ValbartKvit
         // Det kvittot bidrar med till projektets belopp om det valjs – for
         // merkostnadens grans innan nagot skickats. Servern raknar om.
         bidrag: beloppOmKopplade([doman]),
+        rot: harRotOmKopplade([doman]),
         // Hon valjer efter beloppet, sa det ar har skillnaden mellan kvittot
         // och det som raknas betyder mest.
         avgar: avgarRader(avgarForKvitto(doman)),

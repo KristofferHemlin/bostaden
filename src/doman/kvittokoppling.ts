@@ -10,7 +10,7 @@
 // (src/lib/kvittokoppling.ts) och for att rakna ut i forvag vad kvittona
 // bidrar med till projektets belopp – det merkostnaden ska vara mindre an.
 
-import { projektetsBelopp } from "./atgardsberakning";
+import { projektetsBelopp, projektetsBeloppHarRot } from "./atgardsberakning";
 import { arOklassificerad } from "./genomgang";
 import type { Kostnad, Kostnadsrad } from "./typer";
 
@@ -60,6 +60,14 @@ const OSPARAT_PROJEKT = "osparat-projekt";
  */
 export function beloppOmKopplade(kostnader: readonly Kostnad[]): number {
   return projektetsBelopp(
+    kostnader.map((k) => kopplatTillProjekt(k, OSPARAT_PROJEKT)),
+    OSPARAT_PROJEKT,
+  );
+}
+
+/** Bar nagot av kvittona ROT, om de kopplades – se projektetsBeloppHarRot. */
+export function harRotOmKopplade(kostnader: readonly Kostnad[]): boolean {
+  return projektetsBeloppHarRot(
     kostnader.map((k) => kopplatTillProjekt(k, OSPARAT_PROJEKT)),
     OSPARAT_PROJEKT,
   );

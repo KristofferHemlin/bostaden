@@ -61,7 +61,12 @@ import { createRoot, type Root } from "react-dom/client";
 import NyttProjektSida from "@/app/projekt/nytt/page";
 import { utkastNyckel } from "@/app/projekt/nytt/flode";
 import { BOSTADSDEL_FRAGA } from "@/doman/bostadsdel";
-import { merkostnadOverBeloppetFel, tolkaFragetradetFormData } from "@/lib/fragetradet-formdata";
+import { LIKVARDIGT_ETIKETT } from "@/app/projekt/fragetradet";
+import {
+  LIKVARDIGT_MASTE_ANGES,
+  likvardigtOverBeloppetFel,
+  tolkaFragetradetFormData,
+} from "@/lib/fragetradet-formdata";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -235,7 +240,7 @@ describe("varje steg prövas innan nästa", () => {
   it("ett tomt namn stoppar vid namnet, med serverns lydelse", async () => {
     await rendera();
     await tryck("Nästa");
-    const vantat = tolkaFragetradetFormData(new FormData(), { belopp: 0 });
+    const vantat = tolkaFragetradetFormData(new FormData(), { belopp: 0, harRot: false });
     expect("fel" in vantat && vantat.falt).toBe("namn");
     expect(synligaLarm()).toEqual(["fel" in vantat ? vantat.fel : ""]);
     expect(framsteg()).toBe("1 av 4");
@@ -264,7 +269,7 @@ describe("tillståndet mellan stegen", () => {
     expect(h.skapaProjekt).not.toHaveBeenCalled();
 
     await act(async () => behallare.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
-    await act(async () => knapp("Spara").closest("form")!.requestSubmit(knapp("Spara")));
+    await act(async () => knapp("Spara projektet").closest("form")!.requestSubmit(knapp("Spara projektet")));
     expect(h.skapaProjekt).toHaveBeenCalledTimes(1);
     const data = h.skapaProjekt.mock.calls[0][1];
     expect(data.get("namn")).toBe("Måla sovrummet");
@@ -311,7 +316,7 @@ describe("tillståndet mellan stegen", () => {
     await tryck("Ja, det är helt nytt");
     await tryck("Nästa");
     expect(window.localStorage.getItem(utkastNyckel(X))).not.toBeNull();
-    await act(async () => knapp("Spara").closest("form")!.requestSubmit(knapp("Spara")));
+    await act(async () => knapp("Spara projektet").closest("form")!.requestSubmit(knapp("Spara projektet")));
     expect(window.localStorage.getItem(utkastNyckel(X))).toBeNull();
     expect(h.ersatt).toHaveBeenCalledWith("/projekt/c0000000-0000-4000-8000-0000000000d9");
   });
@@ -330,13 +335,12 @@ async function svaraBattre() {
   await tryck("1 – Dåligt skick");
 }
 
-/** Det synliga merkostnadsfältet, eller null. */
+/** Det synliga merkostnadsfältet, eller null – hittat på etiketten hon läser. */
 function merkostnadsfalt(): HTMLInputElement | null {
-  return (
-    [...behallare.querySelectorAll<HTMLInputElement>("input")].find(
-      (i) => synlig(i) && i.placeholder === "t.ex. 500",
-    ) ?? null
+  const etikett = [...behallare.querySelectorAll("label")].find(
+    (l) => synlig(l) && l.textContent?.startsWith(LIKVARDIGT_ETIKETT),
   );
+  return etikett?.querySelector<HTMLInputElement>("input") ?? null;
 }
 
 async function skriv(falt: HTMLInputElement, text: string) {
@@ -352,7 +356,7 @@ async function kryssa() {
 }
 
 async function spara() {
-  await act(async () => knapp("Spara").closest("form")!.requestSubmit(knapp("Spara")));
+  await act(async () => knapp("Spara projektet").closest("form")!.requestSubmit(knapp("Spara projektet")));
 }
 
 // Merkostnaden är den enda frågan som behöver ett belopp, och den ställs
@@ -393,21 +397,27 @@ describe("merkostnaden ställs när det finns ett belopp att dela", () => {
     await spara();
     expect(h.skapaProjekt).not.toHaveBeenCalled();
     expect(framsteg()).toBe("4 av 4");
-    expect(synligaLarm()).toEqual([
-      "Ange en merkostnad större än 0 kr – bättre kvalitet innebär att bytet kostade mer.",
-    ]);
+    expect(synligaLarm()).toEqual([LIKVARDIGT_MASTE_ANGES]);
 
-    // 791,95 kr är vad målningsraderna kostade – torkstället var privat.
+    // Svaret är vad ett likvärdigt byte hade kostat. 791,95 kr är vad
+    // målningsraderna kostade – torkstället var privat – och ett lika stort
+    // svar ger ingen merkostnad.
     await skriv(merkostnadsfalt()!, "791,95");
     await spara();
     expect(h.skapaProjekt).not.toHaveBeenCalled();
     expect(framsteg()).toBe("4 av 4");
-    expect(synligaLarm()).toEqual([merkostnadOverBeloppetFel("Måla sovrummet", 79_195)]);
+    expect(synligaLarm()).toEqual([likvardigtOverBeloppetFel(79_195, false)]);
+
+    await skriv(merkostnadsfalt()!, "0");
+    await spara();
+    expect(h.skapaProjekt).not.toHaveBeenCalled();
+    expect(synligaLarm()).toEqual([LIKVARDIGT_MASTE_ANGES]);
 
     await skriv(merkostnadsfalt()!, "791,94");
     await spara();
     expect(h.skapaProjekt).toHaveBeenCalledTimes(1);
-    expect(h.skapaProjekt.mock.calls[0][1].get("merkostnad")).toBe("791,94");
+    expect(h.skapaProjekt.mock.calls[0][1].get("likvardigt_byte")).toBe("791,94");
+    expect(h.skapaProjekt.mock.calls[0][1].get("merkostnad")).toBeNull();
   });
 });
 
@@ -484,7 +494,7 @@ describe("ett fel i ett tidigare steg visas där frågan står", () => {
         bostadsdelar: [],
         svar: {
           byggdeNytt: "nej", andradePlanlosning: "nej", nyttEllerBytt: "bytt",
-          battreEllerLiknande: "liknande", merkostnad: null, merkostnadText: "",
+          battreEllerLiknande: "liknande", merkostnad: null, likvardigtText: "",
           skickForvarv: "", motivering: "",
         },
         valda: [],
@@ -496,5 +506,196 @@ describe("ett fel i ett tidigare steg visas där frågan står", () => {
     expect(h.skapaProjekt).not.toHaveBeenCalled();
     expect(framsteg()).toBe("3 av 4");
     expect(synligaLarm()).toEqual(["Ange skicket vid förvärvet, 0–5."]);
+  });
+});
+
+// docs/design.md, "Sista steget sammanfattar innan det sparar" (2026-11-18):
+// ovanför kvittolistan står vad hon svarat – namnet, delen av bostaden, vad
+// som gjordes, kvaliteten, skicket – och vad det räknas som. Knappen heter
+// Spara projektet. Inget femte steg.
+describe("sista steget sammanfattar innan det sparar", () => {
+  /** Sammanfattningens rader som hon läser dem: etikett och värde, hela
+   *  texten, nod för nod så att ordgränsen bevaras. Stannar om den saknas. */
+  function sammanfattningen(): string[] {
+    const s = [...behallare.querySelectorAll('[aria-label="Det du svarat"]')].filter(synlig);
+    expect(s, "en synlig sammanfattning").toHaveLength(1);
+    return [...s[0].children].map((rad) =>
+      rad.children.length === 0
+        ? rad.textContent!
+        : [...rad.children].map((e) => e.textContent).join(" | "),
+    );
+  }
+
+  it("utbytt mot liknande: allt hon svarat, och vad det räknas som", async () => {
+    await rendera();
+    await skrivNamn("Måla sovrummet");
+    await tryck("Nästa");
+    await tryck("Ytskikt");
+    await tryck("Nästa");
+    await svaraUtbyttLiknande();
+    await tryck("Nästa");
+    expect(framsteg()).toBe("4 av 4");
+    expect(sammanfattningen()).toEqual([
+      "Måla sovrummet",
+      "Räknas som | Reparation",
+      "Del av bostaden | Ytskikt",
+      "Vad gjordes | Bytte ut något som fanns",
+      "Kvalitet | Liknande som tidigare",
+      "Skick vid förvärvet | 1 – Dåligt skick",
+    ]);
+  });
+
+  it("byggt nytt: grundförbättring, utan kvalitet och skick", async () => {
+    await rendera();
+    await skrivNamn("Ny altan");
+    await tryck("Nästa");
+    await tryck("Nästa");
+    await tryck("Ja, det är helt nytt");
+    await tryck("Nästa");
+    expect(sammanfattningen()).toEqual([
+      "Ny altan",
+      "Räknas som | Grundförbättring",
+      "Vad gjordes | Byggde något nytt",
+    ]);
+  });
+
+  it("bättre kvalitet: grundförbättring och reparation", async () => {
+    await rendera();
+    await svaraBattre();
+    await tryck("Nästa");
+    expect(sammanfattningen()).toContain("Räknas som | Grundförbättring och reparation");
+    expect(sammanfattningen()).toContain("Kvalitet | Bättre");
+  });
+
+  it("står ovanför kvittolistan, och knappen under heter Spara projektet", async () => {
+    await rendera();
+    await skrivNamn("Ny altan");
+    await tryck("Nästa");
+    await tryck("Nästa");
+    await tryck("Ja, det är helt nytt");
+    await tryck("Nästa");
+    const s = behallare.querySelector('[aria-label="Det du svarat"]')!;
+    const lista = behallare.querySelector('input[type="checkbox"]')!;
+    expect(s.compareDocumentPosition(lista) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const knappen = knapp("Spara projektet");
+    expect(knappen.type).toBe("submit");
+    expect(lista.compareDocumentPosition(knappen) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(() => knapp("Spara")).toThrow();
+  });
+
+  it("syns bara i sista steget – och stegen är fortfarande fyra", async () => {
+    await rendera();
+    await skrivNamn("Ny altan");
+    for (const steg of ["1 av 4", "2 av 4", "3 av 4"]) {
+      expect(framsteg()).toBe(steg);
+      expect([...behallare.querySelectorAll('[aria-label="Det du svarat"]')].filter(synlig)).toHaveLength(0);
+      if (steg === "3 av 4") await tryck("Ja, det är helt nytt");
+      await tryck("Nästa");
+    }
+    expect(framsteg()).toBe("4 av 4");
+    expect(() => knapp("Nästa")).toThrow();
+  });
+});
+
+// docs/design.md, "Hur vet du det?" hör inte till flödet: fältet flyttar till
+// projektets sida (tester/motivering-projektsidan.test.ts).
+describe("Hur vet du det? står inte i flödet", () => {
+  it("inte ens när skicket vid förvärvet är 0 – då frågan annars ställdes", async () => {
+    await rendera();
+    await skrivNamn("Måla sovrummet");
+    await tryck("Nästa");
+    await tryck("Nästa");
+    await tryck("Nej");
+    const nej = [...behallare.querySelectorAll("button")].filter((b) => synlig(b) && b.textContent === "Nej");
+    await act(async () => nej[1].click());
+    await tryck("Jag bytte ut något som fanns");
+    await tryck("Liknande som tidigare");
+    // Förutsättningen: skickfrågan står där, och 0 är valt.
+    await tryck("0 – Mycket dåligt skick");
+    expect(knapp("0 – Mycket dåligt skick").getAttribute("aria-pressed")).toBe("true");
+    expect(behallare.textContent).not.toContain("Hur vet du det?");
+    expect(behallare.querySelector("textarea")).toBeNull();
+  });
+
+  it("ett utkast som redan bar ett svar skickar det med – ingen tappar det hon skrivit", async () => {
+    window.localStorage.setItem(
+      utkastNyckel(X),
+      JSON.stringify({
+        steg: 4,
+        namn: "Måla sovrummet",
+        bostadsdelar: [],
+        svar: {
+          byggdeNytt: "nej", andradePlanlosning: "nej", nyttEllerBytt: "bytt",
+          battreEllerLiknande: "liknande", merkostnad: null, likvardigtText: "",
+          skickForvarv: "1", motivering: "Mäklarbilden visar fläckig vägg",
+        },
+        valda: [],
+      }),
+    );
+    await rendera();
+    await spara();
+    expect(h.skapaProjekt).toHaveBeenCalledTimes(1);
+    expect(h.skapaProjekt.mock.calls[0][1].get("motivering")).toBe("Mäklarbilden visar fläckig vägg");
+  });
+
+  it("och ett flöde utan sådant svar skickar inget fält alls", async () => {
+    await rendera();
+    await skrivNamn("Ny altan");
+    await tryck("Nästa");
+    await tryck("Nästa");
+    await tryck("Ja, det är helt nytt");
+    await tryck("Nästa");
+    await spara();
+    expect(h.skapaProjekt.mock.calls[0][1].has("motivering")).toBe(false);
+  });
+});
+
+// Hjälptextens två lydelser (docs/design.md, "Hjälptexten har två lydelser"):
+// ROT-lydelsen bara när ett valt kvitto bär ROT. Talet är spärrens – före
+// ROT, utan privat del. Lydelserna själva prövas mot design.md i
+// tester/likvardigt-byte.test.ts; här prövas att flödet väljer rätt.
+describe("merkostnadsfrågans hjälptext i flödet", () => {
+  const ROT_KVITTO = "Ny köksbänk, montering";
+
+  function laggTillRotKvitto() {
+    const k = h.db.lagg("kostnad", {
+      bostad_id: X, leverantor: "Köksbolaget AB", anteckning: ROT_KVITTO, totalbelopp: 6_081_250,
+      rot_utnyttjat: 1_158_750, dokumentdatum: datum("2026-05-02"), betaldatum: datum("2026-05-02"), skapad_av: ANNA,
+    });
+    h.db.lagg("kostnadsrad", { kostnad_id: k.id, artikel: "Bänk och montering", belopp: 6_081_250 });
+  }
+
+  function hjalptexten(): string {
+    const label = [...behallare.querySelectorAll("label")].find(
+      (l) => synlig(l) && l.textContent?.startsWith(LIKVARDIGT_ETIKETT),
+    );
+    expect(label, "merkostnadsfrågan").toBeTruthy();
+    return label!.lastElementChild!.textContent!.replace(/ /g, " ");
+  }
+
+  async function valj(rubrik: string) {
+    const ruta = [...behallare.querySelectorAll("label")]
+      .find((l) => l.textContent?.includes(rubrik))!
+      .querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    await act(async () => ruta.click());
+  }
+
+  it("ett kvitto utan ROT: projektets belopp, utan ord om ROT", async () => {
+    laggTillRotKvitto();
+    await rendera();
+    await svaraBattre();
+    await tryck("Nästa");
+    await valj(FARG);
+    expect(hjalptexten()).toContain("Projektet kostade 791,95 kr,");
+    expect(hjalptexten()).not.toMatch(/ROT/);
+  });
+
+  it("ett kvitto med ROT: beloppet före ROT-avdraget", async () => {
+    laggTillRotKvitto();
+    await rendera();
+    await svaraBattre();
+    await tryck("Nästa");
+    await valj(ROT_KVITTO);
+    expect(hjalptexten()).toContain("före ROT-avdraget, 60 812,50 kr —");
   });
 });

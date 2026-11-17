@@ -1,7 +1,7 @@
 // Steg 4: oppna ett projekt. Visar fragetradets svar och de kostnader som
-// kopplats hit. Harifran lagger man till en kostnad. Fraga 8:s fritext
-// (`motivering`) visas som en egen rad nar den ar ifylld – den ar det enda
-// som bar bevisningen nar kvitto saknas.
+// kopplats hit. Harifran lagger man till en kostnad. Fraga 8, "Hur vet du
+// det?", besvaras har och inte i projektflodet (docs/design.md, "Hur vet du
+// det?" hör inte till flödet) – den bar bevisningen nar kvitto saknas.
 //
 // Delar flera personer bostaden star vem som besvarade fragorna som en dampad
 // rad (docs/design.md, "Samagande – medlemskapet"): den som svarar forst
@@ -23,12 +23,12 @@ import {
   projektetsBelopp,
 } from "@/doman/atgardsberakning";
 import { bostadsdelText } from "@/doman/bostadsdel";
-import { atgardKategoriText, SKICK_ORD } from "@/doman/fragetradet";
+import { ATGARDSTYP_TEXT, atgardKategoriText, motiveringRelevant, SKICK_ORD } from "@/doman/fragetradet";
+import { MotiveringFalt } from "./motivering";
 import {
   merkostnadUpplysning,
 } from "@/doman/regeltext";
 import { SAMMA_DEL_SKAL } from "@/doman/samma-del";
-import type { Atgardstyp } from "@/doman/typer";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad, tillDomanProjekt } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
@@ -65,14 +65,6 @@ export async function generateMetadata({
   // kvitton (docs/design.md, "Projekt som skapades före omläggningen").
   return { title: (await hamtaProjektnamn(bostadId, [p])).get(p.id) || "Projekt" };
 }
-
-// Fraga 2-4:s svar, sammanfattat till en rad (produktspec 4.1).
-const ATGARDSTYP_TEXT: Record<Atgardstyp, string> = {
-  nybyggnad: "Byggde något nytt",
-  planlosning: "Ändrade planlösningen",
-  nytt_tillagg: "Satte in något nytt",
-  utbytt: "Bytte ut något som fanns",
-};
 
 export default async function ProjektSida({
   params,
@@ -261,8 +253,15 @@ export default async function ProjektSida({
             underlaget när du svarat på dem.
           </p>
         ) : null}
-        {projekt.motivering ? (
-          <p className="pt-1 text-text-sekundar">{projekt.motivering}</p>
+        {/* Fraga 8 – samma villkor som nar den stod i flodet: skicket vid
+            forvarvet 0-2, dar avdraget kan bli stort pa tva subjektiva
+            siffror (produktspec 4.1). Ett sparat svar visas alltid, sa att
+            ingen tappar det hon skrivit – aven om skicket andrats sedan. */}
+        {projekt.motivering ||
+        (harReparationsdel &&
+          projekt.skick_forvarv !== null &&
+          motiveringRelevant(String(projekt.skick_forvarv))) ? (
+          <MotiveringFalt projektId={id} sparad={projekt.motivering ?? ""} />
         ) : null}
         {besvaratAv ? (
           <p className="pt-1 text-text-sekundar">{besvaratAv}</p>

@@ -12,10 +12,9 @@ import type { AterstaendeKvitto, K6aExport } from "@/doman/export-k6a";
 
 export const ATERSTAR_RUBRIK = "Återstår";
 
-// Galler varje rad, ocksa raden om bostadsfragorna – som ar nagot hon inte
-// lagt in (docs/design.md, Exportvyn: "Och inledningsmeningen gäller inte
-// varje rad"). Till 2026-11-16: "Det här har du lagt in, men det ingår inte i
-// talen ovan."
+// Till 2026-11-16: "Det här har du lagt in, men det ingår inte i talen ovan."
+// Raden om bostadsfragorna, som ar nagot hon inte lagt in, star sedan
+// 2026-11-18 i ett band overst och inte har (BOSTADSFRAGOR_BESKED).
 export const ATERSTAR_INLEDNING = "Det här ingår inte i talen ovan än.";
 
 /** Skalet under varje rad – samma ord i exportvyn och i PDF:en. */
@@ -47,11 +46,13 @@ export interface Aterstarrad {
 }
 
 /**
- * Raden overst i Återstår nar bostadsfragorna ar obesvarade (docs/design.md,
- * Exportvyn) – ordagrant. Underlaget vantar pa ett svar; det har inte
- * misslyckats, och raden namnger det som fattas.
+ * Bandet overst i underlaget nar bostadsfragorna ar obesvarade (docs/design.md,
+ * Exportvyn: "Beskedet står i ett band överst, inte under Återstår") –
+ * ordagrant. Underlaget vantar pa ett svar; det har inte misslyckats, och
+ * bandet namnger det som fattas. Det ar ett band, inte en spärr: raderna
+ * visas anda.
  */
-export const BOSTADSFRAGOR_ATERSTAR = {
+export const BOSTADSFRAGOR_BESKED = {
   rubrik: "Vi vet inte om bostaden var nybyggd när du köpte den",
   rad: "Svaret avgör om reparationer räknas med.",
   lank: "Svara på två frågor",

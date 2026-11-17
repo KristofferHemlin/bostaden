@@ -13,10 +13,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { beloppOmKopplade, kvittoGarAttKoppla, merkostnadFragasVid } from "@/doman/kvittokoppling";
+import { beloppOmKopplade, harRotOmKopplade, kvittoGarAttKoppla, merkostnadFragasVid } from "@/doman/kvittokoppling";
 import { serverfelMeddelande } from "@/lib/databas-fel";
 import { hamtaProjektetsBelopp, tillDomanKostnad } from "@/lib/doman-fran-db";
-import { provaMerkostnad } from "@/lib/fragetradet-formdata";
+import { provaLikvardigtByte } from "@/lib/fragetradet-formdata";
 import { oreFranKronor } from "@/lib/format";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { kopplaKvittonTillProjekt } from "@/lib/kvittokoppling";
@@ -57,14 +57,21 @@ export async function laggTillKvitton(
     })
   ).filter((k) => kvittoGarAttKoppla(tillDomanKostnad(k)));
 
-  const beloppEfter =
-    (await hamtaProjektetsBelopp(bostadId, id)) + beloppOmKopplade(valda.map(tillDomanKostnad));
+  const fore = await hamtaProjektetsBelopp(bostadId, id);
+  const beloppEfter = fore.belopp + beloppOmKopplade(valda.map(tillDomanKostnad));
   const fragas = merkostnadFragasVid(projekt, beloppEfter);
   let merkostnad: number | null = null;
   if (fragas) {
-    merkostnad = oreFranKronor(String(formData.get("merkostnad") ?? ""));
-    const fel = provaMerkostnad(merkostnad, beloppEfter, projekt.namn);
-    if (fel) return { fel, falt: "merkostnad" };
+    // Fragan ar vand: svaret ar vad ett likvardigt byte hade kostat, och
+    // merkostnaden ar beloppet minus det (docs/design.md, "Och frågan ställs
+    // bakvänt"). Spärren ar densamma.
+    const svar = provaLikvardigtByte(
+      oreFranKronor(String(formData.get("likvardigt_byte") ?? "")),
+      beloppEfter,
+      fore.harRot || harRotOmKopplade(valda.map(tillDomanKostnad)),
+    );
+    if ("fel" in svar) return { fel: svar.fel, falt: "merkostnad" };
+    merkostnad = svar.merkostnad;
   }
 
   try {

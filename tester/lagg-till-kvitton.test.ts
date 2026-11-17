@@ -53,7 +53,8 @@ import KvittolistaSida from "@/app/kostnad/page";
 import ProjektSida from "@/app/projekt/[id]/page";
 import NyttProjektSida from "@/app/projekt/nytt/page";
 import { utkastNyckel } from "@/app/projekt/nytt/flode";
-import { MERKOSTNAD_MASTE_ANGES, merkostnadOverBeloppetFel } from "@/lib/fragetradet-formdata";
+import { LIKVARDIGT_MASTE_ANGES, likvardigtOverBeloppetFel } from "@/lib/fragetradet-formdata";
+import { LIKVARDIGT_ETIKETT } from "@/app/projekt/fragetradet";
 import { MERKOSTNAD_ANDRAD_FRAGA } from "@/doman/regeltext";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -99,11 +100,13 @@ function seeda(projekt: Record<string, unknown> = { atgardstyp: "utbytt", battre
   h.inloggad = { id: ANNA, email: "anna@exempel.se" };
 }
 
-function formular(kvitton: string[], merkostnad?: string): FormData {
+/** `likvardigt` ar svaret pa vad ett likvardigt byte hade kostat – fragan ar
+ *  vand sedan 2026-11-18, och merkostnaden ar beloppet minus svaret. */
+function formular(kvitton: string[], likvardigt?: string): FormData {
   const f = new FormData();
   f.set("projekt_id", P);
   for (const k of kvitton) f.append("kostnad_ider", ids[k]);
-  if (merkostnad !== undefined) f.set("merkostnad", merkostnad);
+  if (likvardigt !== undefined) f.set("likvardigt_byte", likvardigt);
   return f;
 }
 
@@ -149,19 +152,28 @@ describe("merkostnaden som väntade", () => {
 
   it("får projektet ett belopp krävs svaret, och ingenting kopplas utan det", async () => {
     const fore = h.db.ogonblick();
-    expect(await laggTillKvitton({}, formular(["parkett"]))).toEqual({ fel: MERKOSTNAD_MASTE_ANGES, falt: "merkostnad" });
+    expect(await laggTillKvitton({}, formular(["parkett"]))).toEqual({ fel: LIKVARDIGT_MASTE_ANGES, falt: "merkostnad" });
     expect(h.db.ogonblick()).toEqual(fore);
   });
 
-  it("spärren gäller mot projektets nya belopp – lika med beloppet avvisas", async () => {
+  it("spärren gäller mot projektets nya belopp – ett svar lika med beloppet avvisas", async () => {
     expect(await laggTillKvitton({}, formular(["parkett", "lister"], "12 800"))).toEqual({
-      fel: merkostnadOverBeloppetFel("Nytt golv", 1_280_000),
+      fel: likvardigtOverBeloppetFel(1_280_000, false),
+      falt: "merkostnad",
+    });
+  });
+
+  it("och svaret 0 kr – merkostnaden hade varit hela beloppet – avvisas", async () => {
+    expect(await laggTillKvitton({}, formular(["parkett", "lister"], "0"))).toEqual({
+      fel: LIKVARDIGT_MASTE_ANGES,
       falt: "merkostnad",
     });
   });
 
   it("ett giltigt svar sparas med det nya beloppet som bas", async () => {
-    await expect(laggTillKvitton({}, formular(["parkett", "lister"], "5 000"))).rejects.toThrow("NEXT_REDIRECT");
+    // 12 800 kr kostade det, 7 800 kr hade ett likvardigt byte kostat:
+    // merkostnaden ar 5 000 kr.
+    await expect(laggTillKvitton({}, formular(["parkett", "lister"], "7 800"))).rejects.toThrow("NEXT_REDIRECT");
     expect(projektet()).toMatchObject({ merkostnad: 500_000, merkostnad_bas: 1_280_000, klassificerad_av: ANNA });
     expect(kopplade(P)).toEqual(["lister", "parkett"]);
   });
@@ -201,7 +213,7 @@ describe("sidan", () => {
     const lagg = await rendera(LaggTillSida({ params: Promise.resolve({ id: P }) }));
     window.localStorage.setItem(utkastNyckel(X), JSON.stringify({
       steg: 4, namn: "Nytt golv", bostadsdelar: [],
-      svar: { byggdeNytt: "ja", andradePlanlosning: "", nyttEllerBytt: "", battreEllerLiknande: "", merkostnad: null, merkostnadText: "", skickForvarv: "", motivering: "" },
+      svar: { byggdeNytt: "ja", andradePlanlosning: "", nyttEllerBytt: "", battreEllerLiknande: "", merkostnad: null, likvardigtText: "", skickForvarv: "", motivering: "" },
       valda: [],
     }));
     const nytt = await rendera(NyttProjektSida());
@@ -217,7 +229,10 @@ describe("sidan", () => {
   it("merkostnadsfältet kommer när ett valt kvitto ger projektet ett belopp", async () => {
     seeda();
     const s = await rendera(LaggTillSida({ params: Promise.resolve({ id: P }) }));
-    const falt = () => [...s.div.querySelectorAll<HTMLInputElement>("input")].find((i) => i.placeholder === "t.ex. 500") ?? null;
+    const falt = () =>
+      [...s.div.querySelectorAll("label")]
+        .find((l) => l.textContent?.startsWith(LIKVARDIGT_ETIKETT))
+        ?.querySelector<HTMLInputElement>("input") ?? null;
     const ruta = (namn: string) =>
       [...s.div.querySelectorAll("label")].find((l) => l.textContent?.includes(`Kvitto för ${namn}`))!.querySelector("input")!;
     expect(falt()).toBeNull();

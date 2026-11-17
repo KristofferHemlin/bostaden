@@ -3,7 +3,7 @@
 // de ihop. Datum blir "YYYY-MM-DD"-strangar, ROT/forsakring coalescas till 0.
 
 import { Prisma } from "@prisma/client";
-import { projektetsBelopp } from "@/doman/atgardsberakning";
+import { projektetsBelopp, projektetsBeloppHarRot } from "@/doman/atgardsberakning";
 import { bostadsfragorForBerakning } from "@/doman/bostadsfragor";
 import type {
   Bostad as DomanBostad,
@@ -113,7 +113,7 @@ export async function hamtaKostnaderMedBilaga(bostadId: string): Promise<string[
 export async function hamtaProjektetsBelopp(
   bostadId: string,
   projektId: string,
-): Promise<number> {
+): Promise<{ belopp: number; harRot: boolean }> {
   const rader = await prisma.kostnad.findMany({
     where: {
       bostad_id: bostadId,
@@ -121,7 +121,12 @@ export async function hamtaProjektetsBelopp(
     },
     include: kostnadMedRader,
   });
-  return projektetsBelopp(rader.map(tillDomanKostnad), projektId);
+  const kostnader = rader.map(tillDomanKostnad);
+  return {
+    belopp: projektetsBelopp(kostnader, projektId),
+    // Bara for merkostnadsfragans lydelse (projektetsBeloppHarRot).
+    harRot: projektetsBeloppHarRot(kostnader, projektId),
+  };
 }
 
 /** Alla data oversikten och exportvyn behover for en bostad. */

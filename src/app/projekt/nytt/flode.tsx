@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation";
 import { type KeyboardEvent, useActionState, useEffect, useState } from "react";
 import { skapaProjekt, type SkapaProjektResultat } from "../actions";
 import { BostadsdelFraga } from "../bostadsdel-fraga";
+import { Projektsammanfattning } from "./sammanfattning";
 import {
   Fragetradet,
   FragetradetDoldaFalt,
@@ -106,9 +107,12 @@ function lasUtkast(nyckel: string, kvittoIder: Set<string>): Utkast | null {
     const svar = { ...TOMMA_SVAR };
     for (const k of Object.keys(TOMMA_SVAR) as (keyof FragetradetUIState)[]) {
       const v = u.svar?.[k];
-      if (k === "merkostnad") {
-        if (typeof v === "number" || v === null) svar.merkostnad = v;
-      } else if (typeof v === "string") {
+      // merkostnad ar alltid null i flodet (FragetradetUIState). Ett utkast
+      // fran fore 2026-11-18 kan bara merkostnadText – en merkostnad, inte
+      // svaret pa vad ett likvardigt byte hade kostat. Den lases inte: att
+      // visa den i det vanda faltet vore ett annat tal.
+      if (k === "merkostnad") continue;
+      if (typeof v === "string") {
         (svar as Record<string, unknown>)[k] = v;
       }
     }
@@ -183,16 +187,17 @@ export function NyttProjektFlode({
   // Börja om (docs/design.md, "Och ett utkast går alltid att kasta").
   const [franUtkast, setFranUtkast] = useState(false);
 
-  const valtBelopp = kvitton
-    .filter((k) => valda.has(k.id))
-    .reduce((s, k) => s + k.bidrag, 0);
+  const valdaKvitton = kvitton.filter((k) => valda.has(k.id));
+  const valtBelopp = valdaKvitton.reduce((s, k) => s + k.bidrag, 0);
+  // Bara for merkostnadsfragans lydelse – "fore ROT-avdraget" ar brus utan ROT.
+  const valtHarRot = valdaKvitton.some((k) => k.rot);
 
   const { formRef, hanteraSubmit, visaFel, faltfel, formularfel, rensa } =
     useFormularfel<FragetradetFaltnamn>({
       pagar: pagar || klar,
       resultat,
       validera: (formData) => {
-        const fel = fragetradetsValidering(valtBelopp)(formData);
+        const fel = fragetradetsValidering(valtBelopp, valtHarRot)(formData);
         if (fel) setSteg(STEG_FOR_FALT[fel.falt]);
         return fel;
       },
@@ -243,7 +248,7 @@ export function NyttProjektFlode({
    *  tak – det beror pa kvittona, som valjs sist, och provas vid Spara. */
   function vidare() {
     if (steg === 1 || steg === 3) {
-      const fel = fragetradetsValidering(Number.POSITIVE_INFINITY)(
+      const fel = fragetradetsValidering(Number.POSITIVE_INFINITY, false)(
         new FormData(formRef.current!),
       );
       if (fel && STEG_FOR_FALT[fel.falt] <= steg) {
@@ -352,13 +357,25 @@ export function NyttProjektFlode({
             varden={svar}
             fel={faltfel}
             // Merkostnaden behover ett belopp, och kvittona valjs i steg 4.
-            visaMerkostnad={false}
+            merkostnadsfragan={undefined}
             onChange={(delvis) => {
               setSvar((s) => ({ ...s, ...delvis }));
               rensa();
             }}
           />
         </div>
+
+        {/* Sammanfattningen ovanfor kvittona (docs/design.md, "Sista steget
+            sammanfattar innan det sparar"): knappen under ar "Spara
+            projektet", och det hon sparar ska sta ovanfor den. */}
+        {steg === ANTAL_STEG ? (
+          <Projektsammanfattning
+            namn={namn}
+            bostadsdelar={bostadsdelar}
+            svar={svar}
+            skickForvarv={svar.skickForvarv}
+          />
+        ) : null}
 
         <fieldset hidden={steg !== 4} className="min-w-0">
           <legend className="font-rubrik text-lg text-text-primar">
@@ -388,8 +405,10 @@ export function NyttProjektFlode({
             (docs/design.md, "Att skapa ett projekt"). */}
         {steg === ANTAL_STEG && svar.battreEllerLiknande === "battre" && valtBelopp > 0 ? (
           <MerkostnadFalt
-            varde={svar.merkostnadText}
+            varde={svar.likvardigtText}
             fel={faltfel?.falt === "merkostnad" ? faltfel.fel : undefined}
+            belopp={valtBelopp}
+            harRot={valtHarRot}
             onChange={(delvis) => {
               setSvar((s) => ({ ...s, ...delvis }));
               rensa();
@@ -399,6 +418,12 @@ export function NyttProjektFlode({
 
         <input type="hidden" name="namn" value={namn} />
         <FragetradetDoldaFalt svar={svar} />
+        {/* Fraga 8 stalls inte i flodet (docs/design.md, "Hur vet du det?"
+            hör inte till flödet). Ett utkast fran fore flytten kan bara ett
+            svar, och det skickas med – ingen ska tappa det hon skrivit. */}
+        {svar.motivering.trim() ? (
+          <input type="hidden" name="motivering" value={svar.motivering} />
+        ) : null}
         {[...valda].map((id) => (
           <input key={id} type="hidden" name="kostnad_ider" value={id} />
         ))}
@@ -428,7 +453,7 @@ export function NyttProjektFlode({
           </button>
         ) : (
           <button key="spara" type="submit" disabled={pagar || klar} className={PRIMARKNAPP_KLASS}>
-            {pagar || klar ? "Sparar…" : "Spara"}
+            {pagar || klar ? "Sparar…" : "Spara projektet"}
           </button>
         )}
 

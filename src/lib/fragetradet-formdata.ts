@@ -25,7 +25,6 @@ export interface FragetradetFormResultat {
   battre_kvalitet: boolean | null;
   merkostnad: number | null;
   skick_forvarv: number | null;
-  motivering: string | null;
 }
 
 /** Faltens namn i FormData – fraga 1 ("namn") och fragetradets dolda falt. */
@@ -63,7 +62,9 @@ function asBattreEllerLiknande(
 }
 
 /**
- * Lasser och validerar hela fragetradet (fraga 1-6, fraga 8) ur en FormData.
+ * Lasser och validerar fragetradet (fraga 1-6) ur en FormData. Fraga 8,
+ * motiveringen, hor inte hit: den besvaras pa projektets sida (docs/design.md,
+ * "Hur vet du det?" hör inte till flödet).
  * Returnerar ett fel om namnet saknas, tradet inte ar fardigsvarat (t.ex.
  * merkostnad saknas nar svaret ar "battre"), eller skicket vid forvarvet
  * saknas trots att atgarden har en reparationsdel.
@@ -75,6 +76,10 @@ export function tolkaFragetradetFormData(
      *  atgardsberakning.ts). Merkostnaden maste vara mindre (CLAUDE.md,
      *  steg 2). Obligatoriskt, sa att ingen anropare kan glomma taket. */
     belopp: number;
+    /** Bar nagot av projektets kvitton ROT (projektetsBeloppHarRot)? Avgor
+     *  bara avvisningens lydelse, aldrig ett tal. Obligatoriskt av samma
+     *  skal som beloppet. */
+    harRot: boolean;
   },
 ): FragetradetFormResultat | FragetradetFormFel {
   const namn = String(formData.get("namn") ?? "").trim();
@@ -87,7 +92,9 @@ export function tolkaFragetradetFormData(
     battreEllerLiknande: asBattreEllerLiknande(
       formData.get("battre_eller_liknande"),
     ),
-    merkostnad: oreFranKronor(String(formData.get("merkostnad") ?? "")),
+    // Merkostnaden harleds nedan ur svaret pa vad ett likvardigt byte hade
+    // kostat – det ar inte den hon skriver in.
+    merkostnad: null,
   };
 
   if (svar.byggdeNytt === "") {
@@ -122,20 +129,24 @@ export function tolkaFragetradetFormData(
   // Spärren lattas inte: sa snart beloppet finns galler den.
   const uppskjuten =
     fraga5Relevant(svar) && svar.battreEllerLiknande === "battre" && projekt.belopp === 0;
+  if (fraga5Relevant(svar) && svar.battreEllerLiknande === "battre" && !uppskjuten) {
+    // Fragan ar vand (docs/design.md, "Och frågan ställs bakvänt"): hon
+    // svarar vad ett likvardigt byte hade kostat, och merkostnaden ar
+    // beloppet minus svaret. Spärren ar densamma sedd fran andra hallet.
+    const tolkatSvar = provaLikvardigtByte(
+      oreFranKronor(String(formData.get("likvardigt_byte") ?? "")),
+      projekt.belopp,
+      projekt.harRot,
+    );
+    if ("fel" in tolkatSvar) return { fel: tolkatSvar.fel, falt: "merkostnad" };
+    svar.merkostnad = tolkatSvar.merkostnad;
+  }
   const resultat = uppskjuten
     ? { atgardstyp: "utbytt" as const, battre_kvalitet: true, merkostnad: null }
     : tolkaFragetradet(svar);
   if (!resultat) {
-    return { fel: MERKOSTNAD_MASTE_ANGES, falt: "merkostnad" };
-  }
-  // Och mindre an vad projektet kostade (CLAUDE.md, steg 2). Strangt: lika
-  // med beloppet avvisas ocksa – da hade det likvardiga bytet varit gratis.
-  // Samma grans som Skatteverkets e-tjanst, avlast 2026-10-18.
-  if (resultat.merkostnad !== null && resultat.merkostnad >= projekt.belopp) {
-    return {
-      fel: merkostnadOverBeloppetFel(namn, projekt.belopp),
-      falt: "merkostnad",
-    };
+    // Bara ett ofullstandigt trad kan hamna har – merkostnaden ar provad ovan.
+    return { fel: LIKVARDIGT_MASTE_ANGES, falt: "merkostnad" };
   }
 
   const skick_forvarv = tolkaSkickForvarv(
@@ -145,37 +156,59 @@ export function tolkaFragetradetFormData(
     return { fel: "Ange skicket vid förvärvet, 0–5.", falt: "skick_forvarv" };
   }
 
-  const motivering = String(formData.get("motivering") ?? "").trim();
-
   return {
     namn,
     atgardstyp: resultat.atgardstyp,
     battre_kvalitet: resultat.battre_kvalitet,
     merkostnad: resultat.merkostnad,
     skick_forvarv: harReparationsdel(svar) ? skick_forvarv : null,
-    motivering: motivering || null,
   };
 }
 
-/** Meddelandet nar merkostnaden saknas eller ar noll trots bättre kvalitet. */
-export const MERKOSTNAD_MASTE_ANGES =
-  "Ange en merkostnad större än 0 kr – bättre kvalitet innebär att bytet kostade mer.";
+/**
+ * Avvisningen nar svaret ar noll eller tomt (docs/design.md, "En avvisning som
+ * rör ett tal ska innehålla talet"). Merkostnaden hade da varit hela beloppet.
+ */
+export const LIKVARDIGT_MASTE_ANGES =
+  "Ange vad ett likvärdigt byte hade kostat, mer än 0 kr. Uppskatta om du inte vet exakt.";
 
 /**
- * Spärren 0 < merkostnad < belopp (CLAUDE.md, steg 2) for ett svar som ges
- * utanfor fragetradet – nar kvitton laggs till ett projekt som vantat pa
- * fragan. Samma tva meddelanden som tolkaFragetradetFormData. Beloppet ar
- * alltid storre an noll har: utan belopp stalls fragan inte.
+ * Avvisningen nar svaret ar lika med eller storre an projektets belopp – da
+ * finns ingen merkostnad. Tva lydelser, som hjalptexten: "fore ROT-avdraget"
+ * ar brus nar inget ROT finns (docs/design.md, samma stycke). Beloppet ar
+ * aldrig 0 har: utan belopp skjuts fragan upp i stallet.
  */
-export function provaMerkostnad(merkostnad: number | null, belopp: number, projektnamn: string): string | null {
-  if (merkostnad === null || merkostnad <= 0) return MERKOSTNAD_MASTE_ANGES;
-  if (merkostnad >= belopp) return merkostnadOverBeloppetFel(projektnamn, belopp);
-  return null;
+export function likvardigtOverBeloppetFel(beloppOren: number, harRot: boolean): string {
+  const vad = harRot ? "det är vad arbetet kostade före ROT-avdraget" : "det är vad projektet kostade";
+  return `Ange ett belopp lägre än ${formateraKronor(beloppOren)} – ${vad}. Kostade ett likvärdigt byte lika mycket är svaret på kvalitetsfrågan ”Liknande som tidigare”.`;
 }
 
-/** Meddelandet nar merkostnaden inte ar mindre an projektets belopp – vilket
- *  projekt och vilket belopp det galler. Beloppet ar aldrig 0 har: utan
- *  belopp skjuts fragan upp i stallet (tolkaFragetradetFormData ovan). */
-export function merkostnadOverBeloppetFel(projektnamn: string, beloppOren: number): string {
-  return `Ange en merkostnad mindre än ${formateraKronor(beloppOren)} – det är vad ”${projektnamn}” kostade.`;
+/**
+ * Spärren 0 < merkostnad < belopp (CLAUDE.md, steg 2), provad pa svaret om
+ * vad ett likvardigt byte hade kostat: 0 < svar < belopp ar exakt samma
+ * olikhet, eftersom merkostnad = belopp - svar. Ger merkostnaden – det
+ * lagrade talet, beraknings begrepp – eller avvisningen.
+ *
+ * Delas av fragetradet och av "Välj bland dina kvitton", nar ett projekt som
+ * vantat pa fragan far ett belopp.
+ */
+export function provaLikvardigtByte(
+  likvardigt: number | null,
+  belopp: number,
+  harRot: boolean,
+): { merkostnad: number } | { fel: string } {
+  if (likvardigt === null || likvardigt <= 0) return { fel: LIKVARDIGT_MASTE_ANGES };
+  if (likvardigt >= belopp) return { fel: likvardigtOverBeloppetFel(belopp, harRot) };
+  return { merkostnad: belopp - likvardigt };
+}
+
+/**
+ * Svaret som det nya faltet visar for en merkostnad som redan ar sparad:
+ * beloppet minus merkostnaden, sa att ett oforandrat svar sparas som exakt
+ * samma merkostnad. Null nar det inte gar att visa som ett giltigt svar –
+ * merkostnaden ar inte mindre an beloppet (taket galler), eller saknas.
+ */
+export function likvardigtFranMerkostnad(merkostnad: number | null, belopp: number): number | null {
+  if (merkostnad === null || merkostnad <= 0 || merkostnad >= belopp) return null;
+  return belopp - merkostnad;
 }

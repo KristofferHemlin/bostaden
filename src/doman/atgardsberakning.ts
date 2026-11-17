@@ -153,6 +153,27 @@ export function projektetsBelopp(
 }
 
 /**
+ * Bar nagot av kvittona i projektets belopp ett ROT-avdrag? Samma mangd
+ * kvitton som projektetsBelopp. Avgor bara lydelsen i merkostnadsfragan och
+ * dess avvisning (docs/design.md, "Att skapa ett projekt" och "En avvisning
+ * som rör ett tal ska innehålla talet"): utan ROT ar "fore ROT-avdraget"
+ * brus. Inget tal beror pa den.
+ */
+export function projektetsBeloppHarRot(
+  kostnader: readonly Kostnad[],
+  projektId: string,
+): boolean {
+  return kostnader.some(
+    (k) =>
+      !k.arkiverad &&
+      !arUtkast(k) &&
+      k.betaldatum !== null &&
+      k.rot_utnyttjat > 0 &&
+      beloppForKostnad(k, projektId) > 0,
+  );
+}
+
+/**
  * Varfor merkostnaden behover bekraftas igen, eller null (CLAUDE.md, steg 2):
  *
  *   * "inte_mindre_an_beloppet" – merkostnaden ar lika med eller storre an

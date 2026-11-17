@@ -43,7 +43,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@sentry/nextjs", () => ({ setUser: vi.fn(), captureException: vi.fn() }));
 
 import { skapaProjekt } from "@/app/projekt/actions";
-import { merkostnadOverBeloppetFel } from "@/lib/fragetradet-formdata";
+import { LIKVARDIGT_MASTE_ANGES, likvardigtOverBeloppetFel } from "@/lib/fragetradet-formdata";
 import { SEED_KOSTNADER } from "@/doman/seeddata";
 
 const ANNA = "a0000000-0000-4000-8000-0000000000e1";
@@ -248,19 +248,27 @@ describe("ett avvisat svar lämnar ingenting efter sig", () => {
 });
 
 describe("merkostnaden prövas mot de valda kvittonas belopp", () => {
-  const battre = (merkostnad: string) => ({ ...MALA, battre_eller_liknande: "battre", merkostnad });
+  // Svaret är vad ett likvärdigt byte hade kostat (docs/design.md, "Och
+  // frågan ställs bakvänt"); merkostnaden är beloppet minus svaret.
+  const battre = (likvardigt: string) => ({ ...MALA, battre_eller_liknande: "battre", likvardigt_byte: likvardigt });
+  const kronor = (oren: number) => (oren / 100).toFixed(2).replace(".", ",");
 
-  it("lika med Bauhaus-kvittots målningsrader avvisas – den privata raden räknas inte", async () => {
+  it("ett svar lika med Bauhaus-kvittots målningsrader avvisas – den privata raden räknas inte", async () => {
     const fore = h.db.ogonblick();
-    const kronor = (BAUHAUS_MALNING / 100).toFixed(2).replace(".", ",");
-    const svar = await skapaProjekt({}, formular(battre(kronor), [bauhausId]));
-    expect(svar).toEqual({ fel: merkostnadOverBeloppetFel("Måla sovrummet", BAUHAUS_MALNING), falt: "merkostnad" });
+    const svar = await skapaProjekt({}, formular(battre(kronor(BAUHAUS_MALNING)), [bauhausId]));
+    expect(svar).toEqual({ fel: likvardigtOverBeloppetFel(BAUHAUS_MALNING, false), falt: "merkostnad" });
     expect(h.db.ogonblick()).toEqual(fore);
   });
 
-  it("ett öre mindre sparas, med de valda kvittonas belopp som bas", async () => {
-    const kronor = ((BAUHAUS_MALNING - 1) / 100).toFixed(2).replace(".", ",");
-    await skapaProjekt({}, formular(battre(kronor), [bauhausId]));
+  it("svaret 0 kr – hela beloppet som merkostnad – avvisas", async () => {
+    const fore = h.db.ogonblick();
+    const svar = await skapaProjekt({}, formular(battre("0"), [bauhausId]));
+    expect(svar).toEqual({ fel: LIKVARDIGT_MASTE_ANGES, falt: "merkostnad" });
+    expect(h.db.ogonblick()).toEqual(fore);
+  });
+
+  it("svaret ett öre sparas som merkostnaden beloppet minus ett öre, med de valda kvittonas belopp som bas", async () => {
+    await skapaProjekt({}, formular(battre("0,01"), [bauhausId]));
     expect(nyaProjekt()[0]).toMatchObject({
       battre_kvalitet: true,
       merkostnad: BAUHAUS_MALNING - 1,
@@ -304,5 +312,20 @@ describe("bostadsfrågorna krävs inte när projektet skapas", () => {
     seeda(null);
     const svar = await skapaProjekt({}, formular(MALA, [bauhausId]));
     expect(svar).toEqual({ skapat: nyaProjekt()[0].id });
+  });
+});
+
+// "Hur vet du det?" ställs inte i flödet längre (docs/design.md, "Hur vet du
+// det?" hör inte till flödet), men ett utkast från före flytten kan bära ett
+// svar, och det sparas – ingen ska tappa det hon skrivit.
+describe("motiveringen när projektet skapas", () => {
+  it("ett medskickat svar sparas", async () => {
+    await skapaProjekt({}, formular({ ...MALA, motivering: "  Mäklarbilden visar fläckig vägg " }, [bauhausId]));
+    expect(nyaProjekt()[0].motivering).toBe("Mäklarbilden visar fläckig vägg");
+  });
+
+  it("utan fält: inget svar", async () => {
+    await skapaProjekt({}, formular(MALA, [bauhausId]));
+    expect(nyaProjekt()[0].motivering).toBeNull();
   });
 });

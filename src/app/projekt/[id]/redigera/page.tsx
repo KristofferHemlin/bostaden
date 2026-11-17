@@ -1,5 +1,5 @@
 // Redigera ett projekt (produktspec 6.4): namn och fragetradets svar (fraga
-// 1-6, fraga 8) – och fraga 7, skicket vid forsaljningen, nar bostaden ar
+// 1-6; fraga 8 besvaras pa projektets sida) – och fraga 7, skicket vid forsaljningen, nar bostaden ar
 // sald. Det ar vagen att rata ett skicksvar: forsaljningsflodet fragar bara
 // om obesvarade. Omklassificering rakas om i arssumman sa fort vyerna
 // revalideras. Ett projekt med kopplade kostnader gar inte att ta bort –
@@ -13,6 +13,7 @@ import { Skarm } from "@/components/skarm";
 import {
   merkostnadBehoverBekraftas,
   projektetsBelopp,
+  projektetsBeloppHarRot,
 } from "@/doman/atgardsberakning";
 import { kostnaderKoppladeTillProjekt, projektSumma } from "@/doman/berakningar";
 import {
@@ -26,6 +27,7 @@ import {
   formateraKronor,
   orenTillFalt,
 } from "@/lib/format";
+import { likvardigtFranMerkostnad } from "@/lib/fragetradet-formdata";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -86,6 +88,13 @@ export default async function RedigeraProjektSida({
   // grundforbattring. Har projektet andrats sedan merkostnaden besvarades
   // stalls fragan igen ovanfor formularet (CLAUDE.md, steg 2).
   const belopp = projektetsBelopp(kostnader, id);
+  // Det sparade svaret visas omraknat till faltets betydelse: beloppet minus
+  // merkostnaden, sa att ett oforandrat svar sparas som exakt samma
+  // merkostnad (docs/design.md, "Och frågan ställs bakvänt"). Gar det inte –
+  // merkostnaden ar inte mindre an beloppet, och taket galler – star faltet
+  // tomt, eftersom inget giltigt svar motsvarar det; spärren hade avvisat det
+  // gamla talet ocksa.
+  const likvardigt = likvardigtFranMerkostnad(projekt.merkostnad, belopp);
   const besked = merkostnadBehoverBekraftas(tillDomanProjekt(projekt), belopp);
   const merkostnadAndrad =
     besked === null ? null : merkostnadUpplysning(besked, projekt, belopp, "fraga");
@@ -112,6 +121,7 @@ export default async function RedigeraProjektSida({
         projektId={id}
         blockerande={blockerande}
         projektetsBelopp={belopp}
+        projektetHarRot={projektetsBeloppHarRot(kostnader, id)}
         projektetsSumma={projektSumma(kostnader, id)}
         merkostnadAndrad={merkostnadAndrad}
         // Bostadsdelen gar att ratta har – raden pa projektets sida ar
@@ -130,10 +140,8 @@ export default async function RedigeraProjektSida({
           namn: projekt.namn,
           ...harledFragetradetSvar(projekt.atgardstyp, projekt.battre_kvalitet),
           merkostnad: projekt.merkostnad,
-          merkostnadText:
-            projekt.merkostnad !== null
-              ? formateraBeloppInmatning(orenTillFalt(projekt.merkostnad))
-              : "",
+          likvardigtText:
+            likvardigt !== null ? formateraBeloppInmatning(orenTillFalt(likvardigt)) : "",
           skickForvarv:
             projekt.skick_forvarv !== null ? String(projekt.skick_forvarv) : "",
           motivering: projekt.motivering ?? "",

@@ -8,7 +8,8 @@
 //   * redigeringen (produktspec 6.4, projekt/[id]/redigera), som ocksa
 //     besvarar tradet for ett projekt skapat fore omlaggningen
 //
-// <Fragetradet> ar fraga 2-6 och fraga 8, helt kontrollerat. Fraga 1 (namnet)
+// <Fragetradet> ar fraga 2-6, helt kontrollerat. Fraga 8 besvaras pa
+// projektets sida, inte i ett flode. Fraga 1 (namnet)
 // och sjalva formulartaggen agas av den omslutande sidan – i fas 2 ar namnet
 // forifyllt fran hogens namn, i redigeringen fran projektets. <FragetradetFalt>
 // ar det kombinerade faltet: "Vad gjorde du?" plus fragorna plus de dolda
@@ -37,7 +38,6 @@ import {
   fraga5Relevant,
   harReparationsdel,
   HJALP_SKICK_FORSALJNING,
-  motiveringRelevant,
   SKICK_FORSALJNING_FRAGA,
   SKICK_ORD,
   type BattreEllerLiknandeSvar,
@@ -58,7 +58,6 @@ import {
 import {
   formateraBeloppInmatning,
   formateraKronor,
-  oreFranKronor,
 } from "@/lib/format";
 import { FALTFEL_ATTRIBUT } from "@/lib/formularfel";
 import {
@@ -68,13 +67,20 @@ import {
 } from "@/lib/fragetradet-formdata";
 
 /** UI-tillstandet: fragetradets svar (fraga 2-5) plus fraga 6 och 8, som
- *  lagras rakt av utan tolkning. merkostnad och skick_forvarv ar textfalt har
- *  – tolkningen till oren/heltal sker forst pa servern. */
+ *  lagras rakt av utan tolkning. Svaret pa vad ett likvardigt byte hade
+ *  kostat och skick_forvarv ar textfalt har – tolkningen till oren/heltal,
+ *  och merkostnaden ur svaret, sker forst pa servern. FragetradetSvar:s
+ *  merkostnad ar alltid null har: den ar beraknings begrepp, inte nagot hon
+ *  skriver in (docs/design.md, "Och frågan ställs bakvänt"). */
 export interface FragetradetUIState extends FragetradetSvar {
-  /** Kronor, formaterat lopande av BeloppFalt. Tolkas till oren pa servern. */
-  merkostnadText: string;
+  /** Vad ett likvardigt byte hade kostat, i kronor, formaterat lopande av
+   *  BeloppFalt. Merkostnaden ar projektets belopp minus detta. */
+  likvardigtText: string;
   /** "" eller "0".."5". */
   skickForvarv: string;
+  /** Fraga 8. Har ingen fraga i flodet langre, men ett utkast fran fore
+   *  flytten kan bara ett svar – det skickas med nar projektet skapas, sa att
+   *  ingen tappar det hon skrivit (src/app/projekt/nytt/flode.tsx). */
   motivering: string;
 }
 
@@ -84,7 +90,7 @@ export const TOMMA_SVAR: FragetradetUIState = {
   nyttEllerBytt: "",
   battreEllerLiknande: "",
   merkostnad: null,
-  merkostnadText: "",
+  likvardigtText: "",
   skickForvarv: "",
   motivering: "",
 };
@@ -217,60 +223,77 @@ const HJALP_BATTRE_ELLER_LIKNANDE = (
   </div>
 );
 
-const HJALP_MERKOSTNAD =
-  "Skillnaden i pris mot vad ett likvärdigt byte hade kostat – inte hela beloppet. Uppskatta om du inte har en exakt summa på kvittot.";
-
 const HJALP_SKICK_FORVARV =
   "Jämför med hur det såg ut den dag du tillträdde bostaden, inte dagen innan du åtgärdade det här. Skicket vid försäljningen jämförs mot detta värde när bostaden säljs.";
 
-/** Merkostnaden, fraga 5:s foljd – ett eget falt sa att projektflodet kan
- *  stalla den dar beloppet finns, med samma etikett och hjalptext. */
+/** Merkostnadsfragans etikett (docs/design.md, "Och frågan ställs bakvänt"). */
+export const LIKVARDIGT_ETIKETT = "Vad hade ett likvärdigt byte kostat?";
+
+/**
+ * Hjalptexten, med projektets belopp i: spärrens tal, fore ROT och utan en
+ * privat del – samma tal som merkostnaden dras fran och fordelas over
+ * (CLAUDE.md, steg 2). Tva lydelser, eftersom "fore ROT" ar brus utan ROT;
+ * med ROT forklarar sista meningen varfor talet skiljer sig fran "… kr
+ * räknas med" under Kvittona (docs/design.md, samma stycke).
+ */
+export function likvardigtHjalptext(belopp: number, harRot: boolean): string {
+  const uppskatta = "Uppskatta vad samma arbete hade kostat utan den högre kvaliteten.";
+  return harRot
+    ? `${uppskatta} Jämför med vad arbetet kostade före ROT-avdraget, ${formateraKronor(belopp)} — mellanskillnaden är den del som räknas som grundförbättring. ROT-avdraget minskar sedan båda delarna lika mycket.`
+    : `${uppskatta} Projektet kostade ${formateraKronor(belopp)}, och mellanskillnaden är den del som räknas som grundförbättring.`;
+}
+
+/** Merkostnadsfragan, fraga 5:s foljd – ett eget falt sa att projektflodet
+ *  kan stalla den dar beloppet finns, med samma etikett och hjalptext. Fragan
+ *  ar vand: hon svarar vad ett likvardigt byte hade kostat, och servern drar
+ *  sjalv fran projektets belopp (src/lib/fragetradet-formdata.ts). */
 export function MerkostnadFalt({
   varde,
   fel,
+  belopp,
+  harRot,
   onChange,
 }: {
   varde: string;
   fel?: string;
+  /** Projektets belopp i oren, fore ROT – det svaret dras fran. */
+  belopp: number;
+  /** Bar nagot av projektets kvitton ROT? Valjer hjalptextens lydelse. */
+  harRot: boolean;
   onChange: (delvis: Partial<FragetradetUIState>) => void;
 }) {
   return (
     <Falt
-      etikett="Merkostnaden för den högre kvaliteten"
+      etikett={LIKVARDIGT_ETIKETT}
       obligatoriskt
-      hjalp={HJALP_MERKOSTNAD}
+      hjalp={likvardigtHjalptext(belopp, harRot)}
       fel={fel}
     >
       <BeloppFalt
         aria-invalid={fel ? true : undefined}
         {...(fel ? { [FALTFEL_ATTRIBUT]: "" } : {})}
         value={varde}
-        onValueChange={(text) => {
-          const formaterat = formateraBeloppInmatning(text);
-          onChange({
-            merkostnadText: formaterat,
-            merkostnad: oreFranKronor(formaterat),
-          });
-        }}
+        onValueChange={(text) => onChange({ likvardigtText: formateraBeloppInmatning(text) })}
         className={INPUT_KLASS}
-        placeholder="t.ex. 500"
+        placeholder="t.ex. 3 000"
       />
     </Falt>
   );
 }
 
-/** Fraga 2-6 och fraga 8, helt kontrollerade. Fraga 1 (namnet) hor till den
+/** Fraga 2-6, helt kontrollerade. Fraga 1 (namnet) hor till den
  *  omslutande sidan. */
 export function Fragetradet({
   varden,
   onChange,
   fel,
   helaBeloppet,
-  visaMerkostnad = true,
+  merkostnadsfragan,
 }: {
-  /** Merkostnadsfaltet efter "Bättre kvalitet". Falskt nar det inte finns ett
-   *  belopp att vaga den mot, eller nar flodet staller den pa annat stalle. */
-  visaMerkostnad?: boolean;
+  /** Merkostnadsfragan efter "Bättre kvalitet", med projektets belopp fore
+   *  ROT. Utelamnad nar det inte finns ett belopp att vaga den mot, eller nar
+   *  flodet staller den pa annat stalle. */
+  merkostnadsfragan?: { belopp: number; harRot: boolean };
   varden: FragetradetUIState;
   onChange: (delvis: Partial<FragetradetUIState>) => void;
   /** Ett avvisat svar – visas vid den fraga det galler. */
@@ -311,7 +334,7 @@ export function Fragetradet({
               nyttEllerBytt: "",
               battreEllerLiknande: "",
               merkostnad: null,
-              merkostnadText: "",
+              likvardigtText: "",
               skickForvarv: "",
             })
           }
@@ -340,7 +363,7 @@ export function Fragetradet({
                 nyttEllerBytt: "",
                 battreEllerLiknande: "",
                 merkostnad: null,
-                merkostnadText: "",
+                likvardigtText: "",
                 skickForvarv: "",
               })
             }
@@ -369,7 +392,7 @@ export function Fragetradet({
                 nyttEllerBytt: "nytt",
                 battreEllerLiknande: "",
                 merkostnad: null,
-                merkostnadText: "",
+                likvardigtText: "",
                 skickForvarv: "",
               })
             }
@@ -402,7 +425,7 @@ export function Fragetradet({
               onChange({
                 battreEllerLiknande: "liknande",
                 merkostnad: null,
-                merkostnadText: "",
+                likvardigtText: "",
               })
             }
           />
@@ -413,10 +436,12 @@ export function Fragetradet({
           Bara nar det finns ett belopp att vaga den mot: utan skjuts fragan
           upp (docs/design.md, "Att skapa ett projekt"). Projektflodet staller
           den i kvittosteget i stallet, nar kvittona ar valda. */}
-      {visaMerkostnad && varden.battreEllerLiknande === "battre" ? (
+      {merkostnadsfragan && varden.battreEllerLiknande === "battre" ? (
         <MerkostnadFalt
-          varde={varden.merkostnadText}
+          varde={varden.likvardigtText}
           fel={felFor("merkostnad")}
+          belopp={merkostnadsfragan.belopp}
+          harRot={merkostnadsfragan.harRot}
           onChange={onChange}
         />
       ) : null}
@@ -439,22 +464,9 @@ export function Fragetradet({
         </Fraga>
       ) : null}
 
-      {/* Fraga 8 – ren fritext, blockerar aldrig. Visas bara nar svaret
-          betyder nagot: ett lagt skick vid forvarvet (0-2) ger ett stort
-          reparationsavdrag pa tva subjektiva siffror, och da ar motiveringen
-          en del av bevisningen. Ar skicket 3 eller hogre blir avdraget litet
-          anda, och da finns inget att forsvara (produktspec 4.1). */}
-      {motiveringRelevant(varden.skickForvarv) ? (
-        <Falt etikett="Hur vet du det?" hjalp="Valfritt, men bär bevisningen om kvitto saknas.">
-          <textarea
-            rows={3}
-            value={varden.motivering}
-            onChange={(e) => onChange({ motivering: e.target.value })}
-            className={INPUT_KLASS}
-            placeholder="t.ex. mäklarbilden visar fläckig vägg bakom garderoben"
-          />
-        </Falt>
-      ) : null}
+      {/* Fraga 8, "Hur vet du det?", star inte har: den besvaras pa
+          projektets sida (docs/design.md, "Hur vet du det?" hör inte till
+          flödet; src/app/projekt/[id]/motivering.tsx). */}
     </div>
   );
 }
@@ -486,15 +498,14 @@ export function FragetradetDoldaFalt({ svar }: { svar: FragetradetUIState }) {
       />
       <input
         type="hidden"
-        name="merkostnad"
-        value={svar.battreEllerLiknande === "battre" ? svar.merkostnadText : ""}
+        name="likvardigt_byte"
+        value={svar.battreEllerLiknande === "battre" ? svar.likvardigtText : ""}
       />
       <input
         type="hidden"
         name="skick_forvarv"
         value={harReparationsdel(svar) ? svar.skickForvarv : ""}
       />
-      <input type="hidden" name="motivering" value={svar.motivering} />
     </>
   );
 }
@@ -519,10 +530,10 @@ export function FragetradetFalt({
   helaBeloppet,
   skickForsaljning,
   bostadsdel,
-  visaMerkostnad,
+  merkostnadsfragan,
 }: {
   /** Se <Fragetradet>. */
-  visaMerkostnad?: boolean;
+  merkostnadsfragan?: { belopp: number; harRot: boolean };
   initial?: FragetradetVarden;
   /** "Vilken del av bostaden?" efter namnet, med det sparade svaret. Utelamnad:
    *  fragan visas inte och servern ror inte raderna. */
@@ -548,7 +559,7 @@ export function FragetradetFalt({
     nyttEllerBytt: start.nyttEllerBytt,
     battreEllerLiknande: start.battreEllerLiknande,
     merkostnad: start.merkostnad,
-    merkostnadText: start.merkostnadText,
+    likvardigtText: start.likvardigtText,
     skickForvarv: start.skickForvarv,
     motivering: start.motivering,
   });
@@ -574,7 +585,7 @@ export function FragetradetFalt({
         varden={svar}
         fel={fel}
         helaBeloppet={helaBeloppet}
-        visaMerkostnad={visaMerkostnad}
+        merkostnadsfragan={merkostnadsfragan}
         onChange={(delvis) => {
           setSvar((s) => ({ ...s, ...delvis }));
           onAndring?.();
@@ -650,9 +661,9 @@ export function NamnFalt({
  * useFragetradetFormular, som gjorde samma sak som useFormularfel. Nu finns
  * monstret pa ett stalle.
  */
-export function fragetradetsValidering(projektetsBelopp: number) {
+export function fragetradetsValidering(projektetsBelopp: number, harRot: boolean) {
   return (formData: FormData): FragetradetFormFel | null => {
-    const tolkat = tolkaFragetradetFormData(formData, { belopp: projektetsBelopp });
+    const tolkat = tolkaFragetradetFormData(formData, { belopp: projektetsBelopp, harRot });
     return "fel" in tolkat ? tolkat : null;
   };
 }

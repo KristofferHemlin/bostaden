@@ -6,6 +6,8 @@
 // hamnar efteråt beror på varifrån hon kom:
 //
 //   * från underlaget (fran=export): tillbaka dit
+//   * direkt efter ägarandelen (fran=andel): till översikten, dit
+//     andelsfrågan annars hade lett
 //   * i försäljningsflödet: nästa steg som gäller bostaden
 //     (src/doman/forsaljningsflode.ts)
 //   * annars, för en osåld bostad: underlaget, som är det enda som väntar
@@ -38,9 +40,14 @@ export async function sparaFragorOmBostaden(
   revalidatePath("/installningar");
   revalidatePath("/forsaljning", "layout");
 
-  // Bara de två värdena – `nasta` är formulärdata, och ett okänt värde får
+  // Bara de kända värdena – `nasta` är formulärdata, och ett okänt värde får
   // aldrig styra en omdirigering.
-  if (formData.get("nasta") === "export") redirect("/export");
+  const nasta = formData.get("nasta");
+  if (nasta === "export") redirect("/export");
+  if (nasta === "oversikt") {
+    revalidatePath("/");
+    redirect("/");
+  }
   const { forsaljningsdatum } = await prisma.bostad.findUniqueOrThrow({
     where: { id: bostadId },
     select: { forsaljningsdatum: true },
