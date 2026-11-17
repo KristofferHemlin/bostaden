@@ -702,6 +702,16 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Testdata får därför aldrig vara lika i det fält som avgör ordningen.** Det gäller tidsstämplar, datum och belopp lika mycket, och det gäller också produktionskoden: sorteras något på ett fält som kan vara lika, ska en andra nyckel avgöra.
 
+### Ett tal i en lydelse är ett påstående om beräkningen
+
+**Skriven 2026-11-18.** Jag skrev en hjälptext som bad användaren jämföra mot *"projektets 49 225 kr"* — beloppet efter ROT — medan beräkningens fördelning utgår från bruttot. Agenten såg motsägelsen och frågade innan den byggde. Hade den byggt det jag skrev hade varje projekt med ROT fått sin merkostnad reducerad två gånger.
+
+**En lydelse som namnger ett tal väljer en bas**, och basen måste vara densamma som beräkningens. Texten lär användaren en modell; är modellen en annan än kodens blir svaret fel även när hon svarar rätt.
+
+**Därför: slå upp vilket tal domänen använder innan lydelsen skrivs, inte efter.** Det räcker inte att talet finns på skärmen någonstans — ett projekt kan ha tre riktiga belopp (brutto, efter ROT, efter privat del), och bara ett av dem är det frågan handlar om.
+
+**Och när två av dem syns samtidigt ska texten säga varför de skiljer sig.** Två tal om samma projekt utan förklaring läses som ett fel i appen.
+
 ### En lydelse som ska vaktas står i regelfilen
 
 **Skriven 2026-11-13.** Jag skrev en lydelse i en prompt och inte i `docs/design.md`. Agenten byggde den, märkte att inget test kunde läsa den därifrån, och lade den som en konstant — och sa till.
@@ -735,6 +745,8 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 **Ett test som inte faller när beteendet bryts är inte ett grönt test, det är ett oskrivet test.** Och det syns bara på ett sätt: genom att bryta beteendet med flit och se testet falla. Att det passerar säger ingenting alls.
 
 **Förutsättningen prövas före slutsatsen.** En mätning av att något klipps kräver ett fall som utan klippning skulle svämma över. En mätning av ett tillstånd kräver att tillståndet verkligen är satt där mätningen läser. Går förutsättningen inte att visa är mätningen en tautologi med extra steg.
+
+**Ett negativt utfall är ett resultat — men bara om felet gick att framkalla.** *"Jag letade och hittade inget"* är värdelöst i sig; *"jag bröt villkoret, felet uppstod, jag lagade brytningen och felet var borta"* är ett svar. 2026-11-17 letade agenten efter en söm i bilagemärket vid hovring, hittade ingen, och visade först att sömmen gick att framkalla på alla tre skärmarna. Först då betydde nollresultatet något. **Be om den demonstrationen varje gång svaret är att inget fel finns.**
 
 **Och ett test kan bli tomt långt efter att det skrevs, utan att någon rör det.** Skriven 2026-11-16. När korten doldes på en startskärm utan kvitton blev tre tester som kräver *"inget kort"* sanna av fel skäl — de prövade inte längre kortets villkor utan bara att skärmen saknade kvitton. Agenten misstänkte det själv, hämtade den förra committens testfil, bröt kortet så att det alltid visades och såg de tre gå igenom. Sedan gav den dem varsitt kvitto, och samma brytning fällde dem.
 

@@ -51,7 +51,7 @@ Konsekvensen av att fråga för tidigt **där** är inte att svaren blir fel. Ko
 
 Skattefrågorna hör till åtgärden, inte till kvittot – med hundra kvitton och tio åtgärder ska de ställas tio gånger, inte hundra. **Det uppnås genom att projektet skapas först och kvittona hämtas till det**, inte genom att kvitton sorteras i högar i efterhand.
 
-**Ett projekt skapas direkt, från projektsidan.** Omlagt 2026-11-13; dessförinnan kunde ett projekt bara uppstå ur en gruppering. Flödet är fyra steg och ett enda sparande: *vad gjorde du* → *vilken del av bostaden* → frågeträdet → **vilka kvitton hörde hit** → spara.
+**Ett projekt skapas direkt, från projektsidan.** Omlagt 2026-11-13; dessförinnan kunde ett projekt bara uppstå ur en gruppering. Flödet är fyra steg och ett enda sparande: *vad gjorde du* → *vilken del av bostaden* → frågeträdet → **vilka kvitton hörde hit, med en sammanfattning av svaren ovanför** → spara.
 
 **Hela frågeträdet besvaras här, utom det som kräver försäljningen.** Byggde du något nytt, ändrade du planlösningen, satte du in något som aldrig funnits eller bytte du ut något, var det nya av bättre kvalitet, hur var skicket vid förvärvet — allt är fakta om vad hon gjorde. **Följdfrågorna gäller fullt ut:** trädet grenar som förut, och ett *nej* leder vidare precis som i dag.
 
@@ -132,6 +132,8 @@ De hör inte hemma i registreringen. Den är avsiktligt kort, frågorna är svå
 **Under ägandet är de inte ett krav, utan ett väntande tillstånd i underlaget.** Raderna visas, summorna hålls tillbaka, och *Återstår* säger vad som fattas och leder till frågorna. Lydelsen står i `docs/design.md` under *Exportvyn*.
 
 Frågorna ska gå att ändra i inställningarna efteråt, som allt annat om bostaden.
+
+**De ställs i följd efter ägarandelen, och de krävs vid försäljningen.** Beslutat 2026-11-18: tre frågor om bostaden ställda var för sig är tre avbrott, ställda i följd är de ett ärende. Den som hoppar över dem möter dem igen vid försäljningen, och under tiden säger underlaget med ett band överst att de fattas.
 
 **De ställs när ett tal kräver dem, och det är alltid vid försäljningen — men inte bara då.** Rättat 2026-11-13, samma dag som flytten, efter att agenten såg konsekvensen: beräkningen kräver `nybyggd_vid_forvarv` oavsett om bostaden är såld, eftersom tröskeln prövas på båda slagen tillsammans och nybyggd-regeln nollar reparationsdelen innan tröskeln. Den som aldrig svarat får alltså inget underlag under ägandet heller.
 

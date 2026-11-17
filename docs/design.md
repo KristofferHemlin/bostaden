@@ -1217,17 +1217,35 @@ Lärdomen är inte om just det fältet. **Ett påstående om hur koden fungerar 
 
 **Dialoger som ställer en fråga om sparandet körs efter valideringen, inte före.** Frågan *"Inget kvitto bifogat"* handlar om ett kvitto som är på väg att sparas. Är formuläret ogiltigt sparas ingenting, och då är frågan ställd i onödan – användaren svarar på den, trycker *Spara ändå*, och får först då veta att datumet var fel.
 
-**En avvisning som rör ett tal ska innehålla talet.** Merkostnadsfältet är exemplet, byggt 2026-10-18:
+**En avvisning som rör ett tal ska innehålla talet.** Merkostnadsfältet är exemplet, byggt 2026-10-18. Lydelsen löd då:
 
 > **Ange en merkostnad mindre än 10 000 kr – det är vad ”Bytte fönster” kostade.**
 
-Både ett för högt belopp och ett som är exakt lika med projektets får samma mening, eftersom felet är detsamma. Jämför med Skatteverkets egen lydelse, *"Beloppet måste vara mindre än kostnaden för hela renoveringen"* – korrekt, men den lämnar användaren att själv leta reda på vad renoveringen kostade. Vår säger vilket projekt och vilket tal det gäller, och då behöver hon inte lämna fältet för att rätta sig.
+Jämför med Skatteverkets egen lydelse, *"Beloppet måste vara mindre än kostnaden för hela renoveringen"* – korrekt, men den lämnar användaren att själv leta reda på vad renoveringen kostade. Vår säger vilket projekt och vilket tal det gäller, och då behöver hon inte lämna fältet för att rätta sig.
+
+**Fältet vändes 2026-11-18, och avvisningarna med det.** Hon skriver inte längre merkostnaden utan vad ett likvärdigt byte hade kostat, så en mening om *merkostnaden* talar om ett tal hon aldrig matar in. De två felen ligger dessutom nu på var sitt håll: ett svar som är lika stort som eller större än projektets belopp ger ingen merkostnad alls, och svaret noll ger en merkostnad som är hela beloppet. **Agenten såg det och frågade i stället för att hitta på** — lydelserna är mina.
+
+**Svaret är lika med eller större än projektets belopp.** Två lydelser, som hjälptexten, eftersom *före ROT-avdraget* är brus när det inte finns något ROT:
+
+> **Ange ett belopp lägre än 24 000 kr – det är vad projektet kostade. Kostade ett likvärdigt byte lika mycket är svaret på kvalitetsfrågan ”Liknande som tidigare”.**
+
+> **Ange ett belopp lägre än 60 812,50 kr – det är vad arbetet kostade före ROT-avdraget. Kostade ett likvärdigt byte lika mycket är svaret på kvalitetsfrågan ”Liknande som tidigare”.**
+
+Andra meningen finns därför att det här felet nästan alltid betyder att hon svarat fel på en **tidigare** fråga, inte att hon skrivit fel tal. Den visar vägen vidare i stället för att upprepa gränsen, vilket är regeln under *När ett formulär vägrar*.
+
+**Svaret är noll eller tomt.** En lydelse, eftersom ROT inte spelar någon roll här:
+
+> **Ange vad ett likvärdigt byte hade kostat, mer än 0 kr. Uppskatta om du inte vet exakt.**
+
+Den argumenterar inte om att ett gratis byte vore omöjligt. Den säger vad fältet vill ha och ger lov att gissa — samma lov som hjälptexten redan ger.
 
 **Samma regel gäller en upplysning om ett tal appen räknat om åt användaren.** Upplysningen i exporten när taket slagit till, uppmätt i produktionen 2026-10-18 och värd att behålla ordagrant:
 
 > **Merkostnaden för ”Bytte fönster på framsidan till treglas”, 12 000 kr, är inte mindre än vad projektet kostade, 10 000 kr. Den räknas som högst 10 000 kr tills du ändrat svaret.**
 
 Tre tal och ett projektnamn i en mening, och sista satsen säger att det är tillfälligt och vad som avslutar det. Den som läser den vet vad som hände, varför, och vad hon ska göra – utan att öppna något.
+
+**Den säger fortfarande *merkostnaden*, och ska göra det.** Den beskriver det lagrade talet i underlaget, inte det hon skriver in — och i underlaget heter det merkostnad, eftersom det är beräkningens begrepp. Bara inmatningens fält och dess avvisningar vändes 2026-11-18.
 
 **Appen skriver svenska citattecken, ”så här”, och en sträng som återges i `docs/` återges ordagrant – citattecknen inräknade.** Skriven 2026-10-19, efter att agenten upptäckte att de två meningarna ovan stod med raka citattecken här medan koden skrev svenska. Den som bygger mot en sträng i den här filen ska kunna kopiera den rakt av; står det fel tecken här blir det fel i appen, eller så uppstår en fråga som kostar en runda. Löptext i `docs/` som inte citerar appen är fri.
 
@@ -1991,6 +2009,14 @@ Skärmens rubrik är **"Berätta vad du gjort"**. Flödet är *vad gjorde du* �
 
 **Kvittona väljs sist, inte först.** När projektet är beskrivet visas de kvitton som ännu inte hör till något projekt, och hon väljer vilka som hörde hit. Frågan är då *"vilka av de här hörde till badrummet?"* — hon vet vad hon letar efter, eftersom hon just skrivit namnet.
 
+**Sista steget sammanfattar innan det sparar.** Ändrat 2026-11-18. Knappen hette *Spara* och stod under en kryssrutelista, alltså under det enda på skärmen som inte var det hon sparade. Ovanför listan står därför en sammanfattning av vad hon svarat — namnet, delen av bostaden, vad som gjordes, kvaliteten, skicket — och **vad det räknas som**, vilket är appens omdöme och det enda hon inte kunde förutse. Knappen heter **"Spara projektet"**.
+
+**Inget femte steg.** Granskningen ligger i steg fyra, inte i en egen vy som ser ut som projektsidan. Två skärmar som visar samma sak är en skärm för mycket, och den regeln står redan under *Kvittots detaljvy*. Projektsidan efter sparandet är bekräftelsen.
+
+**"Hur vet du det?" hör inte till flödet.** Fältet under skickfrågan bär bevisningen när kvitto saknas, och skicket är det mjukaste talet i hela beräkningen — det skalar hela reparationsdelen. **Men det är inte brådskande**, och ett fritextfält mitt i ett flöde kostar mer uppmärksamhet än det är värt där. Det flyttar till projektets egen sida, där det går att fylla i efteråt.
+
+Det är samma princip som att betaldatum, uppdelning och projektkoppling görs i efterhand från kvittots detaljvy: det som inte måste fångas medan det går, fångas inte i inmatningen.
+
 **Framsteget räknas i steg, inte i frågor och inte i kvitton.** *"1 av 4"* räcker, utan ordet före. Stegen är alltid fyra; frågorna inuti steg tre varierar med grenen, och **det antalet sägs aldrig** – regeln under *Frågeträdet* gäller oförändrad. Rättat 2026-11-13 efter att agenten såg att orden sa *frågor* medan räknaren räknade steg.
 
 Här stod tidigare att skärmen också skulle säga *"N kvitton kvar"* och *"N projekt väntar på frågor"* — två räknare för två faser, från en modell som inte finns längre.
@@ -2005,7 +2031,27 @@ Här stod tidigare att skärmen också skulle säga *"N kvitton kvar"* och *"N p
 
 Frågan skjuts då upp i stället för att stoppa sparandet. Projektet sparas med sitt slag — *bättre kvalitet* betyder grundförbättring och reparation oavsett hur de två delarna fördelas — och **en upplysning på projektets sida bär sanningen tills frågan besvarats**, på samma sätt som när ett projekt krymper efter att svaret getts (`CLAUDE.md`, *Spärren och taket*).
 
-**Fältet ligger därför i kvittosteget, inte i frågeträdet.** Agenten flyttade det dit 2026-11-13 och frågade om det var rätt läst. Det var det, och skälet är starkare än ordningen: frågan *"hur mycket av beloppet var merkostnad"* går inte att svara på utan beloppet, och avvisningen ska skriva ut det riktiga talet i stället för att gissa en gräns. Fältet visas när ett valt kvitto har ett belopp.
+**Fältet ligger därför i kvittosteget, inte i frågeträdet.** Agenten flyttade det dit 2026-11-13 och frågade om det var rätt läst. Det var det, och skälet är starkare än ordningen: svaret går inte att ge utan beloppet, och avvisningen ska skriva ut det riktiga talet i stället för att gissa en gräns. Fältet visas när ett valt kvitto har ett belopp.
+
+**Och frågan ställs bakvänt mot hur den löstes till 2026-11-18.** Fältet hette *"Merkostnaden för den högre kvaliteten"* och bad om en **skillnad mot något som aldrig hände** – en motfaktisk uppskattning, svår även för den som vet exakt vad hon köpte. Uppmätt av Kristoffer på skärmen: frågan gick inte att förstå.
+
+**Den andra halvan av samma räknesak är lätt att svara på.** Etiketten lyder därför **"Vad hade ett likvärdigt byte kostat?"**, och appen drar själv ifrån. Ett enklare kök, plastmatta i stället för parkett — den siffran kan en människa uppskatta. Skatteverkets eget exempel är dessutom formulerat precis så, som två priser och inte som en differens.
+
+**Talet som visas och dras ifrån är spärrens tal: projektets belopp före ROT, utan en privat del.** Här stod först *"efter ROT"*, och det var fel — agenten såg motsägelsen och frågade innan den byggde. **Fördelningens bas är brutto**, eftersom reduktionsfaktorn bär ROT och minskar båda delarna i efterhand; se *Spärren och taket* i `CLAUDE.md`. Ett svar draget från nettot hade lagrats som ett nettotal och sedan reducerats för ROT en gång till.
+
+**Och det är också rätt fråga att ställa.** Hon jämför med vad arbetet hade kostat, och det står på fakturan. Ett pris mot ett ROT-reducerat tal är två olika sorters tal. Den privata delen är däremot aldrig med, eftersom den aldrig var ett arbete på bostaden.
+
+Hjälptexten har två lydelser, eftersom *före ROT* är brus när ROT inte finns:
+
+> **Vad hade ett likvärdigt byte kostat?**
+> Uppskatta vad samma arbete hade kostat utan den högre kvaliteten. Projektet kostade 24 000 kr, och mellanskillnaden är den del som räknas som grundförbättring.
+
+> **Vad hade ett likvärdigt byte kostat?**
+> Uppskatta vad samma arbete hade kostat utan den högre kvaliteten. Jämför med vad arbetet kostade före ROT-avdraget, 60 812,50 kr — mellanskillnaden är den del som räknas som grundförbättring. ROT-avdraget minskar sedan båda delarna lika mycket.
+
+**Den sista meningen finns för att talet annars säger emot sidan.** Under *Kvittona* står *49 225 kr räknas med*, och två olika tal om samma projekt utan förklaring läses som ett fel.
+
+**Spärren är oförändrad, uttryckt i det nya fältet:** svaret måste vara större än noll och mindre än projektets belopp, vilket är exakt `0 < merkostnad < belopp` sett från andra hållet. **Det lagrade värdet är fortfarande merkostnaden**, alltså beloppet minus svaret; det är beräkningens begrepp och det ändras inte av att inmatningen gör det.
 
 Upplysningens två lydelser delar första meningen:
 
@@ -2484,10 +2530,16 @@ Utan försäljningsdatum visas:
 
 **Det löses inte genom att gissa.** Att räkna som om bostaden inte var nybyggd låter reparationsbeloppen lyfta år över tröskeln som inte skulle passera, och felet går mot ett för högt tal. Att hoppa över reparationerna i tröskelprövningen ändrar vad talet på sida 1 betyder. Båda vägarna byter ett väntande tillstånd mot ett osant tal.
 
-**Underlaget frågar i stället, på sitt eget sätt.** Raderna visas med vad de kostade, de tal svaret skulle ha ändrat står som ett dämpat **–** utan *Förs till*, och *Återstår* inleds med en rad som säger vad som fattas och leder till frågorna:
+**Underlaget frågar i stället, på sitt eget sätt.** Raderna visas med vad de kostade, och de tal svaret skulle ha ändrat står som ett dämpat **–** utan *Förs till*.
+
+**Beskedet står i ett band överst, inte under *Återstår*.** Flyttat 2026-11-18. Raden låg bland kvittona i *Återstår* och såg ut som dem — men varje annan rad där är något hon **lagt in**, och den här är något hon **inte svarat på**. En fråga bland kvitton läses som ett kvitto.
+
+Bandet ligger ovanför tabellerna, alltså ovanför de tal det handlar om, och i samma form som varningen om merkostnaden som redan står där:
 
 > **Vi vet inte om bostaden var nybyggd när du köpte den**
 > Svaret avgör om reparationer räknas med. **Svara på två frågor**
+
+**Men det är ett band och inte en spärr.** Sidan går fortfarande alltid att öppna, raderna visas, och den som bara vill se vad hon samlat ihop får göra det. Skälet står två stycken upp och gäller oförändrat: att kräva ett svar för att ens få titta lär användaren att sidan inte är för henne.
 
 **Och vilka tal som hålls tillbaka avgörs genom att räkna, inte genom att bedöma.** Agentens lösning 2026-11-13, och den är bättre än regeln jag skrev. Underlaget räknas **en gång för varje möjligt svar**, och visas bara där svaren ger samma tal. Där de skiljer sig står strecket.
 
@@ -2515,7 +2567,11 @@ Byggt 2026-11-13 i `522fd8b`: avdragsgill del, *Din andel*, förklaringen under 
 
 **Och lydelsen *"Sammanställningen går inte att göra"* används inte.** Den säger att appen misslyckades. Appen väntar på ett svar, och ett väntande tillstånd namnger det som fattas — regeln står under *Ett tillstånd är inte en kategori*.
 
-**Frågorna ligger på en egen sida, inte i försäljningsflödet.** Samma två frågor, samma lydelser, nådd från två ställen: först av allt när bostaden markeras som såld, och från underlaget när ett tal kräver dem. Sidans rubrik är **"Frågor om bostaden"** – en sida som heter *försäljning* och frågar den som inte sålt säger fel sak om varför den finns.
+**Frågorna ligger på en egen sida, inte i försäljningsflödet.** Samma två frågor, samma lydelser, nådd från tre ställen: först av allt när bostaden markeras som såld, från underlagets band när ett tal kräver dem, och **direkt efter ägarandelen**. Sidans rubrik är **"Frågor om bostaden"** – en sida som heter *försäljning* och frågar den som inte sålt säger fel sak om varför den finns.
+
+**Att de följer på ägarandelen är det som gör dem besvarade.** Beslutat 2026-11-18. Alla tre är frågor om bostaden och ingen av dem om ett kvitto; ställda var för sig blir de tre avbrott, ställda i följd blir de ett ärende. Hon har dessutom just svarat på något av exakt samma slag, så sammanhanget bär.
+
+**Kedjan avbryts när som helst, och ägarandelen är sparad redan.** Svaret på den första frågan får aldrig hänga på att hon orkar svara på de två följande — det vore att göra en sparad uppgift beroende av en annan.
 
 "Markera som såld" ligger som en knapp längst ned på sidan, aldrig som en spärr framför den.
 
