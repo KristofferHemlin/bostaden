@@ -648,6 +648,8 @@ Fallet var det gamla grupperingsflödet: posten skapades med tomt namn, eftersom
 
 **Det är samma regel som redan gäller inställningarnas *Inte angiven*** — *kriteriet är härlett, inte en lista att hålla i synk* — nu tillämpad på ett test i stället för på ett gränssnitt. Varje gång ett krav gäller *alla* av något, är den handskrivna uppräkningen felet.
 
+**Och det gäller också en regel som räknar upp platser.** 2026-11-17: `docs/design.md` namngav tre skärmar där anteckningen är radens huvudtext, och tvåradstestet mätte två av dem. Ingen av listorna var fel; de hade bara glidit isär. **Räknar en regel upp N ställen, pröva alla N** — och säg vilka när du rapporterar, så att glidningen syns nästa gång.
+
 **Och att något prövas ska visas.** Agenten tog bort bostadsvillkoret med flit i tre av de nya fallen; 2, 10 och 5 fall föll.
 
 **Automatiken säger att något saknas; den skriver inte provet.** Ett medlemskapsprov behöver ett anrop med ett främmande id och ett väntat avslag för just den vägen, och det går inte att läsa ur en signatur. Uppräkningen ur koden faller därför med besked när en väg varken är prövad eller undantagen — och **varje undantag bär ett skrivet skäl.** Att ingen hann skriva ett prov är inget skäl.
