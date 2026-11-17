@@ -2003,13 +2003,19 @@ Behövs symboler någon annanstans används tunna ikoner i `--text-sekundar`.
 
 ### Att skapa ett projekt
 
-Skärmens rubrik är **"Berätta vad du gjort"**. Flödet är *vad gjorde du* → *vilken del av bostaden* → frågeträdet → välj kvitton → spara, och det går att avbryta när som helst; det som skrivits ligger kvar.
+Skärmens rubrik är **"Berätta vad du gjort"**. Flödet är **tre steg**: *vad gjorde du och vilken del av bostaden* → frågeträdet → välj kvitton och spara. Det går att avbryta när som helst; det som skrivits ligger kvar.
+
+**Namnet och delen av bostaden står på samma skärm.** Slaget ihop 2026-11-19. De var två steg med ett fält respektive en knapprad, och båda svarar på samma sak: *vad gjorde du, och var*. Ett eget steg för en enda rad knappar är ett steg som bara kostar ett tryck.
+
+**Delen är fortfarande frivillig**, och ligger under namnfältet. Att hoppa över den ska gå utan att först trycka sig förbi den.
 
 **Namnet ställs först, och det är frågeträdets första fråga.** Skälet att namnet betyder något är att det hamnar i deklarationsunderlagets åtgärdskolumn. En rad som säger "K-Bygg Sverige AB" i stället för "Ny köksfläkt" är inte begriplig för någon som inte var där – och det är just därför frågan ställs där användaren tänker på vad hen gjorde.
 
 **Kvittona väljs sist, inte först.** När projektet är beskrivet visas de kvitton som ännu inte hör till något projekt, och hon väljer vilka som hörde hit. Frågan är då *"vilka av de här hörde till badrummet?"* — hon vet vad hon letar efter, eftersom hon just skrivit namnet.
 
 **Sista steget sammanfattar innan det sparar.** Ändrat 2026-11-18. Knappen hette *Spara* och stod under en kryssrutelista, alltså under det enda på skärmen som inte var det hon sparade. Ovanför listan står därför en sammanfattning av vad hon svarat — namnet, delen av bostaden, vad som gjordes, kvaliteten, skicket — och **vad det räknas som**, vilket är appens omdöme och det enda hon inte kunde förutse. Knappen heter **"Spara projektet"**.
+
+**Och sparandet leder till projektlistan, inte till projektets egen sida.** Ändrat 2026-11-19. Sammanfattningen hon just läste är bekräftelsen; projektsidan hade visat samma uppgifter en gång till, vilket är den andra skärmen som visar samma sak. Listan svarar i stället på frågan hon har härnäst — *vad har jag nu?* — och är dessutom varifrån nästa projekt skapas.
 
 **Inget femte steg.** Granskningen ligger i steg fyra, inte i en egen vy som ser ut som projektsidan. Två skärmar som visar samma sak är en skärm för mycket, och den regeln står redan under *Kvittots detaljvy*. Projektsidan efter sparandet är bekräftelsen.
 
@@ -2021,11 +2027,13 @@ Det är samma princip som att betaldatum, uppdelning och projektkoppling görs i
 
 **Det hör hemma i *Ändra projektet*, inte som ett fält på projektsidan.** Jag skrev *"projektets egen sida"* 2026-11-18 och agenten byggde det ordagrant: ett redigerbart fält med en egen *Spara*-knapp mitt i en sida som annars bara visar. **Det bryter samma regel som kvittots detaljvy lyder under** – *allt som ändras ändras i ändringsläget* – och lär användaren att sidan ibland går att skriva i, utan att hon kan se när.
 
-Fältet står därför i projektets redigering, direkt under skickfrågan där det hörde hemma i flödet. **Projektsidan visar motiveringen som en rad**, bredvid *Skick vid förvärvet*, när den är besvarad – och inte alls när den inte är det, eftersom ett tomt valfritt fält som syns blir en påminnelse om något ogjort.
+Fältet står därför i projektets redigering, direkt under skickfrågan där det hörde hemma i flödet. **Projektsidan visar motiveringen som en rad**, direkt efter *Skick vid förvärvet*, när den är besvarad – och inte alls när den inte är det, eftersom ett tomt valfritt fält som syns blir en påminnelse om något ogjort.
+
+**Raden heter *"Hur vet du det?"*, alltså exakt som fältet.** Agentens val 2026-11-18, och rätt: en etikett som är en fråga besvaras av sitt värde, vilket är regeln här, och samma ord på båda ställena gör att hon känner igen sitt eget svar. Ett *Motivering* eller *Underlag* vore två namn på en sak, och det senare krockar dessutom med deklarationsunderlaget.
 
 **Frågan ställs bara när skicket vid förvärvet är 0–2.** Agentens val, och det är rätt: ett lågt skick vid förvärvet är det som **ökar** avdraget, alltså det påstående som behöver bäras av något. Ett högt skick hjälper henne inte, och då är bevisningen ingen hon behöver. Finns redan ett svar visas fältet oavsett, så att ingenting hon skrivit blir oåtkomligt.
 
-**Framsteget räknas i steg, inte i frågor och inte i kvitton.** *"1 av 4"* räcker, utan ordet före. Stegen är alltid fyra; frågorna inuti steg tre varierar med grenen, och **det antalet sägs aldrig** – regeln under *Frågeträdet* gäller oförändrad. Rättat 2026-11-13 efter att agenten såg att orden sa *frågor* medan räknaren räknade steg.
+**Framsteget räknas i steg, inte i frågor och inte i kvitton.** *"1 av 3"* räcker, utan ordet före. Stegen är alltid tre; frågorna inuti steg två varierar med grenen, och **det antalet sägs aldrig** – regeln under *Frågeträdet* gäller oförändrad. Rättat 2026-11-13 efter att agenten såg att orden sa *frågor* medan räknaren räknade steg, och minskat från fyra till tre 2026-11-19.
 
 Här stod tidigare att skärmen också skulle säga *"N kvitton kvar"* och *"N projekt väntar på frågor"* — två räknare för två faser, från en modell som inte finns längre.
 
@@ -2147,6 +2155,24 @@ Förklaringen ligger bakom knappen, inte som brödtext ovanför listan. Den som 
 **Primärknappen heter *Skapa projekt*, och den står både i listan och i det tomma tillståndet.** Omlagt 2026-11-13. Här stod att sidan inte skulle ha någon knapp alls, med skälet att projekt uppstod ur grupperingen och inte som en egen uppgift. Nu är det precis tvärtom: projektsidan **är** vägen in, och ett tomt tillstånd utan knapp vore en skärm som beskriver en handling man inte kan utföra därifrån.
 
 Tomläget är alltså det vanliga: en rubrik som är en uppmaning, en till två rader om varför, och knappen i full bredd.
+
+#### Projektsidan ändras i delar, inte i ett formulär
+
+**Att ändra ett projekt är i dag en enda lång skärm.** Namnet, delen av bostaden, hela frågeträdet, merkostnaden och kvittona ligger på rad, och den som vill rätta ett ord scrollar förbi allt annat. Uppmätt av Kristoffer på skärmen 2026-11-19: *"väldigt stökigt"*.
+
+**Projektsidan blir i stället en läsvy med tre delar, var och en med sin egen *Ändra*.** Det är samma form som inställningssidan redan har – *Bostaden* och *Förvärvet* med var sin länk – och den formen finns just för att en sida med många uppgifter inte ska bli ett formulär man måste ta sig igenom.
+
+| Del | Innehåller | Ändras i |
+|---|---|---|
+| **Vad och var** | Namnet, delen av bostaden | Ett fält och en knapprad |
+| **Frågorna** | Vad gjordes, kvaliteten, det likvärdiga bytet, skicket vid förvärvet, *Hur vet du det?* | Frågeträdet, som i skapandet |
+| **Kvittona** | Kvittoraderna och projektets summa | Välja till och lyfta ut |
+
+**Varje *Ändra* leder till en kort skärm med bara sin del**, och tillbaka till projektsidan. Ingen av dem är flödet från början; den som vill rätta ett namn ska inte gå igenom tre steg för det.
+
+***Räknas som* står kvar på läsvyn och är inte en del.** Det är härlett ur svaren och går inte att ändra direkt — att ge det en *Ändra* vore att påstå att det är en inställning.
+
+**Att lyfta ut ett kvitto hör till *Kvittona*.** Det går redan från kvittots egen sida, via projektvalet, och det här är den andra riktningen av samma sak — precis som att välja till finns på båda hållen. **Kvittot lossas, det raderas inte**, och raden säger vart det tar vägen: tillbaka till kvitton utan projekt.
 
 #### Att lägga kvitton till ett projekt som redan finns
 

@@ -51,7 +51,7 @@ Konsekvensen av att fråga för tidigt **där** är inte att svaren blir fel. Ko
 
 Skattefrågorna hör till åtgärden, inte till kvittot – med hundra kvitton och tio åtgärder ska de ställas tio gånger, inte hundra. **Det uppnås genom att projektet skapas först och kvittona hämtas till det**, inte genom att kvitton sorteras i högar i efterhand.
 
-**Ett projekt skapas direkt, från projektsidan.** Omlagt 2026-11-13; dessförinnan kunde ett projekt bara uppstå ur en gruppering. Flödet är fyra steg och ett enda sparande: *vad gjorde du* → *vilken del av bostaden* → frågeträdet → **vilka kvitton hörde hit, med en sammanfattning av svaren ovanför** → spara.
+**Ett projekt skapas direkt, från projektsidan.** Omlagt 2026-11-13; dessförinnan kunde ett projekt bara uppstå ur en gruppering. Flödet är tre steg och ett enda sparande: *vad gjorde du och vilken del av bostaden* → frågeträdet → **vilka kvitton hörde hit, med en sammanfattning av svaren ovanför** → spara. Sparandet leder till projektlistan.
 
 **Hela frågeträdet besvaras här, utom det som kräver försäljningen.** Byggde du något nytt, ändrade du planlösningen, satte du in något som aldrig funnits eller bytte du ut något, var det nya av bättre kvalitet, hur var skicket vid förvärvet — allt är fakta om vad hon gjorde. **Följdfrågorna gäller fullt ut:** trädet grenar som förut, och ett *nej* leder vidare precis som i dag.
 
