@@ -1,0 +1,118 @@
+"use client";
+
+// Borttagningen av ett projekt (produktspec 6.4). Har projektet kopplade
+// kvitton visas de i stallet for en knapp – de maste lyftas ut, flyttas eller
+// kopplas loss forst. Annars ett bekraftelsesteg.
+//
+// Ligger under delen Vad och var (docs/design.md, "Projektsidan ändras i
+// delar"): det ar projektet som helhet som tas bort, och den delen ar
+// projektets identitet – namnet.
+
+import Link from "next/link";
+import { type FormEvent, useActionState, useState } from "react";
+import { taBortProjekt, type ProjektResultat } from "../actions";
+import { Bekraftelsefraga } from "@/components/bekraftelsefraga";
+import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
+
+const START: ProjektResultat = {};
+
+export interface Blockerande {
+  id: string;
+  leverantor: string;
+  belopp: string;
+}
+
+export function TaBortProjektet({
+  projektId,
+  blockerande,
+}: {
+  projektId: string;
+  blockerande: Blockerande[];
+}) {
+  const [radera, raderaAction, raderar] = useActionState(taBortProjekt, START);
+  const [bekraftaRadera, setBekraftaRadera] = useState(false);
+  const hanteraRaderaSubmit = useForhindraDubbelinskick(raderar);
+
+  return (
+    <div className="border-t border-linje p-5">
+      {blockerande.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          <p className="font-granssnitt text-sm text-text-primar">
+            Projektet går inte att ta bort så länge kvitton är kopplade hit.
+            Flytta dem till ett annat projekt eller koppla loss dem först.
+          </p>
+          <ul className="divide-y divide-linje rounded-lg bg-yta-nedsankt">
+            {blockerande.map((k) => (
+              <li key={k.id}>
+                <Link
+                  href={`/kostnad/${k.id}`}
+                  className="flex items-baseline justify-between gap-3 px-3 py-2 font-granssnitt text-sm text-text-primar hover:text-accent-mork"
+                >
+                  <span className="truncate">{k.leverantor}</span>
+                  <span className="shrink-0 tabular-nums">{k.belopp}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : bekraftaRadera ? (
+        <RaderaProjektFraga
+          projektId={projektId}
+          action={raderaAction}
+          onSubmit={hanteraRaderaSubmit}
+          raderar={raderar}
+          fel={radera.fel}
+          onAvbryt={() => setBekraftaRadera(false)}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setBekraftaRadera(true)}
+          className="font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
+        >
+          Ta bort projektet
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Fragan innan projektet raderas – appens enda form for en bekraftelse
+ * (src/components/bekraftelsefraga.tsx). Exporterad sa att den gar att
+ * rendera i tester (tester/bekraftelserutor.test.ts).
+ */
+export function RaderaProjektFraga({
+  projektId,
+  action,
+  onSubmit,
+  raderar,
+  fel,
+  onAvbryt,
+}: {
+  projektId: string;
+  action: (formData: FormData) => void;
+  onSubmit?: (e: FormEvent<HTMLFormElement>) => void;
+  raderar: boolean;
+  fel?: string;
+  onAvbryt: () => void;
+}) {
+  return (
+    <Bekraftelsefraga
+      id="bekrafta-projekt-text"
+      fraga="Ta bort projektet? Det går inte att ångra. Inga kvitton påverkas – projektet har inga kopplade."
+      fel={fel}
+      form={{
+        action,
+        onSubmit,
+        dolda: <input type="hidden" name="projekt_id" value={projektId} />,
+      }}
+      bekrafta={{
+        text: raderar ? "Tar bort…" : "Ja, ta bort projektet",
+        submit: true,
+        disabled: raderar,
+      }}
+      avbryt={{ text: "Avbryt", onClick: onAvbryt }}
+    />
+  );
+}

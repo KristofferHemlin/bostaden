@@ -1,8 +1,9 @@
 "use client";
 
-// Projektflodet (docs/design.md, "Att skapa ett projekt"): fyra steg i ett
-// formular – vad gjorde du, vilken del av bostaden, fragetradet, vilka kvitton
-// som horde hit – och ett enda sparande sist (skapaProjekt). Fragorna ar
+// Projektflodet (docs/design.md, "Att skapa ett projekt"): tre steg i ett
+// formular – vad gjorde du och vilken del av bostaden, fragetradet, vilka
+// kvitton som horde hit – och ett enda sparande sist (skapaProjekt), som
+// leder till projektlistan. Fragorna ar
 // fragetradets egna komponenter (src/app/projekt/fragetradet.tsx), samma som
 // genomgangens fas 2 och redigeringen, sa att de stalls ordagrant likadant.
 //
@@ -56,19 +57,19 @@ const START: SkapaProjektResultat = {};
 /** Antalet steg. Fast, oavsett gren – det ar stegen som raknas, inte
  *  fragorna, vars antal varierar (docs/design.md, "Ange aldrig hur många
  *  frågorna är"). */
-export const ANTAL_STEG = 4;
-type Steg = 1 | 2 | 3 | 4;
+export const ANTAL_STEG = 3;
+type Steg = 1 | 2 | 3;
 
 /** Steget dar varje fraga star – dit flodet gar nar svaret avvisas. */
 const STEG_FOR_FALT: Record<FragetradetFaltnamn, Steg> = {
   namn: 1,
-  byggde_nytt: 3,
-  andrade_planlosning: 3,
-  nytt_eller_bytt: 3,
-  battre_eller_liknande: 3,
+  byggde_nytt: 2,
+  andrade_planlosning: 2,
+  nytt_eller_bytt: 2,
+  battre_eller_liknande: 2,
   // Merkostnaden stalls i kvittosteget, nar beloppet finns.
-  merkostnad: 4,
-  skick_forvarv: 3,
+  merkostnad: 3,
+  skick_forvarv: 2,
 };
 
 export type { ValbartKvitto };
@@ -76,6 +77,9 @@ export type { ValbartKvitto };
 // ---- Utkastet ---------------------------------------------------------------
 
 interface Utkast {
+  /** 2 sedan stegen blev tre (2026-11-19). Ett utkast utan den ar fran
+   *  fyra steg, dar namnet och delen var var sitt. */
+  version?: 2;
   steg: Steg;
   namn: string;
   bostadsdelar: BostadsdelSvar[];
@@ -103,7 +107,13 @@ function lasUtkast(nyckel: string, kvittoIder: Set<string>): Utkast | null {
     const text = window.localStorage.getItem(nyckel);
     if (!text) return null;
     const u = JSON.parse(text) as Partial<Utkast>;
-    const steg = [1, 2, 3, 4].includes(u.steg as number) ? (u.steg as Steg) : 1;
+    // Ett utkast fran fyra steg: namnet (1) och delen (2) star nu pa samma
+    // skarm, sa allt efter flyttar ett steg bakat.
+    const sparat = Number(u.steg);
+    const steg: Steg =
+      u.version === 2
+        ? [1, 2, 3].includes(sparat) ? (sparat as Steg) : 1
+        : sparat === 3 ? 2 : sparat === 4 ? 3 : 1;
     const svar = { ...TOMMA_SVAR };
     for (const k of Object.keys(TOMMA_SVAR) as (keyof FragetradetUIState)[]) {
       const v = u.svar?.[k];
@@ -223,14 +233,16 @@ export function NyttProjektFlode({
 
   useEffect(() => {
     if (!utkastLast || klar) return;
-    sparaUtkast(nyckel, { steg, namn, bostadsdelar, svar, valda: [...valda] });
+    sparaUtkast(nyckel, { version: 2, steg, namn, bostadsdelar, svar, valda: [...valda] });
   }, [utkastLast, klar, nyckel, steg, namn, bostadsdelar, svar, valda]);
 
-  // Sparat: utkastet ar besvarat, och projektet ar dit hon ska.
+  // Sparat: utkastet ar besvarat, och listan ar dit hon ska – inte
+  // projektets sida, som hade visat sammanfattningen hon nyss last en gang
+  // till (docs/design.md, "Och sparandet leder till projektlistan").
   useEffect(() => {
     if (!resultat.skapat) return;
     glomUtkast(nyckel);
-    router.replace(`/projekt/${resultat.skapat}`);
+    router.replace("/projekt");
   }, [resultat.skapat, nyckel, router]);
 
   // Ett fel fran servern i ett tidigare steg visas dar fragan star.
@@ -247,7 +259,7 @@ export function NyttProjektFlode({
   /** Nasta: steget provas med samma tolkning som servern, utom merkostnadens
    *  tak – det beror pa kvittona, som valjs sist, och provas vid Spara. */
   function vidare() {
-    if (steg === 1 || steg === 3) {
+    if (steg === 1 || steg === 2) {
       const fel = fragetradetsValidering(Number.POSITIVE_INFINITY, false)(
         new FormData(formRef.current!),
       );
@@ -328,35 +340,39 @@ export function NyttProjektFlode({
           <Meddelanderuta>Det här är ett utkast du började på tidigare.</Meddelanderuta>
         ) : null}
 
+        {/* Namnet och delen pa samma skarm (docs/design.md, "Namnet och
+            delen av bostaden står på samma skärm"): bada svarar pa vad hon
+            gjorde, och var. Delen ar frivillig och star under namnet, sa att
+            Nästa hoppar over den utan att hon forst trycker sig forbi den.
+            hidden sitter pa ett eget skal: i Tailwind 3 vinner .flex over
+            [hidden], och steget hade synts i alla steg. */}
         <div hidden={steg !== 1}>
-          <NamnFalt
-            varde={namn}
-            fel={faltfel?.falt === "namn" ? faltfel.fel : undefined}
-            onChange={(v) => {
-              setNamn(v);
-              rensa();
-            }}
-          />
-        </div>
-
-        {/* Frivillig (docs/design.md, "Vilken del av bostaden projektet
-            rörde") – ingen validering, den kan inte stoppa projektet. */}
-        <div hidden={steg !== 2}>
-          <BostadsdelFraga
-            key={instans}
-            upplatelseform={upplatelseform}
-            initial={bostadsdelar}
-            onAndring={setBostadsdelar}
-          />
+          <div className="flex flex-col gap-6">
+            <NamnFalt
+              varde={namn}
+              fel={faltfel?.falt === "namn" ? faltfel.fel : undefined}
+              onChange={(v) => {
+                setNamn(v);
+                rensa();
+              }}
+            />
+            {/* Ingen validering – den kan inte stoppa projektet. */}
+            <BostadsdelFraga
+              key={instans}
+              upplatelseform={upplatelseform}
+              initial={bostadsdelar}
+              onAndring={setBostadsdelar}
+            />
+          </div>
         </div>
 
         {/* Fraga 2 och framat, med all grenning. Raden om hela beloppet visas
             inte: kvittona ar inte valda an, och beloppet finns inte. */}
-        <div hidden={steg !== 3}>
+        <div hidden={steg !== 2}>
           <Fragetradet
             varden={svar}
             fel={faltfel}
-            // Merkostnaden behover ett belopp, och kvittona valjs i steg 4.
+            // Merkostnaden behover ett belopp, och kvittona valjs i sista steget.
             merkostnadsfragan={undefined}
             onChange={(delvis) => {
               setSvar((s) => ({ ...s, ...delvis }));
@@ -377,7 +393,7 @@ export function NyttProjektFlode({
           />
         ) : null}
 
-        <fieldset hidden={steg !== 4} className="min-w-0">
+        <fieldset hidden={steg !== ANTAL_STEG} className="min-w-0">
           <legend className="font-rubrik text-lg text-text-primar">
             {namn.trim()
               ? `Vilka kvitton hörde till ”${namn.trim()}”?`
@@ -442,8 +458,8 @@ export function NyttProjektFlode({
         {/* Nasta och Spara ar tva olika knappar, och nycklarna gor att React
             aldrig ateranvander den ena som den andra. Utan dem stod de pa
             samma plats i tradet, och React bytte bara type pa samma <button>:
-            vid ett riktigt klick pa Nasta i steg 3 hann uppdateringen till
-            steg 4 koras fore knappens standardhandling, knappen var da redan
+            vid ett riktigt klick pa Nasta i fragesteget hann uppdateringen
+            till kvittosteget koras fore knappens standardhandling, knappen var da redan
             type="submit", och formularet skickades – projektet sparades utan
             att kvittosteget visats. Uppmatt i produktionen 2026-11-16;
             framkallat i tester/projekt-nytt-steg4-webblasare.test.ts. */}
@@ -478,7 +494,7 @@ export function NyttProjektFlode({
 
         {/* Avskild langst ned, nar fragorna star pa skarmen (docs/design.md,
             "Projektfrågorna"). */}
-        {steg === 3 ? (
+        {steg === 2 ? (
           <div className="border-t border-linje pt-4">
             <Friskrivning />
           </div>

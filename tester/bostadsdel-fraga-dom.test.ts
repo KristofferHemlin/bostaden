@@ -16,7 +16,6 @@ vi.mock("next/navigation", () => ({
 
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { FragetradetFalt } from "@/app/projekt/fragetradet";
 import { BostadsdelFraga } from "@/app/projekt/bostadsdel-fraga";
 import { tolkaBostadsdelar } from "@/doman/bostadsdel";
 
@@ -64,25 +63,11 @@ const knappar = () => [...grupp().querySelectorAll("button")].map((b) => b.textC
 const knapp = (text: string) => [...grupp().querySelectorAll("button")].find((b) => b.textContent === text)!;
 
 describe("bostadsdelsfragan", () => {
-  // I redigeringen, där namnet, bostadsdelen och frågeträdet står på samma
-  // sida. Till 2026-11-13 prövades ordningen i genomgångens fas 2, som är
-  // riven; projektflödets egna steg prövas i tester/projekt-nytt-flode.test.ts.
-  it("star efter namnet och fore fragetradet", async () => {
-    await act(async () =>
-      rot.render(
-        createElement(FragetradetFalt, {
-          helaBeloppet: 0,
-          bostadsdel: { upplatelseform: "bostadsratt", initial: [] },
-        }),
-      ),
-    );
-    const namn = [...behallare.querySelectorAll("label span")].find((s) => s.textContent?.startsWith("Vad gjorde du?"))!;
-    const del = grupp();
-    const nasta = [...behallare.querySelectorAll("legend")].find((l) => l.textContent !== fragan())!;
-    expect(namn.compareDocumentPosition(del) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(del.compareDocumentPosition(nasta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
+  // Att frågan står under namnet prövas där den står: projektflödets första
+  // steg (tester/projekt-nytt-flode.test.ts) och delen Vad och var
+  // (tester/projektsidan-i-delar.test.ts). Här stod till 2026-11-19 ett prov
+  // av <FragetradetFalt> med bostadsdelen, en kombination ingen skärm längre
+  // visar (docs/design.md, "Projektsidan ändras i delar").
   it("en bostadsratt far bostadsrattens knappar, en fastighet aven husets", async () => {
     const { bostadsratt, fastighetPlus } = knapparIDesign();
     await act(async () => rot.render(createElement(BostadsdelFraga, { upplatelseform: "bostadsratt" })));

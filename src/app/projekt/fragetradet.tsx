@@ -46,10 +46,7 @@ import {
   type JaNejSvar,
   type NyttEllerBigtSvar,
 } from "@/doman/fragetradet";
-import type { BostadsdelSvar } from "@/doman/bostadsdel";
-import type { Upplatelseform } from "@/doman/typer";
 import { BeloppFalt } from "@/components/belopp-falt";
-import { BostadsdelFraga } from "./bostadsdel-fraga";
 import {
   Falt,
   FALTFEL_KLASS,
@@ -63,6 +60,7 @@ import {
 import { FALTFEL_ATTRIBUT } from "@/lib/formularfel";
 import {
   tolkaFragetradetFormData,
+  tolkaFragetradetSvaren,
   type FragetradetFaltnamn,
   type FragetradetFormFel,
 } from "@/lib/fragetradet-formdata";
@@ -557,19 +555,20 @@ export function FragetradetFalt({
   onAndring,
   helaBeloppet,
   skickForsaljning,
-  bostadsdel,
   merkostnadsfragan,
   motiveringsfragan,
+  utanNamn,
 }: {
+  /** Namnet hor till projektsidans del *Vad och var* och andras dar
+   *  (docs/design.md, "Projektsidan ändras i delar"). Satt: fragan visas inte
+   *  och faltet skickas inte, sa att servern lamnar namnet orort. */
+  utanNamn?: boolean;
   /** Se <Fragetradet>. */
   merkostnadsfragan?: { belopp: number; harRot: boolean };
   /** Se <Fragetradet>. Angiven: motiveringen skickas alltid, sa att servern
    *  skriver den – tom nar fragan inte visas. */
   motiveringsfragan?: { harSparatSvar: boolean };
   initial?: FragetradetVarden;
-  /** "Vilken del av bostaden?" efter namnet, med det sparade svaret. Utelamnad:
-   *  fragan visas inte och servern ror inte raderna. */
-  bostadsdel?: { upplatelseform: Upplatelseform; initial: BostadsdelSvar[] };
   /** Fraga 7, skicket vid forsaljningen – bara i projektets redigering och
    *  bara nar bostaden ar markerad som sald (da skickas det tidigare svaret,
    *  eller "" om det saknas). Utelamnad: fragan visas inte och faltet skickas
@@ -600,18 +599,16 @@ export function FragetradetFalt({
 
   return (
     <div className="flex flex-col gap-6">
-      <NamnFalt
-        varde={namn}
-        fel={fel?.falt === "namn" ? fel.fel : undefined}
-        onChange={(v) => {
-          setNamn(v);
-          onAndring?.();
-        }}
-      />
-
-      {bostadsdel ? (
-        <BostadsdelFraga upplatelseform={bostadsdel.upplatelseform} initial={bostadsdel.initial} />
-      ) : null}
+      {utanNamn ? null : (
+        <NamnFalt
+          varde={namn}
+          fel={fel?.falt === "namn" ? fel.fel : undefined}
+          onChange={(v) => {
+            setNamn(v);
+            onAndring?.();
+          }}
+        />
+      )}
 
       <Fragetradet
         varden={svar}
@@ -644,7 +641,7 @@ export function FragetradetFalt({
         </Fraga>
       ) : null}
 
-      <input type="hidden" name="namn" value={namn} />
+      {utanNamn ? null : <input type="hidden" name="namn" value={namn} />}
       <FragetradetDoldaFalt svar={svar} />
       {motiveringsfragan ? (
         <input
@@ -703,7 +700,12 @@ export function NamnFalt({
  */
 export function fragetradetsValidering(projektetsBelopp: number, harRot: boolean) {
   return (formData: FormData): FragetradetFormFel | null => {
-    const tolkat = tolkaFragetradetFormData(formData, { belopp: projektetsBelopp, harRot });
+    const projekt = { belopp: projektetsBelopp, harRot };
+    // Ett formular utan namnfaltet – delen Frågorna pa projektsidan – provas
+    // utan namnet, precis som servern gor (redigeraProjekt).
+    const tolkat = formData.has("namn")
+      ? tolkaFragetradetFormData(formData, projekt)
+      : tolkaFragetradetSvaren(formData, projekt);
     return "fel" in tolkat ? tolkat : null;
   };
 }

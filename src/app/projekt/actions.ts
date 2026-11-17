@@ -22,7 +22,10 @@ import { arGiltigtId } from "@/lib/giltigt-id";
 import { kopplaKvittonTillProjekt } from "@/lib/kvittokoppling";
 import { sparaBostadsdelar } from "@/lib/bostadsdel-lagring";
 import {
+  NAMN_SAKNAS,
   tolkaFragetradetFormData,
+  tolkaFragetradetSvaren,
+  tolkaNamn,
   type FragetradetFaltnamn,
 } from "@/lib/fragetradet-formdata";
 import { prisma } from "@/lib/prisma";
@@ -217,10 +220,18 @@ export async function redigeraProjekt(
   // Att spara svaret – aven oforandrat – ar att bekrafta det: beloppet sparas
   // pa nytt, och en tidigare upplysning om att projektet andrats forsvinner.
   const { belopp, harRot } = await hamtaProjektetsBelopp(bostadId, id);
-  const tolkat = tolkaFragetradetFormData(formData, { belopp, harRot });
+  // Namnet hor till delen Vad och var (docs/design.md, "Projektsidan ändras
+  // i delar") och skickas har bara for ett projekt utan svar, dar fragan 1
+  // stalls med resten av tradet. Saknas faltet ror sparandet inte namnet.
+  let namn: string | undefined;
+  if (formData.has("namn")) {
+    const n = tolkaNamn(formData);
+    if (n === null) return NAMN_SAKNAS;
+    namn = n;
+  }
+  const tolkat = tolkaFragetradetSvaren(formData, { belopp, harRot });
   if ("fel" in tolkat) return tolkat;
 
-  const bostadsdelar = tolkaBostadsdelar(formData);
 
   // Utan belopp stalls merkostnadsfragan inte (docs/design.md, "Att skapa ett
   // projekt"), och tolkningen ger den obesvarad. Ett svar som redan finns –
@@ -233,7 +244,7 @@ export async function redigeraProjekt(
     await tx.projekt.update({
       where: { id },
       data: {
-        namn: tolkat.namn,
+        ...(namn !== undefined ? { namn } : {}),
         ...(nyttAr !== undefined ? { ar: nyttAr } : {}),
         atgardstyp: tolkat.atgardstyp,
         battre_kvalitet: tolkat.battre_kvalitet,
@@ -257,13 +268,103 @@ export async function redigeraProjekt(
         klassificerad_av: anvandareId,
       },
     });
-    // Bostadsdelen (docs/design.md, "Vilken del av bostaden projektet
-    // rörde"): frivillig, och ror inga tal.
-    await sparaBostadsdelar(tx, id, bostadsdelar);
+    // Bostadsdelen sparas inte har: den hor till delen Vad och var
+    // (sparaVadOchVar), och varje del sparar bara sina egna falt
+    // (docs/design.md, "Projektsidan ändras i delar").
   });
 
   revalideraProjektvyer(id);
   redirect(`/projekt/${id}`);
+}
+
+/**
+ * Delen *Vad och var* pa projektsidan (docs/design.md, "Projektsidan ändras i
+ * delar"): namnet och delen av bostaden, inget annat. Fragetradets svar,
+ * merkostnaden och skicket rors inte – formularet skickar dem inte, och den
+ * har vagen laser dem inte heller.
+ */
+export async function sparaVadOchVar(
+  _foreg: ProjektResultat,
+  formData: FormData,
+): Promise<ProjektResultat> {
+  const { bostadId, anvandareId } = await kravBostad();
+  const id = String(formData.get("projekt_id") ?? "");
+  if (!arGiltigtId(id)) return { fel: "Projektet hittades inte." };
+
+  const projekt = await prisma.projekt.findFirst({
+    where: { id, bostad_id: bostadId },
+    select: { id: true },
+  });
+  if (!projekt) return { fel: "Projektet hittades inte." };
+
+  const namn = tolkaNamn(formData);
+  if (namn === null) return NAMN_SAKNAS;
+  const bostadsdelar = tolkaBostadsdelar(formData);
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.projekt.update({ where: { id }, data: { namn } });
+      await sparaBostadsdelar(tx, id, bostadsdelar);
+    });
+  } catch (fel) {
+    return {
+      fel: serverfelMeddelande(fel, { sida: "projekt/vad-och-var", anrop: "sparaVadOchVar", anvandareId }),
+    };
+  }
+
+  revalideraProjektvyer(id);
+  redirect(`/projekt/${id}`);
+}
+
+export interface LyftUtResultat {
+  fel?: string;
+}
+
+/**
+ * Lyfter ut ett kvitto ur ett projekt (docs/design.md, "Att lyfta ut ett
+ * kvitto hör till Kvittona"). Kvittot lossas, det raderas inte: bara
+ * fordelningarna till just det har projektet tas bort, sa att ett kvitto som
+ * ocksa ar uppdelat pa ett annat projekt ligger kvar dar, och ett som bara
+ * horde hit hamnar bland kvitton utan projekt. Samma sak som att valja
+ * "inget projekt" pa kvittots egen sida, sedd fran projektet.
+ *
+ * Merkostnaden rors inte. Projektets belopp andras, och omfragningen
+ * (CLAUDE.md, steg 2) tar det darifran: merkostnad_bas skiljer sig nu fran
+ * beloppet, och projektet fragar om svaret fortfarande stammer.
+ */
+export async function lyftUtKvitto(
+  _foreg: LyftUtResultat,
+  formData: FormData,
+): Promise<LyftUtResultat> {
+  const { bostadId, anvandareId } = await kravBostad();
+  const projektId = String(formData.get("projekt_id") ?? "");
+  const kostnadId = String(formData.get("kostnad_id") ?? "");
+  if (!arGiltigtId(projektId) || !arGiltigtId(kostnadId)) {
+    return { fel: "Kvittot hittades inte i projektet." };
+  }
+
+  const [projekt, kostnad] = await Promise.all([
+    prisma.projekt.findFirst({ where: { id: projektId, bostad_id: bostadId }, select: { id: true } }),
+    prisma.kostnad.findFirst({ where: { id: kostnadId, bostad_id: bostadId }, select: { id: true } }),
+  ]);
+  if (!projekt || !kostnad) return { fel: "Kvittot hittades inte i projektet." };
+
+  try {
+    await prisma.radfordelning.deleteMany({
+      where: {
+        projekt_id: projekt.id,
+        kostnadsrad: { kostnad_id: kostnad.id, kostnad: { bostad_id: bostadId } },
+      },
+    });
+  } catch (fel) {
+    return {
+      fel: serverfelMeddelande(fel, { sida: "projekt/kvitton/andra", anrop: "lyftUtKvitto", anvandareId }),
+    };
+  }
+
+  revalideraProjektvyer(projekt.id);
+  revalidatePath(`/projekt/${projekt.id}/kvitton/andra`);
+  return {};
 }
 
 // Ett projekt med kopplade kostnader far inte tas bort forran de flyttats eller

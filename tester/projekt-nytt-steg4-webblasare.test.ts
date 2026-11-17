@@ -4,7 +4,10 @@ import { build } from "esbuild";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
 
-// Projektflödets fjärde steg, i en riktig webbläsare med riktiga klick.
+// Projektflödets sista steg, i en riktig webbläsare med riktiga klick. Flödet
+// hade fyra steg när felet hittades och har tre sedan 2026-11-19
+// (docs/design.md, "Namnet och delen av bostaden står på samma skärm");
+// villkoret är detsamma – Nästa på steget före kvittona.
 //
 // Uppmätt i produktionen 2026-11-16 på 59a1d35: räknaren sade 3 AV 4, knappen
 // sade Nästa – och ett tryck sparade projektet. Steg fyra kom aldrig.
@@ -165,7 +168,7 @@ async function lage(): Promise<Lage> {
   })()`);
 }
 
-describe("projektflödets fjärde steg, med riktiga klick i Chrome", () => {
+describe("projektflödets sista steg, med riktiga klick i Chrome", () => {
   it("Nästa på frågeträdet leder till kvittona – och skickar ingenting", async () => {
     await webblasare.cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
     await webblasare.cdp("Page.navigate", { url: `${webblasare.adress}flode` });
@@ -178,23 +181,21 @@ describe("projektflödets fjärde steg, med riktiga klick i Chrome", () => {
     await webblasare.cdp("Input.insertText", { text: "Nytt avlopp i köket" });
     await tryck("Nästa");
     steg.push(await lage());
-    await tryck("Nästa");
-    steg.push(await lage());
     await tryck("Ja, det är helt nytt");
     await tryck("Nästa");
     steg.push(await lage());
 
     for (const [i, s] of steg.entries()) console.log(`steg ${i + 1}: ${s.framsteg} · skickat ${s.inskickat}\n  ${s.synligt}`);
 
-    // Förutsättningen: flödet gick verkligen genom stegen 1–3 med klicken.
-    expect(steg.slice(0, 3).map((s) => s.framsteg)).toEqual(["1 av 4", "2 av 4", "3 av 4"]);
-    // Och Nästa på steg 3 leder till steg 4, utan att något skickats.
-    expect(steg[3].inskickat, "formuläret skickades från steg 3").toBe(0);
-    expect(steg[3].framsteg).toBe("4 av 4");
-    expect(steg[3].synligt).toContain(KVITTO.rubrik);
+    // Förutsättningen: flödet gick verkligen genom stegen 1–2 med klicken.
+    expect(steg.slice(0, 2).map((s) => s.framsteg)).toEqual(["1 av 3", "2 av 3"]);
+    // Och Nästa på steg 2 leder till steg 3, utan att något skickats.
+    expect(steg[2].inskickat, "formuläret skickades från steg 2").toBe(0);
+    expect(steg[2].framsteg).toBe("3 av 3");
+    expect(steg[2].synligt).toContain(KVITTO.rubrik);
   }, 60_000);
 
-  it("på steg fyra väljs kvittot, och Spara skickar en gång – med kvittot", async () => {
+  it("på sista steget väljs kvittot, och Spara skickar en gång – med kvittot", async () => {
     // Raden är en etikett som växlar rutan; den hittas på anteckningen.
     const punkt = await webblasare.utvardera<{ x: number; y: number } | null>(`(() => {
       const l = [...document.querySelectorAll("label")].find(
@@ -203,7 +204,7 @@ describe("projektflödets fjärde steg, med riktiga klick i Chrome", () => {
       const r = l.getBoundingClientRect();
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     })()`);
-    expect(punkt, "kvittoraden på steg fyra").not.toBeNull();
+    expect(punkt, "kvittoraden på sista steget").not.toBeNull();
     for (const type of ["mousePressed", "mouseReleased"]) {
       await webblasare.cdp("Input.dispatchMouseEvent", { type, x: punkt!.x, y: punkt!.y, button: "left", clickCount: 1 });
     }

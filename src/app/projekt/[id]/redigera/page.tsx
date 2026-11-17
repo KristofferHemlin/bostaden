@@ -1,9 +1,9 @@
-// Redigera ett projekt (produktspec 6.4): namn och fragetradets svar (fraga
-// 1-6 och fraga 8) – och fraga 7, skicket vid forsaljningen, nar bostaden ar
-// sald. Det ar vagen att rata ett skicksvar: forsaljningsflodet fragar bara
-// om obesvarade. Omklassificering rakas om i arssumman sa fort vyerna
-// revalideras. Ett projekt med kopplade kostnader gar inte att ta bort –
-// sidan visar vilka kostnader som blockerar i stallet for att bara neka.
+// Projektsidans del Frågorna (produktspec 6.4, docs/design.md, "Projektsidan
+// ändras i delar"): fragetradets svar (fraga 2-6 och fraga 8) – och fraga 7,
+// skicket vid forsaljningen, nar bostaden ar sald. Det ar vagen att rata ett
+// skicksvar: forsaljningsflodet fragar bara om obesvarade. Omklassificering
+// rakas om i arssumman sa fort vyerna revalideras. Namnet och delen av
+// bostaden andras under Vad och var, och borttagningen ligger dar.
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -15,18 +15,14 @@ import {
   projektetsBelopp,
   projektetsBeloppHarRot,
 } from "@/doman/atgardsberakning";
-import { kostnaderKoppladeTillProjekt, projektSumma } from "@/doman/berakningar";
+import { projektSumma } from "@/doman/berakningar";
 import {
   merkostnadUpplysning,
 } from "@/doman/regeltext";
 import { harledFragetradetSvar } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad, tillDomanProjekt } from "@/lib/doman-fran-db";
-import {
-  formateraBeloppInmatning,
-  formateraKronor,
-  orenTillFalt,
-} from "@/lib/format";
+import { formateraBeloppInmatning, orenTillFalt } from "@/lib/format";
 import { likvardigtFranMerkostnad } from "@/lib/fragetradet-formdata";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
@@ -70,7 +66,6 @@ export default async function RedigeraProjektSida({
   const [projekt, bostad, kostnadRader] = await Promise.all([
     prisma.projekt.findFirst({
       where: { id, bostad_id: bostadId },
-      include: { bostadsdelar: { select: { del: true, fritext: true } } },
     }),
     prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } }),
     prisma.kostnad.findMany({
@@ -99,16 +94,6 @@ export default async function RedigeraProjektSida({
   const merkostnadAndrad =
     besked === null ? null : merkostnadUpplysning(besked, projekt, belopp, "fraga");
 
-  const blockerande = kostnaderKoppladeTillProjekt(kostnader, id).map((k) => {
-    const original = kostnadRader.find((x) => x.id === k.id)!;
-    return {
-      id: k.id,
-      // Ett utkast kan inte vara kopplat (det har inga rader) – falten ar satta.
-      leverantor: original.leverantor ?? "",
-      belopp: formateraKronor(original.totalbelopp ?? 0),
-    };
-  });
-
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
@@ -119,14 +104,14 @@ export default async function RedigeraProjektSida({
     >
       <RedigeraProjektForm
         projektId={id}
-        blockerande={blockerande}
+        // Fraga 1 hor till Vad och var – utom for ett projekt utan svar, dar
+        // hela tradet stalls har (docs/design.md, "Projekt som skapades före
+        // omläggningen").
+        medNamn={projekt.atgardstyp === null}
         projektetsBelopp={belopp}
         projektetHarRot={projektetsBeloppHarRot(kostnader, id)}
         projektetsSumma={projektSumma(kostnader, id)}
         merkostnadAndrad={merkostnadAndrad}
-        // Bostadsdelen gar att ratta har – raden pa projektets sida ar
-        // nagot hon kan andra, inte bara nagot hon matat in (docs/design.md).
-        bostadsdel={{ upplatelseform: bostad.upplatelseform, initial: projekt.bostadsdelar }}
         // Fraga 7 gar att andra har, men forst nar bostaden ar sald – fore
         // forsaljningen finns inget "nar du salde" att svara om.
         skickForsaljning={

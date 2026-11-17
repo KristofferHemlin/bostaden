@@ -3,7 +3,7 @@ import { createElement, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { RaderaBilagaFraga } from "@/app/kostnad/[id]/bilagor";
 import { RaderaKvittoFraga } from "@/app/kostnad/[id]/kvitto-kort";
-import { RaderaProjektFraga } from "@/app/projekt/[id]/redigera/form";
+import { RaderaProjektFraga } from "@/app/projekt/[id]/ta-bort-projektet";
 import {
   BytKortRuta,
   BytUpplatelseformFraga,

@@ -127,13 +127,15 @@ describe("projektsidan", () => {
     expect([...s.querySelectorAll("h1")].map((x) => x.textContent)).toEqual([NAMNET]);
     expect(lankar(s, "Svara på frågorna")).toEqual([`/projekt/${HOG}/redigera`]);
     expect(s.innerHTML).not.toContain("/genomgang");
-    expect(lankar(s, "Ändra projektet"), "inget svar att ändra").toEqual([]);
+    expect(lankar(s, "Ändra"), "inget svar att ändra").not.toContain(`/projekt/${HOG}/redigera`);
   });
 
-  it("ett besvarat projekt har ingen Svara på frågorna, men Ändra projektet", async () => {
+  // Ändra projektet är ersatt av en Ändra per del (docs/design.md,
+  // "Projektsidan ändras i delar"); frågorna ändras under Frågorna.
+  it("ett besvarat projekt har ingen Svara på frågorna, men en Ändra till frågorna", async () => {
     const s = await dom(ProjektSida({ params: Promise.resolve({ id: KLAR }) }));
     expect(lankar(s, "Svara på frågorna")).toEqual([]);
-    expect(lankar(s, "Ändra projektet")).toEqual([`/projekt/${KLAR}/redigera`]);
+    expect(lankar(s, "Ändra")).toContain(`/projekt/${KLAR}/redigera`);
   });
 });
 

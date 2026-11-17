@@ -83,10 +83,15 @@ async function projektsidan(): Promise<HTMLDivElement> {
   return div;
 }
 
-/** Faktarutans rader som hon läser dem: etikett | värde. */
+/** Raderna i projektsidans del Frågorna, där motiveringen hör hemma
+ *  (docs/design.md, "Projektsidan ändras i delar"), som hon läser dem:
+ *  etikett | värde. Delen hittas på sin rubrik, och testet stannar om den
+ *  saknas. */
 function faktarader(s: HTMLElement): string[] {
-  const ruta = s.querySelector("section")!;
-  return [...ruta.children]
+  const rubrik = [...s.querySelectorAll("h2")].find((e) => e.textContent === "Frågorna");
+  expect(rubrik, "delen Frågorna").toBeDefined();
+  const del = rubrik!.closest("section")!;
+  return [...del.querySelectorAll("div")]
     .filter((e) => e.children.length === 2 && e.children[0].tagName === "SPAN")
     .map((e) => [...e.children].map((c) => c.textContent).join(" | "));
 }

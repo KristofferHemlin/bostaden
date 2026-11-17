@@ -221,7 +221,7 @@ beforeAll(async () => {
   const kroppar: Record<string, string> = Object.fromEntries(
     Object.entries(sidor).map(([namn, vy]) => [namn, renderToStaticMarkup(vy)]),
   );
-  for (const steg of [1, 2, 3, 4] as const) kroppar[`nytt-${steg}`] = await nyttProjektVidSteg(steg);
+  for (const steg of [1, 2, 3] as const) kroppar[`nytt-${steg}`] = await nyttProjektVidSteg(steg);
   for (const [namn, kropp] of Object.entries(kroppar)) {
     // Bada anteckningarna maste finnas pa sidan – annars mats ingenting.
     const vantade =
@@ -246,11 +246,13 @@ afterAll(async () => {
 
 /** Projektflodet renderat i en DOM, med ett utkast som star pa `steg`: namnet
  *  skrivet, fragetradet besvarat (utbytt mot liknande) och ett kvitto valt. */
-async function nyttProjektVidSteg(steg: 1 | 2 | 3 | 4): Promise<string> {
+async function nyttProjektVidSteg(steg: 1 | 2 | 3): Promise<string> {
   const valt = h.db.tabell("kostnad").find((k) => k.anteckning === OK_KORT)!.id;
   window.localStorage.setItem(
     utkastNyckel(X),
     JSON.stringify({
+      // Utkast i tre steg (2026-11-19): 3 ar kvittosteget.
+      version: 2,
       steg,
       namn: "Nytt golv",
       bostadsdelar: [],
@@ -268,7 +270,7 @@ async function nyttProjektVidSteg(steg: 1 | 2 | 3 | 4): Promise<string> {
   const rot = createRoot(behallare);
   await act(async () => rot.render(vy));
   const framsteg = [...behallare.querySelectorAll("p")].find((p) => /^\d+ av \d+$/.test(p.textContent!));
-  expect(framsteg?.textContent, "utkastet ska ha ställt flödet på steget").toBe(`${steg} av 4`);
+  expect(framsteg?.textContent, "utkastet ska ha ställt flödet på steget").toBe(`${steg} av 3`);
   // React satter en kontrollerad rutas `checked` som egenskap, inte som
   // attribut, och innerHTML bar bara attribut – utan det har ser Chrome
   // aldrig en ikryssad ruta, och orangemätningen nedan provar ingenting.
@@ -387,7 +389,7 @@ describe("anteckningen får två rader där den är radens huvudtext, vid 390 px
   }, 60_000);
 
   it("projektflödet, kryssrutelistan där kvitton väljs till projektet", async () => {
-    provaParet("nytt projekt, kryssrutelistan", await mat("nytt-4", NY_KORT), await mat("nytt-4", NY_LANG));
+    provaParet("nytt projekt, kryssrutelistan", await mat("nytt-3", NY_KORT), await mat("nytt-3", NY_LANG));
   }, 60_000);
 });
 
@@ -398,8 +400,7 @@ describe("projektflödet har ett orange element per steg, och det är knappen vi
   it.each([
     [1, "Nästa"],
     [2, "Nästa"],
-    [3, "Nästa"],
-    [4, "Spara projektet"],
+    [3, "Spara projektet"],
   ] as const)("steg %s: bara %s", async (steg, knapp) => {
     await cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
     await cdp("Page.navigate", { url: `${adress}nytt-${steg}` });
@@ -431,10 +432,53 @@ describe("projektflödet har ett orange element per steg, och det är knappen vi
     });
     const { orange, tonerLasta, ikryssade } = svar.result.value;
     // Sista steget ska ha en synlig ikryssad ruta, annars provas inte rutans farg.
-    expect(ikryssade, "synliga ikryssade rutor").toBe(steg === 4 ? 1 : 0);
+    expect(ikryssade, "synliga ikryssade rutor").toBe(steg === 3 ? 1 : 0);
     console.log(`nytt projekt, steg ${steg}: ${orange.length} orange – ${orange.join(" | ")}`);
     expect(tonerLasta, "tre olika orange toner ska gå att läsa ur sidan").toBe(3);
     expect(orange).toEqual([`BUTTON: ${knapp}`]);
+  }, 60_000);
+});
+
+// docs/design.md, "Namnet och delen av bostaden står på samma skärm": båda
+// på första steget, och ingen av dem efter det. Mätt i Chrome med sidans
+// riktiga CSS, för det är där det kan gå fel: i Tailwind 3 skriver `.flex`
+// över attributet `hidden`, och ett steg med båda syns då på varje skärm.
+// jsdom och en sida utan CSS ser bara attributet.
+//
+// Metoden: två oberoende mått per element – checkVisibility() och en yta
+// större än noll – som måste vara överens, annars faller testet (CLAUDE.md,
+// "Mät rätt egenskap, och låt två oberoende mått vara överens").
+describe("namnet och delen av bostaden syns på första steget och inget annat", () => {
+  it.each([
+    [1, true],
+    [2, false],
+    [3, false],
+  ] as const)("steg %s: syns %s", async (steg, syns) => {
+    await cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
+    await cdp("Page.navigate", { url: `${adress}nytt-${steg}` });
+    await vanta(500);
+    const svar = await cdp<{ result: { value: { namn: boolean[] | null; delen: boolean[] | null } } }>("Runtime.evaluate", {
+      awaitPromise: true,
+      returnByValue: true,
+      expression: `(async () => {
+        for (let i = 0; i < 100 && document.readyState !== 'complete'; i++) await new Promise(r => setTimeout(r, 100));
+        const matt = (el) => {
+          if (!el) return null;
+          const r = el.getBoundingClientRect();
+          return [el.checkVisibility({ visibilityProperty: true, opacityProperty: true }), r.width > 0 && r.height > 0];
+        };
+        const etikett = [...document.querySelectorAll('label')].find((l) => l.textContent.startsWith('Vad gjorde du?'));
+        return { namn: matt(etikett ? etikett.querySelector('input') : null), delen: matt(document.querySelector('[data-bostadsdel]')) };
+      })()`,
+    });
+    const { namn, delen } = svar.result.value;
+    // Ett uteblivet fynd är ett fel: båda ska finnas på varje steg, synliga
+    // eller inte.
+    expect(namn, "namnfältet finns inte på sidan").not.toBeNull();
+    expect(delen, "delfrågan finns inte på sidan").not.toBeNull();
+    expect(namn![0], "namnfältet: måtten är oense").toBe(namn![1]);
+    expect(delen![0], "delfrågan: måtten är oense").toBe(delen![1]);
+    expect([namn![0], delen![0]]).toEqual([syns, syns]);
   }, 60_000);
 });
 
@@ -480,7 +524,7 @@ describe("sammanfattningen ligger på kortets egen yta, som projektsidans faktar
   }
 
   it("ingen egen bakgrund, och samma yta bakom som bakom faktarutan", async () => {
-    const sammanfattning = await ytor("nytt-4", `() => document.querySelector('[aria-label="Det du svarat"]')`);
+    const sammanfattning = await ytor("nytt-3", `() => document.querySelector('[aria-label="Det du svarat"]')`);
     const faktaruta = await ytor(
       "projekt",
       // Faktarutan är sektionen med raden År – den står alltid där, också
@@ -488,7 +532,7 @@ describe("sammanfattningen ligger på kortets egen yta, som projektsidans faktar
       `() => [...document.querySelectorAll('section')].find(s => [...s.querySelectorAll('span')].some(e => e.textContent === 'År'))`,
     );
     console.log(`sammanfattning: egen ${sammanfattning.egen}, synlig ${sammanfattning.synlig}; faktaruta: synlig ${faktaruta.synlig}; nedsänkt ${sammanfattning.nedsankt}`);
-    expect(sammanfattning.hittad, "sammanfattningen på steg 4").toBe(true);
+    expect(sammanfattning.hittad, "sammanfattningen på sista steget").toBe(true);
     expect(faktaruta.hittad, "projektsidans faktaruta").toBe(true);
     // Förutsättningen: den nedsänkta ytan går att skilja från kortets.
     expect(faktaruta.synlig).not.toBe("");

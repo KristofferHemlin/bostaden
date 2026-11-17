@@ -71,6 +71,28 @@ function asBattreEllerLiknande(
  */
 export function tolkaFragetradetFormData(
   formData: FormData,
+  projekt: { belopp: number; harRot: boolean },
+): FragetradetFormResultat | FragetradetFormFel {
+  const namn = tolkaNamn(formData);
+  if (namn === null) return NAMN_SAKNAS;
+  const svar = tolkaFragetradetSvaren(formData, projekt);
+  return "fel" in svar ? svar : { namn, ...svar };
+}
+
+/** Fraga 1, namnet, eller null nar det ar tomt. */
+export function tolkaNamn(formData: FormData): string | null {
+  return String(formData.get("namn") ?? "").trim() || null;
+}
+
+export const NAMN_SAKNAS: FragetradetFormFel = { fel: "Skriv vad du gjorde.", falt: "namn" };
+
+/**
+ * Fragetradet utan namnet (fraga 2-6). Projektsidans del *Frågorna* andras
+ * for sig, och namnet hor till delen *Vad och var* (docs/design.md,
+ * "Projektsidan ändras i delar") – darfor gar svaren att tolka utan det.
+ */
+export function tolkaFragetradetSvaren(
+  formData: FormData,
   projekt: {
     /** Projektets belopp i oren (projektetsBelopp, src/doman/
      *  atgardsberakning.ts). Merkostnaden maste vara mindre (CLAUDE.md,
@@ -81,10 +103,7 @@ export function tolkaFragetradetFormData(
      *  skal som beloppet. */
     harRot: boolean;
   },
-): FragetradetFormResultat | FragetradetFormFel {
-  const namn = String(formData.get("namn") ?? "").trim();
-  if (!namn) return { fel: "Skriv vad du gjorde.", falt: "namn" };
-
+): Omit<FragetradetFormResultat, "namn"> | FragetradetFormFel {
   const svar: FragetradetSvar = {
     byggdeNytt: asJaNej(formData.get("byggde_nytt")),
     andradePlanlosning: asJaNej(formData.get("andrade_planlosning")),
@@ -157,7 +176,6 @@ export function tolkaFragetradetFormData(
   }
 
   return {
-    namn,
     atgardstyp: resultat.atgardstyp,
     battre_kvalitet: resultat.battre_kvalitet,
     merkostnad: resultat.merkostnad,

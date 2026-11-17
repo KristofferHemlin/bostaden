@@ -45,7 +45,7 @@ vi.mock("@sentry/nextjs", () => ({ setUser: vi.fn(), captureException: vi.fn() }
 
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { redigeraProjekt } from "@/app/projekt/actions";
+import { redigeraProjekt, sparaVadOchVar } from "@/app/projekt/actions";
 import ProjektSida from "@/app/projekt/[id]/page";
 import {
   BOSTADSDEL_ETIKETT,
@@ -100,12 +100,12 @@ function seeda(upplatelseform: "bostadsratt" | "fastighet" = "bostadsratt") {
   h.anvandareId = ANNA;
 }
 
-/** Redigeringens formular: namnet, fraga 2 = ja, och bostadsdelens falt. */
+/** Formularet for delen Vad och var: namnet och bostadsdelens falt
+ *  (docs/design.md, "Projektsidan ändras i delar"). */
 function svar(delar: string[] | null, fritext?: string): FormData {
   const f = new FormData();
   f.set("projekt_id", PROJEKT);
   f.set("namn", "Nytt kök");
-  f.set("byggde_nytt", "ja");
   if (delar !== null) {
     f.set("bostadsdel_fragad", "1");
     for (const d of delar) f.append("bostadsdel", d);
@@ -193,11 +193,12 @@ describe("tolkningen", () => {
 });
 
 // Projektet i testdatan saknar svar, som ett projekt skapat före omläggningen:
-// redigeringen besvarar trädet och sparar bostadsdelen. Fallen sparades till
-// 2026-11-13 genom genomgångens fas 2, som är riven; beteendet lever vidare här.
-describe("svaret sparas när frågorna besvaras", () => {
+// Delen Vad och var sparar bostadsdelen, med namnet. Fallen sparades till
+// 2026-11-13 genom genomgångens fas 2 och till 2026-11-19 genom redigeringen
+// av hela projektet; beteendet lever vidare här.
+describe("svaret sparas under Vad och var", () => {
   it("flera delar och Annat med fritext", async () => {
-    expect(await sparat(redigeraProjekt({}, svar(["KOK", "EL", "ANNAT"], "Trappan")))).toBe(
+    expect(await sparat(sparaVadOchVar({}, svar(["KOK", "EL", "ANNAT"], "Trappan")))).toBe(
       `/projekt/${PROJEKT}`,
     );
     expect(rader()).toEqual([
@@ -208,45 +209,55 @@ describe("svaret sparas när frågorna besvaras", () => {
   });
 
   it("varje lagrad del ar en kod, aldrig fritexten", async () => {
-    await sparat(redigeraProjekt({}, svar(["ANNAT"], "Garderoben i hallen")));
+    await sparat(sparaVadOchVar({}, svar(["ANNAT"], "Garderoben i hallen")));
     for (const r of rader()) expect(BOSTADSDELAR).toContain(r.del);
     expect(rader()).toEqual([{ projekt_id: PROJEKT, del: "ANNAT", fritext: "Garderoben i hallen" }]);
   });
 
-  it("frivillig: utan svar klassificeras hogen anda, och inga rader skapas", async () => {
-    expect(await sparat(redigeraProjekt({}, svar([])))).toBe(`/projekt/${PROJEKT}`);
+  it("frivillig: utan svar sparas namnet anda, och inga rader skapas", async () => {
+    expect(await sparat(sparaVadOchVar({}, svar([])))).toBe(`/projekt/${PROJEKT}`);
     const projekt = h.db.tabell("projekt").find((p) => p.id === PROJEKT)!;
-    expect(projekt.atgardstyp).toBe("nybyggnad");
     expect(projekt.namn).toBe("Nytt kök");
     expect(rader()).toEqual([]);
   });
 
   it("tak gar att lagra for en bostadsratt – filtret ligger i granssnittet", async () => {
     seeda("bostadsratt");
-    await sparat(redigeraProjekt({}, svar(["TAK"])));
+    await sparat(sparaVadOchVar({}, svar(["TAK"])));
     expect(rader()).toEqual([{ projekt_id: PROJEKT, del: "TAK", fritext: null }]);
   });
 });
 
-describe("redigeringen", () => {
+describe("att ändra svaret", () => {
   beforeEach(async () => {
-    await sparat(redigeraProjekt({}, svar(["KOK", "ANNAT"], "Trappan")));
+    await sparat(sparaVadOchVar({}, svar(["KOK", "ANNAT"], "Trappan")));
   });
 
   it("ersatter svaret med det nya urvalet", async () => {
-    await sparat(redigeraProjekt({}, svar(["BADRUM"])));
+    await sparat(sparaVadOchVar({}, svar(["BADRUM"])));
     expect(rader()).toEqual([{ projekt_id: PROJEKT, del: "BADRUM", fritext: null }]);
   });
 
   it("ror inte raderna nar fragan inte visades", async () => {
-    await sparat(redigeraProjekt({}, svar(null)));
+    await sparat(sparaVadOchVar({}, svar(null)));
+    expect(rader().map((r) => r.del)).toEqual(["KOK", "ANNAT"]);
+  });
+
+  // Varje del sparar bara sina egna falt (docs/design.md, "Projektsidan
+  // ändras i delar"): Frågorna rör inte delen, inte ens om falten skulle
+  // skickas med.
+  it("att spara frågorna rör inte delen av bostaden", async () => {
+    const f = svar(["BADRUM"]);
+    f.set("byggde_nytt", "ja");
+    expect(await sparat(redigeraProjekt({}, f))).toBe(`/projekt/${PROJEKT}`);
+    expect(h.db.tabell("projekt").find((p) => p.id === PROJEKT)!.atgardstyp).toBe("nybyggnad");
     expect(rader().map((r) => r.del)).toEqual(["KOK", "ANNAT"]);
   });
 });
 
 describe("projektets sida", () => {
   it("visar svaret som en rad, med fritexten dar Annat star", async () => {
-    await sparat(redigeraProjekt({}, svar(["KOK", "EL", "ANNAT"], "Trappan")));
+    await sparat(sparaVadOchVar({}, svar(["KOK", "EL", "ANNAT"], "Trappan")));
     const rad = (await projektsidan()).match(
       /<div class="flex justify-between gap-3"><span[^>]*>Del av bostaden<\/span><span[^>]*>(.*?)<\/span><\/div>/,
     );
@@ -254,7 +265,12 @@ describe("projektets sida", () => {
   });
 
   it("raden finns inte nar fragan aldrig besvarats", async () => {
-    await sparat(redigeraProjekt({}, svar([])));
+    await sparat(sparaVadOchVar({}, svar([])));
+    const fragorna = new FormData();
+    fragorna.set("projekt_id", PROJEKT);
+    fragorna.set("namn", "Nytt kök");
+    fragorna.set("byggde_nytt", "ja");
+    await sparat(redigeraProjekt({}, fragorna));
     const html = await projektsidan();
     // Forutsattningen: sidan ar renderad med sina rader.
     expect(html).toContain(">Räknas som</span>");

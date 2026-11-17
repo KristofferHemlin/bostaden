@@ -5,9 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // projekt"). Den riktiga sidan kors mot en falsk databas och renderas hel i
 // en DOM; bara server-actionen ar utbytt, sa att testet ser vad som skickas.
 //
-//   1. Ordningen: vad gjorde du → vilken del av bostaden → fragetradet →
-//      vilka kvitton hörde hit. Framsteget ar "N av 4", utan ordet fore, och
-//      ingenstans star hur manga fragorna ar.
+//   1. Ordningen: vad gjorde du och vilken del av bostaden → fragetradet →
+//      vilka kvitton hörde hit. Framsteget ar "N av 3", utan ordet fore, och
+//      ingenstans star hur manga fragorna ar. Delen ar frivillig och star
+//      under namnet; Nästa hoppar over den.
 //   2. Varje steg provas innan nasta: ett tomt namn eller en obesvarad fraga
 //      stoppar vid sin fraga.
 //   3. Tillstandet mellan stegen (CLAUDE.md): ingenting skickas forran
@@ -177,34 +178,47 @@ async function svaraUtbyttLiknande() {
 }
 
 describe("ordningen och framsteget", () => {
-  it("namnet, bostadsdelen, frågeträdet, kvittona – som 1 av 4 till 4 av 4", async () => {
+  it("namnet och bostadsdelen, frågeträdet, kvittona – som 1 av 3 till 3 av 3", async () => {
     await rendera();
-    expect(framsteg()).toBe("1 av 4");
+    expect(framsteg()).toBe("1 av 3");
     expect(synligText()).toContain("Vad gjorde du?");
-    expect(synligText()).not.toContain(BOSTADSDEL_FRAGA);
+    expect(synligText()).toContain(BOSTADSDEL_FRAGA);
+    expect(synligText()).not.toContain("Byggde du något nytt som inte fanns tidigare?");
 
     await skrivNamn("Måla sovrummet");
     await tryck("Nästa");
-    expect(framsteg()).toBe("2 av 4");
-    expect(synligText()).toContain(BOSTADSDEL_FRAGA);
-    expect(synligText()).not.toContain("Vad gjorde du?");
-
-    await tryck("Nästa");
-    expect(framsteg()).toBe("3 av 4");
+    expect(framsteg()).toBe("2 av 3");
     expect(synligText()).toContain("Byggde du något nytt som inte fanns tidigare?");
+    expect(synligText()).not.toContain("Vad gjorde du?");
+    expect(synligText()).not.toContain(BOSTADSDEL_FRAGA);
 
     await svaraUtbyttLiknande();
     await tryck("Nästa");
-    expect(framsteg()).toBe("4 av 4");
+    expect(framsteg()).toBe("3 av 3");
     const rubrik = [...behallare.querySelectorAll("legend")].find(synlig)!;
     expect(rubrik.textContent).toBe("Vilka kvitton hörde till ”Måla sovrummet”?");
     expect([...behallare.querySelectorAll('input[type="checkbox"]')].filter(synlig)).toHaveLength(1);
   });
 
+  // docs/design.md: "Att hoppa över den ska gå utan att först trycka sig
+  // förbi den." Ett tryck på Nästa, med delen obesvarad, och frågeträdet
+  // står där.
+  it("bostadsdelen står under namnet och hoppas över med samma Nästa", async () => {
+    await rendera();
+    const namnfalt = behallare.querySelector<HTMLInputElement>('input[type="text"]')!;
+    const ytskikt = knapp("Ytskikt");
+    expect(namnfalt.compareDocumentPosition(ytskikt) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(ytskikt.getAttribute("aria-pressed")).toBe("false");
+    await skrivNamn("Måla sovrummet");
+    await tryck("Nästa");
+    expect(framsteg()).toBe("2 av 3");
+    expect(synligaLarm()).toEqual([]);
+    expect(synligText()).toContain("Byggde du något nytt som inte fanns tidigare?");
+  });
+
   it("skicket vid förvärvet ställs när något byttes ut, och inte när det byggdes nytt", async () => {
     await rendera();
     await skrivNamn("Ny altan");
-    await tryck("Nästa");
     await tryck("Nästa");
     await tryck("Ja, det är helt nytt");
     expect(synligText()).not.toContain("Hur var skicket vid förvärvet?");
@@ -243,7 +257,7 @@ describe("varje steg prövas innan nästa", () => {
     const vantat = tolkaFragetradetFormData(new FormData(), { belopp: 0, harRot: false });
     expect("fel" in vantat && vantat.falt).toBe("namn");
     expect(synligaLarm()).toEqual(["fel" in vantat ? vantat.fel : ""]);
-    expect(framsteg()).toBe("1 av 4");
+    expect(framsteg()).toBe("1 av 3");
   });
 
   it("en obesvarad fråga stoppar i frågeträdet", async () => {
@@ -251,8 +265,7 @@ describe("varje steg prövas innan nästa", () => {
     await skrivNamn("Måla sovrummet");
     await tryck("Nästa");
     await tryck("Nästa");
-    await tryck("Nästa");
-    expect(framsteg()).toBe("3 av 4");
+    expect(framsteg()).toBe("2 av 3");
     expect(synligaLarm()).toEqual(["Svara på om du byggde något nytt."]);
   });
 });
@@ -261,7 +274,6 @@ describe("tillståndet mellan stegen", () => {
   it("ingenting skickas förrän Spara, och då allt på en gång", async () => {
     await rendera();
     await skrivNamn("Måla sovrummet");
-    await tryck("Nästa");
     await tryck("Ytskikt");
     await tryck("Nästa");
     await svaraUtbyttLiknande();
@@ -282,7 +294,6 @@ describe("tillståndet mellan stegen", () => {
   it("det som skrivits ligger kvar när hon går därifrån och kommer tillbaka", async () => {
     await rendera();
     await skrivNamn("Måla sovrummet");
-    await tryck("Nästa");
     await tryck("Ytskikt");
     await tryck("Nästa");
     await tryck("Ja, det är helt nytt");
@@ -292,12 +303,14 @@ describe("tillståndet mellan stegen", () => {
     rot = createRoot(behallare);
     await rendera();
 
-    expect(framsteg()).toBe("3 av 4");
+    expect(framsteg()).toBe("2 av 3");
     expect(knapp("Ja, det är helt nytt").getAttribute("aria-pressed")).toBe("true");
     await tryck("Tillbaka");
+    expect(framsteg()).toBe("1 av 3");
     expect(knapp("Ytskikt").getAttribute("aria-pressed")).toBe("true");
-    await tryck("Tillbaka");
     expect(behallare.querySelector<HTMLInputElement>('input[type="text"]')!.value).toBe("Måla sovrummet");
+    // Första steget har inget att gå tillbaka till.
+    expect(() => knapp("Tillbaka")).toThrow();
     expect(h.skapaProjekt).not.toHaveBeenCalled();
   });
 
@@ -307,25 +320,26 @@ describe("tillståndet mellan stegen", () => {
     expect(window.localStorage.getItem(utkastNyckel(X))).toBeNull();
   });
 
-  it("när projektet sparats är utkastet borta och hon hamnar på projektet", async () => {
+  // docs/design.md, "Och sparandet leder till projektlistan": sammanfattningen
+  // hon nyss läste är bekräftelsen, och projektsidan hade visat den igen.
+  it("när projektet sparats är utkastet borta och hon hamnar i projektlistan", async () => {
     h.skapaProjekt.mockResolvedValue({ skapat: "c0000000-0000-4000-8000-0000000000d9" });
     await rendera();
     await skrivNamn("Ny altan");
-    await tryck("Nästa");
     await tryck("Nästa");
     await tryck("Ja, det är helt nytt");
     await tryck("Nästa");
     expect(window.localStorage.getItem(utkastNyckel(X))).not.toBeNull();
     await act(async () => knapp("Spara projektet").closest("form")!.requestSubmit(knapp("Spara projektet")));
     expect(window.localStorage.getItem(utkastNyckel(X))).toBeNull();
-    expect(h.ersatt).toHaveBeenCalledWith("/projekt/c0000000-0000-4000-8000-0000000000d9");
+    expect(h.ersatt).toHaveBeenCalledTimes(1);
+    expect(h.ersatt).toHaveBeenCalledWith("/projekt");
   });
 });
 
 /** Svarar fram till fråga 5 = bättre kvalitet och skick 1, med namnet satt. */
 async function svaraBattre() {
   await skrivNamn("Måla sovrummet");
-  await tryck("Nästa");
   await tryck("Nästa");
   await tryck("Nej");
   const nej = [...behallare.querySelectorAll("button")].filter((b) => synlig(b) && b.textContent === "Nej");
@@ -366,10 +380,10 @@ describe("merkostnaden ställs när det finns ett belopp att dela", () => {
   it("inte i frågeträdet, och i kvittosteget först när ett kvitto med belopp är valt", async () => {
     await rendera();
     await svaraBattre();
-    expect(framsteg()).toBe("3 av 4");
+    expect(framsteg()).toBe("2 av 3");
     expect(merkostnadsfalt(), "inget merkostnadsfält i frågeträdet").toBeNull();
     await tryck("Nästa");
-    expect(framsteg()).toBe("4 av 4");
+    expect(framsteg()).toBe("3 av 3");
     expect(merkostnadsfalt(), "inget fält utan valt kvitto").toBeNull();
     await kryssa();
     expect(merkostnadsfalt(), "fältet ska komma när kvittot valts").not.toBeNull();
@@ -396,7 +410,7 @@ describe("merkostnaden ställs när det finns ett belopp att dela", () => {
     await kryssa();
     await spara();
     expect(h.skapaProjekt).not.toHaveBeenCalled();
-    expect(framsteg()).toBe("4 av 4");
+    expect(framsteg()).toBe("3 av 3");
     expect(synligaLarm()).toEqual([LIKVARDIGT_MASTE_ANGES]);
 
     // Svaret är vad ett likvärdigt byte hade kostat. 791,95 kr är vad
@@ -405,7 +419,7 @@ describe("merkostnaden ställs när det finns ett belopp att dela", () => {
     await skriv(merkostnadsfalt()!, "791,95");
     await spara();
     expect(h.skapaProjekt).not.toHaveBeenCalled();
-    expect(framsteg()).toBe("4 av 4");
+    expect(framsteg()).toBe("3 av 3");
     expect(synligaLarm()).toEqual([likvardigtOverBeloppetFel(79_195, false)]);
 
     await skriv(merkostnadsfalt()!, "0");
@@ -454,24 +468,22 @@ describe("ett utkast går att kasta", () => {
   it("ett återupptaget utkast säger att det är ett, och Börja om tömmer allt", async () => {
     await rendera();
     await skrivNamn("Måla sovrummet");
-    await tryck("Nästa");
     await tryck("Ytskikt");
     await tryck("Nästa");
     await tryck("Ja, det är helt nytt");
     await lamnaOchKomTillbaka();
 
     expect(synligText()).toContain(UTKASTET);
-    expect(framsteg()).toBe("3 av 4");
+    expect(framsteg()).toBe("2 av 3");
     await tryck("Börja om");
 
-    expect(framsteg()).toBe("1 av 4");
+    expect(framsteg()).toBe("1 av 3");
     expect(behallare.querySelector<HTMLInputElement>('input[type="text"]')!.value).toBe("");
     expect(synligText()).not.toContain(UTKASTET);
     expect(window.localStorage.getItem(utkastNyckel(X))).toBeNull();
     // Inget av de gamla svaren ligger kvar dolt.
-    await skrivNamn("Ny altan");
-    await tryck("Nästa");
     expect(knapp("Ytskikt").getAttribute("aria-pressed")).toBe("false");
+    await skrivNamn("Ny altan");
     await tryck("Nästa");
     expect(knapp("Ja, det är helt nytt").getAttribute("aria-pressed")).toBe("false");
     expect(h.skapaProjekt).not.toHaveBeenCalled();
@@ -485,6 +497,7 @@ describe("ett utkast går att kasta", () => {
 describe("ett fel i ett tidigare steg visas där frågan står", () => {
   // Ett utkast som står på sista steget utan skicket vid förvärvet – som när
   // ett äldre utkast läses in. Spara ska då leda tillbaka till frågan.
+  // Utkastet är från fyra steg (ingen version), där 4 var kvittosteget.
   it("ett saknat skick vid förvärvet skickar tillbaka till frågeträdet", async () => {
     window.localStorage.setItem(
       utkastNyckel(X),
@@ -501,10 +514,10 @@ describe("ett fel i ett tidigare steg visas där frågan står", () => {
       }),
     );
     await rendera();
-    expect(framsteg()).toBe("4 av 4");
+    expect(framsteg()).toBe("3 av 3");
     await spara();
     expect(h.skapaProjekt).not.toHaveBeenCalled();
-    expect(framsteg()).toBe("3 av 4");
+    expect(framsteg()).toBe("2 av 3");
     expect(synligaLarm()).toEqual(["Ange skicket vid förvärvet, 0–5."]);
   });
 });
@@ -529,12 +542,11 @@ describe("sista steget sammanfattar innan det sparar", () => {
   it("utbytt mot liknande: allt hon svarat, och vad det räknas som", async () => {
     await rendera();
     await skrivNamn("Måla sovrummet");
-    await tryck("Nästa");
     await tryck("Ytskikt");
     await tryck("Nästa");
     await svaraUtbyttLiknande();
     await tryck("Nästa");
-    expect(framsteg()).toBe("4 av 4");
+    expect(framsteg()).toBe("3 av 3");
     expect(sammanfattningen()).toEqual([
       "Måla sovrummet",
       "Räknas som | Reparation",
@@ -548,7 +560,6 @@ describe("sista steget sammanfattar innan det sparar", () => {
   it("byggt nytt: grundförbättring, utan kvalitet och skick", async () => {
     await rendera();
     await skrivNamn("Ny altan");
-    await tryck("Nästa");
     await tryck("Nästa");
     await tryck("Ja, det är helt nytt");
     await tryck("Nästa");
@@ -571,7 +582,6 @@ describe("sista steget sammanfattar innan det sparar", () => {
     await rendera();
     await skrivNamn("Ny altan");
     await tryck("Nästa");
-    await tryck("Nästa");
     await tryck("Ja, det är helt nytt");
     await tryck("Nästa");
     const s = behallare.querySelector('[aria-label="Det du svarat"]')!;
@@ -583,16 +593,16 @@ describe("sista steget sammanfattar innan det sparar", () => {
     expect(() => knapp("Spara")).toThrow();
   });
 
-  it("syns bara i sista steget – och stegen är fortfarande fyra", async () => {
+  it("syns bara i sista steget – och stegen är tre", async () => {
     await rendera();
     await skrivNamn("Ny altan");
-    for (const steg of ["1 av 4", "2 av 4", "3 av 4"]) {
+    for (const steg of ["1 av 3", "2 av 3"]) {
       expect(framsteg()).toBe(steg);
       expect([...behallare.querySelectorAll('[aria-label="Det du svarat"]')].filter(synlig)).toHaveLength(0);
-      if (steg === "3 av 4") await tryck("Ja, det är helt nytt");
+      if (steg === "2 av 3") await tryck("Ja, det är helt nytt");
       await tryck("Nästa");
     }
-    expect(framsteg()).toBe("4 av 4");
+    expect(framsteg()).toBe("3 av 3");
     expect(() => knapp("Nästa")).toThrow();
   });
 });
@@ -603,7 +613,6 @@ describe("Hur vet du det? står inte i flödet", () => {
   it("inte ens när skicket vid förvärvet är 0 – då frågan annars ställdes", async () => {
     await rendera();
     await skrivNamn("Måla sovrummet");
-    await tryck("Nästa");
     await tryck("Nästa");
     await tryck("Nej");
     const nej = [...behallare.querySelectorAll("button")].filter((b) => synlig(b) && b.textContent === "Nej");
@@ -697,5 +706,47 @@ describe("merkostnadsfrågans hjälptext i flödet", () => {
     await tryck("Nästa");
     await valj(ROT_KVITTO);
     expect(hjalptexten()).toContain("före ROT-avdraget, 60 812,50 kr —");
+  });
+});
+
+// Ett utkast sparat innan stegen blev tre (docs/design.md, 2026-11-19) bär
+// sitt steg i den gamla räkningen, där namnet och delen var var sitt. Det ska
+// öppnas på samma fråga som hon lämnade, inte ett steg för långt fram.
+describe("ett utkast från fyra steg öppnas där hon var", () => {
+  const SVAR = {
+    byggdeNytt: "ja", andradePlanlosning: "", nyttEllerBytt: "",
+    battreEllerLiknande: "", merkostnad: null, likvardigtText: "",
+    skickForvarv: "", motivering: "",
+  };
+  const gammalt = (steg: number) =>
+    window.localStorage.setItem(
+      utkastNyckel(X),
+      JSON.stringify({ steg, namn: "Ny altan", bostadsdelar: [], svar: SVAR, valda: [] }),
+    );
+
+  it("gamla steg 2, delen av bostaden, öppnas på första steget, där delen står nu", async () => {
+    gammalt(2);
+    await rendera();
+    expect(framsteg()).toBe("1 av 3");
+    expect(synligText()).toContain(BOSTADSDEL_FRAGA);
+  });
+
+  it("gamla steg 3, frågeträdet, öppnas på frågeträdet", async () => {
+    gammalt(3);
+    await rendera();
+    expect(framsteg()).toBe("2 av 3");
+    expect(knapp("Ja, det är helt nytt").getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("ett nytt utkast på steg 2 är frågeträdet, inte delen", async () => {
+    await rendera();
+    await skrivNamn("Ny altan");
+    await tryck("Nästa");
+    const sparat = JSON.parse(window.localStorage.getItem(utkastNyckel(X))!);
+    expect(sparat.steg).toBe(2);
+    act(() => rot.unmount());
+    rot = createRoot(behallare);
+    await rendera();
+    expect(framsteg()).toBe("2 av 3");
   });
 });

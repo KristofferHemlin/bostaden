@@ -92,6 +92,8 @@ import ProjektSida from "@/app/projekt/[id]/page";
 import RedigeraProjektSida from "@/app/projekt/[id]/redigera/page";
 import NyttProjektSida from "@/app/projekt/nytt/page";
 import LaggTillKvittonSida from "@/app/projekt/[id]/kvitton/page";
+import KvittonaSida from "@/app/projekt/[id]/kvitton/andra/page";
+import VadOchVarSida from "@/app/projekt/[id]/vad-och-var/page";
 import FragorOmBostadenSida from "@/app/bostaden/fragor/page";
 import BostadenAndelSida from "@/app/bostaden/andel/page";
 import BjudInSida from "@/app/bostaden/bjud-in/page";
@@ -119,7 +121,13 @@ import {
   taBortBilaga,
 } from "@/app/kostnad/bilaga-actions";
 import { skapaUtkast, sparaKostnad } from "@/app/kostnad/nytt/actions";
-import { redigeraProjekt, skapaProjekt, taBortProjekt } from "@/app/projekt/actions";
+import {
+  lyftUtKvitto,
+  redigeraProjekt,
+  skapaProjekt,
+  sparaVadOchVar,
+  taBortProjekt,
+} from "@/app/projekt/actions";
 import { laggTillKvitton } from "@/app/projekt/[id]/kvitton/actions";
 import { sparaFragorOmBostaden } from "@/app/bostaden/fragor/actions";
 import { sparaAndelen, sparaKopeskillingen } from "@/app/bostaden/actions";
@@ -427,6 +435,24 @@ const VAGAR_MED_ID: Vag[] = [
     avslag: "fel",
   },
   { vag: "taBortProjekt", anrop: () => taBortProjekt(START, formular({ projekt_id: PX })), avslag: "fel" },
+  // Projektsidans delar (docs/design.md, "Projektsidan ändras i delar").
+  { vag: "sida /projekt/[id]/vad-och-var", anrop: () => VadOchVarSida(params(PX)), avslag: "sidan finns inte" },
+  {
+    vag: "sparaVadOchVar",
+    anrop: () => sparaVadOchVar(START, formular({ projekt_id: PX, namn: "Kapat" })),
+    avslag: "fel",
+  },
+  { vag: "sida /projekt/[id]/kvitton/andra", anrop: () => KvittonaSida(params(PX)), avslag: "sidan finns inte" },
+  {
+    vag: "lyftUtKvitto (annans projekt, annans kvitto)",
+    anrop: () => lyftUtKvitto(START, formular({ projekt_id: PX, kostnad_id: KX })),
+    avslag: "fel",
+  },
+  {
+    vag: "lyftUtKvitto (eget projekt, annans kvitto)",
+    anrop: () => lyftUtKvitto(START, formular({ projekt_id: HY, kostnad_id: KX })),
+    avslag: "fel",
+  },
   // Lägg till kvitton – efterträdaren till genomgångens laggIHog.
   { vag: "sida /projekt/[id]/kvitton", anrop: () => LaggTillKvittonSida(params(PX)), avslag: "sidan finns inte" },
   {

@@ -1,7 +1,7 @@
-// Steg 4: oppna ett projekt. Visar fragetradets svar och de kostnader som
-// kopplats hit. Harifran lagger man till en kostnad. Fraga 8, "Hur vet du
-// det?", visas som en rad nar den ar besvarad; den besvaras i redigeringen
-// (docs/design.md, "Det hör hemma i Ändra projektet").
+// Projektets sida: en lasvy i tre delar – Vad och var, Frågorna, Kvittona –
+// var och en med sin egen Ändra som leder till en kort skarm med bara sin del
+// (docs/design.md, "Projektsidan ändras i delar"). Ingenting pa sidan gar att
+// skriva i. Räknas som och År ar harledda och star overst, utan Ändra.
 //
 // Delar flera personer bostaden star vem som besvarade fragorna som en dampad
 // rad (docs/design.md, "Samagande – medlemskapet"): den som svarar forst
@@ -33,6 +33,7 @@ import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad, tillDomanProjekt } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { projektnamnKarta } from "@/doman/genomgang";
 import { hamtaProjektnamn } from "@/lib/projektnamn";
@@ -141,18 +142,17 @@ export default async function ProjektSida({
       rubrik={projektnamnKarta([projekt], kostnadRader).get(id) ?? projekt.namn}
       bakLank={{ href: "/projekt", text: "Projekt" }}
     >
+      {/* Det som ar harlett ur svaren och kvittona, och darfor inte en del
+          med en egen Ändra (docs/design.md, "Räknas som står kvar på läsvyn
+          och är inte en del"): att ge det en vore att pasta att det ar en
+          installning. */}
       <section className={`${FAKTARUTA_KLASS} border-b border-linje p-4`}>
         {/* Utelamnas tills fragorna ar besvarade (docs/design.md,
             "Projektlistan"): faltet rymmer en kategori, inte ett tillstand.
-            Att svaren saknas sags av meddelandet nedan. */}
+            Att svaren saknas sags under Frågorna. */}
         {oklassificerad ? null : (
           <Rad etikett="Räknas som" varde={kategoriText} />
         )}
-        {/* Bostadsdelen, bredvid Räknas som (docs/design.md, "Vilken del av
-            bostaden projektet rörde"). Utelamnas nar fragan inte besvarats –
-            inga rader betyder inte tillfragad, och ett tillstand ar inget
-            varde. Ingenstans annars, och i inget tal. */}
-        {delText ? <Rad etikett="Del av bostaden" varde={delText} /> : null}
         {/* Kvittonas betaldatum, inte etiketten projekt.ar – samma ar som
             underlaget (src/lib/projektar.ts). */}
         <Rad
@@ -162,6 +162,32 @@ export default async function ProjektSida({
             projekt.ar,
           )}
         />
+      </section>
+
+      {/* Tre delar med var sin Ändra, i installningssidans form
+          (docs/design.md, "Projektsidan ändras i delar"). Varje Ändra leder
+          till en kort skarm med bara sin del. */}
+      <ProjektDel titel="Vad och var" andra={`/projekt/${id}/vad-och-var`}>
+        {/* Ett projekt fran fore omlaggningen kan sakna namn; rubriken ar
+            da kvittonas, och raden sager att namnet saknas. */}
+        <Rad
+          etikett="Namn"
+          varde={projekt.namn.trim() || "Inte angivet"}
+          atgard={projekt.namn.trim() === ""}
+        />
+        {/* Bostadsdelen (docs/design.md, "Vilken del av bostaden projektet
+            rörde"). Utelamnas nar fragan inte besvarats – inga rader betyder
+            inte tillfragad, och ett tillstand ar inget varde. Ingenstans
+            annars, och i inget tal. */}
+        {delText ? <Rad etikett="Del av bostaden" varde={delText} /> : null}
+      </ProjektDel>
+
+      {/* Utan svar finns inget att andra – vagen in ar Svara på frågorna
+          (docs/design.md, "Projekt som skapades före omläggningen"). */}
+      <ProjektDel
+        titel="Frågorna"
+        andra={oklassificerad ? undefined : `/projekt/${id}/redigera`}
+      >
         {oklassificerad ? null : (
           <>
             <Rad etikett="Vad gjordes" varde={ATGARDSTYP_TEXT[projekt.atgardstyp!]} />
@@ -208,10 +234,10 @@ export default async function ProjektSida({
                 }
               />
             ) : null}
-            {/* Fraga 8 som en rad bredvid skicket, nar den ar besvarad – och
-                inte alls annars: ett tomt valfritt falt som syns blir en
+            {/* Fraga 8 som en rad direkt efter skicket, nar den ar besvarad –
+                och inte alls annars: ett tomt valfritt falt som syns blir en
                 paminnelse om nagot ogjort (docs/design.md, "Det hör hemma i
-                Ändra projektet"). Den besvaras i redigeringen. */}
+                Ändra projektet"). Den besvaras under Frågorna. */}
             {projekt.motivering ? (
               <Rad etikett="Hur vet du det?" varde={projekt.motivering} />
             ) : null}
@@ -255,29 +281,43 @@ export default async function ProjektSida({
           </>
         )}
         {oklassificerad ? (
-          <p className="pt-1 text-text-sekundar">
-            Frågorna om det här är inte besvarade än. Det tas med i
-            underlaget när du svarat på dem.
-          </p>
+          <>
+            <p className="text-text-sekundar">
+              Frågorna om det här är inte besvarade än. Det tas med i
+              underlaget när du svarat på dem.
+            </p>
+            <Link href={`/projekt/${id}/redigera`} className={`mt-2 ${PRIMARKNAPP_KLASS}`}>
+              Svara på frågorna
+            </Link>
+          </>
         ) : null}
         {besvaratAv ? (
           <p className="pt-1 text-text-sekundar">{besvaratAv}</p>
         ) : null}
-      </section>
+      </ProjektDel>
 
       <section>
         {/* Rubriken bar projektets summa hogerstalld, som kvittolistans
             arsrubrik: samma tal som projektlistan (projektSumma), och raderna
             under gar att rakna ihop till den. "Kvitton", aldrig "kostnader"
             (docs/design.md, Ordval i granssnittet). */}
+        {/* Delen Kvittona: Ändra leder till att lyfta ut ett kvitto
+            (docs/design.md, "Att lyfta ut ett kvitto hör till Kvittona"),
+            och visas bara nar det finns ett kvitto att lyfta ut. Summan star
+            kvar i rubriken, fore Ändra. */}
         <div className="flex items-baseline justify-between gap-3 px-4 pt-4">
           <Avdelningsrubrik>
             Kvitton
           </Avdelningsrubrik>
           {kostnader.length > 0 ? (
-            <p className="font-rubrik text-sm tabular-nums text-text-primar">
-              {formateraKronor(projektSumma(kostnader, id))}
-            </p>
+            <div className="flex items-baseline gap-3">
+              <p className="font-rubrik text-sm tabular-nums text-text-primar">
+                {formateraKronor(projektSumma(kostnader, id))}
+              </p>
+              <Link href={`/projekt/${id}/kvitton/andra`} className={ANDRA_KLASS}>
+                Ändra
+              </Link>
+            </div>
           ) : null}
         </div>
         {/* Flera kvitton i ett svep (docs/design.md, "Att lägga kvitton till
@@ -348,34 +388,50 @@ export default async function ProjektSida({
           </div>
         )}
         <div className="flex flex-col gap-2 p-4">
-          {/* Ett projekt utan svar kan bara vara skapat fore omlaggningen.
-              Vagen till svaren ar redigeringen, som staller hela tradet
-              (docs/design.md, "Projekt som skapades före omläggningen"). */}
-          {oklassificerad ? (
-            <Link href={`/projekt/${id}/redigera`} className={PRIMARKNAPP_KLASS}>
-              Svara på frågorna
-            </Link>
-          ) : null}
           {/* Inmatningen kopplar inte till ett projekt (docs/design.md,
               "Inmatningen har fem falt, inget mer"); kvittot kopplas fran
-              projektet eller pa kvittots egen sida. */}
+              projektet eller pa kvittots egen sida. Ändra projektet finns
+              inte langre: varje del har sin egen Ändra. */}
           <Link
             href="/kostnad/nytt"
             className={oklassificerad ? SEKUNDARKNAPP_KLASS : PRIMARKNAPP_KLASS}
           >
             Lägg till kvitto
           </Link>
-          {/* Utan svar finns inget att andra – knappen ovan leder dit. */}
-          {oklassificerad ? null : (
-            <Link
-              href={`/projekt/${id}/redigera`}
-              className={SEKUNDARKNAPP_KLASS}
-            >
-              Ändra projektet
-            </Link>
-          )}
         </div>
       </section>
     </Skarm>
+  );
+}
+
+const ANDRA_KLASS =
+  "font-granssnitt text-sm text-text-sekundar underline underline-offset-2 hover:text-text-primar";
+
+/**
+ * En del av projektsidan: rubrik till vanster och en dampad Ändra i samma
+ * rad, som installningssidans kort (src/app/installningar/kort.tsx,
+ * KortHuvud). Utan andra-lank har delen inget att andra.
+ */
+function ProjektDel({
+  titel,
+  andra,
+  children,
+}: {
+  titel: string;
+  andra?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section aria-label={titel} className="border-b border-linje">
+      <div className="flex items-center justify-between gap-3 px-4 pt-4">
+        <h2 className="font-rubrik text-base text-text-primar">{titel}</h2>
+        {andra ? (
+          <Link href={andra} className={ANDRA_KLASS}>
+            Ändra
+          </Link>
+        ) : null}
+      </div>
+      <div className={`${FAKTARUTA_KLASS} p-4`}>{children}</div>
+    </section>
   );
 }
