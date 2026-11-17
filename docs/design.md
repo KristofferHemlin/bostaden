@@ -2170,6 +2170,18 @@ Tomläget är alltså det vanliga: en rubrik som är en uppmaning, en till två 
 
 **Varje *Ändra* leder till en kort skärm med bara sin del**, och tillbaka till projektsidan. Ingen av dem är flödet från början; den som vill rätta ett namn ska inte gå igenom tre steg för det.
 
+**Skärmen heter samma sak som delen den ändrar.** *Vad och var*, *Frågorna*, *Kvittona*. Rubriken *Ändra projekt* gällde när redigeringen var en enda skärm; med tre stycken skulle den stå på alla tre och säga lika lite om var och en. Formen är inställningssidans: en del på läsvyn och en skärm med samma namn bakom dess *Ändra*.
+
+**Undantaget är ett projekt utan svar.** Då heter skärmen fortfarande **"Berätta vad du gjort"** och bär hela trädet med namnfrågan först, eftersom trädet aldrig besvarats. Namnet går att ändra också från *Vad och var*; två vägar till ett fält är inte ett problem så länge båda är ärliga.
+
+**Varje del sparar bara sina egna fält, också på servern.** Att *Frågorna* inte skriver namnet är inte en följd av att skärmen saknar fältet — det ska gälla även om fältet skulle skickas med. En skärm som kan skriva något den inte visar är en skärm som skriver i blindo.
+
+***Ta bort projektet* står på *Vad och var*.** Agentens val, och rätt: läsvyn ändrar ingenting, så knappen kan inte ligga där, och den del som bär projektets identitet är den som kan ta bort den. Den står sist på skärmen och aldrig intill *Spara*.
+
+**Summan står kvar i *Kvittona*s rubrik, med *Ändra* högerställd i samma rad.** Samma form som projektkortets *Visa alla* på startskärmen.
+
+**Det likvärdiga bytet får ingen egen rad på läsvyn.** Merkostnaden står som i dag på raden *Kvalitet*. Agenten såg skälet: det likvärdiga bytets pris är **härlett** ur beloppet minus merkostnaden, och ändras projektets belopp räknas det inte längre fram ur samma tal. **Läsvyn visar det lagrade, inte ett härlett som kan bli inaktuellt** — det är samma regel som gör att *Räknas som* står utanför delarna.
+
 ***Räknas som* står kvar på läsvyn och är inte en del.** Det är härlett ur svaren och går inte att ändra direkt — att ge det en *Ändra* vore att påstå att det är en inställning.
 
 **Att lyfta ut ett kvitto hör till *Kvittona*.** Det går redan från kvittots egen sida, via projektvalet, och det här är den andra riktningen av samma sak — precis som att välja till finns på båda hållen. **Kvittot lossas, det raderas inte**, och raden säger vart det tar vägen: tillbaka till kvitton utan projekt.

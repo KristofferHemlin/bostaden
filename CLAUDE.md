@@ -652,6 +652,8 @@ Fallet var det gamla grupperingsflödet: posten skapades med tomt namn, eftersom
 
 **Och att något prövas ska visas.** Agenten tog bort bostadsvillkoret med flit i tre av de nya fallen; 2, 10 och 5 fall föll.
 
+**Uppräkningen ur koden har betalat sig.** 2026-11-19 delades projektsidan i tre, med två nya serverfunktioner och två nya sidor — och åtkomsttestet föll på alla fyra **innan** någon skrivit ett prov för dem. En handskriven lista hade varit tyst, och fyra nya vägar hade gått i produktion utan medlemskapsprov.
+
 **Automatiken säger att något saknas; den skriver inte provet.** Ett medlemskapsprov behöver ett anrop med ett främmande id och ett väntat avslag för just den vägen, och det går inte att läsa ur en signatur. Uppräkningen ur koden faller därför med besked när en väg varken är prövad eller undantagen — och **varje undantag bär ett skrivet skäl.** Att ingen hann skriva ett prov är inget skäl.
 
 **Jag bröt den här regeln dagen efter att jag skrev den.** Agenten skrev att posterna saknades i testet; jag skrev att koden saknade skydd. Det är *En mening i en rapport är inte en avläsning av koden*, en dag gammal, och jag var den som bröt den. Ett fel som upprepas snabbt är inte otur, det är en vana — och vanan är att läsa en rapport som en starkare historia än den berättar.
@@ -719,6 +721,16 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 **En lydelse som bara står i en prompt kan inte vaktas.** Prompten är borta när nästa omgång börjar; filen är kvar. Det är samma regel som att en regel som bara finns i en prompt inte finns, och den gäller ord för ord lika mycket som den gäller beslut.
 
 **Och det är prompten som är felet, inte konstanten.** Agenten gjorde rätt som byggde det den fick och sa var hålet satt. Lydelsen flyttar till filen, inte till nästa prompt.
+
+### Ett dolt element är dolt först när appens riktiga CSS mäter det
+
+**Skriven 2026-11-19.** I Tailwind 3 vinner klassen `flex` över attributet `hidden`: `display: flex` i ett stilark slår `display: none` från webbläsarens egen stilmall. En layoutklass på ett dolt skal gör alltså det dolda synligt — i projektflödet hade namnet och delen av bostaden stått kvar i alla tre stegen.
+
+**Varken jsdom eller en sida utan stilark kan se det.** Båda läser attributet och rapporterar *dolt*, eftersom ingen av dem tillämpar CSS:en som upphäver det. Ett prov av synlighet som körs utan appens riktiga stilark prövar alltså att attributet är satt, inte att elementet är dolt — och de två är inte samma sak så fort ett stilark finns.
+
+**Synlighet mäts därför i webbläsaren, med appens byggda CSS.** Agenten såg risken innan den fanns i koden, införde felet med flit, och visade att mätningen faller på steg 2 och 3. Inget befintligt prov märkte något.
+
+**Det är samma familj som *En klass är inte en layout*, men åt andra hållet:** där var klassnamnet ett för svagt bevis för en layout, här är attributet ett för svagt bevis för frånvaro. **Det som avgör är kaskaden, och den finns bara i en riktig webbläsare.**
 
 ### Ett simulerat klick är inte ett tryck
 
