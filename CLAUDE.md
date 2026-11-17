@@ -656,6 +656,16 @@ Fallet var det gamla grupperingsflödet: posten skapades med tomt namn, eftersom
 
 **Jag bröt den här regeln dagen efter att jag skrev den.** Agenten skrev att posterna saknades i testet; jag skrev att koden saknade skydd. Det är *En mening i en rapport är inte en avläsning av koden*, en dag gammal, och jag var den som bröt den. Ett fel som upprepas snabbt är inte otur, det är en vana — och vanan är att läsa en rapport som en starkare historia än den berättar.
 
+### En odefinierad variabel ger inget fel, den ärver något rimligt
+
+**Skriven 2026-11-17.** Bilagemärkets snedstreck ligger ovanpå ett bredare streck som ska ha radens bakgrundsfärg, hämtad ur en CSS-variabel. Projektsidans kort satte bakgrundsfärgen men aldrig variabeln, så strecket ritades i märkets egen ton — en tjock tegelröd bom i stället för ett tunt snedstreck, på en sida vi tittat på i dagar.
+
+**CSS klagar inte på en variabel som saknar värde.** Den ärver, eller faller tillbaka på något initialt, och resultatet renderas. Felet ser därför ut som ett designval, inte som ett fel — och det är den sortens fel ingen hittar genom att läsa koden, eftersom den som läser komponenten inte ser vilken behållare den hamnar i.
+
+**En komponent som läser en variabel ställer ett krav på varje behållare den kan ligga i.** Kravet är osynligt från båda hållen: komponenten vet inte var den används, behållaren vet inte vad den måste sätta. **Sätt den därför på den gemensamma behållaren, inte per sida**, och mät färgen — inte klassnamnet, inte att elementet finns.
+
+**Och det här hittades av en mätning som var beställd för något annat.** Uppdraget var kursiven och märket på en tredje skärm; felet låg i märket självt. Att bredda en mätning till en skärm till är billigt, och det är så här det lönar sig.
+
 ### Ett mått på text måste bevara ordgränsen
 
 **Skriven 2026-11-13.** Två brytningar fällde inte sina tester: att kvittolistan och projektlistan säger *"klart"* gick igenom fast beteendet var brutet. Felet låg i mätningen. `textContent` fogar ihop intilliggande element utan mellanrum, så *"Allt är klart"* intill *"Lägg till kvitto"* blev `klartLägg`, och ett mönster med ordgräns hittade ingenting. **Ett test som läser texten så kan aldrig falla, och det ser grönt ut för alltid.**

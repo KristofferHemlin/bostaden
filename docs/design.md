@@ -564,6 +564,12 @@ Här stod först att märket visas bara när bilagan saknas. Det ändrades av Kr
 
 Formen som gäller: snedstrecket i tjocklek 2, lagt ovanpå ett bredare streck i radens **bakgrundsfärg**. Bakgrundsstrecket tar sin färg ur samma variabel som ytan raden ligger på — aldrig ett hårdkodat värde, eftersom märket då blir fel den dag raden byter yta. Kvittolistans rader ligger på olika band, så det här är inte hypotetiskt.
 
+**Och varje behållare en rad kan ligga i måste sätta den variabeln.** Uppmätt 2026-11-17 av agenten: projektsidans kort satte bakgrundsfärgen men aldrig variabeln, så bakgrundsstrecket ritades i märkets egen ton. Mätningen läste **två tegelröda streck, ett 5 och ett 2 tjockt, där det ska finnas ett** — i praktiken en tjock bom i stället för ett tunt snedstreck. Den stod på en sida vi båda tittat på i flera dagar utan att se den.
+
+**En odefinierad variabel ger inget fel, den ärver något rimligt.** Det är därför felet var osynligt: märket renderades, formen fanns, bara färgen var fel — och fel på ett sätt som ser ut som ett designval. Variabeln sätts nu av det gemensamma kortet, alltså för varje sida som använder det.
+
+**Hovringen hör till samma regel.** Byter raden yta när muspekaren vilar på den, ska bakgrundsstrecket byta med den — annars uppstår en söm tvärs över märket just när blicken är där. Det är mätt på kvittolistan och ännu inte på projektsidan.
+
 **Och det är en bedömning som görs med ögat, inte av ett test.** Ett test kan pröva att märket finns, vilket läge det är i, och att snedstrecket följer med; att det går att *uppfatta* kan bara avgöras genom att titta på det i verklig storlek. Den som ändrar märkets storlek, färg eller tjocklek ska titta igen.
 
 **Den gröna tonen betyder *bilaga finns*, aldrig *klart*.** Risken skriven samma dag: en grön markering på varje rad kan läsas som att posten är färdig, och den första riktiga användaren slutade just därför att hon trodde att hon var klar. Ett kvitto med bilaga är inte klart — det är frågorna som gör att det räknas. **Därför är tonen dämpad och formen en dokumentkontur, aldrig en bock.** Visar mätningen efter lansering att folk fortfarande slutar för tidigt är det här en av kandidaterna att pröva bort.
