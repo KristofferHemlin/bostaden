@@ -859,7 +859,11 @@ Skälet att kortet alls finns är att startskärmen annars ser likadan ut före 
 
 **Året härleds på varje skärm som nämner det, inte bara i listan.** Uppmätt 2026-11-16: projektsidan och projektlistan sade 2024 medan kvittots rullista *Koppla till projekt* sade *"2026 · Nya fönster på framsidan"*. Ett projekt som heter två saker i samma app går inte att känna igen. Härledningen hör till projektets namnform, inte till en av sidorna.
 
-**Året i kortet härleds som i projektlistan**, ur det tidigaste betaldatumet bland projektets kvitton. **Ett enda år, aldrig ett spann** – ett projekt vars kvitton korsar ett årsskifte visas under det tidigaste. Att skriva *2024–2025* i en lista som grupperar per år gör raden omöjlig att placera, och delningen som faktiskt betyder något sker ändå i exporten, där varje år får sin egen rad. Agenten påpekade 2026-11-13 att kortet visade den lagrade etiketten medan listan hade bytt — och samma uppgift som ser olika ut på två skärmar läses som två olika uppgifter. Det är samma regel som gav startskärmens sex senaste kvitton kursiven och bilagemärket när kvittolistan fick dem.
+**Året i kortet härleds som i projektlistan**, ur projektets kvitton, och **spänner de över ett årsskifte skrivs spannet: *2025–2026***. Här stod till 2026-11-19 att det skulle vara ett enda år, det tidigaste — men det skälet var att listan grupperade på år och en rad med ett spann inte gick att placera. Grupperingen är borta, och då finns ingen anledning att utelämna det andra året.
+
+**Formen är densamma överallt projektet nämns:** listan, kortet på startskärmen, kvittots *Koppla till projekt* och *Dela upp*. Agenten såg att de hade glidit isär och frågade innan den byggde vidare. Ett projekt som heter två saker i samma app går inte att känna igen – det är samma skäl som gav härledningen från början.
+
+**Undantaget är exportens rader, och det är inget undantag.** Där är året **radens** år, inte projektets: ett projekt som spänner över ett årsskifte ger en rad per år, eftersom tröskeln prövas per kalenderår. Den delningen ska inte slås ihop till ett spann. Agenten påpekade 2026-11-13 att kortet visade den lagrade etiketten medan listan hade bytt — och samma uppgift som ser olika ut på två skärmar läses som två olika uppgifter. Det är samma regel som gav startskärmens sex senaste kvitton kursiven och bilagemärket när kvittolistan fick dem.
 
 **Kortet visar inga belopp som kan ändras.** Projektets namn, året och vad det räknas som, ingenting mer. Summan på sida 1 kan fortfarande falla när bostaden säljs, eftersom tröskeln prövas per år på båda slagen tillsammans – och ett tal på startskärmen som senare sjunker är värre än inget tal.
 
@@ -2009,6 +2013,8 @@ Skärmens rubrik är **"Berätta vad du gjort"**. Flödet är **tre steg**: *vad
 
 **Delen är fortfarande frivillig**, och ligger under namnfältet. Att hoppa över den ska gå utan att först trycka sig förbi den.
 
+**Och att den är frivillig måste synas.** Som eget steg kunde hon trycka *Nästa* förbi den; under ett fält med stjärna ser de två ut som ett set, och uppmätt på skärmen 2026-11-19 finns ingenting som säger att knappraden går att lämna. Under knapparna står därför en dämpad rad: **"Valfritt – du kan lägga till det senare."** Samma form som motiveringsfältets *"Valfritt, men bär bevisningen om kvitto saknas."*
+
 **Namnet ställs först, och det är frågeträdets första fråga.** Skälet att namnet betyder något är att det hamnar i deklarationsunderlagets åtgärdskolumn. En rad som säger "K-Bygg Sverige AB" i stället för "Ny köksfläkt" är inte begriplig för någon som inte var där – och det är just därför frågan ställs där användaren tänker på vad hen gjorde.
 
 **Kvittona väljs sist, inte först.** När projektet är beskrivet visas de kvitton som ännu inte hör till något projekt, och hon väljer vilka som hörde hit. Frågan är då *"vilka av de här hörde till badrummet?"* — hon vet vad hon letar efter, eftersom hon just skrivit namnet.
@@ -2063,7 +2069,7 @@ Hjälptexten har två lydelser, eftersom *före ROT* är brus när ROT inte finn
 > Uppskatta vad samma arbete hade kostat utan den högre kvaliteten. Projektet kostade 24 000 kr, och mellanskillnaden är den del som räknas som grundförbättring.
 
 > **Vad hade ett likvärdigt byte kostat?**
-> Uppskatta vad samma arbete hade kostat utan den högre kvaliteten. Jämför med vad arbetet kostade före ROT-avdraget, 60 812,50 kr — mellanskillnaden är den del som räknas som grundförbättring. ROT-avdraget minskar sedan båda delarna lika mycket.
+> Uppskatta vad samma arbete hade kostat utan den högre kvaliteten. Jämför med vad arbetet kostade före ROT-avdraget, 60 812,50 kr – mellanskillnaden är den del som räknas som grundförbättring. ROT-avdraget minskar sedan båda delarna lika mycket.
 
 **Den sista meningen finns för att talet annars säger emot sidan.** Under *Kvittona* står *49 225 kr räknas med*, och två olika tal om samma projekt utan förklaring läses som ett fel.
 
@@ -2126,7 +2132,7 @@ Efter namnet kommer **"Vilken del av bostaden?"** – knappar att trycka på, fl
 
 **Kvittoraden klipper anteckningen till en rad.** `white-space: nowrap` med `text-overflow: ellipsis` ger alltid en rad oavsett skärmbredd – ungefär 60 tecken på en dator, hälften på en telefon. **Den ska i stället rymma två rader och klippas först därefter.**
 
-Det gäller där anteckningen är radens huvudtext: **kryssrutelistan där kvitton väljs till ett projekt**, kvittolistan, *Senaste kvitton* på översikten, och projektets egen kvittolista. Är leverantören huvudtext stannar raden på en rad, och deklarationsunderlaget rörs inte: det visar projektets namn, som är en etikett och kort av konstruktion.
+Det gäller där anteckningen är radens huvudtext: **kryssrutelistan där kvitton väljs till ett projekt**, kvittolistan, *Senaste kvitton* på översikten, projektets egen kvittolista, och **skärmen *Kvittona***. Är leverantören huvudtext stannar raden på en rad, och deklarationsunderlaget rörs inte: det visar projektets namn, som är en etikett och kort av konstruktion.
 
 **Kryssrutelistan är den viktigaste av dem.** Det är där hon avgör vilka kvitton som hörde till det hon just beskrivit, och det avgörandet går inte att göra på en tredjedel av varje mening.
 
@@ -2136,7 +2142,13 @@ Två rader, inte obegränsat: nästan varje anteckning ryms, och listan är fort
 
 ### Projektlistan
 
-Varje rad visar projektets namn, belopp och vad det räknas som. Etiketten heter **Räknas som**, inte *Kategori* – den säger följden i stället för taxonomin.
+Varje rad visar projektets namn, år, belopp och vad det räknas som. Etiketten heter **Räknas som**, inte *Kategori* – den säger följden i stället för taxonomin.
+
+**Listan grupperas inte på år, och året står på raden.** Omlagt 2026-11-19. Rubrikerna sade emot raderna under sig: *Måla badrum* låg under **2025** med ett kvitto daterat **2026-09-12** synligt direkt under, och samma projekt ger två rader i underlaget, en per år. **Ett projekt hör inte till ett år** – det är kvittona som gör det.
+
+**Gruppera på år det som tillhör ett år.** Kvitton har ett betaldatum och hör till precis ett år, så kvittolistan grupperas. Ett projekt kan spänna över ett årsskifte, och då är varje rubrik ett påstående som raden motsäger. Spänner projektet över två år står båda på raden: *2025–2026*.
+
+**Ordningen är nyast skapade först.** Det som just sparats ligger överst, och det är den enda bekräftelsen hon får — sparandet leder hit, och en rad som hamnar längst ned i en lista säger inte att något gick vägen. Samma skäl som ordnar startskärmens projektkort.
 
 **Ett projekt utan kvitton visar inget belopp, och aldrig *0 kr*.** Hittat av agenten 2026-11-13; raden har sagt *0 kr* sedan projektflödet byggdes. Noll kronor är ett mätt tal och påstår att åtgärden inte kostade något. Sanningen är att vi inte har kvittona. I beloppets plats står en dämpad **"Inga kvitton än"**, som säger vad som fattas och vad hon kan göra åt det.
 
@@ -2161,6 +2173,8 @@ Tomläget är alltså det vanliga: en rubrik som är en uppmaning, en till två 
 **Att ändra ett projekt är i dag en enda lång skärm.** Namnet, delen av bostaden, hela frågeträdet, merkostnaden och kvittona ligger på rad, och den som vill rätta ett ord scrollar förbi allt annat. Uppmätt av Kristoffer på skärmen 2026-11-19: *"väldigt stökigt"*.
 
 **Projektsidan blir i stället en läsvy med tre delar, var och en med sin egen *Ändra*.** Det är samma form som inställningssidan redan har – *Bostaden* och *Förvärvet* med var sin länk – och den formen finns just för att en sida med många uppgifter inte ska bli ett formulär man måste ta sig igenom.
+
+**De tre delarnas rubriker ser likadana ut.** *KVITTONA* ritades 2026-11-19 som liten spärrad versal medan de andra två var vanliga rubriker — den gamla sektionsetiketten som överlevde delningen. Tre delar av samma rang har samma form.
 
 | Del | Innehåller | Ändras i |
 |---|---|---|
@@ -2197,6 +2211,10 @@ Tomläget är alltså det vanliga: en rubrik som är en uppmaning, en till två 
 **Inuti ett flöde betyder *Avbryt* något annat: att lämna flödet.** Det är *Tillbaka* som flyttar ett steg. Avbryter hon försäljningens skickfråga hamnar hon därför i underlaget, varifrån flödet startades, och inte på föregående steg. **De två orden får aldrig byta betydelse mellan två flöden.**
 
 **Och *Frågorna* nådd från underlagets *Återstår* ska återvända dit.** I dag leder *Avbryt* till projektsidan oavsett varifrån hon kom. Det är samma brist som *Välj bland dina kvitton* hade, och den rättas på samma sätt.
+
+**Kvittoraden ser likadan ut på *Kvittona* som på projektsidan.** Uppmätt 2026-11-19: raden tappade kursiven och bilagemärket en skärm bort. Uppräkningen under *Anteckningen får två rader* gäller nu **fyra** ställen — kryssrutelistan, kvittolistan, *Senaste kvitton* och projektets kvittolista — och *Kvittona* visar samma rad som projektsidan, eftersom det är samma rad.
+
+**En skärm har en väg ut, och den heter samma sak hela vägen.** *Kvittona* hade både *← Renovering kök* i huvudet och *Tillbaka till projektet* längst ned. Två utgångar är i sin ordning på en lång skärm; **två olika ord för samma destination är det inte.** Båda bär projektets namn.
 
 **Att lyfta ut ett kvitto hör till *Kvittona*.** Det går redan från kvittots egen sida, via projektvalet, och det här är den andra riktningen av samma sak — precis som att välja till finns på båda hållen. **Kvittot lossas, det raderas inte**, och raden säger vart det tar vägen: tillbaka till kvitton utan projekt.
 
