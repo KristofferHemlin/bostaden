@@ -203,8 +203,8 @@ export function Listrad({
   /**
    * Statusraden – forsta raden under namnet – i kursiv (docs/design.md,
    * Kvittolistan, "Kvittoraden ska gå att skilja från nästa"). Den ar den
-   * enda raden som alltid finns, sa den markerar var varje rad borjar. Bara
-   * kvittolistan anvander den an.
+   * enda raden som alltid finns, sa den markerar var varje rad borjar.
+   * Kvittolistan, startskarmens sex senaste och projektets kvittolista.
    */
   kursivStatus?: boolean;
   /**
@@ -658,7 +658,10 @@ export function Skarm({
         {egnaKort ? (
           <div className="flex flex-col gap-4 sm:gap-5">{children}</div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-linje bg-yta-upphojd">
+          // --radens-yta som i Kort: bilagemarkets bakgrundsstreck laser den.
+          // Utan den foll strecket tillbaka pa currentColor, och snedstrecket
+          // pa projektsidan blev en tjock tegelrod bom (uppmatt 2026-11-17).
+          <div className="overflow-hidden rounded-xl border border-linje bg-yta-upphojd [--radens-yta:var(--yta-upphojd)]">
             {children}
           </div>
         )}

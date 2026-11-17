@@ -80,11 +80,13 @@ vi.mock("@/lib/dokumentavlasning/analysera", () => ({ analyseraDokumentbuffert: 
 const { renderToStaticMarkup } = await import("react-dom/server");
 const { default: KvittolistaSida } = await import("@/app/kostnad/page");
 const { default: Oversikt } = await import("@/app/page");
+const { default: ProjektSida } = await import("@/app/projekt/[id]/page");
 
 const ROT = process.cwd();
 
 const ANNA = "a0000000-0000-4000-8000-000000000001";
 const X = "b0000000-0000-4000-8000-00000000000a";
+const P = "c0000000-0000-4000-8000-00000000000a";
 const datum = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
 /** Markets tva etiketter, ordagrant ur docs/design.md – lases inne i testet. */
@@ -141,6 +143,9 @@ function seeda() {
     nybyggd_vid_forvarv: false,
   });
   db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: X, agarandel: 100 });
+  // Ett projekt som bostadens del av varje kvitto hör till – projektsidans
+  // egen kvittolista mäts med samma kvitton som de andra två skärmarna.
+  db.lagg("projekt", { id: P, bostad_id: X, namn: "Huset 2025", ar: 2025, atgardstyp: "nybyggnad" });
   for (const k of KVITTON) {
     const kostnad = db.lagg("kostnad", {
       bostad_id: X,
@@ -153,7 +158,8 @@ function seeda() {
       skapad_av: ANNA,
     });
     if (k.bilaga) db.lagg("bilaga", { kostnad_id: kostnad.id, sokvag: `x/${kostnad.id}.jpg`, filtyp: "image/jpeg" });
-    db.lagg("kostnadsrad", { kostnad_id: kostnad.id, artikel: k.leverantor, belopp: k.belopp - (k.privat ?? 0) });
+    const bostadens = db.lagg("kostnadsrad", { kostnad_id: kostnad.id, artikel: k.leverantor, belopp: k.belopp - (k.privat ?? 0) });
+    db.lagg("radfordelning", { kostnadsrad_id: bostadens.id, projekt_id: P, andel: 1 });
     if (k.privat) {
       const rad = db.lagg("kostnadsrad", { kostnad_id: kostnad.id, artikel: "Privat", belopp: k.privat });
       db.lagg("radfordelning", { kostnadsrad_id: rad.id, projekt_id: null, privat: true, andel: 1 });
@@ -200,6 +206,8 @@ beforeAll(async () => {
     css,
     renderToStaticMarkup(await Oversikt({ searchParams: Promise.resolve({}) } as Parameters<typeof Oversikt>[0])),
   );
+
+  SIDOR.projekt = sida(css, renderToStaticMarkup(await ProjektSida({ params: Promise.resolve({ id: P }) })));
 
   webblasare = await startaWebblasare(SIDOR, "kvittobo-kvittoraden-");
   adress = webblasare.adress;
@@ -534,6 +542,31 @@ describe("startskärmens sex senaste har samma rader", () => {
     for (const [i, rad] of rader.entries()) {
       const k = pa[i];
       console.log(`startskärmen, ${k.bilaga ? "med bilaga " : "utan bilaga"} | ${rad.rader.map((r) => `${r.text} [${r.stil}]`).join(" / ")} | yta ${rad.yta}`);
+      expect(rad.rader.map((r) => r.stil), `${k.anteckning}: raderna under rubriken`).toEqual(
+        rad.rader.map((_, j) => (j === 0 ? "italic" : "normal")),
+      );
+      provaMarket(rad, k.bilaga, etiketter, toner);
+    }
+  }, 60_000);
+});
+
+// docs/design.md, Kvittolistan: kursiven och bilagemärket gäller på tre
+// skärmar – kvittolistan, startskärmens sex senaste och projektets egen
+// kvittolista (den tredje skriven 2026-11-17). Varje kvitto ligger i
+// projektet, så alla tretton mäts, med och utan bilaga.
+describe("projektets egen kvittolista har samma rader", () => {
+  it("kursiv första rad och märket i det läge bilagan säger", async () => {
+    const etiketter = etiketterna();
+    await oppna("projekt");
+    const toner = { finns: await palett("--bilaga-finns"), saknas: await palett("--bilaga-saknas") };
+    // Förutsättningen: tonerna går att skilja åt, och båda lägena finns.
+    expect(toner.finns).not.toBe(toner.saknas);
+    expect(KVITTON.some((k) => k.bilaga) && KVITTON.some((k) => !k.bilaga)).toBe(true);
+    const rader = await matRader(KVITTON.map((k) => k.anteckning));
+    for (const [i, rad] of rader.entries()) {
+      const k = KVITTON[i];
+      expect(rad.rubrikStil, `${k.anteckning}: rubriken`).toBe("normal");
+      expect(rad.rader[0]?.text, `${k.anteckning}: första raden`).toBe(`${k.leverantor} · ${k.dag}`);
       expect(rad.rader.map((r) => r.stil), `${k.anteckning}: raderna under rubriken`).toEqual(
         rad.rader.map((_, j) => (j === 0 ? "italic" : "normal")),
       );

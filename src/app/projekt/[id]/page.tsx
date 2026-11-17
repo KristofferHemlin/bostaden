@@ -16,7 +16,7 @@ import {
   SEKUNDARKNAPP_KLASS,
   Skarm,
 } from "@/components/skarm";
-import { beloppForKostnad, projektSumma, rotForBelopp } from "@/doman/berakningar";
+import { arUtkast, beloppForKostnad, projektSumma, rotForBelopp } from "@/doman/berakningar";
 import { projektetsArText } from "@/lib/projektar";
 import {
   merkostnadBehoverBekraftas,
@@ -37,6 +37,7 @@ import { arGiltigtId } from "@/lib/giltigt-id";
 import { projektnamnKarta } from "@/doman/genomgang";
 import { hamtaProjektnamn } from "@/lib/projektnamn";
 import { hamtaValbaraKvitton } from "@/lib/valbara-kvitton";
+import { bilagemarke } from "@/lib/kvittolista";
 import { prisma } from "@/lib/prisma";
 import { upphovsrad } from "@/lib/samagande";
 import { antalMedlemmar, kravBostad } from "@/lib/session";
@@ -103,7 +104,10 @@ export default async function ProjektSida({
       bostad_id: bostadId,
       rader: { some: { fordelningar: { some: { projekt_id: id } } } },
     },
-    include: { rader: { include: { fordelningar: true } } },
+    include: {
+      rader: { include: { fordelningar: true } },
+      _count: { select: { bilagor: true } },
+    },
     orderBy: { betaldatum: "asc" },
   });
   const kostnader = kostnadRader.map(tillDomanKostnad);
@@ -319,6 +323,16 @@ export default async function ProjektSida({
                   // belopp utan att leta upp kvittot via Kvitton.
                   href={`/kostnad/${k.id}`}
                   status={notering ? [leverantor, datum].filter(Boolean).join(" · ") : (datum ?? "")}
+                  // Kursiv forsta rad och bilagemarket, som i kvittolistan och
+                  // pa startskarmen (docs/design.md, Kvittolistan). Samma
+                  // villkor som dar: utkast och kvitton som inte hor till
+                  // bostaden bar inget marke.
+                  kursivStatus
+                  bilaga={bilagemarke({
+                    arkiverad: original.arkiverad,
+                    utkast: arUtkast(original),
+                    antalBilagor: original._count.bilagor,
+                  })}
                   // Projektets summa ovan raknar kvittot; det ar underlaget
                   // (exporten, troskeln) som vantar pa betaldatumet.
                   underStatus={k.betaldatum ? undefined : "Obetald – räknas i underlaget när den är betald"}
