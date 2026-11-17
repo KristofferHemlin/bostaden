@@ -454,7 +454,7 @@ const VAGAR_MED_ID: Vag[] = [
     avslag: "fel",
   },
   // Lägg till kvitton – efterträdaren till genomgångens laggIHog.
-  { vag: "sida /projekt/[id]/kvitton", anrop: () => LaggTillKvittonSida(params(PX)), avslag: "sidan finns inte" },
+  { vag: "sida /projekt/[id]/kvitton", anrop: () => LaggTillKvittonSida({ ...params(PX), searchParams: Promise.resolve({}) }), avslag: "sidan finns inte" },
   {
     vag: "laggTillKvitton (annans projekt)",
     anrop: () => laggTillKvitton(START, formular({ projekt_id: PX, kostnad_ider: K3X })),

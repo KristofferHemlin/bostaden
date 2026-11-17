@@ -12,6 +12,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LyftUtKnapp } from "./lyft-ut";
+import { FRAN_KVITTONA } from "../fran";
 import { Listrad, Skarm } from "@/components/skarm";
 import { beloppForKostnad, projektSumma, rotForBelopp } from "@/doman/berakningar";
 import { projektnamnKarta } from "@/doman/genomgang";
@@ -143,7 +144,9 @@ export default async function KvittonaSida({
             följer med till sin del") – annars leder lanken till en tom lista. */}
         {antalValbara > 0 ? (
           <Link
-            href={`/projekt/${id}/kvitton`}
+            // Avbryt dar leder hit igen (docs/design.md, "Efter Avbryt går
+            // hon tillbaka dit hon kom ifrån").
+            href={`/projekt/${id}/kvitton?fran=${FRAN_KVITTONA}`}
             className="font-granssnitt text-sm text-text-primar underline underline-offset-2 hover:text-accent-mork"
           >
             Välj bland dina kvitton

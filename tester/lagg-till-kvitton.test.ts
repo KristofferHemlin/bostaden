@@ -210,7 +210,7 @@ describe("sidan", () => {
   }
 
   it("är samma lista som projektskapandets sista steg, rad för rad", async () => {
-    const lagg = await rendera(LaggTillSida({ params: Promise.resolve({ id: P }) }));
+    const lagg = await rendera(LaggTillSida({ params: Promise.resolve({ id: P }), searchParams: Promise.resolve({}) }));
     window.localStorage.setItem(utkastNyckel(X), JSON.stringify({
       steg: 4, namn: "Nytt golv", bostadsdelar: [],
       svar: { byggdeNytt: "ja", andradePlanlosning: "", nyttEllerBytt: "", battreEllerLiknande: "", merkostnad: null, likvardigtText: "", skickForvarv: "", motivering: "" },
@@ -228,7 +228,7 @@ describe("sidan", () => {
 
   it("merkostnadsfältet kommer när ett valt kvitto ger projektet ett belopp", async () => {
     seeda();
-    const s = await rendera(LaggTillSida({ params: Promise.resolve({ id: P }) }));
+    const s = await rendera(LaggTillSida({ params: Promise.resolve({ id: P }), searchParams: Promise.resolve({}) }));
     const falt = () =>
       [...s.div.querySelectorAll("label")]
         .find((l) => l.textContent?.startsWith(LIKVARDIGT_ETIKETT))
@@ -266,7 +266,7 @@ describe("sidan", () => {
     // Förutsättningen: kvittolistan har alla tre raderna.
     expect(iListan).toHaveLength(3);
 
-    const s = await rendera(LaggTillSida({ params: Promise.resolve({ id: P }) }));
+    const s = await rendera(LaggTillSida({ params: Promise.resolve({ id: P }), searchParams: Promise.resolve({}) }));
     const etikett = [...s.div.querySelectorAll("label")].find((l) => l.textContent?.includes("Kvitto med avdrag"));
     expect(etikett, "kvittot i kryssrutelistan").toBeTruthy();
     const iRutan = [...etikett!.querySelectorAll("span")]
@@ -328,7 +328,7 @@ describe("ROT-lydelsen gäller också här", () => {
     const div = document.createElement("div");
     document.body.appendChild(div);
     const rot = createRoot(div);
-    await act(async () => rot.render((await LaggTillSida({ params: Promise.resolve({ id: P }) })) as Parameters<typeof rot.render>[0]));
+    await act(async () => rot.render((await LaggTillSida({ params: Promise.resolve({ id: P }), searchParams: Promise.resolve({}) })) as Parameters<typeof rot.render>[0]));
     const ruta = [...div.querySelectorAll("label")].find((l) => l.textContent?.includes("Kvitto för köket"))!.querySelector("input")!;
     await act(async () => ruta.click());
     const label = [...div.querySelectorAll("label")].find((l) => l.textContent?.startsWith(LIKVARDIGT_ETIKETT));

@@ -22,12 +22,15 @@ const START: LaggTillKvittonResultat = {};
 
 export function LaggTillKvittonFormular({
   projektId,
+  tillbaka,
   projekt,
   beloppFore,
   rotFore,
   kvitton,
 }: {
   projektId: string;
+  /** Dit Avbryt leder: dar hon kom ifran. Sparandet leder till projektet. */
+  tillbaka: string;
   projekt: { atgardstyp: string | null; battre_kvalitet: boolean | null; merkostnad: number | null };
   /** Projektets belopp innan nagot lagts till, i oren. */
   beloppFore: number;
@@ -71,8 +74,8 @@ export function LaggTillKvittonFormular({
         <p className={HJALPTEXT_KLASS}>
           Alla kvitton du lagt in hör redan till ett projekt.
         </p>
-        <Link href={`/projekt/${projektId}`} className={`${PRIMARKNAPP_KLASS} mt-4`}>
-          Tillbaka till projektet
+        <Link href={tillbaka} className={`${PRIMARKNAPP_KLASS} mt-4`}>
+          Tillbaka
         </Link>
       </div>
     );
@@ -122,7 +125,7 @@ export function LaggTillKvittonFormular({
         {pagar ? "Sparar…" : "Lägg till"}
       </button>
       <Link
-        href={`/projekt/${projektId}`}
+        href={tillbaka}
         className="text-center font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
       >
         Avbryt

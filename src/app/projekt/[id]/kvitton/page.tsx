@@ -4,6 +4,7 @@
 // steg (src/lib/valbara-kvitton.ts, src/components/kvitto-kryssruta.tsx).
 
 import { notFound } from "next/navigation";
+import { FRAN_KVITTONA } from "./fran";
 import { LaggTillKvittonFormular } from "./formular";
 import { Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
@@ -20,10 +21,13 @@ export const dynamic = "force-dynamic";
 
 export default async function LaggTillKvittonSida({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ fran?: string }>;
 }) {
   const { id } = await params;
+  const { fran } = await searchParams;
   if (!arGiltigtId(id)) notFound();
   const { bostadId } = await kravBostad();
 
@@ -40,15 +44,24 @@ export default async function LaggTillKvittonSida({
     hamtaProjektnamn(bostadId, [projekt]),
   ]);
   const visningsnamn = namn.get(id) ?? projekt.namn;
+  // Ett avbrott lamnar henne dar hon stod; ett sparande leder till
+  // projektets sida, dar den nya summan syns (docs/design.md, "Att välja
+  // till kvitton slutar på projektsidan, men bara när något sparats").
+  // Bakåt i sidhuvudet ar ocksa ett avbrott och gar samma vag.
+  const tillbaka =
+    fran === FRAN_KVITTONA
+      ? { href: `/projekt/${id}/kvitton/andra`, text: "Kvittona" }
+      : { href: `/projekt/${id}`, text: visningsnamn };
 
   return (
     <Skarm
       bostadsnamn={bostadHeader(bostad).bostadsnamn}
       rubrik="Välj bland dina kvitton"
-      bakLank={{ href: `/projekt/${id}`, text: visningsnamn }}
+      bakLank={tillbaka}
     >
       <LaggTillKvittonFormular
         projektId={id}
+        tillbaka={tillbaka.href}
         projekt={projekt}
         beloppFore={beloppFore.belopp}
         rotFore={beloppFore.harRot}

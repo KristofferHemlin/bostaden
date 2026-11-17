@@ -55,6 +55,8 @@ import ProjektSida from "@/app/projekt/[id]/page";
 import RedigeraSida from "@/app/projekt/[id]/redigera/page";
 import VadOchVarSida from "@/app/projekt/[id]/vad-och-var/page";
 import KvittonaSida from "@/app/projekt/[id]/kvitton/andra/page";
+import ValjSida from "@/app/projekt/[id]/kvitton/page";
+import { laggTillKvitton } from "@/app/projekt/[id]/kvitton/actions";
 import { merkostnadBehoverBekraftas } from "@/doman/atgardsberakning";
 import { BOSTADSDEL_FRAGA } from "@/doman/bostadsdel";
 import { merkostnadUpplysning } from "@/doman/regeltext";
@@ -487,7 +489,7 @@ describe("Kvittona: att lyfta ut ett kvitto", () => {
     f.set("kostnad_id", fonster);
     await lyftUtKvitto({}, f);
     const med = await skarmen();
-    expect(lankar(med.div, "Välj bland dina kvitton")).toEqual([`/projekt/${P}/kvitton`]);
+    expect(lankar(med.div, "Välj bland dina kvitton")).toEqual([`/projekt/${P}/kvitton?fran=kvittona`]);
     med.stang();
   });
 });
@@ -512,5 +514,75 @@ describe("varje skärm heter som sin del, och bakåt heter projektet", () => {
     expect(texter, "bakåtlänken").toContain("Bytte fönster");
     expect(texter).not.toContain(titel);
     s.stang();
+  });
+});
+
+// docs/design.md, "Att välja till kvitton slutar på projektsidan, men bara
+// när något sparats": ett avbrott lämnar henne där hon stod, ett sparande får
+// flytta henne dit resultatet syns. Bakåt i sidhuvudet är också ett avbrott.
+describe("Välj bland dina kvitton: tillbaka dit hon kom ifrån, efter ett sparande till projektet", () => {
+  const valj = (fran?: string) =>
+    rendera(ValjSida({ params: Promise.resolve({ id: P }), searchParams: Promise.resolve(fran === undefined ? {} : { fran }) }));
+
+  /** Sidhuvudets bakåtlänk: texten utan pilen, och vart den går. */
+  function bakat(div: HTMLElement): [string, string | null][] {
+    return [...div.querySelectorAll("a")]
+      .filter((a) => a.textContent!.startsWith("←"))
+      .map((a) => [a.textContent!.replace(/^←\s*/, ""), a.getAttribute("href")]);
+  }
+
+  async function lyftUtFonstret() {
+    const f = new FormData();
+    f.set("projekt_id", P);
+    f.set("kostnad_id", fonster);
+    await lyftUtKvitto({}, f);
+  }
+
+  it("från Kvittona: Avbryt och bakåt leder till Kvittona", async () => {
+    await lyftUtFonstret();
+    const s = await valj("kvittona");
+    expect(lankar(s.div, "Avbryt")).toEqual([`/projekt/${P}/kvitton/andra`]);
+    expect(bakat(s.div)).toEqual([["Kvittona", `/projekt/${P}/kvitton/andra`]]);
+    s.stang();
+  });
+
+  it("från projektsidan: Avbryt och bakåt leder till projektet", async () => {
+    await lyftUtFonstret();
+    const s = await valj();
+    expect(lankar(s.div, "Avbryt")).toEqual([`/projekt/${P}`]);
+    expect(bakat(s.div)).toEqual([["Bytte fönster", `/projekt/${P}`]]);
+    s.stang();
+  });
+
+  it("ett okänt ursprung leder till projektet – parametern pekar aldrig någon annanstans", async () => {
+    await lyftUtFonstret();
+    for (const fran of ["https://exempel.se", "/kostnad", "Kvittona"]) {
+      const s = await valj(fran);
+      expect(lankar(s.div, "Avbryt"), fran).toEqual([`/projekt/${P}`]);
+      expect(bakat(s.div), fran).toEqual([["Bytte fönster", `/projekt/${P}`]]);
+      s.stang();
+    }
+  });
+
+  it("utan något att välja går Tillbaka också dit hon kom ifrån", async () => {
+    const s = await valj("kvittona");
+    // Förutsättningen: inget kvitto är valbart, så listan är tom.
+    expect(s.div.querySelectorAll('input[type="checkbox"]')).toHaveLength(0);
+    expect(lankar(s.div, "Tillbaka")).toEqual([`/projekt/${P}/kvitton/andra`]);
+    s.stang();
+  });
+
+  it("efter ett sparande hamnar hon på projektet, också när hon kom från Kvittona", async () => {
+    await lyftUtFonstret();
+    const s = await valj("kvittona");
+    const ruta = [...s.div.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
+    expect(ruta, "fönsterkvittot går att välja").toHaveLength(1);
+    await act(async () => ruta[0].click());
+    const knappen = [...s.div.querySelectorAll("button")].find((b) => b.textContent === "Lägg till")!;
+    const f = new FormData(knappen.closest("form")!);
+    s.stang();
+    // Projektet har ändrats sedan merkostnaden besvarades; svaret ges om på
+    // Frågorna. Här prövas bara vart sparandet leder.
+    await expect(laggTillKvitton({}, f)).rejects.toThrow(`NEXT_REDIRECT /projekt/${P}`);
   });
 });
