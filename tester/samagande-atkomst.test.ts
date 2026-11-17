@@ -357,7 +357,7 @@ const VAGAR_MED_ID: Vag[] = [
     avslag: "sidan finns inte",
   },
   { vag: "sida /projekt/[id]", anrop: () => ProjektSida(params(PX)), avslag: "sidan finns inte" },
-  { vag: "sida /projekt/[id]/redigera", anrop: () => RedigeraProjektSida(params(PX)), avslag: "sidan finns inte" },
+  { vag: "sida /projekt/[id]/redigera", anrop: () => RedigeraProjektSida({ ...params(PX), searchParams: Promise.resolve({}) }), avslag: "sidan finns inte" },
 
   // Bilagornas adress – direkta anrop
   { vag: "GET /bilaga/[id] (visning)", anrop: () => hamtaBilaga(BX), avslag: "404", foljer: "egen" },

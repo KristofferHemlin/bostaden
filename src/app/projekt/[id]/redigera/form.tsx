@@ -29,6 +29,7 @@ const START: ProjektResultat = {};
 
 export function RedigeraProjektForm({
   projektId,
+  tillbaka,
   varden,
   medNamn,
   projektetsBelopp,
@@ -38,6 +39,8 @@ export function RedigeraProjektForm({
   skickForsaljning,
 }: {
   projektId: string;
+  /** Dit Avbryt leder: dar hon kom ifran. Sparandet leder till projektet. */
+  tillbaka: string;
   varden: FragetradetVarden;
   /** Namnfragan, bara for ett projekt utan svar – se ovan. */
   medNamn: boolean;
@@ -120,7 +123,7 @@ export function RedigeraProjektForm({
       </button>
 
       <Link
-        href={`/projekt/${projektId}`}
+        href={tillbaka}
         className="text-center font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
       >
         Avbryt

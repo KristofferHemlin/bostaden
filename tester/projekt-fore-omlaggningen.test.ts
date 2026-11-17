@@ -150,7 +150,7 @@ describe("redigeringen", () => {
     const div = document.createElement("div");
     document.body.appendChild(div);
     const rot = createRoot(div);
-    await act(async () => rot.render(await RedigeraSida({ params: Promise.resolve({ id }) })));
+    await act(async () => rot.render(await RedigeraSida({ params: Promise.resolve({ id }), searchParams: Promise.resolve({}) })));
     const kopia = div.cloneNode(true) as HTMLDivElement;
     act(() => rot.unmount());
     div.remove();
@@ -201,7 +201,10 @@ describe("listan och underlaget", () => {
   it("underlagets Återstår leder från det gamla projektet till redigeringen", async () => {
     const s = await dom(ExportSida());
     // En rad per år, som allt i underlaget: kvittona är betalda 2024 och 2025.
-    expect(lankar(s, NAMNET)).toEqual([`/projekt/${HOG}/redigera`, `/projekt/${HOG}/redigera`]);
+    // Med ursprunget, så att Avbryt och bakåt leder hit igen (docs/design.md,
+    // "Avbryt lämnar henne där hon stod").
+    const dit = `/projekt/${HOG}/redigera?fran=aterstar`;
+    expect(lankar(s, NAMNET)).toEqual([dit, dit]);
     expect(s.innerHTML).not.toContain('href="/genomgang');
   });
 });

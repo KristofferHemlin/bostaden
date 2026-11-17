@@ -195,7 +195,7 @@ describe("redigeringen", () => {
     const div = document.createElement("div");
     document.body.appendChild(div);
     const rot = createRoot(div);
-    await act(async () => rot.render(await RedigeraSida({ params: Promise.resolve({ id: P }) })));
+    await act(async () => rot.render(await RedigeraSida({ params: Promise.resolve({ id: P }), searchParams: Promise.resolve({}) })));
     // Faltet hittas pa etiketten hon laser, inte pa en platshallare.
     const falt =
       [...div.querySelectorAll("label")]

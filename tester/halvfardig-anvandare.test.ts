@@ -173,7 +173,7 @@ describe("vad en halvfärdig användare ser", () => {
     const s = await sida(ExportSida());
     inget(s, "underlaget");
     const lankar = [...s.querySelectorAll("a")].map((a) => [a.textContent, a.getAttribute("href")]);
-    expect(lankar).toContainEqual([NAMNET, `/projekt/${GAMMAL}/redigera`]);
+    expect(lankar).toContainEqual([NAMNET, `/projekt/${GAMMAL}/redigera?fran=aterstar`]);
     expect(lankar).toContainEqual(["Skapa projekt", "/projekt/nytt"]);
     expect(s.textContent).toContain("Färg till sovrummet");
   });
@@ -187,7 +187,7 @@ describe("det gamla projektet", () => {
     const svara = [...fore.querySelectorAll("a")].find((a) => a.textContent === "Svara på frågorna");
     expect(svara?.getAttribute("href")).toBe(`/projekt/${GAMMAL}/redigera`);
 
-    const redigera = await sida(RedigeraSida({ params: Promise.resolve({ id: GAMMAL }) }));
+    const redigera = await sida(RedigeraSida({ params: Promise.resolve({ id: GAMMAL }), searchParams: Promise.resolve({}) }));
     expect([...redigera.querySelectorAll("h1")].map((x) => x.textContent)).toEqual(["Berätta vad du gjort"]);
 
     const f = new FormData();

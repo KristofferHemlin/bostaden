@@ -92,6 +92,7 @@ import {
   type Aterstarrad,
 } from "@/lib/aterstar";
 import { vantandeUnderlag, type VantandeRad, type VantandeUnderlag } from "@/doman/vantande-underlag";
+import { FRAN_ATERSTAR } from "@/app/projekt/[id]/redigera/fran";
 
 const ANDELSFRAGAN_FRAN_EXPORT = `${UPPGIFTENS_SOKVAG.agarandel}?fran=export`;
 
@@ -745,7 +746,10 @@ function VantandeSumma({ underrad }: { underrad: string }) {
  * feltypat rattas pa kvittots skarm, ett utkast i kompletteringen.
  */
 function aterstarHref(r: Aterstarrad): string | undefined {
-  if (r.orsakKod === "vantar_pa_fragor" && r.projektId) return `/projekt/${r.projektId}/redigera`;
+  // Ursprunget med i adressen, sa att Avbryt och bakåt leder hit igen
+  // (docs/design.md, "Avbryt lämnar henne där hon stod").
+  if (r.orsakKod === "vantar_pa_fragor" && r.projektId)
+    return `/projekt/${r.projektId}/redigera?fran=${FRAN_ATERSTAR}`;
   if (r.orsakKod === "utan_betaldatum" || r.orsakKod === "fore_tilltradet") return `/kostnad/${r.kostnadId}`;
   if (r.orsakKod === "utan_belopp") return `/kostnad/nytt?utkast=${r.kostnadId}`;
   return undefined;

@@ -8,6 +8,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { projektnamnKarta } from "@/doman/genomgang";
+import { FRAN_ATERSTAR } from "./fran";
 import { RedigeraProjektForm } from "./form";
 import { Skarm } from "@/components/skarm";
 import {
@@ -55,10 +56,13 @@ export const dynamic = "force-dynamic";
 
 export default async function RedigeraProjektSida({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ fran?: string }>;
 }) {
   const { id } = await params;
+  const { fran } = await searchParams;
   // Ett id som inte ar en uuid finns inte – "finns inte", inte felgransen
   // (src/lib/giltigt-id.ts).
   if (!arGiltigtId(id)) notFound();
@@ -77,6 +81,14 @@ export default async function RedigeraProjektSida({
   if (!projekt) notFound();
 
   const { bostadsnamn } = bostadHeader(bostad);
+  // Avbryt och bakåt lamnar henne dar hon stod: underlaget nar hon kom fran
+  // dess Återstår, annars projektets sida. Ett sparande leder alltid till
+  // projektet, dar svaret syns (docs/design.md, "Avbryt lämnar henne där hon
+  // stod"; "Och Frågorna nådd från underlagets Återstår ska återvända dit").
+  const tillbaka =
+    fran === FRAN_ATERSTAR
+      ? { href: "/export", text: "Deklarationsunderlag" }
+      : { href: `/projekt/${id}`, text: projektnamnKarta([projekt], kostnadRader).get(id) ?? projekt.namn };
   const kostnader = kostnadRader.map(tillDomanKostnad);
 
   // Projektets belopp (fore ROT) for spärren pa merkostnaden, och summan
@@ -101,10 +113,11 @@ export default async function RedigeraProjektSida({
       rubrik={rubrikFor(projekt.atgardstyp)}
       // Ett tomt namn skrivs aldrig ut rakt av (docs/design.md, "Projekt som
       // skapades före omläggningen").
-      bakLank={{ href: `/projekt/${id}`, text: projektnamnKarta([projekt], kostnadRader).get(id) ?? projekt.namn }}
+      bakLank={tillbaka}
     >
       <RedigeraProjektForm
         projektId={id}
+        tillbaka={tillbaka.href}
         // Fraga 1 hor till Vad och var – utom for ett projekt utan svar, dar
         // hela tradet stalls har (docs/design.md, "Projekt som skapades före
         // omläggningen").

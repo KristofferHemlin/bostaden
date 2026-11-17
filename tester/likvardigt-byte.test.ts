@@ -238,7 +238,7 @@ async function redigeringen(): Promise<{ falt: HTMLInputElement | null; hjalp: s
   const div = document.createElement("div");
   document.body.appendChild(div);
   const rot = createRoot(div);
-  await act(async () => rot.render(await RedigeraSida({ params: Promise.resolve({ id: P }) })));
+  await act(async () => rot.render(await RedigeraSida({ params: Promise.resolve({ id: P }), searchParams: Promise.resolve({}) })));
   const label = [...div.querySelectorAll("label")].find((l) => l.textContent?.startsWith(LIKVARDIGT_ETIKETT));
   const form = div.querySelector<HTMLFormElement>("form")!;
   const resultat = {

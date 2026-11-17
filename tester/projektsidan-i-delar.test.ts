@@ -334,7 +334,7 @@ describe("Vad och var", () => {
 });
 
 describe("Frågorna", () => {
-  const skarmen = (id = P) => rendera(RedigeraSida({ params: Promise.resolve({ id }) }));
+  const skarmen = (id = P) => rendera(RedigeraSida({ params: Promise.resolve({ id }), searchParams: Promise.resolve({}) }));
 
   it("har frågeträdet, men inte namnet och inte delen av bostaden", async () => {
     const s = await skarmen();
@@ -500,7 +500,7 @@ describe("Kvittona: att lyfta ut ett kvitto", () => {
 describe("varje skärm heter som sin del, och bakåt heter projektet", () => {
   it.each([
     ["Vad och var", () => VadOchVarSida({ params: Promise.resolve({ id: P }) })],
-    ["Frågorna", () => RedigeraSida({ params: Promise.resolve({ id: P }) })],
+    ["Frågorna", () => RedigeraSida({ params: Promise.resolve({ id: P }), searchParams: Promise.resolve({}) })],
     ["Kvittona", () => KvittonaSida({ params: Promise.resolve({ id: P }) })],
   ] as const)("%s", async (titel, vy) => {
     const s = await rendera(vy());
@@ -584,5 +584,41 @@ describe("Välj bland dina kvitton: tillbaka dit hon kom ifrån, efter ett spara
     // Projektet har ändrats sedan merkostnaden besvarades; svaret ges om på
     // Frågorna. Här prövas bara vart sparandet leder.
     await expect(laggTillKvitton({}, f)).rejects.toThrow(`NEXT_REDIRECT /projekt/${P}`);
+  });
+});
+
+// docs/design.md, "Och Frågorna nådd från underlagets Återstår ska återvända
+// dit": samma form som Välj bland dina kvitton – ursprunget i adressen, bara
+// det kända värdet godtas, och ett sparande leder till projektet.
+describe("Frågorna från Återstår: Avbryt och bakåt till underlaget, sparandet till projektet", () => {
+  const fragorna = (id: string, fran?: string) =>
+    rendera(RedigeraSida({ params: Promise.resolve({ id }), searchParams: Promise.resolve(fran === undefined ? {} : { fran }) }));
+
+  function bakat(div: HTMLElement): [string, string | null][] {
+    return [...div.querySelectorAll("a")]
+      .filter((a) => a.textContent!.startsWith("←"))
+      .map((a) => [a.textContent!.replace(/^←\s*/, ""), a.getAttribute("href")]);
+  }
+
+  it("från Återstår: Avbryt och bakåt leder till underlaget", async () => {
+    const s = await fragorna(GAMMALT, "aterstar");
+    expect(lankar(s.div, "Avbryt")).toEqual(["/export"]);
+    expect(bakat(s.div)).toEqual([["Deklarationsunderlag", "/export"]]);
+    s.stang();
+  });
+
+  it("utan ursprung, eller med ett okänt: till projektet", async () => {
+    for (const fran of [undefined, "https://exempel.se", "/kostnad", "kvittona"]) {
+      const s = await fragorna(P, fran);
+      expect(lankar(s.div, "Avbryt"), String(fran)).toEqual([`/projekt/${P}`]);
+      expect(bakat(s.div), String(fran)).toEqual([["Bytte fönster", `/projekt/${P}`]]);
+      s.stang();
+    }
+  });
+
+  it("ett sparande från Återstår leder till projektet, där svaret syns", async () => {
+    const f = new FormData();
+    for (const [k, v] of Object.entries({ projekt_id: GAMMALT, namn: "Nytt golv", byggde_nytt: "ja" })) f.set(k, v);
+    await expect(redigeraProjekt({}, f)).rejects.toThrow(`NEXT_REDIRECT /projekt/${GAMMALT}`);
   });
 });

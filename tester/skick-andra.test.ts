@@ -147,7 +147,7 @@ afterEach(() => {
 
 /** Redigeringens formular, som sidan bygger det, renderat i en DOM. */
 async function redigering() {
-  const vy = await RedigeraProjektSida({ params: Promise.resolve({ id: FASAD }) });
+  const vy = await RedigeraProjektSida({ params: Promise.resolve({ id: FASAD }), searchParams: Promise.resolve({}) });
   const [formular] = elementFor(vy, "RedigeraProjektForm");
   expect(formular, "sidan visar inte formularet").toBeTruthy();
   await act(async () => rot.render(createElement(RedigeraProjektForm, formular.props as never)));
