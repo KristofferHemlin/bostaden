@@ -220,11 +220,12 @@ export async function redigeraProjekt(
   // Att spara svaret – aven oforandrat – ar att bekrafta det: beloppet sparas
   // pa nytt, och en tidigare upplysning om att projektet andrats forsvinner.
   const { belopp, harRot } = await hamtaProjektetsBelopp(bostadId, id);
-  // Namnet hor till delen Vad och var (docs/design.md, "Projektsidan ändras
-  // i delar") och skickas har bara for ett projekt utan svar, dar fragan 1
-  // stalls med resten av tradet. Saknas faltet ror sparandet inte namnet.
+  // Namnet hor till delen Vad och var (docs/design.md, "Varje del sparar
+  // bara sina egna fält, också på servern"). Bara ett projekt utan svar far
+  // det har, dar fraga 1 stalls med resten av tradet. Ett besvarat projekts
+  // namn skrivs aldrig harifran – inte ens om faltet skulle skickas med.
   let namn: string | undefined;
-  if (formData.has("namn")) {
+  if (projekt.atgardstyp === null && formData.has("namn")) {
     const n = tolkaNamn(formData);
     if (n === null) return NAMN_SAKNAS;
     namn = n;

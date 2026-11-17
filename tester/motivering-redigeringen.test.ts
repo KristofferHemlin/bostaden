@@ -238,6 +238,9 @@ describe("att spara redigeringen", () => {
       nytt_eller_bytt: "bytt", battre_eller_liknande: "liknande", skick_forvarv: "1",
     })) f.set(k, v);
     await expect(redigeraProjekt({}, f)).rejects.toThrow("NEXT_REDIRECT");
-    expect(h.db.tabell("projekt")[0]).toMatchObject({ namn: "Måla om sovrummet", motivering: SVARET });
+    // Namnet hör till Vad och var och skrivs inte härifrån för ett besvarat
+    // projekt, inte ens när fältet skickas (docs/design.md, "Varje del sparar
+    // bara sina egna fält, också på servern").
+    expect(h.db.tabell("projekt")[0]).toMatchObject({ namn: "Måla sovrummet", motivering: SVARET });
   });
 });

@@ -69,11 +69,17 @@ const datum = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
 const design = () => readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
 
-/** Rubrikerna ur design.md: utan svar, med svar. */
+/** Rubrikerna ur design.md: utan svar ("Undantaget är ett projekt utan
+ *  svar"), och med svar – skärmens namn är delens, och frågeträdets del är
+ *  den andra av de tre ("Skärmen heter samma sak som delen den ändrar").
+ *  Raden under "Projekt som skapades före omläggningen" säger fortfarande
+ *  "Ändra projekt" för ett besvarat projekt; den är äldre än delningen och
+ *  läses inte här. */
 function rubrikerna(): { utan: string; med: string } {
-  const m = design().match(/inget svar heter sidan \*\*"([^"]+)"\*\*; har det ett heter den \*\*"([^"]+)"\*\*/);
-  if (!m) throw new Error("design.md saknar redigeringens två rubriker");
-  return { utan: m[1], med: m[2] };
+  const utan = design().match(/Undantaget är ett projekt utan svar\.\*\* Då heter skärmen fortfarande \*\*"([^"]+)"\*\*/);
+  const delar = design().match(/\*\*Skärmen heter samma sak som delen den ändrar\.\*\* \*([^*]+)\*, \*([^*]+)\*, \*([^*]+)\*\./);
+  if (!utan || !delar) throw new Error("design.md saknar skärmarnas rubriker");
+  return { utan: utan[1], med: delar[2] };
 }
 
 function seeda() {
@@ -157,7 +163,7 @@ describe("redigeringen", () => {
     expect(lankar(s, `← ${NAMNET}`).concat(lankar(s, NAMNET))).toEqual([`/projekt/${HOG}`]);
   });
 
-  it("heter Ändra projekt när svaret finns", async () => {
+  it("heter Frågorna när svaret finns – som delen den ändrar", async () => {
     const s = await rendera(KLAR);
     expect([...s.querySelectorAll("h1")].map((x) => x.textContent)).toEqual([rubrikerna().med]);
   });

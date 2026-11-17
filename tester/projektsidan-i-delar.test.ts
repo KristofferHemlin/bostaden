@@ -187,11 +187,11 @@ const svaren = (id = P) => {
 };
 
 describe("läsvyn: tre delar med var sin Ändra", () => {
-  it("Vad och var, Frågorna och Kvitton, var och en med en Ändra till sin egen skärm", async () => {
+  it("Vad och var, Frågorna och Kvittona, var och en med en Ändra till sin egen skärm", async () => {
     const s = await sidan();
     expect(lankar(del(s.div, "Vad och var"), "Ändra")).toEqual([`/projekt/${P}/vad-och-var`]);
     expect(lankar(del(s.div, "Frågorna"), "Ändra")).toEqual([`/projekt/${P}/redigera`]);
-    expect(lankar(del(s.div, "Kvitton"), "Ändra")).toEqual([`/projekt/${P}/kvitton/andra`]);
+    expect(lankar(del(s.div, "Kvittona"), "Ändra")).toEqual([`/projekt/${P}/kvitton/andra`]);
     // Och inget annat på sidan heter Ändra – det gamla Ändra projektet är borta.
     expect(lankar(s.div, "Ändra")).toHaveLength(3);
     expect(lankar(s.div, "Ändra projektet")).toEqual([]);
@@ -221,7 +221,7 @@ describe("läsvyn: tre delar med var sin Ändra", () => {
     const ruta = etikett!.closest("section")!;
     expect(ruta.querySelector("h2"), "rutan är ingen del").toBeNull();
     expect(lankar(ruta, "Ändra")).toEqual([]);
-    for (const t of ["Vad och var", "Frågorna", "Kvitton"]) {
+    for (const t of ["Vad och var", "Frågorna", "Kvittona"]) {
       expect(rader(del(s.div, t)).some((r) => r.startsWith("Räknas som")), t).toBe(false);
     }
     s.stang();
@@ -244,8 +244,8 @@ describe("läsvyn: tre delar med var sin Ändra", () => {
 
   it("ett projekt utan kvitton har ingen Ändra under Kvitton – det finns inget att lyfta ut", async () => {
     const s = await sidan(GAMMALT);
-    expect(del(s.div, "Kvitton").textContent).toContain("Inga kvitton i projektet än.");
-    expect(lankar(del(s.div, "Kvitton"), "Ändra")).toEqual([]);
+    expect(del(s.div, "Kvittona").textContent).toContain("Inga kvitton i projektet än.");
+    expect(lankar(del(s.div, "Kvittona"), "Ändra")).toEqual([]);
     s.stang();
   });
 });
@@ -313,6 +313,17 @@ describe("Vad och var", () => {
     expect(delarna()).toEqual(["FONSTER"]);
   });
 
+  // docs/design.md: "Den står sist på skärmen och aldrig intill Spara."
+  it("Ta bort projektet står sist, med Avbryt mellan den och Spara", async () => {
+    const s = await rendera(VadOchVarSida({ params: Promise.resolve({ id: GAMMALT }) }));
+    const kontroller = [...s.div.querySelectorAll("main button, main a")].map((e) => e.textContent);
+    const i = kontroller.indexOf("Ta bort projektet");
+    expect(i, "knappen Ta bort projektet").toBeGreaterThanOrEqual(0);
+    expect(i, "sist på skärmen").toBe(kontroller.length - 1);
+    expect(kontroller.slice(-3)).toEqual(["Spara ändringar", "Avbryt", "Ta bort projektet"]);
+    s.stang();
+  });
+
   it("borttagningen ligger här, och säger vilka kvitton som hindrar den", async () => {
     const s = await skarmen();
     expect(s.div.textContent).toContain("Projektet går inte att ta bort så länge kvitton är kopplade hit.");
@@ -358,6 +369,33 @@ describe("Frågorna", () => {
     expect(rader(del(v.div, "Frågorna"))).toContain("Skick vid förvärvet | 2 – Ganska bra skick");
     v.stang();
   });
+
+  // docs/design.md: "det ska gälla även om fältet skulle skickas med".
+  it("ett besvarat projekts namn skrivs aldrig härifrån, inte ens när fältet skickas", async () => {
+    const s = await skarmen();
+    const f = formular(s.div);
+    s.stang();
+    expect(f.has("namn"), "förutsättningen: skärmen skickar inget namn").toBe(false);
+    f.set("namn", "Något annat");
+    await expect(redigeraProjekt({}, f)).rejects.toThrow(`NEXT_REDIRECT /projekt/${P}`);
+    expect(projektet().namn).toBe("Bytte fönster");
+    // Ett tomt namn stoppar inte heller sparandet – fältet hör inte hit.
+    f.set("namn", "");
+    await expect(redigeraProjekt({}, f)).rejects.toThrow(`NEXT_REDIRECT /projekt/${P}`);
+    expect(projektet().namn).toBe("Bytte fönster");
+  });
+
+  it("ett projekt utan svar sparar namnet här, med resten av trädet", async () => {
+    const f = new FormData();
+    for (const [k, v] of Object.entries({ projekt_id: GAMMALT, namn: "Nytt golv", byggde_nytt: "ja" })) f.set(k, v);
+    await expect(redigeraProjekt({}, f)).rejects.toThrow(`NEXT_REDIRECT /projekt/${GAMMALT}`);
+    expect(projektet(GAMMALT)).toMatchObject({ namn: "Nytt golv", atgardstyp: "nybyggnad" });
+    // Nu har projektet svar; ett tomt namn prövas på ett som ännu saknar dem.
+    seeda();
+    f.set("namn", "");
+    expect(await redigeraProjekt({}, f)).toEqual({ fel: "Skriv vad du gjorde.", falt: "namn" });
+  });
+
 
   it("ett projekt utan svar får namnfrågan här, med resten av trädet", async () => {
     const s = await skarmen(GAMMALT);
@@ -451,5 +489,28 @@ describe("Kvittona: att lyfta ut ett kvitto", () => {
     const med = await skarmen();
     expect(lankar(med.div, "Välj bland dina kvitton")).toEqual([`/projekt/${P}/kvitton`]);
     med.stang();
+  });
+});
+
+// docs/design.md, "Skärmen heter samma sak som delen den ändrar", och
+// Tryckytor: bakåt heter destinationen. Alla tre leder tillbaka till
+// projektets sida, som heter som projektet – aldrig som skärmen man står på.
+describe("varje skärm heter som sin del, och bakåt heter projektet", () => {
+  it.each([
+    ["Vad och var", () => VadOchVarSida({ params: Promise.resolve({ id: P }) })],
+    ["Frågorna", () => RedigeraSida({ params: Promise.resolve({ id: P }) })],
+    ["Kvittona", () => KvittonaSida({ params: Promise.resolve({ id: P }) })],
+  ] as const)("%s", async (titel, vy) => {
+    const s = await rendera(vy());
+    expect([...s.div.querySelectorAll("h1")].map((e) => e.textContent)).toEqual([titel]);
+    // Delen på läsvyn har samma namn.
+    const v = await sidan();
+    expect(() => del(v.div, titel)).not.toThrow();
+    v.stang();
+    const bak = [...s.div.querySelectorAll("a")].filter((a) => a.getAttribute("href") === `/projekt/${P}`);
+    const texter = bak.map((a) => a.textContent!.replace(/^←\s*/, ""));
+    expect(texter, "bakåtlänken").toContain("Bytte fönster");
+    expect(texter).not.toContain(titel);
+    s.stang();
   });
 });

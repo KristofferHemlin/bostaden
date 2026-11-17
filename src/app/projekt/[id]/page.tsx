@@ -306,8 +306,11 @@ export default async function ProjektSida({
             och visas bara nar det finns ett kvitto att lyfta ut. Summan star
             kvar i rubriken, fore Ändra. */}
         <div className="flex items-baseline justify-between gap-3 px-4 pt-4">
+          {/* Delen heter Kvittona, som skarmen bakom dess Ändra
+              (docs/design.md, "Skärmen heter samma sak som delen den
+              ändrar"). */}
           <Avdelningsrubrik>
-            Kvitton
+            Kvittona
           </Avdelningsrubrik>
           {kostnader.length > 0 ? (
             <div className="flex items-baseline gap-3">

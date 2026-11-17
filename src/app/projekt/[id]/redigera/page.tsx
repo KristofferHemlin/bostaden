@@ -28,10 +28,11 @@ import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
-/** Rubriken foljer vad som saknas (docs/design.md, "Projekt som skapades
- *  före omläggningen"): ett projekt utan svar har inget att andra. */
+/** Skarmen heter som delen den andrar (docs/design.md, "Skärmen heter samma
+ *  sak som delen den ändrar"). Undantaget ar ett projekt utan svar: tradet
+ *  har aldrig besvarats, och skarmen ar ett forsta svar, inte en andring. */
 function rubrikFor(atgardstyp: string | null): string {
-  return atgardstyp === null ? "Berätta vad du gjort" : "Ändra projekt";
+  return atgardstyp === null ? "Berätta vad du gjort" : "Frågorna";
 }
 
 export async function generateMetadata({

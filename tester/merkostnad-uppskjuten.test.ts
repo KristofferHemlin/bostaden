@@ -226,10 +226,16 @@ describe("redigeringen", () => {
     return f;
   }
 
+  // Ändringen är skicket, som hör till Frågorna. Till 2026-11-19 var det
+  // namnet, som nu hör till Vad och var och inte skrivs härifrån för ett
+  // besvarat projekt (docs/design.md, "Varje del sparar bara sina egna fält,
+  // också på servern").
   it("utan belopp sparas en ändring, och ett redan givet svar står kvar", async () => {
     seeda({ merkostnad: 300_000 });
-    await expect(redigeraProjekt({}, redigering("3 000"))).rejects.toThrow(`NEXT_REDIRECT /projekt/${P}`);
-    expect(h.db.tabell("projekt")[0]).toMatchObject({ namn: "Nytt golv i hallen", merkostnad: 300_000 });
+    const f = redigering("3 000");
+    f.set("skick_forvarv", "2");
+    await expect(redigeraProjekt({}, f)).rejects.toThrow(`NEXT_REDIRECT /projekt/${P}`);
+    expect(h.db.tabell("projekt")[0]).toMatchObject({ skick_forvarv: 2, merkostnad: 300_000, namn: "Nytt golv" });
   });
 
   it("med belopp gäller spärren som förut", async () => {
