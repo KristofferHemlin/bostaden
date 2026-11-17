@@ -2184,7 +2184,19 @@ Tomläget är alltså det vanliga: en rubrik som är en uppmaning, en till två 
 
 ***Räknas som* står kvar på läsvyn och är inte en del.** Det är härlett ur svaren och går inte att ändra direkt — att ge det en *Ändra* vore att påstå att det är en inställning.
 
-**Att välja till kvitton slutar på projektsidan, men bara när något sparats.** *Välj bland dina kvitton* nås från *Kvittona* och går ett steg längre tillbaka än man kom ifrån — och det är rätt efter ett sparande, eftersom det hon vill se då är projektets nya summa i sitt sammanhang. **Efter *Avbryt* går hon tillbaka dit hon kom ifrån.** Ett avbrott ska lämna henne där hon stod; ett sparande får flytta henne dit resultatet syns.
+**Att välja till kvitton slutar på projektsidan, men bara när något sparats.** *Välj bland dina kvitton* nås från *Kvittona* och går ett steg längre tillbaka än man kom ifrån — och det är rätt efter ett sparande, eftersom det hon vill se då är projektets nya summa i sitt sammanhang. **Efter *Avbryt* går hon tillbaka dit hon kom ifrån.**
+
+**Och bakåtlänken följer samma ursprung som *Avbryt*.** Agentens tillägg 2026-11-19, och rätt: båda lämnar skärmen utan att spara, och två vägar ut som landar olika är två olika löften om samma handling.
+
+### Avbryt lämnar henne där hon stod
+
+**Ett avbrott ska lämna henne där hon stod; ett sparande får flytta henne dit resultatet syns.** Det är hela regeln, och den gäller varje skärm som går att nå från mer än ett håll.
+
+**Nås en skärm från flera ställen måste den veta varifrån**, och ursprunget skickas då med i adressen. **Bara de värden skärmen känner igen godtas** – allt annat faller tillbaka på den vanliga destinationen, så att en parameter aldrig kan peka någon annanstans. Agentens lösning 2026-11-19, och den ska se likadan ut nästa gång.
+
+**Inuti ett flöde betyder *Avbryt* något annat: att lämna flödet.** Det är *Tillbaka* som flyttar ett steg. Avbryter hon försäljningens skickfråga hamnar hon därför i underlaget, varifrån flödet startades, och inte på föregående steg. **De två orden får aldrig byta betydelse mellan två flöden.**
+
+**Och *Frågorna* nådd från underlagets *Återstår* ska återvända dit.** I dag leder *Avbryt* till projektsidan oavsett varifrån hon kom. Det är samma brist som *Välj bland dina kvitton* hade, och den rättas på samma sätt.
 
 **Att lyfta ut ett kvitto hör till *Kvittona*.** Det går redan från kvittots egen sida, via projektvalet, och det här är den andra riktningen av samma sak — precis som att välja till finns på båda hållen. **Kvittot lossas, det raderas inte**, och raden säger vart det tar vägen: tillbaka till kvitton utan projekt.
 

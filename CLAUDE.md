@@ -654,6 +654,10 @@ Fallet var det gamla grupperingsflödet: posten skapades med tomt namn, eftersom
 
 **Uppräkningen ur koden har betalat sig.** 2026-11-19 delades projektsidan i tre, med två nya serverfunktioner och två nya sidor — och åtkomsttestet föll på alla fyra **innan** någon skrivit ett prov för dem. En handskriven lista hade varit tyst, och fyra nya vägar hade gått i produktion utan medlemskapsprov.
 
+**Men regeln har en gräns, och den ska stå skriven.** Agenten erbjöd 2026-11-19 ett likadant test för varje *Avbryt* i appen. Svaret var nej, och skälet är det som avgör i alla sådana fall: **uppräkningen är värd sitt pris när bristen är osynlig och dyr.** En väg utan medlemskapsprov visar en bostads kvitton under en annan bostads adress och ser riktig ut. En *Avbryt* som landar fel syns för den första som går skärmen, och kostar en förlorad plats i en lista.
+
+**Där bristen är synlig räcker regeln, och testet blir en skatt** — det måste röras vid varje ny skärm och säger oftast bara det uppenbara. Fråga alltså inte *gäller kravet alla?* utan **vad kostar det att missa en, och hur länge hinner felet leva?**
+
 **Automatiken säger att något saknas; den skriver inte provet.** Ett medlemskapsprov behöver ett anrop med ett främmande id och ett väntat avslag för just den vägen, och det går inte att läsa ur en signatur. Uppräkningen ur koden faller därför med besked när en väg varken är prövad eller undantagen — och **varje undantag bär ett skrivet skäl.** Att ingen hann skriva ett prov är inget skäl.
 
 **Jag bröt den här regeln dagen efter att jag skrev den.** Agenten skrev att posterna saknades i testet; jag skrev att koden saknade skydd. Det är *En mening i en rapport är inte en avläsning av koden*, en dag gammal, och jag var den som bröt den. Ett fel som upprepas snabbt är inte otur, det är en vana — och vanan är att läsa en rapport som en starkare historia än den berättar.
