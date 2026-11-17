@@ -251,7 +251,7 @@ export const LIKVARDIGT_ETIKETT = "Vad hade ett likvärdigt byte kostat?";
 export function likvardigtHjalptext(belopp: number, harRot: boolean): string {
   const uppskatta = "Uppskatta vad samma arbete hade kostat utan den högre kvaliteten.";
   return harRot
-    ? `${uppskatta} Jämför med vad arbetet kostade före ROT-avdraget, ${formateraKronor(belopp)} — mellanskillnaden är den del som räknas som grundförbättring. ROT-avdraget minskar sedan båda delarna lika mycket.`
+    ? `${uppskatta} Jämför med vad arbetet kostade före ROT-avdraget, ${formateraKronor(belopp)} – mellanskillnaden är den del som räknas som grundförbättring. ROT-avdraget minskar sedan båda delarna lika mycket.`
     : `${uppskatta} Projektet kostade ${formateraKronor(belopp)}, och mellanskillnaden är den del som räknas som grundförbättring.`;
 }
 

@@ -12,13 +12,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LyftUtKnapp } from "./lyft-ut";
+import { ProjektetsKvittorad } from "../../kvittorad";
 import { FRAN_KVITTONA } from "../fran";
-import { Listrad, Skarm } from "@/components/skarm";
-import { beloppForKostnad, projektSumma, rotForBelopp } from "@/doman/berakningar";
+import { Skarm } from "@/components/skarm";
+import { projektSumma } from "@/doman/berakningar";
 import { projektnamnKarta } from "@/doman/genomgang";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
-import { formateraKronor, isoDatum } from "@/lib/format";
+import { formateraKronor } from "@/lib/format";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
 import { hamtaProjektnamn } from "@/lib/projektnamn";
@@ -51,7 +52,7 @@ export default async function KvittonaSida({
         bostad_id: bostadId,
         rader: { some: { fordelningar: { some: { projekt_id: id } } } },
       },
-      include: { rader: { include: { fordelningar: true } } },
+      include: { rader: { include: { fordelningar: true } }, _count: { select: { bilagor: true } } },
       orderBy: [{ betaldatum: "asc" }, { id: "asc" }],
     }),
     hamtaValbaraKvitton(bostadId).then((k) => k.length),
@@ -76,12 +77,14 @@ export default async function KvittonaSida({
       })
     : [];
   const andraNamn = await hamtaProjektnamn(bostadId, andraProjekt);
+  // Bakåt i huvudet och lanken langst ned bar samma namn.
+  const visningsnamn = projektnamnKarta([projekt], kostnadRader).get(id) ?? projekt.namn;
 
   return (
     <Skarm
       bostadsnamn={bostadHeader(bostad).bostadsnamn}
       rubrik="Kvittona"
-      bakLank={{ href: `/projekt/${id}`, text: projektnamnKarta([projekt], kostnadRader).get(id) ?? projekt.namn }}
+      bakLank={{ href: `/projekt/${id}`, text: visningsnamn }}
     >
       <div className="flex items-baseline justify-between gap-3 px-4 pt-4">
         <p className="font-granssnitt text-sm text-text-sekundar">
@@ -102,24 +105,15 @@ export default async function KvittonaSida({
         <ul className="divide-y divide-linje">
           {kostnader.map((k) => {
             const original = kostnadRader.find((x) => x.id === k.id)!;
-            const notering = original.anteckning?.trim();
-            const leverantor = original.leverantor?.trim();
-            const datumRad = original.betaldatum ?? original.dokumentdatum;
-            const datum = datumRad ? isoDatum(datumRad) : null;
             const annat = original.rader
               .flatMap((r) => r.fordelningar)
               .find((f) => f.projekt_id && f.projekt_id !== id)?.projekt_id;
             return (
               <li key={k.id}>
-                {/* Samma rad som pa projektets sida, utan lank: har ar
-                    raden till for att lyftas ut, inte for att oppnas. */}
-                <Listrad
-                  namn={notering || leverantor || "Kvitto"}
-                  anteckning={!!notering}
-                  status={notering ? [leverantor, datum].filter(Boolean).join(" · ") : (datum ?? "")}
-                  belopp={formateraKronor(beloppForKostnad(k, id))}
-                  rot={rotForBelopp(k, beloppForKostnad(k, id))}
-                />
+                {/* Samma rad som pa projektets sida – samma komponent
+                    (docs/design.md, "Kvittoraden ser likadan ut på Kvittona
+                    som på projektsidan"). */}
+                <ProjektetsKvittorad kostnad={k} original={original} projektId={id} />
                 <div className="px-4 pb-3">
                   <LyftUtKnapp
                     projektId={id}
@@ -152,11 +146,14 @@ export default async function KvittonaSida({
             Välj bland dina kvitton
           </Link>
         ) : null}
+        {/* Samma ord som bakåt i huvudet: en destination, ett namn
+            (docs/design.md, "En skärm har en väg ut, och den heter samma sak
+            hela vägen"). */}
         <Link
           href={`/projekt/${id}`}
           className="text-center font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
         >
-          Tillbaka till projektet
+          {visningsnamn}
         </Link>
       </div>
     </Skarm>

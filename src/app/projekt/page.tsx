@@ -1,21 +1,28 @@
-// Steg 4: lista projekt, grupperade per ar-etikett. Varje rad ar klickbar och
-// blir anvandarens att-gora-lista (produktspec 7).
+// Projektlistan (produktspec 7, docs/design.md "Projektlistan"). Varje rad ar
+// klickbar och blir anvandarens att-gora-lista.
+//
+// Ingen arsgruppering: ett projekt hor inte till ett ar, det ar kvittona som
+// gor det (docs/design.md, "Listan grupperas inte på år"). Aret star pa
+// raden, ur kvittonas betaldatum, och spanner projektet over ett arsskifte
+// star bada. Ordningen ar nyast skapade forst – sparandet leder hit, och
+// raden overst ar bekraftelsen.
 
 import Link from "next/link";
 import { KategoriInfo } from "./kategori-info";
-import { Avdelningsrubrik, Listrad, PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
+import { Listrad, PRIMARKNAPP_KLASS, Skarm } from "@/components/skarm";
 import {
   beloppForKostnad,
   projektSumma,
   rotForBelopp,
 } from "@/doman/berakningar";
 import { atgardKategoriText } from "@/doman/fragetradet";
-import { projektarKarta, projektnamnKarta } from "@/doman/genomgang";
+import { projektnamnKarta } from "@/doman/genomgang";
 import { slaUppRegelparameter } from "@/doman/regelparameter";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
 import { formateraKronor, isoDatum } from "@/lib/format";
 import { rotAvgarRad } from "@/lib/kvittolista";
+import { projektarTextKarta } from "@/lib/projektar";
 import { kravBostad } from "@/lib/session";
 
 export const metadata = { title: "Projekt" };
@@ -45,9 +52,18 @@ export default async function ProjektlistaSida() {
   const domanKostnadPerId = new Map(kostnader.map((k) => [k.id, k]));
   // En hog utan namn heter som i fas 1 (src/doman/genomgang.ts).
   const projektnamn = projektnamnKarta(projektRader, kostnadRader);
-  const projektar = projektarKarta(projektRader, kostnadRader);
 
-  const rader = projektRader.map((p) => {
+  // Nyast skapade forst, med id som andra nyckel: tva projekt med samma
+  // tidsstampel far aldrig en ordning som avgors av slumpen (CLAUDE.md,
+  // "Lika tidsstämplar är ingen ordning"). Fragan i hamtaBostadsdata ror vi
+  // inte – underlaget laser samma rader.
+  const iOrdning = [...projektRader].sort(
+    (a, b) => b.skapad_at.getTime() - a.skapad_at.getTime() || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0),
+  );
+
+  const arText = projektarTextKarta(projektRader, kostnadRader);
+
+  const rader = iOrdning.map((p) => {
     // Allt som kopplats hit, aven utan betaldatum – samma tal som projektets
     // egen sida (projektSumma).
     const belopp = projektSumma(kostnader, p.id);
@@ -87,9 +103,9 @@ export default async function ProjektlistaSida() {
     return {
       id: p.id,
       namn: projektnamn.get(p.id) ?? p.namn,
-      // Aret ur kvittona (projektarKarta) – samma som pa startsidan och i
-      // kvittots rullistor.
-      ar: projektar.get(p.id) ?? p.ar,
+      // Aren ur kvittonas betaldatum, samma harledning som varje annan
+      // skarm (projektarTextKarta): "2025–2026" over ett arsskifte.
+      arText: arText.get(p.id) ?? String(p.ar),
       harKvitton: kvitton.length > 0,
       belopp,
       // En hog fran klassificeringsgenomgangens fas 1 (atgardstyp = null) har
@@ -100,13 +116,6 @@ export default async function ProjektlistaSida() {
     };
   });
 
-  const perAr = new Map<number, typeof rader>();
-  for (const r of rader) {
-    const lista = perAr.get(r.ar) ?? [];
-    lista.push(r);
-    perAr.set(r.ar, lista);
-  }
-  const arSorterade = [...perAr.keys()].sort((a, b) => b - a);
 
   return (
     <Skarm
@@ -143,13 +152,8 @@ export default async function ProjektlistaSida() {
               Skapa projekt
             </Link>
           </div>
-          {arSorterade.map((ar) => (
-            <div key={ar} className="border-b border-linje last:border-b-0">
-              <Avdelningsrubrik className="px-4 pt-4">
-                {ar}
-              </Avdelningsrubrik>
-              <div className="divide-y divide-linje">
-                {perAr.get(ar)!.map((r) => (
+          <div className="divide-y divide-linje">
+                {rader.map((r) => (
                   // Utstrackt lank (docs/design.md, "Listrader"): kortet – rad
                   // OCH kvittolistan under – ska vara en enda klickyta, inte
                   // bara den ovre halvan. `relative` har gor kortet till den
@@ -169,7 +173,8 @@ export default async function ProjektlistaSida() {
                       href={`/projekt/${r.id}`}
                       strackt
                       namn={r.namn}
-                      status={r.status}
+                      // Aret pa raden, fore vad det raknas som.
+                      status={[r.arText, r.status].filter(Boolean).join(" · ")}
                       atgard={r.atgard}
                       // Ett projekt utan kvitton har inget belopp – "0 kr"
                       // vore ett matt tal (docs/design.md, Projektlistan).
@@ -209,9 +214,7 @@ export default async function ProjektlistaSida() {
                     ) : null}
                   </div>
                 ))}
-              </div>
-            </div>
-          ))}
+          </div>
         </>
       )}
     </Skarm>

@@ -4,6 +4,7 @@
 
 import "server-only";
 import { projektarKarta, projektnamnKarta } from "@/doman/genomgang";
+import { projektarTextKarta } from "@/lib/projektar";
 import { prisma } from "@/lib/prisma";
 
 export async function hamtaProjektnamn(
@@ -30,13 +31,15 @@ export async function hamtaProjektnamn(
 
 /**
  * Projektens namnform for en rullista: namnet (som projektnamnKarta) och aret
- * ur kvittona (projektarKarta), senaste ar forst. Det ar den form "2024 · Nya
- * fönster" skrivs i, och den ska saga samma ar som projektlistan.
+ * ur kvittona (projektarTextKarta), senaste ar forst. Det ar den form "2024 ·
+ * Nya fönster" – eller "2025–2026 · Måla badrum" – skrivs i, och den ska saga
+ * samma ar som projektlistan. Ordningen foljer fortfarande det tidigaste aret
+ * (projektarKarta); det ar bara texten som ar gemensam.
  */
 export async function hamtaProjektval(
   bostadId: string,
   projekt: { id: string; namn: string; ar: number }[],
-): Promise<{ id: string; namn: string; ar: number }[]> {
+): Promise<{ id: string; namn: string; ar: number; arText: string }[]> {
   const kvitton = await prisma.kostnad.findMany({
     where: {
       bostad_id: bostadId,
@@ -51,9 +54,15 @@ export async function hamtaProjektval(
   });
   const namn = projektnamnKarta(projekt, kvitton);
   const ar = projektarKarta(projekt, kvitton);
+  const arText = projektarTextKarta(projekt, kvitton);
   // Ordningen i listan foljer det visade aret; lika ar behaller den ordning
   // projekten kom i, som redan ar bestamd (ar, sedan skapad_at).
   return projekt
-    .map((p) => ({ id: p.id, namn: namn.get(p.id) ?? p.namn, ar: ar.get(p.id) ?? p.ar }))
+    .map((p) => ({
+      id: p.id,
+      namn: namn.get(p.id) ?? p.namn,
+      ar: ar.get(p.id) ?? p.ar,
+      arText: arText.get(p.id) ?? String(p.ar),
+    }))
     .sort((a, b) => b.ar - a.ar);
 }

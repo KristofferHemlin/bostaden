@@ -43,7 +43,6 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
-import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ProjektSida from "@/app/projekt/[id]/page";
 
@@ -84,14 +83,6 @@ function seeda() {
   // projekt.ar ar 2023 – etiketten fran nar projektet skapades.
   db.lagg("projekt", { id: P, bostad_id: X, namn: "Fönsterbyte", ar: 2023, atgardstyp: "nybyggnad" });
   h.inloggad = { id: ANNA, email: "anna@exempel.se" };
-}
-
-function elementFor(nod: unknown, namn: string): ReactElement<Record<string, unknown>>[] {
-  if (nod == null || typeof nod !== "object") return [];
-  if (Array.isArray(nod)) return nod.flatMap((n) => elementFor(n, namn));
-  const el = nod as ReactElement<Record<string, unknown>> & { type?: unknown };
-  const egen = typeof el.type === "function" && (el.type as { name: string }).name === namn ? [el] : [];
-  return [...egen, ...elementFor(el.props?.children, namn)];
 }
 
 /** Raden for aret som hon laser den: sidan renderad, och raden hittad pa
@@ -142,9 +133,15 @@ describe("projektsidans kvitton lankar till kvittot", () => {
   it("varje kvittorad gar till sitt kvitto", async () => {
     const a = kvitto("Ekstrands", "2023-11-02");
     const b = kvitto("Byggmax", null);
-    const vy = await ProjektSida({ params: Promise.resolve({ id: P }) });
-    const html = elementFor(vy, "Listrad").map((r) => renderToStaticMarkup(r)).join("\n");
-    expect(html).toContain(`href="/kostnad/${a}"`);
-    expect(html).toContain(`href="/kostnad/${b}"`);
+    // Sidan renderad, och raden hittad på det hon läser: leverantören. Raden
+    // ligger i en egen komponent sedan 2026-11-19 (ProjektetsKvittorad) och
+    // finns inte i det orenderade trädet (CLAUDE.md, "Koden formas inte
+    // efter ett tests begränsning").
+    const d = document.createElement("div");
+    d.innerHTML = renderToStaticMarkup(await ProjektSida({ params: Promise.resolve({ id: P }) }));
+    const lankFor = (leverantor: string) =>
+      [...d.querySelectorAll("a")].filter((l) => l.textContent?.includes(leverantor)).map((l) => l.getAttribute("href"));
+    expect(lankFor("Ekstrands")).toEqual([`/kostnad/${a}`]);
+    expect(lankFor("Byggmax")).toEqual([`/kostnad/${b}`]);
   });
 });

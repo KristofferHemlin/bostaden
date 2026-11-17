@@ -175,6 +175,21 @@ describe("när steget visas", () => {
     expect(medText(html, "legend", SAMMA_DEL_FRAGA)).toHaveLength(1);
   });
 
+  // docs/design.md, "Året härleds på varje skärm som nämner det": hennes
+  // åtgärder med årtal, och årtalet är kvittonas, inte etiketten. Till
+  // 2026-11-19 visade frågan etiketten.
+  it("åtgärderna står med kvittonas år, inte etiketten", async () => {
+    seeda({ forstaBetald: "2023-06-01" });
+    // Förutsättningen: etiketten och kvittot säger olika år.
+    expect(h.db.tabell("projekt").find((p) => p.id === FASAD)!.ar).toBe(2022);
+    const [formular] = elementFor(await SammaDelSida(), "SammaDelFormular");
+    expect(formular, "sidan visar inte frågan").toBeTruthy();
+    // Det sidan lämnar formuläret; formuläret skriver "år · namn" efter ett
+    // ja (provat under "formuläret" nedan).
+    const kandidater = formular.props.kandidater as { ar: string; namn: string }[];
+    expect(kandidater.map((k) => `${k.ar} · ${k.namn}`)).toEqual(["2023 · Måla fasaden", "2025 · Måla fasaden igen"]);
+  });
+
   it("den ena utanför femårsfönstret: steget visas inte, sidan går till underlaget", async () => {
     seeda({ forstaBetald: "2019-06-01" });
     expect(await omdirigeringFran(() => SammaDelSida())).toBe("/export");
@@ -307,8 +322,8 @@ describe("formuläret", () => {
   });
 
   const kandidater = [
-    { id: FASAD, namn: "Måla fasaden", ar: 2022, markerad: false },
-    { id: FASAD_IGEN, namn: "Måla fasaden igen", ar: 2025, markerad: false },
+    { id: FASAD, namn: "Måla fasaden", ar: "2022", markerad: false },
+    { id: FASAD_IGEN, namn: "Måla fasaden igen", ar: "2025", markerad: false },
   ];
   const knapp = (text: string) => medText(behallare, "button", text)[0] as HTMLButtonElement;
   const markerade = () =>

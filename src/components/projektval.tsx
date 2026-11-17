@@ -13,11 +13,12 @@ export interface Projektval {
   id: string;
   /** Visningsnamnet – for en hog utan namn hogVisningsnamn (projektnamnKarta). */
   namn: string;
-  ar: number;
+  /** Aret som text, ur projektarTextKarta – "2025–2026" over ett arsskifte. */
+  arText: string;
 }
 
-export function projektvalText(p: Pick<Projektval, "namn" | "ar">): string {
-  return `${p.ar} · ${p.namn}`;
+export function projektvalText(p: Pick<Projektval, "namn" | "arText">): string {
+  return `${p.arText} · ${p.namn}`;
 }
 
 export function Projektalternativ({ projekt }: { projekt: Projektval[] }) {

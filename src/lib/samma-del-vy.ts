@@ -13,11 +13,13 @@ import {
   tillDomanRegelparameter,
 } from "@/lib/doman-fran-db";
 import { prisma } from "@/lib/prisma";
+import { projektarTextKarta } from "@/lib/projektar";
 
 export interface SammaDelKandidat {
   id: string;
   namn: string;
-  ar: number;
+  /** Aret som text, samma harledning som overallt (projektarTextKarta). */
+  ar: string;
   markerad: boolean;
 }
 
@@ -64,12 +66,14 @@ export async function hamtaSammaDelVy(bostadId: string): Promise<SammaDelVy | nu
     throw fel;
   }
 
+  // Aret ur kvittona, inte etiketten – samma som varje annan skarm.
+  const arText = projektarTextKarta(projektRader, kostnadRader);
   const kandidater = projektRader
     .filter((p) => ex.samma_del_kandidater.includes(p.id))
     .map((p) => ({
       id: p.id,
       namn: p.namn,
-      ar: p.ar,
+      ar: arText.get(p.id) ?? String(p.ar),
       markerad: p.tidigare_gang_samma_del === true,
     }));
 

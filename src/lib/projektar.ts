@@ -21,3 +21,35 @@ export function projektetsArText(betaldatum: (string | null)[], etikett: number)
   const iFoljd = ar.every((a, i) => i === 0 || a === ar[i - 1]! + 1);
   return iFoljd ? `${ar[0]}–${ar[ar.length - 1]}` : ar.join(", ");
 }
+
+/** Det ur en kvittorad som arstexten behover: betaldatumet och vilka projekt
+ *  dess rader hor till. Bade databasrader och falska rader i proven har det. */
+export interface KvittoForAr {
+  betaldatum: Date | null;
+  rader: { fordelningar: { projekt_id: string | null }[] }[];
+}
+
+/**
+ * Aret som text for varje projekt, ur kvittonas betaldatum – den enda
+ * harledningen av ett projekts ar i appen (docs/design.md, "Året härleds på
+ * varje skärm som nämner det"). Projektlistan, projektsidan, startskarmens
+ * kort, kvittots rullistor och forsaljningens fraga om samma del gar alla
+ * hit. Ett projekt over ett arsskifte heter da "2025–2026" overallt, i
+ * stallet for att lista och rullista sager olika ar (2026-11-19).
+ */
+export function projektarTextKarta(
+  projekt: { id: string; ar: number }[],
+  kvitton: KvittoForAr[],
+): Map<string, string> {
+  return new Map(
+    projekt.map((p) => [
+      p.id,
+      projektetsArText(
+        kvitton
+          .filter((k) => k.rader.some((r) => r.fordelningar.some((f) => f.projekt_id === p.id)))
+          .map((k) => (k.betaldatum ? k.betaldatum.toISOString().slice(0, 10) : null)),
+        p.ar,
+      ),
+    ]),
+  );
+}

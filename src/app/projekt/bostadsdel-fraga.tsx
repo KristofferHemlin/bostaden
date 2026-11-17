@@ -15,7 +15,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Kortval } from "./fragetradet";
-import { INPUT_KLASS } from "@/components/skarm";
+import { HJALPTEXT_KLASS, INPUT_KLASS } from "@/components/skarm";
 import {
   BOSTADSDEL_ETIKETT,
   BOSTADSDEL_FALT,
@@ -28,6 +28,9 @@ import {
   type BostadsdelSvar,
 } from "@/doman/bostadsdel";
 import type { Upplatelseform } from "@/doman/typer";
+
+/** Raden under knapparna (docs/design.md). */
+const BOSTADSDEL_VALFRITT = "Valfritt – du kan lägga till det senare.";
 
 export function BostadsdelFraga({
   upplatelseform,
@@ -90,6 +93,10 @@ export function BostadsdelFraga({
           className={`${INPUT_KLASS} mt-2`}
         />
       ) : null}
+      {/* Att den ar frivillig ska synas: under ett falt med stjarna ser de
+          tva annars ut som ett set (docs/design.md, "Och att den är frivillig
+          måste synas"). Samma form som motiveringsfaltets hjalptext. */}
+      <p className={`mt-1 ${HJALPTEXT_KLASS}`}>{BOSTADSDEL_VALFRITT}</p>
 
       <input type="hidden" name={BOSTADSDEL_FRAGAD_FALT} value="1" />
       {[...valda].map((del) => (

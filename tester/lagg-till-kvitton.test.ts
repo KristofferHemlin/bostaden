@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { designensHjalptexter, normalisera } from "./_merkostnadslydelser";
 import { REGELPARAMETRAR } from "./_hjalp";
 
 // "Lägg till kvitton" på ett projekt som redan finns (docs/design.md, "Att
@@ -333,7 +334,9 @@ describe("ROT-lydelsen gäller också här", () => {
     await act(async () => ruta.click());
     const label = [...div.querySelectorAll("label")].find((l) => l.textContent?.startsWith(LIKVARDIGT_ETIKETT));
     expect(label, "merkostnadsfrågan").toBeTruthy();
-    expect(label!.lastElementChild!.textContent!.replace(/ /g, " ")).toContain("före ROT-avdraget, 60 812,50 kr —");
+    // Hela hjälptexten, ordagrant ur design.md – citatet med ROT är skrivet
+    // för just 60 812,50 kr, köksfakturans belopp före avdraget.
+    expect(normalisera(label!.lastElementChild!.textContent!)).toBe(designensHjalptexter()[1][1]);
     const falt = label!.querySelector("input")!;
     const satt = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
     await act(async () => {

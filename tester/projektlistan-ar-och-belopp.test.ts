@@ -82,17 +82,26 @@ async function listan(): Promise<HTMLElement> {
   return div.querySelector("main")!;
 }
 
-/** Projektets rad – länken med projektets namn – och året den står under. */
+/** Projektets rad – länken med projektets namn – och året som står på den
+ *  (docs/design.md, "Listan grupperas inte på år, och året står på raden"):
+ *  raden under namnet, "2024–2025 · Grundförbättring", läst som hela
+ *  elementets text. Stannar om raden eller året saknas. */
 function raden(s: HTMLElement, namn: string): { text: string; ar: string; saknas: Element | null } {
   const lank = [...s.querySelectorAll("a")].find((a) => a.textContent?.startsWith(namn));
   if (!lank) throw new Error(`projektlistan saknar ${namn}`);
   // Hela raden – en utsträckt länk: namnet är länken, beloppet står bredvid.
   const rad = lank.closest("div.relative");
-  const grupp = lank.closest("div.border-b");
-  if (!rad || !grupp) throw new Error(`${namn}: raden eller årsgruppen hittades inte`);
-  const ar = grupp.querySelector("p")?.textContent ?? "";
+  if (!rad) throw new Error(`${namn}: raden hittades inte`);
+  const statusrad = [...rad.querySelectorAll("p, span")].find((e) => /^\d{4}(?:[–,] ?\d{4})* · .+$/.test(e.textContent ?? ""));
+  if (!statusrad) throw new Error(`${namn}: raden bär inget år`);
+  const ar = statusrad.textContent!.split(" · ")[0];
   const saknas = [...rad.querySelectorAll("span")].find((e) => e.textContent === "Inga kvitton än") ?? null;
   return { text: rad.textContent ?? "", ar, saknas };
+}
+
+/** Projektens namn i den ordning listan visar dem. */
+function ordningen(s: HTMLElement): string[] {
+  return [...s.querySelectorAll("div.relative > *:first-child a")].map((a) => a.textContent ?? "");
 }
 
 beforeEach(() => {
@@ -116,15 +125,65 @@ describe("ett projekt utan kvitton", () => {
 });
 
 describe("året i raden", () => {
-  it("är det tidigaste betaldatumet bland kvittona, inte etiketten", async () => {
+  // Till 2026-11-19 det tidigaste året, och listan grupperades på det.
+  // Ett projekt över ett årsskifte står nu med båda åren, som på
+  // projektsidan och i underlaget, där det ger en rad per år.
+  it("är åren kvittona betalades, inte etiketten – båda när projektet spänner över ett årsskifte", async () => {
     // Förutsättningen: etiketten och kvittona säger olika.
     expect(h.db.tabell("projekt").find((p) => p.namn === "Nytt kök")!.ar).toBe(2026);
-    expect(raden(await listan(), "Nytt kök").ar).toBe("2024");
+    expect(raden(await listan(), "Nytt kök").ar).toBe("2024–2025");
   });
 
   it("är etiketten när projektet saknar kvitton, eller bara har obetalda", async () => {
     const s = await listan();
     expect(raden(s, "Badrum 2022").ar).toBe("2022");
     expect(raden(s, "Nya fönster").ar).toBe("2023");
+  });
+});
+
+// docs/design.md, "Listan grupperas inte på år" och "Ordningen är nyast
+// skapade först": rubriker per år sade emot raderna under sig, och det nya
+// projektet hamnade längst ned i sitt år.
+describe("ordningen och grupperingen", () => {
+  it("ingen årsrubrik: inget element på listan vars hela text är ett år", async () => {
+    const s = await listan();
+    // Förutsättningen: åren finns på raderna.
+    expect(raden(s, "Nytt kök").ar).toBe("2024–2025");
+    expect([...s.querySelectorAll("*")].filter((e) => /^\d{4}$/.test(e.textContent?.trim() ?? ""))).toEqual([]);
+  });
+
+  it("nyast skapade först, oavsett år", async () => {
+    // Skapade 1, 2 och 3 januari; åren på raderna är 2022, 2024–2025 och 2023,
+    // så en ordning på år hade gett något annat.
+    expect(ordningen(await listan())).toEqual(["Nya fönster", "Nytt kök", "Badrum 2022"]);
+  });
+
+  it("ett projekt som just skapats ligger överst, också utan kvitton", async () => {
+    h.db.lagg("projekt", { bostad_id: X, namn: "Måla hallen", ar: 2019, atgardstyp: "nybyggnad", skapad_at: datum("2026-11-19") });
+    expect(ordningen(await listan())[0]).toBe("Måla hallen");
+  });
+
+  // CLAUDE.md, "Lika tidsstämplar är ingen ordning": utan en andra nyckel
+  // avgör databasens ordning, och den är insättningsordningen här. Samma två
+  // projekt, insatta åt båda hållen, ska ge samma lista.
+  it("lika tidsstämplar får en bestämd ordning, inte insättningens", async () => {
+    // Fasta id: den falska databasen delar annars ut id i
+    // insättningsordning, och då går id och insättning inte att skilja åt.
+    const ID: Record<string, string> = {
+      "Tvilling A": "c0000000-0000-4000-8000-0000000000a1",
+      "Tvilling B": "c0000000-0000-4000-8000-0000000000b1",
+    };
+    const tvillingar = (namn: string[]) => {
+      seeda();
+      for (const n of namn) {
+        h.db.lagg("projekt", { id: ID[n], bostad_id: X, namn: n, ar: 2026, atgardstyp: "nybyggnad", skapad_at: datum("2026-11-20") });
+      }
+    };
+    tvillingar(["Tvilling A", "Tvilling B"]);
+    const framat = ordningen(await listan()).slice(0, 2);
+    tvillingar(["Tvilling B", "Tvilling A"]);
+    const bakat = ordningen(await listan()).slice(0, 2);
+    expect([...framat].sort()).toEqual(["Tvilling A", "Tvilling B"]);
+    expect(bakat).toEqual(framat);
   });
 });

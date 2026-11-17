@@ -36,7 +36,7 @@ import {
 import { atgardKategoriText } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
-import { projektarKarta } from "@/doman/genomgang";
+import { projektarTextKarta } from "@/lib/projektar";
 import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 import {
   formateraAntal,
@@ -115,7 +115,8 @@ export default async function Oversikt({
   // till en bostad hen redan ar medlem i visas inte (se utestaendeInbjudningar).
   const inbjudningar = await utestaendeInbjudningar(anvandare.epost, anvandare.id);
   const { bostad, kostnader, projektRader, kostnadRader } = await hamtaBostadsdata(bostadId);
-  const projektar = projektarKarta(projektRader, kostnadRader);
+  // Samma arstext som projektlistan och projektsidan (projektarTextKarta).
+  const projektar = projektarTextKarta(projektRader, kostnadRader);
   // Inbjudningar FRAN den har bostaden som annu inte besvarats (docs/design.md,
   // "Startskärmen med innehåll"): ett kort overst, ett pastaende och ingen
   // uppmaning. Besvarade inbjudningar visas inte – ingenting

@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { designensHjalptexter, normalisera } from "./_merkostnadslydelser";
 
 // Projektflödet, provat pa det som renderas (docs/design.md, "Att skapa ett
 // projekt"). Den riktiga sidan kors mot en falsk databas och renderas hel i
@@ -214,6 +217,20 @@ describe("ordningen och framsteget", () => {
     expect(framsteg()).toBe("2 av 3");
     expect(synligaLarm()).toEqual([]);
     expect(synligText()).toContain("Byggde du något nytt som inte fanns tidigare?");
+  });
+
+  // docs/design.md, "Och att den är frivillig måste synas". Lydelsen läses
+  // ur filen.
+  it("under delens knappar står att den är valfri", async () => {
+    const m = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8").match(
+      /Under knapparna står därför en dämpad rad: \*\*"([^"]+)"\*\*/,
+    );
+    if (!m) throw new Error("design.md saknar raden under knapparna");
+    await rendera();
+    const rad = [...behallare.querySelectorAll("p")].filter((p) => synlig(p) && p.textContent === m[1]);
+    expect(rad, "raden, synlig på första steget").toHaveLength(1);
+    const knappar = [...behallare.querySelectorAll("[data-bostadsdel] button")];
+    expect(knappar.at(-1)!.compareDocumentPosition(rad[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("skicket vid förvärvet ställs när något byttes ut, och inte när det byggdes nytt", async () => {
@@ -705,7 +722,9 @@ describe("merkostnadsfrågans hjälptext i flödet", () => {
     await svaraBattre();
     await tryck("Nästa");
     await valj(ROT_KVITTO);
-    expect(hjalptexten()).toContain("före ROT-avdraget, 60 812,50 kr —");
+    // Hela hjälptexten, ordagrant ur design.md – citatet med ROT är skrivet
+    // för just 60 812,50 kr, ROT-kvittots belopp före avdraget.
+    expect(normalisera(hjalptexten())).toBe(designensHjalptexter()[1][1]);
   });
 });
 

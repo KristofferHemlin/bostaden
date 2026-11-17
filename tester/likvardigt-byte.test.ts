@@ -48,6 +48,7 @@ vi.mock("@/lib/lagring/klient", () => ({
 }));
 
 import { readFileSync } from "node:fs";
+import { citatEfter, designensHjalptexter, normalisera } from "./_merkostnadslydelser";
 import { join } from "node:path";
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
@@ -71,37 +72,7 @@ import {
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-const normalisera = (t: string) => t.replace(/ /g, " ").replace(/\s+/g, " ").trim();
-const utanMarkering = (t: string) => t.replace(/\*\*/g, "").replace(/\*/g, "");
-
-/** Citatblocken (en eller två rader) efter den rad i design.md som börjar med
- *  `stycke`, fram till nästa stycke som inte är ett citat. Stannar om stycket
- *  inte finns. */
-function citatEfter(stycke: string): string[][] {
-  const rader = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8").split("\n");
-  const start = rader.findIndex((r) => r.startsWith(stycke));
-  expect(start, `stycket "${stycke}" i design.md`).toBeGreaterThanOrEqual(0);
-  const citat: string[][] = [];
-  let i = start + 1;
-  for (; i < rader.length; i++) {
-    const r = rader[i];
-    if (r.trim() === "") continue;
-    if (!r.startsWith(">")) break;
-    const block: string[] = [];
-    for (; i < rader.length && rader[i].startsWith(">"); i++) block.push(utanMarkering(rader[i].replace(/^>\s?/, "")));
-    citat.push(block);
-  }
-  return citat;
-}
-
 describe("hjälptexten och etiketten, ordagrant ur design.md", () => {
-  /** [etikett, hjälptext] för de två citaten: utan ROT och med. */
-  function designensHjalptexter(): [string, string][] {
-    const citat = citatEfter("Hjälptexten har två lydelser");
-    expect(citat, "två citat: utan ROT och med").toHaveLength(2);
-    return citat.map((c) => [normalisera(c[0]), normalisera(c[1])] as [string, string]);
-  }
-
   function renderat(belopp: number, harRot: boolean): { etikett: string; hjalp: string } {
     const div = document.createElement("div");
     div.innerHTML = renderToStaticMarkup(

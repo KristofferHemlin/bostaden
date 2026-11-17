@@ -62,6 +62,7 @@ vi.mock("@/lib/dokumentavlasning/analysera", () => ({ analyseraDokumentbuffert: 
 import { createElement, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ProjektlistaSida from "@/app/projekt/page";
+import ProjektSida from "@/app/projekt/[id]/page";
 import KostnadSida from "@/app/kostnad/[id]/page";
 import DelaUppSida from "@/app/kostnad/[id]/dela/page";
 import ExportSida from "@/app/export/page";
@@ -214,35 +215,42 @@ describe("Återstår ger varje hog en egen nyckel", () => {
   });
 });
 
-// Samma år för ett projekt överallt (docs/design.md, Listrader). Uppmätt
-// 2026-11-16: projektlistan visade året ur kvittona, rullistan Koppla till
-// projekt projektets etikett – "2026 · Fönstren" på kvittot, 2024 i listan.
-// Året räknas ur kvittona på ett ställe (projektarKarta), och varje vy ska
-// visa det.
+// Samma år för ett projekt överallt (docs/design.md, "Året härleds på varje
+// skärm som nämner det"). Uppmätt 2026-11-16: projektlistan visade året ur
+// kvittona, rullistan Koppla till projekt projektets etikett – "2026 ·
+// Fönstren" på kvittot, 2024 i listan. Sedan 2026-11-19 räknas året ur
+// kvittona på ett ställe som text (projektarTextKarta), och ett projekt över
+// ett årsskifte heter "2024–2025" på varje skärm: listan, projektsidan,
+// startskärmens kort och rullistorna. Fönstren har därför kvitton båda åren.
 describe("ett projekt har samma år i listan och i rullistorna", () => {
   const FONSTER = "c0000000-0000-4000-8000-00000000000f";
   const K_FONSTER = "d0000000-0000-4000-8000-00000000000f";
+  const K_FONSTER_2 = "d0000000-0000-4000-8000-0000000000f2";
 
   function seedaFonster() {
     h.db.lagg("projekt", { id: FONSTER, bostad_id: X, namn: "Fönstren", ar: 2026, atgardstyp: "nybyggnad" });
     kvitto(K_FONSTER, "Fönsterbolaget", "2024-09-10", FONSTER);
+    kvitto(K_FONSTER_2, "Fönsterbolaget", "2025-02-03", FONSTER);
   }
 
-  /** Projektlistans år för projektet: årsrubriken närmast före dess länk. */
+  /** Projektlistans år för projektet: statusraden på dess rad, det första
+   *  elementet efter länken vars hela text börjar med ett år (docs/design.md,
+   *  "året står på raden"). Stannar om projektet eller året saknas. */
   async function aretIListan(): Promise<string> {
     const html = renderToStaticMarkup((await ProjektlistaSida()) as ReactElement);
-    const fore = html.slice(0, html.indexOf(`href="/projekt/${FONSTER}"`));
-    expect(fore.length, "projektet saknas i listan").toBeLessThan(html.length);
-    const ar = [...fore.matchAll(/>(\d{4})</g)].at(-1)?.[1];
-    if (!ar) throw new Error("ingen årsrubrik före projektet");
+    const i = html.indexOf(`href="/projekt/${FONSTER}"`);
+    if (i < 0) throw new Error("projektet saknas i listan");
+    const ar = html.slice(i).match(/>(\d{4}(?:[–,] ?\d{4})*) · [^<]+</)?.[1];
+    if (!ar) throw new Error("listans rad bär inget år");
     return ar;
   }
 
   it("Koppla till projekt och Dela upp säger listans år, inte etiketten", async () => {
     seedaFonster();
     const ar = await aretIListan();
-    // Förutsättningen: kvittonas år och etiketten skiljer sig.
-    expect(ar).toBe("2024");
+    // Förutsättningen: kvittonas år och etiketten skiljer sig, och
+    // projektet spänner över ett årsskifte.
+    expect(ar).toBe("2024–2025");
     expect(h.db.tabell("projekt").find((p) => p.id === FONSTER)!.ar).toBe(2026);
 
     const vy = await KostnadSida({ params: Promise.resolve({ id: K_BAUHAUS }) });
@@ -272,6 +280,12 @@ describe("ett projekt har samma år i listan och i rullistorna", () => {
     const start = renderToStaticMarkup((await Oversikt({ searchParams: Promise.resolve({}) })) as ReactElement);
     const projektkort = start.slice(start.indexOf(`href="/projekt/${FONSTER}"`));
     expect(projektkort.length, "projektet saknas på startskärmen").toBeLessThan(start.length);
-    expect(projektkort.match(/>(\d{4}) · [^<]+</)?.[1]).toBe(ar);
+    expect(projektkort.match(/>(\d{4}(?:[–,] ?\d{4})*) · [^<]+</)?.[1]).toBe(ar);
+
+    // Projektsidan: raden År, etikett och värde.
+    const sidan = renderToStaticMarkup((await ProjektSida({ params: Promise.resolve({ id: FONSTER }) })) as ReactElement);
+    const raden = sidan.match(/>År<\/span><span[^>]*>([^<]+)</);
+    expect(raden, "projektsidans rad År").not.toBeNull();
+    expect(raden![1].trim()).toBe(ar);
   });
 });

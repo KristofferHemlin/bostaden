@@ -130,8 +130,8 @@ describe("redigera kvitto", () => {
         arkiverad: false,
         kostnadId: "d0000000-0000-4000-8000-000000000001",
         projekt: [
-          { id: "c0000000-0000-4000-8000-000000000001", namn: "Badrummet", ar: 2025 },
-          { id: "c0000000-0000-4000-8000-000000000002", namn: "Sovrummet", ar: 2025 },
+          { id: "c0000000-0000-4000-8000-000000000001", namn: "Badrummet", arText: "2025" },
+          { id: "c0000000-0000-4000-8000-000000000002", namn: "Sovrummet", arText: "2025" },
         ],
         varden: {
           leverantor: "BAUHAUS",

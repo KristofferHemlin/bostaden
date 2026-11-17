@@ -109,7 +109,7 @@ describe("ändringsläget för ett kvitto med privat del", () => {
         // Som KvittoKort skickar det: kvittot hör till bostaden.
         arkiverad: false,
         kostnadId: KOSTNAD,
-        projekt: [{ id: PROJEKT, namn: "Målade sovrummet", ar: 2026 }],
+        projekt: [{ id: PROJEKT, namn: "Målade sovrummet", arText: "2026" }],
         varden: {
           leverantor: "Bauhaus",
           totalbelopp: "10000,00",

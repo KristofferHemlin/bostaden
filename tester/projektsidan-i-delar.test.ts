@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Projektsidan ändras i delar (docs/design.md, "Projektsidan ändras i delar",
@@ -60,6 +62,7 @@ import { laggTillKvitton } from "@/app/projekt/[id]/kvitton/actions";
 import { merkostnadBehoverBekraftas } from "@/doman/atgardsberakning";
 import { BOSTADSDEL_FRAGA } from "@/doman/bostadsdel";
 import { merkostnadUpplysning } from "@/doman/regeltext";
+import { formateraKronor } from "@/lib/format";
 import { hamtaProjektetsBelopp, tillDomanProjekt } from "@/lib/doman-fran-db";
 import { hamtaValbaraKvitton } from "@/lib/valbara-kvitton";
 
@@ -426,7 +429,14 @@ describe("Kvittona: att lyfta ut ett kvitto", () => {
     // Det delade kvittot hamnar inte bland kvitton utan projekt.
     expect(knappFor(s.div, "Byggmax").textContent).toBe("Lyft ut – resten ligger kvar i ”Målade fasaden”");
     expect(s.div.textContent).toContain("Ett kvitto du lyfter ut raderas inte.");
-    expect(lankar(s.div, "Tillbaka till projektet")).toEqual([`/projekt/${P}`]);
+    // En väg ut, ett ord (docs/design.md, "En skärm har en väg ut, och den
+    // heter samma sak hela vägen"): huvudets bakåt och länken längst ned bär
+    // båda projektets namn, och båda går till projektet.
+    const utgangar = [...s.div.querySelectorAll("a")]
+      .filter((a) => a.getAttribute("href") === `/projekt/${P}`)
+      .map((a) => a.textContent!.replace(/^←\s*/, ""));
+    expect(utgangar).toEqual(["Bytte fönster", "Bytte fönster"]);
+    expect(lankar(s.div, "Tillbaka till projektet")).toEqual([]);
     s.stang();
   });
 
@@ -620,5 +630,70 @@ describe("Frågorna från Återstår: Avbryt och bakåt till underlaget, sparand
     const f = new FormData();
     for (const [k, v] of Object.entries({ projekt_id: GAMMALT, namn: "Nytt golv", byggde_nytt: "ja" })) f.set(k, v);
     await expect(redigeraProjekt({}, f)).rejects.toThrow(`NEXT_REDIRECT /projekt/${GAMMALT}`);
+  });
+});
+
+// docs/design.md, "Kvittoraden ser likadan ut på Kvittona som på
+// projektsidan": det är samma rad. 2026-11-19 tappade Kvittona kursiven och
+// bilagemärket en skärm bort. Provet kräver att samma kvittos rad är samma
+// HTML på båda skärmarna – och visar först att raden har något att tappa:
+// en anteckning, en andrarad och ett bilagemärke.
+describe("kvittoraden är samma rad på Kvittona som på projektsidan", () => {
+  it("samma kvitto ger samma rad, med anteckning, kursiv andrarad och bilagemärke", async () => {
+    const k = h.db.tabell("kostnad").find((x) => x.id === fonster)!;
+    k.anteckning = "Tre nya fönster mot gatan, karmarna var ruttna";
+    h.db.lagg("bilaga", { kostnad_id: fonster, sokvag: `x/${fonster}.jpg`, filtyp: "image/jpeg" });
+
+    const sida = await sidan();
+    const kvittona = await rendera(KvittonaSida({ params: Promise.resolve({ id: P }) }));
+    const belopp = formateraKronor(4_000_000);
+    /** Raden: närmaste förfader till kvittots länk som också bär beloppet –
+     *  inom skärmens egen behållare, och utan något annat kvitto. Stannar
+     *  annars: en mätning som klättrar till sidans rot jämför sidan med sig
+     *  själv. Så var det först, eftersom beloppet skrivs med hårt mellanslag. */
+    const pa = (div: HTMLElement) => {
+      const lank = [...div.querySelectorAll(`a[href="/kostnad/${fonster}"]`)];
+      expect(lank, "kvittots rad, en länk till kvittot").toHaveLength(1);
+      let rad: HTMLElement = lank[0] as HTMLElement;
+      while (rad !== div && !rad.textContent!.includes(belopp)) rad = rad.parentElement!;
+      expect(rad, "raden med beloppet, inom skärmen").not.toBe(div);
+      expect(rad.textContent, "bara det här kvittot").not.toContain("Montage AB");
+      return rad;
+    };
+    const pPa = pa(sida.div);
+    const pKv = pa(kvittona.div);
+    // Förutsättningen: raden har det som kan tappas – anteckningen,
+    // andraraden och märket för en bifogad bild, inte det för en saknad.
+    expect(pPa.textContent).toContain("Tre nya fönster mot gatan");
+    expect(pPa.textContent).toContain("Fönsterfabriken · 2024-04-02");
+    expect(pPa.innerHTML, "märket säger att kvittot är bifogat").toContain("Kvitto bifogat");
+    expect(pPa.innerHTML).not.toContain("Inget kvitto bifogat");
+    expect(pKv.outerHTML).toBe(pPa.outerHTML);
+    sida.stang();
+    kvittona.stang();
+  });
+});
+
+// docs/design.md, "Och att den är frivillig måste synas": under knapparna en
+// dämpad rad. Lydelsen läses ur filen.
+describe("delen av bostaden ser frivillig ut", () => {
+  function raden(): string {
+    const m = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8").match(
+      /Under knapparna står därför en dämpad rad: \*\*"([^"]+)"\*\*/,
+    );
+    if (!m) throw new Error("design.md saknar raden under knapparna");
+    return m[1];
+  }
+
+  it("på Vad och var står raden under knapparna", async () => {
+    const s = await rendera(VadOchVarSida({ params: Promise.resolve({ id: P }) }));
+    const fraga = s.div.querySelector("[data-bostadsdel]");
+    expect(fraga, "delfrågan").not.toBeNull();
+    const rad = [...fraga!.querySelectorAll("p")].filter((p) => p.textContent === raden());
+    expect(rad, "raden, en gång").toHaveLength(1);
+    const knappar = [...fraga!.querySelectorAll("button")];
+    expect(knappar.length).toBeGreaterThan(0);
+    expect(knappar.at(-1)!.compareDocumentPosition(rad[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    s.stang();
   });
 });

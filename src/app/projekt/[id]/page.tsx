@@ -10,15 +10,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  Avdelningsrubrik,
-  Listrad,
   PRIMARKNAPP_KLASS,
   SEKUNDARKNAPP_KLASS,
   Skarm,
 } from "@/components/skarm";
 import { Faktarad as Rad, FAKTARUTA_KLASS } from "@/components/faktarad";
-import { arUtkast, beloppForKostnad, projektSumma, rotForBelopp } from "@/doman/berakningar";
-import { projektetsArText } from "@/lib/projektar";
+import { ProjektetsKvittorad } from "./kvittorad";
+import { projektSumma } from "@/doman/berakningar";
+import { projektarTextKarta } from "@/lib/projektar";
 import {
   merkostnadBehoverBekraftas,
   projektetsBelopp,
@@ -31,14 +30,13 @@ import {
 import { SAMMA_DEL_SKAL } from "@/doman/samma-del";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad, tillDomanProjekt } from "@/lib/doman-fran-db";
-import { formateraKronor, isoDatum } from "@/lib/format";
+import { formateraKronor } from "@/lib/format";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { projektnamnKarta } from "@/doman/genomgang";
 import { hamtaProjektnamn } from "@/lib/projektnamn";
 import { hamtaValbaraKvitton } from "@/lib/valbara-kvitton";
-import { bilagemarke } from "@/lib/kvittolista";
 import { prisma } from "@/lib/prisma";
 import { upphovsrad } from "@/lib/samagande";
 import { antalMedlemmar, kravBostad } from "@/lib/session";
@@ -157,10 +155,7 @@ export default async function ProjektSida({
             underlaget (src/lib/projektar.ts). */}
         <Rad
           etikett="År"
-          varde={projektetsArText(
-            kostnader.map((k) => k.betaldatum),
-            projekt.ar,
-          )}
+          varde={projektarTextKarta([projekt], kostnadRader).get(id) ?? String(projekt.ar)}
         />
       </section>
 
@@ -296,33 +291,17 @@ export default async function ProjektSida({
         ) : null}
       </ProjektDel>
 
-      <section>
-        {/* Rubriken bar projektets summa hogerstalld, som kvittolistans
-            arsrubrik: samma tal som projektlistan (projektSumma), och raderna
-            under gar att rakna ihop till den. "Kvitton", aldrig "kostnader"
-            (docs/design.md, Ordval i granssnittet). */}
-        {/* Delen Kvittona: Ändra leder till att lyfta ut ett kvitto
-            (docs/design.md, "Att lyfta ut ett kvitto hör till Kvittona"),
-            och visas bara nar det finns ett kvitto att lyfta ut. Summan star
-            kvar i rubriken, fore Ändra. */}
-        <div className="flex items-baseline justify-between gap-3 px-4 pt-4">
-          {/* Delen heter Kvittona, som skarmen bakom dess Ändra
-              (docs/design.md, "Skärmen heter samma sak som delen den
-              ändrar"). */}
-          <Avdelningsrubrik>
-            Kvittona
-          </Avdelningsrubrik>
-          {kostnader.length > 0 ? (
-            <div className="flex items-baseline gap-3">
-              <p className="font-rubrik text-sm tabular-nums text-text-primar">
-                {formateraKronor(projektSumma(kostnader, id))}
-              </p>
-              <Link href={`/projekt/${id}/kvitton/andra`} className={ANDRA_KLASS}>
-                Ändra
-              </Link>
-            </div>
-          ) : null}
-        </div>
+      <section aria-label="Kvittona">
+        {/* Delen Kvittona, med samma rubrik som de andra tva (DelHuvud):
+            tre delar av samma rang har samma form (docs/design.md, "De tre
+            delarnas rubriker ser likadana ut"). Summan star hogerstalld fore
+            Ändra – samma tal som projektlistan (projektSumma). Ändra leder
+            till att lyfta ut ett kvitto och visas bara nar det finns ett. */}
+        <DelHuvud
+          titel="Kvittona"
+          andra={kostnader.length > 0 ? `/projekt/${id}/kvitton/andra` : undefined}
+          summa={kostnader.length > 0 ? formateraKronor(projektSumma(kostnader, id)) : undefined}
+        />
         {/* Flera kvitton i ett svep (docs/design.md, "Att lägga kvitton till
             ett projekt som redan finns"). Bara nar det finns kvitton att
             valja – annars leder lanken till en tom lista. */}
@@ -342,52 +321,14 @@ export default async function ProjektSida({
           </p>
         ) : (
           <div className="divide-y divide-linje">
-            {kostnader.map((k) => {
-              const original = kostnadRader.find((x) => x.id === k.id)!;
-              // Samma rad som i kvittolistan och Senaste kvitton
-              // (docs/design.md, "Anteckningen får två rader där den är
-              // radens huvudtext"): anteckningen overst pa tva rader,
-              // leverantor och datum dampat under. Saknas anteckning ar
-              // leverantoren huvudtext och andraraden bara datumet.
-              const notering = original.anteckning?.trim();
-              const leverantor = original.leverantor?.trim();
-              const datumRad = original.betaldatum ?? original.dokumentdatum;
-              const datum = datumRad ? isoDatum(datumRad) : null;
-              return (
-                <Listrad
-                  key={k.id}
-                  namn={notering || leverantor || "Kvitto"}
-                  anteckning={!!notering}
-                  // Till kvittot, som i kvittolistan – dar ratta man ett
-                  // belopp utan att leta upp kvittot via Kvitton.
-                  href={`/kostnad/${k.id}`}
-                  status={notering ? [leverantor, datum].filter(Boolean).join(" · ") : (datum ?? "")}
-                  // Kursiv forsta rad och bilagemarket, som i kvittolistan och
-                  // pa startskarmen (docs/design.md, Kvittolistan). Samma
-                  // villkor som dar: utkast och kvitton som inte hor till
-                  // bostaden bar inget marke.
-                  kursivStatus
-                  bilaga={bilagemarke({
-                    arkiverad: original.arkiverad,
-                    utkast: arUtkast(original),
-                    antalBilagor: original._count.bilagor,
-                  })}
-                  // Projektets summa ovan raknar kvittot; det ar underlaget
-                  // (exporten, troskeln) som vantar pa betaldatumet.
-                  underStatus={k.betaldatum ? undefined : "Obetald – räknas i underlaget när den är betald"}
-                  atgard={!k.betaldatum}
-                  // Beloppet pa pappret, inte det ROT-reducerade bidraget
-                  // (docs/design.md, "Samma belopp ska se likadant ut
-                  // overallt") – annars star samma kvitto med tva olika
-                  // summor pa olika skarmar.
-                  belopp={formateraKronor(beloppForKostnad(k, id))}
-                  // ROT som avgar fran just den har delen av kvittot
-                  // (docs/design.md, Listrader: "ROT-raden hor till
-                  // kvittoraden, overallt den visas").
-                  rot={rotForBelopp(k, beloppForKostnad(k, id))}
-                />
-              );
-            })}
+            {kostnader.map((k) => (
+              <ProjektetsKvittorad
+                key={k.id}
+                kostnad={k}
+                original={kostnadRader.find((x) => x.id === k.id)!}
+                projektId={id}
+              />
+            ))}
           </div>
         )}
         <div className="flex flex-col gap-2 p-4">
@@ -426,15 +367,28 @@ function ProjektDel({
 }) {
   return (
     <section aria-label={titel} className="border-b border-linje">
-      <div className="flex items-center justify-between gap-3 px-4 pt-4">
-        <h2 className="font-rubrik text-base text-text-primar">{titel}</h2>
-        {andra ? (
-          <Link href={andra} className={ANDRA_KLASS}>
-            Ändra
-          </Link>
-        ) : null}
-      </div>
+      <DelHuvud titel={titel} andra={andra} />
       <div className={`${FAKTARUTA_KLASS} p-4`}>{children}</div>
     </section>
+  );
+}
+
+/** En dels rubrikrad – en enda for alla tre delar, sa att de inte kan
+ *  glida isar i form. Summan, nar den finns, star hogerstalld fore Ändra. */
+function DelHuvud({ titel, andra, summa }: { titel: string; andra?: string; summa?: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 px-4 pt-4">
+      <h2 className="font-rubrik text-base text-text-primar">{titel}</h2>
+      {summa || andra ? (
+        <div className="flex items-baseline gap-3">
+          {summa ? <p className="font-rubrik text-sm tabular-nums text-text-primar">{summa}</p> : null}
+          {andra ? (
+            <Link href={andra} className={ANDRA_KLASS}>
+              Ändra
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }

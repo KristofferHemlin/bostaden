@@ -90,6 +90,9 @@ const { default: Oversikt } = await import("@/app/page");
 const { default: KvittolistaSida } = await import("@/app/kostnad/page");
 const { default: NyttProjektSida } = await import("@/app/projekt/nytt/page");
 const { default: ProjektSida } = await import("@/app/projekt/[id]/page");
+const { default: KvittonaSida } = await import("@/app/projekt/[id]/kvitton/andra/page");
+const { Avdelningsrubrik } = await import("@/components/skarm");
+const { createElement } = await import("react");
 const { utkastNyckel } = await import("@/app/projekt/nytt/flode");
 
 const ROT = process.cwd();
@@ -217,6 +220,9 @@ beforeAll(async () => {
     oversikt: await Oversikt({ searchParams: Promise.resolve({}) } as Parameters<typeof Oversikt>[0]),
     kostnad: await KvittolistaSida(),
     projekt: await ProjektSida({ params: Promise.resolve({ id: HOG }) }),
+    // Det femte stället (docs/design.md, "Anteckningen får två rader"):
+    // samma rad som projektsidan, en skärm bort.
+    kvittona: await KvittonaSida({ params: Promise.resolve({ id: HOG }) }),
   };
   const kroppar: Record<string, string> = Object.fromEntries(
     Object.entries(sidor).map(([namn, vy]) => [namn, renderToStaticMarkup(vy)]),
@@ -360,6 +366,7 @@ describe("anteckningen får två rader där den är radens huvudtext, vid 390 px
     ["oversikt", "Senaste kvitton"],
     ["kostnad", "kvittolistan"],
     ["projekt", "projektets egen kvittolista"],
+    ["kvittona", "skärmen Kvittona"],
   ])("%s (%s)", async (sida) => {
     provaParet(sida, await mat(sida, KORT), await mat(sida, LANG));
   }, 60_000);
@@ -367,7 +374,7 @@ describe("anteckningen får två rader där den är radens huvudtext, vid 390 px
   // Och raden under anteckningen är leverantör och datum, som i kvittolistan
   // – samma kvitto, samma rad (docs/design.md, Kvittolistan). Raden läses i
   // Chrome, hela texten: elementet efter anteckningens.
-  it.each(["oversikt", "kostnad", "projekt"])("%s: leverantör och datum under anteckningen", async (sida) => {
+  it.each(["oversikt", "kostnad", "projekt", "kvittona"])("%s: leverantör och datum under anteckningen", async (sida) => {
     await cdp("Page.navigate", { url: `${adress}${sida}` });
     await vanta(300);
     const svar = await cdp<{ result: { value: (string | null)[] } }>("Runtime.evaluate", {
@@ -436,6 +443,51 @@ describe("projektflödet har ett orange element per steg, och det är knappen vi
     console.log(`nytt projekt, steg ${steg}: ${orange.length} orange – ${orange.join(" | ")}`);
     expect(tonerLasta, "tre olika orange toner ska gå att läsa ur sidan").toBe(3);
     expect(orange).toEqual([`BUTTON: ${knapp}`]);
+  }, 60_000);
+});
+
+// docs/design.md, "De tre delarnas rubriker ser likadana ut": KVITTONA var
+// liten spärrad versal medan de andra två var vanliga rubriker. Mätt i Chrome
+// med appens CSS, inte ur klassnamn (CLAUDE.md, "En klass är inte en
+// layout"): typsnitt, storlek, vikt, versalisering, spärrning och färg ska
+// vara desamma för alla tre.
+//
+// Förutsättningen prövas först: den gamla sektionsetiketten (Avdelningsrubrik),
+// insatt på samma sida, ska mätas som annorlunda – annars kan mätningen inte
+// skilja formerna åt och likheten betyder ingenting.
+describe("projektsidans tre delar har rubriker av samma form", () => {
+  it("Vad och var, Frågorna och Kvittona mäts likadant, och sektionsetiketten mäts annorlunda", async () => {
+    await cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
+    await cdp("Page.navigate", { url: `${adress}projekt` });
+    await vanta(500);
+    const etikett = renderToStaticMarkup(createElement(Avdelningsrubrik, null, "Prov"));
+    const svar = await cdp<{ result: { value: Record<string, string[] | null> } }>("Runtime.evaluate", {
+      awaitPromise: true,
+      returnByValue: true,
+      expression: `(async () => {
+        for (let i = 0; i < 100 && document.readyState !== 'complete'; i++) await new Promise(r => setTimeout(r, 100));
+        const form = (el) => {
+          if (!el) return null;
+          const s = getComputedStyle(el);
+          return [s.fontFamily, s.fontSize, s.fontWeight, s.textTransform, s.letterSpacing, s.color];
+        };
+        const rubrik = (t) => [...document.querySelectorAll('section *')].find((e) => e.children.length === 0 && e.textContent === t) || null;
+        const prov = document.createElement('div');
+        prov.innerHTML = ${JSON.stringify(etikett)};
+        document.querySelector('section').appendChild(prov);
+        const ut = { vad: form(rubrik('Vad och var')), fragor: form(rubrik('Frågorna')), kvitton: form(rubrik('Kvittona')), etikett: form(prov.firstElementChild) };
+        prov.remove();
+        return ut;
+      })()`,
+    });
+    const { vad, fragor, kvitton, etikett: gammal } = svar.result.value;
+    expect(vad, "rubriken Vad och var").not.toBeNull();
+    expect(fragor, "rubriken Frågorna").not.toBeNull();
+    expect(kvitton, "rubriken Kvittona").not.toBeNull();
+    console.log(`delarnas rubriker: ${JSON.stringify(vad)} · sektionsetiketten: ${JSON.stringify(gammal)}`);
+    expect(gammal, "förutsättningen: sektionsetiketten mäts annorlunda").not.toEqual(vad);
+    expect(fragor).toEqual(vad);
+    expect(kvitton).toEqual(vad);
   }, 60_000);
 });
 
