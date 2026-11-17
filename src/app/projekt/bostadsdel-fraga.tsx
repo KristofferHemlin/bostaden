@@ -22,8 +22,9 @@ import {
   BOSTADSDEL_FRAGA,
   BOSTADSDEL_FRAGAD_FALT,
   BOSTADSDEL_FRITEXT_FALT,
-  BOSTADSDELAR,
+  BOSTADSDEL_GRUPPER,
   bostadsdelarFor,
+  bostadsdelarIGrupp,
   type Bostadsdel,
   type BostadsdelSvar,
 } from "@/doman/bostadsdel";
@@ -61,9 +62,13 @@ export function BostadsdelFraga({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valda, fritext]);
 
+  // Upplatelseformens knappar, och varje sparat svar – ocksa ett som ligger
+  // utanfor dem (docs/design.md): det far aldrig bli osynligt. Varje kod har
+  // en grupp (BOSTADSDEL_GRUPP), sa ett sadant svar hamnar under sin rubrik.
   const visade = new Set<Bostadsdel>([...bostadsdelarFor(upplatelseform), ...initial.map((s) => s.del)]);
-  // ANNAT sist, ovriga i kodlistans ordning.
-  const knappar = [...BOSTADSDELAR.filter((d) => d !== "ANNAT" && visade.has(d)), "ANNAT" as const];
+  const grupper = BOSTADSDEL_GRUPPER.map((g) => ({ ...g, knappar: bostadsdelarIGrupp(g.grupp, visade) })).filter(
+    (g) => g.knappar.length > 0,
+  );
 
   function vaxla(del: Bostadsdel) {
     setValda((f) => {
@@ -77,10 +82,23 @@ export function BostadsdelFraga({
   return (
     <fieldset data-bostadsdel="">
       <legend className="mb-1.5 font-granssnitt text-sm text-text-sekundar">{BOSTADSDEL_FRAGA}</legend>
-      <div className="grid grid-cols-2 gap-2">
-        {knappar.map((del) => (
-          <Kortval key={del} vald={valda.has(del)} text={BOSTADSDEL_ETIKETT[del]} onClick={() => vaxla(del)} />
-        ))}
+      {/* Tva axlar med namn: rum och platser, delar och system
+          (docs/design.md, "Lösningen är att namnge axlarna, inte att välja
+          en"). Annat for sig under bada, eftersom det inte hor till nagon. */}
+      {grupper.map((g, i) => (
+        <div key={g.grupp} role="group" aria-labelledby={`bostadsdel-${g.grupp}`} className={i > 0 ? "mt-3" : undefined}>
+          <p id={`bostadsdel-${g.grupp}`} className="mb-1.5 font-granssnitt text-xs text-text-sekundar">
+            {g.rubrik}
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {g.knappar.map((del) => (
+              <Kortval key={del} vald={valda.has(del)} text={BOSTADSDEL_ETIKETT[del]} onClick={() => vaxla(del)} />
+            ))}
+          </div>
+        </div>
+      ))}
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Kortval vald={valda.has("ANNAT")} text={BOSTADSDEL_ETIKETT.ANNAT} onClick={() => vaxla("ANNAT")} />
       </div>
       {valda.has("ANNAT") ? (
         <input
@@ -88,7 +106,7 @@ export function BostadsdelFraga({
           name={BOSTADSDEL_FRITEXT_FALT}
           value={fritext}
           onChange={(e) => setFritext(e.target.value)}
-          aria-label="Vilken annan del av bostaden"
+          aria-label="Vad mer rörde projektet"
           placeholder="t.ex. trappan"
           className={`${INPUT_KLASS} mt-2`}
         />

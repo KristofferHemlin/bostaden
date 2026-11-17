@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { radensEtikett } from "./_bostadsdelar-design";
 
 // Projektsidan ändras i delar (docs/design.md, "Projektsidan ändras i delar",
 // 2026-11-19): en läsvy med tre delar – Vad och var, Frågorna, Kvittona – var
@@ -207,7 +208,7 @@ describe("läsvyn: tre delar med var sin Ändra", () => {
     const s = await sidan();
     expect(rader(del(s.div, "Vad och var"))).toEqual([
       "Namn | Bytte fönster",
-      "Del av bostaden | Fönster",
+      `${radensEtikett()} | Fönster`,
     ]);
     expect(rader(del(s.div, "Frågorna"))).toEqual([
       "Vad gjordes | Bytte ut något som fanns",
@@ -296,7 +297,7 @@ describe("Vad och var", () => {
     const v = await sidan();
     expect(rader(del(v.div, "Vad och var"))).toEqual([
       "Namn | Bytte fönster i vardagsrummet",
-      "Del av bostaden | Ytskikt, Fönster",
+      `${radensEtikett()} | Ytskikt, Fönster`,
     ]);
     expect(rader(del(v.div, "Frågorna"))).toContain("Kvalitet | Bättre – merkostnad 12 000 kr");
     expect(rader(del(v.div, "Frågorna"))).toContain(`Hur vet du det? | ${SVARET}`);
@@ -369,7 +370,7 @@ describe("Frågorna", () => {
     const v = await sidan();
     expect(rader(del(v.div, "Vad och var"))).toEqual([
       "Namn | Bytte fönster",
-      "Del av bostaden | Fönster",
+      `${radensEtikett()} | Fönster`,
     ]);
     expect(rader(del(v.div, "Frågorna"))).toContain("Skick vid förvärvet | 2 – Ganska bra skick");
     v.stang();
@@ -486,7 +487,7 @@ describe("Kvittona: att lyfta ut ett kvitto", () => {
     const fragan = merkostnadUpplysning("projektet_andrat", projektet() as never, belopp, "fraga");
     expect(fragorna.textContent).toContain(fragan);
     expect(lankar(fragorna, "Svara igen")).toEqual([`/projekt/${P}/redigera`]);
-    expect(rader(del(v.div, "Vad och var"))).toEqual(["Namn | Bytte fönster", "Del av bostaden | Fönster"]);
+    expect(rader(del(v.div, "Vad och var"))).toEqual(["Namn | Bytte fönster", `${radensEtikett()} | Fönster`]);
     v.stang();
   });
 

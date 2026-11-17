@@ -67,7 +67,54 @@ export const BOSTADSDEL_ETIKETT: Record<Bostadsdel, string> = {
   ANNAT: "Annat",
 };
 
-export const BOSTADSDEL_FRAGA = "Vilken del av bostaden?";
+/** Fragan, och raden pa projektets sida och i sammanfattningen
+ *  (docs/design.md, "Vad projektet rörde"). Fragan hette "Vilken del av
+ *  bostaden?" till 2026-11-20: namnet krockade med forsaljningens fraga om
+ *  samma del, som star kvar ordagrant. Koden heter fortfarande bostadsdel –
+ *  anvandarens sprak och kodens behover inte vara samma. */
+export const BOSTADSDEL_FRAGA = "Vad rörde projektet?";
+export const BOSTADSDEL_RAD = "Projektet rörde";
+
+/** De tva axlarna knapparna star under (docs/design.md, "Lösningen är att
+ *  namnge axlarna, inte att välja en"). Bara dar hon valjer – raden pa
+ *  projektsidan ar en. Annat hor till ingen av dem. */
+export type BostadsdelGrupp = "rum" | "delar";
+
+export const BOSTADSDEL_GRUPPER: { grupp: BostadsdelGrupp; rubrik: string }[] = [
+  { grupp: "rum", rubrik: "Rum och platser" },
+  { grupp: "delar", rubrik: "Delar och system" },
+];
+
+/** Varje kod utom Annat har en grupp – typen kraver det, sa att ett sparat
+ *  svar aldrig kan bli hemlost. Ordningen ar designtabellens: lagenhetens
+ *  forst, husets sedan. */
+export const BOSTADSDEL_GRUPP: Record<Exclude<Bostadsdel, "ANNAT">, BostadsdelGrupp> = {
+  KOK: "rum",
+  BADRUM: "rum",
+  BALKONG: "rum",
+  FORVARING: "rum",
+  ALTAN: "rum",
+  GARAGE: "rum",
+  TOMT: "rum",
+  GOLV: "delar",
+  YTSKIKT: "delar",
+  EL: "delar",
+  VVS: "delar",
+  DORRAR: "delar",
+  VITVAROR: "delar",
+  FONSTER: "delar",
+  TAK: "delar",
+  FASAD: "delar",
+  VARME: "delar",
+  DRANERING: "delar",
+};
+
+/** Knapparna i en grupp, i gruppens ordning, bland dem som ska visas. */
+export function bostadsdelarIGrupp(grupp: BostadsdelGrupp, visade: Set<Bostadsdel>): Bostadsdel[] {
+  return (Object.keys(BOSTADSDEL_GRUPP) as Exclude<Bostadsdel, "ANNAT">[]).filter(
+    (d) => BOSTADSDEL_GRUPP[d] === grupp && visade.has(d),
+  );
+}
 
 // Det en lagenhet har. Tak, fasad, dranering och tomt tillhor huset – ett
 // pastaende om byggnaden, aldrig om avdragsratten (docs/design.md).

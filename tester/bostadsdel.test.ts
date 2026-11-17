@@ -49,21 +49,16 @@ import { redigeraProjekt, sparaVadOchVar } from "@/app/projekt/actions";
 import ProjektSida from "@/app/projekt/[id]/page";
 import {
   BOSTADSDEL_ETIKETT,
+  BOSTADSDEL_GRUPPER,
   BOSTADSDELAR,
   bostadsdelarFor,
+  bostadsdelarIGrupp,
   tolkaBostadsdelar,
 } from "@/doman/bostadsdel";
+import { knapptabellen, radensEtikett } from "./_bostadsdelar-design";
 
 const las = (fil: string) => readFileSync(join(process.cwd(), "docs", fil), "utf-8");
 
-/** Knapparna per upplatelseform, ur tabellen i design.md. */
-function knapparIDesign(): { bostadsratt: string[]; fastighetPlus: string[] } {
-  const d = las("design.md");
-  const br = d.match(/^\| Bostadsrätt \| (.+) \|$/m);
-  const fa = d.match(/^\| Fastighet \| Alla ovan, plus (.+) \|$/m);
-  if (!br || !fa) throw new Error("design.md saknar knapptabellen");
-  return { bostadsratt: br[1].split(", "), fastighetPlus: fa[1].split(", ") };
-}
 
 /** Koderna ur datamodellen i produktspec.md. */
 function koderISpec(): string[] {
@@ -144,18 +139,37 @@ describe("koder, etiketter och knappar", () => {
     expect([...BOSTADSDELAR]).toEqual(koderISpec());
   });
 
-  it("en bostadsratt visar design.md:s knappar, i den ordningen", () => {
-    expect(bostadsdelarFor("bostadsratt").map((d) => BOSTADSDEL_ETIKETT[d])).toEqual(
-      knapparIDesign().bostadsratt,
-    );
+  // Två grupper per upplåtelseform (docs/design.md, "Vad projektet rörde"),
+  // i tabellens ordning. Annat står för sig, i ingen av dem.
+  const grupperna = (form: "bostadsratt" | "fastighet") => {
+    const visade = new Set(bostadsdelarFor(form));
+    return BOSTADSDEL_GRUPPER.map((g) => bostadsdelarIGrupp(g.grupp, visade).map((d) => BOSTADSDEL_ETIKETT[d]));
+  };
+
+  it("grupperna heter som tabellens kolumner", () => {
+    expect(BOSTADSDEL_GRUPPER.map((g) => g.rubrik)).toEqual(knapptabellen().rubriker);
   });
 
-  it("en fastighet visar alla en bostadsratt har, plus husets", () => {
-    const { bostadsratt, fastighetPlus } = knapparIDesign();
-    const fastighet = bostadsdelarFor("fastighet").map((d) => BOSTADSDEL_ETIKETT[d]);
-    expect([...fastighet].sort()).toEqual([...bostadsratt, ...fastighetPlus].sort());
+  it("en bostadsratt visar design.md:s knappar, per grupp och i den ordningen", () => {
+    expect(grupperna("bostadsratt")).toEqual(knapptabellen().bostadsratt);
+    expect(bostadsdelarFor("bostadsratt")).toContain("ANNAT");
+  });
+
+  it("en fastighet visar alla en bostadsratt har, plus husets, i samma grupp", () => {
+    const { bostadsratt, fastighetPlus } = knapptabellen();
+    expect(grupperna("fastighet")).toEqual([
+      [...bostadsratt[0], ...fastighetPlus[0]],
+      [...bostadsratt[1], ...fastighetPlus[1]],
+    ]);
     // Annat sist, eftersom det oppnar fritexten.
-    expect(fastighet.at(-1)).toBe("Annat");
+    expect(bostadsdelarFor("fastighet").at(-1)).toBe("ANNAT");
+  });
+
+  // Inga knappar tillkommer och inga försvinner: varje kod utom Annat står i
+  // precis en grupp, så ett sparat svar aldrig blir hemlöst.
+  it("varje kod utom Annat har precis en grupp", () => {
+    const iGrupp = BOSTADSDEL_GRUPPER.flatMap((g) => bostadsdelarIGrupp(g.grupp, new Set(BOSTADSDELAR)));
+    expect([...iGrupp].sort()).toEqual(BOSTADSDELAR.filter((d) => d !== "ANNAT").sort());
   });
 
   it("varje kod har en knapp i nagon upplatelseform", () => {
@@ -259,7 +273,7 @@ describe("projektets sida", () => {
   it("visar svaret som en rad, med fritexten dar Annat star", async () => {
     await sparat(sparaVadOchVar({}, svar(["KOK", "EL", "ANNAT"], "Trappan")));
     const rad = (await projektsidan()).match(
-      /<div class="flex justify-between gap-3"><span[^>]*>Del av bostaden<\/span><span[^>]*>(.*?)<\/span><\/div>/,
+      new RegExp(`<div class="flex justify-between gap-3"><span[^>]*>${radensEtikett()}<\\/span><span[^>]*>(.*?)<\\/span><\\/div>`),
     );
     expect(utanTaggar(rad![1])).toBe("Kök, El, Trappan");
   });
@@ -274,6 +288,8 @@ describe("projektets sida", () => {
     const html = await projektsidan();
     // Forutsattningen: sidan ar renderad med sina rader.
     expect(html).toContain(">Räknas som</span>");
-    expect(html).not.toContain("Del av bostaden");
+    // Raden letas efter på sitt nuvarande namn – ett negativt prov på ett
+    // namn som inte längre används hade gått igenom vad sidan än visade.
+    expect(html).not.toContain(`>${radensEtikett()}<`);
   });
 });

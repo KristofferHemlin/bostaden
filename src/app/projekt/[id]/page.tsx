@@ -22,7 +22,7 @@ import {
   merkostnadBehoverBekraftas,
   projektetsBelopp,
 } from "@/doman/atgardsberakning";
-import { bostadsdelText } from "@/doman/bostadsdel";
+import { BOSTADSDEL_RAD, bostadsdelText } from "@/doman/bostadsdel";
 import { ATGARDSTYP_TEXT, atgardKategoriText, SKICK_ORD } from "@/doman/fragetradet";
 import {
   merkostnadUpplysning,
@@ -174,7 +174,7 @@ export default async function ProjektSida({
             rörde"). Utelamnas nar fragan inte besvarats – inga rader betyder
             inte tillfragad, och ett tillstand ar inget varde. Ingenstans
             annars, och i inget tal. */}
-        {delText ? <Rad etikett="Del av bostaden" varde={delText} /> : null}
+        {delText ? <Rad etikett={BOSTADSDEL_RAD} varde={delText} /> : null}
       </ProjektDel>
 
       {/* Utan svar finns inget att andra – vagen in ar Svara på frågorna

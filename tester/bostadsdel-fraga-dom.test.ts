@@ -18,6 +18,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { BostadsdelFraga } from "@/app/projekt/bostadsdel-fraga";
 import { tolkaBostadsdelar } from "@/doman/bostadsdel";
+import { knapptabellen } from "./_bostadsdelar-design";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 window.scrollTo = () => {};
@@ -30,13 +31,6 @@ function fragan(): string {
   return m[1];
 }
 
-function knapparIDesign(): { bostadsratt: string[]; fastighetPlus: string[] } {
-  const d = design();
-  const br = d.match(/^\| Bostadsrätt \| (.+) \|$/m);
-  const fa = d.match(/^\| Fastighet \| Alla ovan, plus (.+) \|$/m);
-  if (!br || !fa) throw new Error("design.md saknar knapptabellen");
-  return { bostadsratt: br[1].split(", "), fastighetPlus: fa[1].split(", ") };
-}
 
 let behallare: HTMLDivElement;
 let rot: Root;
@@ -60,6 +54,16 @@ function grupp(): HTMLFieldSetElement {
 }
 
 const knappar = () => [...grupp().querySelectorAll("button")].map((b) => b.textContent);
+
+/** Knapparna under en rubrik, som hon läser dem: gruppen hittad på sin
+ *  rubriks text, stannar om den saknas. */
+function underRubrik(rubrik: string): string[] {
+  const g = [...grupp().querySelectorAll('[role="group"]')].find(
+    (e) => e.querySelector(`#${e.getAttribute("aria-labelledby")}`)?.textContent === rubrik,
+  );
+  if (!g) throw new Error(`ingen grupp under rubriken ${rubrik}`);
+  return [...g.querySelectorAll("button")].map((b) => b.textContent!);
+}
 const knapp = (text: string) => [...grupp().querySelectorAll("button")].find((b) => b.textContent === text)!;
 
 describe("bostadsdelsfragan", () => {
@@ -68,12 +72,26 @@ describe("bostadsdelsfragan", () => {
   // (tester/projektsidan-i-delar.test.ts). Här stod till 2026-11-19 ett prov
   // av <FragetradetFalt> med bostadsdelen, en kombination ingen skärm längre
   // visar (docs/design.md, "Projektsidan ändras i delar").
-  it("en bostadsratt far bostadsrattens knappar, en fastighet aven husets", async () => {
-    const { bostadsratt, fastighetPlus } = knapparIDesign();
+  // docs/design.md, "Vad projektet rörde": knapparna under två rubriker,
+  // Annat för sig under båda. Rubrikerna och knapparna ur tabellen.
+  it("en bostadsratt far bostadsrattens knappar under två rubriker, en fastighet aven husets", async () => {
+    const { rubriker, bostadsratt, fastighetPlus } = knapptabellen();
     await act(async () => rot.render(createElement(BostadsdelFraga, { upplatelseform: "bostadsratt" })));
-    expect(knappar()).toEqual(bostadsratt);
+    expect(underRubrik(rubriker[0])).toEqual(bostadsratt[0]);
+    expect(underRubrik(rubriker[1])).toEqual(bostadsratt[1]);
     await act(async () => rot.render(createElement(BostadsdelFraga, { upplatelseform: "fastighet" })));
-    expect([...knappar()].sort()).toEqual([...bostadsratt, ...fastighetPlus].sort());
+    expect(underRubrik(rubriker[0])).toEqual([...bostadsratt[0], ...fastighetPlus[0]]);
+    expect(underRubrik(rubriker[1])).toEqual([...bostadsratt[1], ...fastighetPlus[1]]);
+  });
+
+  it("Annat står för sig, efter båda grupperna och i ingen av dem", async () => {
+    const { rubriker } = knapptabellen();
+    await act(async () => rot.render(createElement(BostadsdelFraga, { upplatelseform: "fastighet" })));
+    expect(underRubrik(rubriker[0])).not.toContain("Annat");
+    expect(underRubrik(rubriker[1])).not.toContain("Annat");
+    expect(knappar().filter((t) => t === "Annat")).toHaveLength(1);
+    const sista = [...grupp().querySelectorAll('[role="group"]')].at(-1)!;
+    expect(sista.compareDocumentPosition(knapp("Annat")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("flerval, och Annat oppnar ett fritextfalt", async () => {
@@ -115,5 +133,10 @@ describe("bostadsdelsfragan", () => {
       ),
     );
     expect(knapp("Tak").getAttribute("aria-pressed")).toBe("true");
+    // Och under sin rubrik – grupperingen får inte göra svaret hemlöst.
+    // Förutsättningen: en bostadsrätt har annars ingen Tak-knapp.
+    const { rubriker, bostadsratt } = knapptabellen();
+    expect(bostadsratt[1]).not.toContain("Tak");
+    expect(underRubrik(rubriker[1])).toEqual([...bostadsratt[1], "Tak"]);
   });
 });

@@ -9,7 +9,7 @@
 // ovanfor kvittolistan, och knappen under bada heter "Spara projektet".
 
 import { Faktarad as Rad, FAKTARUTA_KLASS } from "@/components/faktarad";
-import { bostadsdelText, type BostadsdelSvar } from "@/doman/bostadsdel";
+import { BOSTADSDEL_RAD, bostadsdelText, type BostadsdelSvar } from "@/doman/bostadsdel";
 import {
   ATGARDSTYP_TEXT,
   atgardFranSvar,
@@ -49,7 +49,7 @@ export function Projektsammanfattning({
       {atgard ? (
         <Rad etikett="Räknas som" varde={atgardKategoriText(atgard.atgardstyp, atgard.battre_kvalitet)} />
       ) : null}
-      {delText ? <Rad etikett="Del av bostaden" varde={delText} /> : null}
+      {delText ? <Rad etikett={BOSTADSDEL_RAD} varde={delText} /> : null}
       {atgard ? (
         <>
           <Rad etikett="Vad gjordes" varde={ATGARDSTYP_TEXT[atgard.atgardstyp]} />

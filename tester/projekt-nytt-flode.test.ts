@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { radensEtikett } from "./_bostadsdelar-design";
 import { designensHjalptexter, normalisera } from "./_merkostnadslydelser";
 
 // Projektflödet, provat pa det som renderas (docs/design.md, "Att skapa ett
@@ -567,7 +568,7 @@ describe("sista steget sammanfattar innan det sparar", () => {
     expect(sammanfattningen()).toEqual([
       "Måla sovrummet",
       "Räknas som | Reparation",
-      "Del av bostaden | Ytskikt",
+      `${radensEtikett()} | Ytskikt`,
       "Vad gjordes | Bytte ut något som fanns",
       "Kvalitet | Liknande som tidigare",
       "Skick vid förvärvet | 1 – Dåligt skick",
