@@ -2136,7 +2136,15 @@ Efter namnet kommer **"Vad rörde projektet?"** – knappar att trycka på, fler
 | Bostadsrätt | Kök, Badrum, Balkong eller uteplats, Förvaring | Golv, Ytskikt, El, VVS, Dörrar, Vitvaror, Fönster |
 | Fastighet | Alla ovan, plus Altan, Garage eller förråd, Tomt | Alla ovan, plus Tak, Fasad, Värme, Dränering |
 
-*Annat* står under båda grupperna, för båda upplåtelseformerna.
+*Annat* står under båda grupperna, för båda upplåtelseformerna. **Väljs *Annat* får fritextfältet den tillgängliga etiketten "Annat som projektet rörde"** – inte *"Vad mer rörde projektet"*, eftersom *mer* är fel när *Annat* är det enda hon valt.
+
+**Grupprubrikerna är etiketter, inte rubriker.** Dämpade och utan versaler, i samma storlek som brödtexten – **aldrig under golvet på 14 px**, som agenten föreslog genom att göra dem ett steg mindre än frågan. Regeln i den här filen räknar upp fyrtiofem ställen som en gång låg under golvet; den här skulle ha blivit nummer fyrtiosex.
+
+**Ordningen bärs av avståndet, inte av vikten.** Här stod först *"frågan står över dem genom sin vikt"*, och agenten såg att det inte går ihop: frågan *"Vad rörde projektet?"* är själv en fältetikett i samma stil, så en vikt som skiljer den från grupperna skiljer den också från *"Vad gjorde du?"* en rad upp. **Två fältetiketter på samma skärm får inte väga olika**, och att göra varje etikett i appen halvfet är en ommålning ingen bett om för att lösa ett avstånd.
+
+Grupprubriken sitter därför **tätt mot sina knappar och har luft ovanför** – samma grepp som under *Så fungerar det* på startskärmen, där mellanrummet upp till rubriken är ungefär dubbelt så stort som mellanrummet mellan raderna. **Närhet gör grupperna till grupper utan att något byter storlek, vikt eller färg.**
+
+**Att varje knapp måste tillhöra en grupp är en kompilatorsak, inte en lista.** Agentens lösning: varje kod utom *Annat* kräver en grupp, och en ny kod utan grupp går inte att bygga. **Det är uppräkningsregeln löst i typsystemet** i stället för i ett test — det billigaste stället av alla, eftersom felet då aldrig hinner existera.
 
 **Svaret syns på projektets egen sida**, som raden **"Projektet rörde"** bredvid *Räknas som*. **En rad, inte två** – grupperingen hjälper när hon väljer och är brus när hon läser, och en rad som heter *Delar och system* skulle bära tillbaka precis den antydan namnbytet tog bort. Ett fält som samlas in och visas ingenstans är precis det regeln under *Hjälptexter under fält* förbjuder – och raden gör frågan till något hon kan rätta i stället för något hon bara matat in.
 

@@ -658,6 +658,8 @@ Fallet var det gamla grupperingsflödet: posten skapades med tomt namn, eftersom
 
 **Där bristen är synlig räcker regeln, och testet blir en skatt** — det måste röras vid varje ny skärm och säger oftast bara det uppenbara. Fråga alltså inte *gäller kravet alla?* utan **vad kostar det att missa en, och hur länge hinner felet leva?**
 
+**Och billigast av allt är när typsystemet bär uppräkningen.** 2026-11-20 krävde agenten att varje knappkod utom en måste ha en grupp, så att en ny kod utan grupp inte går att bygga. **Då hinner felet aldrig existera** — det finns inget utfall att läsa, ingen lista att hålla i synk och inget test att röra vid nästa ändring. **Fråga därför om kravet går att uttrycka i en typ innan du skriver ett prov för det.**
+
 **Automatiken säger att något saknas; den skriver inte provet.** Ett medlemskapsprov behöver ett anrop med ett främmande id och ett väntat avslag för just den vägen, och det går inte att läsa ur en signatur. Uppräkningen ur koden faller därför med besked när en väg varken är prövad eller undantagen — och **varje undantag bär ett skrivet skäl.** Att ingen hann skriva ett prov är inget skäl.
 
 **Jag bröt den här regeln dagen efter att jag skrev den.** Agenten skrev att posterna saknades i testet; jag skrev att koden saknade skydd. Det är *En mening i en rapport är inte en avläsning av koden*, en dag gammal, och jag var den som bröt den. Ett fel som upprepas snabbt är inte otur, det är en vana — och vanan är att läsa en rapport som en starkare historia än den berättar.
