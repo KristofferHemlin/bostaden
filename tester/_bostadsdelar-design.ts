@@ -40,3 +40,12 @@ export function radensEtikett(): string {
   if (!m) throw new Error("design.md saknar radens etikett");
   return m[1];
 }
+
+/** Fritextfaltets etikett nar Annat ar valt, ur design.md. */
+export function annatsEtikett(): string {
+  const m = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8").match(
+    /Väljs \*Annat\* får fritextfältet den tillgängliga etiketten "([^"]+)"/,
+  );
+  if (!m) throw new Error("design.md saknar etiketten för Annats fritextfält");
+  return m[1];
+}

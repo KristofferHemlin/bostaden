@@ -18,7 +18,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { BostadsdelFraga } from "@/app/projekt/bostadsdel-fraga";
 import { tolkaBostadsdelar } from "@/doman/bostadsdel";
-import { knapptabellen } from "./_bostadsdelar-design";
+import { annatsEtikett, knapptabellen } from "./_bostadsdelar-design";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 window.scrollTo = () => {};
@@ -104,6 +104,9 @@ describe("bostadsdelsfragan", () => {
     expect(knapp("El").getAttribute("aria-pressed")).toBe("true");
 
     const fritext = grupp().querySelector<HTMLInputElement>('input[type="text"]')!;
+    // Etiketten skärmläsaren läser, ur design.md – hela texten, inte en del av
+    // den. Inte "Vad mer rörde projektet": mer är fel när Annat är det enda valet.
+    expect(fritext.getAttribute("aria-label")).toBe(annatsEtikett());
     const satt = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
     await act(async () => {
       satt.call(fritext, "Trappan");

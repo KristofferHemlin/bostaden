@@ -33,6 +33,11 @@ import type { Upplatelseform } from "@/doman/typer";
 /** Raden under knapparna (docs/design.md). */
 const BOSTADSDEL_VALFRITT = "Valfritt – du kan lägga till det senare.";
 
+/** Fritextfaltets etikett nar Annat ar valt (docs/design.md, "Vad projektet
+ *  rörde"). Inte "Vad mer rörde projektet": mer ar fel nar Annat ar det enda
+ *  hon valt. */
+const BOSTADSDEL_ANNAT_ETIKETT = "Annat som projektet rörde";
+
 export function BostadsdelFraga({
   upplatelseform,
   initial = [],
@@ -81,13 +86,21 @@ export function BostadsdelFraga({
 
   return (
     <fieldset data-bostadsdel="">
-      <legend className="mb-1.5 font-granssnitt text-sm text-text-sekundar">{BOSTADSDEL_FRAGA}</legend>
+      <legend className="font-granssnitt text-sm text-text-sekundar">{BOSTADSDEL_FRAGA}</legend>
       {/* Tva axlar med namn: rum och platser, delar och system
           (docs/design.md, "Lösningen är att namnge axlarna, inte att välja
-          en"). Annat for sig under bada, eftersom det inte hor till nagon. */}
-      {grupper.map((g, i) => (
-        <div key={g.grupp} role="group" aria-labelledby={`bostadsdel-${g.grupp}`} className={i > 0 ? "mt-3" : undefined}>
-          <p id={`bostadsdel-${g.grupp}`} className="mb-1.5 font-granssnitt text-xs text-text-sekundar">
+          en"). Annat for sig under bada, eftersom det inte hor till nagon.
+
+          Grupprubrikerna ar etiketter, inte rubriker (docs/design.md, "Vad
+          projektet rörde"): samma storlek, vikt och farg som fragan, aldrig
+          under golvet pa 14 px. Ordningen bars av avstandet – tatt ned till
+          knapparna (mb-1.5), dubbelt sa mycket luft ovanfor (mt-3), ocksa
+          for den forsta gruppen under fragan, som darfor saknar egen
+          marginal. Matt i
+          tester/bostadsdel-fraga-layout.test.ts. */}
+      {grupper.map((g) => (
+        <div key={g.grupp} role="group" aria-labelledby={`bostadsdel-${g.grupp}`} className="mt-3">
+          <p id={`bostadsdel-${g.grupp}`} className="mb-1.5 font-granssnitt text-sm text-text-sekundar">
             {g.rubrik}
           </p>
           <div className="grid grid-cols-2 gap-2">
@@ -106,7 +119,7 @@ export function BostadsdelFraga({
           name={BOSTADSDEL_FRITEXT_FALT}
           value={fritext}
           onChange={(e) => setFritext(e.target.value)}
-          aria-label="Vad mer rörde projektet"
+          aria-label={BOSTADSDEL_ANNAT_ETIKETT}
           placeholder="t.ex. trappan"
           className={`${INPUT_KLASS} mt-2`}
         />
