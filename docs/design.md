@@ -2013,9 +2013,17 @@ Skärmens rubrik är **"Berätta vad du gjort"**. Flödet är *vad gjorde du* �
 
 **Inget femte steg.** Granskningen ligger i steg fyra, inte i en egen vy som ser ut som projektsidan. Två skärmar som visar samma sak är en skärm för mycket, och den regeln står redan under *Kvittots detaljvy*. Projektsidan efter sparandet är bekräftelsen.
 
-**"Hur vet du det?" hör inte till flödet.** Fältet under skickfrågan bär bevisningen när kvitto saknas, och skicket är det mjukaste talet i hela beräkningen — det skalar hela reparationsdelen. **Men det är inte brådskande**, och ett fritextfält mitt i ett flöde kostar mer uppmärksamhet än det är värt där. Det flyttar till projektets egen sida, där det går att fylla i efteråt.
+**Sammanfattningen ligger på kortets egen yta, inte på `--yta-nedsankt`.** Den nedsänkta ytan är årsrubrikernas band, och ett band betyder *här börjar en ny grupp*. Sammanfattningen är innehåll, och den ska dessutom se ut som projektsidans faktaruta — det är samma uppgifter med samma etiketter, och likheten är hela poängen med att visa dem före sparandet.
+
+**"Hur vet du det?" hör inte till flödet.** Fältet under skickfrågan bär bevisningen när kvitto saknas, och skicket är det mjukaste talet i hela beräkningen — det skalar hela reparationsdelen. **Men det är inte brådskande**, och ett fritextfält mitt i ett flöde kostar mer uppmärksamhet än det är värt där.
 
 Det är samma princip som att betaldatum, uppdelning och projektkoppling görs i efterhand från kvittots detaljvy: det som inte måste fångas medan det går, fångas inte i inmatningen.
+
+**Det hör hemma i *Ändra projektet*, inte som ett fält på projektsidan.** Jag skrev *"projektets egen sida"* 2026-11-18 och agenten byggde det ordagrant: ett redigerbart fält med en egen *Spara*-knapp mitt i en sida som annars bara visar. **Det bryter samma regel som kvittots detaljvy lyder under** – *allt som ändras ändras i ändringsläget* – och lär användaren att sidan ibland går att skriva i, utan att hon kan se när.
+
+Fältet står därför i projektets redigering, direkt under skickfrågan där det hörde hemma i flödet. **Projektsidan visar motiveringen som en rad**, bredvid *Skick vid förvärvet*, när den är besvarad – och inte alls när den inte är det, eftersom ett tomt valfritt fält som syns blir en påminnelse om något ogjort.
+
+**Frågan ställs bara när skicket vid förvärvet är 0–2.** Agentens val, och det är rätt: ett lågt skick vid förvärvet är det som **ökar** avdraget, alltså det påstående som behöver bäras av något. Ett högt skick hjälper henne inte, och då är bevisningen ingen hon behöver. Finns redan ett svar visas fältet oavsett, så att ingenting hon skrivit blir oåtkomligt.
 
 **Framsteget räknas i steg, inte i frågor och inte i kvitton.** *"1 av 4"* räcker, utan ordet före. Stegen är alltid fyra; frågorna inuti steg tre varierar med grenen, och **det antalet sägs aldrig** – regeln under *Frågeträdet* gäller oförändrad. Rättat 2026-11-13 efter att agenten såg att orden sa *frågor* medan räknaren räknade steg.
 
