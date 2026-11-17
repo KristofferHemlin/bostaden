@@ -205,12 +205,16 @@ describe("före försäljningen", () => {
 
 describe("ingången från projektsidan", () => {
   async function skickraden(): Promise<HTMLElement> {
+    // Sidan renderad, och raden hittad pa sin etikett – inte pa namnet pa
+    // komponenten som ritar den (CLAUDE.md, "Koden formas inte efter ett
+    // tests begränsning"); till 2026-11-18 letade den efter en funktion som
+    // hette Rad, och foll nar raden flyttade till en delad komponent.
     const vy = await ProjektSida({ params: Promise.resolve({ id: FASAD }) });
-    const rad = elementFor(vy, "Rad").find((r) => r.props.etikett === "Skick vid försäljningen");
-    expect(rad, "ingen skickrad").toBeTruthy();
     const d = document.createElement("div");
-    d.innerHTML = renderToStaticMarkup(rad!);
-    return d;
+    d.innerHTML = renderToStaticMarkup(vy);
+    const etiketter = [...d.querySelectorAll("span")].filter((e) => e.textContent === "Skick vid försäljningen");
+    expect(etiketter, "en skickrad").toHaveLength(1);
+    return etiketter[0].parentElement as HTMLElement;
   }
 
   it("ett besvarat skick har länken Ändra till redigeringen", async () => {

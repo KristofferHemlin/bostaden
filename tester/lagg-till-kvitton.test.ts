@@ -289,3 +289,62 @@ describe("sidan", () => {
     expect(await lankar()).toEqual([]);
   });
 });
+
+// ROT-lydelsen i avvisningen (docs/design.md, "Svaret är lika med eller större
+// än projektets belopp"): merkostnadsfrågan nås både i projektflödet och här,
+// så lydelsen prövas här också – på servern och vid fältet (CLAUDE.md, "Räknar
+// en regel upp N ställen, pröva alla N"). Lydelserna själva mot design.md:
+// tester/likvardigt-byte.test.ts.
+describe("ROT-lydelsen gäller också här", () => {
+  const KOK = 6_081_250; // före ROT; 49 225 kr att betala
+  function laggTillKoket() {
+    const k = h.db.lagg("kostnad", {
+      bostad_id: X, leverantor: "Köksbolaget AB", anteckning: "Kvitto för köket", totalbelopp: KOK,
+      rot_utnyttjat: 1_158_750, dokumentdatum: datum("2026-05-03"), betaldatum: datum("2026-05-03"),
+    });
+    ids.kok = k.id as string;
+    h.db.lagg("kostnadsrad", { kostnad_id: k.id, artikel: "Kök och montering", belopp: KOK });
+  }
+  beforeEach(() => {
+    seeda();
+    laggTillKoket();
+  });
+
+  it("servern: ett kvitto med ROT ger lydelsen före ROT-avdraget", async () => {
+    expect(await laggTillKvitton({}, formular(["kok"], "60 812,50"))).toEqual({
+      fel: likvardigtOverBeloppetFel(KOK, true),
+      falt: "merkostnad",
+    });
+  });
+
+  it("servern: utan ROT bland de valda, lydelsen utan ROT – samma väg, andra kvitton", async () => {
+    expect(await laggTillKvitton({}, formular(["parkett"], "12 000"))).toEqual({
+      fel: likvardigtOverBeloppetFel(1_200_000, false),
+      falt: "merkostnad",
+    });
+  });
+
+  it("vid fältet: hjälptexten och avvisningen med ROT, innan något skickas", async () => {
+    const div = document.createElement("div");
+    document.body.appendChild(div);
+    const rot = createRoot(div);
+    await act(async () => rot.render((await LaggTillSida({ params: Promise.resolve({ id: P }) })) as Parameters<typeof rot.render>[0]));
+    const ruta = [...div.querySelectorAll("label")].find((l) => l.textContent?.includes("Kvitto för köket"))!.querySelector("input")!;
+    await act(async () => ruta.click());
+    const label = [...div.querySelectorAll("label")].find((l) => l.textContent?.startsWith(LIKVARDIGT_ETIKETT));
+    expect(label, "merkostnadsfrågan").toBeTruthy();
+    expect(label!.lastElementChild!.textContent!.replace(/ /g, " ")).toContain("före ROT-avdraget, 60 812,50 kr —");
+    const falt = label!.querySelector("input")!;
+    const satt = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+    await act(async () => {
+      satt.call(falt, "60 812,50");
+      falt.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const form = div.querySelector("form")!;
+    await act(async () => form.requestSubmit());
+    const larm = [...div.querySelectorAll('[role="alert"]')].map((e) => e.textContent);
+    expect(larm).toEqual([likvardigtOverBeloppetFel(KOK, true)]);
+    act(() => rot.unmount());
+    div.remove();
+  });
+});

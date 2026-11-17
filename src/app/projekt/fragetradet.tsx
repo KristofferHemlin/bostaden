@@ -8,8 +8,8 @@
 //   * redigeringen (produktspec 6.4, projekt/[id]/redigera), som ocksa
 //     besvarar tradet for ett projekt skapat fore omlaggningen
 //
-// <Fragetradet> ar fraga 2-6, helt kontrollerat. Fraga 8 besvaras pa
-// projektets sida, inte i ett flode. Fraga 1 (namnet)
+// <Fragetradet> ar fraga 2-6, helt kontrollerat, och fraga 8 i redigeringen
+// – aldrig i flodet (docs/design.md, "Det hör hemma i Ändra projektet"). Fraga 1 (namnet)
 // och sjalva formulartaggen agas av den omslutande sidan – i fas 2 ar namnet
 // forifyllt fran hogens namn, i redigeringen fran projektets. <FragetradetFalt>
 // ar det kombinerade faltet: "Vad gjorde du?" plus fragorna plus de dolda
@@ -38,6 +38,7 @@ import {
   fraga5Relevant,
   harReparationsdel,
   HJALP_SKICK_FORSALJNING,
+  motiveringRelevant,
   SKICK_FORSALJNING_FRAGA,
   SKICK_ORD,
   type BattreEllerLiknandeSvar,
@@ -226,6 +227,19 @@ const HJALP_BATTRE_ELLER_LIKNANDE = (
 const HJALP_SKICK_FORVARV =
   "Jämför med hur det såg ut den dag du tillträdde bostaden, inte dagen innan du åtgärdade det här. Skicket vid försäljningen jämförs mot detta värde när bostaden säljs.";
 
+export const MOTIVERING_ETIKETT = "Hur vet du det?";
+const MOTIVERING_HJALP = "Valfritt, men bär bevisningen om kvitto saknas.";
+
+/**
+ * Visas fraga 8 (docs/design.md, "Frågan ställs bara när skicket vid
+ * förvärvet är 0–2")? Ett lagt skick vid forvarvet ar det som okar avdraget,
+ * alltsa det pastaende som behover baras av nagot. Finns redan ett svar visas
+ * den oavsett, sa att ingenting hon skrivit blir oatkomligt.
+ */
+export function motiveringVisas(svar: FragetradetUIState, harSparatSvar: boolean): boolean {
+  return harSparatSvar || (harReparationsdel(svar) && motiveringRelevant(svar.skickForvarv));
+}
+
 /** Merkostnadsfragans etikett (docs/design.md, "Och frågan ställs bakvänt"). */
 export const LIKVARDIGT_ETIKETT = "Vad hade ett likvärdigt byte kostat?";
 
@@ -289,7 +303,11 @@ export function Fragetradet({
   fel,
   helaBeloppet,
   merkostnadsfragan,
+  motiveringsfragan,
 }: {
+  /** Fraga 8, "Hur vet du det?" – bara i projektets redigering. Utelamnad
+   *  (flodet): fragan stalls inte. */
+  motiveringsfragan?: { harSparatSvar: boolean };
   /** Merkostnadsfragan efter "Bättre kvalitet", med projektets belopp fore
    *  ROT. Utelamnad nar det inte finns ett belopp att vaga den mot, eller nar
    *  flodet staller den pa annat stalle. */
@@ -464,9 +482,19 @@ export function Fragetradet({
         </Fraga>
       ) : null}
 
-      {/* Fraga 8, "Hur vet du det?", star inte har: den besvaras pa
-          projektets sida (docs/design.md, "Hur vet du det?" hör inte till
-          flödet; src/app/projekt/[id]/motivering.tsx). */}
+      {/* Fraga 8 – bara i redigeringen, aldrig i flodet (docs/design.md,
+          "Det hör hemma i Ändra projektet"). Direkt under skickfragan. */}
+      {motiveringsfragan && motiveringVisas(varden, motiveringsfragan.harSparatSvar) ? (
+        <Falt etikett={MOTIVERING_ETIKETT} hjalp={MOTIVERING_HJALP}>
+          <textarea
+            rows={3}
+            value={varden.motivering}
+            onChange={(e) => onChange({ motivering: e.target.value })}
+            className={INPUT_KLASS}
+            placeholder="t.ex. mäklarbilden visar fläckig vägg bakom garderoben"
+          />
+        </Falt>
+      ) : null}
     </div>
   );
 }
@@ -531,9 +559,13 @@ export function FragetradetFalt({
   skickForsaljning,
   bostadsdel,
   merkostnadsfragan,
+  motiveringsfragan,
 }: {
   /** Se <Fragetradet>. */
   merkostnadsfragan?: { belopp: number; harRot: boolean };
+  /** Se <Fragetradet>. Angiven: motiveringen skickas alltid, sa att servern
+   *  skriver den – tom nar fragan inte visas. */
+  motiveringsfragan?: { harSparatSvar: boolean };
   initial?: FragetradetVarden;
   /** "Vilken del av bostaden?" efter namnet, med det sparade svaret. Utelamnad:
    *  fragan visas inte och servern ror inte raderna. */
@@ -586,6 +618,7 @@ export function FragetradetFalt({
         fel={fel}
         helaBeloppet={helaBeloppet}
         merkostnadsfragan={merkostnadsfragan}
+        motiveringsfragan={motiveringsfragan}
         onChange={(delvis) => {
           setSvar((s) => ({ ...s, ...delvis }));
           onAndring?.();
@@ -613,6 +646,13 @@ export function FragetradetFalt({
 
       <input type="hidden" name="namn" value={namn} />
       <FragetradetDoldaFalt svar={svar} />
+      {motiveringsfragan ? (
+        <input
+          type="hidden"
+          name="motivering"
+          value={motiveringVisas(svar, motiveringsfragan.harSparatSvar) ? svar.motivering : ""}
+        />
+      ) : null}
       {fragaSkickForsaljning ? (
         <input type="hidden" name="skick_forsaljning" value={skickVidForsaljning} />
       ) : null}

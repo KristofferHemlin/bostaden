@@ -1,7 +1,7 @@
 // Steg 4: oppna ett projekt. Visar fragetradets svar och de kostnader som
 // kopplats hit. Harifran lagger man till en kostnad. Fraga 8, "Hur vet du
-// det?", besvaras har och inte i projektflodet (docs/design.md, "Hur vet du
-// det?" hör inte till flödet) – den bar bevisningen nar kvitto saknas.
+// det?", visas som en rad nar den ar besvarad; den besvaras i redigeringen
+// (docs/design.md, "Det hör hemma i Ändra projektet").
 //
 // Delar flera personer bostaden star vem som besvarade fragorna som en dampad
 // rad (docs/design.md, "Samagande – medlemskapet"): den som svarar forst
@@ -16,6 +16,7 @@ import {
   SEKUNDARKNAPP_KLASS,
   Skarm,
 } from "@/components/skarm";
+import { Faktarad as Rad, FAKTARUTA_KLASS } from "@/components/faktarad";
 import { arUtkast, beloppForKostnad, projektSumma, rotForBelopp } from "@/doman/berakningar";
 import { projektetsArText } from "@/lib/projektar";
 import {
@@ -23,8 +24,7 @@ import {
   projektetsBelopp,
 } from "@/doman/atgardsberakning";
 import { bostadsdelText } from "@/doman/bostadsdel";
-import { ATGARDSTYP_TEXT, atgardKategoriText, motiveringRelevant, SKICK_ORD } from "@/doman/fragetradet";
-import { MotiveringFalt } from "./motivering";
+import { ATGARDSTYP_TEXT, atgardKategoriText, SKICK_ORD } from "@/doman/fragetradet";
 import {
   merkostnadUpplysning,
 } from "@/doman/regeltext";
@@ -141,7 +141,7 @@ export default async function ProjektSida({
       rubrik={projektnamnKarta([projekt], kostnadRader).get(id) ?? projekt.namn}
       bakLank={{ href: "/projekt", text: "Projekt" }}
     >
-      <section className="space-y-2 border-b border-linje p-4 font-granssnitt text-sm">
+      <section className={`${FAKTARUTA_KLASS} border-b border-linje p-4`}>
         {/* Utelamnas tills fragorna ar besvarade (docs/design.md,
             "Projektlistan"): faltet rymmer en kategori, inte ett tillstand.
             Att svaren saknas sags av meddelandet nedan. */}
@@ -208,6 +208,13 @@ export default async function ProjektSida({
                 }
               />
             ) : null}
+            {/* Fraga 8 som en rad bredvid skicket, nar den ar besvarad – och
+                inte alls annars: ett tomt valfritt falt som syns blir en
+                paminnelse om nagot ogjort (docs/design.md, "Det hör hemma i
+                Ändra projektet"). Den besvaras i redigeringen. */}
+            {projekt.motivering ? (
+              <Rad etikett="Hur vet du det?" varde={projekt.motivering} />
+            ) : null}
             {harReparationsdel ? (
               <Rad
                 etikett="Skick vid försäljningen"
@@ -252,16 +259,6 @@ export default async function ProjektSida({
             Frågorna om det här är inte besvarade än. Det tas med i
             underlaget när du svarat på dem.
           </p>
-        ) : null}
-        {/* Fraga 8 – samma villkor som nar den stod i flodet: skicket vid
-            forvarvet 0-2, dar avdraget kan bli stort pa tva subjektiva
-            siffror (produktspec 4.1). Ett sparat svar visas alltid, sa att
-            ingen tappar det hon skrivit – aven om skicket andrats sedan. */}
-        {projekt.motivering ||
-        (harReparationsdel &&
-          projekt.skick_forvarv !== null &&
-          motiveringRelevant(String(projekt.skick_forvarv))) ? (
-          <MotiveringFalt projektId={id} sparad={projekt.motivering ?? ""} />
         ) : null}
         {besvaratAv ? (
           <p className="pt-1 text-text-sekundar">{besvaratAv}</p>
@@ -380,41 +377,5 @@ export default async function ProjektSida({
         </div>
       </section>
     </Skarm>
-  );
-}
-
-function Rad({
-  etikett,
-  varde,
-  atgard,
-  lank,
-}: {
-  etikett: string;
-  varde: string;
-  atgard?: boolean;
-  /** En vag att andra svaret, direkt efter vardet. */
-  lank?: { href: string; text: string };
-}) {
-  return (
-    <div className="flex justify-between gap-3">
-      <span className="text-text-sekundar">{etikett}</span>
-      <span className="flex items-center gap-1.5 text-right text-text-primar">
-        {atgard ? (
-          <span
-            aria-hidden
-            className="inline-block h-1.5 w-1.5 rounded-full bg-accent"
-          />
-        ) : null}
-        {varde}
-        {lank ? (
-          <Link
-            href={lank.href}
-            className="ml-1 text-text-sekundar underline underline-offset-2 hover:text-text-primar"
-          >
-            {lank.text}
-          </Link>
-        ) : null}
-      </span>
-    </div>
   );
 }

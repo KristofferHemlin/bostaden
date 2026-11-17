@@ -437,3 +437,64 @@ describe("projektflödet har ett orange element per steg, och det är knappen vi
     expect(orange).toEqual([`BUTTON: ${knapp}`]);
   }, 60_000);
 });
+
+// docs/design.md, "Sammanfattningen ligger på kortets egen yta, inte på
+// `--yta-nedsankt`": den nedsänkta ytan är årsrubrikernas band, och
+// sammanfattningen ska se ut som projektsidans faktaruta. Färgen mäts i
+// Chrome, inte ur ett klassnamn (CLAUDE.md, "En klass är inte en layout").
+//
+// Metoden: den yta som syns bakom ett element är dess egen bakgrund om den
+// inte är genomskinlig, annars närmaste förälders. Två mått ska stämma: att
+// sammanfattningen inte har någon egen bakgrund, och att ytan som syns bakom
+// den är densamma som bakom projektsidans faktaruta. Förutsättningen prövas
+// först: --yta-nedsankt måste vara en annan färg än kortets yta, annars kan
+// mätningen inte skilja dem åt.
+describe("sammanfattningen ligger på kortets egen yta, som projektsidans faktaruta", () => {
+  async function ytor(sida: string, hitta: string): Promise<{ egen: string; synlig: string; nedsankt: string; hittad: boolean }> {
+    await cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
+    await cdp("Page.navigate", { url: `${adress}${sida}` });
+    await vanta(500);
+    const svar = await cdp<{ result: { value: { egen: string; synlig: string; nedsankt: string; hittad: boolean } } }>("Runtime.evaluate", {
+      awaitPromise: true,
+      returnByValue: true,
+      expression: `(async () => {
+        for (let i = 0; i < 100 && document.readyState !== 'complete'; i++) await new Promise(r => setTimeout(r, 100));
+        const el = (${hitta})();
+        const prov = document.createElement('div');
+        prov.style.backgroundColor = 'var(--yta-nedsankt)';
+        document.body.appendChild(prov);
+        const nedsankt = getComputedStyle(prov).backgroundColor;
+        prov.remove();
+        if (!el) return { egen: '', synlig: '', nedsankt, hittad: false };
+        const genomskinlig = (f) => f === 'transparent' || /rgba\\(.*,\\s*0\\)$/.test(f);
+        let n = el, synlig = '';
+        while (n) {
+          const f = getComputedStyle(n).backgroundColor;
+          if (!genomskinlig(f)) { synlig = f; break; }
+          n = n.parentElement;
+        }
+        return { egen: getComputedStyle(el).backgroundColor, synlig, nedsankt, hittad: true };
+      })()`,
+    });
+    return svar.result.value;
+  }
+
+  it("ingen egen bakgrund, och samma yta bakom som bakom faktarutan", async () => {
+    const sammanfattning = await ytor("nytt-4", `() => document.querySelector('[aria-label="Det du svarat"]')`);
+    const faktaruta = await ytor(
+      "projekt",
+      // Faktarutan är sektionen med raden År – den står alltid där, också
+      // för projektet i den här riggen, som saknar svar.
+      `() => [...document.querySelectorAll('section')].find(s => [...s.querySelectorAll('span')].some(e => e.textContent === 'År'))`,
+    );
+    console.log(`sammanfattning: egen ${sammanfattning.egen}, synlig ${sammanfattning.synlig}; faktaruta: synlig ${faktaruta.synlig}; nedsänkt ${sammanfattning.nedsankt}`);
+    expect(sammanfattning.hittad, "sammanfattningen på steg 4").toBe(true);
+    expect(faktaruta.hittad, "projektsidans faktaruta").toBe(true);
+    // Förutsättningen: den nedsänkta ytan går att skilja från kortets.
+    expect(faktaruta.synlig).not.toBe("");
+    expect(faktaruta.synlig).not.toBe(sammanfattning.nedsankt);
+    // Två mått som ska stämma överens.
+    expect(sammanfattning.egen).toMatch(/^rgba\(0, 0, 0, 0\)$|^transparent$/);
+    expect(sammanfattning.synlig).toBe(faktaruta.synlig);
+  }, 60_000);
+});

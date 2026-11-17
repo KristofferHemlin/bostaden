@@ -1,5 +1,5 @@
 // Redigera ett projekt (produktspec 6.4): namn och fragetradets svar (fraga
-// 1-6; fraga 8 besvaras pa projektets sida) – och fraga 7, skicket vid forsaljningen, nar bostaden ar
+// 1-6 och fraga 8) – och fraga 7, skicket vid forsaljningen, nar bostaden ar
 // sald. Det ar vagen att rata ett skicksvar: forsaljningsflodet fragar bara
 // om obesvarade. Omklassificering rakas om i arssumman sa fort vyerna
 // revalideras. Ett projekt med kopplade kostnader gar inte att ta bort –

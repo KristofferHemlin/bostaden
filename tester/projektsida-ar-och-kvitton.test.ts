@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { REGELPARAMETRAR } from "./_hjalp";
 
@@ -29,6 +30,9 @@ vi.mock("next/navigation", () => ({
   notFound: () => {
     throw new Error("NEXT_NOT_FOUND");
   },
+  // Sidan renderas hel sedan 2026-11-18, och Skarm laser sokvagen.
+  usePathname: () => "/projekt",
+  useRouter: () => ({ push: () => {}, refresh: () => {}, replace: () => {} }),
 }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ host: "bostad.test" }) }));
 vi.mock("@sentry/nextjs", () => ({ setUser: vi.fn(), captureException: vi.fn() }));
@@ -90,11 +94,18 @@ function elementFor(nod: unknown, namn: string): ReactElement<Record<string, unk
   return [...egen, ...elementFor(el.props?.children, namn)];
 }
 
+/** Raden for aret som hon laser den: sidan renderad, och raden hittad pa
+ *  sin etikett – inte pa namnet pa komponenten som ritar den (CLAUDE.md,
+ *  "Koden formas inte efter ett tests begränsning"). Till 2026-11-18 letade
+ *  den efter en funktion som hette Rad i det orenderade tradet, och foll nar
+ *  raden flyttade till en delad komponent. */
 async function arraden(): Promise<string> {
   const vy = await ProjektSida({ params: Promise.resolve({ id: P }) });
-  const rad = elementFor(vy, "Rad").find((r) => r.props.etikett === "År");
-  expect(rad, "sidan har ingen rad for aret").toBeTruthy();
-  return renderToStaticMarkup(rad!);
+  const d = document.createElement("div");
+  d.innerHTML = renderToStaticMarkup(vy);
+  const etiketter = [...d.querySelectorAll("span")].filter((e) => e.textContent === "År");
+  expect(etiketter, "sidan har en rad for aret").toHaveLength(1);
+  return etiketter[0].parentElement!.outerHTML;
 }
 
 beforeEach(seeda);

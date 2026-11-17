@@ -117,6 +117,9 @@ export function RedigeraProjektForm({
           }
           skickForsaljning={skickForsaljning}
           bostadsdel={bostadsdel}
+          // Fraga 8 hor hemma har (docs/design.md, "Det hör hemma i Ändra
+          // projektet"); ett sparat svar visas alltid.
+          motiveringsfragan={{ harSparatSvar: varden.motivering.trim() !== "" }}
         />
 
         {/* Bara fel som inte hor till nagon fraga star har – resten star vid

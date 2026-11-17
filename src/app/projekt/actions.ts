@@ -117,7 +117,7 @@ export async function skapaProjekt(
           // Fraga 8 stalls inte i flodet langre, men ett utkast fran fore
           // flytten kan bara ett svar – det sparas, sa att ingen tappar det
           // hon skrivit (docs/design.md, "Hur vet du det?" hör inte till
-          // flödet). Annars besvaras den pa projektets sida.
+          // flödet). Annars besvaras den i redigeringen.
           motivering: String(formData.get("motivering") ?? "").trim() || null,
           klassificerad_av: anvandareId,
         },
@@ -247,8 +247,13 @@ export async function redigeraProjekt(
         ...(skickForsaljning !== undefined && tolkat.atgardstyp === "utbytt"
           ? { skick_forsaljning: skickForsaljning }
           : {}),
-        // motivering rors inte: fraga 8 besvaras pa projektets sida
-        // (sparaMotivering nedan), och redigeringen ar inte dess vag.
+        // Fraga 8 besvaras har (docs/design.md, "Det hör hemma i Ändra
+        // projektet"). Bara nar faltet skickats: ett formular utan det –
+        // ett aldre, eller ett anrop som inte ar redigeringen – lamnar ett
+        // sparat svar orort, sa att ingen tappar det hon skrivit.
+        ...(formData.has("motivering")
+          ? { motivering: String(formData.get("motivering") ?? "").trim() || null }
+          : {}),
         klassificerad_av: anvandareId,
       },
     });
@@ -299,46 +304,4 @@ export async function taBortProjekt(
   revalidatePath("/kostnad/[id]", "page");
   revalidatePath("/export");
   redirect("/projekt");
-}
-
-export interface MotiveringResultat {
-  fel?: string;
-  /** Satt nar svaret sparats – faltet sager det tills nasta andring. */
-  sparat?: boolean;
-}
-
-/**
- * Fraga 8, "Hur vet du det?", fran projektets sida (docs/design.md, "Hur vet
- * du det?" hör inte till flödet). Fritext, valfri, blockerar aldrig. Ett tomt
- * falt tar bort ett tidigare svar: det ar en anteckning, inte ett tal, och
- * den som skrivit fel ska kunna stryka det.
- */
-export async function sparaMotivering(
-  _foreg: MotiveringResultat,
-  formData: FormData,
-): Promise<MotiveringResultat> {
-  const { bostadId, anvandareId } = await kravBostad();
-  const id = String(formData.get("projekt_id") ?? "");
-  if (!arGiltigtId(id)) return { fel: "Projektet hittades inte." };
-
-  const projekt = await prisma.projekt.findFirst({
-    where: { id, bostad_id: bostadId },
-    select: { id: true },
-  });
-  if (!projekt) return { fel: "Projektet hittades inte." };
-
-  const motivering = String(formData.get("motivering") ?? "").trim();
-  try {
-    await prisma.projekt.update({
-      where: { id },
-      data: { motivering: motivering || null },
-    });
-  } catch (fel) {
-    return {
-      fel: serverfelMeddelande(fel, { sida: "projekt/[id]", anrop: "sparaMotivering", anvandareId }),
-    };
-  }
-
-  revalidatePath(`/projekt/${id}`);
-  return { sparat: true };
 }

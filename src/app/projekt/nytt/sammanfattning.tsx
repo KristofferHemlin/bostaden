@@ -8,6 +8,7 @@
 // Ingen egen granskningsvy och inget femte steg – sammanfattningen star
 // ovanfor kvittolistan, och knappen under bada heter "Spara projektet".
 
+import { Faktarad as Rad, FAKTARUTA_KLASS } from "@/components/faktarad";
 import { bostadsdelText, type BostadsdelSvar } from "@/doman/bostadsdel";
 import {
   ATGARDSTYP_TEXT,
@@ -37,7 +38,10 @@ export function Projektsammanfattning({
     <section
       aria-label="Det du svarat"
       data-sammanfattning=""
-      className="space-y-2 rounded-lg bg-yta-nedsankt p-4 font-granssnitt text-sm"
+      // Kortets egen yta, som projektsidans faktaruta – inte --yta-nedsankt,
+      // som ar arsrubrikernas band (docs/design.md, "Sammanfattningen ligger
+      // på kortets egen yta").
+      className={FAKTARUTA_KLASS}
     >
       {namn.trim() ? (
         <p className="font-rubrik text-base text-text-primar">{namn.trim()}</p>
@@ -61,14 +65,5 @@ export function Projektsammanfattning({
         </>
       ) : null}
     </section>
-  );
-}
-
-function Rad({ etikett, varde }: { etikett: string; varde: string }) {
-  return (
-    <div className="flex justify-between gap-3">
-      <span className="text-text-sekundar">{etikett}</span>
-      <span className="text-right text-text-primar">{varde}</span>
-    </div>
   );
 }

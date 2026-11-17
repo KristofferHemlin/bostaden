@@ -63,8 +63,8 @@ function asBattreEllerLiknande(
 
 /**
  * Lasser och validerar fragetradet (fraga 1-6) ur en FormData. Fraga 8,
- * motiveringen, hor inte hit: den besvaras pa projektets sida (docs/design.md,
- * "Hur vet du det?" hör inte till flödet).
+ * motiveringen, tolkas inte har: redigeraProjekt skriver den bara nar faltet
+ * skickats (docs/design.md, "Det hör hemma i Ändra projektet").
  * Returnerar ett fel om namnet saknas, tradet inte ar fardigsvarat (t.ex.
  * merkostnad saknas nar svaret ar "battre"), eller skicket vid forvarvet
  * saknas trots att atgarden har en reparationsdel.
