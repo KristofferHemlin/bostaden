@@ -2184,6 +2184,8 @@ Tomläget är alltså det vanliga: en rubrik som är en uppmaning, en till två 
 
 ***Räknas som* står kvar på läsvyn och är inte en del.** Det är härlett ur svaren och går inte att ändra direkt — att ge det en *Ändra* vore att påstå att det är en inställning.
 
+**Att välja till kvitton slutar på projektsidan, men bara när något sparats.** *Välj bland dina kvitton* nås från *Kvittona* och går ett steg längre tillbaka än man kom ifrån — och det är rätt efter ett sparande, eftersom det hon vill se då är projektets nya summa i sitt sammanhang. **Efter *Avbryt* går hon tillbaka dit hon kom ifrån.** Ett avbrott ska lämna henne där hon stod; ett sparande får flytta henne dit resultatet syns.
+
 **Att lyfta ut ett kvitto hör till *Kvittona*.** Det går redan från kvittots egen sida, via projektvalet, och det här är den andra riktningen av samma sak — precis som att välja till finns på båda hållen. **Kvittot lossas, det raderas inte**, och raden säger vart det tar vägen: tillbaka till kvitton utan projekt.
 
 #### Att lägga kvitton till ett projekt som redan finns
@@ -2208,7 +2210,9 @@ Här stod till 2026-11-16 *Lägg till kvitton*, en bokstav från *Lägg till kvi
 
 **Vägen in är projektets redigering, inte en egen skärm.** Redigeringen ställer redan hela trädet och klassificerar ett sådant projekt rätt. Projektsidans *Svara på frågorna* och underlagets *Återstår* pekar dit.
 
-**Rubriken följer vad som saknas.** Har projektet inget svar heter sidan **"Berätta vad du gjort"**; har det ett heter den **"Ändra projekt"**. En rubrik som säger *ändra* om något som aldrig besvarats påstår att det finns ett svar.
+**Rubriken följer vad som saknas.** Har projektet inget svar heter skärmen **"Berätta vad du gjort"**; har det ett heter den **"Frågorna"**, som varje annan del. En rubrik som säger *ändra* om något som aldrig besvarats påstår att det finns ett svar.
+
+Här stod *"Ändra projekt"* till 2026-11-19, kvar från när redigeringen var en enda skärm. **Agenten följde det nyare stycket, lät den gamla raden vara och sa till** – vilket är rätt ordning, eftersom filen är min. Ett test läste dessutom rubriken härifrån och läser den nu där regeln faktiskt står.
 
 **Och ett projekt utan namn visas som sina kvitton.** *"2 kvitton · BAUHAUS, Byggmax"*, leverantörerna i datumordning, året först där texten kan kapas. Regeln stod här till 2026-11-13 och ströks som överflödig eftersom nya projekt alltid har ett namn. Den gäller fortfarande – för de gamla raderna, och bara för dem. Ett tomt namn skrivs aldrig ut rakt av.
 
