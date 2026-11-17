@@ -2007,11 +2007,11 @@ Behövs symboler någon annanstans används tunna ikoner i `--text-sekundar`.
 
 ### Att skapa ett projekt
 
-Skärmens rubrik är **"Berätta vad du gjort"**. Flödet är **tre steg**: *vad gjorde du och vilken del av bostaden* → frågeträdet → välj kvitton och spara. Det går att avbryta när som helst; det som skrivits ligger kvar.
+Skärmens rubrik är **"Berätta vad du gjort"**. Flödet är **tre steg**: *vad gjorde du och vad det rörde* → frågeträdet → välj kvitton och spara. Det går att avbryta när som helst; det som skrivits ligger kvar.
 
 **Namnet och delen av bostaden står på samma skärm.** Slaget ihop 2026-11-19. De var två steg med ett fält respektive en knapprad, och båda svarar på samma sak: *vad gjorde du, och var*. Ett eget steg för en enda rad knappar är ett steg som bara kostar ett tryck.
 
-**Delen är fortfarande frivillig**, och ligger under namnfältet. Att hoppa över den ska gå utan att först trycka sig förbi den.
+**Frågan om vad projektet rörde är fortfarande frivillig**, och ligger under namnfältet. Att hoppa över den ska gå utan att först trycka sig förbi den.
 
 **Och att den är frivillig måste synas.** Som eget steg kunde hon trycka *Nästa* förbi den; under ett fält med stjärna ser de två ut som ett set, och uppmätt på skärmen 2026-11-19 finns ingenting som säger att knappraden går att lämna. Under knapparna står därför en dämpad rad: **"Valfritt – du kan lägga till det senare."** Samma form som motiveringsfältets *"Valfritt, men bär bevisningen om kvitto saknas."*
 
@@ -2107,26 +2107,44 @@ Till 2026-11-04 var det förifyllt med anteckningen fram till första skiljeteck
 
 **Inget annat fält i appen är ett förslag.** De andra förifyllda fälten är sparade svar eller avläsningar, och båda ska stå kvar som de är: ett avläst belopp som markeras vid första klicket kan ersättas av en enda siffra.
 
-#### Vilken del av bostaden projektet rörde
+#### Vad projektet rörde
 
-Efter namnet kommer **"Vilken del av bostaden?"** – knappar att trycka på, flera går att välja, och *Annat* öppnar ett fritextfält.
+Efter namnet kommer **"Vad rörde projektet?"** – knappar att trycka på, flera går att välja, och *Annat* öppnar ett fritextfält.
+
+**Frågan hette *"Vilken del av bostaden?"* till 2026-11-20, och det namnet var två fel i ett.**
+
+**Det första: knapparna blandar två axlar utan att säga det.** *Kök* och *Badrum* är platser; *Golv*, *El*, *VVS* och *Fönster* är delar och system. Ett kök innehåller golv, el och VVS, så ett köksprojekt hör hemma på fem knappar samtidigt – och hon letar efter ett rätt svar på en fråga som har flera. Uppmätt av Kristoffer på skärmen.
+
+**Lösningen är att namnge axlarna, inte att välja en.** Folk säger båda: *"vi gjorde om badrummet"* och *"vi bytte fönster"* är lika naturliga, och tvingas det ena in i det andra tappar vi det hon menade. Knapparna står därför under två rubriker:
+
+> **Rum och platser** · Kök, Badrum, Balkong eller uteplats, Förvaring — och för en fastighet Altan, Garage eller förråd, Tomt
+>
+> **Delar och system** · Golv, Ytskikt, El, VVS, Dörrar, Vitvaror, Fönster — och för en fastighet Tak, Fasad, Värme, Dränering
+
+*Annat* står för sig under båda, eftersom det inte tillhör någondera. **Inga knappar tillkommer och inga försvinner**, och inget sparat svar ändrar betydelse – grupperingen finns bara där hon väljer.
+
+**Det andra felet: namnet krockade med försäljningens fråga.** Vid försäljningen frågar appen *"har du gjort om samma del av bostaden mer än en gång?"* – och `CLAUDE.md` säger uttryckligen att vi **inte** bygger något begrepp för byggnadsdel, eftersom en lista vi hittat på kan ta bort ett avdrag hon har rätt till, och ett borttaget avdrag syns inte. Därför frågar vi henne i stället.
+
+**Ett fält som heter samma sak som den frågan antyder att appen redan vet.** Försäljningens lydelse speglar Skatteverkets regel och står kvar ordagrant; det är vårt eget fält som byter namn.
 
 **Frågan är frivillig.** Ett obesvarat projekt sparas ändå. Flödet har redan upp till sex frågor per projekt, och en sjunde som stoppar det vore en ny spärr i precis den väg som ska vara kort. Knappar kostar ett tryck för den som vill svara och ingenting för den som inte vill.
 
 **Vilka knappar som visas beror på upplåtelseformen, och bara på vad bostaden fysiskt har.** En lägenhet har inget eget tak, ingen fasad, ingen dränering och ingen tomt – de tillhör huset. Det är ett påstående om byggnaden, inte om avdragsrätten. `docs/regelkallor.md` säger att ansvarsfördelningen mellan förening och medlem varierar och att ingen generell regel går att koda, så **knapparna får aldrig bli ett omdöme om vad som är avdragsgillt**. Betalade hon för fönsterbytet själv är det hennes, oavsett vad stadgarna borde ha sagt.
 
-| | Knappar |
-|---|---|
-| Bostadsrätt | Kök, Badrum, Golv, Ytskikt, El, VVS, Dörrar, Förvaring, Vitvaror, Fönster, Balkong eller uteplats, Annat |
-| Fastighet | Alla ovan, plus Tak, Fasad, Värme, Dränering, Altan, Garage eller förråd, Tomt |
+| | Rum och platser | Delar och system |
+|---|---|---|
+| Bostadsrätt | Kök, Badrum, Balkong eller uteplats, Förvaring | Golv, Ytskikt, El, VVS, Dörrar, Vitvaror, Fönster |
+| Fastighet | Alla ovan, plus Altan, Garage eller förråd, Tomt | Alla ovan, plus Tak, Fasad, Värme, Dränering |
 
-**Svaret syns på projektets egen sida**, som raden **"Del av bostaden"** bredvid *Räknas som*. Ett fält som samlas in och visas ingenstans är precis det regeln under *Hjälptexter under fält* förbjuder – och raden gör frågan till något hon kan rätta i stället för något hon bara matat in.
+*Annat* står under båda grupperna, för båda upplåtelseformerna.
+
+**Svaret syns på projektets egen sida**, som raden **"Projektet rörde"** bredvid *Räknas som*. **En rad, inte två** – grupperingen hjälper när hon väljer och är brus när hon läser, och en rad som heter *Delar och system* skulle bära tillbaka precis den antydan namnbytet tog bort. Ett fält som samlas in och visas ingenstans är precis det regeln under *Hjälptexter under fält* förbjuder – och raden gör frågan till något hon kan rätta i stället för något hon bara matat in.
 
 **Frågan finns därför också i projektets redigering.** Ett sparat svar som ligger utanför upplåtelseformens knappar visas ändå där – annars försvinner det tyst nästa gång hon sparar något helt annat. En bostad kan ha bytt form i registreringen, och ett svar hon gett ska inte raderas av en lista hon aldrig såg.
 
-**Men inte i deklarationsunderlaget och inte i något tal.** Bostadsdelen rör ingen beräkning, ingen tröskel och ingen blankett. Den dagen vi visar *hur mycket som lagts på köket* är det en egen sak att bestämma, och den vilar på data vi ännu inte har.
+**Men inte i deklarationsunderlaget och inte i något tal.** Svaret rör ingen beräkning, ingen tröskel och ingen blankett. Den dagen vi visar *hur mycket som lagts på köket* är det en egen sak att bestämma, och den vilar på data vi ännu inte har.
 
-**Den heter *bostadsdel*, aldrig *kategori*.** Ordet kategori betyder redan grundförbättring och reparation i den här appen, och ett borttaget fält hette `kategori`. Två betydelser av samma ord i samma produkt är hur en vecka av motsägelser börjar.
+**I koden heter den fortfarande `bostadsdel`, aldrig `kategori`.** Ordet kategori betyder redan grundförbättring och reparation i den här appen, och ett borttaget fält hette `kategori`. Två betydelser av samma ord i samma produkt är hur en vecka av motsägelser börjar. **Namnbytet 2026-11-20 gäller det användaren ser**, inte kolumnen – användarens språk och kodens språk behöver inte vara samma, och en migrering för ett fält som inte rör ett tal vore fel pris.
 
 #### Anteckningen får två rader där den är radens huvudtext
 
@@ -2149,6 +2167,20 @@ Varje rad visar projektets namn, år, belopp och vad det räknas som. Etiketten 
 **Gruppera på år det som tillhör ett år.** Kvitton har ett betaldatum och hör till precis ett år, så kvittolistan grupperas. Ett projekt kan spänna över ett årsskifte, och då är varje rubrik ett påstående som raden motsäger. Spänner projektet över två år står båda på raden: *2025–2026*.
 
 **Ordningen är nyast skapade först.** Det som just sparats ligger överst, och det är den enda bekräftelsen hon får — sparandet leder hit, och en rad som hamnar längst ned i en lista säger inte att något gick vägen. Samma skäl som ordnar startskärmens projektkort.
+
+**Och listan får inga årsflikar, nu eller senare.** Frågan ställdes 2026-11-20, dagen efter att grupperingen togs bort, och svaret är detsamma som dagen innan: **ett projekt hör inte till ett år.** En flik tvingar fram ett val mellan 2025 och 2026 för ett projekt som är båda, och det är exakt det som gjorde rubrikerna fel. Att det fungerar på kvittosidan beror på att ett kvitto har ett betaldatum och hör till precis ett år.
+
+**Skalan skiljer dem dessutom åt.** Kvittona räknas i hundratal över ett ägande; projekten i tiotal. Det kvittolistan löser med hopfällning har projektlistan inte problemet att lösa. **Blir listan lång är svaret en summa och ett antal överst, inte en uppdelning** – men det byggs den dag någon faktiskt har tjugo projekt, inte innan.
+
+**Inga ikoner för delen av bostaden.** Också föreslaget 2026-11-20, och det är en bättre idé än den verkar tåla. Tre saker fäller den:
+
+- **Delen är frivillig.** Några rader får en ikon och andra inte, och en ragglig kolumn är sämre än ingen
+- **Flera delar går att välja**, och *Annat* är fritext. Vilken ikon ett kök-och-badrum-projekt får är en fråga utan bra svar
+- **Hälften av delarna går inte att teckna.** *Kök* och *Badrum* är lätta; *Ytskikt*, *Förvaring* och *VVS* är det inte, och en uppsättning där hälften gissas rätt är brus
+
+**Och det ikonen skulle lösa är redan löst.** Raden bär projektets namn, skrivet av henne — *"Nytt klinkergolv i hallen"* är mer sökbart för ögat än någon symbol. Det är därför namnet är radens huvudtext.
+
+Regeln om tunna ikoner i `--text-sekundar` står kvar och gäller där en symbol bär något text inte kan. **Den dagen en uppsättning övervägs måste den vara komplett och entydig i 16 px** – halva vägen är det värsta läget.
 
 **Ett projekt utan kvitton visar inget belopp, och aldrig *0 kr*.** Hittat av agenten 2026-11-13; raden har sagt *0 kr* sedan projektflödet byggdes. Noll kronor är ett mätt tal och påstår att åtgärden inte kostade något. Sanningen är att vi inte har kvittona. I beloppets plats står en dämpad **"Inga kvitton än"**, som säger vad som fattas och vad hon kan göra åt det.
 
@@ -2212,7 +2244,7 @@ Tomläget är alltså det vanliga: en rubrik som är en uppmaning, en till två 
 
 **Och *Frågorna* nådd från underlagets *Återstår* ska återvända dit.** I dag leder *Avbryt* till projektsidan oavsett varifrån hon kom. Det är samma brist som *Välj bland dina kvitton* hade, och den rättas på samma sätt.
 
-**Kvittoraden ser likadan ut på *Kvittona* som på projektsidan.** Uppmätt 2026-11-19: raden tappade kursiven och bilagemärket en skärm bort. Uppräkningen under *Anteckningen får två rader* gäller nu **fyra** ställen — kryssrutelistan, kvittolistan, *Senaste kvitton* och projektets kvittolista — och *Kvittona* visar samma rad som projektsidan, eftersom det är samma rad.
+**Kvittoraden ser likadan ut på *Kvittona* som på projektsidan.** Uppmätt 2026-11-19: raden tappade kursiven och bilagemärket en skärm bort. **Uppräkningen står på ett ställe, under *Anteckningen får två rader*, och räknas inte om här.** Jag skrev *fyra* i det här stycket och *fem* i listan samma dag; agenten mätte alla fem och sa till. En regel som räknar upp ställen får inte ha en andra uppräkning någon annanstans — då är det bara en tidsfråga innan de säger olika.
 
 **En skärm har en väg ut, och den heter samma sak hela vägen.** *Kvittona* hade både *← Renovering kök* i huvudet och *Tillbaka till projektet* längst ned. Två utgångar är i sin ordning på en lång skärm; **två olika ord för samma destination är det inte.** Båda bär projektets namn.
 

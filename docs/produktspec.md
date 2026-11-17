@@ -51,7 +51,7 @@ Konsekvensen av att fråga för tidigt **där** är inte att svaren blir fel. Ko
 
 Skattefrågorna hör till åtgärden, inte till kvittot – med hundra kvitton och tio åtgärder ska de ställas tio gånger, inte hundra. **Det uppnås genom att projektet skapas först och kvittona hämtas till det**, inte genom att kvitton sorteras i högar i efterhand.
 
-**Ett projekt skapas direkt, från projektsidan.** Omlagt 2026-11-13; dessförinnan kunde ett projekt bara uppstå ur en gruppering. Flödet är tre steg och ett enda sparande: *vad gjorde du och vilken del av bostaden* → frågeträdet → **vilka kvitton hörde hit, med en sammanfattning av svaren ovanför** → spara. Sparandet leder till projektlistan.
+**Ett projekt skapas direkt, från projektsidan.** Omlagt 2026-11-13; dessförinnan kunde ett projekt bara uppstå ur en gruppering. Flödet är tre steg och ett enda sparande: *vad gjorde du och vad det rörde* → frågeträdet → **vilka kvitton hörde hit, med en sammanfattning av svaren ovanför** → spara. Sparandet leder till projektlistan.
 
 **Hela frågeträdet besvaras här, utom det som kräver försäljningen.** Byggde du något nytt, ändrade du planlösningen, satte du in något som aldrig funnits eller bytte du ut något, var det nya av bättre kvalitet, hur var skicket vid förvärvet — allt är fakta om vad hon gjorde. **Följdfrågorna gäller fullt ut:** trädet grenar som förut, och ett *nej* leder vidare precis som i dag.
 
@@ -339,7 +339,7 @@ En åtgärd. Klassificeringen sitter här, inte på kostnaden.
 
 ### Projektets bostadsdel
 
-Svaret på *"Vilken del av bostaden?"* när projektet skapas. Lydelser och vilka knappar som visas står i `docs/design.md`.
+Svaret på *"Vad rörde projektet?"* när projektet skapas — frågan hette *"Vilken del av bostaden?"* till 2026-11-20. Lydelser, grupperingen i *Rum och platser* respektive *Delar och system*, och vilka knappar som visas står i `docs/design.md`.
 
 **Egen tabell, inte en kolumn.** Ett projekt kan röra flera delar – ett kök och elen till det – och en kolumn med kommatecken i går inte att fråga på.
 
@@ -359,7 +359,7 @@ Svaret på *"Vilken del av bostaden?"* när projektet skapas. Lydelser och vilka
 
 **Och flervalet gör summering per del omöjlig.** Ett projekt på 200 000 kr som är både `KOK` och `EL` ligger i båda. Summerar man delarna får man mer än vad som lagts ut. Frågan *hur mycket på köket* kan därför bara besvaras som **projekt som rörde köket**, aldrig som kronor som tillhör kök. Skrivs det inte ned här bygger någon ett diagram som går till 130 %.
 
-**Ordet *kategori* är upptaget** och betyder grundförbättring respektive reparation – se nästa stycke. Den här heter `bostadsdel` överallt.
+**Ordet *kategori* är upptaget** och betyder grundförbättring respektive reparation – se nästa stycke. Kolumnen heter `bostadsdel` överallt i koden, också efter att frågan bytt namn på skärmen.
 
 **Kategorierna är härledda, inte lagrade.** En åtgärd kan bidra till både grundförbättring och reparation samtidigt – ett exklusivare kök är merkostnaden i den ena kategorin och resten i den andra. Ett lagrat `kategori`-fält kan inte uttrycka det och glider dessutom isär från frågeträdets svar vid varje redigering.
 
