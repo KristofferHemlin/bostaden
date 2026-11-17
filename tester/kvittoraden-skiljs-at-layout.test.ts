@@ -400,31 +400,6 @@ describe("kvittoraden på /kostnad, mätt i Chrome vid 390 px", () => {
     expect(KVITTON.some((k) => !k.bilaga)).toBe(true);
   }, 60_000);
 
-  it("bakgrundsstrecket följer radens yta, också vid hovring", async () => {
-    // Hovring finns bara med en pekare – en emulerad telefon har ingen, och
-    // da byts ytan aldrig. Provet gors darfor i skrivbordslage.
-    await cdp("Emulation.setDeviceMetricsOverride", { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
-    await cdp("Page.navigate", { url: `${adress}kostnad` });
-    await new Promise((r) => setTimeout(r, 500));
-    await fallUt();
-    const utan = KVITTON.find((k) => !k.bilaga)!.anteckning;
-    const [vila] = await matRader([utan]);
-    expect(vila.marken[0].snedstreck[0]?.underFarg, "i vila").toBe(vila.yta);
-    // Pekaren pa raden, som hon hovrar den.
-    const punkt = await utvardera<{ x: number; y: number }>(`(() => {
-      const p = [...document.body.querySelectorAll('p')].find(p => p.textContent === ${JSON.stringify(utan)});
-      p.scrollIntoView({ block: 'center' });
-      const r = p.getBoundingClientRect();
-      return { x: r.left + 5, y: r.top + r.height / 2 };
-    })()`);
-    await cdp("Input.dispatchMouseEvent", { type: "mouseMoved", x: punkt.x, y: punkt.y });
-    await new Promise((r) => setTimeout(r, 300));
-    const [hovrad] = await matRader([utan]);
-    expect(hovrad.yta, "hovringen ska byta radens yta").not.toBe(vila.yta);
-    expect(hovrad.marken[0].snedstreck[0]?.underFarg, "vid hovring").toBe(hovrad.yta);
-    await cdp("Input.dispatchMouseEvent", { type: "mouseMoved", x: 1, y: 1 });
-  }, 60_000);
-
   it("första raden under rubriken är kursiv, och ingen annan", async () => {
     await oppna("kostnad");
     const rader = await matRader(KVITTON.map((k) => k.anteckning));
@@ -572,5 +547,57 @@ describe("projektets egen kvittolista har samma rader", () => {
       );
       provaMarket(rad, k.bilaga, etiketter, toner);
     }
+  }, 60_000);
+});
+
+// docs/design.md, bilagemärket: "Hovringen hör till samma regel." Byter raden
+// yta när pekaren vilar på den ska bakgrundsstrecket byta med den, annars
+// syns en söm tvärs över märket. Prövat på alla tre skärmar som bär märket
+// (till 2026-11-17 bara på kvittolistan).
+//
+// Hovring finns bara med en pekare: hoverOnlyWhenSupported lägger varje
+// hover-regel bakom (hover: hover) and (pointer: fine), och en emulerad
+// telefon har ingen pekare. Provet görs därför i skrivbordsläge, med
+// förutsättningen mätt i sidan, och pekaren flyttas med en riktig
+// mushändelse. Övergångarna är avstängda i riggen, så färgen läses färdig.
+describe("bakgrundsstrecket följer radens yta, också vid hovring", () => {
+  it.each(["kostnad", "oversikt", "projekt"])("%s", async (namn) => {
+    await cdp("Emulation.setDeviceMetricsOverride", { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
+    await cdp("Page.navigate", { url: `${adress}${namn}` });
+    await utvardera(`(async () => {
+      for (let i = 0; i < 100 && document.readyState !== 'complete'; i++) await new Promise(r => setTimeout(r, 50));
+    })()`);
+    if (namn === "kostnad") await fallUt();
+    expect(
+      await utvardera<boolean>(`matchMedia('(hover: hover) and (pointer: fine)').matches`),
+      "förutsättningen: enheten kan hovra",
+    ).toBe(true);
+    // Ett kvitto utan bilaga som står på sidan – det är det som har ett snedstreck.
+    const synliga = await utvardera<string[]>(`[...document.body.querySelectorAll('p')].map(p => p.textContent)`);
+    const utan = KVITTON.find((k) => !k.bilaga && synliga.includes(k.anteckning));
+    expect(utan, `${namn}: ett kvitto utan bilaga ska stå på sidan`).toBeTruthy();
+    // Pekaren bort från raden först, så att vilan verkligen är vila.
+    await cdp("Input.dispatchMouseEvent", { type: "mouseMoved", x: 1, y: 1 });
+    const [vila] = await matRader([utan!.anteckning]);
+    expect(vila.marken[0].snedstreck[0]?.underFarg, `${namn}: i vila`).toBe(vila.yta);
+    const punkt = await utvardera<{ x: number; y: number }>(`(() => {
+      const p = [...document.body.querySelectorAll('p')].find(p => p.textContent === ${JSON.stringify(utan!.anteckning)});
+      p.scrollIntoView({ block: 'center' });
+      const r = p.getBoundingClientRect();
+      return { x: r.left + 5, y: r.top + r.height / 2 };
+    })()`);
+    await cdp("Input.dispatchMouseEvent", { type: "mouseMoved", x: punkt.x, y: punkt.y });
+    await new Promise((r) => setTimeout(r, 300));
+    const hovrad = await utvardera<boolean>(`(() => {
+      const p = [...document.body.querySelectorAll('p')].find(p => p.textContent === ${JSON.stringify(utan!.anteckning)});
+      return p.matches(':hover');
+    })()`);
+    expect(hovrad, `${namn}: raden ska vara i hovringsläge`).toBe(true);
+    const [hover] = await matRader([utan!.anteckning]);
+    console.log(`${namn}: yta ${vila.yta} → ${hover.yta}; strecket under ${vila.marken[0].snedstreck[0]?.underFarg} → ${hover.marken[0].snedstreck[0]?.underFarg}`);
+    // Förutsättningen: hovringen byter radens yta – annars prövas ingen söm.
+    expect(hover.yta, `${namn}: hovringen ska byta radens yta`).not.toBe(vila.yta);
+    expect(hover.marken[0].snedstreck[0]?.underFarg, `${namn}: vid hovring`).toBe(hover.yta);
+    await cdp("Input.dispatchMouseEvent", { type: "mouseMoved", x: 1, y: 1 });
   }, 60_000);
 });
