@@ -688,6 +688,8 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **En regel som föds ur en rapport ska prövas mot koden innan den skrivs**, eller skrivas som ett krav i stället för som ett påstående. Skillnaden syns i tempus: *"underlaget visar"* är ett påstående om appen, *"underlaget ska visa"* är ett krav på den. Designfilen har blivit fel på just det sättet förr — sex påståenden om appen som inte stämde, i en enda genomgång.
 
+**En kommentar i koden är också ett påstående, och den ruttnar som alla andra.** 2026-11-20 mättes två kommentarer mot verkligheten: en sa att ett återupptaget utkast *"visar da sina sparade varden direkt"* — fälten var tomma — och en sa att analysen körs om *"om falten ar tomma"*, när villkoret i själva verket var om bilagan var omarkerad. **Båda hade lästs av en människa och trotts.** En kommentar som beskriver ett beteende ska prövas när beteendet prövas, annars är den en regel ingen vaktar.
+
 **Det här är samma familj som *Ett tal som förts vidare är inte mätt***, med en mening i stället för ett tal. Och botemedlet är detsamma: fråga vad som faktiskt mättes, eller mät själv.
 
 **Agenten som rättar berömmet gör det dyraste och nyttigaste den kan göra.** Den här rättelsen kom oombedd, mot sitt eget intresse, och den räddade en regel från att bli en lögn om produkten.

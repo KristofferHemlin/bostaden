@@ -392,8 +392,13 @@ Ett kvitto eller en faktura.
 | arkiverad | bool | användarens val, default false |
 | klassificerad_av | fk? | vilken medlem som kopplade kostnaden till ett projekt |
 | anteckning | text? | "Vad gällde det?" – bär minnet till klassificeringen
+| utkast_belopp | int? | beloppet hon skrivit i ett **utkast**, i ören. Läses bara av utkastformuläret, töms när kostnaden sparas på riktigt
 
-**`totalbelopp`, `leverantor` och `dokumentdatum` är tomma i ett utkast.** Ett utkast skapas så snart en fil valts, och kan bli liggande utan att kompletteras – se *Dokumentavläsning*.
+**`totalbelopp` är tomt i ett utkast, och det är själva definitionen.** `arUtkast` returnerar `totalbelopp === null`, och fjorton ställen i koden hänger på den gränsen — kvittolistans utkastrad, startskärmens sex senaste, årssummorna, tröskeln, projektets belopp, merkostnadens bas och underlagets *Återstår*.
+
+**Därför bär `utkast_belopp` beloppet medan det är ett utkast.** Tillagd 2026-11-20, efter en mätning som visade att ett utkast inte sparade någonting av det hon skrev. **Kolumnen är additiv och får vara tom** — den ändrar ingen befintlig rads betydelse, till skillnad från en `utkast`-flagga, som hade krävt att varje existerande rad fylldes och att definitionen skrevs om på alla fjorton ställena.
+
+**De fyra andra fälten behöver ingen ny kolumn.** `leverantor`, `dokumentdatum`, `betaldatum` och `rot_utnyttjat` kan sparas på ett utkast som de är; ingenting tar dem för tecken på att utkastet är klart.
 
 **Tillstånden är härledda, inte lagrade.** Endast `arkiverad` är ett fält, eftersom det är ett aktivt användarval. Övriga tillstånd beräknas:
 

@@ -1071,7 +1071,13 @@ Att dölja raden helt när ingenting lästs av vore värre. Då blir fältet on�
 
 **Att spara ett fält får inte göra utkastet till ett sparat kvitto.** Gränsen mellan de två är i dag att `totalbelopp` saknas; sparas beloppet löpande upphör utkastet att vara ett utkast utan att hon gjort något. **Den fällan avgör hur det här byggs**, och svaret ligger i koden — se prompten.
 
-**Avläsningen körs aldrig om när något redan är ifyllt.** Villkoret i dag är att bilagan är omarkerad, vilket är något annat, och kommentaren i `form.tsx` påstår felaktigt att det är fälten som avgör.
+**Avläsningen körs när bilagan är omarkerad *och* inget fält är ifyllt.** Villkoret i dag är bara det första, och kommentaren i `form.tsx` påstår felaktigt att det är fälten som avgör. Båda leden behövs: fälten hindrar att ett svar hon gett skrivs över, och markeringen hindrar att ett oläsbart kvitto läses om i all evighet, eftersom ett sådant lämnar fälten tomma hur många gånger det än försöks.
+
+**Ett utkast som redan är markerat men har tomma fält läses inte om.** Det är agentens fråga 2026-11-20, och det är precis de rader där hon tappade allt. **Men en regel som lagar gamla rader genom att betala för nya modellanrop har en kostnad vi inte ser** — vi vet inte hur många sådana utkast som finns. Hon möter ett tomt formulär, som i dag. Visar det sig röra många rader är det en egen åtgärd att köra medvetet, inte en bieffekt av ett villkor.
+
+**En utkastrad som har en leverantör visar den.** Regeln under *Kvittolistan* säger att ett utkast visar sitt tillstånd i stället för leverantör och datum — den skrevs när ett utkast **aldrig** kunde ha någon. Har det en nu är den radens bästa kännetecken, och tillståndsraden *Utkast · komplettera uppgifterna* står kvar under den.
+
+**Men en utkastrad visar ingen ROT-rad.** *"varav ROT 11 587,50 kr, avgår"* under en rad utan belopp är en upplysning om ett tal som inte står där. Listan räknar i dag avdragen också för utkast; ett sparat ROT-svar får inte synas förrän raden har ett belopp.
 
 **Och misslyckas markeringen rapporteras det.** Det inre catchet sväljer felet innan det yttre ser något — uppmätt: noll rapporter till Sentry. Ett tyst fel som kostar ett modellanrop och visar ett förkastat tal är inte en nedgradering, det är ett fel.
 
