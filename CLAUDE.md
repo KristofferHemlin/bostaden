@@ -762,6 +762,8 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Ett test som inte faller när beteendet bryts är inte ett grönt test, det är ett oskrivet test.** Och det syns bara på ett sätt: genom att bryta beteendet med flit och se testet falla. Att det passerar säger ingenting alls.
 
+**Och ser något fel ut medan regeln är uppfylld, är det regelns referenspunkt som är fel.** Skriven 2026-11-20: jag skrev att en knapp skulle ha *"minst samma luft ovanför sig som en grupprubrik har"*, och agenten visade att den redan hade det och ändå såg ut att höra till gruppen — ett prov av regeln hade gått igenom på koden som såg fel ut. **Måttet jämförde med fel sak**, inte med för lite marginal. Fråga då inte *hur mycket mer?* utan **mot vad mäter jag?**
+
 **Förutsättningen prövas före slutsatsen.** En mätning av att något klipps kräver ett fall som utan klippning skulle svämma över. En mätning av ett tillstånd kräver att tillståndet verkligen är satt där mätningen läser. Går förutsättningen inte att visa är mätningen en tautologi med extra steg.
 
 **Ett negativt utfall är ett resultat — men bara om felet gick att framkalla.** *"Jag letade och hittade inget"* är värdelöst i sig; *"jag bröt villkoret, felet uppstod, jag lagade brytningen och felet var borta"* är ett svar. 2026-11-17 letade agenten efter en söm i bilagemärket vid hovring, hittade ingen, och visade först att sömmen gick att framkalla på alla tre skärmarna. Först då betydde nollresultatet något. **Be om den demonstrationen varje gång svaret är att inget fel finns.**

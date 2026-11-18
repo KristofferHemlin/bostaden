@@ -2085,6 +2085,12 @@ Upplysningens två lydelser delar första meningen:
 
 **Och underlaget får ingen egen rad för det.** Varningen överst säger redan att merkostnaden inte är ifylld. Samma sak sägs en gång.
 
+**Ett flöde har två sorters kontroller, inte tre.** Omlagt 2026-11-20 efter att Kristoffer såg att *Fortsätt senare* och *Tillbaka* ligger bredvid varandra och ser likadana ut, med *← Projekt* en bit bort i toppen.
+
+**Att röra sig i flödet** är *Nästa* med *Tillbaka* som en stillsam länk under — de hör ihop och ska stå ihop. **Att lämna flödet** är tillbakalänken i huvudet, som varje annan skärm i appen.
+
+***Fortsätt senare* tas bort.** Utkastet sparas oavsett hur hon lämnar sidan, så kontrollen är en tredje dörr till samma rum — och två dörrar som ser lika ut bredvid varandra kostar mer uppmärksamhet än den tredje dörren är värd. **Ett löfte som hålls är bättre än ett löfte som sägs:** hon får beskedet när hon kommer tillbaka, där det betyder något, i stället för när hon går.
+
 **Utkastet lever i webbläsaren, och säger inte mer än det kan hålla.** Det som skrivits ligger kvar mellan besöken, men bara i den webbläsaren och på den enheten — börjar hon på telefonen och öppnar datorn finns det inte. Länken heter därför **"Fortsätt senare"** och lovar ingenting om var. Ingenting halvfärdigt sparas i databasen; projektet, bostadsdelen och kvittokopplingarna skrivs i en transaktion eller inte alls.
 
 **Och ett utkast går alltid att kasta.** Möts hon av ett påbörjat projekt hon inte minns ska skärmen säga att det är ett utkast och erbjuda **"Börja om"** bredvid. Ett utkast som bara går att slutföra är inte ett utkast, det är en skärm man sitter fast i.
@@ -2136,13 +2142,21 @@ Efter namnet kommer **"Vad rörde projektet?"** – knappar att trycka på, fler
 | Bostadsrätt | Kök, Badrum, Balkong eller uteplats, Förvaring | Golv, Ytskikt, El, VVS, Dörrar, Vitvaror, Fönster |
 | Fastighet | Alla ovan, plus Altan, Garage eller förråd, Tomt | Alla ovan, plus Tak, Fasad, Värme, Dränering |
 
-*Annat* står under båda grupperna, för båda upplåtelseformerna. **Väljs *Annat* får fritextfältet den tillgängliga etiketten "Annat som projektet rörde"** – inte *"Vad mer rörde projektet"*, eftersom *mer* är fel när *Annat* är det enda hon valt.
+***Annat* står efter båda grupperna och utanför dem.** Uppmätt på skärmen 2026-11-20: knappen hamnade i samma rutnät som *Delar och system*, direkt under *Fönster* och med samma avstånd som mellan två knappar i gruppen — alltså omöjlig att skilja från en medlem i den. **Det är precis det grupperingen finns för att undvika**, eftersom *Annat* hör till ingendera.
+
+**Avståndet mäts mot gruppgränsen, inte mot en grupprubriks egen luft.** Agenten visade 2026-11-20 att *Annat* redan låg utanför rutnätet med 12 px ovanför sig — alltså lika mycket som en grupprubrik har — och ändå såg ut som en medlem, eftersom knapparna i gruppen ligger 8 px isär. **Fyra pixlars skillnad är ingen gräns.** Min regel var uppfylld av precis det som såg fel ut.
+
+Regeln lyder därför: ***Annat* skiljs från den sista gruppen minst lika starkt som grupperna skiljs från varandra** — alltså hela avståndet från en grupps sista knapp till nästa grupprubrik, uppmätt till 38 px. **Det är en relation och inte ett tal**, så den överlever en ändrad avståndsskala; ett prov ska mäta relationen.
+
+Här stod först bara att den *"står under båda grupperna"*, vilket går att läsa som *längst ned*, och det var min formulering som lämnade utrymmet. **Väljs *Annat* får fritextfältet den tillgängliga etiketten "Annat som projektet rörde"** – inte *"Vad mer rörde projektet"*, eftersom *mer* är fel när *Annat* är det enda hon valt.
 
 **Grupprubrikerna är etiketter, inte rubriker.** Dämpade och utan versaler, i samma storlek som brödtexten – **aldrig under golvet på 14 px**, som agenten föreslog genom att göra dem ett steg mindre än frågan. Regeln i den här filen räknar upp fyrtiofem ställen som en gång låg under golvet; den här skulle ha blivit nummer fyrtiosex.
 
 **Ordningen bärs av avståndet, inte av vikten.** Här stod först *"frågan står över dem genom sin vikt"*, och agenten såg att det inte går ihop: frågan *"Vad rörde projektet?"* är själv en fältetikett i samma stil, så en vikt som skiljer den från grupperna skiljer den också från *"Vad gjorde du?"* en rad upp. **Två fältetiketter på samma skärm får inte väga olika**, och att göra varje etikett i appen halvfet är en ommålning ingen bett om för att lösa ett avstånd.
 
-Grupprubriken sitter därför **tätt mot sina knappar och har luft ovanför** – samma grepp som under *Så fungerar det* på startskärmen, där mellanrummet upp till rubriken är ungefär dubbelt så stort som mellanrummet mellan raderna. **Närhet gör grupperna till grupper utan att något byter storlek, vikt eller färg.**
+Grupprubriken sitter därför **tätt mot sina knappar och har luft ovanför** – samma grepp som under *Så fungerar det* på startskärmen, där mellanrummet upp till rubriken är ungefär dubbelt så stort som mellanrummet mellan raderna. **Närhet gör grupperna till grupper utan att något byter storlek, vikt eller färg.** Uppmätt 2026-11-20 vid 393 px: 12 px ovanför varje grupprubrik, 6 px under.
+
+**Frågan har samma mellanrum ned till första gruppen som grupperna har till varandra, och det är avsiktligt.** Agenten tog bort frågans egen nederkantsmarginal för att de två grupperna skulle få lika mycket luft, vilket var rätt — men det gör också att frågan inte skiljs ut av avståndet. **Den skiljs ut av att den är en fråga.** *"Vad rörde projektet?"* slutar med frågetecken och står först; grupperna är substantiv. Att i stället ge frågan mer luft hade gjort den till en rubrik över två jämnstora grupper, och då hade den första gruppen sett ut att höra till något annat än den andra.
 
 **Att varje knapp måste tillhöra en grupp är en kompilatorsak, inte en lista.** Agentens lösning: varje kod utom *Annat* kräver en grupp, och en ny kod utan grupp går inte att bygga. **Det är uppräkningsregeln löst i typsystemet** i stället för i ett test — det billigaste stället av alla, eftersom felet då aldrig hinner existera.
 
