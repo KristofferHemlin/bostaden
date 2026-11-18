@@ -481,14 +481,14 @@ describe("efter anslutningen", () => {
 
     // Doris lagger in ett, Anna ser det.
     const doris = (await sparaKostnad(
-      formular({ leverantor: "Byggmax", totalbelopp: "1 249,00", dokumentdatum: "2025-06-10" }),
+      formular({ leverantor: "Byggmax", totalbelopp: "1 249,00", dokumentdatum: "2025-06-10", betaldatum: "2025-06-10" }),
     )) as { kostnadId: string };
     loggaIn(ANNA);
     await expect(KostnadSida({ params: Promise.resolve({ id: doris.kostnadId }) })).resolves.toBeTruthy();
 
     // Anna lagger in ett, Doris ser det.
     const anna = (await sparaKostnad(
-      formular({ leverantor: "Hornbach", totalbelopp: "845,50", dokumentdatum: "2025-06-12" }),
+      formular({ leverantor: "Hornbach", totalbelopp: "845,50", dokumentdatum: "2025-06-12", betaldatum: "2025-06-12" }),
     )) as { kostnadId: string };
     loggaIn(DORIS);
     await expect(KostnadSida({ params: Promise.resolve({ id: anna.kostnadId }) })).resolves.toBeTruthy();

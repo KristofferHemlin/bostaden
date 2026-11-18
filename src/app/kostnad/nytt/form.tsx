@@ -17,8 +17,10 @@
 // kvitto är betaldatumet") – det som avgor vilket ar kvittot raknas pa.
 // Dokumentdatumet foljer med fältet, utom nar avlasningen last ett eget
 // dokumentdatum som skiljer sig fran betaldagen (en faktura med en stampel
-// "Betald"): da bar ett dolt falt fakturans datum, sa att sorteringen,
-// tilltradesgransen och notisen om kvittodatum provar ratt dag.
+// "Betald"): da VISAS det som ett andra falt, "Kvittots datum", sa att
+// sorteringen, tilltradesgransen och notisen om kvittodatum provar ratt dag –
+// och sa att hon kan se och andra det datum tilltradesfragan galler
+// (docs/design.md, "Ändra datumet måste leda till det datum som prövas").
 //
 // UNDANTAG: ROT-raden "Drogs ROT av på fakturan?" (docs/design.md,
 // "ROT-avdrag"). Raden visas ALLTID – utfalld nar dokumentavlasningen last ett
@@ -318,6 +320,7 @@ export function NyKostnadForm({
   const tilltradeBekraftatDatumRef = useRef<string | null>(null);
   const [visaTilltradeDialog, setVisaTilltradeDialog] = useState(false);
   const datumfaltRef = useRef<HTMLDivElement | null>(null);
+  const kvittodatumfaltRef = useRef<HTMLDivElement | null>(null);
   // En sparad bilaga som vantar pa bekraftelse innan den raderas
   // (src/lib/bilageborttagning.ts). En nyss vald fil tas bort direkt.
   const [vantandeBorttagning, setVantandeBorttagning] =
@@ -412,11 +415,15 @@ export function NyKostnadForm({
     leverantor: utkast?.falt?.leverantor ?? "",
   });
   // Dokumentets eget datum, BARA nar det skiljer sig fran betaldatumet
-  // (avlasningen last bada och de var olika). Tomt betyder "samma dag som
-  // betaldatumet" – da foljer det med faltet, sa att en rattad dag pa ett
-  // kassakvitto rattar bada. `kvittodatum` ar det som provas mot tilltradet.
+  // (avlasningen last bada och de var olika). Da visas det som ett eget falt,
+  // "Kvittots datum", och faltet star kvar aven om hon andrar det till samma
+  // dag – ett falt som forsvinner under fingrarna ar varre an ett for mycket.
+  // Annars ar det samma dag som betaldatumet och foljer med det faltet, sa att
+  // en rattad dag pa ett kassakvitto rattar bada. `kvittodatum` ar det som
+  // provas mot tilltradet.
   const [dokumentdatum, setDokumentdatum] = useState(utkast?.falt?.dokumentdatum ?? "");
-  const kvittodatum = dokumentdatum || falt.datum;
+  const [visaKvittodatum, setVisaKvittodatum] = useState(Boolean(utkast?.falt?.dokumentdatum));
+  const kvittodatum = visaKvittodatum ? dokumentdatum : falt.datum;
   const faltRef = useRef(falt);
   useEffect(() => {
     faltRef.current = falt;
@@ -709,9 +716,12 @@ export function NyKostnadForm({
       if (data.betaldatum && nu.datum.trim() === "") {
         nasta.datum = data.betaldatum;
         nyttAuto.datum = true;
-        setDokumentdatum(
-          data.dokumentdatum && data.dokumentdatum !== data.betaldatum ? data.dokumentdatum : "",
-        );
+        if (data.dokumentdatum && data.dokumentdatum !== data.betaldatum) {
+          setDokumentdatum(data.dokumentdatum);
+          setVisaKvittodatum(true);
+        } else {
+          setDokumentdatum("");
+        }
       }
       if (nyttAuto.belopp || nyttAuto.datum || nyttAuto.leverantor) {
         setFalt(nasta);
@@ -956,11 +966,16 @@ export function NyKostnadForm({
     formRef.current?.requestSubmit();
   }
 
-  // "Ändra datumet": stanger fragan och stalls i datumfaltet, dar felet
-  // sannolikt sitter. Ingenting sparas.
+  // "Ändra datumet": stanger fragan och stalls i det datum fragan galler
+  // (docs/design.md, "Ändra datumet måste leda till det datum som prövas").
+  // Skiljer sig kvittots datum fran betaldagen ar det det synliga faltet
+  // "Kvittots datum"; annars ar de samma dag, och betaldatumet ar faltet.
+  // Ingenting sparas.
   function tilltradeDialogAndra() {
     setVisaTilltradeDialog(false);
-    datumfaltRef.current?.querySelector<HTMLInputElement>("input")?.focus();
+    (visaKvittodatum ? kvittodatumfaltRef : datumfaltRef).current
+      ?.querySelector<HTMLInputElement>("input")
+      ?.focus();
   }
 
   // "Datumet stämmer": bekraftar just det har datumet och sparar. Rutan ar
@@ -1558,10 +1573,10 @@ export function NyKostnadForm({
         </Falt>
       </UtfallbarSektion>
 
-      {/* Det enda datumfaltet ar betaldatumet (docs/design.md, "Det enda
-          datumfältet i ett nytt kvitto är betaldatumet"): etiketten och
-          hjalptexten sager vad det avgor. Ett avvikande dokumentdatum bars
-          dolt (se `dokumentdatum`) och gar att andra i kvittots andringslage. */}
+      {/* Datumfaltet ar betaldatumet (docs/design.md, "Det enda datumfältet
+          i ett nytt kvitto är betaldatumet"): etiketten och hjalptexten sager
+          vad det avgor. Ett avvikande dokumentdatum far ett eget falt under
+          (se `visaKvittodatum`). */}
       <Falt
         etikett="Betaldatum"
         obligatoriskt
@@ -1574,17 +1589,36 @@ export function NyKostnadForm({
         <div ref={datumfaltRef}>
         <DatumFalt
           defaultValue={falt.datum}
-          fel={faltfel.dokumentdatum ?? faltfel.betaldatum}
+          fel={visaKvittodatum ? faltfel.betaldatum : (faltfel.dokumentdatum ?? faltfel.betaldatum)}
           onChange={(iso) => {
             setFalt((f) => ({ ...f, datum: iso }));
-            rensaFaltfel("dokumentdatum", "betaldatum");
+            if (visaKvittodatum) rensaFaltfel("betaldatum");
+            else rensaFaltfel("dokumentdatum", "betaldatum");
           }}
         />
         </div>
       </Falt>
 
-      {/* Kvittodatum utanfor innehavet (docs/design.md): dokumentdatumet ar
-          betaldatumet utom nar avlasningen last ett eget (se `kvittodatum`). */}
+      {/* Kvittots datum, bara nar det skiljer sig fran betaldagen. Det ar det
+          tilltradesgransen provar, och "Ändra datumet" landar har. */}
+      {visaKvittodatum ? (
+        <Falt etikett="Kvittots datum" obligatoriskt>
+          <div ref={kvittodatumfaltRef}>
+            <DatumFalt
+              defaultValue={dokumentdatum}
+              fel={faltfel.dokumentdatum}
+              onChange={(iso) => {
+                setDokumentdatum(iso);
+                rensaFaltfel("dokumentdatum");
+              }}
+            />
+          </div>
+        </Falt>
+      ) : null}
+
+      {/* Kvittodatum utanfor innehavet (docs/design.md): under det falt som
+          bar kvittots datum – "Kvittots datum" nar det syns, annars
+          betaldatumet, som da ar samma dag. */}
       <KvittodatumNotis notis={kvittodatumNotis(kvittodatum, innehav)} />
 
       <Falt
@@ -1612,7 +1646,7 @@ export function NyKostnadForm({
       </Falt>
 
       {/* Betaldatumet ar faltet; dokumentdatumet ar samma dag utom nar
-          avlasningen last ett annat. */}
+          "Kvittots datum" visas. */}
       <input type="hidden" name="dokumentdatum" value={kvittodatum} />
       <input type="hidden" name="betaldatum" value={falt.datum} />
 

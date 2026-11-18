@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -34,6 +36,15 @@ function inmatning(falt: Record<string, string>): FormData {
   return fd;
 }
 
+/** Meningen för ett tomt datumfält, ordagrant ur docs/design.md ("När ett
+ *  formulär vägrar"). Läses i provet, aldrig på modulnivå. */
+function tomtDatumMening(): string {
+  const design = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+  const m = design.match(/\*"(Fyll i [^"]+)"\* när fältet är tomt/);
+  if (!m) throw new Error('hittade inte "*\"Fyll i …\"* när fältet är tomt" i docs/design.md');
+  return m[1];
+}
+
 function felen(fd: FormData) {
   const t = tolkaKostnadsformular(fd);
   return "felen" in t ? t.felen : [];
@@ -46,9 +57,23 @@ describe("inmatningen – varje avvisning har en mening", () => {
         falt: "totalbelopp",
         fel: "Fyll i ett belopp större än noll, t.ex. 1 020,95.",
       },
-      { falt: "dokumentdatum", fel: "Fyll i kvittots datum." },
+      { falt: "betaldatum", fel: tomtDatumMening() },
       { falt: "leverantor", fel: "Fyll i leverantör." },
     ]);
+  });
+
+  it("ett tomt betaldatum ger en mening, inte en till för det dolda kvittodatumet", () => {
+    const datumfel = felen(inmatning({ leverantor: "X", totalbelopp: "1" })).filter(
+      (f) => f.falt === "betaldatum" || f.falt === "dokumentdatum",
+    );
+    expect(datumfel).toEqual([{ falt: "betaldatum", fel: tomtDatumMening() }]);
+  });
+
+  it("ett tömt Kvittots datum, när det syns, får sin egen mening", () => {
+    const datumfel = felen(inmatning({ leverantor: "X", totalbelopp: "1", betaldatum: "2026-01-08" })).filter(
+      (f) => f.falt === "betaldatum" || f.falt === "dokumentdatum",
+    );
+    expect(datumfel).toEqual([{ falt: "dokumentdatum", fel: "Fyll i kvittots datum." }]);
   });
 
   it("varje fel har en icke-tom mening", () => {
@@ -88,22 +113,20 @@ describe("inmatningen – varje avvisning har en mening", () => {
 });
 
 describe("inmatningen – ett fel ger ett meddelande", () => {
-  it("2026-02-31: fältets eget fel vinner, 'Fyll i kvittots datum.' visas inte", () => {
+  it("2026-02-31: fältets eget fel vinner, formulärets 'Fyll i …' visas inte", () => {
     const egetFel = datumfel("2026", "02", "31");
     expect(egetFel).toBe("Ogiltig dag.");
     // Datumfältet rapporterar "" för ett ogiltigt datum, så formuläret
     // underkänner det som tomt …
     const formularetsFel = felen(inmatning({ leverantor: "X", totalbelopp: "1" }))
-      .find((f) => f.falt === "dokumentdatum")?.fel;
-    expect(formularetsFel).toBe("Fyll i kvittots datum.");
+      .find((f) => f.falt === "betaldatum")?.fel;
+    expect(formularetsFel).toBe(tomtDatumMening());
     // … men fältet visar bara ett av dem, och det sanna.
     expect(datumfaltetsMeddelande(egetFel, formularetsFel)).toBe("Ogiltig dag.");
   });
 
   it("ett tomt datum får formulärets mening", () => {
-    expect(datumfaltetsMeddelande(null, "Fyll i kvittots datum.")).toBe(
-      "Fyll i kvittots datum.",
-    );
+    expect(datumfaltetsMeddelande(null, tomtDatumMening())).toBe(tomtDatumMening());
   });
 
   it("utan fel visas ingenting", () => {
@@ -351,13 +374,21 @@ describe("inmatningens meddelanden namnger fältet som det heter på skärmen", 
     ]);
   });
 
-  it("inget meddelande från inmatningen nämner Betaldatum", () => {
+  // Till 2026-11-18 hette inmatningens enda datumfalt "Datum", och inget
+  // meddelande fick namna Betaldatum, ett falt som inte fanns pa skarmen. Nu
+  // heter faltet Betaldatum, och det ar "Kvittots datum" som bara syns nar det
+  // skiljer sig – sa inget meddelande far namna det nar datumen ar samma dag.
+  it("med samma dag i båda nämner inget meddelande Kvittots datum, som då inte syns", () => {
     for (const fd of [
       inmatning({}),
       inmatning({ totalbelopp: "1", dokumentdatum: "1965-06-01", betaldatum: "1965-06-01", leverantor: "X" }),
-      inmatning({ totalbelopp: "1", dokumentdatum: "2026-01-01", betaldatum: "fel", leverantor: "X" }),
+      inmatning({ totalbelopp: "1", dokumentdatum: "fel", betaldatum: "fel", leverantor: "X" }),
     ]) {
-      for (const f of felen(fd)) expect(f.fel).not.toMatch(/betaldatum/i);
+      for (const f of felen(fd)) expect(f.fel).not.toMatch(/kvittots datum/i);
     }
+  });
+
+  it("ett tomt datumfält namnges som det heter på skärmen, Betaldatum", () => {
+    expect(tomtDatumMening().toLowerCase()).toContain("betaldatum");
   });
 });

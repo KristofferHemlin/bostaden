@@ -117,16 +117,24 @@ export function tolkaKostnadsformular(
   }
   if (privatFel) felen.push({ falt: "privatbelopp", fel: privatFel });
 
-  // Inmatningen har ETT datumfalt, "Datum", som satter bade dokumentdatum och
-  // betaldatum (docs/design.md, "Datum i kostnadsformularet"). Meddelandena
-  // namnger darfor faltet som det heter pa skarmen, inte kolumnen de provar.
-  if (!DATUM.test(dokumentdatum)) {
-    felen.push({ falt: "dokumentdatum", fel: "Fyll i kvittots datum." });
-  } else if (betaldatum !== "") {
+  // Inmatningens datumfalt ar "Betaldatum", och det ar obligatoriskt
+  // (docs/design.md, "Ett enda datumfält, och det är betaldagen"). Kvittots
+  // datum ar samma dag, utom nar det skiljer sig och har ett eget falt,
+  // "Kvittots datum". Meddelandena namnger faltet som det heter pa skarmen,
+  // inte kolumnen de provar – och ett tomt betaldatum ger ETT meddelande, inte
+  // ocksa ett for det dolda dokumentdatum som ar samma tomma dag.
+  if (betaldatum === "") {
+    felen.push({ falt: "betaldatum", fel: "Fyll i betaldatumet." });
+  } else {
     if (!DATUM.test(betaldatum)) {
       felen.push({ falt: "betaldatum", fel: "Datumet har fel format." });
     } else if (betaldatum < TIDIGASTE_BETALDATUM) {
       felen.push({ falt: "betaldatum", fel: "Datum före 1970 stöds inte." });
+    }
+    // Samma varde som betaldatumet ar samma falt pa skarmen, och dess fel
+    // ar redan sagt ovan. Bara ett eget, synligt Kvittots datum provas for sig.
+    if (dokumentdatum !== betaldatum && !DATUM.test(dokumentdatum)) {
+      felen.push({ falt: "dokumentdatum", fel: "Fyll i kvittots datum." });
     }
   }
 

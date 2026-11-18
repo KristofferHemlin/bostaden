@@ -389,7 +389,7 @@ const VAGAR_MED_ID: Vag[] = [
     vag: "sparaKostnad (slutfor utkast)",
     anrop: () =>
       sparaKostnad(formular({
-        utkast_id: UX, leverantor: "Kapat", totalbelopp: "100", dokumentdatum: "2025-04-14",
+        utkast_id: UX, leverantor: "Kapat", totalbelopp: "100", dokumentdatum: "2025-04-14", betaldatum: "2025-04-14",
       })),
     avslag: "fel",
     foljer: "egen",
@@ -730,7 +730,7 @@ describe("vem som lade in och vem som besvarade", () => {
     h.db.lagg("medlemskap", { anvandare_id: DORIS, bostad_id: X });
     loggaIn(DORIS);
     await expect(
-      sparaKostnad(formular({ leverantor: "Byggmax", totalbelopp: "1 249,00", dokumentdatum: "2025-05-02" })),
+      sparaKostnad(formular({ leverantor: "Byggmax", totalbelopp: "1 249,00", dokumentdatum: "2025-05-02", betaldatum: "2025-05-02" })),
     ).resolves.not.toHaveProperty("fel");
     const nytt = h.db.tabell("kostnad").find((k) => k.leverantor === "Byggmax" && k.id !== K2X);
     expect(nytt?.skapad_av).toBe(DORIS);
@@ -994,7 +994,7 @@ describe.each([
     const utkast = await skapaUtkast();
     expect(h.db.tabell("kostnad").find((k) => k.id === utkast.kostnadId)?.bostad_id).toBe(Y);
 
-    await sparaKostnad(formular({ leverantor: "Byggmax", totalbelopp: "1 249,00", dokumentdatum: "2025-05-02" }));
+    await sparaKostnad(formular({ leverantor: "Byggmax", totalbelopp: "1 249,00", dokumentdatum: "2025-05-02", betaldatum: "2025-05-02" }));
     expect(h.db.tabell("kostnad").find((k) => k.leverantor === "Byggmax" && k.id !== K2X)?.bostad_id).toBe(Y);
 
     await kor(() => sparaForvarvet(START, formular({ tilltradesdatum: "2021-03-15", agarandel: "50" })));
@@ -1074,7 +1074,7 @@ describe("utkastet bar sin bostad", () => {
     expect(h.lager.createSignedUploadUrl).toHaveBeenCalledWith(expect.stringMatching(new RegExp(`^${X}/${kostnadId}/`)));
 
     const sparad = await sparaKostnad(formular({
-      utkast_id: kostnadId!, bostad_id: X, leverantor: "BAUHAUS", totalbelopp: "1 997,05", dokumentdatum: "2025-04-14",
+      utkast_id: kostnadId!, bostad_id: X, leverantor: "BAUHAUS", totalbelopp: "1 997,05", dokumentdatum: "2025-04-14", betaldatum: "2025-04-14",
     }));
     expect(sparad).toEqual({ kostnadId });
 
@@ -1101,7 +1101,7 @@ describe("utkastet bar sin bostad", () => {
     const { kostnadId } = await skapaUtkast(X);
     await sparaUtkastfalten(kostnadId!, { belopp: "60 812,50", datum: "2025-04-14", dokumentdatum: "", leverantor: "Byggfirman AB", rot: "", anteckning: "" });
     await sparaKostnad(formular({
-      utkast_id: kostnadId!, bostad_id: X, leverantor: "Byggfirman AB", totalbelopp: "60 812,50", dokumentdatum: "2025-04-14",
+      utkast_id: kostnadId!, bostad_id: X, leverantor: "Byggfirman AB", totalbelopp: "60 812,50", dokumentdatum: "2025-04-14", betaldatum: "2025-04-14",
     }));
     const sparat = { ...h.db.tabell("kostnad").find((k) => k.id === kostnadId)! };
     expect(sparat.totalbelopp).toBe(6_081_250);
@@ -1116,7 +1116,7 @@ describe("utkastet bar sin bostad", () => {
   it("ett kvitto utan bilaga sparas i formularets bostad, inte i den som blivit aktiv", async () => {
     byt(Y);
     const sparad = await sparaKostnad(formular({
-      bostad_id: X, leverantor: "Byggmax", totalbelopp: "1 249,00", dokumentdatum: "2025-05-02",
+      bostad_id: X, leverantor: "Byggmax", totalbelopp: "1 249,00", dokumentdatum: "2025-05-02", betaldatum: "2025-05-02",
     }));
     expect(h.db.tabell("kostnad").find((k) => k.id === sparad.kostnadId)?.bostad_id).toBe(X);
   });
@@ -1125,7 +1125,7 @@ describe("utkastet bar sin bostad", () => {
     const { kostnadId } = await skapaUtkast(X);
     byt(Y);
     await sparaKostnad(formular({
-      utkast_id: kostnadId!, bostad_id: Y, leverantor: "BAUHAUS", totalbelopp: "100", dokumentdatum: "2025-04-14",
+      utkast_id: kostnadId!, bostad_id: Y, leverantor: "BAUHAUS", totalbelopp: "100", dokumentdatum: "2025-04-14", betaldatum: "2025-04-14",
     }));
     expect(h.db.tabell("kostnad").find((k) => k.id === kostnadId)?.bostad_id).toBe(X);
   });
@@ -1135,7 +1135,7 @@ describe("utkastet bar sin bostad", () => {
     const fore = h.db.ogonblick();
     expect(await skapaUtkast(X)).toHaveProperty("fel");
     expect(
-      await sparaKostnad(formular({ bostad_id: X, leverantor: "Kapat", totalbelopp: "1", dokumentdatum: "2025-04-14" })),
+      await sparaKostnad(formular({ bostad_id: X, leverantor: "Kapat", totalbelopp: "1", dokumentdatum: "2025-04-14", betaldatum: "2025-04-14" })),
     ).toHaveProperty("fel");
     expect(await skapaUtkast("inte-ett-id")).toHaveProperty("fel");
     expect(h.db.ogonblick()).toEqual(fore);

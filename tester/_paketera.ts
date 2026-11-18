@@ -27,7 +27,14 @@ export async function skapaProjekt(_foreg, formData) {
  *  esbuild inte prövar att de importerade namnen finns. */
 const TOM_MODUL = `const ingenting = () => undefined; module.exports = new Proxy({}, { get: (_, k) => (k === "__esModule" ? false : ingenting) });`;
 
-export async function paketera(INGANG: string): Promise<string> {
+/**
+ * `serverStubbar` byter ut bestamda "use server"-moduler mot egen kod, nyckeln
+ * ar sokvagen under src/ ("app/kostnad/nytt/actions.ts"). Ovriga "use
+ * server"-moduler blir tomma som forut. Lagt till 2026-11-18 for
+ * kvittoformularets tilltradesprov, som behover ett sparande som noterar
+ * formularet.
+ */
+export async function paketera(INGANG: string, serverStubbar: Record<string, string> = {}): Promise<string> {
   const utfall = await build({
     stdin: { contents: INGANG, loader: "tsx", resolveDir: ROT, sourcefile: "ingang.tsx" },
     bundle: true,
@@ -54,7 +61,10 @@ export async function paketera(INGANG: string): Promise<string> {
           // är den enda som behöver göra något.
           b.onLoad({ filter: /[\\/]src[\\/].*\.(ts|tsx)$/ }, (a) => {
             const kod = readFileSync(a.path, "utf-8");
-            return /^\s*"use server";/.test(kod) ? { contents: TOM_MODUL, loader: "js" } : undefined;
+            if (!/^\s*"use server";/.test(kod)) return undefined;
+            const relativ = a.path.slice(join(ROT, "src").length + 1).split("\\").join("/");
+            if (relativ in serverStubbar) return { contents: serverStubbar[relativ], loader: "js" };
+            return { contents: TOM_MODUL, loader: "js" };
           });
           b.onLoad({ filter: /.*/, namespace: "stub" }, (a) => {
             if (a.path === "actions") return { contents: ACTIONS_STUB, loader: "js" };
