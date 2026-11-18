@@ -671,6 +671,12 @@ En rad kan bära flera dämpade rader. Ett kvitto kan sakna bilaga *och* ha ROT.
 **Årsrubriken och *Inlagt {år}* måste räkna samma sak.** De gjorde det inte, och att de råkade visa samma tal för två kvitton är ingen garanti. Tre skillnader fanns 2026-10-01:
 
 - **Den privata delen räknas aldrig med.** Metrikrutorna utesluter den, årsrubriken gjorde det inte. Ett belopp som "hörde inte till bostaden" hör inte till någon summa i appen.
+- **Det enda datumfältet i ett nytt kvitto är betaldatumet.** Skrivet 2026-11-18, efter att agenten mätt hela kedjan. Formuläret hade ett fält som hette *Datum*, och det skrevs till **båda** kolumnerna. Avläsningen fyller det med fakturans datum — mätt mot den riktiga modellen, tre av tre gånger, **också när fakturan bär en stämpel med betaldagen**, eftersom instruktionen ber om *"kvittots eller fakturans datum"* och aldrig nämner betalningen. Utfallet för en faktura daterad 2025-12-28 och betald 2026-01-08: **2025 i kvittolistan, i årssumman, i tröskelprövningen och utanför femårsfönstret vid en försäljning 2031.** Reglerna nedan var alltså rätt hela tiden; det var fältet som ljög om vad det samlade in.
+
+  **Fältet heter *Betaldatum* och säger vad det avgör:** *"Dagen du betalade – det är den som avgör vilket år kvittot räknas på."* För ett butikskvitto är det samma dag som står på kvittot, så ingenting blir svårare i det vanliga fallet. **Avläsningen ska be om båda datumen**: dokumentets eget datum, och betaldagen när dokumentet anger en. Finns ingen betaldag är de samma. Att be om ett datum och sedan använda det som ett annat är samma sorts fel som en kommentar som beskriver något koden inte gör — och **en ändrad instruktion är ett påstående om modellen, så den mäts om med samma uppställning som visade felet.**
+
+  **Och kvittots egen sida ska visa det datum som avgör året.** Den visade *Datum* och inte betaldatumet, så det tal som bestämmer vilket år kostnaden hamnar på gick inte att se någonstans efter att kvittot sparats. Skiljer sig dokumentdatumet står det under, dämpat.
+
 - **Året är betaldatumets år.** Saknas betaldatum hör kostnaden inte till något år – den hamnar under en egen rubrik *Utan betaldatum* i listan och räknas i ingen årssumma. Att placera den på dokumentdatumets år är en gissning appen gör tyst, och den gissningen flyttar ett belopp över en tröskel som gäller per kalenderår. Livstidssumman räknar den ändå, eftersom dess löfte är allt.
 - **Försäkringsersättning avgår på samma sätt som ROT**, den dagen den går att mata in. Den är inte inmatningsbar i dag, och det är därför ingen avvikelse ännu – men den blir det i samma stund fältet finns, och regeln ska stå skriven innan dess.
 
@@ -1080,6 +1086,13 @@ Att dölja raden helt när ingenting lästs av vore värre. Då blir fältet on�
 **Villkoret gäller när ett utkast öppnas igen, inte när hon väljer en fil.** Väljer hon filen efter att ha skrivit beloppet har hon just bett om en avläsning, och då ska den köras — den fyller bara tomma fält, så hennes tal står kvar. Meningen ovan är skriven generellt och ska läsas så: **det är ett sparat svar som skyddas, inte ett påbörjat formulär.**
 
 **Ett utkast som redan är markerat men har tomma fält läses inte om.** Det är agentens fråga 2026-11-20, och det är precis de rader där hon tappade allt. **Men en regel som lagar gamla rader genom att betala för nya modellanrop har en kostnad vi inte ser** — vi vet inte hur många sådana utkast som finns. Hon möter ett tomt formulär, som i dag. Visar det sig röra många rader är det en egen åtgärd att köra medvetet, inte en bieffekt av ett villkor.
+
+**Ett utkast utan bilaga är fortfarande ett utkast.** Skrivet 2026-11-18. Raden går att skapa i dag: hon väljer en fil, utkastet föds, och hon tar bort filen med krysset — eller uppladdningen misslyckas. Kvar blir en rad med allt hon skrivit och ingen bild. **Två ställen behandlar den som om den inte fanns, och båda ska lagas:**
+
+- **Den saknas helt under *Återstår* i underlaget**, eftersom filtret bara släpper igenom utkast med en bekräftad bilaga. *Återstår* finns för att visa det som inte räknas med än, och en rad utan belopp är precis det. **Det är bilagan som saknas, inte kostnaden.**
+- **Dess soptunna raderar utan att fråga**, eftersom bekräftelsen byggs av antalet bilagor och noll bilagor ger ingen fråga. **Det som raderas är det hon skrev**, inte en fil — och sedan utkastet fick ett minne är den frågan viktigare än den var. Bekräftelsen hör till raden, inte till dess bilagor.
+
+Kommentarerna *"ett utkast utan bilaga är ingenting"* och *"Ett utkast utan sin bild är ingenting"* var sanna när de skrevs och är det inte längre.
 
 **En utkastrad bär sitt bästa kännetecken, och tillståndsraden står under det.** Regeln under *Kvittolistan* säger att ett utkast visar sitt tillstånd i stället för leverantör och datum — den skrevs när ett utkast **aldrig** kunde ha något av det. Nu kan det ha båda, och ordningen är listans vanliga: **anteckningen först, leverantören när anteckning saknas.** *Utkast · komplettera uppgifterna* står kvar under endera.
 

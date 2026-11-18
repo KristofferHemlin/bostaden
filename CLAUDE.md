@@ -788,6 +788,14 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Att agenten rapporterade det självt är det rätta utfallet.** Den behöll spärren eftersom den uttrycker designregeln rakt ut och håller om beloppsfunktionen någon gång ändras — ett försvar i djupled, inte en bärande rad. Då ska det stå så: **en rad vars borttagande inte syns läses annars som bärande av nästa människa.** Och det som vaktar regeln är provet, inte raden.
 
+### Rätt regel på fel indata ger fel tal
+
+**Skriven 2026-11-18.** Årsreglerna var riktiga på varje ställe som räknar: årsrubriken, årssumman, tröskeln per kalenderår, femårsfönstret och exporten läser alla **betaldatumet**, utan reserv. Ändå hamnade en faktura daterad 2025-12-28 och betald 2026-01-08 på 2025 överallt — därför att **formuläret hade ett fält som hette *Datum* och skrev det till båda kolumnerna**, och avläsningen fyllde fältet med fakturans datum.
+
+**Felet syntes aldrig i regeln, och kunde inte göra det.** Ingen beräkning var fel; den fick fel tal. Den som granskar beräkningarna hittar ingenting, och alla prov på dem är gröna med rätta.
+
+**Så när ett tal blir fel och reglerna står emot granskning, gå uppströms till det som matar dem.** Ett fält med ett vagt namn som skriver till två kolumner är ett påstående om att de två är samma sak. **Ett insamlat värde ska heta det som avgör något**, och det som avgör året ska gå att se på skärmen efteråt.
+
 ### Vem skriver reglerna
 
 **Agenten rör inga md-filer — inte heller den här.** Regeln har alltid varit att `docs/` är mitt, och `CLAUDE.md` ligger utanför `docs/` men lyder under samma ordning: den som skriver prompten skriver reglerna, agenten läser dem och säger emot dem. Skriven 2026-10-21 efter att agenten frågade, vilket var befogat eftersom regeln bara stått som *"ändra ingenting i `docs/`"*.
