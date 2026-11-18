@@ -1148,7 +1148,11 @@ Sparas ett kvitto daterat före tillträdet ställs en fråga. En enda, med båd
 >
 > [ **Ändra datumet** ] [ Datumet stämmer ]
 
-***Ändra datumet* måste leda till det datum som prövas.** Skrivet 2026-11-18. Gränsen prövar kvittots datum, inte betaldagen — och sedan formuläret bara visar betaldagen ligger det prövade talet dolt. Knappen flyttade markören till *Betaldatum*, där ingen ändring i världen släcker frågan. **Skiljer sig de två datumen ska dokumentdatumet visas och gå att ändra i formuläret**, och knappen landa där. Annars är den tunga knappen en återvändsgränd för just den användare den finns för.
+***Ändra datumet* måste leda till det datum som prövas.** Skrivet 2026-11-18. Gränsen prövar kvittots datum, inte betaldagen — och sedan formuläret bara visar betaldagen ligger det prövade talet dolt. Knappen flyttade markören till *Betaldatum*, där ingen ändring i världen släcker frågan. **Skiljer sig de två datumen ska dokumentdatumet visas och gå att ändra i formuläret**, och knappen landa där. Annars är den tunga knappen en återvändsgränd för just den användare den finns för — och värre än så: mätt i Chrome rättade hon året i *Betaldatum*, som knappen bjöd in till, varpå kvittot bytte år och frågan kom tillbaka.
+
+**Fältet heter *Kvittots datum* överallt.** Samma dag hette *Datum* i kvittots ändringsläge och *Kvittots datum* i formuläret och på läsläget — **ett värde med två namn är två värden för den som läser skärmen.** Ändringsläget byter namn. Hjälptexten är *"Dagen på kvittot eller fakturan."*, eftersom fältet bara dyker upp när något är ovanligt och då är det inte uppenbart vad det vill ha.
+
+**Fältet står kvar sedan det visats**, också om hon ändrar det till samma dag som betaldagen. Ett fält som försvinner medan hon skriver i det är värre än ett fält för mycket.
 
 **Båda datumen står i texten.** Den som typat fel ser felet i samma mening som frågan, utan att behöva leta tillbaka i formuläret.
 

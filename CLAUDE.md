@@ -800,6 +800,8 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Skriven 2026-11-18.** När formuläret slutade visa dokumentdatumet blev tillträdesgränsen — som prövar just det datumet — en fråga om ett tal hon inte kan se. Knappen *Ändra datumet* flyttar markören till *Betaldatum*, och ingen ändring där släcker frågan; det prövade datumet går att nå först i kvittots ändringsläge.
 
+**Och en återvändsgräns står sällan stilla — den leder vidare in i ett nytt fel.** Mätt i Chrome 2026-11-18, innan något byggdes: fakturan var daterad 2024-12-28, ett feltypat år, och betald 2026-01-08. Frågan sa *"kvittot är daterat 2024-12-28"*, knappen lämnade markören i *Betaldatum*, och hon rättade året där — som knappen bjöd in till. **Betaldagen blev 2025-01-08, kvittot bytte år, och frågan om 2024-12-28 kom tillbaka.** Hon gjorde precis som ombedd och fick ett nytt fel på köpet.
+
 **Ett dolt fält är obekvämt; ett dolt fält som blockerar är en återvändsgränd.** Varje gång ett värde flyttas ur synfältet: leta upp det som prövar det, och fråga om någon av dem kan säga nej till henne. Säger en av dem nej måste värdet tillbaka — synligt och ändringsbart på det ställe där nejet kommer.
 
 **Och samma fråga gäller åt andra hållet:** en regel som skrivs om på ett ställe har nästan alltid en äldre lydelse någon annanstans. *Ett enda datumfält … fältet heter "Datum" och sätter båda värdena* stod kvar i `docs/design.md` medan årsregeln tre avsnitt bort sade motsatsen, och ett felmeddelande hette fortfarande *"Fyll i kvittots datum."* under ett fält som bytt namn. Agenten hittade båda. **Den som skriver om en regel söker efter dess gamla lydelse innan omgången är klar.**
