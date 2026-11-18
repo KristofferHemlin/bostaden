@@ -100,22 +100,36 @@ async function lage(): Promise<Lage> {
   })()`);
 }
 
+/** Flödet från början till kvittosteget, med riktiga klick. Varje prov går
+ *  vägen själv – inget prov fortsätter där ett annat slutade. Stegen
+ *  returneras så att provet kan pröva att vägen gick som den skulle. */
+async function tillKvittosteget(): Promise<Lage[]> {
+  await webblasare.cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
+  // Flodet sparar ett utkast i webblasaren, och ett utkast oppnar pa sitt
+  // sparade steg. Lagringen hor till sidans ursprung, sa sidan oppnas, toms
+  // och oppnas igen.
+  await webblasare.cdp("Page.navigate", { url: `${webblasare.adress}flode` });
+  await vanta(500);
+  await webblasare.utvardera("localStorage.clear()");
+  await webblasare.cdp("Page.navigate", { url: `${webblasare.adress}flode` });
+  await vanta(500);
+
+  const steg: Lage[] = [];
+  steg.push(await lage());
+  // Namnet, som hon skriver det.
+  await webblasare.utvardera(`document.querySelector('input[type="text"]').focus()`);
+  await webblasare.cdp("Input.insertText", { text: "Nytt avlopp i köket" });
+  await tryck("Nästa");
+  steg.push(await lage());
+  await tryck("Ja, det är helt nytt");
+  await tryck("Nästa");
+  steg.push(await lage());
+  return steg;
+}
+
 describe("projektflödets sista steg, med riktiga klick i Chrome", () => {
   it("Nästa på frågeträdet leder till kvittona – och skickar ingenting", async () => {
-    await webblasare.cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
-    await webblasare.cdp("Page.navigate", { url: `${webblasare.adress}flode` });
-    await vanta(500);
-
-    const steg: Lage[] = [];
-    steg.push(await lage());
-    // Namnet, som hon skriver det.
-    await webblasare.utvardera(`document.querySelector('input[type="text"]').focus()`);
-    await webblasare.cdp("Input.insertText", { text: "Nytt avlopp i köket" });
-    await tryck("Nästa");
-    steg.push(await lage());
-    await tryck("Ja, det är helt nytt");
-    await tryck("Nästa");
-    steg.push(await lage());
+    const steg = await tillKvittosteget();
 
     for (const [i, s] of steg.entries()) console.log(`steg ${i + 1}: ${s.framsteg} · skickat ${s.inskickat}\n  ${s.synligt}`);
 
@@ -128,6 +142,11 @@ describe("projektflödets sista steg, med riktiga klick i Chrome", () => {
   }, 60_000);
 
   it("på sista steget väljs kvittot, och Spara skickar en gång – med kvittot", async () => {
+    // Utgangslaget byggs har, inte arvt fran provet ovan.
+    const steg = await tillKvittosteget();
+    expect(steg[2].framsteg, "förutsättningen föll: flödet nådde inte kvittosteget").toBe("3 av 3");
+    expect(steg[2].inskickat, "förutsättningen föll: formuläret skickades på vägen till kvittosteget").toBe(0);
+
     // Raden är en etikett som växlar rutan; den hittas på anteckningen.
     const punkt = await webblasare.utvardera<{ x: number; y: number } | null>(`(() => {
       const l = [...document.querySelectorAll("label")].find(

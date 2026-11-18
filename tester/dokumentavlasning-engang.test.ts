@@ -50,7 +50,11 @@ function bilagaRad(over: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  // mockReset och inte bara clearAllMocks, som behaller implementationerna:
+  // annars arvde provet efter "markeringen misslyckas" en update som alltid
+  // kastar, och provade markeringen med en databas som var nere
+  // (CLAUDE.md, "Ett prov ärver allt som inte uttryckligen nollställs").
+  for (const f of Object.values(h)) f.mockReset();
   h.download.mockResolvedValue({
     data: { arrayBuffer: async () => new ArrayBuffer(8) },
     error: null,

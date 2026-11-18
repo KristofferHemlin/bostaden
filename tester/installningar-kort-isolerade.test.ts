@@ -91,8 +91,18 @@ const BOSTADEN_FORMULAR = {
   kapitaltillskott: "60 000",
 };
 
+/** Bostaden som actionen laser. Satts i varje prov som nar dit – inget
+ *  prov arver ett varde fran ett annat (CLAUDE.md, "Ett prov ärver allt som
+ *  inte uttryckligen nollställs"). */
+function bostadenAr(upplatelseform: "bostadsratt" | "fastighet") {
+  h.bostadFindUniqueOrThrow.mockResolvedValue({ upplatelseform, forsaljningsdatum: null });
+}
+
 beforeEach(() => {
-  vi.clearAllMocks();
+  // mockReset och inte bara clearAllMocks: clearAllMocks tommer anropen men
+  // behaller implementationerna, och da lackte sparaBostadens returvarde in
+  // i sparaForvarvets prov, som foll nar de kordes ensamma.
+  for (const f of Object.values(h)) f.mockReset();
   h.bostadUpdate.mockResolvedValue({});
   h.medlemskapUpdateMany.mockResolvedValue({ count: 1 });
   ensamAgare();
@@ -100,7 +110,7 @@ beforeEach(() => {
 
 describe("sparaBostaden ror bara Bostadens egna falt", () => {
   beforeEach(() => {
-    h.bostadFindUniqueOrThrow.mockResolvedValue({ upplatelseform: "bostadsratt", forsaljningsdatum: null });
+    bostadenAr("bostadsratt");
   });
 
   it("skickar exakt Bostadens falt till bostad.update, och rör aldrig medlemskap", async () => {
@@ -140,7 +150,13 @@ describe("sparaForvarvet ror bara Forvarvets egna falt", () => {
   // Ett aktivt svar pa forsta agaren ar ett svar, var det an ges – Forvarvet
   // skriver det nar svaret ar fullstandigt (src/doman/bostadsfragor.ts).
   // Bostaden-kortet ror det aldrig, utom genom ett byte av upplatelseform.
-  it("med forsta agaren ja: exakt Forvarvets falt och ombildningen, och bara agarandel till medlemskap", async () => {
+  //
+  // Ombildningen ar Forvarvets falt bara nar fragan stalls, och den stalls
+  // bara for en bostadsratt dar forsta agaren ar ja. Provet arvde tidigare
+  // "bostadsratt" fran blocket ovan utan att saga det; nu star det har, och
+  // provet efter visar att formen avgor.
+  it("bostadsrätt, forsta agaren ja: exakt Forvarvets falt och ombildningen, och bara agarandel till medlemskap", async () => {
+    bostadenAr("bostadsratt");
     const resultat = await sparaForvarvet(
       {},
       formulardata({ ...FORVARVET_FORMULAR, forsta_agare: "ja", ombildning: "ja" }),
@@ -163,7 +179,22 @@ describe("sparaForvarvet ror bara Forvarvets egna falt", () => {
     expect(medlemskapData).toEqual({ agarandel: 50 });
   });
 
+  it("fastighet, forsta agaren ja: ombildningen skrivs inte – fragan stalls inte", async () => {
+    bostadenAr("fastighet");
+    const resultat = await sparaForvarvet(
+      {},
+      formulardata({ ...FORVARVET_FORMULAR, forsta_agare: "ja", ombildning: "ja" }),
+    );
+
+    expect(resultat.fel).toBeUndefined();
+    const data = h.bostadUpdate.mock.calls[0][0].data;
+    expect(Object.keys(data).sort()).toEqual([...FORVARVET_FALT].sort());
+    expect(data).not.toHaveProperty(OMBILDNING);
+    expect(data.nybyggd_vid_forvarv).toBe(true);
+  });
+
   it("med forsta agaren nej: ombildningen skrivs inte – ett kvarlamnat ja ar ofarligt", async () => {
+    bostadenAr("bostadsratt");
     const resultat = await sparaForvarvet(
       {},
       formulardata({ ...FORVARVET_FORMULAR, forsta_agare: "nej", ombildning: "ja" }),
@@ -177,12 +208,14 @@ describe("sparaForvarvet ror bara Forvarvets egna falt", () => {
   });
 
   it("tillträdesdatum ar fortfarande obligatoriskt", async () => {
+    // Ingen bostad satt med flit: ett tomt datum avvisas innan bostaden lases.
     const resultat = await sparaForvarvet({}, formulardata({ tilltradesdatum: "", agarandel: "100" }));
     expect(resultat.fel).toContain("Tillträdesdatum");
     expect(h.bostadUpdate).not.toHaveBeenCalled();
   });
 
   it("tomma belopp sparas som null, och ett otolkbart avvisas", async () => {
+    bostadenAr("bostadsratt");
     await sparaForvarvet({}, formulardata({ tilltradesdatum: "2018-06-01", agarandel: "100" }));
     expect(h.bostadUpdate.mock.calls[0][0].data).toMatchObject({ kopeskilling: null, kopkostnader: null });
 
