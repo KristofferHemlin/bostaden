@@ -64,6 +64,8 @@ import {
   totalbeloppHjalptext,
 } from "@/lib/format";
 import {
+  KVITTODATUM_ETIKETT,
+  KVITTODATUM_HJALPTEXT,
   kvittodatumNotis,
   type Innehavsgranser,
 } from "@/lib/kvittodatum-notis";
@@ -232,7 +234,7 @@ function LasVy({
             <Rad etikett="Betaldatum" varde={varden.betaldatum} />
             {varden.avvikandeDokumentdatum ? (
               <p className="text-right text-text-sekundar">
-                Kvittots datum {varden.avvikandeDokumentdatum}
+                {KVITTODATUM_ETIKETT} {varden.avvikandeDokumentdatum}
               </p>
             ) : null}
           </div>
@@ -446,7 +448,9 @@ export function RedigeraVy({
           </Falt>
         </UtfallbarSektion>
 
-        <Falt etikett="Datum" obligatoriskt>
+        {/* Samma namn och hjalptext som i formularet (docs/design.md,
+            "Fältet heter Kvittots datum överallt"). */}
+        <Falt etikett={KVITTODATUM_ETIKETT} obligatoriskt hjalp={KVITTODATUM_HJALPTEXT}>
           <DatumFalt
             name="dokumentdatum"
             defaultValue={varden.dokumentdatum}

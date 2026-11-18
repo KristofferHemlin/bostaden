@@ -99,6 +99,19 @@ afterAll(() => {
   else process.env.ANTHROPIC_API_KEY = NYCKEL_FORE;
 });
 
+/** Varje synligt datumfalt (det med en arsruta): etiketten, utan
+ *  obligatoriskt-markeringen, och texten under faltet. */
+function datumfaltMedNamn(beh: HTMLElement): { etikett: string; under: string }[] {
+  return [...beh.querySelectorAll("label")]
+    .filter((l) => l.querySelector('input[aria-label="År"]') && l.closest("[hidden]") === null)
+    .map((l) => {
+      const spans = [...l.children].filter((c) => c.tagName === "SPAN");
+      const etikett = (spans[0]?.textContent ?? "").replace(/\*$/, "").trim();
+      const under = spans.length > 1 ? (spans[spans.length - 1].textContent ?? "").trim() : "";
+      return { etikett, under };
+    });
+}
+
 /** Modellens svar pa fakturan: 8 500 kr fore ROT, 1 800 kr ROT, 6 700 kr att betala. */
 function svar(datum: { dokumentdatum: string; betaldatum: string | null }) {
   return JSON.stringify({
@@ -148,6 +161,7 @@ async function laggIn(modellsvar: string) {
   expect(h.modellanrop, "forutsattningen: avlasningen kordes").toBe(1);
   const datumfaltet = beh.querySelector<HTMLInputElement>('input[name="betaldatum"]')!.value;
   const etiketter = [...beh.querySelectorAll("label")].map((l) => (l.textContent ?? "").replace(/\s/g, " "));
+  const formularetsFalt = datumfaltMedNamn(beh);
   await act(async () => { beh.querySelector("form")!.requestSubmit(); });
   for (let i = 0; i < 30; i++) await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
   await act(async () => rot.unmount());
@@ -173,8 +187,23 @@ async function laggIn(modellsvar: string) {
     (await KostnadSida({ params: Promise.resolve({ id: u.id as string }) })) as ReactElement,
   ).replace(/\s/g, " ");
 
+  // Andringslaget: kvittots sida i webblasarens trad, och ett tryck pa
+  // "Ändra" som hon gor det.
+  const kort = document.createElement("div");
+  document.body.appendChild(kort);
+  const kortrot = createRoot(kort);
+  await act(async () =>
+    kortrot.render((await KostnadSida({ params: Promise.resolve({ id: u.id as string }) })) as ReactElement),
+  );
+  const andra = [...kort.querySelectorAll("button")].find((b) => (b.textContent ?? "").trim() === "Ändra");
+  expect(andra, "knappen Ändra pa kvittots sida hittades inte").toBeDefined();
+  await act(async () => { andra!.click(); });
+  const andringslagetsFalt = datumfaltMedNamn(kort);
+  await act(async () => kortrot.unmount());
+  kort.remove();
+
   return {
-    datumfaltet, etiketter, rubriker, kvittot,
+    datumfaltet, etiketter, rubriker, kvittot, formularetsFalt, andringslagetsFalt,
     betaldatum: iso(rad.betaldatum), dokumentdatum: iso(rad.dokumentdatum),
     ar2025: arssumma(2025), ar2026: arssumma(2026),
   };
@@ -186,6 +215,28 @@ describe("faltet heter Betaldatum och sager vad det avgor", () => {
     const traff = design.match(/\*\*Fältet heter \*Betaldatum\* och säger vad det avgör:\*\* \*"([^"]+)"\*/);
     expect(traff, "lydelsen hittades inte i docs/design.md").not.toBeNull();
     expect(BETALDATUM_HJALPTEXT).toBe(traff![1]);
+  });
+});
+
+describe("samma dag heter samma sak pa alla tre skarmar", () => {
+  // docs/design.md, "Fältet heter Kvittots datum överallt": formularet,
+  // lasläget och andringsläget. Namnet och hjalptexten lases ur designfilen
+  // inne i provet.
+  it("formularet och andringslaget: Kvittots datum med hjalptexten, lasläget: Kvittots datum", async () => {
+    const design = await readFile(path.resolve(import.meta.dirname, "../docs/design.md"), "utf8");
+    const namn = design.match(/\*\*Fältet heter \*([^*]+)\* överallt\.\*\*/);
+    const hjalp = design.match(/\*\*Fältet heter \*[^*]+\* överallt\.\*\*[^\n]*?Hjälptexten är \*"([^"]+)"\*/);
+    expect(namn, "namnet hittades inte i docs/design.md").not.toBeNull();
+    expect(hjalp, "hjalptexten hittades inte i docs/design.md").not.toBeNull();
+    const kvittodatum = { etikett: namn![1], under: hjalp![1] };
+
+    const r = await laggIn(svar({ dokumentdatum: "2025-12-28", betaldatum: "2026-01-08" }));
+    expect(r.formularetsFalt, "nytt kvitto").toEqual([
+      { etikett: "Betaldatum", under: BETALDATUM_HJALPTEXT },
+      kvittodatum,
+    ]);
+    expect(r.andringslagetsFalt.find((f) => f.etikett !== "Betaldatum"), "kvittots andringslage").toEqual(kvittodatum);
+    expect(r.kvittot, "kvittots lasläge").toContain(`${namn![1]} 2025-12-28`);
   });
 });
 

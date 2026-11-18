@@ -147,6 +147,8 @@ import {
   type Kostnadsfalt,
 } from "@/lib/kostnadsformular";
 import {
+  KVITTODATUM_ETIKETT,
+  KVITTODATUM_HJALPTEXT,
   kvittodatumNotis,
   type Innehavsgranser,
 } from "@/lib/kvittodatum-notis";
@@ -1602,7 +1604,7 @@ export function NyKostnadForm({
       {/* Kvittots datum, bara nar det skiljer sig fran betaldagen. Det ar det
           tilltradesgransen provar, och "Ändra datumet" landar har. */}
       {visaKvittodatum ? (
-        <Falt etikett="Kvittots datum" obligatoriskt>
+        <Falt etikett={KVITTODATUM_ETIKETT} obligatoriskt hjalp={KVITTODATUM_HJALPTEXT}>
           <div ref={kvittodatumfaltRef}>
             <DatumFalt
               defaultValue={dokumentdatum}

@@ -15,6 +15,14 @@
 
 import { dateratForeTilltradet } from "@/doman/atgardsberakning";
 
+/** Dokumentdatumets namn pa varje skarm (docs/design.md, "Fältet heter
+ *  Kvittots datum överallt"): formularet, lasläget och andringsläget. Samma
+ *  dag med tva namn ar tva varden for den som laser skarmen. */
+export const KVITTODATUM_ETIKETT = "Kvittots datum";
+
+/** Hjalptexten under faltet, i formularet och i andringsläget. */
+export const KVITTODATUM_HJALPTEXT = "Dagen på kvittot eller fakturan.";
+
 export interface Innehavsgranser {
   /** ISO-datum ("YYYY-MM-DD"). */
   tilltradesdatum: string;
