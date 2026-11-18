@@ -2,10 +2,15 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import postcss from "postcss";
 import tailwindcss from "tailwindcss";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import tailwindKonfig from "../tailwind.config";
 import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
 import { paketera } from "./_paketera";
+
+// Flodets egen nyckel for utkastet, ur samma kalla som koden. Server-actionen
+// den drar in hor inte till det som provas.
+vi.mock("@/app/projekt/actions", () => ({ skapaProjekt: async () => ({}) }));
+const { utkastNyckel } = await import("@/app/projekt/nytt/flode");
 
 // docs/design.md, "Ett flöde har två sorters kontroller, inte tre": att röra
 // sig i flödet är Nästa, med Tillbaka under, och att lämna det är
@@ -33,6 +38,7 @@ import { paketera } from "./_paketera";
 
 const ROT = process.cwd();
 const BORJA_OM = "Börja om";
+const BOSTAD_ID = "b0000000-0000-4000-8000-000000000001";
 
 const KVITTO = {
   id: "d0000000-0000-4000-8000-000000000001",
@@ -49,7 +55,7 @@ import { createRoot } from "react-dom/client";
 import { NyttProjektFlode } from "@/app/projekt/nytt/flode";
 (window as unknown as { __inskickat: unknown[] }).__inskickat = [];
 createRoot(document.getElementById("rot")!).render(
-  <NyttProjektFlode bostadId="b0000000-0000-4000-8000-000000000001" upplatelseform="bostadsratt" kvitton={${JSON.stringify([KVITTO])}} />,
+  <NyttProjektFlode bostadId="${BOSTAD_ID}" upplatelseform="bostadsratt" kvitton={${JSON.stringify([KVITTO])}} />,
 );
 `;
 
@@ -97,6 +103,19 @@ async function oppna(namn: string) {
   await webblasare.cdp("Emulation.setTouchEmulationEnabled", { enabled: true });
   await webblasare.cdp("Page.navigate", { url: `${webblasare.adress}${namn}` });
   await vanta(500);
+}
+
+/** Projektflödet utan något kvar i webbläsaren: ingen början på ett utkast
+ *  från ett annat prov. Lagringen hör till sidans ursprung, så sidan öppnas
+ *  först och töms sedan. */
+async function oppnaProjektflodetTomt() {
+  await oppna("projekt");
+  await webblasare.utvardera("localStorage.clear()");
+  await oppna("projekt");
+}
+
+async function harUtkast(): Promise<boolean> {
+  return webblasare.utvardera<boolean>(`localStorage.getItem(${JSON.stringify(utkastNyckel(BOSTAD_ID))}) !== null`);
 }
 
 /** Ett tryck som användarens, på den synliga knappen med texten. */
@@ -147,8 +166,8 @@ function logga(flode: string, steg: Lage[]) {
 
 describe("flödenas navigeringskontroller, räknade i Chrome", () => {
   it("projektflödet: Nästa, och Tillbaka där det finns något att gå tillbaka till – inget mer", async () => {
-    await webblasare.utvardera("localStorage.clear()").catch(() => undefined);
-    await oppna("projekt");
+    await oppnaProjektflodetTomt();
+    expect(await harUtkast(), "ett utkast låg kvar fast lagringen tömts – flödet börjar inte från början").toBe(false);
     const steg: Lage[] = [await lage()];
     await webblasare.utvardera(`document.querySelector('input[type="text"]').focus()`);
     await webblasare.cdp("Input.insertText", { text: "Nytt avlopp i köket" });
@@ -167,8 +186,20 @@ describe("flödenas navigeringskontroller, räknade i Chrome", () => {
   }, 60_000);
 
   it("projektflödet från ett utkast: Börja om syns och räknas inte som navigering", async () => {
-    // Utkastet fran provet ovan ligger kvar i webblasaren, med steget det
-    // stod pa; samma adress laddar det. Tillbaka tar det genom alla tre.
+    // Provet lagger dit sitt eget utkast, som hon gor: borjar fran tomt,
+    // skriver ett namn och gar till sista steget. Utkastet ar forutsattningen
+    // och provas for sig, sa att ett saknat utkast sager just det – inte att
+    // Borja om ar borta.
+    await oppnaProjektflodetTomt();
+    await webblasare.utvardera(`document.querySelector('input[type="text"]').focus()`);
+    await webblasare.cdp("Input.insertText", { text: "Nytt avlopp i köket" });
+    await tryck("Nästa");
+    await tryck("Ja, det är helt nytt");
+    await tryck("Nästa");
+    expect(await harUtkast(), "förutsättningen föll: inget utkast sparades i webbläsaren – Börja om kan inte prövas").toBe(true);
+
+    // Samma adress igen laddar utkastet, med steget det stod pa. Tillbaka
+    // tar det genom alla tre.
     await oppna("projekt");
     const steg: Lage[] = [await lage()];
     await tryck("Tillbaka");
@@ -177,10 +208,11 @@ describe("flödenas navigeringskontroller, räknade i Chrome", () => {
     steg.push(await lage());
     logga("projekt (utkast)", steg);
 
+    expect(steg[0].framsteg, "utkastet fanns men laddades inte – flödet stod inte på sitt sparade steg").toBe("3 av 3");
     expect(steg.map((s) => s.framsteg)).toEqual(["3 av 3", "2 av 3", "1 av 3"]);
-    // Forutsattningen: Borja om syns i varje steg, annars provar undantaget
-    // ingenting.
-    for (const s of steg) expect(s.utanfor, `${s.framsteg}: Börja om syns inte – flödet laddade inget utkast`).toContain(BORJA_OM);
+    // Utkastet ar laddat, sa Borja om ska synas i varje steg – annars provar
+    // undantaget ingenting, och det ar da ett fel i flodet.
+    for (const s of steg) expect(s.utanfor, `${s.framsteg}: utkastet är laddat men Börja om syns inte`).toContain(BORJA_OM);
     expect(steg.map((s) => s.navigering)).toEqual([["Spara projektet", "Tillbaka"], ["Nästa", "Tillbaka"], ["Nästa"]]);
   }, 60_000);
 
