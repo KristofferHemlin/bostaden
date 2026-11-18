@@ -2091,7 +2091,11 @@ Upplysningens två lydelser delar första meningen:
 
 ***Fortsätt senare* tas bort.** Utkastet sparas oavsett hur hon lämnar sidan, så kontrollen är en tredje dörr till samma rum — och två dörrar som ser lika ut bredvid varandra kostar mer uppmärksamhet än den tredje dörren är värd. **Ett löfte som hålls är bättre än ett löfte som sägs:** hon får beskedet när hon kommer tillbaka, där det betyder något, i stället för när hon går.
 
-**Utkastet lever i webbläsaren, och säger inte mer än det kan hålla.** Det som skrivits ligger kvar mellan besöken, men bara i den webbläsaren och på den enheten — börjar hon på telefonen och öppnar datorn finns det inte. Länken heter därför **"Fortsätt senare"** och lovar ingenting om var. Ingenting halvfärdigt sparas i databasen; projektet, bostadsdelen och kvittokopplingarna skrivs i en transaktion eller inte alls.
+**Regeln gäller varje flöde, inte bara det här.** Agenten hittade samma mönster i försäljningens skickfråga 2026-11-20: *Hoppa över* och *Avbryt* står som likadana länkar under varandra. De är inte samma sort — *Hoppa över* går vidare utan att svara och hör alltså till *Nästa*, medan *Avbryt* lämnar flödet. **Den som lämnar hör hemma i huvudet**, namngiven efter sin destination, som på varje annan skärm.
+
+**Och undantaget som inte är ett: *Börja om* står kvar** när ett utkast öppnats, eftersom regeln om att ett utkast alltid ska gå att kasta väger tyngre. Den rör inte flödet och lämnar det inte — den river det hon står i, och det är en tredje sorts handling med ett eget skäl.
+
+**Utkastet lever i webbläsaren, och säger inte mer än det kan hålla.** Det som skrivits ligger kvar mellan besöken, men bara i den webbläsaren och på den enheten — börjar hon på telefonen och öppnar datorn finns det inte. **Därför lovar ingen kontroll någonting om var**; beskedet kommer när hon är tillbaka, i raden om att det finns ett påbörjat utkast. Här stod till 2026-11-20 att länken *"heter därför Fortsätt senare"*, kvar från innan den togs bort — agenten såg motsägelsen och lät filen vara. Ingenting halvfärdigt sparas i databasen; projektet, bostadsdelen och kvittokopplingarna skrivs i en transaktion eller inte alls.
 
 **Och ett utkast går alltid att kasta.** Möts hon av ett påbörjat projekt hon inte minns ska skärmen säga att det är ett utkast och erbjuda **"Börja om"** bredvid. Ett utkast som bara går att slutföra är inte ett utkast, det är en skärm man sitter fast i.
 
