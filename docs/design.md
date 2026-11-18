@@ -1081,7 +1081,9 @@ Att dölja raden helt när ingenting lästs av vore värre. Då blir fältet on�
 
 **Ett utkast som redan är markerat men har tomma fält läses inte om.** Det är agentens fråga 2026-11-20, och det är precis de rader där hon tappade allt. **Men en regel som lagar gamla rader genom att betala för nya modellanrop har en kostnad vi inte ser** — vi vet inte hur många sådana utkast som finns. Hon möter ett tomt formulär, som i dag. Visar det sig röra många rader är det en egen åtgärd att köra medvetet, inte en bieffekt av ett villkor.
 
-**En utkastrad som har en leverantör visar den.** Regeln under *Kvittolistan* säger att ett utkast visar sitt tillstånd i stället för leverantör och datum — den skrevs när ett utkast **aldrig** kunde ha någon. Har det en nu är den radens bästa kännetecken, och tillståndsraden *Utkast · komplettera uppgifterna* står kvar under den.
+**En utkastrad bär sitt bästa kännetecken, och tillståndsraden står under det.** Regeln under *Kvittolistan* säger att ett utkast visar sitt tillstånd i stället för leverantör och datum — den skrevs när ett utkast **aldrig** kunde ha något av det. Nu kan det ha båda, och ordningen är listans vanliga: **anteckningen först, leverantören när anteckning saknas.** *Utkast · komplettera uppgifterna* står kvar under endera.
+
+**Har raden både anteckning och leverantör syns bara anteckningen, och det är rätt.** Agenten såg det 2026-11-20 och frågade var leverantören skulle ta vägen — svaret är ingenstans. *"Altanbygget, andra fakturan"* säger vad raden är; *Byggfirman AB* säger var den kom ifrån, och det står en knapptryckning bort. **Andraraden är tillståndets**, och ett namn intryckt bredvid tillståndet konkurrerar med det enda raden behöver säga: att den inte är klar. Jag skrev regeln ovan som ett mekaniskt *visar leverantören* när jag menade *bär sitt bästa kännetecken* — den läses nu som det senare.
 
 **Men en utkastrad visar ingen ROT-rad.** *"varav ROT 11 587,50 kr, avgår"* under en rad utan belopp är en upplysning om ett tal som inte står där. Listan räknar i dag avdragen också för utkast; ett sparat ROT-svar får inte synas förrän raden har ett belopp.
 
