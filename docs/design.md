@@ -462,6 +462,10 @@ Tomt utkast: ingen fråga, som förut. Utkast med bilaga:
 
 I plural: *"Bilagorna försvinner med det och går inte att få tillbaka."*
 
+**Och sedan 2026-11-18 hör frågan till raden, inte till dess bilagor.** Bekräftelsen byggdes av antalet bilagor, så ett utkast utan fil raderades utan ett ord — med allt hon skrivit. Sedan utkastet fick ett minne är det hon skrev det som kan gå förlorat, och **ett utkast som inte är tomt frågar alltid.** Ett tomt raderas direkt, som förut. Utkast utan bilaga men med ifyllda fält:
+
+> "Ta bort utkastet? Det du skrivit försvinner med det och går inte att få tillbaka."
+
 **Kvittots detaljvy frågar redan, men säger fel ord.** Lydelsen *"Bilden raderas och går inte att återskapa"* stämmer inte när bilagan är en PDF. Den delar nu inledning med de andra och behåller den enda upplysning som är sann just där – att kvittot självt blir kvar:
 
 > "Ta bort bilagan? Den går inte att få tillbaka. Kvittots uppgifter ligger kvar."
@@ -675,7 +679,7 @@ En rad kan bära flera dämpade rader. Ett kvitto kan sakna bilaga *och* ha ROT.
 
   **Fältet heter *Betaldatum* och säger vad det avgör:** *"Dagen du betalade – det är den som avgör vilket år kvittot räknas på."* För ett butikskvitto är det samma dag som står på kvittot, så ingenting blir svårare i det vanliga fallet. **Avläsningen ska be om båda datumen**: dokumentets eget datum, och betaldagen när dokumentet anger en. Finns ingen betaldag är de samma. Att be om ett datum och sedan använda det som ett annat är samma sorts fel som en kommentar som beskriver något koden inte gör — och **en ändrad instruktion är ett påstående om modellen, så den mäts om med samma uppställning som visade felet.**
 
-  **Och kvittots egen sida ska visa det datum som avgör året.** Den visade *Datum* och inte betaldatumet, så det tal som bestämmer vilket år kostnaden hamnar på gick inte att se någonstans efter att kvittot sparats. Skiljer sig dokumentdatumet står det under, dämpat.
+  **Och kvittots egen sida ska visa det datum som avgör året.** Den visade *Datum* och inte betaldatumet, så det tal som bestämmer vilket år kostnaden hamnar på gick inte att se någonstans efter att kvittot sparats. Etiketten är ***Betaldatum***, och skiljer sig dokumentdatumet står det under, dämpat, som ***Kvittots datum 2025-12-28***.
 
 - **Året är betaldatumets år.** Saknas betaldatum hör kostnaden inte till något år – den hamnar under en egen rubrik *Utan betaldatum* i listan och räknas i ingen årssumma. Att placera den på dokumentdatumets år är en gissning appen gör tyst, och den gissningen flyttar ett belopp över en tröskel som gäller per kalenderår. Livstidssumman räknar den ändå, eftersom dess löfte är allt.
 - **Försäkringsersättning avgår på samma sätt som ROT**, den dagen den går att mata in. Den är inte inmatningsbar i dag, och det är därför ingen avvikelse ännu – men den blir det i samma stund fältet finns, och regeln ska stå skriven innan dess.
@@ -1037,7 +1041,11 @@ Att lägga in ett kvitto ska ta tio sekunder och aldrig kräva ett beslut använ
 
 Varje extra rad – också en hopfälld – säger att det finns mer att göra här. Fyra fält följda av fem valfria rader läses som nio saker att ta ställning till, och den som just handlat orkar inte det.
 
-**Ett enda datumfält.** Handlar man i butik är kvittots datum och betaldatumet samma dag. Fältet heter "Datum" och sätter båda värdena.
+**Ett enda datumfält, och det är betaldagen.** Handlar man i butik är kvittots datum och betaldatumet samma dag, och då är fältet det enda som behövs. **Fältet hette "Datum" och satte båda värdena fram till 2026-11-18** — den raden stod kvar när årsregeln ovan skrevs om, och agenten hittade motsägelsen. Så här gäller nu:
+
+- **Etiketten är *Betaldatum*:** *"Dagen du betalade – det är den som avgör vilket år kvittot räknas på."*
+- **Läser avläsningen ett dokumentdatum som skiljer sig från betaldagen följer det med dolt**, och sparas med utkastet. Det är det som sorterar inom året, prövar tillträdesgränsen och tänder notisen om kvittodatum
+- **Hittar avläsningen ingen betaldag får fältet dokumentets datum.** Det är samma utfall som förut, men nu under en etikett som säger vad talet avgör. Ett tomt fält vore ärligare och kostar tio sekunder i det vanliga fallet; etiketten är priset vi valde i stället
 
 **Fritextfältet heter "Vad gällde det?"** och är det enda som bär betydelse framåt. Hjälptexten uppmuntrar en beskrivande mening, inte ett ord: "målade om sovrummet, väggarna var slitna sedan vi flyttade in" är vad som gör klassificeringen möjlig åtta år senare. "Färg" är det inte. Fältet är inte obligatoriskt – ett kvitto utan anteckning är bättre än inget kvitto.
 
@@ -1140,6 +1148,8 @@ Sparas ett kvitto daterat före tillträdet ställs en fråga. En enda, med båd
 >
 > [ **Ändra datumet** ] [ Datumet stämmer ]
 
+***Ändra datumet* måste leda till det datum som prövas.** Skrivet 2026-11-18. Gränsen prövar kvittots datum, inte betaldagen — och sedan formuläret bara visar betaldagen ligger det prövade talet dolt. Knappen flyttade markören till *Betaldatum*, där ingen ändring i världen släcker frågan. **Skiljer sig de två datumen ska dokumentdatumet visas och gå att ändra i formuläret**, och knappen landa där. Annars är den tunga knappen en återvändsgränd för just den användare den finns för.
+
 **Båda datumen står i texten.** Den som typat fel ser felet i samma mening som frågan, utan att behöva leta tillbaka i formuläret.
 
 ***Ändra datumet* är den tunga knappen**, eftersom ett feltypat årtal är det vanliga fallet. Samma viktning som i *Inget kvitto bifogat*: appens gissning får tyngden, användarens egen väg står kvar bredvid och är lika lätt att träffa. **Den stänger aldrig utan att spara** – svarar hon *Datumet stämmer* sparas kvittot, precis som *Spara ändå* sparar.
@@ -1208,9 +1218,9 @@ Skriven 2026-11-09, efter att den första riktiga användaren tryckte på det en
 
 Ett tomt obligatoriskt fält flyttade bara fokus och sa ingenting. Ett ogiltigt datum gav två meddelanden för samma fel, varav det ena var osant. Frågeträdet skrev en hel mening. Samma produkt, tre svar på samma fråga: *varför hände ingenting när jag tryckte?*
 
-**Varje avvisning har en mening.** Den säger vad som saknas eller är fel, i appens vanliga ton, och den står vid det fält den gäller. *"Fyll i kvittots datum."* när fältet är tomt; *"Ogiltig dag."* när det är ifyllt men omöjligt. Aldrig bara en flyttad markör, aldrig bara en ram som byter färg – en synlig markering utan ord lämnar användaren med att gissa.
+**Varje avvisning har en mening.** Den säger vad som saknas eller är fel, i appens vanliga ton, och den står vid det fält den gäller. *"Fyll i betaldatumet."* när fältet är tomt; *"Ogiltig dag."* när det är ifyllt men omöjligt. Aldrig bara en flyttad markör, aldrig bara en ram som byter färg – en synlig markering utan ord lämnar användaren med att gissa.
 
-**Ett fel ger ett meddelande.** Står det redan *"Ogiltig dag."* vid fältet får det inte också stå *"Fyll i kvittots datum."* längre ner. Det andra är dessutom falskt – datumet *är* ifyllt – och ett falskt felmeddelande är värre än inget, eftersom användaren letar efter ett problem som inte finns.
+**Ett fel ger ett meddelande.** Står det redan *"Ogiltig dag."* vid fältet får det inte också stå *"Fyll i betaldatumet."* längre ner. Det andra är dessutom falskt – datumet *är* ifyllt – och ett falskt felmeddelande är värre än inget, eftersom användaren letar efter ett problem som inte finns.
 
 **Meddelandet meddelas, inte bara visas.** Det bär `role="alert"`, så att det når den som inte ser skärmen. Fokus flyttas till det första fältet som är fel, aldrig till `<body>`. Fältet får `aria-invalid`, och `aria-describedby` binder det till meningen — annars hör den som använder skärmläsare ett fel utan att veta vilket fält det gäller.
 
