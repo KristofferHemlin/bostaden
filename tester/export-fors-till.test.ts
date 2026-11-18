@@ -57,7 +57,7 @@ function underlag({
       kostnad({ id: "k1", betaldatum: "2030-04-01", totalbelopp: GRUND, projekt_id: "p1" }),
       kostnad({ id: "k2", betaldatum: "2030-05-01", totalbelopp: REPARATION, projekt_id: "p2" }),
     ],
-    kostnader_med_bilaga: [],
+    utkast_som_inte_ar_tomma: [],
     regelparametrar: REGELPARAMETRAR,
   };
   const ex = byggK6aExport(indata);

@@ -121,9 +121,10 @@ export interface OklassificeradHog {
  *  ligger i en oklassificerad hog. "utan_hog": inlagt men inte (helt) kopplat
  *  till en hog – det okopplade beloppet aterstar. "utan_betaldatum": hor inte
  *  till nagot ar och kan darfor inte sta pa sidorna, hog eller inte.
- *  "utan_belopp": ett utkast med bilaga – nagon har fotat ett kvitto men inte
- *  fyllt i det (docs/design.md, Skarmuppbyggnad: "Ett utkast med en bilaga ar
- *  pengar i arkivet och ska synas i Återstår"). "fore_tilltradet": kvittot ar
+ *  "utan_belopp": ett utkast som inte ar tomt – ett fotat kvitto som inte
+ *  fyllts i, eller det hon skrev utan bilaga (docs/design.md, Skarmuppbyggnad:
+ *  "Ett utkast med en bilaga ar pengar i arkivet och ska synas i Återstår",
+ *  och "Ett utkast utan bilaga är fortfarande ett utkast"). "fore_tilltradet": kvittot ar
  *  daterat fore tilltradet och raknas aldrig med (CLAUDE.md, steg 3) – hela
  *  beloppet star har, oavsett hog, sa att det aldrig utelamnas tyst. */
 export type AterstaendeKvitto =
@@ -227,10 +228,12 @@ export interface K6aIndata {
   medlemskap: Medlemskap;
   projekt: Projekt[];
   kostnader: Kostnad[];
-  /** Id for kostnaderna som har minst en bekraftad bilaga. Avgor vilka utkast
-   *  som star i Återstår – ett utkast utan bilaga ar ingenting. Obligatoriskt,
-   *  sa att ingen anropare kan glomma det och tappa utkasten i tysthet. */
-  kostnader_med_bilaga: readonly string[];
+  /** Id for utkasten som inte ar tomma (src/lib/tomt-utkast.ts) – samma
+   *  urval som kvittolistan. Avgor vilka utkast som star i Återstår: ett med
+   *  bilaga, och ett utan bilaga men med det hon skrivit. Bara ett helt tomt
+   *  utkast ar ingenting. Obligatoriskt, sa att ingen anropare kan glomma det
+   *  och tappa utkasten i tysthet. */
+  utkast_som_inte_ar_tomma: readonly string[];
   regelparametrar: Regelparameter[];
 }
 
@@ -708,13 +711,14 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
   // till nagon hog aterstar. Ett kvitto utan betaldatum aterstar helt: det hor
   // inte till nagot ar och har darfor ingen plats pa sidorna.
   const aterstaende: AterstaendeKvitto[] = [];
-  const medBilaga = new Set(indata.kostnader_med_bilaga);
+  const utkastSomSyns = new Set(indata.utkast_som_inte_ar_tomma);
   for (const kostnad of kostnader) {
-    // Ett utkast har inget belopp och faller darfor igenom filtret nedan. Med
-    // en bilaga ar det ett fotat kvitto och ska synas – utan tal, eftersom
-    // det inte finns nagot (docs/design.md, Skarmuppbyggnad).
+    // Ett utkast har inget belopp och faller darfor igenom filtret nedan. Ar
+    // det inte tomt – en bilaga, eller det hon skrev – ska det synas, utan tal,
+    // eftersom det inte finns nagot (docs/design.md, "Ett utkast utan bilaga
+    // är fortfarande ett utkast").
     if (arUtkast(kostnad)) {
-      if (!kostnad.arkiverad && medBilaga.has(kostnad.id)) {
+      if (!kostnad.arkiverad && utkastSomSyns.has(kostnad.id)) {
         aterstaende.push({
           kostnad_id: kostnad.id,
           ar: null,

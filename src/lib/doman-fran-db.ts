@@ -90,18 +90,27 @@ export function tillDomanRegelparameter(
 }
 
 /**
- * Id for bostadens kostnader som har minst en bekraftad bilaga – K6aIndata.
- * kostnader_med_bilaga. Avgor vilka utkast som star i Återstår: ett utkast
- * med bilaga ar ett fotat kvitto, ett utan ar ingenting. Bara bekraftade
- * uppladdningar raknas, samma villkor som arkivexporten.
+ * Id for bostadens utkast som inte ar tomma – K6aIndata.utkast_som_inte_ar_tomma.
+ * Avgor vilka utkast som star i Återstår (docs/design.md, "Ett utkast utan
+ * bilaga är fortfarande ett utkast"): samma regel som kvittolistan och
+ * startskarmen (INTE_TOMT_UTKAST), sa att ett utkast som syns i listan ocksa
+ * syns i underlaget. Ett utkast med en bilaga star dar, och ett utan bilaga men
+ * med det hon skrivit gor det ocksa – det ar bilagan som saknas, inte
+ * kostnaden. Bara ett helt tomt utkast ar ingenting.
+ *
+ * Pa exportsidan ar villkoret ett forsvar i djupled: hamtaBostadsdata slapper
+ * redan bort tomma utkast, sa ett tomt utkast nar aldrig exporten dar. Uppmatt
+ * 2026-11-18: att ta bort villkoret har ensamt faller inget prov; tas bada
+ * bort faller motprovet i tester/utkast-utan-bilaga.test.ts. Barande ar det
+ * for samma-del-vyn och bilagepaketet, som laser alla bostadens kostnader
+ * ofiltrerade (src/lib/samma-del-vy.ts, src/lib/bilagepaket/hamta.ts).
  */
-export async function hamtaKostnaderMedBilaga(bostadId: string): Promise<string[]> {
-  const bilagor = await prisma.bilaga.findMany({
-    where: { uppladdning_bekraftad: true, kostnad: { bostad_id: bostadId } },
-    select: { kostnad_id: true },
-    distinct: ["kostnad_id"],
+export async function hamtaUtkastSomInteArTomma(bostadId: string): Promise<string[]> {
+  const utkast = await prisma.kostnad.findMany({
+    where: { bostad_id: bostadId, totalbelopp: null, ...INTE_TOMT_UTKAST },
+    select: { id: true },
   });
-  return bilagor.flatMap((b) => (b.kostnad_id ? [b.kostnad_id] : []));
+  return utkast.map((k) => k.id);
 }
 
 /**

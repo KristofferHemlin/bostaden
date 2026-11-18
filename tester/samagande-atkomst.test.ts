@@ -397,7 +397,7 @@ const VAGAR_MED_ID: Vag[] = [
   {
     vag: "sparaUtkastfalten",
     anrop: () =>
-      sparaUtkastfalten(UX, { belopp: "60 812,50", datum: "2025-04-14", leverantor: "Kapat", rot: "1 000", anteckning: "Kapat" }),
+      sparaUtkastfalten(UX, { belopp: "60 812,50", datum: "2025-04-14", dokumentdatum: "", leverantor: "Kapat", rot: "1 000", anteckning: "Kapat" }),
     avslag: "fel",
     foljer: "egen",
   },
@@ -1088,7 +1088,7 @@ describe("utkastet bar sin bostad", () => {
     const { kostnadId } = await skapaUtkast(X);
     byt(Y);
     expect(
-      await sparaUtkastfalten(kostnadId!, { belopp: "60 812,50", datum: "2025-04-14", leverantor: "Byggfirman AB", rot: "", anteckning: "" }),
+      await sparaUtkastfalten(kostnadId!, { belopp: "60 812,50", datum: "2025-04-14", dokumentdatum: "", leverantor: "Byggfirman AB", rot: "", anteckning: "" }),
     ).toEqual({ ok: true });
     const kvitto = h.db.tabell("kostnad").find((k) => k.id === kostnadId)!;
     expect(kvitto.bostad_id).toBe(X);
@@ -1099,7 +1099,7 @@ describe("utkastet bar sin bostad", () => {
 
   it("efter att utkastet sparats pa riktigt skriver ett sent lopande sparande ingenting", async () => {
     const { kostnadId } = await skapaUtkast(X);
-    await sparaUtkastfalten(kostnadId!, { belopp: "60 812,50", datum: "2025-04-14", leverantor: "Byggfirman AB", rot: "", anteckning: "" });
+    await sparaUtkastfalten(kostnadId!, { belopp: "60 812,50", datum: "2025-04-14", dokumentdatum: "", leverantor: "Byggfirman AB", rot: "", anteckning: "" });
     await sparaKostnad(formular({
       utkast_id: kostnadId!, bostad_id: X, leverantor: "Byggfirman AB", totalbelopp: "60 812,50", dokumentdatum: "2025-04-14",
     }));
@@ -1108,7 +1108,7 @@ describe("utkastet bar sin bostad", () => {
     // Talet har flyttat – kopian ligger inte kvar bredvid det sparade kvittot.
     expect(sparat.utkast_belopp).toBeNull();
 
-    const sent = await sparaUtkastfalten(kostnadId!, { belopp: "1", datum: "", leverantor: "Fel", rot: "", anteckning: "Fel" });
+    const sent = await sparaUtkastfalten(kostnadId!, { belopp: "1", datum: "", dokumentdatum: "", leverantor: "Fel", rot: "", anteckning: "Fel" });
     expect(sent.ok).toBe(false);
     expect(h.db.tabell("kostnad").find((k) => k.id === kostnadId)).toEqual(sparat);
   });

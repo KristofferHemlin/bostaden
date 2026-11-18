@@ -68,7 +68,7 @@ import { foreForsaljningForklaring } from "@/doman/regeltext";
 import { behoverSkickForsaljning } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { BILAGEPAKET_SYNLIGT } from "@/lib/bilagepaket/flagga";
-import { hamtaBostadsdata, hamtaKostnaderMedBilaga, tillDomanBostad } from "@/lib/doman-fran-db";
+import { hamtaBostadsdata, hamtaUtkastSomInteArTomma, tillDomanBostad } from "@/lib/doman-fran-db";
 import { formateraKronor, formateraKronorEllerStreck, isoDatum } from "@/lib/format";
 import { hamtaAndelar } from "@/lib/andelar";
 import { UPPGIFTENS_SOKVAG } from "@/lib/bostadsuppgifter";
@@ -102,11 +102,11 @@ export const dynamic = "force-dynamic";
 
 export default async function ExportSida() {
   const { bostadId, anvandareId, agarandel } = await kravBostad();
-  const [{ bostad, projekt, projektRader, kostnader, kostnadRader, regelparametrar }, andelar, kostnaderMedBilaga] =
+  const [{ bostad, projekt, projektRader, kostnader, kostnadRader, regelparametrar }, andelar, utkastSomInteArTomma] =
     await Promise.all([
       hamtaBostadsdata(bostadId),
       hamtaAndelar(bostadId),
-      hamtaKostnaderMedBilaga(bostadId),
+      hamtaUtkastSomInteArTomma(bostadId),
     ]);
   const medlemmar = andelar.medlemmar.length;
   const delad = arDeladBostad(medlemmar);
@@ -170,7 +170,7 @@ export default async function ExportSida() {
       medlemskap: { agarandel: andelAttMultiplicera(andelslage) },
       projekt,
       kostnader,
-      kostnader_med_bilaga: kostnaderMedBilaga,
+      utkast_som_inte_ar_tomma: utkastSomInteArTomma,
       regelparametrar,
     };
 

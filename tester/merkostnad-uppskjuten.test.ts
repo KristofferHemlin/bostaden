@@ -57,7 +57,7 @@ import { merkostnadBehoverBekraftas } from "@/doman/atgardsberakning";
 import { byggK6aExport } from "@/doman/export-k6a";
 import { MERKOSTNAD_SAKNAS, MERKOSTNAD_SAKNAS_UTAN_BELOPP } from "@/doman/regeltext";
 import {
-  hamtaKostnaderMedBilaga,
+  hamtaUtkastSomInteArTomma,
   tillDomanBostad,
   tillDomanKostnad,
   tillDomanProjekt,
@@ -124,14 +124,14 @@ async function exporten() {
     h.db.klient.projekt.findMany({ where: { bostad_id: X } }),
     h.db.klient.kostnad.findMany({ where: { bostad_id: X }, include: { rader: { include: { fordelningar: true } } } }),
     h.db.klient.regelparameter.findMany(),
-    hamtaKostnaderMedBilaga(X),
+    hamtaUtkastSomInteArTomma(X),
   ]);
   return byggK6aExport({
     bostad: tillDomanBostad(bostad as never),
     medlemskap: { agarandel: 100 },
     projekt: (projekt as never[]).map(tillDomanProjekt),
     kostnader: (kostnader as never[]).map(tillDomanKostnad),
-    kostnader_med_bilaga: bilagor,
+    utkast_som_inte_ar_tomma: bilagor,
     regelparametrar: (regel as never[]).map(tillDomanRegelparameter),
   });
 }

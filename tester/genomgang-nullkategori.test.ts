@@ -26,7 +26,7 @@ describe("hog utan atgardstyp (grupperad men inte klassificerad)", () => {
       medlemskap: { agarandel: 100 },
       projekt: [hog],
       kostnader: [k],
-      kostnader_med_bilaga: [],
+      utkast_som_inte_ar_tomma: [],
       regelparametrar: REGELPARAMETRAR,
     };
 

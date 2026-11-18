@@ -69,7 +69,7 @@ const EX = byggK6aExport({
   medlemskap: { agarandel: 100 },
   projekt: PROJEKT,
   kostnader: KOSTNADER,
-  kostnader_med_bilaga: [],
+  utkast_som_inte_ar_tomma: [],
   regelparametrar: REGELPARAMETRAR,
 });
 
@@ -166,7 +166,7 @@ describe("sida 1: beloppet står kvar när grundförbättringen faller bort", ()
       medlemskap: { agarandel: 100 },
       projekt: [brevlada],
       kostnader: [k],
-      kostnader_med_bilaga: [],
+      utkast_som_inte_ar_tomma: [],
       regelparametrar: REGELPARAMETRAR,
     });
     const r = ex.sida1.rader[0];
@@ -184,7 +184,7 @@ describe("sida 1: beloppet står kvar när grundförbättringen faller bort", ()
       medlemskap: { agarandel: 100 },
       projekt: [projekt({ atgardstyp: "nybyggnad" })],
       kostnader: [k],
-      kostnader_med_bilaga: [],
+      utkast_som_inte_ar_tomma: [],
       regelparametrar: REGELPARAMETRAR,
     });
     const r = ex.sida1.rader[0];
@@ -200,7 +200,7 @@ describe("sida 1: beloppet står kvar när grundförbättringen faller bort", ()
       medlemskap: { agarandel: 100 },
       projekt: [projekt({ atgardstyp: "nybyggnad" })],
       kostnader: [k],
-      kostnader_med_bilaga: [],
+      utkast_som_inte_ar_tomma: [],
       regelparametrar: REGELPARAMETRAR,
     });
     expect(ex.sida1.rader[0].forklaring).toBe(

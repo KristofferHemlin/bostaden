@@ -5,7 +5,7 @@
 // Beloppet hamnar i `utkast_belopp`, ALDRIG i `totalbelopp`: totalbelopp IS
 // NULL ar definitionen av ett utkast (arUtkast), och ett belopp dar skulle
 // gora utkastet till ett sparat kvitto utan att hon gjort nagot. De ovriga
-// fem ligger i sina vanliga kolumner – ingenting tar dem for tecken pa att
+// falten ligger i sina vanliga kolumner – ingenting tar dem for tecken pa att
 // utkastet ar klart (docs/produktspec.md, datamodellen).
 //
 // Ingenting valideras mot reglerna har: det gor sparandet, nar hon sparar pa
@@ -18,8 +18,11 @@ import { oreFranKronor } from "@/lib/format";
 /** Faltens text som de star i formularet. */
 export interface Utkastfalt {
   belopp: string;
-  /** YYYY-MM-DD – formularets enda datumfalt, som satter bada datumen. */
+  /** YYYY-MM-DD – formularets enda datumfalt, betaldatumet. */
   datum: string;
+  /** YYYY-MM-DD – dokumentets eget datum nar avlasningen last ett som skiljer
+   *  sig fran betaldatumet, annars "" (= samma dag som betaldatumet). */
+  dokumentdatum: string;
   leverantor: string;
   rot: string;
   /** "Vad gällde det?" – det som gor kvittot begripligt om atta ar. */
@@ -52,6 +55,7 @@ function datumEllerNull(text: string): Date | null {
 
 export function tolkaUtkastfalt(falt: Utkastfalt): Utkastkolumner {
   const datum = datumEllerNull(String(falt.datum ?? "").trim());
+  const dokumentdatum = datumEllerNull(String(falt.dokumentdatum ?? "").trim());
   const leverantor = String(falt.leverantor ?? "").trim();
   // Trimmad som vid sparandet (tolkaKostnadsformular), sa att en blank
   // anteckning ar null och tomt-utkast-regeln ser samma sak som i dag.
@@ -59,8 +63,9 @@ export function tolkaUtkastfalt(falt: Utkastfalt): Utkastkolumner {
   return {
     utkast_belopp: positivtOreEllerNull(String(falt.belopp ?? "")),
     leverantor: leverantor === "" ? null : leverantor,
-    // Samma dag i bada, som formularets datumfalt (src/app/kostnad/nytt/form.tsx).
-    dokumentdatum: datum,
+    // Faltet ar betaldatumet; dokumentdatumet ar samma dag utom nar
+    // avlasningen last ett annat (src/app/kostnad/nytt/form.tsx).
+    dokumentdatum: dokumentdatum ?? datum,
     betaldatum: datum,
     rot_utnyttjat: positivtOreEllerNull(String(falt.rot ?? "")),
     anteckning: anteckning === "" ? null : anteckning,

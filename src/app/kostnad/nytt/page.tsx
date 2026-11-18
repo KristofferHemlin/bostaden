@@ -48,7 +48,7 @@ export default async function NyKostnadSida({
     | {
         id: string;
         anteckning: string | null;
-        falt: { belopp: string; datum: string; leverantor: string; rot: string };
+        falt: { belopp: string; datum: string; dokumentdatum: string; leverantor: string; rot: string };
         bilagor: Awaited<ReturnType<typeof listaKostnadsbilagor>>;
       }
     | undefined;
@@ -65,6 +65,7 @@ export default async function NyKostnadSida({
         utkast_belopp: true,
         leverantor: true,
         dokumentdatum: true,
+        betaldatum: true,
         rot_utnyttjat: true,
       },
     });
@@ -78,7 +79,14 @@ export default async function NyKostnadSida({
       // aterkomsten ar det hon skrev.
       falt: {
         belopp: rad.utkast_belopp === null ? "" : formateraBeloppInmatning(orenTillFalt(rad.utkast_belopp)),
-        datum: rad.dokumentdatum ? isoDatum(rad.dokumentdatum) : "",
+        // Formularets datumfalt ar betaldatumet. Dokumentdatumet foljer med
+        // bara nar det skiljer sig – annars ar det samma dag (form.tsx,
+        // `dokumentdatum`).
+        datum: rad.betaldatum ? isoDatum(rad.betaldatum) : "",
+        dokumentdatum:
+          rad.dokumentdatum && isoDatum(rad.dokumentdatum) !== (rad.betaldatum ? isoDatum(rad.betaldatum) : "")
+            ? isoDatum(rad.dokumentdatum)
+            : "",
         leverantor: rad.leverantor ?? "",
         rot: rad.rot_utnyttjat === null ? "" : formateraBeloppInmatning(orenTillFalt(rad.rot_utnyttjat)),
       },

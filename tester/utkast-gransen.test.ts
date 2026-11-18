@@ -109,7 +109,7 @@ async function seeda() {
   h.inloggad = { id: ANNA, email: "anna@exempel.se" };
   // Det hon skrev, genom den riktiga vagen.
   const r = await sparaUtkastfalten(utkastId, {
-    belopp: "60 812,50", datum: "2026-10-01", leverantor: "Byggfirman AB", rot: "11 587,50",
+    belopp: "60 812,50", datum: "2026-10-01", dokumentdatum: "", leverantor: "Byggfirman AB", rot: "11 587,50",
     anteckning: ANTECKNINGEN,
   });
   expect(r, "forutsattningen: utkastets falt sparades").toEqual({ ok: true });
@@ -159,7 +159,7 @@ describe("ett utkast med sparade falt ar fortfarande ett utkast", () => {
 
   it("kvittolistan: utan anteckning visar utkastraden leverantoren", async () => {
     await sparaUtkastfalten(utkastId, {
-      belopp: "60 812,50", datum: "2026-10-01", leverantor: "Byggfirman AB", rot: "11 587,50", anteckning: "",
+      belopp: "60 812,50", datum: "2026-10-01", dokumentdatum: "", leverantor: "Byggfirman AB", rot: "11 587,50", anteckning: "",
     });
     const text = ((await kvittoraden())?.textContent ?? "").replace(/\s/g, " ");
     expect(text).toContain("Byggfirman AB");

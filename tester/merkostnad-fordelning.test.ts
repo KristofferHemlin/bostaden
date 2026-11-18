@@ -30,7 +30,7 @@ function bygg(projektlista: Projekt[], kostnader: Kostnad[]) {
     medlemskap: { agarandel: 100 },
     projekt: projektlista,
     kostnader,
-    kostnader_med_bilaga: [],
+    utkast_som_inte_ar_tomma: [],
     regelparametrar: REGELPARAMETRAR,
   });
 }

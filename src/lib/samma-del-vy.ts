@@ -6,7 +6,7 @@ import "server-only";
 import { byggK6aExport, VantarPaBostadsfragor } from "@/doman/export-k6a";
 import type { SammaDelStatus } from "@/doman/samma-del";
 import {
-  hamtaKostnaderMedBilaga,
+  hamtaUtkastSomInteArTomma,
   tillDomanBostad,
   tillDomanKostnad,
   tillDomanProjekt,
@@ -33,7 +33,7 @@ export interface SammaDelVy {
 
 /** Null nar underlaget inte gar att rakna – bostadsfragorna ar obesvarade. */
 export async function hamtaSammaDelVy(bostadId: string): Promise<SammaDelVy | null> {
-  const [bostad, projektRader, kostnadRader, regelparameterRader, kostnaderMedBilaga] =
+  const [bostad, projektRader, kostnadRader, regelparameterRader, utkastSomInteArTomma] =
     await Promise.all([
       prisma.bostad.findUniqueOrThrow({ where: { id: bostadId } }),
       prisma.projekt.findMany({
@@ -46,7 +46,7 @@ export async function hamtaSammaDelVy(bostadId: string): Promise<SammaDelVy | nu
         orderBy: { skapad_at: "asc" },
       }),
       prisma.regelparameter.findMany(),
-      hamtaKostnaderMedBilaga(bostadId),
+      hamtaUtkastSomInteArTomma(bostadId),
     ]);
 
   let ex;
@@ -58,7 +58,7 @@ export async function hamtaSammaDelVy(bostadId: string): Promise<SammaDelVy | nu
       medlemskap: { agarandel: null },
       projekt: projektRader.map(tillDomanProjekt),
       kostnader: kostnadRader.map(tillDomanKostnad),
-      kostnader_med_bilaga: kostnaderMedBilaga,
+      utkast_som_inte_ar_tomma: utkastSomInteArTomma,
       regelparametrar: regelparameterRader.map(tillDomanRegelparameter),
     });
   } catch (fel) {

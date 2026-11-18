@@ -45,7 +45,7 @@ import {
 } from "@/lib/kvittolista";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
-import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
+import { arTomtUtkast, INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 
 export const metadata = { title: "Kvitton" };
 
@@ -54,6 +54,9 @@ export const dynamic = "force-dynamic";
 
 interface KvittoRad {
   id: string;
+  /** Ett utkast som varken har bilaga eller ifyllt falt – soptunnan fragar
+   *  inte da (src/lib/bilageborttagning.ts). Falskt for sparade kvitton. */
+  tomtUtkast: boolean;
   namn: string;
   /** Namnet ar anteckningen – far tva rader i Listrad. */
   anteckning: boolean;
@@ -161,6 +164,10 @@ export default async function KvittolistaSida() {
       atgard,
       utkast,
       antalBilagor: k._count.bilagor,
+      // Soptunnans fraga hor till raden (src/lib/bilageborttagning.ts). Listan
+      // visar inga tomma utkast (INTE_TOMT_UTKAST ovan), men regeln laser
+      // raden sjalv i stallet for att lita pa urvalet.
+      tomtUtkast: utkast && arTomtUtkast({ ...k, antalBilagor: k._count.bilagor }),
       belopp: utkast ? undefined : formateraKronor(k.totalbelopp ?? 0),
       href: utkast ? `/kostnad/nytt?utkast=${k.id}` : `/kostnad/${k.id}`,
       bild:
@@ -313,6 +320,7 @@ function Kvittorader({ poster }: { poster: KvittoRad[] }) {
                 kostnadId={r.id}
                 lage="ikon"
                 antalBilagor={r.antalBilagor}
+                tomt={r.tomtUtkast}
               />
             ) : undefined
           }

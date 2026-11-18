@@ -99,7 +99,7 @@ describe("taket i beräkningen", () => {
     medlemskap: { agarandel: 100 },
     projekt: [P],
     kostnader: K,
-    kostnader_med_bilaga: [],
+    utkast_som_inte_ar_tomma: [],
     regelparametrar: REGELPARAMETRAR,
   });
 
@@ -148,7 +148,7 @@ describe("omfrågningen när projektet ändrats", () => {
       medlemskap: { agarandel: 100 },
       projekt: [p],
       kostnader: K,
-      kostnader_med_bilaga: [],
+      utkast_som_inte_ar_tomma: [],
       regelparametrar: REGELPARAMETRAR,
     });
     expect(ex.sida1.rader[0].varningar).toEqual([merkostnadAndratText(NAMN)]);

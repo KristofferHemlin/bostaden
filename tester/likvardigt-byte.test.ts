@@ -58,7 +58,7 @@ import { LIKVARDIGT_ETIKETT, MerkostnadFalt } from "@/app/projekt/fragetradet";
 import RedigeraSida from "@/app/projekt/[id]/redigera/page";
 import { byggK6aExport } from "@/doman/export-k6a";
 import {
-  hamtaKostnaderMedBilaga,
+  hamtaUtkastSomInteArTomma,
   tillDomanBostad,
   tillDomanKostnad,
   tillDomanProjekt,
@@ -190,14 +190,14 @@ async function underlaget() {
     h.db.klient.projekt.findMany({ where: { bostad_id: X } }),
     h.db.klient.kostnad.findMany({ where: { bostad_id: X }, include: { rader: { include: { fordelningar: true } } } }),
     h.db.klient.regelparameter.findMany(),
-    hamtaKostnaderMedBilaga(X),
+    hamtaUtkastSomInteArTomma(X),
   ]);
   const ex = byggK6aExport({
     bostad: tillDomanBostad(bostad as never),
     medlemskap: { agarandel: 100 },
     projekt: (projekt as never[]).map(tillDomanProjekt),
     kostnader: (kostnader as never[]).map(tillDomanKostnad),
-    kostnader_med_bilaga: bilagor,
+    utkast_som_inte_ar_tomma: bilagor,
     regelparametrar: (regel as never[]).map(tillDomanRegelparameter),
   });
   // Tidpunkten för genereringen är inget tal i underlaget.

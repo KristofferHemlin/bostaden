@@ -37,7 +37,7 @@ import { atgardKategoriText } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
 import { projektarTextKarta } from "@/lib/projektar";
-import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
+import { arTomtUtkast, INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 import {
   formateraAntal,
   formateraKronor,
@@ -146,6 +146,11 @@ export default async function Oversikt({
         betaldatum: true,
         dokumentdatum: true,
         skapad_at: true,
+        // Soptunnans fraga hor till raden: tomt eller inte avgors av samma
+        // falt som tomt-utkast-regeln laser (src/lib/tomt-utkast.ts).
+        utkast_belopp: true,
+        rot_utnyttjat: true,
+        forsakringsersattning: true,
         // Soptunnan pa ett utkast fragar nar det har bilagor
         // (src/lib/bilageborttagning.ts).
         _count: { select: { bilagor: true } },
@@ -425,6 +430,7 @@ export default async function Oversikt({
                           kostnadId={k.id}
                           lage="ikon"
                           antalBilagor={k._count.bilagor}
+                          tomt={arTomtUtkast({ ...k, antalBilagor: k._count.bilagor })}
                         />
                       ) : undefined
                     }

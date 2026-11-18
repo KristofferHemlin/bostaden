@@ -125,7 +125,11 @@ export default async function KostnadSida({
 
   const anteckning = kostnad.anteckning?.trim();
   // Utkast har redirectats bort ovan – har ar leverantor, datum och belopp satta.
-  const datum = kostnad.betaldatum ?? kostnad.dokumentdatum;
+  // Betaldatumet avgor aret och star som datumet; dokumentdatumet visas under
+  // bara nar det ar en annan dag. Ingen reserv: saknas betaldatum star "–",
+  // eftersom kvittot da inte hor till nagot ar (docs/design.md, Listrader).
+  const betaldatum = kostnad.betaldatum ? isoDatum(kostnad.betaldatum) : null;
+  const dokumentdatum = kostnad.dokumentdatum ? isoDatum(kostnad.dokumentdatum) : null;
 
   // Kvittodatum utanfor innehavet (docs/design.md): provar dokumentdatumet,
   // aldrig betaldatumet – aven om raden ovan visar betaldatum i forsta hand.
@@ -165,7 +169,8 @@ export default async function KostnadSida({
           sammanfattningsnamn,
           belopp: formateraKronor(kostnad.totalbelopp),
           rot: rotRadILaslage(kostnad.rot_utnyttjat),
-          datum: datum ? isoDatum(datum) : "–",
+          betaldatum: betaldatum ?? "–",
+          avvikandeDokumentdatum: dokumentdatum && dokumentdatum !== betaldatum ? dokumentdatum : null,
           leverantor: kostnad.leverantor ?? "–",
           kvittodatumNotisText,
           grupperingar,

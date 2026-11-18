@@ -160,7 +160,9 @@ describe("privatfrågan i inmatningen", () => {
 
     const privat = knappMedText(fraga);
     expect(fore(knappMedText("Drogs ROT av på fakturan?"), privat)).toBe(true);
-    expect(fore(privat, faltetikett("Datum"))).toBe(true);
+    // Datumfaltet heter Betaldatum sedan 2026-11-18 (docs/design.md, "Det enda
+    // datumfältet i ett nytt kvitto är betaldatumet").
+    expect(fore(privat, faltetikett("Betaldatum"))).toBe(true);
 
     // Inget forval: hopfalld, och inget falt att passera.
     expect(privat.getAttribute("aria-expanded")).toBe("false");

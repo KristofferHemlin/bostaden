@@ -80,7 +80,12 @@ interface LasVarden {
   /** Formaterat ROT-belopp, eller null nar det ar tomt eller noll – da star
    *  raden inte dar (docs/design.md, "ROT-avdrag"). */
   rot: string | null;
-  datum: string;
+  /** Betaldatumet – det som avgor vilket ar kvittot raknas pa – eller "–"
+   *  nar kvittot saknar betaldatum. */
+  betaldatum: string;
+  /** Dokumentdatumet nar det skiljer sig fran betaldatumet, annars null – da
+   *  star ingen rad under. */
+  avvikandeDokumentdatum: string | null;
   leverantor: string;
   kvittodatumNotisText: string | null;
   grupperingar: string[];
@@ -220,7 +225,17 @@ function LasVy({
         <div className="mt-2 space-y-2 font-granssnitt text-sm">
           <Rad etikett="Belopp" varde={varden.belopp} />
           {varden.rot ? <Rad etikett="ROT-avdrag" varde={varden.rot} /> : null}
-          <Rad etikett="Datum" varde={varden.datum} />
+          {/* Datumet som avgor aret (docs/design.md, "Det enda datumfältet i
+              ett nytt kvitto är betaldatumet"), och dokumentets eget dampat
+              under bara nar det ar en annan dag. */}
+          <div>
+            <Rad etikett="Betaldatum" varde={varden.betaldatum} />
+            {varden.avvikandeDokumentdatum ? (
+              <p className="text-right text-text-sekundar">
+                Kvittots datum {varden.avvikandeDokumentdatum}
+              </p>
+            ) : null}
+          </div>
           <Rad etikett="Leverantör" varde={varden.leverantor} />
         </div>
         {varden.kvittodatumNotisText ? (

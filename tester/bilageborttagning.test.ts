@@ -63,21 +63,32 @@ describe("texterna", () => {
 });
 
 // "Och darfor fragar soptunnan ocksa, nar utkastet har en bilaga." Ett utkast
-// med ett foto AR fotot – raderingen tar filerna i lagringen med sig. Ett
-// tomt utkast har inget varde, och en fraga dar ar ett eget fel.
+// med ett foto AR fotot – raderingen tar filerna i lagringen med sig. Och
+// "Ett utkast utan bilaga är fortfarande ett utkast": bekraftelsen hor till
+// raden, inte till dess bilagor. Bara ett tomt utkast har inget varde, och
+// en fraga dar ar ett eget fel.
 describe("utkastets soptunna", () => {
   it("ett tomt utkast tas bort utan fraga", () => {
-    expect(utkastetsBekraftelse(0)).toBeNull();
+    expect(utkastetsBekraftelse({ tomt: true, antalBilagor: 0 })).toBeNull();
+  });
+
+  it("ett utkast utan bilaga men med det hon skrev fragar", () => {
+    // Lydelsen star inte i docs/design.md; den foljer de tva texterna ovan
+    // ("Ta bort utkastet? … försvinner med det och går inte att få tillbaka.")
+    // och ar agentens, inte designfilens.
+    expect(utkastetsBekraftelse({ tomt: false, antalBilagor: 0 })).toBe(
+      "Ta bort utkastet? Det du skrivit försvinner med det och går inte att få tillbaka.",
+    );
   });
 
   it("ett utkast med en bilaga fragar, i singular", () => {
-    expect(utkastetsBekraftelse(1)).toBe(
+    expect(utkastetsBekraftelse({ tomt: false, antalBilagor: 1 })).toBe(
       "Ta bort utkastet? Bilagan försvinner med det och går inte att få tillbaka.",
     );
   });
 
   it("ett utkast med flera bilagor fragar, i plural", () => {
-    expect(utkastetsBekraftelse(3)).toBe(
+    expect(utkastetsBekraftelse({ tomt: false, antalBilagor: 3 })).toBe(
       "Ta bort utkastet? Bilagorna försvinner med det och går inte att få tillbaka.",
     );
   });
@@ -87,7 +98,7 @@ describe("utkastets soptunna", () => {
       path.resolve(import.meta.dirname, "../src/app/kostnad/utkast-radera.tsx"),
       "utf8",
     );
-    expect(knapp).toContain("utkastetsBekraftelse(antalBilagor)");
+    expect(knapp).toContain("utkastetsBekraftelse({ tomt, antalBilagor })");
     expect(knapp).not.toMatch(/antalBilagor\s*[><=]/);
   });
 
@@ -100,6 +111,9 @@ describe("utkastets soptunna", () => {
         antal += 1;
         expect(m[0]).toMatch(/antalBilagor=\{/);
         expect(m[0]).not.toMatch(/antalBilagor=\{\s*\d+\s*\}/);
+        // Tomt eller inte laser raden sjalv – aldrig ett inskrivet svar.
+        expect(m[0]).toMatch(/tomt=\{/);
+        expect(m[0]).not.toMatch(/tomt=\{\s*(true|false)\s*\}/);
       }
     }
     expect(antal).toBe(3);

@@ -29,14 +29,22 @@ export const BEKRAFTA_BILAGEBORTTAGNING =
 export const BEKRAFTA_BILAGEBORTTAGNING_KVITTO = `${BEKRAFTA_BILAGEBORTTAGNING} Kvittots uppgifter ligger kvar.`;
 
 /**
- * Utkastets soptunna. Ett tomt utkast tas bort direkt – det har inget varde,
- * och en fraga dar ar ett eget fel. Ett utkast med en bilaga AR bilagan:
- * raderingen tar filerna i lagringen med sig, sa da fragas det.
+ * Utkastets soptunna (docs/design.md, "Ett utkast utan bilaga är fortfarande
+ * ett utkast"). Bekraftelsen hor till RADEN, inte till dess bilagor: ett
+ * utkast som inte ar tomt fragar alltid, eftersom det som raderas ar det hon
+ * skrev eller fotade. Ett tomt utkast tas bort direkt – det har inget varde,
+ * och en fraga dar ar ett eget fel. Med bilagor sager texten att de forsvinner
+ * med det; utan bilagor att det hon skrivit gor det.
  * Lamnar tillbaka texten att bekrafta med, eller null nar ingen fraga stalls.
  */
-export function utkastetsBekraftelse(antalBilagor: number): string | null {
-  if (antalBilagor <= 0) return null;
-  const vad = antalBilagor === 1 ? "Bilagan" : "Bilagorna";
+export function utkastetsBekraftelse(utkast: { tomt: boolean; antalBilagor: number }): string | null {
+  if (utkast.tomt) return null;
+  const vad =
+    utkast.antalBilagor <= 0
+      ? "Det du skrivit"
+      : utkast.antalBilagor === 1
+        ? "Bilagan"
+        : "Bilagorna";
   return `Ta bort utkastet? ${vad} försvinner med det och går inte att få tillbaka.`;
 }
 

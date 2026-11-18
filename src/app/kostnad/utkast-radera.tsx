@@ -1,16 +1,20 @@
 "use client";
 
-// Radering av ett utkast (docs/design.md, "Kvittolistan"). Ett TOMT utkast tas
-// bort direkt – det har inget belopp och inget varde, och en dialog ar bara i
-// vagen. Ett utkast med bilaga AR bilagan: raderingen tar filerna i lagringen
-// med sig, sa da fragas det forst. Beslutet och texten kommer fran
+// Radering av ett utkast (docs/design.md, "Kvittolistan" och "Ett utkast utan
+// bilaga är fortfarande ett utkast"). Ett TOMT utkast tas bort direkt – det
+// har inget varde, och en dialog ar bara i vagen. Alla andra fragar forst:
+// bekraftelsen hor till raden, inte till dess bilagor. Med bilagor tar
+// raderingen filerna i lagringen med sig; utan dem ar det hon skrev det som
+// forsvinner – och sedan utkastet fick ett minne ar det lika mycket vart att
+// fraga om. Beslutet och texten kommer fran
 // src/lib/bilageborttagning.ts (utkastetsBekraftelse), samma stalle som
 // krysset pa en bilaga – inte ett eget villkor har. Komponenten ar den enda
 // soptunnan for utkast, i alla tre lagen den anvands.
 //
 // Bade actionerna gar samma vag i botten: Storage rensas forst, sedan sjalva
 // kostnaden (raderna, fordelningarna och bilaga-raderna tar cascaden).
-// "Raderingen tar med bilagorna. Ett utkast utan sin bild ar ingenting."
+// Raderingen tar med bilagorna. Ett utkast utan bilaga ar inte ingenting:
+// har det ett ifyllt falt ar det hennes arbete, och det fragas om.
 //
 // Tva lagen – och tva olika actioner, INTE bara tva stilar av samma knapp
 // (docs/design.md, "Listrader": "En åtgärd på en rad byter aldrig sida"):
@@ -46,11 +50,15 @@ export function UtkastRaderaKnapp({
   kostnadId,
   lage,
   antalBilagor,
+  tomt,
 }: {
   kostnadId: string;
   lage: "ikon" | "knapp";
   /** Bilagor som ligger sparade pa utkastet – raderas med det. */
   antalBilagor: number;
+  /** Sant nar utkastet varken har en bilaga eller ett ifyllt falt
+   *  (src/lib/tomt-utkast.ts) – bara da tas det bort utan fraga. */
+  tomt: boolean;
 }) {
   const action = lage === "ikon" ? taBortUtkastRad : taBortKostnad;
   const [resultat, raderaAction, raderar] = useActionState(action, START);
@@ -58,7 +66,7 @@ export function UtkastRaderaKnapp({
 
   // Fragan stalls fore inskickningen; "Ta bort" skickar sedan om formularet
   // med fragan passerad. Samma flode som "Inget kvitto bifogat" i nytt kvitto.
-  const bekraftelse = utkastetsBekraftelse(antalBilagor);
+  const bekraftelse = utkastetsBekraftelse({ tomt, antalBilagor });
   const formRef = useRef<HTMLFormElement>(null);
   const passeradRef = useRef(false);
   const [fragar, setFragar] = useState(false);

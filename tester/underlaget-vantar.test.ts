@@ -156,7 +156,7 @@ async function indata(): Promise<K6aIndata> {
     kostnader: ((await k.kostnad.findMany({
       where: { bostad_id: X }, include: { rader: { include: { fordelningar: true } } },
     })) as never[]).map(tillDomanKostnad),
-    kostnader_med_bilaga: [],
+    utkast_som_inte_ar_tomma: [],
     regelparametrar: ((await k.regelparameter.findMany()) as never[]).map(tillDomanRegelparameter),
   };
 }

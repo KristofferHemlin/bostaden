@@ -66,7 +66,7 @@ function bygg(agarandel: number | null, belopp: number): K6aIndata {
     medlemskap: { agarandel },
     projekt: [projekt({ id: "p1", atgardstyp: "nybyggnad", namn: "Altan" })],
     kostnader: [kostnad({ id: "k1", betaldatum: "2030-04-01", totalbelopp: belopp, projekt_id: "p1" })],
-    kostnader_med_bilaga: [],
+    utkast_som_inte_ar_tomma: [],
     regelparametrar: REGELPARAMETRAR,
   };
 }

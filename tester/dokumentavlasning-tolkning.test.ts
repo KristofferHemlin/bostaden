@@ -17,9 +17,10 @@ import {
 describe("tolkaDokumentsvar: rent modellsvar", () => {
   it("tolkar ett rent JSON-objekt med alla tre falt", () => {
     const svar =
-      '{"datum":"2026-08-22","att_betala":1020.95,"leverantor":"Bauhaus Bromma"}';
+      '{"dokumentdatum":"2026-08-22","att_betala":1020.95,"leverantor":"Bauhaus Bromma"}';
     expect(tolkaDokumentsvar(svar)).toEqual({
-      datum: "2026-08-22",
+      betaldatum: "2026-08-22",
+      dokumentdatum: "2026-08-22",
       totalbelopp: 102095,
       leverantor: "Bauhaus Bromma",
       rot_utnyttjat: null,
@@ -28,9 +29,10 @@ describe("tolkaDokumentsvar: rent modellsvar", () => {
 
   it("tolkar JSON inne i ett ```json-kodstaket", () => {
     const svar =
-      '```json\n{\n  "datum": "2026-08-22",\n  "att_betala": 1020.95,\n  "leverantor": "Bauhaus"\n}\n```';
+      '```json\n{\n  "dokumentdatum": "2026-08-22",\n  "att_betala": 1020.95,\n  "leverantor": "Bauhaus"\n}\n```';
     expect(tolkaDokumentsvar(svar)).toEqual({
-      datum: "2026-08-22",
+      betaldatum: "2026-08-22",
+      dokumentdatum: "2026-08-22",
       totalbelopp: 102095,
       leverantor: "Bauhaus",
       rot_utnyttjat: null,
@@ -39,9 +41,10 @@ describe("tolkaDokumentsvar: rent modellsvar", () => {
 
   it("tolkar JSON aven med omkringliggande text fran modellen", () => {
     const svar =
-      'Har ar uppgifterna jag kunde lasa ut:\n{"datum":"2026-08-22","att_betala":499,"leverantor":"Clas Ohlson"}\nHor av dig om nagot ser fel ut.';
+      'Har ar uppgifterna jag kunde lasa ut:\n{"dokumentdatum":"2026-08-22","att_betala":499,"leverantor":"Clas Ohlson"}\nHor av dig om nagot ser fel ut.';
     expect(tolkaDokumentsvar(svar)).toEqual({
-      datum: "2026-08-22",
+      betaldatum: "2026-08-22",
+      dokumentdatum: "2026-08-22",
       totalbelopp: 49900,
       leverantor: "Clas Ohlson",
       rot_utnyttjat: null,
@@ -50,9 +53,10 @@ describe("tolkaDokumentsvar: rent modellsvar", () => {
 
   it("tolkar en faktura med utnyttjat ROT-avdrag", () => {
     const svar =
-      '{"datum":"2026-09-01","summa_fore_rot":50000,"att_betala":41000,"valuta":"SEK","leverantor":"K-Bygg Sverige AB","rot_utnyttjat":9000}';
+      '{"dokumentdatum":"2026-09-01","summa_fore_rot":50000,"att_betala":41000,"valuta":"SEK","leverantor":"K-Bygg Sverige AB","rot_utnyttjat":9000}';
     expect(tolkaDokumentsvar(svar)).toEqual({
-      datum: "2026-09-01",
+      betaldatum: "2026-09-01",
+      dokumentdatum: "2026-09-01",
       totalbelopp: 5000000,
       leverantor: "K-Bygg Sverige AB",
       rot_utnyttjat: 900000,
@@ -62,7 +66,7 @@ describe("tolkaDokumentsvar: rent modellsvar", () => {
 
 describe("tolkaDokumentsvar: trasiga eller tomma svar ger inga gissningar", () => {
   it("trasig JSON ger alla falt null", () => {
-    expect(tolkaDokumentsvar('{"datum":"2026-08-22", "att_betala":')).toEqual(
+    expect(tolkaDokumentsvar('{"dokumentdatum":"2026-08-22", "att_betala":')).toEqual(
       TOMT_DOKUMENTFALT,
     );
   });
@@ -97,7 +101,8 @@ describe("tolkaDokumentsvar: trasiga eller tomma svar ger inga gissningar", () =
 describe("tolkaDokumentsvar: falt som saknas eller ar null tolkas inte till nagot", () => {
   it("ett falt satt, de andra utelamnade -> de andra blir null", () => {
     expect(tolkaDokumentsvar('{"leverantor":"Bauhaus Bromma"}')).toEqual({
-      datum: null,
+      betaldatum: null,
+      dokumentdatum: null,
       totalbelopp: null,
       leverantor: "Bauhaus Bromma",
       rot_utnyttjat: null,
@@ -106,42 +111,42 @@ describe("tolkaDokumentsvar: falt som saknas eller ar null tolkas inte till nago
 
   it("falt satt till null i JSON forblir null", () => {
     expect(
-      tolkaDokumentsvar('{"datum":null,"att_betala":null,"leverantor":null}'),
+      tolkaDokumentsvar('{"dokumentdatum":null,"att_betala":null,"leverantor":null}'),
     ).toEqual(TOMT_DOKUMENTFALT);
   });
 });
 
 describe("tolkaDokumentsvar: datum", () => {
   it("giltigt YYYY-MM-DD behalls oforandrat", () => {
-    expect(tolkaDokumentsvar('{"datum":"2015-03-07"}').datum).toBe(
+    expect(tolkaDokumentsvar('{"dokumentdatum":"2015-03-07"}').dokumentdatum).toBe(
       "2015-03-07",
     );
   });
 
   it("orimligt datum (2026-13-40) ger null", () => {
-    expect(tolkaDokumentsvar('{"datum":"2026-13-40"}').datum).toBe(null);
+    expect(tolkaDokumentsvar('{"dokumentdatum":"2026-13-40"}').dokumentdatum).toBe(null);
   });
 
   it("31 februari finns inte -> null", () => {
-    expect(tolkaDokumentsvar('{"datum":"2026-02-31"}').datum).toBe(null);
+    expect(tolkaDokumentsvar('{"dokumentdatum":"2026-02-31"}').dokumentdatum).toBe(null);
   });
 
   it("fritext-datum (fel format) ger null, inte en gissning", () => {
-    expect(tolkaDokumentsvar('{"datum":"22 augusti 2026"}').datum).toBe(null);
+    expect(tolkaDokumentsvar('{"dokumentdatum":"22 augusti 2026"}').dokumentdatum).toBe(null);
   });
 
   it("datum med tid ger null (bara ren date godtas)", () => {
-    expect(tolkaDokumentsvar('{"datum":"2026-08-22T13:37:00Z"}').datum).toBe(
+    expect(tolkaDokumentsvar('{"dokumentdatum":"2026-08-22T13:37:00Z"}').dokumentdatum).toBe(
       null,
     );
   });
 
   it("ar langt utanfor rimligt intervall ger null", () => {
-    expect(tolkaDokumentsvar('{"datum":"0026-08-22"}').datum).toBe(null);
+    expect(tolkaDokumentsvar('{"dokumentdatum":"0026-08-22"}').dokumentdatum).toBe(null);
   });
 
   it("datum som tal ger null", () => {
-    expect(tolkaDokumentsvar('{"datum":20260822}').datum).toBe(null);
+    expect(tolkaDokumentsvar('{"dokumentdatum":20260822}').dokumentdatum).toBe(null);
   });
 });
 
@@ -215,10 +220,11 @@ describe("tolkaDokumentsvar: valuta – bara kronbelopp slapps igenom", () => {
   it("euro-kvitto: datum och leverantor tolkas anda, bara beloppen nollas", () => {
     expect(
       tolkaDokumentsvar(
-        '{"datum":"2026-08-22","att_betala":19.90,"valuta":"EUR","leverantor":"Lidl"}',
+        '{"dokumentdatum":"2026-08-22","att_betala":19.90,"valuta":"EUR","leverantor":"Lidl"}',
       ),
     ).toEqual({
-      datum: "2026-08-22",
+      betaldatum: "2026-08-22",
+      dokumentdatum: "2026-08-22",
       totalbelopp: null,
       leverantor: "Lidl",
       rot_utnyttjat: null,
@@ -334,10 +340,11 @@ describe("tolkaDokumentsvar: rot_utnyttjat (kronor, aldrig procent)", () => {
   it("datum och leverantor tolkas anda nar valutan blockerar beloppen", () => {
     expect(
       tolkaDokumentsvar(
-        '{"datum":"2026-09-01","att_betala":5000,"valuta":"EUR","leverantor":"Baumeister GmbH","rot_utnyttjat":900}',
+        '{"dokumentdatum":"2026-09-01","att_betala":5000,"valuta":"EUR","leverantor":"Baumeister GmbH","rot_utnyttjat":900}',
       ),
     ).toEqual({
-      datum: "2026-09-01",
+      betaldatum: "2026-09-01",
+      dokumentdatum: "2026-09-01",
       totalbelopp: null,
       leverantor: "Baumeister GmbH",
       rot_utnyttjat: null,
@@ -417,7 +424,8 @@ describe("tolkaDokumentsvar: totalbeloppet pa en ROT-faktura ar att betala plus 
 // gor det inte. Datum och leverantor fylls i som vanligt.
 
 const FAKTURAN = {
-  datum: "2026-09-01",
+  betaldatum: "2026-09-01",
+  dokumentdatum: "2026-09-01",
   leverantor: "K-Bygg Sverige AB",
   valuta: "SEK",
   att_betala: 49225.0,
@@ -456,7 +464,8 @@ describe("tolkaDokumentsvar: de lasta talen kontrollerar varandra", () => {
   it("felläst nettorad: beloppet lamnas tomt, datum och leverantor fylls i", () => {
     const t = tolkaDokumentsvarMedKontroll(svar({ ...FAKTURAN, netto: 49650.0 }));
     expect(t.falt).toEqual({
-      datum: "2026-09-01",
+      betaldatum: "2026-09-01",
+      dokumentdatum: "2026-09-01",
       totalbelopp: null,
       leverantor: "K-Bygg Sverige AB",
       rot_utnyttjat: 1158750,
@@ -482,7 +491,7 @@ describe("tolkaDokumentsvar: de lasta talen kontrollerar varandra", () => {
 
   it("butikskvitto med bara en totalsumma: ingen kontroll, ingen rapport", () => {
     const t = tolkaDokumentsvarMedKontroll(
-      '{"datum":"2026-08-22","att_betala":1020.95,"valuta":"SEK","leverantor":"Bauhaus Bromma"}',
+      '{"dokumentdatum":"2026-08-22","att_betala":1020.95,"valuta":"SEK","leverantor":"Bauhaus Bromma"}',
     );
     expect(t.falt.totalbelopp).toBe(102095);
     expect(avlasningsrapporter(t)).toEqual([]);
@@ -569,12 +578,12 @@ describe("avlasningsrapporter", () => {
 
   it("trasig JSON rapporteras som obrukbar", () => {
     expect(
-      avlasningsrapporter(tolkaDokumentsvarMedKontroll('{"datum":"2026-08-22", "att_betala":')),
+      avlasningsrapporter(tolkaDokumentsvarMedKontroll('{"dokumentdatum":"2026-08-22", "att_betala":')),
     ).toHaveLength(1);
   });
 
   it("ett tolkbart svar dar inget falt gick att lasa rapporteras inte", () => {
-    const t = tolkaDokumentsvarMedKontroll('{"datum":null,"att_betala":null}');
+    const t = tolkaDokumentsvarMedKontroll('{"dokumentdatum":null,"att_betala":null}');
     expect(t.tolkbart).toBe(true);
     expect(avlasningsrapporter(t)).toEqual([]);
   });

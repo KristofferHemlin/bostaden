@@ -13,8 +13,12 @@
 //   * Betaldatum som skiljer sig fran kvittots datum -> "Andra uppgifter".
 //   * Uppdelning pa flera rader eller projekt -> "Dela upp".
 //   * Koppling till en befintlig gruppering -> klassificeringsgenomgangen.
-// Datumfaltet satter bade dokumentdatum och betaldatum till samma dag; en
-// avvikande betaldag ar nastan bara obetalda fakturor och hor till rattningen.
+// Datumfaltet ar BETALDATUMET (docs/design.md, "Det enda datumfältet i ett nytt
+// kvitto är betaldatumet") – det som avgor vilket ar kvittot raknas pa.
+// Dokumentdatumet foljer med fältet, utom nar avlasningen last ett eget
+// dokumentdatum som skiljer sig fran betaldagen (en faktura med en stampel
+// "Betald"): da bar ett dolt falt fakturans datum, sa att sorteringen,
+// tilltradesgransen och notisen om kvittodatum provar ratt dag.
 //
 // UNDANTAG: ROT-raden "Drogs ROT av på fakturan?" (docs/design.md,
 // "ROT-avdrag"). Raden visas ALLTID – utfalld nar dokumentavlasningen last ett
@@ -160,6 +164,13 @@ import {
 
 const START: KostnadResultat = {};
 
+/** Betaldatumets hjalptext (docs/design.md, "Det enda datumfältet i ett nytt
+ *  kvitto är betaldatumet"). Exporterad for provet som laser lydelsen ur
+ *  designfilen. Ger plats at "Kunde inte läsas av" nar faltet ar tomt efter
+ *  avlasningen, som de andra faltens hjalptexter. */
+export const BETALDATUM_HJALPTEXT =
+  "Dagen du betalade – det är den som avgör vilket år kvittot räknas på.";
+
 const BILAGA_ACCEPT =
   "image/jpeg,image/png,image/heic,image/heif,application/pdf,.jpg,.jpeg,.png,.heic,.heif,.pdf";
 
@@ -232,7 +243,15 @@ export interface Utkast {
   id: string;
   anteckning: string | null;
   /** Det hon skrivit i utkastet, i faltens egen form (src/app/kostnad/nytt/page.tsx). */
-  falt?: { belopp: string; datum: string; leverantor: string; rot: string };
+  falt?: {
+    belopp: string;
+    /** Betaldatumet – formularets datumfalt. */
+    datum: string;
+    /** Dokumentdatumet nar det skiljer sig fran betaldatumet, annars "". */
+    dokumentdatum: string;
+    leverantor: string;
+    rot: string;
+  };
   bilagor: Bilagevy[];
 }
 
@@ -392,6 +411,12 @@ export function NyKostnadForm({
     datum: utkast?.falt?.datum ?? "",
     leverantor: utkast?.falt?.leverantor ?? "",
   });
+  // Dokumentets eget datum, BARA nar det skiljer sig fran betaldatumet
+  // (avlasningen last bada och de var olika). Tomt betyder "samma dag som
+  // betaldatumet" – da foljer det med faltet, sa att en rattad dag pa ett
+  // kassakvitto rattar bada. `kvittodatum` ar det som provas mot tilltradet.
+  const [dokumentdatum, setDokumentdatum] = useState(utkast?.falt?.dokumentdatum ?? "");
+  const kvittodatum = dokumentdatum || falt.datum;
   const faltRef = useRef(falt);
   useEffect(() => {
     faltRef.current = falt;
@@ -575,6 +600,7 @@ export function NyKostnadForm({
     JSON.stringify({
       belopp: falt.belopp,
       datum: falt.datum,
+      dokumentdatum,
       leverantor: falt.leverantor,
       rot: rotUtnyttjat,
       anteckning,
@@ -612,12 +638,15 @@ export function NyKostnadForm({
     if (!utkastId) return;
     vantandeUtkastRef.current = {
       id: utkastId,
-      falt: { belopp: falt.belopp, datum: falt.datum, leverantor: falt.leverantor, rot: rotUtnyttjat, anteckning },
+      falt: {
+        belopp: falt.belopp, datum: falt.datum, dokumentdatum, leverantor: falt.leverantor,
+        rot: rotUtnyttjat, anteckning,
+      },
     };
     if (utkastTimerRef.current) clearTimeout(utkastTimerRef.current);
     utkastTimerRef.current = setTimeout(skickaUtkastfalten, 600);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [utkastId, falt.belopp, falt.datum, falt.leverantor, rotUtnyttjat, anteckning]);
+  }, [utkastId, falt.belopp, falt.datum, dokumentdatum, falt.leverantor, rotUtnyttjat, anteckning]);
 
   // Det som vantar skickas nar formularet lamnas. skickaUtkastfalten laser bara
   // refar, sa den version effekten haller ar lika bra som den senaste.
@@ -674,9 +703,15 @@ export function NyKostnadForm({
         nasta.belopp = formateraBeloppInmatning(orenTillFalt(data.totalbelopp));
         nyttAuto.belopp = true;
       }
-      if (data.datum && nu.datum.trim() === "") {
-        nasta.datum = data.datum;
+      // Faltet ar betaldatumet; ett avvikande dokumentdatum bars dolt bredvid
+      // (se `dokumentdatum` ovan). Bara nar betaldatumet fylls – ett datum hon
+      // skrivit sjalv ror avlasningen inte, och inte dess dokumentdatum heller.
+      if (data.betaldatum && nu.datum.trim() === "") {
+        nasta.datum = data.betaldatum;
         nyttAuto.datum = true;
+        setDokumentdatum(
+          data.dokumentdatum && data.dokumentdatum !== data.betaldatum ? data.dokumentdatum : "",
+        );
       }
       if (nyttAuto.belopp || nyttAuto.datum || nyttAuto.leverantor) {
         setFalt(nasta);
@@ -882,7 +917,7 @@ export function NyKostnadForm({
     const nasta = nastaStegVidSparande({
       antalFel: felen.length,
       obesvaradeFragor: sparfragor({
-        kvittodatum: falt.datum,
+        kvittodatum,
         tilltradesdatum: innehav.tilltradesdatum,
         bekraftatKvittodatum: tilltradeBekraftatDatumRef.current,
         harBilaga: poster.length > 0,
@@ -931,7 +966,7 @@ export function NyKostnadForm({
   // "Datumet stämmer": bekraftar just det har datumet och sparar. Rutan ar
   // ingen sparr – den stanger aldrig utan att spara (docs/design.md).
   function tilltradeDialogStammer() {
-    tilltradeBekraftatDatumRef.current = falt.datum;
+    tilltradeBekraftatDatumRef.current = kvittodatum;
     setVisaTilltradeDialog(false);
     formRef.current?.requestSubmit();
   }
@@ -1018,6 +1053,11 @@ export function NyKostnadForm({
 
     router.push("/");
   }
+
+  // Allt som ligger sparat pa utkastet raderas med det: bilagorna fran ett
+  // aterupptaget utkast och nyss valda filer som hunnit laddas upp.
+  const antalSparadeBilagor =
+    befintliga.length + filer.filter((f) => filstatus[filnyckel(f)]?.bilagaId).length;
 
   const nagotAutoifyllt =
     autoFalt.belopp || autoFalt.datum || autoFalt.leverantor;
@@ -1518,13 +1558,14 @@ export function NyKostnadForm({
         </Falt>
       </UtfallbarSektion>
 
-      {/* Ett datumfalt satter bade dokumentdatum och betaldatum till samma dag
-          (docs/design.md, "Datum i kostnadsformularet"). En avvikande betaldag
-          hor till "Andra uppgifter". */}
+      {/* Det enda datumfaltet ar betaldatumet (docs/design.md, "Det enda
+          datumfältet i ett nytt kvitto är betaldatumet"): etiketten och
+          hjalptexten sager vad det avgor. Ett avvikande dokumentdatum bars
+          dolt (se `dokumentdatum`) och gar att andra i kvittots andringslage. */}
       <Falt
-        etikett="Datum"
+        etikett="Betaldatum"
         obligatoriskt
-        hjalp={faltStatus(falt.datum.trim() === "")}
+        hjalp={faltStatus(falt.datum.trim() === "") ?? BETALDATUM_HJALPTEXT}
       >
         {/* Formularets meddelande gar till faltet, som sjalv avgor att
             bara ett visas – har faltet ett eget ("Ogiltig dag.") vinner det.
@@ -1543,9 +1584,8 @@ export function NyKostnadForm({
       </Falt>
 
       {/* Kvittodatum utanfor innehavet (docs/design.md): dokumentdatumet ar
-          samma falt som betaldatumet har (se ovan), sa notisen prova
-          `falt.datum` direkt. */}
-      <KvittodatumNotis notis={kvittodatumNotis(falt.datum, innehav)} />
+          betaldatumet utom nar avlasningen last ett eget (se `kvittodatum`). */}
+      <KvittodatumNotis notis={kvittodatumNotis(kvittodatum, innehav)} />
 
       <Falt
         etikett="Leverantör"
@@ -1571,8 +1611,9 @@ export function NyKostnadForm({
         />
       </Falt>
 
-      {/* Datumfaltet matar bada de dolda datumfalten till samma dag. */}
-      <input type="hidden" name="dokumentdatum" value={falt.datum} />
+      {/* Betaldatumet ar faltet; dokumentdatumet ar samma dag utom nar
+          avlasningen last ett annat. */}
+      <input type="hidden" name="dokumentdatum" value={kvittodatum} />
       <input type="hidden" name="betaldatum" value={falt.datum} />
 
       {/* Det enda faltet som bar betydelse framat. Fritext, aldrig obligatoriskt.
@@ -1640,20 +1681,23 @@ export function NyKostnadForm({
       </button>
     </form>
 
-    {/* Ta bort utkastet – langst ned, skilt fran spara-knappen. Ingen
-        bekraftelse (docs/design.md, "Kvittolistan"); raderingen tar med
-        bilagorna och gar samma vag som taBortKostnad. Visas bara nar ett
+    {/* Ta bort utkastet – langst ned, skilt fran spara-knappen. Fragar nar
+        utkastet inte ar tomt (src/lib/bilageborttagning.ts); raderingen tar
+        med bilagorna och gar samma vag som taBortKostnad. Visas bara nar ett
         utkast faktiskt aterupptas. */}
     {utkast ? (
       <div className="border-t border-linje p-5">
         <UtkastRaderaKnapp
           kostnadId={utkast.id}
           lage="knapp"
-          // Allt som ligger sparat pa utkastet raderas med det: bilagorna fran
-          // ett ateruppatt utkast och nyss valda filer som hunnit laddas upp.
-          antalBilagor={
-            befintliga.length +
-            filer.filter((f) => filstatus[filnyckel(f)]?.bilagaId).length
+          antalBilagor={antalSparadeBilagor}
+          // Fragan hor till raden (src/lib/bilageborttagning.ts): bara ett
+          // utkast utan bilaga OCH utan nagot ifyllt tas bort utan fraga.
+          tomt={
+            antalSparadeBilagor === 0 &&
+            [falt.belopp, falt.datum, falt.leverantor, rotUtnyttjat, anteckning].every(
+              (v) => v.trim() === "",
+            )
           }
         />
       </div>
@@ -1672,7 +1716,7 @@ export function NyKostnadForm({
     {visaTilltradeDialog ? (
       <TilltradeDialog
         tilltradesdatum={innehav.tilltradesdatum}
-        kvittodatum={falt.datum}
+        kvittodatum={kvittodatum}
         onAndra={tilltradeDialogAndra}
         onStammer={tilltradeDialogStammer}
       />

@@ -271,7 +271,7 @@ describe("talen ändras inte", () => {
       medlemskap: { agarandel: 100 },
       projekt: [{ id: "p", namn: "Fönster", atgardstyp: "utbytt" as const, battre_kvalitet: false, merkostnad: null, merkostnad_bas: null, skick_forvarv: 1, skick_forsaljning: 4, tidigare_gang_samma_del: false }],
       kostnader: [{ id: "k", totalbelopp: 4_800_000, betaldatum: "2025-04-02", dokumentdatum: "2025-04-02", rot_utnyttjat: 0, forsakringsersattning: 0, arkiverad: false, rader: [{ artikel: "Fönster", belopp: 4_800_000, fordelningar: [{ projekt_id: "p", privat: false, andel: 1 }] }] }],
-      kostnader_med_bilaga: ["k"],
+      utkast_som_inte_ar_tomma: ["k"],
       regelparametrar: REGELPARAMETRAR,
     });
     expect(() => byggK6aExport(indata(null))).toThrow(VantarPaBostadsfragor);

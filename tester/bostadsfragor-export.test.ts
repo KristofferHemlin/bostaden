@@ -27,7 +27,7 @@ function bygg(
     medlemskap: { agarandel: 100 },
     projekt: [],
     kostnader: [],
-    kostnader_med_bilaga: [],
+    utkast_som_inte_ar_tomma: [],
     regelparametrar: REGELPARAMETRAR,
     ...over,
   };

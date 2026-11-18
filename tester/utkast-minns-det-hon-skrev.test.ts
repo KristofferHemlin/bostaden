@@ -54,7 +54,7 @@ vi.mock("@/app/kostnad/bilaga-actions", () => ({
 vi.mock("@/lib/dokumentavlasning/analysera", () => ({
   analyseraDokumentbuffert: async () => {
     h.modellanrop++;
-    return { kord: true, falt: { totalbelopp: 6181250, leverantor: "Maskinens AB", datum: "2026-10-01", rot_utnyttjat: null } };
+    return { kord: true, falt: { totalbelopp: 6181250, leverantor: "Maskinens AB", betaldatum: "2026-10-01", dokumentdatum: "2026-10-01", rot_utnyttjat: null } };
   },
 }));
 vi.mock("@/lib/feltrapportering", () => ({

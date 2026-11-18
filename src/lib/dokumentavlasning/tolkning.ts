@@ -33,8 +33,20 @@
 import { oreFranKronor } from "@/lib/format";
 
 export interface Dokumentfalt {
-  /** Betal-/kvittodatum som "YYYY-MM-DD", eller null nar det inte gar att lasa. */
-  datum: string | null;
+  /** Betaldagen som "YYYY-MM-DD" – det datum som avgor vilket ar kvittot
+   *  raknas pa (docs/design.md, "Det enda datumfältet i ett nytt kvitto är
+   *  betaldatumet"). Dokumentets egen betaldag nar det anger en (en stampel
+   *  "Betald", "Betalt den"), annars dokumentets datum: ett kassakvitto ar
+   *  betalt den dag det ar daterat. Null nar inget av dem gick att lasa.
+   *
+   *  Missar modellen betaldagen pa en faktura blir faltet alltsa FAKTURANS
+   *  datum, inte tomt – samma tal som fore 2026-11-18, under en etikett som
+   *  sager vad det avgor. */
+  betaldatum: string | null;
+  /** Dokumentets eget datum (fakturadatum, kvittots datum) som "YYYY-MM-DD",
+   *  eller null. Till dokumentdatum: sorteringen inom aret, tilltradesgransen
+   *  och notisen om kvittodatum provar det, aldrig aret. */
+  dokumentdatum: string | null;
   /** Hela summan inklusive moms och FORE ROT-avdrag, som heltal oren, eller
    *  null. Underlaget ar totalbelopp minus rot_utnyttjat. */
   totalbelopp: number | null;
@@ -46,7 +58,8 @@ export interface Dokumentfalt {
 }
 
 export const TOMT_DOKUMENTFALT: Dokumentfalt = {
-  datum: null,
+  betaldatum: null,
+  dokumentdatum: null,
   totalbelopp: null,
   leverantor: null,
   rot_utnyttjat: null,
@@ -264,9 +277,11 @@ export function tolkaDokumentsvarMedKontroll(text: unknown): Dokumenttolkning {
     summaForeRot: belopp(o.summa_fore_rot),
   });
 
+  const dokumentdatum = tolkaDatum(o.dokumentdatum);
   return {
     falt: {
-      datum: tolkaDatum(o.datum),
+      betaldatum: tolkaDatum(o.betaldatum) ?? dokumentdatum,
+      dokumentdatum,
       totalbelopp,
       leverantor: tolkaLeverantor(o.leverantor),
       rot_utnyttjat: rotBelopp,

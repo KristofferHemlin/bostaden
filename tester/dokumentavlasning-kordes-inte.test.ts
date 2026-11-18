@@ -29,7 +29,8 @@ describe("analyseraDokumentbuffert utan ANTHROPIC_API_KEY", () => {
     expect(resultat).toEqual({
       kord: false,
       falt: {
-        datum: null,
+        betaldatum: null,
+        dokumentdatum: null,
         totalbelopp: null,
         leverantor: null,
         rot_utnyttjat: null,

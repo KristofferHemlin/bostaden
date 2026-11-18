@@ -30,7 +30,8 @@ const BOSTAD = "11111111-1111-1111-1111-111111111111";
 const ANNAN_BOSTAD = "99999999-9999-9999-9999-999999999999";
 
 const LAST_FALT: Dokumentfalt = {
-  datum: "2026-05-01",
+  betaldatum: "2026-05-01",
+  dokumentdatum: "2026-05-01",
   totalbelopp: 102095,
   leverantor: "Bauhaus Bromma",
   rot_utnyttjat: null,
