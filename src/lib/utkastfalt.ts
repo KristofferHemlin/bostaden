@@ -5,7 +5,7 @@
 // Beloppet hamnar i `utkast_belopp`, ALDRIG i `totalbelopp`: totalbelopp IS
 // NULL ar definitionen av ett utkast (arUtkast), och ett belopp dar skulle
 // gora utkastet till ett sparat kvitto utan att hon gjort nagot. De ovriga
-// fyra ligger i sina vanliga kolumner – ingenting tar dem for tecken pa att
+// fem ligger i sina vanliga kolumner – ingenting tar dem for tecken pa att
 // utkastet ar klart (docs/produktspec.md, datamodellen).
 //
 // Ingenting valideras mot reglerna har: det gor sparandet, nar hon sparar pa
@@ -22,6 +22,8 @@ export interface Utkastfalt {
   datum: string;
   leverantor: string;
   rot: string;
+  /** "Vad gällde det?" – det som gor kvittot begripligt om atta ar. */
+  anteckning: string;
 }
 
 export interface Utkastkolumner {
@@ -30,6 +32,7 @@ export interface Utkastkolumner {
   dokumentdatum: Date | null;
   betaldatum: Date | null;
   rot_utnyttjat: number | null;
+  anteckning: string | null;
 }
 
 /** Postgres int4 – storre varden gar inte att lagra i kolumnerna. */
@@ -50,6 +53,9 @@ function datumEllerNull(text: string): Date | null {
 export function tolkaUtkastfalt(falt: Utkastfalt): Utkastkolumner {
   const datum = datumEllerNull(String(falt.datum ?? "").trim());
   const leverantor = String(falt.leverantor ?? "").trim();
+  // Trimmad som vid sparandet (tolkaKostnadsformular), sa att en blank
+  // anteckning ar null och tomt-utkast-regeln ser samma sak som i dag.
+  const anteckning = String(falt.anteckning ?? "").trim();
   return {
     utkast_belopp: positivtOreEllerNull(String(falt.belopp ?? "")),
     leverantor: leverantor === "" ? null : leverantor,
@@ -57,5 +63,6 @@ export function tolkaUtkastfalt(falt: Utkastfalt): Utkastkolumner {
     dokumentdatum: datum,
     betaldatum: datum,
     rot_utnyttjat: positivtOreEllerNull(String(falt.rot ?? "")),
+    anteckning: anteckning === "" ? null : anteckning,
   };
 }

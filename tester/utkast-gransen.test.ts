@@ -73,6 +73,7 @@ const datum = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 const TROSKEL = REGELPARAMETRAR.find((r) => r.nyckel === "troskelbelopp")!.varde;
 
 let utkastId = "";
+const ANTECKNINGEN = "Altanbygget, andra fakturan: snickeriet och virket till trappan";
 
 async function seeda() {
   const { db } = h;
@@ -109,6 +110,7 @@ async function seeda() {
   // Det hon skrev, genom den riktiga vagen.
   const r = await sparaUtkastfalten(utkastId, {
     belopp: "60 812,50", datum: "2026-10-01", leverantor: "Byggfirman AB", rot: "11 587,50",
+    anteckning: ANTECKNINGEN,
   });
   expect(r, "forutsattningen: utkastets falt sparades").toEqual({ ok: true });
 }
@@ -140,18 +142,38 @@ describe("ett utkast med sparade falt ar fortfarande ett utkast", () => {
   it("forutsattningen: beloppet ligger i utkast_belopp, inte i totalbelopp", () => {
     expect(utkastet()).toMatchObject({
       totalbelopp: null, utkast_belopp: 6_081_250, leverantor: "Byggfirman AB", rot_utnyttjat: 1_158_750,
+      anteckning: ANTECKNINGEN,
     });
   });
 
-  it("kvittolistan: utkastraden, med leverantoren, utan belopp och utan ROT-rad", async () => {
+  it("kvittolistan: utkastraden, med anteckningen, utan belopp och utan ROT-rad", async () => {
     const rad = await kvittoraden();
     expect(rad?.getAttribute("href")).toBe(`/kostnad/nytt?utkast=${utkastId}`);
     const text = (rad?.textContent ?? "").replace(/\s/g, " ");
+    expect(text).toContain(ANTECKNINGEN);
     expect(text).toContain("Utkast · komplettera uppgifterna");
-    expect(text).toContain("Byggfirman AB");
     expect(text).not.toContain("60 812");
     expect(text).not.toContain("11 587");
     expect(text).not.toMatch(/ROT/);
+  });
+
+  it("kvittolistan: utan anteckning visar utkastraden leverantoren", async () => {
+    await sparaUtkastfalten(utkastId, {
+      belopp: "60 812,50", datum: "2026-10-01", leverantor: "Byggfirman AB", rot: "11 587,50", anteckning: "",
+    });
+    const text = ((await kvittoraden())?.textContent ?? "").replace(/\s/g, " ");
+    expect(text).toContain("Byggfirman AB");
+    expect(text).toContain("Utkast · komplettera uppgifterna");
+  });
+
+  it("kvittolistan: utkastet ligger under 2026, raknas i antalet men inte i summan", async () => {
+    const div = document.createElement("div");
+    div.innerHTML = renderToStaticMarkup(await KvittolistaSida());
+    const rubriker = [...div.querySelectorAll("summary")].map((r) => (r.textContent ?? "").replace(/\s/g, " "));
+    expect(rubriker.some((r) => r.startsWith("Utan betaldatum")), "utkastet under Utan betaldatum").toBe(false);
+    const ar2026 = rubriker.find((r) => r.startsWith("2026"));
+    // Bauhaus 4 000 kr och utkastet: tva kvitton, ett belopp.
+    expect(ar2026).toBe("2026 · 2 kvitton4 000 kr");
   });
 
   it("arssumman och troskeln: utkastet raknas inte – 4 000 kr, under troskeln", async () => {
@@ -169,6 +191,16 @@ describe("ett utkast med sparade falt ar fortfarande ett utkast", () => {
 describe("motprovet: samma rad med beloppet i totalbelopp ar ett kvitto", () => {
   beforeEach(() => {
     utkastet().totalbelopp = utkastet().utkast_belopp;
+  });
+
+  it("kvittolistan: arsrubriken raknar med beloppet", async () => {
+    const div = document.createElement("div");
+    div.innerHTML = renderToStaticMarkup(await KvittolistaSida());
+    const ar2026 = [...div.querySelectorAll("summary")]
+      .map((r) => (r.textContent ?? "").replace(/\s/g, " "))
+      .find((r) => r.startsWith("2026"));
+    // 4 000 kr plus 60 812,50 kr minus ROT 11 587,50 kr, avrundat i rubriken.
+    expect(ar2026).toBe("2026 · 2 kvitton53 225 kr");
   });
 
   it("kvittolistan: en vanlig kvittorad", async () => {

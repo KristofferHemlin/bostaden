@@ -29,8 +29,9 @@ export const KORDES_INTE: Dokumentavlasning = { kord: false, falt: { ...TOMT_DOK
  * hoppas avlasningen over. Ett aterupptat utkast visar da de falt hon sparat
  * (sparaUtkastfalten), eller tomma falt om hon inte skrivit nagot, i stallet
  * for att kosta ett anrop och en vantan. Formularet kor dessutom aldrig
- * avlasningen pa ett utkast dar nagot falt ar ifyllt (src/app/kostnad/nytt/
- * form.tsx).
+ * avlasningen pa ett ATERUPPTAGET utkast dar nagot falt ar ifyllt
+ * (src/app/kostnad/nytt/form.tsx) – i ett nytt formular kors den nar filen
+ * valts, och fyller da bara tomma falt.
  */
 export async function analyseraKostnadsbilaga(params: {
   bostadId: string;

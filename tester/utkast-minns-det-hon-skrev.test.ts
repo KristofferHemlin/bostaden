@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 // Ett kvittoutkast minns det hon skrev (docs/design.md). Forloppet som
 // mattes 2026-11-20: avlasningen fyller i 61 812,50 kr och Maskinens AB, hon
-// rattar till 60 812,50 kr och Byggfirman AB, stanger direkt, och oppnar
+// rattar till 60 812,50 kr och Byggfirman AB, skriver en mening i "Vad gällde
+// det?" (anteckningen, tillagd 2026-11-20 i nasta omgang), stanger direkt, och oppnar
 // utkastet igen. Da var falten tomma om markeringen av bilagan lyckats, och
 // maskinens gissning tillbaka om den misslyckats.
 //
@@ -143,8 +144,11 @@ async function oppnaUtkastet() {
 const belopp = () => behallare.querySelector<HTMLInputElement>('input[name="totalbelopp"]')!;
 const varde = (el: HTMLInputElement) => el.value.replace(/\s/g, " ");
 const leverantor = () => behallare.querySelector<HTMLInputElement>('input[name="leverantor"]')!;
-async function skriv(el: HTMLInputElement, varde: string) {
-  const satt = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+const anteckningen = () => behallare.querySelector<HTMLTextAreaElement>('textarea[name="anteckning"]')!;
+const MENINGEN = "Altanbygget, andra fakturan: snickeriet och virket till trappan";
+async function skriv(el: HTMLInputElement | HTMLTextAreaElement, varde: string) {
+  const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  const satt = Object.getOwnPropertyDescriptor(proto, "value")!.set!;
   await act(async () => {
     satt.call(el, varde);
     el.dispatchEvent(new Event("input", { bubbles: true }));
@@ -167,14 +171,21 @@ for (const markeringFaller of [true, false]) {
       expect(forst.belopp, "avlasningen fyllde inte i beloppet").toBe("61 812,50");
       await skriv(belopp(), "60 812,50");
       await skriv(leverantor(), "Byggfirman AB");
+      await skriv(anteckningen(), MENINGEN);
       await stang();
       const db = { ...h.db!.kostnad, analyserad: h.db!.bilaga.dokument_analyserad };
       await oppnaUtkastet();
-      const igen = { belopp: varde(belopp()), leverantor: leverantor().value, anrop: h.modellanrop, sentry: h.sentry };
+      const igen = {
+        belopp: varde(belopp()), leverantor: leverantor().value, anteckning: anteckningen().value,
+        anrop: h.modellanrop, sentry: h.sentry,
+      };
       // Hennes tal, i databasen och i formularet – och fortfarande ett utkast.
-      expect(db).toMatchObject({ totalbelopp: null, utkast_belopp: 6_081_250, leverantor: "Byggfirman AB" });
+      expect(db).toMatchObject({
+        totalbelopp: null, utkast_belopp: 6_081_250, leverantor: "Byggfirman AB", anteckning: MENINGEN,
+      });
       expect(igen.belopp).toBe("60 812,50");
       expect(igen.leverantor).toBe("Byggfirman AB");
+      expect(igen.anteckning).toBe(MENINGEN);
       // Avlasningen kordes inte om: nagot var ifyllt, aven nar bilagan
       // fortfarande ar omarkerad.
       expect(igen.anrop, "avlasningen kordes om").toBe(1);

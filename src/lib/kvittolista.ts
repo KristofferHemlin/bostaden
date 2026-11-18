@@ -164,6 +164,13 @@ export function raknasMedRad(kostnad: Kostnad): string | null {
  * Ett utkast far inga rader alls (docs/design.md, "Ett kvittoutkast minns det
  * hon skrev"): ett sparat ROT-svar under en rad utan belopp vore en
  * upplysning om ett tal som inte star dar.
+ *
+ * Utkastraden nedan ar ett forsvar i djupled, inte den barande raden. Uppmatt
+ * 2026-11-20: tas den bort ensam faller ingenting, eftersom bostadensBelopp
+ * redan ger 0 for ett utkast och darmed bade ROT och privat del blir 0. Den
+ * star kvar for att regeln ska halla om bostadensBelopp nagon gang andras.
+ * Det som vaktar regeln ar tester/utkast-gransen.test.ts, som faller nar
+ * bada skydden ar borta.
  */
 export function avgarForKvitto(kostnad: Kostnad): {
   rot: number;

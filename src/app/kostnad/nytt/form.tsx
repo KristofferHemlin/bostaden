@@ -52,7 +52,8 @@
 // listan och i genomgangen och rensas aldrig automatiskt. Valjs ingen fil alls
 // skapar sparningen en ny kostnad som vanligt.
 //
-// Medan det finns ett utkast sparas belopp, datum, leverantor och ROT lopande
+// Medan det finns ett utkast sparas belopp, datum, leverantor, ROT och
+// anteckningen lopande
 // pa det (sparaUtkastfalten, docs/design.md "Ett kvittoutkast minns det hon
 // skrev") – beloppet i utkast_belopp, aldrig i totalbelopp, sa att utkastet
 // forblir ett utkast tills hon sparar.
@@ -534,11 +535,16 @@ export function NyKostnadForm({
   }, [forhandsFil]);
 
   // Aterupptat utkast: kor avlasningen pa den forsta redan uppladdade bilagan
-  // nar BADE den inte lasts av och inget falt ar ifyllt (docs/design.md, "Ett
-  // kvittoutkast minns det hon skrev"). Falten hindrar att det hon skrivit
-  // ersatts av en ny gissning; markeringen hindrar att ett olasbart kvitto,
-  // som lamnar falten tomma, lases om varje gang. Ett markerat utkast med
-  // tomma falt lases alltsa inte om – det visar tomma falt.
+  // nar BADE den inte lasts av och inget av falten avlasningen fyller ar
+  // ifyllt (docs/design.md, "Ett kvittoutkast minns det hon skrev"). Falten
+  // hindrar att det hon sparat ersatts av en ny gissning; markeringen hindrar
+  // att ett olasbart kvitto, som lamnar falten tomma, lases om varje gang. Ett
+  // markerat utkast med tomma falt lases alltsa inte om – det visar tomma falt.
+  //
+  // Villkoret galler BARA har. Valjer hon en fil i ett nytt formular (laddaEn)
+  // har hon just bett om en avlasning, och den kors aven om hon skrivit nagot:
+  // analysera() fyller bara tomma falt, sa hennes tal star kvar. Det ar ett
+  // sparat svar som skyddas, inte ett paborjat formular.
   useEffect(() => {
     if (analysKordRef.current) return;
     const forsta = utkast?.bilagor[0];
@@ -571,6 +577,7 @@ export function NyKostnadForm({
       datum: falt.datum,
       leverantor: falt.leverantor,
       rot: rotUtnyttjat,
+      anteckning,
     }),
   );
   const vantandeUtkastRef = useRef<{ id: string; falt: Utkastfalt } | null>(null);
@@ -605,12 +612,12 @@ export function NyKostnadForm({
     if (!utkastId) return;
     vantandeUtkastRef.current = {
       id: utkastId,
-      falt: { belopp: falt.belopp, datum: falt.datum, leverantor: falt.leverantor, rot: rotUtnyttjat },
+      falt: { belopp: falt.belopp, datum: falt.datum, leverantor: falt.leverantor, rot: rotUtnyttjat, anteckning },
     };
     if (utkastTimerRef.current) clearTimeout(utkastTimerRef.current);
     utkastTimerRef.current = setTimeout(skickaUtkastfalten, 600);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [utkastId, falt.belopp, falt.datum, falt.leverantor, rotUtnyttjat]);
+  }, [utkastId, falt.belopp, falt.datum, falt.leverantor, rotUtnyttjat, anteckning]);
 
   // Det som vantar skickas nar formularet lamnas. skickaUtkastfalten laser bara
   // refar, sa den version effekten haller ar lika bra som den senaste.
