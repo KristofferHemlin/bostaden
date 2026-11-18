@@ -1059,6 +1059,22 @@ Fältetiketten inuti sektionen heter fortfarande "ROT-avdrag". Där är sammanha
 
 Att dölja raden helt när ingenting lästs av vore värre. Då blir fältet onåbart när avläsningen misslyckas, när nyckeln saknas eller när kvittot är handskrivet, och användaren vet inte ens att det finns.
 
+### Ett kvittoutkast minns det hon skrev
+
+**Avgjort 2026-11-20, efter en mätning som började som något annat.** Utkastet sparade inga fält alls: hon fotar kvittot, modellen fyller i 61 812,50 kr och *Maskinens AB*, hon rättar till 60 812,50 kr och *Byggfirman AB*, hon stänger — och databasen har `totalbelopp null` och `leverantör null`. Både hennes rättelse och maskinens avläsning var borta.
+
+**Vad hon mötte vid återkomsten avgjordes av en skrivning hon inte vet om.** Lyckades markeringen av bilagan som avläst: tomma fält, skriv om allt. Misslyckades den: **exakt det tal hon nyss förkastade**, förifyllt och rimligt. Regeln under *Namnfältet är tomt* gäller här med full kraft — ett rimligt men felaktigt förifyllt syns inte.
+
+**Ett utkast ska därför bära det hon skrivit**, och det är det enda som håller löftet att kvittot kan vänta på henne. *"Fånga kvittot medan det är färskt, resten kan vänta"* är inget löfte om resten faller bort medan hon väntar.
+
+**Det sparas i databasen, inte i webbläsaren.** Bilagan ligger redan där, och utkastet syns i kvittolistan också på en annan enhet — fält som bara fanns lokalt skulle göra raden till ett löfte om något den inte har. Det är skillnaden mot projektflödets utkast, som inte har något sparat i databasen alls.
+
+**Att spara ett fält får inte göra utkastet till ett sparat kvitto.** Gränsen mellan de två är i dag att `totalbelopp` saknas; sparas beloppet löpande upphör utkastet att vara ett utkast utan att hon gjort något. **Den fällan avgör hur det här byggs**, och svaret ligger i koden — se prompten.
+
+**Avläsningen körs aldrig om när något redan är ifyllt.** Villkoret i dag är att bilagan är omarkerad, vilket är något annat, och kommentaren i `form.tsx` påstår felaktigt att det är fälten som avgör.
+
+**Och misslyckas markeringen rapporteras det.** Det inre catchet sväljer felet innan det yttre ser något — uppmätt: noll rapporter till Sentry. Ett tyst fel som kostar ett modellanrop och visar ett förkastat tal är inte en nedgradering, det är ett fel.
+
 ### Kvittodatum utanför innehavet
 
 Ett kvitto daterat före tillträdet eller efter försäljningen får en dämpad upplysning. **Aldrig en spärr.** Användaren äger bedömningen; appen påpekar bara att datumet ligger utanför den tid hen ägde bostaden.
