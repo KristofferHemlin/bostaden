@@ -146,12 +146,10 @@ function AtgardFormular({
           Hoppa över
         </button>
 
-        <Link
-          href="/export"
-          className="text-center font-granssnitt text-sm text-text-sekundar underline hover:text-text-primar"
-        >
-          Avbryt
-        </Link>
+        {/* Ingen Avbryt har (docs/design.md, "Regeln gäller varje flöde"):
+            Hoppa over gar vidare och hor till Spara och nasta, medan att
+            lamna flodet ar tillbakalanken i huvudet, till underlaget
+            varifran flodet startades (page.tsx). */}
 
         {/* Avskild langst ned, samma monster som fragetradet.tsx – bedomningen
             hor till de skarmar dar den faktiskt gors (docs/design.md,

@@ -1,8 +1,7 @@
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import { build } from "esbuild";
+import { existsSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
+import { paketera } from "./_paketera";
 
 // Projektflödets sista steg, i en riktig webbläsare med riktiga klick. Flödet
 // hade fyra steg när felet hittades och har tre sedan 2026-11-19
@@ -28,8 +27,6 @@ import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
 // klick, inte ett skripts. Server-actionen byts mot en som bara noterar att
 // formuläret skickades.
 
-const ROT = process.cwd();
-
 const KVITTO = {
   id: "d0000000-0000-4000-8000-000000000001",
   rubrik: "Bytte avloppsstammen under köksbänken",
@@ -50,76 +47,11 @@ createRoot(document.getElementById("rot")!).render(
 );
 `;
 
-/** Flödets server-action, utbytt: den noterar formuläret och sparar ingenting. */
-const ACTIONS_STUB = `
-export async function skapaProjekt(_foreg, formData) {
-  const falt = {};
-  for (const [k, v] of formData.entries()) (falt[k] ??= []).push(String(v));
-  window.__inskickat.push(falt);
-  return {};
-}
-`;
-
-/** En modul där varje namn är en funktion som inte gör något. CommonJS, så att
- *  esbuild inte prövar att de importerade namnen finns. */
-const TOM_MODUL = `const ingenting = () => undefined; module.exports = new Proxy({}, { get: (_, k) => (k === "__esModule" ? false : ingenting) });`;
-
-async function paketera(): Promise<string> {
-  const utfall = await build({
-    stdin: { contents: INGANG, loader: "tsx", resolveDir: ROT, sourcefile: "ingang.tsx" },
-    bundle: true,
-    write: false,
-    format: "iife",
-    jsx: "automatic",
-    platform: "browser",
-    define: { "process.env.NODE_ENV": '"production"' },
-    alias: { "@": join(ROT, "src") },
-    logLevel: "error",
-    plugins: [
-      {
-        name: "stubbar",
-        setup(b) {
-          b.onResolve({ filter: /^\.\.\/actions$/ }, (a) =>
-            a.importer.includes(join("projekt", "nytt")) ? { path: "actions", namespace: "stub" } : undefined,
-          );
-          // Allt från next: länken och routern som stubbar, resten tomt – liksom
-          // Sentry. Next:s riktiga router drar in Node-moduler och hör inte till
-          // det som prövas.
-          b.onResolve({ filter: /^(next(\/.*)?|@sentry\/nextjs)$/ }, (a) => ({ path: a.path, namespace: "stub" }));
-          // Serverkod som sidhuvudet drar in (bostadsväxlarens action): en
-          // tom modul som tål vilka namn som helst. Flödets egen action ovan
-          // är den enda som behöver göra något.
-          b.onLoad({ filter: /[\\/]src[\\/].*\.(ts|tsx)$/ }, (a) => {
-            const kod = readFileSync(a.path, "utf-8");
-            return /^\s*"use server";/.test(kod) ? { contents: TOM_MODUL, loader: "js" } : undefined;
-          });
-          b.onLoad({ filter: /.*/, namespace: "stub" }, (a) => {
-            if (a.path === "actions") return { contents: ACTIONS_STUB, loader: "js" };
-            if (a.path === "next/link")
-              return {
-                contents: `import { createElement } from "react"; export default function Link({ href, children, ...r }) { return createElement("a", { href, ...r }, children); }`,
-                loader: "js",
-                resolveDir: ROT,
-              };
-            if (a.path === "next/navigation")
-              return {
-                contents: `export function useRouter() { return { push() {}, replace() {}, refresh() {} }; } export function usePathname() { return "/projekt/nytt"; } export function useSearchParams() { return new URLSearchParams(); } export function redirect() {} export function notFound() {}`,
-                loader: "js",
-              };
-            return { contents: TOM_MODUL, loader: "js" };
-          });
-        },
-      },
-    ],
-  });
-  return utfall.outputFiles[0].text;
-}
-
 let webblasare: Webblasare;
 
 beforeAll(async () => {
   expect(existsSync(CHROME), `Chrome behövs för att klicka som en användare – sätt CHROME_SOKVAG (${CHROME})`).toBe(true);
-  const skript = await paketera();
+  const skript = await paketera(INGANG);
   const sida = `<!doctype html><html lang="sv"><head><meta charset="utf-8"></head>
 <body><div id="rot"></div><script>${skript.replace(/<\/script/g, "<\\/script")}</script></body></html>`;
   webblasare = await startaWebblasare({ flode: sida }, "kvittobo-steg4-");
