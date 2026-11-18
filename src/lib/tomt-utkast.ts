@@ -17,6 +17,7 @@ import type { Prisma } from "@prisma/client";
 
 export interface UtkastUppgifter {
   totalbelopp: number | null;
+  utkast_belopp: number | null;
   leverantor: string | null;
   dokumentdatum: Date | null;
   betaldatum: Date | null;
@@ -30,6 +31,7 @@ export interface UtkastUppgifter {
 export function arTomtUtkast(k: UtkastUppgifter): boolean {
   return (
     k.totalbelopp === null &&
+    k.utkast_belopp === null &&
     k.leverantor === null &&
     k.dokumentdatum === null &&
     k.betaldatum === null &&
@@ -48,6 +50,7 @@ export function arTomtUtkast(k: UtkastUppgifter): boolean {
 export const INTE_TOMT_UTKAST = {
   NOT: {
     totalbelopp: null,
+    utkast_belopp: null,
     leverantor: null,
     dokumentdatum: null,
     betaldatum: null,

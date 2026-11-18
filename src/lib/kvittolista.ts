@@ -9,6 +9,7 @@
 // kan glida isar.
 
 import {
+  arUtkast,
   avrunda,
   bostadensBelopp,
   inlagtForKostnad,
@@ -159,12 +160,17 @@ export function raknasMedRad(kostnad: Kostnad): string | null {
  * Inte for projektsidan: dar visas projektets del av kvittot, och berakningens
  * tal ar projektets bidrag, inte kvittots. Samma lydelse med ett annat tal
  * vore varre an ingen rad (docs/design.md, Listrader).
+ *
+ * Ett utkast far inga rader alls (docs/design.md, "Ett kvittoutkast minns det
+ * hon skrev"): ett sparat ROT-svar under en rad utan belopp vore en
+ * upplysning om ett tal som inte star dar.
  */
 export function avgarForKvitto(kostnad: Kostnad): {
   rot: number;
   privat: number;
   raknasMed: string | null;
 } {
+  if (arUtkast(kostnad)) return { rot: 0, privat: 0, raknasMed: null };
   return {
     rot: rotForBelopp(kostnad, bostadensBelopp(kostnad)),
     privat: privatBelopp(kostnad),

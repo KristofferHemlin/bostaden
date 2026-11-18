@@ -52,8 +52,14 @@
 // listan och i genomgangen och rensas aldrig automatiskt. Valjs ingen fil alls
 // skapar sparningen en ny kostnad som vanligt.
 //
+// Medan det finns ett utkast sparas belopp, datum, leverantor och ROT lopande
+// pa det (sparaUtkastfalten, docs/design.md "Ett kvittoutkast minns det hon
+// skrev") – beloppet i utkast_belopp, aldrig i totalbelopp, sa att utkastet
+// forblir ett utkast tills hon sparar.
+//
 // Aterupptas ett utkast (?utkast= pa lanken fran listan) visas de redan
-// uppladdade bilagorna och analysen kors om pa den forsta om falten ar tomma.
+// uppladdade bilagorna och de falt hon sparat. Avlasningen kors pa den forsta
+// bilagan bara om den inte redan lasts av OCH inget av falten ar ifyllt.
 //
 // Forhandsvisningen (docs/design.md, "Bilagor") RENDERAR den forsta bilagan i
 // full bredd OVANFOR miniatyrraden – samma ordning som pa ett sparat kvitto,
@@ -88,7 +94,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { skapaUtkast, sparaKostnad, type KostnadResultat } from "./actions";
+import { skapaUtkast, sparaKostnad, sparaUtkastfalten, type KostnadResultat } from "./actions";
+import type { Utkastfalt } from "@/lib/utkastfalt";
 import { analyseraBilaga, taBortBilaga } from "@/app/kostnad/bilaga-actions";
 import { UtkastRaderaKnapp } from "@/app/kostnad/utkast-radera";
 import { BekraftaBorttagning } from "@/components/bekrafta-borttagning";
@@ -223,6 +230,8 @@ function orenTillFalt(oren: number): string {
 export interface Utkast {
   id: string;
   anteckning: string | null;
+  /** Det hon skrivit i utkastet, i faltens egen form (src/app/kostnad/nytt/page.tsx). */
+  falt?: { belopp: string; datum: string; leverantor: string; rot: string };
   bilagor: Bilagevy[];
 }
 
@@ -376,10 +385,11 @@ export function NyKostnadForm({
 
   // Falten analysen kan fylla i. Kontrollerade sa att avlasningen kan lasa av om
   // de redan har ett varde – tomma falt fylls, allt annat lamnas.
+  // Ett aterupptaget utkast borjar med det hon skrev sist.
   const [falt, setFalt] = useState({
-    belopp: "",
-    datum: "",
-    leverantor: "",
+    belopp: utkast?.falt?.belopp ?? "",
+    datum: utkast?.falt?.datum ?? "",
+    leverantor: utkast?.falt?.leverantor ?? "",
   });
   const faltRef = useRef(falt);
   useEffect(() => {
@@ -408,8 +418,10 @@ export function NyKostnadForm({
   // ROT-belopp ur fakturan (ingen gissning – det star dar), hopfalld annars
   // (dar VORE en automatisk utfallning en gissning om vem som hade ROT).
   // Raden ser ut som nagot man kan oppna aven hopfalld (se UtfallbarSektion).
-  const [rotOppen, setRotOppen] = useState(false);
-  const [rotUtnyttjat, setRotUtnyttjat] = useState("");
+  // Ett aterupptaget utkast med ett sparat ROT-belopp oppnas med raden utfalld –
+  // samma skal som efter avlasningen: det star ett tal dar, och det ska synas.
+  const [rotOppen, setRotOppen] = useState(Boolean(utkast?.falt?.rot));
+  const [rotUtnyttjat, setRotUtnyttjat] = useState(utkast?.falt?.rot ?? "");
   const rotUtnyttjatRef = useRef(rotUtnyttjat);
   useEffect(() => {
     rotUtnyttjatRef.current = rotUtnyttjat;
@@ -521,18 +533,93 @@ export function NyKostnadForm({
     };
   }, [forhandsFil]);
 
-  // Aterupptat utkast: kor avlasningen pa den forsta redan uppladdade bilagan,
-  // men bara om den inte redan analyserats. Avlasningen kors en gang per bilaga
-  // – ar den gjord visar formularet sina sparade varden direkt, utan ett
-  // sprakmodellanrop och en vantan for ingenting. analysera() fyller bara tomma
-  // falt, sa det ar tryggt aven om nagot redan skrivits (t.ex. vid en omladdning).
+  // Aterupptat utkast: kor avlasningen pa den forsta redan uppladdade bilagan
+  // nar BADE den inte lasts av och inget falt ar ifyllt (docs/design.md, "Ett
+  // kvittoutkast minns det hon skrev"). Falten hindrar att det hon skrivit
+  // ersatts av en ny gissning; markeringen hindrar att ett olasbart kvitto,
+  // som lamnar falten tomma, lases om varje gang. Ett markerat utkast med
+  // tomma falt lases alltsa inte om – det visar tomma falt.
   useEffect(() => {
     if (analysKordRef.current) return;
     const forsta = utkast?.bilagor[0];
     if (!forsta) return;
     analysKordRef.current = true;
     if (forsta.analyserad) return;
+    const nu = faltRef.current;
+    const nagotIfyllt = [nu.belopp, nu.datum, nu.leverantor, rotUtnyttjatRef.current].some(
+      (v) => v.trim() !== "",
+    );
+    if (nagotIfyllt) return;
     void analysera(forsta.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Lopande sparande av utkastets falt (docs/design.md, "Ett kvittoutkast
+  // minns det hon skrev"). Varje andring vantar en kort stund, sa att ett
+  // belopp som skrivs siffra for siffra blir ett anrop och inte tio. Det som
+  // vantar skickas ocksa nar formularet lamnas – en navigering bort eller en
+  // flik som stangs – annars vore den sista rattelsen den som tappades.
+  //
+  // Startlaget raknas som redan sparat: ett aterupptaget utkast skickar
+  // ingenting forran hon andrat nagot. Nar sparandet pa riktigt borjat skickas
+  // inget mer – och servern skriver anda bara pa en rad som fortfarande ar ett
+  // utkast (sparaUtkastfalten), sa ett sent anrop kan inte skriva over det
+  // sparade kvittot.
+  const sparatUtkastRef = useRef(
+    JSON.stringify({
+      belopp: falt.belopp,
+      datum: falt.datum,
+      leverantor: falt.leverantor,
+      rot: rotUtnyttjat,
+    }),
+  );
+  const vantandeUtkastRef = useRef<{ id: string; falt: Utkastfalt } | null>(null);
+  const utkastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const slutforsRef = useRef(false);
+
+  function skickaUtkastfalten() {
+    if (utkastTimerRef.current) {
+      clearTimeout(utkastTimerRef.current);
+      utkastTimerRef.current = null;
+    }
+    const vantande = vantandeUtkastRef.current;
+    vantandeUtkastRef.current = null;
+    if (!vantande || slutforsRef.current) return;
+    const nyckel = JSON.stringify(vantande.falt);
+    if (nyckel === sparatUtkastRef.current) return;
+    sparatUtkastRef.current = nyckel;
+    // Servern rapporterar sina egna fel till Sentry (serverfelMeddelande). Gick
+    // det inte raknas laget som osparat, sa att nasta andring – eller att
+    // formularet lamnas – forsoker igen med det som da star i falten.
+    sparaUtkastfalten(vantande.id, vantande.falt).then(
+      (r) => {
+        if (!r.ok && sparatUtkastRef.current === nyckel) sparatUtkastRef.current = "";
+      },
+      () => {
+        if (sparatUtkastRef.current === nyckel) sparatUtkastRef.current = "";
+      },
+    );
+  }
+
+  useEffect(() => {
+    if (!utkastId) return;
+    vantandeUtkastRef.current = {
+      id: utkastId,
+      falt: { belopp: falt.belopp, datum: falt.datum, leverantor: falt.leverantor, rot: rotUtnyttjat },
+    };
+    if (utkastTimerRef.current) clearTimeout(utkastTimerRef.current);
+    utkastTimerRef.current = setTimeout(skickaUtkastfalten, 600);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [utkastId, falt.belopp, falt.datum, falt.leverantor, rotUtnyttjat]);
+
+  // Det som vantar skickas nar formularet lamnas. skickaUtkastfalten laser bara
+  // refar, sa den version effekten haller ar lika bra som den senaste.
+  useEffect(() => {
+    window.addEventListener("pagehide", skickaUtkastfalten);
+    return () => {
+      window.removeEventListener("pagehide", skickaUtkastfalten);
+      skickaUtkastfalten();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -848,6 +935,13 @@ export function NyKostnadForm({
   async function skicka(formData: FormData) {
     setPagar(true);
     setResultat(START);
+    // Sparandet pa riktigt tar over: inget lopande sparande av utkastet efter
+    // det har (se skickaUtkastfalten). Slapps igen om sparandet inte gick.
+    slutforsRef.current = true;
+    if (utkastTimerRef.current) {
+      clearTimeout(utkastTimerRef.current);
+      utkastTimerRef.current = null;
+    }
 
     formData.set("utkast_id", utkastId ?? "");
     formData.set("bostad_id", bostad.id);
@@ -866,6 +960,7 @@ export function NyKostnadForm({
           : "Kunde inte nå servern. Försök igen om en liten stund.",
         kostnadId: utkastId ?? undefined,
       });
+      slutforsRef.current = false;
       setPagar(false);
       setFokusBegaran((n) => n + 1);
       return;
@@ -874,11 +969,13 @@ export function NyKostnadForm({
     // faltet, precis som om formularet sjalvt hade sagt det.
     if (sparad.fel && sparad.falt) {
       visaFaltfel([{ falt: sparad.falt, fel: sparad.fel }]);
+      slutforsRef.current = false;
       setPagar(false);
       return;
     }
     if (sparad.fel || !sparad.kostnadId) {
       setResultat(sparad.fel ? sparad : { fel: "Kvittot kunde inte sparas." });
+      slutforsRef.current = false;
       setPagar(false);
       // Knappen var otillganglig under sparandet och tappade fokus – utan
       // detta hamnar fokus pa <body>.

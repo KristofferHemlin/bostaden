@@ -108,7 +108,7 @@ const STANDARD: Record<Modell, () => Rad> = {
     tidigare_gang_samma_del: null,
   }),
   kostnad: () => ({
-    leverantor: null, totalbelopp: null, dokumentdatum: null, betaldatum: null,
+    leverantor: null, totalbelopp: null, utkast_belopp: null, dokumentdatum: null, betaldatum: null,
     rot_utnyttjat: null, forsakringsersattning: null, arkiverad: false, anteckning: null,
     skapad_av: null,
   }),

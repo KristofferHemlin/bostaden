@@ -14,7 +14,7 @@ import { notFound, redirect } from "next/navigation";
 import { NyKostnadForm } from "./form";
 import { Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
-import { isoDatum } from "@/lib/format";
+import { formateraBeloppInmatning, isoDatum, orenTillFalt } from "@/lib/format";
 import { listaKostnadsbilagor } from "@/lib/lagring/bilagor";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -48,6 +48,7 @@ export default async function NyKostnadSida({
     | {
         id: string;
         anteckning: string | null;
+        falt: { belopp: string; datum: string; leverantor: string; rot: string };
         bilagor: Awaited<ReturnType<typeof listaKostnadsbilagor>>;
       }
     | undefined;
@@ -55,7 +56,17 @@ export default async function NyKostnadSida({
   if (utkastId) {
     const rad = await prisma.kostnad.findFirst({
       where: { id: utkastId, bostad_id: bostadId },
-      select: { id: true, totalbelopp: true, anteckning: true },
+      select: {
+        id: true,
+        totalbelopp: true,
+        anteckning: true,
+        // Det hon skrivit i utkastet (docs/design.md, "Ett kvittoutkast minns
+        // det hon skrev") – sparat lopande av formularet, sparaUtkastfalten.
+        utkast_belopp: true,
+        leverantor: true,
+        dokumentdatum: true,
+        rot_utnyttjat: true,
+      },
     });
     if (!rad) notFound();
     // Redan slutfort – vidare till den vanliga detaljvyn.
@@ -63,6 +74,14 @@ export default async function NyKostnadSida({
     utkast = {
       id: rad.id,
       anteckning: rad.anteckning,
+      // Samma form som falten har i formularet, sa att det hon ser vid
+      // aterkomsten ar det hon skrev.
+      falt: {
+        belopp: rad.utkast_belopp === null ? "" : formateraBeloppInmatning(orenTillFalt(rad.utkast_belopp)),
+        datum: rad.dokumentdatum ? isoDatum(rad.dokumentdatum) : "",
+        leverantor: rad.leverantor ?? "",
+        rot: rad.rot_utnyttjat === null ? "" : formateraBeloppInmatning(orenTillFalt(rad.rot_utnyttjat)),
+      },
       bilagor: await listaKostnadsbilagor(rad.id),
     };
   }

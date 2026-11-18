@@ -10,6 +10,7 @@ import { arTomtUtkast, INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 
 const tomt = {
   totalbelopp: null,
+  utkast_belopp: null,
   leverantor: null,
   dokumentdatum: null,
   betaldatum: null,
@@ -40,6 +41,9 @@ describe("arTomtUtkast", () => {
     expect(arTomtUtkast({ ...tomt, betaldatum: new Date("2026-08-22") })).toBe(false);
     expect(arTomtUtkast({ ...tomt, rot_utnyttjat: 900_000 })).toBe(false);
     expect(arTomtUtkast({ ...tomt, forsakringsersattning: 100 })).toBe(false);
+    // Beloppet hon skrivit i utkastet (docs/design.md, "Ett kvittoutkast minns
+    // det hon skrev") – ett utkast med bara det ar inte tomt.
+    expect(arTomtUtkast({ ...tomt, utkast_belopp: 6_081_250 })).toBe(false);
   });
 
   it("ett sparat kvitto ar aldrig ett tomt utkast, aven utan bilaga", () => {
@@ -52,6 +56,7 @@ describe("INTE_TOMT_UTKAST (databasvillkoret) speglar samma regel", () => {
     expect(INTE_TOMT_UTKAST).toEqual({
       NOT: {
         totalbelopp: null,
+        utkast_belopp: null,
         leverantor: null,
         dokumentdatum: null,
         betaldatum: null,

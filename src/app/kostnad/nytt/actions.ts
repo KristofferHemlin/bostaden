@@ -35,7 +35,8 @@ import { serverfelMeddelande } from "@/lib/databas-fel";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { tolkaKostnadsformular, type Kostnadsfalt } from "@/lib/kostnadsformular";
 import { prisma } from "@/lib/prisma";
-import { kravMedlemskapI } from "@/lib/session";
+import { bostadForKostnad, kravBostad, kravMedlemskapI } from "@/lib/session";
+import { tolkaUtkastfalt, type Utkastfalt } from "@/lib/utkastfalt";
 
 export interface KostnadResultat {
   fel?: string;
@@ -90,6 +91,41 @@ export async function skapaUtkast(
     // nytt/form.tsx, sakerstallUtkast) i stallet for att tyst hanga sig.
     return {
       fel: serverfelMeddelande(fel, { sida: "kostnad/nytt", anrop: "skapaUtkast", anvandareId }),
+    };
+  }
+}
+
+/**
+ * Sparar utkastets falt medan hon skriver (docs/design.md, "Ett kvittoutkast
+ * minns det hon skrev"). Beloppet i `utkast_belopp`, de ovriga i sina vanliga
+ * kolumner – se src/lib/utkastfalt.ts for varfor totalbelopp aldrig rors.
+ *
+ * Skriver bara pa en rad som FORTFARANDE ar ett utkast (`totalbelopp: null` i
+ * villkoret). Ett lopande sparande som kommer fram efter att kvittot sparats
+ * pa riktigt traffar darmed ingenting, i stallet for att skriva over det
+ * sparade kvittot med formularets tidigare lage.
+ *
+ * Foljer utkastets eget medlemskap, som sparaKostnad – inte den aktiva
+ * bostaden (docs/design.md, "Att äga flera bostäder").
+ */
+export async function sparaUtkastfalten(
+  kostnadId: string,
+  falt: Utkastfalt,
+): Promise<{ ok: boolean; fel?: string }> {
+  const { anvandareId } = await kravBostad();
+  try {
+    const bostadId = await bostadForKostnad(kostnadId, anvandareId);
+    if (!bostadId) return { ok: false, fel: "Utkastet hittades inte." };
+    const { count } = await prisma.kostnad.updateMany({
+      where: { id: kostnadId, bostad_id: bostadId, totalbelopp: null },
+      data: tolkaUtkastfalt(falt),
+    });
+    if (count === 0) return { ok: false, fel: "Utkastet hittades inte." };
+    return { ok: true };
+  } catch (fel) {
+    return {
+      ok: false,
+      fel: serverfelMeddelande(fel, { sida: "kostnad/nytt", anrop: "sparaUtkastfalten", anvandareId }),
     };
   }
 }
@@ -165,6 +201,9 @@ export async function sparaKostnad(
             betaldatum: bet,
             anteckning,
             rot_utnyttjat: rotUtnyttjat,
+            // Talet har flyttat till totalbelopp – utkastets kopia toms, sa
+            // att den aldrig ligger kvar bredvid ett sparat kvitto.
+            utkast_belopp: null,
             rader: raderSkapa(rader),
           },
         }),

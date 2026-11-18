@@ -26,8 +26,11 @@ export const KORDES_INTE: Dokumentavlasning = { kord: false, falt: { ...TOMT_DOK
  *
  * Avlasningen kors EN GANG per bilaga. `dokument_analyserad` satts nar
  * sprakmodellanropet gjorts – oavsett utfall – och nasta gang utkastet oppnas
- * hoppas avlasningen over. Ett aterupptat utkast visar da sina sparade varden
- * direkt i stallet for att kosta ett anrop och en vantan for ingenting.
+ * hoppas avlasningen over. Ett aterupptat utkast visar da de falt hon sparat
+ * (sparaUtkastfalten), eller tomma falt om hon inte skrivit nagot, i stallet
+ * for att kosta ett anrop och en vantan. Formularet kor dessutom aldrig
+ * avlasningen pa ett utkast dar nagot falt ar ifyllt (src/app/kostnad/nytt/
+ * form.tsx).
  */
 export async function analyseraKostnadsbilaga(params: {
   bostadId: string;
@@ -64,14 +67,20 @@ export async function analyseraKostnadsbilaga(params: {
     const resultat = await analyseraDokumentbuffert(original, format);
 
     // Anropet ar gjort. Markera bilagan oavsett utfall sa att avlasningen inte
-    // gors om. En misslyckad markering far inte svalja resultatet.
+    // gors om. En misslyckad markering far inte svalja resultatet – det hon
+    // ser nu ar lika riktigt – men den rapporteras: utan markeringen kan nasta
+    // oppning kosta ett nytt modellanrop, och det inre felet nar aldrig det
+    // yttre catchet (docs/design.md, "Ett kvittoutkast minns det hon skrev").
     try {
       await prisma.bilaga.update({
         where: { id: params.bilagaId },
         data: { dokument_analyserad: true },
       });
-    } catch {
-      // Nasta oppning kor avlasningen igen – inte varre an dagens beteende.
+    } catch (fel) {
+      rapporteraFel(fel, {
+        sida: "dokumentavlasning",
+        anrop: "analyseraKostnadsbilaga (markeringen)",
+      });
     }
 
     return resultat;

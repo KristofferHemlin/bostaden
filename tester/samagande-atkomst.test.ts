@@ -120,7 +120,7 @@ import {
   bekraftaBilagauppladdning,
   taBortBilaga,
 } from "@/app/kostnad/bilaga-actions";
-import { skapaUtkast, sparaKostnad } from "@/app/kostnad/nytt/actions";
+import { skapaUtkast, sparaKostnad, sparaUtkastfalten } from "@/app/kostnad/nytt/actions";
 import {
   lyftUtKvitto,
   redigeraProjekt,
@@ -391,6 +391,13 @@ const VAGAR_MED_ID: Vag[] = [
       sparaKostnad(formular({
         utkast_id: UX, leverantor: "Kapat", totalbelopp: "100", dokumentdatum: "2025-04-14",
       })),
+    avslag: "fel",
+    foljer: "egen",
+  },
+  {
+    vag: "sparaUtkastfalten",
+    anrop: () =>
+      sparaUtkastfalten(UX, { belopp: "60 812,50", datum: "2025-04-14", leverantor: "Kapat", rot: "1 000" }),
     avslag: "fel",
     foljer: "egen",
   },
@@ -1075,6 +1082,35 @@ describe("utkastet bar sin bostad", () => {
     expect(kvitto.bostad_id).toBe(X);
     expect(kvitto.totalbelopp).toBe(199_705);
     expect(h.db.tabell("kostnad").filter((k) => k.bostad_id === Y && k.skapad_av === ANNA)).toEqual([]);
+  });
+
+  it("utkastets falt sparas i utkastets bostad medan Y ar aktiv, och det forblir ett utkast", async () => {
+    const { kostnadId } = await skapaUtkast(X);
+    byt(Y);
+    expect(
+      await sparaUtkastfalten(kostnadId!, { belopp: "60 812,50", datum: "2025-04-14", leverantor: "Byggfirman AB", rot: "" }),
+    ).toEqual({ ok: true });
+    const kvitto = h.db.tabell("kostnad").find((k) => k.id === kostnadId)!;
+    expect(kvitto.bostad_id).toBe(X);
+    expect(kvitto.utkast_belopp).toBe(6_081_250);
+    expect(kvitto.leverantor).toBe("Byggfirman AB");
+    expect(kvitto.totalbelopp).toBeNull();
+  });
+
+  it("efter att utkastet sparats pa riktigt skriver ett sent lopande sparande ingenting", async () => {
+    const { kostnadId } = await skapaUtkast(X);
+    await sparaUtkastfalten(kostnadId!, { belopp: "60 812,50", datum: "2025-04-14", leverantor: "Byggfirman AB", rot: "" });
+    await sparaKostnad(formular({
+      utkast_id: kostnadId!, bostad_id: X, leverantor: "Byggfirman AB", totalbelopp: "60 812,50", dokumentdatum: "2025-04-14",
+    }));
+    const sparat = { ...h.db.tabell("kostnad").find((k) => k.id === kostnadId)! };
+    expect(sparat.totalbelopp).toBe(6_081_250);
+    // Talet har flyttat – kopian ligger inte kvar bredvid det sparade kvittot.
+    expect(sparat.utkast_belopp).toBeNull();
+
+    const sent = await sparaUtkastfalten(kostnadId!, { belopp: "1", datum: "", leverantor: "Fel", rot: "" });
+    expect(sent.ok).toBe(false);
+    expect(h.db.tabell("kostnad").find((k) => k.id === kostnadId)).toEqual(sparat);
   });
 
   it("ett kvitto utan bilaga sparas i formularets bostad, inte i den som blivit aktiv", async () => {
