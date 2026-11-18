@@ -22,7 +22,6 @@
 // ett tidigare steg gar att visa vid sin fraga: flodet byter till det steget
 // och fokus flyttas dit (docs/design.md, "När ett formulär vägrar").
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type KeyboardEvent, useActionState, useEffect, useState } from "react";
 import { skapaProjekt, type SkapaProjektResultat } from "../actions";
@@ -479,18 +478,17 @@ export function NyttProjektFlode({
           </button>
         ) : null}
 
-        {/* Fortsatt senare lovar ingenting om var: utkastet ligger i den har
-            webblasaren, pa den har enheten (docs/design.md). */}
-        <div className="flex justify-center gap-6">
-          <Link href="/projekt" className={TEXTLANK_KLASS}>
-            Fortsätt senare
-          </Link>
-          {franUtkast ? (
-            <button type="button" onClick={borjaOm} className={TEXTLANK_KLASS}>
-              Börja om
-            </button>
-          ) : null}
-        </div>
+        {/* Tva sorters kontroller, inte tre (docs/design.md, "Ett flöde har
+            två sorters kontroller"): Nasta med Tillbaka under for att rora
+            sig i flodet, tillbakalanken i huvudet for att lamna det. Ingen
+            "Fortsätt senare" – utkastet sparas hur hon an lamnar sidan, och
+            beskedet far hon nar hon kommer tillbaka. Borja om star kvar:
+            ett utkast ska alltid ga att kasta. */}
+        {franUtkast ? (
+          <button type="button" onClick={borjaOm} className={TEXTLANK_KLASS}>
+            Börja om
+          </button>
+        ) : null}
 
         {/* Avskild langst ned, nar fragorna star pa skarmen (docs/design.md,
             "Projektfrågorna"). */}

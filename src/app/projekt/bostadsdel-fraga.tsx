@@ -110,7 +110,15 @@ export function BostadsdelFraga({
           </div>
         </div>
       ))}
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      {/* Annat skiljs fran den sista gruppen minst lika starkt som
+          grupperna skiljs fran varandra (docs/design.md, "Vad projektet
+          rörde"): hela gruppgransen, alltsa luften ovanfor en grupprubrik
+          (mt-3), rubrikens egen rad (1lh i text-sm, rubrikens storlek) och
+          luften under den (mb-1.5). Med bara mt-3 lag knappen 12 px under
+          Fonster mot 8 px inne i gruppen – fyra pixlar ar ingen grans.
+          Relationen mats i tester/bostadsdel-fraga-layout.test.ts; andras
+          avstanden ovanfor faller provet tills det har foljer med. */}
+      <div className="mt-[calc(theme(spacing.3)+1lh+theme(spacing[1.5]))] grid grid-cols-2 gap-2 text-sm">
         <Kortval vald={valda.has("ANNAT")} text={BOSTADSDEL_ETIKETT.ANNAT} onClick={() => vaxla("ANNAT")} />
       </div>
       {valda.has("ANNAT") ? (
