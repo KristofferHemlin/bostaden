@@ -1071,7 +1071,13 @@ Att dölja raden helt när ingenting lästs av vore värre. Då blir fältet on�
 
 **Att spara ett fält får inte göra utkastet till ett sparat kvitto.** Gränsen mellan de två är i dag att `totalbelopp` saknas; sparas beloppet löpande upphör utkastet att vara ett utkast utan att hon gjort något. **Den fällan avgör hur det här byggs**, och svaret ligger i koden — se prompten.
 
+**Anteckningen sparas löpande som de andra fälten.** Den stod inte i min uppräkning 2026-11-20 och byggdes därför inte — mitt förbiseende, och det värsta fältet att tappa: *"Vad gällde det?"* är det som gör kvittot begripligt om åtta år, och hjälptexten ber uttryckligen om en beskrivande mening. Att den meningen försvinner när hon stänger är precis den förlust utkastet nu finns för att hindra.
+
+**Ett utkast med ett betaldatum ligger under sitt år, inte under *Utan betaldatum*.** Raden är densamma och saknar fortfarande belopp. Den räknas i årsrubrikens antal men aldrig i dess summa — samma ordning som ett kvitto som inte hör till bostaden: **en rad är ett kvitto, ett belopp är ett belopp.**
+
 **Avläsningen körs när bilagan är omarkerad *och* inget fält är ifyllt.** Villkoret i dag är bara det första, och kommentaren i `form.tsx` påstår felaktigt att det är fälten som avgör. Båda leden behövs: fälten hindrar att ett svar hon gett skrivs över, och markeringen hindrar att ett oläsbart kvitto läses om i all evighet, eftersom ett sådant lämnar fälten tomma hur många gånger det än försöks.
+
+**Villkoret gäller när ett utkast öppnas igen, inte när hon väljer en fil.** Väljer hon filen efter att ha skrivit beloppet har hon just bett om en avläsning, och då ska den köras — den fyller bara tomma fält, så hennes tal står kvar. Meningen ovan är skriven generellt och ska läsas så: **det är ett sparat svar som skyddas, inte ett påbörjat formulär.**
 
 **Ett utkast som redan är markerat men har tomma fält läses inte om.** Det är agentens fråga 2026-11-20, och det är precis de rader där hon tappade allt. **Men en regel som lagar gamla rader genom att betala för nya modellanrop har en kostnad vi inte ser** — vi vet inte hur många sådana utkast som finns. Hon möter ett tomt formulär, som i dag. Visar det sig röra många rader är det en egen åtgärd att köra medvetet, inte en bieffekt av ett villkor.
 

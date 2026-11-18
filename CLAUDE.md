@@ -784,6 +784,10 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Varje gång ett villkor läggs till som gör något osynligt, blir varje test som kräver dess frånvaro misstänkt.** Ett negativt påstående — *syns inte*, *står inte där*, *kastar inte* — vilar på att det fanns en chans att det skulle synas. Tas den chansen bort någon annanstans dör testet tyst och fortsätter lysa grönt. Leta upp dem i samma omgång, och visa att de fortfarande kan falla.
 
+**Och en spärr som inte fäller något när den bryts ensam är antingen oprövad eller överflödig — säg vilket.** Skriven 2026-11-20. Agenten byggde en spärr som hindrar ROT-raden på ett utkast, bröt den med flit, och **ingenting föll**: beloppsfunktionen ger redan noll för ett utkast, så skyddet fanns före spärren. Det är inte samma sak som ett oskrivet test, och skillnaden är hela poängen med att fråga.
+
+**Att agenten rapporterade det självt är det rätta utfallet.** Den behöll spärren eftersom den uttrycker designregeln rakt ut och håller om beloppsfunktionen någon gång ändras — ett försvar i djupled, inte en bärande rad. Då ska det stå så: **en rad vars borttagande inte syns läses annars som bärande av nästa människa.** Och det som vaktar regeln är provet, inte raden.
+
 ### Vem skriver reglerna
 
 **Agenten rör inga md-filer — inte heller den här.** Regeln har alltid varit att `docs/` är mitt, och `CLAUDE.md` ligger utanför `docs/` men lyder under samma ordning: den som skriver prompten skriver reglerna, agenten läser dem och säger emot dem. Skriven 2026-10-21 efter att agenten frågade, vilket var befogat eftersom regeln bara stått som *"ändra ingenting i `docs/`"*.
