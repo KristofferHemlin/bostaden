@@ -2085,6 +2085,10 @@ Upplysningens två lydelser delar första meningen:
 
 **Och underlaget får ingen egen rad för det.** Varningen överst säger redan att merkostnaden inte är ifylld. Samma sak sägs en gång.
 
+**Ett formulär i ett steg är inget flöde, och behåller *Spara* och *Avbryt*.** Gränsen är agentens, dragen 2026-11-20 när den räknade upp appens flöden: *Vad och var*, *Frågorna*, kvitton till ett projekt, uppdelningen av ett kvitto och kvittots ändringsläge är formulär — en skärm, ett sparande, och *Avbryt* som ångrar det hon skrivit i just den. **Där är *Avbryt* inte en utgång utan en motsats till *Spara***, och den regeln står redan på tre ställen i den här filen.
+
+Ett flöde har steg, en räknare och ett sparande i slutet. Det är där nedanstående gäller.
+
 **Ett flöde har två sorters kontroller, inte tre.** Omlagt 2026-11-20 efter att Kristoffer såg att *Fortsätt senare* och *Tillbaka* ligger bredvid varandra och ser likadana ut, med *← Projekt* en bit bort i toppen.
 
 **Att röra sig i flödet** är *Nästa* med *Tillbaka* som en stillsam länk under — de hör ihop och ska stå ihop. **Att lämna flödet** är tillbakalänken i huvudet, som varje annan skärm i appen.
@@ -2266,7 +2270,9 @@ Tomläget är alltså det vanliga: en rubrik som är en uppmaning, en till två 
 
 **Nås en skärm från flera ställen måste den veta varifrån**, och ursprunget skickas då med i adressen. **Bara de värden skärmen känner igen godtas** – allt annat faller tillbaka på den vanliga destinationen, så att en parameter aldrig kan peka någon annanstans. Agentens lösning 2026-11-19, och den ska se likadan ut nästa gång.
 
-**Inuti ett flöde betyder *Avbryt* något annat: att lämna flödet.** Det är *Tillbaka* som flyttar ett steg. Avbryter hon försäljningens skickfråga hamnar hon därför i underlaget, varifrån flödet startades, och inte på föregående steg. **De två orden får aldrig byta betydelse mellan två flöden.**
+**Inuti ett flöde heter utgången inte *Avbryt* alls.** Den ligger i huvudet och bär sin destination — *← Deklarationsunderlag* ur försäljningens skickfråga, *← Projekt* ur projektflödet — och leder dit flödet startades, aldrig till föregående steg. Det är *Tillbaka* som flyttar ett steg.
+
+Här stod till 2026-11-20 att *Avbryt* i ett flöde betyder att lämna det, med skickfrågan som exempel. **Den kontrollen finns inte längre där**: agenten tog bort den som en andra väg till samma ställe och sa till om att raden blivit inaktuell. Regeln är densamma, men ordet behövdes aldrig — huvudets länk gjorde redan det *Avbryt* skulle göra.
 
 **Och *Frågorna* nådd från underlagets *Återstår* ska återvända dit.** I dag leder *Avbryt* till projektsidan oavsett varifrån hon kom. Det är samma brist som *Välj bland dina kvitton* hade, och den rättas på samma sätt.
 
