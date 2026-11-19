@@ -103,7 +103,7 @@ afterAll(() => {
  *  obligatoriskt-markeringen, och texten under faltet. */
 function datumfaltMedNamn(beh: HTMLElement): { etikett: string; under: string }[] {
   return [...beh.querySelectorAll("label")]
-    .filter((l) => l.querySelector('input[aria-label="År"]') && l.closest("[hidden]") === null)
+    .filter((l) => l.querySelector('input[aria-label$=", år"]') && l.closest("[hidden]") === null)
     .map((l) => {
       const spans = [...l.children].filter((c) => c.tagName === "SPAN");
       const etikett = (spans[0]?.textContent ?? "").replace(/\*$/, "").trim();

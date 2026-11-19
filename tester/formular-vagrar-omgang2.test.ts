@@ -198,7 +198,7 @@ describe("inställningarna: meningen vid fältet, inte längst ned i kortet", ()
   it("tillträdesdatumet: i datumfältet, bundet", () => {
     const mening = "Tillträdesdatum före 1970 stöds inte.";
     const html = forvarvet({ fel: mening, falt: "tilltradesdatum" });
-    const ar = html.match(/<input[^>]*aria-label="År"[^>]*>/)![0];
+    const ar = html.match(/<input[^>]*aria-label="Tillträdesdatum, år"[^>]*>/)![0];
     expect(ar).toContain('aria-invalid="true"');
     const id = ar.match(/aria-describedby="([^"]+)"/)?.[1];
     expect(html).toMatch(new RegExp(`id="${id}" role="alert"[^>]*>${mening}<`));

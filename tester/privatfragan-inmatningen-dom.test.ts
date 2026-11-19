@@ -103,9 +103,9 @@ async function skriv(selektor: string, text: string) {
 
 async function fyllIKvittot() {
   await skriv('input[name="totalbelopp"]', "10000");
-  await skriv('input[aria-label="År"]', "2026");
-  await skriv('input[aria-label="Månad"]', "05");
-  await skriv('input[aria-label="Dag"]', "01");
+  await skriv('input[aria-label="Betaldatum, år"]', "2026");
+  await skriv('input[aria-label="Betaldatum, månad"]', "05");
+  await skriv('input[aria-label="Betaldatum, dag"]', "01");
   await skriv('input[name="leverantor"]', "Bauhaus");
   await act(async () => knapp("Var något på kvittot privat?").click());
   await skriv('input[name="privatbelopp"]', "1000");

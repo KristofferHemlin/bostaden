@@ -113,9 +113,9 @@ interface Lage {
 async function lage(): Promise<Lage> {
   return webblasare.utvardera<Lage>(`(() => {
     const syns = (e) => e.closest("[hidden]") === null && e.getClientRects().length > 0;
-    const datumfalt = [...document.querySelectorAll("label")].filter((l) => syns(l) && l.querySelector('input[aria-label="År"]'))
+    const datumfalt = [...document.querySelectorAll("label")].filter((l) => syns(l) && l.querySelector('input[aria-label$=", år"]'))
       .map((l) => {
-        const v = [...l.querySelectorAll('input[aria-label="År"], input[aria-label="Månad"], input[aria-label="Dag"]')].map((i) => i.value).join("-");
+        const v = [...l.querySelectorAll('input[aria-label$=", år"], input[aria-label$=", månad"], input[aria-label$=", dag"]')].map((i) => i.value).join("-");
         return l.querySelector("span").textContent.replace(/\\*$/, "").trim() + " " + v;
       });
     const rubrik = [...document.querySelectorAll("h2, h3, p")].find((e) => syns(e) && e.textContent.trim() === "Datumet ligger före tillträdet");

@@ -17,6 +17,7 @@ import {
   type ReactNode,
 } from "react";
 import { ToppradAdress } from "@/components/bostadsvaxlare";
+import { FaltEtikettGivare } from "@/components/falt-etikett";
 import { Installningslank, Toppnavigering } from "@/components/toppnavigering";
 import { privatAvgarRad, rotAvgarRad } from "@/lib/kvittolista";
 
@@ -382,7 +383,9 @@ export function Falt({
           </span>
         ) : null}
       </span>
-      {falt}
+      {/* Etiketten foljer med till kontroller med egna namn – datumfaltets
+          rutor (src/components/falt-etikett.tsx). */}
+      <FaltEtikettGivare etikett={etikett}>{falt}</FaltEtikettGivare>
       {fel ? (
         <span id={felId} role="alert" className={`mt-1 block ${FALTFEL_KLASS}`}>
           {fel}

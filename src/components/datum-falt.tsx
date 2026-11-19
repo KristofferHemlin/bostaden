@@ -40,6 +40,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { isoDatum } from "@/lib/format";
 import { datumfel } from "@/lib/datum";
 import { FALTFEL_KLASS } from "@/components/skarm";
+import { delensNamn, useFaltEtikett } from "@/components/falt-etikett";
 import { datumfaltetsMeddelande, FALTFEL_ATTRIBUT } from "@/lib/formularfel";
 
 const FALT_BAS =
@@ -149,6 +150,9 @@ export function DatumFalt({
   // varje delfalt pekar pa meningen, sa att den som anvander skarmlasare vet
   // vilket falt felet galler.
   const meddelandeId = useId();
+  // Varje ruta bar faltets namn och sin egen del: "Betaldatum, år"
+  // (docs/design.md, "De tre rutorna måste bära fältets namn").
+  const faltetsNamn = useFaltEtikett();
   const beskrivning = ogiltigt ? meddelandeId : undefined;
 
   return (
@@ -163,7 +167,7 @@ export function DatumFalt({
           inputMode="numeric"
           pattern="[0-9]*"
           autoComplete="off"
-          aria-label="År"
+          aria-label={delensNamn(faltetsNamn, "År")}
           aria-invalid={ogiltigt || undefined}
           aria-describedby={beskrivning}
           placeholder="ÅÅÅÅ"
@@ -180,7 +184,7 @@ export function DatumFalt({
           inputMode="numeric"
           pattern="[0-9]*"
           autoComplete="off"
-          aria-label="Månad"
+          aria-label={delensNamn(faltetsNamn, "Månad")}
           aria-invalid={ogiltigt || undefined}
           aria-describedby={beskrivning}
           placeholder="MM"
@@ -198,7 +202,7 @@ export function DatumFalt({
           inputMode="numeric"
           pattern="[0-9]*"
           autoComplete="off"
-          aria-label="Dag"
+          aria-label={delensNamn(faltetsNamn, "Dag")}
           aria-invalid={ogiltigt || undefined}
           aria-describedby={beskrivning}
           placeholder="DD"

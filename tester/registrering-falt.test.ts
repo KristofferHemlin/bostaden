@@ -155,7 +155,7 @@ describe("formuläret visar meningen vid fältet", () => {
 
   it("tillträdesdatum: bundet i datumfältet", () => {
     const html = rendera({ fel: "Fyll i tillträdesdatum.", falt: "tilltradesdatum" }, true);
-    const ar = html.match(/<input[^>]*aria-label="År"[^>]*>/)![0];
+    const ar = html.match(/<input[^>]*aria-label="[^"]*, år"[^>]*>/)![0];
     arBundet(html, ar, "Fyll i tillträdesdatum.");
   });
 
