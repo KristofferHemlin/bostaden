@@ -598,6 +598,8 @@ Projekt visas som rader avdelade med 1px linjer, inte som separata kort. Varje r
 
 **Varje nytt steg i ett flerstegsflöde börjar överst.** Efter ett besvarat projekt står användaren längst ned på mobilen, och nästa öppnas där. Rulla till toppen när steget byts – annars ser det ut som om ingenting hände.
 
+**De tre rutorna måste bära fältets namn.** Skrivet 2026-11-19. Rutorna heter *År*, *Månad* och *Dag*, och de namnen **tar över fältets etikett** — i webbläsarens tillgänglighetsträd heter rutorna bara *"År"*, *"Månad"*, *"Dag"*, ingenstans *Betaldatum*. Uppmätt två gånger oberoende: i min genomklickning 2026-11-18 och av agenten i koden dagen efter. **Sedan formuläret kan visa två datumfält samtidigt är de omöjliga att skilja åt** för den som hör skärmen i stället för att se den, och för röststyrning och ifyllnadshjälp. Varje ruta ska bära både fältets namn och sin egen del, och det gäller alla fyra ställen: registreringen, inmatningen, ändringsläget och inställningarna.
+
 **Alla datum matas in i tre fält – aldrig med den infödda datumväljaren.** År, månad, dag, med automatiskt hopp framåt när ett fält är fullt och backsteg genom tomma fält. Numeriskt tangentbord. Gäller kvittodatum, betaldatum och tillträdesdatum, i registreringen, inmatningen, redigeringen och inställningarna.
 
 Den infödda väljaren är bättre i ett avseende: ett ifyllt datum går att läsa på en blick, medan tre rutor med siffror måste sättas ihop i huvudet. Den förlorar ändå, av tre skäl.
