@@ -12,11 +12,13 @@ Kvittobo drivs i dag av en privatperson, inte av ett bolag. Det står här för 
 
 **Ditt konto.** E-postadress och lösenord. Lösenordet lagras krypterat av vår inloggningsleverantör och är aldrig läsbart för oss.
 
-Delar du en bostad med någon ser de andra medlemmarna din e-postadress, bland annat vid de kvitton du lagt in. Bjuder du in någon sparas den personens e-postadress tills inbjudan besvaras.
+Delar du en bostad med någon ser de andra medlemmarna din e-postadress, bland annat vid de kvitton du lagt in. Bjuder du in någon sparas den personens e-postadress tills inbjudan besvarats.
 
 **Din bostad.** Adress, upplåtelseform, tillträdesdatum, storlek, köpeskilling, ägarandel och liknande uppgifter du själv fyller i.
 
-**Dina kvitton och fakturor.** Den bild eller PDF du laddar upp, samt belopp, datum, leverantör och de anteckningar du skriver.
+**Dina kvitton och fakturor.** Den bild eller PDF du laddar upp, och de uppgifter som hör till kvittot: belopp, datum, leverantör, eventuellt ROT-avdrag, en eventuell privat del och de anteckningar du skriver.
+
+**Teknisk information om din inloggning.** När du loggar in sparar vår inloggningsleverantör din IP-adress och vilken webbläsare du använde, så att en session kan avslutas och missbruk upptäckas.
 
 Inga uppgifter hämtas om dig från andra källor. Tjänsten begär inte tillgång till din e-post, dina bankuppgifter eller din telefon utöver de filer du själv väljer att ladda upp.
 
@@ -28,7 +30,7 @@ Inga uppgifter hämtas om dig från andra källor. Tjänsten begär inte tillgå
 | Drift, felsökning och säkerhet | Berättigat intresse, art. 6.1 f |
 | Förbättra och utveckla tjänsten | Berättigat intresse, art. 6.1 f |
 
-**Vårt berättigade intresse** för de två sista består i att kunna driva en tjänst som fungerar och göra den bättre.
+Vårt berättigade intresse för de två sista består i att kunna driva en tjänst som fungerar och göra den bättre.
 
 Ingen behandling innebär automatiserat beslutsfattande som har rättsliga följder för dig. Avläsningen av kvittot föreslår värden som du själv granskar och kan ändra.
 
@@ -36,27 +38,41 @@ Ingen behandling innebär automatiserat beslutsfattande som har rättsliga följ
 
 Följande företag behandlar uppgifter på uppdrag av oss. De får inte använda uppgifterna för egna ändamål, och biträdesavtal ingår i leverantörernas villkor.
 
-**Supabase** – databas, inloggning och dina uppladdade filer. Lagras i Stockholm.
+**Supabase** – databas, inloggning och dina uppladdade filer. Lagras i Stockholm. Här sparas också din IP-adress och webbläsare för dina inloggningssessioner, och härifrån skickas tjänstens två mejl: det som bekräftar din adress när du registrerar dig, och det du begär när du glömt lösenordet. Båda innehåller din adress och en länk med en engångskod.
+
+**Resend** – levererar de två mejlen ovan åt Supabase. Endast din e-postadress och mejlets innehåll skickas dit. Mejlen skickas från Irland, medan loggar och kontouppgifter lagras i USA.
 
 **Vercel** – kör applikationen. Funktionerna är placerade i Stockholm.
 
-**Resend** – skickar mejlet när du ber om ett nytt lösenord. Endast din e-postadress och mejlets innehåll skickas dit. Mejlen skickas från Irland, medan loggar och kontouppgifter lagras i USA.
+**Sentry** – tekniska felrapporter. **Rapporter skickas bara när något går fel** – går allt som det ska lämnar ingenting appen. En rapport innehåller felets meddelande och var i koden det inträffade, vilken sida det gällde, vilken webbläsare som användes och ett användar-id som pekar på raden i vår databas, inte på dig.
 
-**Sentry** – tekniska felrapporter. Rapporterna innehåller inte kvittobilder, belopp, leverantörer eller adresser, utan tekniska uppgifter om felet: vilken sida det inträffade på, vad som gick fel i koden, vilken webbläsare som användes och ett användar-id. Data lagras inom EU.
+Innan rapporten skickas tas uppgifter som kan höra till dig bort: inmatade värden ur felmeddelanden, e-postadresser, sökparametrar i adresser, och det appen skrivit till webbläsarens konsol. Kvittobilder skickas aldrig. Data lagras inom EU.
 
-**Anthropic** – läser av belopp, datum och leverantör ur det kvitto du laddar upp. Bilden skickas vid uppladdningen och används inte för att träna någon modell.
+**Anthropic** – läser av belopp, datum, leverantör och ROT-avdrag ur det kvitto eller den faktura du laddar upp. **Filens metadata tas bort innan den skickas** – ett mobilfoto kan annars bära med sig var det togs, och det har ingenting med kvittot att göra. Bilden skickas när du laddar upp den, och kan skickas om ifall avläsningen inte lyckades. Den används inte för att träna någon modell. **Behandlingen sker i USA** – se avsnitt 5.
 
-**Google Places** – adressökning när du registrerar din bostad. Endast det du skriver i sökfältet skickas dit.
+**Google Places** – adressökning när du registrerar din bostad eller ändrar den i inställningarna. Det som skickas är texten du skriver i sökfältet, en slumpad nyckel som håller ihop din sökning, språk och land, och – när du valt ett förslag – en identifierare för den adressen.
 
-**Att kvittobilden skickas till en språkmodell** är den behandling som är minst självklar, och därför står den uttryckligen här snarare än i en fotnot. Vill du inte att det sker kan du fylla i uppgifterna för hand – avläsningen är en hjälp, inte ett krav.
+**Typsnitten på sidorna serveras av oss själva.** Inget tredjepartsbolag får veta att du besökt tjänsten genom att din webbläsare hämtar ett typsnitt.
+
+Att kvittobilden skickas till en språkmodell är den behandling som är minst självklar, och därför står den uttryckligen här snarare än i en fotnot. Vill du inte att det sker kan du fylla i uppgifterna för hand – avläsningen är en hjälp, inte ett krav.
 
 ## 5. Överföring utanför EU/EES
 
-Dina kvitton, bilagor och kontouppgifter lagras inom EU/EES. Leverantörerna i avsnitt 4 är i flera fall amerikanska bolag, och i den mån uppgifter behandlas eller lagras utanför EU/EES – som Resends loggar över utskickade mejl – sker det med stöd av EU-kommissionens standardavtalsklausuler.
+**Dina kvitton, bilagor och kontouppgifter lagras inom EU/EES.** Databasen, filerna och applikationen ligger i Stockholm, och de tekniska felrapporterna inom EU.
+
+Tre behandlingar sker ändå utanför EU/EES, och de står här var för sig:
+
+**Avläsningen av kvittot.** Bilden eller PDF:en skickas till Anthropics gränssnitt i USA, läses av, och svaret skickas tillbaka. Bilden lagras inte hos oss i samband med avläsningen – den ligger kvar i Stockholm – men själva behandlingen sker i USA.
+
+**Loggarna över utskickade mejl** hos Resend.
+
+**Adressökningen** hos Google, när du skriver i sökfältet vid registreringen.
+
+Leverantörerna är i dessa fall amerikanska bolag, och överföringen sker med stöd av EU-kommissionens standardavtalsklausuler.
 
 ## 6. Hur länge uppgifterna sparas
 
-**Så länge du har ett konto.** Hela poängen med tjänsten är att dokumentationen ska finnas kvar den dag du säljer din bostad, och det kan dröja många år. Att radera efter en tids inaktivitet skulle förstöra det du använder tjänsten för.
+Så länge du har ett konto. Hela poängen med tjänsten är att dokumentationen ska finnas kvar den dag du säljer din bostad, och det kan dröja många år. Att radera efter en tids inaktivitet skulle förstöra det du använder tjänsten för.
 
 Vill du att ditt konto raderas mejlar du kvittobo@gmail.com. Då tas ditt konto bort, och i en bostad bara du har tillgång till tas också alla uppgifter och uppladdade filer bort. Delar du bostaden med någon tas bara din tillgång bort – kvittona och filerna ligger kvar hos de andra, eftersom de dokumenterar bostaden och inte dig.
 
@@ -72,7 +88,7 @@ All trafik mellan din webbläsare och tjänsten är krypterad. Dina filer ligger
 
 Du har rätt att få veta vilka uppgifter som finns om dig, att få felaktiga uppgifter rättade, och att få dina uppgifter raderade. Du har rätt att invända mot behandling som sker med stöd av berättigat intresse, och rätt att begära att behandlingen begränsas.
 
-**Du kan när som helst ladda ner alla kvitton och fakturor i en bostad** som ett zip-arkiv från inställningarna. Det kostar ingenting och kräver ingen kontakt med oss. Uppgifterna du skrivit in får du genom att höra av dig.
+Du kan när som helst ladda ner alla kvitton och fakturor i en bostad som ett zip-arkiv från inställningarna. Det kostar ingenting och kräver ingen kontakt med oss. Uppgifterna du skrivit in får du genom att höra av dig.
 
 Hör av dig till kvittobo@gmail.com om du vill utöva någon av rättigheterna.
 
@@ -80,7 +96,7 @@ Hör av dig till kvittobo@gmail.com om du vill utöva någon av rättigheterna.
 
 ## 9. Kakor
 
-Tjänsten använder kakor för att hålla dig inloggad. De är nödvändiga för att inloggningen ska fungera.
+Tjänsten använder kakor för att hålla dig inloggad. De är nödvändiga för att inloggningen ska fungera. Tjänsten har ingen besöksmätning och inga kakor för marknadsföring.
 
 ## 10. Om verksamheten överlåts
 
@@ -90,4 +106,4 @@ Skulle tjänsten överlåtas till ett bolag eller till någon annan kan uppgifte
 
 Policyn kan uppdateras. Har en ändring betydelse för dig meddelas du innan den börjar gälla.
 
-Senast uppdaterad: 25 oktober 2026
+Senast uppdaterad: 20 november 2026

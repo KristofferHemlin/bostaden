@@ -832,6 +832,8 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Skrivet 2026-11-20.** Sentry-filtret tar bort nycklar i `extra` och `contexts`, cookies, `Authorization`, IP-huvuden och kroppen. **Felets eget meddelande rensas inte** — och det är där uppgifterna står: Prismas valideringsfel skriver ut anropets argument ordagrant, så en leverantör och en adress följde med i klartext i en mätning.
 
+**Och att sanera en representation hjälper inte om något redan kopierat innehållet till en annan.** Funnet av agenten 2026-11-20, under mätningen och inte i uppdraget: **Sentrys stacktolkare i webbläsaren läste rader ur ett flerradigt felmeddelande som stackramar.** En e-postadress hamnade som funktionsnamn och en token som filnamn. Meddelandet saneras — men kopian i ramarna hade redan tagits. **Fråga vad som har läst strängen innan ditt filter gör det.**
+
 **Den som bygger ett filter räknar upp fälten han tänker på.** Meddelandet är inte ett fält, det är en sträng någon annan har skrivit — ofta ett bibliotek som gärna visar vad som matades in för att vara hjälpsamt. **Fråga alltid vad den strängen kan innehålla**, inte bara vilka nycklar som finns bredvid den.
 
 Samma sak gäller brödsmulor: anropen till backend saneras, men navigeringarna bär sidans adress med sökparametrar som den står.
