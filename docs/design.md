@@ -1346,6 +1346,18 @@ Raden går att lämna tom. Vet man inte beloppet just nu sparas kvittot ändå, 
 
 **Totalbeloppet är summan före ROT.** Underlaget räknas som totalbelopp minus ROT, alltså det man själv betalat. En faktura visar oftast "Att betala" efter att avdraget redan dragits – det talet är alltså inte totalbeloppet, och läses det in som ett sådant dras ROT två gånger. Hur talet räknas fram ur en faktura står i `CLAUDE.md` under *Avläsningen läser, den räknar aldrig*.
 
+**Men antagandet att fakturans slutsumma alltid är efter avdraget är fel, och det kostade oss ett för högt tal.** Uppmätt av agenten 2026-11-21, tolv gånger av tolv: en faktura som trycker *TOTALT ATT BETALA 50 287,50* och **under den** raden *ROT-avdrag utnyttjat 6 480,00* visar summan **före** avdraget. Modellen läser det tryckta talet ärligt, koden lägger till ROT en gång till, och underlaget blir 6 480 kr för högt. **Fakturor skriver det på båda sätten, och ingen av dem är fel.**
+
+**Så här avgörs det i stället, i tur och ordning:**
+
+1. **Trycker fakturan netto och moms är summan av dem totalbeloppet.** ROT är en reduktion av vad hon betalar, aldrig av fakturans summa, så `netto + moms` är alltid beloppet före avdraget. Står de där finns ingen tvetydighet kvar
+2. **Annars frågas modellen rakt ut om avdraget redan är avräknat från det tryckta talet.** Fakturor säger det nästan alltid i ord — *"att betala efter avdrag"*, *"varav ROT-avdrag"* — och det är en avläsning, inte en uträkning
+3. **Går det inte att fastställa lämnas fältet tomt**, med ett besked som säger varför: *"Vi kunde inte avgöra om ROT-avdraget redan är avräknat – fyll i summan före avdraget."*
+
+**Aldrig lägga till ROT till ett tryckt tal utan att veta att talet är nettot.** Felet går annars åt det farliga hållet: ett yrkande hon inte har rätt till, i ett dokument Skatteverket kan begära in. **Ett tomt fält kostar tio sekunder; ett för högt avdrag kostar något annat.**
+
+**Det tomma fältet den 20 november var alltså skyddet som fungerade** — kontrollen mot netto och moms såg att talen inte gick ihop. Utan de raderna hade det stått 56 767,50 kr på skärmen, ett rimligt tal som är fel med hela ROT-beloppet.
+
 **Hjälptexten under Totalbelopp ändras när ROT är ifyllt.** "Hela kvittosumman" räcker för ett butikskvitto men säger ingenting på en faktura där avdraget redan är avräknat – fakturans egen slutsumma är då inte totalbeloppet, och den som skriver in den för hand får ett underlag som är för lågt med hela ROT-beloppet. Står det ett belopp i ROT-fältet säger hjälptexten i stället att beloppet är summan innan ROT drogs av, alltså fakturans summa inklusive moms men före avdraget.
 
 Det är det enda stället i formuläret där en hjälptext byter lydelse, och det är motiverat: fältet betyder faktiskt olika saker i de två fallen, och det är den enda punkt där en användare kan göra ett fel på tiotusen kronor utan att något ser konstigt ut.

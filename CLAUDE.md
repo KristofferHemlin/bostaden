@@ -812,6 +812,18 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Skrivet 2026-11-19.** Ett antal regler i `CLAUDE.md`, `docs/design.md` och `docs/produktspec.md` är stämplade **2026-11-20** — utkastets minne, `utkast_belopp`, kommentarsregeln och deras släkt. De skrevs i samma sträcka som posterna stämplade 11-18 och 11-19, och **ordningen i filerna är inte stämplarnas ordning.** Stämpeln säger vilken omgång en regel kom ur, inte vilken som kom först. Stöter du på en motsägelse mellan två regler, **avgör den inte på datumen.**
 
+### Ett avläst tal utan sin bas är inte ett tal
+
+**Skriven 2026-11-21, och den är dyrt köpt.** Avläsningen ber modellen om `att_betala` och **antar att det är summan efter ROT**, varpå koden räknar `totalbelopp = att_betala + rot_utnyttjat`. På en faktura där *TOTALT ATT BETALA* är summan **före** avdraget läser modellen det tryckta talet ärligt, och koden lägger till ROT en gång till.
+
+**Utfallet, uppmätt av agenten tolv gånger av tolv:** ett belopp **6 480 kr för högt** — alltså ett för stort avdrag i ett deklarationsunderlag. Det tal som står på fakturan är rätt tal; det är vårt antagande om vad det betyder som är fel.
+
+**Antagandet syns ingenstans.** Varken i modellens svar, i databasen eller på skärmen står det vilken bas talet har. Det enda som räddade oss var att fakturan också tryckte netto och moms, så en kontroll kunde se att summan inte gick ihop och lämna fältet tomt.
+
+**Regeln:** ett tal som lästs ur ett dokument ska bära **vad det är**, inte bara hur mycket. Ber du om ett belopp, be i samma andetag om vilken bas det har — och **räkna aldrig vidare på ett tal vars bas är antagen.** Det gäller lika mycket vår egen kod som modellen: *Avläsningen läser, den räknar aldrig* har en tvilling, och den heter *koden räknar inte heller på något den gissat betydelsen av*.
+
+**Och felet går åt det farliga hållet.** Ett för högt tal i ett underlag är ett yrkande hon inte har rätt till. **Kan basen inte fastställas lämnas fältet tomt** — tio sekunders inmatning är billigare än ett avdrag som inte håller.
+
 ### Ett rött utfall är ett påstående om maskinen lika mycket som om koden
 
 **Skriven 2026-11-20, efter två undersökningar och en halv vecka.** `anteckning-tva-rader-layout` föll på tidsgräns en kväll och hängde i 18,7 minuter dagen efter. Vi mätte marginaler, misstänkte riggen, misstänkte Chrome, misstänkte belastningen. **Orsaken var att datorn somnade mitt i sviten.** Agenten läste systemets energilogg: sömnperioderna på 31, 92, 474 och 307 sekunder motsvarar provens uppehåll på 16, 90, 471 och 300. Natten innan stängdes locket 23:52:08 och öppnades 00:02:01, och tidsgränserna rapporterades 00:02:17.
