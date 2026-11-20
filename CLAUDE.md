@@ -812,6 +812,28 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Skrivet 2026-11-19.** Ett antal regler i `CLAUDE.md`, `docs/design.md` och `docs/produktspec.md` är stämplade **2026-11-20** — utkastets minne, `utkast_belopp`, kommentarsregeln och deras släkt. De skrevs i samma sträcka som posterna stämplade 11-18 och 11-19, och **ordningen i filerna är inte stämplarnas ordning.** Stämpeln säger vilken omgång en regel kom ur, inte vilken som kom först. Stöter du på en motsägelse mellan två regler, **avgör den inte på datumen.**
 
+### Ett rött utfall är ett påstående om maskinen lika mycket som om koden
+
+**Skriven 2026-11-20, efter två undersökningar och en halv vecka.** `anteckning-tva-rader-layout` föll på tidsgräns en kväll och hängde i 18,7 minuter dagen efter. Vi mätte marginaler, misstänkte riggen, misstänkte Chrome, misstänkte belastningen. **Orsaken var att datorn somnade mitt i sviten.** Agenten läste systemets energilogg: sömnperioderna på 31, 92, 474 och 307 sekunder motsvarar provens uppehåll på 16, 90, 471 och 300. Natten innan stängdes locket 23:52:08 och öppnades 00:02:01, och tidsgränserna rapporterades 00:02:17.
+
+**Det förklarade också två tal vi lagt åt sidan:** att ett prov utan webbläsare föll på 5 sekunder, och att bygget tog 5,5 minuter mot fjorton sekunder. Belastningen 55 kom **efter** uppvaknandet, inte före.
+
+**Lärdomen är inte att maskinen sov.** Den är att vi ägnade två omgångar åt att leta i koden efter ett fel som låg utanför den. **Fråga alltid, före allt annat: vad gjorde maskinen under körningen?** Klockslag, belastning, sömn, nätverk. Ett utfall utan den uppgiften är ett halvt utfall.
+
+**Och den filen var inte skyldig, bara längst.** Den tar 12,9–15,0 sekunder mot högst 9,7 för någon annan, alltså är den den som oftast pågår när något händer. **Den fil som faller oftast är ofta bara den som pågår mest** — det är ingen ledtråd till vad felet är.
+
+### En anonym gräns som löser ut före en namngiven gör felet oläsbart
+
+**Skriven 2026-11-20.** Riggens städning har egna gränser på upp till 30 sekunder sammanlagt, men vitests gräns för en `afterAll`-hook är 10. Den anonyma *"Hook timed out in 10000ms"* hinner alltså alltid före riggens namngivna besked, och den som läser utfallet får veta att något tog för lång tid men inte vad.
+
+**Det är samma familj som en förutsättning som faller före provet:** felet som visas är inte felet som hände. **En yttre gräns ska alltid ligga utanför den inre**, annars är den inre meningslös.
+
+### En svit som hämtar något över nätet mäter inte bara koden
+
+**Skriven 2026-11-20.** Fyra provfiler hämtar Googles typsnitt över internet. En sida som väntar på `document.fonts.ready` mot ett typsnitt som aldrig svarar faller med *"Väntade mer än 15 s på Chromes svar på Runtime.evaluate"* — uppmätt av agenten mot en server som tar emot anslutningen men aldrig svarar, alltså precis som ett nät som försvinner.
+
+**Ett beroende vi inte visste om är ett beroende vi inte kan läsa utfallet genom.** Det som hämtas utifrån serveras lokalt, och varje väntan inne i sidan får en egen gräns med ett eget besked.
+
 ### Vem skriver reglerna
 
 **Agenten rör inga md-filer — inte heller den här.** Regeln har alltid varit att `docs/` är mitt, och `CLAUDE.md` ligger utanför `docs/` men lyder under samma ordning: den som skriver prompten skriver reglerna, agenten läser dem och säger emot dem. Skriven 2026-10-21 efter att agenten frågade, vilket var befogat eftersom regeln bara stått som *"ändra ingenting i `docs/`"*.

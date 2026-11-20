@@ -2800,6 +2800,8 @@ Poängen är att sidan ska vara meningsfull under hela ägandet i stället för 
 
 **Knappen under *Återstår* heter *Skapa projekt*.** Den hette *Berätta vad du gjort* till 2026-11-16, vilket är rubriken på skärmen den leder till och inte namnet på handlingen. *Ett ord, inga synonymer* gäller också knappar: handlingen heter *Skapa projekt* på kvittosidan och på projektsidan, och då heter den det här också.
 
+**Kvittoraderna under *Återstår* står i årsordning, inte i inläggningsordning.** Funnet av agenten 2026-11-20: högarna står i årsordning men raderna inom dem i den ordning de lades in, med årtalet bredvid — alltså 2025, 2019, 2024 under varandra. **Det bryter mot regeln att talet och ordningen ska komma ur samma källa**, och den regeln gäller inte bara projektår. En lista som visar ett tal per rad sorteras på det talet.
+
 **Och inledningsmeningen gäller inte varje rad.** *"Det här har du lagt in, men det ingår inte i talen ovan"* stämmer för ett kvitto och inte för raden om bostadsfrågorna, som är något hon **inte** lagt in. Meningen lyder i stället *"Det här ingår inte i talen ovan än."*
 
 **Samma information står aldrig två gånger.** Det som inte räknas med redovisas i en enda lista med namn, år och belopp, en åtgärdsprick och vägen dit. Ingen andra lista som upprepar samma rader i längre meningar – konsekvensen sägs en gång, i en rad ovanför listan.
