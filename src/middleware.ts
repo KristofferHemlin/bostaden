@@ -10,8 +10,10 @@ export const config = {
   // pdf.js-byggena i public/ – de laddas som moduler/worker och far inte
   // omdirigeras till /login. Detsamma galler ikonerna, manifestet, robots.txt
   // och sitemap.xml (src/app/manifest.ts, robots.ts, sitemap.ts): de hamtas
-  // av webblasare och sokmotorer utan session.
+  // av webblasare och sokmotorer utan session. `typsnitt` ar appens egna
+  // typsnitt i public/ – landningssidan laddar dem utan session, och en
+  // omdirigering till /login hade gett reservtypsnitten.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|pdfjs/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|pdfjs/|typsnitt/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

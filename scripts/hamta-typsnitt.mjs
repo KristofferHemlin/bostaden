@@ -1,23 +1,24 @@
-// Hamtar appens typsnitt en gang till tester/typsnitt/, sa att webblasarproven
-// mater med Fraunces och Instrument Sans utan att hamta nagot over natet
-// (CLAUDE.md, "En svit som hämtar något över nätet mäter inte bara koden").
+// Hamtar appens typsnitt en gang till public/typsnitt/. Appen serverar dem
+// sjalv – ingen sida hamtar nagot fran Googles servrar, sa Google far inte
+// besokarnas IP-adresser (integritetspolicyn; 2026-11-20 lankade varje sida,
+// aven landningssidan, till fonts.googleapis.com). Webblasarproven mater med
+// samma filer, sa att sviten inte heller hamtar nagot over natet (CLAUDE.md,
+// "En svit som hämtar något över nätet mäter inte bara koden").
 //
-// Adressen lases ur src/app/layout.tsx, samma rad som appen anvander, och
-// skrivs overst i typsnitt.css. tester/typsnitt-lokalt.test.ts faller om
-// layouten byter typsnitt utan att det har skriptet korts om.
+// Vilka typsnitt och vikter bestams i KALLA (scripts/typsnittskalla.mjs), och skrivs overst i
+// typsnitt.css. tester/typsnitt-lokalt.test.ts faller om filen och KALLA
+// sager olika.
 //
 // Kor: node scripts/hamta-typsnitt.mjs
 
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { KALLA } from "./typsnittskalla.mjs";
 
 const ROT = new URL("..", import.meta.url).pathname;
-const KATALOG = join(ROT, "tester/typsnitt");
+const KATALOG = join(ROT, "public/typsnitt");
 
-const adress = readFileSync(join(ROT, "src/app/layout.tsx"), "utf-8")
-  .match(/href="(https:\/\/fonts\.googleapis\.com\/css2[^"]+)"/)?.[1]
-  ?.replaceAll("&amp;", "&");
-if (!adress) throw new Error("src/app/layout.tsx saknar länken till Google Fonts");
+const adress = KALLA;
 
 // Google valjer filformat efter anvandaragenten; en Chrome-agent ger woff2.
 const AGENT =
@@ -51,4 +52,4 @@ writeFileSync(
   join(KATALOG, "typsnitt.css"),
   `/* Kalla: ${adress} */\n/* Skapad av scripts/hamta-typsnitt.mjs – andra inte for hand. */\n${css}`,
 );
-console.log(`${namnFor.size} filer i tester/typsnitt/`);
+console.log(`${namnFor.size} filer i public/typsnitt/`);

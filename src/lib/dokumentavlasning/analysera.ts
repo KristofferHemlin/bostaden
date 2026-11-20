@@ -6,7 +6,8 @@
 // uppladdningen sker forst nar kostnaden sparas.
 //
 // HEIC kan modellen inte lasa och det ar standardformatet pa iPhone – samma
-// konvertering som miniatyrgenereringen kor i minnet fore anropet.
+// konvertering som miniatyrgenereringen kor i minnet fore anropet. Varje
+// format skickas utan sin metadata (./metadata.ts).
 //
 // Avlasningen BLOCKERAR aldrig sparandet, men den ar aldrig tyst (produktspec,
 // "Dokumentavlasning"). Darfor returneras inte bara falten utan ocksa `kord`:
@@ -20,7 +21,7 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { rapporteraFel } from "@/lib/feltrapportering";
 import type { Bilageformat } from "@/lib/lagring/bilaga-regler";
-import { heicTillJpegMiniatyr } from "@/lib/lagring/miniatyr";
+import { utanMetadata, type DokumentUtanMetadata } from "./metadata";
 import {
   TOMT_DOKUMENTFALT,
   avlasningsrapporter,
@@ -112,30 +113,31 @@ export async function analyseraDokumentbuffert(
       return KORDES_INTE;
     }
 
+    // Metadatan bort fore anropet (./metadata.ts) – EXIF med plats, en PDF:s
+    // forfattare och program. Gar det inte skickas ingenting: ett fast
+    // meddelande till felrapporteringen, inget ur filen.
+    let dokument: DokumentUtanMetadata;
+    try {
+      dokument = await utanMetadata(original, format);
+    } catch {
+      rapporteraFel(new Error(`Dokumentavläsning: metadata kunde inte rensas (${format.andelse})`), SAMMANHANG);
+      return KORDES_INTE;
+    }
+
     const klient = new Anthropic({ apiKey: nyckel });
 
     const dokumentblock: Anthropic.ContentBlockParam =
-      format.andelse === "pdf"
+      dokument.mediatyp === "application/pdf"
         ? {
             type: "document",
-            source: {
-              type: "base64",
-              media_type: "application/pdf",
-              data: original.toString("base64"),
-            },
+            source: { type: "base64", media_type: "application/pdf", data: dokument.data.toString("base64") },
           }
         : {
             type: "image",
             source: {
               type: "base64",
-              media_type: format.kraverMiniatyr
-                ? "image/jpeg"
-                : (format.mimetyp as Bildmediatyp),
-              // HEIC/HEIF -> nedskalad JPG i minnet, samma kod som miniatyren.
-              data: (format.kraverMiniatyr
-                ? await heicTillJpegMiniatyr(original)
-                : original
-              ).toString("base64"),
+              media_type: dokument.mediatyp satisfies Bildmediatyp,
+              data: dokument.data.toString("base64"),
             },
           };
 

@@ -6,12 +6,15 @@ import {
   CHROME,
   kastaOmSidanKastade,
   startaWebblasare,
+  TYPSNITT_ADRESS,
   TYPSNITT_LANK,
   TYPSNITTSKATALOG,
   VANTA_PA_TYPSNITT,
   VANTA_PA_TYPSNITT_MS,
   type Webblasare,
 } from "./_webblasare";
+import { KALLA } from "../scripts/typsnittskalla.mjs";
+import { config as middlewareKonfig } from "@/middleware";
 
 // Webblasarproven hamtar inga typsnitt over natet (CLAUDE.md, "En svit som
 // hämtar något över nätet mäter inte bara koden"). Till 2026-11-20 lankade
@@ -28,14 +31,17 @@ const ROT = process.cwd();
 const GOOGLE = ["fonts", "googleapis", "com"].join(".");
 const GSTATIC = ["fonts", "gstatic", "com"].join(".");
 
-describe("den lokala kopian av typsnitten", () => {
-  it("är hämtad ur samma adress som appens layout använder", () => {
-    const layout = readFileSync(join(ROT, "src/app/layout.tsx"), "utf-8")
-      .match(/href="(https:\/\/fonts\.googleapis\.com\/css2[^"]+)"/)?.[1]
-      ?.replaceAll("&amp;", "&");
-    expect(layout, "förutsättningen: layouten länkar till sina typsnitt").toBeDefined();
+/** Varje fil under `katalog`, rekursivt – uppräknat ur koden, inte en lista. */
+function filerUnder(katalog: string): string[] {
+  return readdirSync(join(ROT, katalog), { withFileTypes: true }).flatMap((d) =>
+    d.isDirectory() ? filerUnder(join(katalog, d.name)) : [join(katalog, d.name)],
+  );
+}
+
+describe("appens typsnitt serveras av appen själv", () => {
+  it("kopian är hämtad ur den källa skriptet anger", () => {
     const kalla = readFileSync(join(TYPSNITTSKATALOG, "typsnitt.css"), "utf-8").match(/^\/\* Kalla: (\S+) \*\//)?.[1];
-    expect(kalla, "typsnittet byttes i layouten – kör node scripts/hamta-typsnitt.mjs").toBe(layout);
+    expect(kalla, "typsnitten byttes i scripts/typsnittskalla.mjs – kör node scripts/hamta-typsnitt.mjs").toBe(KALLA);
   });
 
   it("pekar bara på filer som finns bredvid den, inget över nätet", () => {
@@ -44,19 +50,33 @@ describe("den lokala kopian av typsnitten", () => {
     expect(adresser.length, "förutsättningen: stilarket har typsnittsfiler").toBeGreaterThan(0);
     for (const a of adresser) {
       expect(a, "en adress utanför katalogen").not.toMatch(/^[a-z]+:|^\//);
-      expect(existsSync(join(TYPSNITTSKATALOG, a)), `${a} saknas i tester/typsnitt/`).toBe(true);
+      expect(existsSync(join(TYPSNITTSKATALOG, a)), `${a} saknas i public/typsnitt/`).toBe(true);
     }
   });
 
-  it("ingen provfil länkar till Googles typsnitt", () => {
-    // Uppräknat ur katalogen, inte en lista: en ny provfil som länkar ut faller här.
-    const lankarUt = readdirSync(join(ROT, "tester"))
-      .filter((f) => f.endsWith(".ts"))
+  it("layouten länkar till appens egen kopia", () => {
+    const layout = readFileSync(join(ROT, "src/app/layout.tsx"), "utf-8");
+    expect(layout).toContain(`href="${TYPSNITT_ADRESS}"`);
+  });
+
+  it("ingen fil i appen eller sviten länkar till Googles typsnitt", () => {
+    // src/ är appen, tester/ är sviten. Skriptet som hämtar kopian får nämna källan.
+    const lankarUt = [...filerUnder("src"), ...filerUnder("tester")]
+      .filter((f) => /\.(tsx?|mjs|css|md|html)$/.test(f))
       .filter((f) => {
-        const text = readFileSync(join(ROT, "tester", f), "utf-8");
+        const text = readFileSync(join(ROT, f), "utf-8");
         return text.includes(GOOGLE) || text.includes(GSTATIC);
       });
     expect(lankarUt).toEqual([]);
+  });
+
+  it("middlewaren släpper typsnitten utan session – och kör fortfarande på sidorna", () => {
+    const monster = new RegExp(`^${middlewareKonfig.matcher[0]}$`);
+    // Förutsättningen: mönstret träffar en vanlig sida, så att det inte bara släpper allt.
+    expect(monster.test("/kostnad")).toBe(true);
+    for (const fil of readdirSync(TYPSNITTSKATALOG)) {
+      expect(monster.test(`/typsnitt/${fil}`), `/typsnitt/${fil} skulle omdirigeras till /login`).toBe(false);
+    }
   });
 });
 

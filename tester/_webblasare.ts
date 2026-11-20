@@ -34,8 +34,9 @@
 // typsnitt som aldrig svarar foll med "Väntade mer än 15 s på Chromes svar på
 // Runtime.evaluate" – uppmatt mot en server som tar emot anslutningen och
 // aldrig svarar, som ett nat som forsvinner nar datorn somnar. Nu serveras
-// tester/typsnitt/ (scripts/hamta-typsnitt.mjs) pa /_typsnitt/ av varje
-// server riggen startar, och vantan inne i sidan har en egen grans,
+// appens egna typsnitt, public/typsnitt/ (scripts/hamta-typsnitt.mjs), pa
+// /typsnitt/ av varje server riggen startar – samma filer och samma adress
+// som i appen, och vantan inne i sidan har en egen grans,
 // VANTA_PA_TYPSNITT_MS, under CDP-anropets 15 s – sa att beskedet ar
 // "typsnitten laddades inte" och inte en anonym tidsgrans. Provat i
 // tester/typsnitt-lokalt.test.ts.
@@ -127,8 +128,8 @@ const FILTYPER: Record<string, string> = {
 
 /** Katalogen med appens typsnitt, och adressen varje server riggen startar
  *  serverar den pa – se overst. */
-export const TYPSNITTSKATALOG = join(process.cwd(), "tester/typsnitt");
-export const TYPSNITT_ADRESS = "/_typsnitt/typsnitt.css";
+export const TYPSNITTSKATALOG = join(process.cwd(), "public/typsnitt");
+export const TYPSNITT_ADRESS = "/typsnitt/typsnitt.css";
 /** Lanken en sida lagger i sitt <head> for appens typsnitt. */
 export const TYPSNITT_LANK = `<link rel="stylesheet" href="${TYPSNITT_ADRESS}">`;
 
@@ -183,8 +184,8 @@ export async function startaWebblasare(
 ): Promise<Webblasare> {
   const server: Server = createServer((req, res) => {
     const namn = new URL(req.url ?? "/", "http://x").pathname.slice(1);
-    if (namn.startsWith("_typsnitt/")) {
-      const fil = join(TYPSNITTSKATALOG, namn.slice("_typsnitt/".length));
+    if (namn.startsWith("typsnitt/")) {
+      const fil = join(TYPSNITTSKATALOG, namn.slice("typsnitt/".length));
       if (fil.startsWith(TYPSNITTSKATALOG + "/") && existsSync(fil) && statSync(fil).isFile()) {
         res.writeHead(200, { "content-type": FILTYPER[extname(fil)] ?? "application/octet-stream" }).end(readFileSync(fil));
       } else {

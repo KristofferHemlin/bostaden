@@ -2,9 +2,18 @@
 // det vitlistade sammanhanget (produktspec avsnitt 13): sida, anrop och
 // anvandar-id, aldrig kvittobilder, belopp eller atkomsttoken.
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Breadcrumb, ErrorEvent, EventHint } from "@sentry/nextjs";
-import { beforeBreadcrumb, beforeSend, saneraBreadcrumbUrl } from "@/lib/sentry-filter";
+import {
+  beforeBreadcrumb,
+  beforeSend,
+  PRISMA_ARGUMENT_BORTTAGNA,
+  saneraBreadcrumbUrl,
+  saneraText,
+  utanSessioner,
+} from "@/lib/sentry-filter";
 
 describe("saneraBreadcrumbUrl", () => {
   it("strippar token och sokvag (bostad_id/kostnad_id) ur en signerad lagringslank", () => {
@@ -107,5 +116,71 @@ describe("beforeSend – anvandarobjektet", () => {
     expect(resultat?.request?.cookies).toBeUndefined();
     expect(resultat?.request?.query_string).toBeUndefined();
     expect(resultat?.request?.headers).toEqual({ "Content-Type": "application/json" });
+  });
+});
+
+describe("saneraText – felets eget meddelande", () => {
+  // Riktiga valideringsfel från Prisma, uppmätta mot databasen 2026-11-20
+  // (tester/fixturer/prisma-valideringsfel.json). Meddelandet bar anropets
+  // argument ordagrant – en leverantör, en gatuadress, en e-postadress.
+  const PRISMA = JSON.parse(
+    readFileSync(join(process.cwd(), "tester/fixturer/prisma-valideringsfel.json"), "utf-8"),
+  ).meddelanden as Record<string, string>;
+  const VARDEN = /Hemliga Byggfirman|Storgatan 1|anna\.andersson@exempel\.se|tolvtusen/;
+
+  it.each([
+    ["kostnadMedFelTyp", "Invalid `prisma.kostnad.findMany()` invocation:", "Argument `totalbelopp`: Invalid value provided. Expected IntNullableFilter, Int or Null, provided String."],
+    ["bostadMedOkantFalt", "Invalid `prisma.bostad.findMany()` invocation:", "Unknown argument `gatuadressen`. Available options are marked with ?."],
+    ["anvandareMedEpost", "Invalid `prisma.anvandare.findMany()` invocation:", "Argument `id`: Invalid value provided. Expected UuidFilter or String, provided Int."],
+  ])("%s: argumenten bort, anropet och felet kvar", (namn, rubrik, felrad) => {
+    expect(PRISMA[namn], "förutsättningen: meddelandet bär värdena").toMatch(VARDEN);
+    const ut = saneraText(PRISMA[namn]);
+    expect(ut).toBe(`\n${rubrik}\n\n${PRISMA_ARGUMENT_BORTTAGNA}\n\n${felrad}`);
+  });
+
+  it("e-postadresser och sökparametrar i fullständiga adresser tas bort i varje text", () => {
+    expect(saneraText("kunde inte nå https://x.supabase.co/storage/v1/object/sign/a.jpg?token=t för anna@exempel.se")).toBe(
+      "kunde inte nå https://x.supabase.co/storage/v1/object/sign/a.jpg för [e-post]",
+    );
+  });
+
+  it("ett meddelande utan något av det lämnas orört", () => {
+    expect(saneraText("Kunde inte läsa sidantalet")).toBe("Kunde inte läsa sidantalet");
+  });
+});
+
+describe("beforeSend – adresserna i händelsen", () => {
+  it("sidans adress, Referer och Nexts request_path bär inte sina sökparametrar", () => {
+    const ut = beforeSend(
+      {
+        request: { url: "https://kvittobo.se/kostnad/k-1?utkast=u-1", headers: { Referer: "https://kvittobo.se/export?fran=x" } },
+        contexts: { nextjs: { request_path: "/kostnad/k-1?utkast=u-1", router_kind: "App Router" } },
+      } as unknown as ErrorEvent,
+      {} as EventHint,
+    )!;
+    expect(ut.request!.url).toBe("https://kvittobo.se/kostnad/k-1");
+    expect(ut.request!.headers).toEqual({ Referer: "https://kvittobo.se/export" });
+    expect(ut.contexts!.nextjs).toEqual({ request_path: "/kostnad/k-1", router_kind: "App Router" });
+  });
+});
+
+describe("beforeBreadcrumb – navigering, konsol och klick", () => {
+  it("navigeringen utan sökparametrar", () => {
+    expect(beforeBreadcrumb({ category: "navigation", data: { from: "/a?x=1", to: "/b?y=2" } })!.data).toEqual({ from: "/a", to: "/b" });
+  });
+  it("konsolen skickas inte", () => {
+    expect(beforeBreadcrumb({ category: "console", message: "Bauhaus 12 000 kr" })).toBeNull();
+  });
+  it("klickets elementattribut bort, taggen och klasserna kvar", () => {
+    expect(beforeBreadcrumb({ category: "ui.click", message: 'body > button.knapp[title="Bauhaus 12 000 kr"]' })!.message).toBe(
+      "body > button.knapp",
+    );
+  });
+});
+
+describe("utanSessioner", () => {
+  it("tar bort sessionerna och bara dem", () => {
+    const namn = ["InboundFilters", "BrowserSession", "ProcessSession", "RequestData"].map((name) => ({ name }));
+    expect(utanSessioner(namn).map((i) => i.name)).toEqual(["InboundFilters", "RequestData"]);
   });
 });

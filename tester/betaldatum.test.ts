@@ -65,7 +65,19 @@ vi.mock("@/lib/lagring/bilaga-klient", () => ({ laddaUppKostnadsbilaga: vi.fn() 
 vi.mock("@/lib/lagring/klient", () => ({
   BILAGOR_BUCKET: "bilagor",
   bilagelager: () => ({
-    download: async () => ({ data: { arrayBuffer: async () => new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer }, error: null }),
+    // En riktig PNG, 1 × 1 bildpunkt: metadatan rensas fore avlasningen
+    // (src/lib/dokumentavlasning/metadata.ts), och en fil som inte gar att
+    // lasa skickas inte alls. Till 2026-11-20 rackte de fyra forsta bytena.
+    download: async () => ({
+      data: {
+        arrayBuffer: async () =>
+          Uint8Array.from(
+            atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="),
+            (c) => c.charCodeAt(0),
+          ).buffer,
+      },
+      error: null,
+    }),
     createSignedUrl: async () => ({ data: { signedUrl: "about:blank" }, error: null }),
     createSignedUrls: async () => ({ data: [], error: null }),
   }),

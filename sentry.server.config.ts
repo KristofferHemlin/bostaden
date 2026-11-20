@@ -5,7 +5,7 @@
 // saknas NEXT_PUBLIC_SENTRY_DSN initieras Sentry aldrig, och appen fungerar
 // exakt som utan felrapportering. Se .env.example.
 import * as Sentry from "@sentry/nextjs";
-import { beforeBreadcrumb, beforeSend } from "@/lib/sentry-filter";
+import { beforeBreadcrumb, beforeSend, utanSessioner } from "@/lib/sentry-filter";
 
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
@@ -21,5 +21,9 @@ if (dsn) {
     sendDefaultPii: false,
     beforeSend,
     beforeBreadcrumb,
+    // Inget nar inget hant: inga sessioner och inga klientrapporter om
+    // forkastade transaktioner (src/lib/sentry-filter.ts).
+    integrations: utanSessioner,
+    sendClientReports: false,
   });
 }
