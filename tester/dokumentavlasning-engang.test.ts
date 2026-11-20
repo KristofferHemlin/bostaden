@@ -35,6 +35,7 @@ const LAST_FALT: Dokumentfalt = {
   totalbelopp: 102095,
   leverantor: "Bauhaus Bromma",
   rot_utnyttjat: null,
+  rot_avrakning_oklar: false,
 };
 const LAST: Dokumentavlasning = { kord: true, falt: LAST_FALT };
 const KORDES_INTE: Dokumentavlasning = { kord: false, falt: { ...TOMT_DOKUMENTFALT } };

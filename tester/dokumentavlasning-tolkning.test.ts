@@ -24,6 +24,7 @@ describe("tolkaDokumentsvar: rent modellsvar", () => {
       totalbelopp: 102095,
       leverantor: "Bauhaus Bromma",
       rot_utnyttjat: null,
+      rot_avrakning_oklar: false,
     });
   });
 
@@ -36,6 +37,7 @@ describe("tolkaDokumentsvar: rent modellsvar", () => {
       totalbelopp: 102095,
       leverantor: "Bauhaus",
       rot_utnyttjat: null,
+      rot_avrakning_oklar: false,
     });
   });
 
@@ -48,18 +50,20 @@ describe("tolkaDokumentsvar: rent modellsvar", () => {
       totalbelopp: 49900,
       leverantor: "Clas Ohlson",
       rot_utnyttjat: null,
+      rot_avrakning_oklar: false,
     });
   });
 
   it("tolkar en faktura med utnyttjat ROT-avdrag", () => {
     const svar =
-      '{"dokumentdatum":"2026-09-01","summa_fore_rot":50000,"att_betala":41000,"valuta":"SEK","leverantor":"K-Bygg Sverige AB","rot_utnyttjat":9000}';
+      '{"dokumentdatum":"2026-09-01","summa_fore_rot":50000,"att_betala":41000,"valuta":"SEK","leverantor":"K-Bygg Sverige AB","rot_utnyttjat":9000,"rot_avraknat":true,"rot_avraknat_citat":"Att betala efter ROT-avdrag"}';
     expect(tolkaDokumentsvar(svar)).toEqual({
       betaldatum: "2026-09-01",
       dokumentdatum: "2026-09-01",
       totalbelopp: 5000000,
       leverantor: "K-Bygg Sverige AB",
       rot_utnyttjat: 900000,
+      rot_avrakning_oklar: false,
     });
   });
 });
@@ -106,6 +110,7 @@ describe("tolkaDokumentsvar: falt som saknas eller ar null tolkas inte till nago
       totalbelopp: null,
       leverantor: "Bauhaus Bromma",
       rot_utnyttjat: null,
+      rot_avrakning_oklar: false,
     });
   });
 
@@ -228,6 +233,7 @@ describe("tolkaDokumentsvar: valuta – bara kronbelopp slapps igenom", () => {
       totalbelopp: null,
       leverantor: "Lidl",
       rot_utnyttjat: null,
+      rot_avrakning_oklar: false,
     });
   });
 
@@ -348,6 +354,7 @@ describe("tolkaDokumentsvar: rot_utnyttjat (kronor, aldrig procent)", () => {
       totalbelopp: null,
       leverantor: "Baumeister GmbH",
       rot_utnyttjat: null,
+      rot_avrakning_oklar: false,
     });
   });
 });
@@ -361,10 +368,10 @@ describe("tolkaDokumentsvar: rot_utnyttjat (kronor, aldrig procent)", () => {
 // Totalbeloppet raknas alltid som att_betala + rot_utnyttjat – aldrig ur
 // summa_fore_rot (CLAUDE.md, "Avlasningen laser, den raknar aldrig").
 
-describe("tolkaDokumentsvar: totalbeloppet pa en ROT-faktura ar att betala plus ROT", () => {
+describe("tolkaDokumentsvar: en ROT-faktura som sager att avdraget ar avraknat – att betala plus ROT", () => {
   it("summa_fore_rot som stammer med att betala plus ROT andrar ingenting", () => {
     const f = tolkaDokumentsvar(
-      '{"summa_fore_rot":60812.50,"att_betala":49225,"rot_utnyttjat":11587.50,"valuta":"SEK"}',
+      '{"summa_fore_rot":60812.50,"att_betala":49225,"rot_utnyttjat":11587.50,"valuta":"SEK","rot_avraknat":true,"rot_avraknat_citat":"Att betala efter ROT-avdrag"}',
     );
     expect(f.totalbelopp).toBe(6081250);
     expect(f.rot_utnyttjat).toBe(1158750);
@@ -372,7 +379,7 @@ describe("tolkaDokumentsvar: totalbeloppet pa en ROT-faktura ar att betala plus 
 
   it("bara 'Att betala' och ROT-raden: totalbeloppet ar de tva adderade", () => {
     const f = tolkaDokumentsvar(
-      '{"summa_fore_rot":null,"att_betala":49225,"rot_utnyttjat":11587.50,"valuta":"SEK"}',
+      '{"summa_fore_rot":null,"att_betala":49225,"rot_utnyttjat":11587.50,"valuta":"SEK","rot_avraknat":true,"rot_avraknat_citat":"Att betala efter ROT-avdrag"}',
     );
     expect(f.totalbelopp).toBe(6081250);
     expect(f.rot_utnyttjat).toBe(1158750);
@@ -380,8 +387,8 @@ describe("tolkaDokumentsvar: totalbeloppet pa en ROT-faktura ar att betala plus 
 
   it("underlaget blir det man sjalv betalat, inte ROT draget tva ganger", () => {
     for (const svar of [
-      '{"summa_fore_rot":60812.50,"att_betala":49225,"rot_utnyttjat":11587.50}',
-      '{"att_betala":49225,"rot_utnyttjat":11587.50}',
+      '{"summa_fore_rot":60812.50,"att_betala":49225,"rot_utnyttjat":11587.50,"rot_avraknat":true,"rot_avraknat_citat":"Att betala efter ROT-avdrag"}',
+      '{"att_betala":49225,"rot_utnyttjat":11587.50,"rot_avraknat":true,"rot_avraknat_citat":"Att betala efter ROT-avdrag"}',
     ]) {
       const f = tolkaDokumentsvar(svar);
       expect(f.totalbelopp! - f.rot_utnyttjat!).toBe(4922500);
@@ -469,8 +476,9 @@ describe("tolkaDokumentsvar: de lasta talen kontrollerar varandra", () => {
       totalbelopp: null,
       leverantor: "K-Bygg Sverige AB",
       rot_utnyttjat: 1158750,
+      rot_avrakning_oklar: false,
     });
-    expect(t.avvikelser).toEqual(["netto+moms ≠ att_betala+rot"]);
+    expect(t.avvikelser).toEqual(["netto+moms ≠ att_betala, med eller utan rot"]);
   });
 
   it("faktura utan ROT: totalbeloppet ar att betala, och netto + moms stammer", () => {
@@ -486,7 +494,7 @@ describe("tolkaDokumentsvar: de lasta talen kontrollerar varandra", () => {
       svar({ att_betala: 1250.0, netto: 1100.0, moms: 250.0 }),
     );
     expect(t.falt.totalbelopp).toBe(null);
-    expect(t.avvikelser).toEqual(["netto+moms ≠ att_betala+rot"]);
+    expect(t.avvikelser).toEqual(["netto+moms ≠ att_betala, med eller utan rot"]);
   });
 
   it("butikskvitto med bara en totalsumma: ingen kontroll, ingen rapport", () => {
@@ -505,11 +513,13 @@ describe("tolkaDokumentsvar: de lasta talen kontrollerar varandra", () => {
     expect(t.avvikelser).toEqual([]);
   });
 
+  // Sedan 2026-11-21 ar netto + moms kallan nar de ar tryckta (docs/design.md,
+  // "Totalbeloppet är summan före ROT"): 1 020,95, inte den avrundade summan.
   it("oresavrundning till hela kronor ar ingen avvikelse", () => {
     const t = tolkaDokumentsvarMedKontroll(
       svar({ att_betala: 1021.0, netto: 816.76, moms: 204.19 }),
     );
-    expect(t.falt.totalbelopp).toBe(102100);
+    expect(t.falt.totalbelopp).toBe(102095);
     expect(t.avvikelser).toEqual([]);
   });
 
@@ -525,7 +535,7 @@ describe("tolkaDokumentsvar: de lasta talen kontrollerar varandra", () => {
   // slutsumman efter ROT, och underlaget blir for lagt med hela ROT-beloppet.
   it("summa_fore_rot avviker utan netto och moms: att betala plus ROT galler, avvikelsen rapporteras", () => {
     const t = tolkaDokumentsvarMedKontroll(
-      '{"att_betala":49225,"rot_utnyttjat":11587.50,"summa_fore_rot":61812.50}',
+      '{"att_betala":49225,"rot_utnyttjat":11587.50,"summa_fore_rot":61812.50,"rot_avraknat":true,"rot_avraknat_citat":"Att betala efter ROT-avdrag"}',
     );
     expect(t.falt.totalbelopp).toBe(6081250);
     expect(avlasningsrapporter(t)).toEqual([
@@ -533,15 +543,14 @@ describe("tolkaDokumentsvar: de lasta talen kontrollerar varandra", () => {
     ]);
   });
 
-  it("netto + moms avviker: tomt aven nar summa_fore_rot ocksa avviker", () => {
+  // summa_fore_rot provas mot ett faststallt totalbelopp. Har netto + moms
+  // redan avvisat beloppet finns inget att prova den mot (sedan 2026-11-21).
+  it("netto + moms avviker: tomt, och summa_fore_rot har inget att provas mot", () => {
     const t = tolkaDokumentsvarMedKontroll(
       svar({ ...FAKTURAN, netto: 49650.0, summa_fore_rot: 61812.5 }),
     );
     expect(t.falt.totalbelopp).toBe(null);
-    expect(t.avvikelser).toEqual([
-      "netto+moms ≠ att_betala+rot",
-      "summa_fore_rot avviker",
-    ]);
+    expect(t.avvikelser).toEqual(["netto+moms ≠ att_betala, med eller utan rot"]);
   });
 
   it("annan valuta: inga belopp och darmed inga avvikelser", () => {
@@ -562,7 +571,7 @@ describe("avlasningsrapporter", () => {
       tolkaDokumentsvarMedKontroll(svar({ ...FAKTURAN, netto: 49650.0 })),
     );
     expect(rapporter).toHaveLength(1);
-    expect(rapporter[0]).toContain("netto+moms ≠ att_betala+rot");
+    expect(rapporter[0]).toContain("netto+moms ≠ att_betala, med eller utan rot");
     expect(rapporter[0]).not.toMatch(/\d/);
     expect(rapporter[0]).not.toContain("K-Bygg");
   });
@@ -586,5 +595,72 @@ describe("avlasningsrapporter", () => {
     const t = tolkaDokumentsvarMedKontroll('{"dokumentdatum":null,"att_betala":null}');
     expect(t.tolkbart).toBe(true);
     expect(avlasningsrapporter(t)).toEqual([]);
+  });
+});
+
+// Totalbeloppet ar summan fore ROT, och koden lagger aldrig till ROT till ett
+// tryckt tal utan att veta att talet ar efter avdraget (docs/design.md,
+// "Totalbeloppet är summan före ROT"; CLAUDE.md, "Ett avläst tal utan sin bas
+// är inte ett tal"). Fakturan fran 2026-11-20: TOTALT ATT BETALA 50 287,50 och
+// under den ROT-avdrag utnyttjat 6 480,00 – summan FORE avdraget. Med det
+// gamla antagandet blev totalbeloppet 56 767,50, 6 480 kr for hogt.
+
+const FORE_ROT = { att_betala: 50287.5, rot_utnyttjat: 6480, valuta: "SEK" };
+
+describe("totalbeloppet ar summan fore ROT – i designfilens ordning", () => {
+  it("1. netto och moms tryckta: summan av dem, vad att betala an ar", () => {
+    for (const att_betala of [50287.5, 43807.5]) {
+      const t = tolkaDokumentsvarMedKontroll(svar({ ...FORE_ROT, att_betala, netto: 40230, moms: 10057.5 }));
+      expect(t.falt.totalbelopp, `att betala ${att_betala}`).toBe(5028750);
+      expect(t.falt.rot_avrakning_oklar).toBe(false);
+      expect(t.avvikelser).toEqual([]);
+    }
+  });
+
+  it("1. och netto och moms vinner over vad modellen sager om avdraget", () => {
+    const t = tolkaDokumentsvarMedKontroll(
+      svar({ ...FORE_ROT, netto: 40230, moms: 10057.5, rot_avraknat: true, rot_avraknat_citat: "Att betala efter ROT-avdrag" }),
+    );
+    expect(t.falt.totalbelopp).toBe(5028750);
+  });
+
+  it("2. utan netto och moms, dokumentet sager att ROT ar avraknat: att betala plus ROT", () => {
+    const t = tolkaDokumentsvarMedKontroll(svar({ ...FORE_ROT, att_betala: 43807.5, rot_avraknat: true, rot_avraknat_citat: "Att betala efter ROT-avdrag" }));
+    expect(t.falt.totalbelopp).toBe(5028750);
+  });
+
+  it("2. dokumentet sager att summan ar fore avdraget: att betala ar totalbeloppet", () => {
+    const t = tolkaDokumentsvarMedKontroll(svar({ ...FORE_ROT, rot_avraknat: false, rot_avraknat_citat: "Summa före avdrag" }));
+    expect(t.falt.totalbelopp).toBe(5028750);
+  });
+
+  it("3. det gar inte att avgora: tomt, och fältet säger varför", () => {
+    for (const rot_avraknat of [null, undefined, "ja", 1]) {
+      const t = tolkaDokumentsvarMedKontroll(svar({ ...FORE_ROT, rot_avraknat }));
+      expect(t.falt.totalbelopp, `rot_avraknat ${String(rot_avraknat)}`).toBe(null);
+      expect(t.falt.rot_avrakning_oklar).toBe(true);
+      expect(t.falt.rot_utnyttjat).toBe(648000);
+      expect(avlasningsrapporter(t)).toEqual(["Dokumentavläsning: rot_avraknat okant"]);
+    }
+  });
+
+  // Exakta tal, inte "inte 56 767,50": ett prov som provar en riktning ar
+  // ingen sparr (CLAUDE.md).
+  it.each([
+    ["inget om avdraget", {}, null],
+    ["avdraget uttryckligen okant", { rot_avraknat: null }, null],
+    ["modellens egen summa fore ROT", { summa_fore_rot: 56767.5 }, null],
+    ["summan sagd vara fore avdraget", { rot_avraknat: false, rot_avraknat_citat: "Summa före avdrag" }, 5028750],
+    // Uppmatt 2026-11-21: modellens svar for fakturan, fem ganger av fem.
+    ["modellen sager efter, men utan citat", { rot_avraknat: true }, null],
+    ["modellen sager efter, med tomt citat", { rot_avraknat: true, rot_avraknat_citat: " " }, null],
+  ])("det farliga fallet, %s: aldrig 56 767,50", (_namn, extra, vantat) => {
+    expect(tolkaDokumentsvar(svar({ ...FORE_ROT, ...extra })).totalbelopp).toBe(vantat);
+  });
+
+  it("utan ROT finns inget att avgora: att betala, och inget besked", () => {
+    const t = tolkaDokumentsvarMedKontroll(svar({ att_betala: 1020.95, valuta: "SEK" }));
+    expect(t.falt.totalbelopp).toBe(102095);
+    expect(t.falt.rot_avrakning_oklar).toBe(false);
   });
 });

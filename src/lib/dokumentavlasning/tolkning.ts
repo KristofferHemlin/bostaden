@@ -55,7 +55,15 @@ export interface Dokumentfalt {
   /** Utnyttjad ROT-skattereduktion som heltal oren – det avdrag som REDAN
    *  dragits av pa fakturan – eller null. Aldrig procentsatsen. */
   rot_utnyttjat: number | null;
+  /** Sant nar totalbeloppet lamnades tomt for att det inte gick att avgora om
+   *  ROT-avdraget redan ar avraknat fran det tryckta talet (docs/design.md,
+   *  "Totalbeloppet är summan före ROT", punkt 3). Formularet sager da varfor. */
+  rot_avrakning_oklar: boolean;
 }
+
+/** Beskedet vid beloppet nar rot_avrakning_oklar – ordagrant ur docs/design.md. */
+export const ROT_AVRAKNING_OKLAR_BESKED =
+  "Vi kunde inte avgöra om ROT-avdraget redan är avräknat – fyll i summan före avdraget.";
 
 export const TOMT_DOKUMENTFALT: Dokumentfalt = {
   betaldatum: null,
@@ -63,6 +71,7 @@ export const TOMT_DOKUMENTFALT: Dokumentfalt = {
   totalbelopp: null,
   leverantor: null,
   rot_utnyttjat: null,
+  rot_avrakning_oklar: false,
 };
 
 const DATUM_MONSTER = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -186,8 +195,9 @@ const ORESAVRUNDNING = 50;
 
 /** Vilken kontroll som slog fel. Namnet ar det enda som rapporteras – aldrig talen. */
 export type Avlasningsavvikelse =
-  | "netto+moms ≠ att_betala+rot"
-  | "summa_fore_rot avviker";
+  | "netto+moms ≠ att_betala, med eller utan rot"
+  | "summa_fore_rot avviker"
+  | "rot_avraknat okant";
 
 interface LastaBelopp {
   attBetala: number | null;
@@ -195,6 +205,9 @@ interface LastaBelopp {
   netto: number | null;
   moms: number | null;
   summaForeRot: number | null;
+  /** Modellens svar pa om dokumentet SAGER att ROT redan ar avraknat fran
+   *  att_betala: sant, falskt, eller null nar det inte star. */
+  rotAvraknat: boolean | null;
 }
 
 function stammer(a: number, b: number): boolean {
@@ -202,42 +215,70 @@ function stammer(a: number, b: number): boolean {
 }
 
 /**
- * Totalbeloppet ur de tryckta talen, provat mot de ovriga. Kallan ar alltid
- * att_betala (+ rot_utnyttjat nar ROT finns); netto + moms och summa_fore_rot
- * ar bara kontroller och blir aldrig totalbeloppet.
+ * Totalbeloppet – summan FORE ROT – ur de tryckta talen, i den ordning
+ * docs/design.md bestammer ("Totalbeloppet är summan före ROT"). Koden lagger
+ * aldrig till ROT till ett tryckt tal utan att veta att talet ar efter
+ * avdraget (CLAUDE.md, "Ett avläst tal utan sin bas är inte ett tal").
  *
- * - netto + moms avviker: nagot av de tryckta talen ar fellast, och vilket gar
- *   inte att veta. Beloppet lamnas tomt.
- * - summa_fore_rot avviker: rapporteras, men beloppet star. Regeln om tva
- *   oense vagar galler tryckta tal, och summa_fore_rot ar faltet modellen
- *   raknar ut sjalv – ingen jamlike. Ett tomt belopp pa en ROT-faktura leder
- *   dessutom anvandaren att skriva in slutsumman, som redan ar efter
- *   avdraget, och underlaget blir for lagt med hela ROT-beloppet.
+ * 1. Netto och moms tryckta: summan av dem AR totalbeloppet. ROT minskar vad
+ *    hon betalar, aldrig fakturans summa. Star att_betala ocksa dar ska det
+ *    stamma med den summan, antingen som det ar (tryckt fore avdraget) eller
+ *    med ROT tillagt (tryckt efter) – annars ar nagot fellast och beloppet
+ *    lamnas tomt.
+ * 2. Annars, nar ROT finns: dokumentets egna ord avgor. rot_avraknat sant –
+ *    att_betala ar efter avdraget och ROT laggs till; falskt – att_betala ar
+ *    totalbeloppet; okant – beloppet lamnas tomt med eget besked. Till
+ *    2026-11-21 antogs det forsta, och en faktura som tryckte summan fore
+ *    avdraget gav ett belopp 6 480 kr for hogt, tolv ganger av tolv.
+ * 3. Utan ROT ar att_betala totalbeloppet; det finns inget att avgora.
  *
- * Ett vanligt butikskvitto med bara en totalsumma har inget att kontrollera
- * mot och gar igenom som forut.
+ * summa_fore_rot ar modellens egen uträkning och blir aldrig kallan; avviker
+ * den rapporteras det, men beloppet star.
  */
 function kontrolleraTotalbelopp(b: LastaBelopp): {
   totalbelopp: number | null;
   avvikelser: Avlasningsavvikelse[];
+  rotAvrakningOklar: boolean;
 } {
-  if (b.attBetala === null) return { totalbelopp: null, avvikelser: [] };
-  const summa = b.attBetala + (b.rot ?? 0);
-
   const avvikelser: Avlasningsavvikelse[] = [];
-  const nettoMoms =
-    b.netto !== null && b.moms !== null ? b.netto + b.moms : null;
-  const bekraftad = nettoMoms !== null && stammer(nettoMoms, summa);
+  const rot = b.rot ?? 0;
+  let totalbelopp: number | null = null;
+  let rotAvrakningOklar = false;
 
-  if (nettoMoms !== null && !bekraftad) {
-    avvikelser.push("netto+moms ≠ att_betala+rot");
+  if (b.netto !== null && b.moms !== null) {
+    const nettoMoms = b.netto + b.moms;
+    const attBetalaStammer =
+      b.attBetala === null ||
+      stammer(b.attBetala, nettoMoms) ||
+      (rot > 0 && stammer(b.attBetala + rot, nettoMoms));
+    if (attBetalaStammer) totalbelopp = nettoMoms;
+    else avvikelser.push("netto+moms ≠ att_betala, med eller utan rot");
+  } else if (b.attBetala !== null) {
+    if (rot === 0) totalbelopp = b.attBetala;
+    else if (b.rotAvraknat === true) totalbelopp = b.attBetala + rot;
+    else if (b.rotAvraknat === false) totalbelopp = b.attBetala;
+    else {
+      rotAvrakningOklar = true;
+      avvikelser.push("rot_avraknat okant");
+    }
   }
-  if (b.summaForeRot !== null && !stammer(b.summaForeRot, summa)) {
+
+  if (totalbelopp !== null && b.summaForeRot !== null && !stammer(b.summaForeRot, totalbelopp)) {
     avvikelser.push("summa_fore_rot avviker");
   }
+  return { totalbelopp, avvikelser, rotAvrakningOklar };
+}
 
-  const godkand = nettoMoms === null || bekraftad;
-  return { totalbelopp: godkand ? summa : null, avvikelser };
+/**
+ * Modellens rot_avraknat: bara ett uttryckligt sant eller falskt, och bara med
+ * citatet det bygger pa. Uppmatt 2026-11-21: utan kravet pa citat svarade
+ * modellen true fem ganger av fem for en faktura vars enda ord om avdraget var
+ * raden "ROT-avdrag utnyttjat: 6 480,00 kr" – och beloppet blev 6 480 kr for
+ * hogt. Koden tolkar inte citatet; den kraver bara att beviset finns.
+ */
+function tolkaAvrakning(varde: unknown, citat: unknown): boolean | null {
+  if (varde !== true && varde !== false) return null;
+  return typeof citat === "string" && citat.trim() !== "" ? varde : null;
 }
 
 /** Tolkningen med det som behovs for att rapportera ett obrukbart svar. */
@@ -269,12 +310,13 @@ export function tolkaDokumentsvarMedKontroll(text: unknown): Dokumenttolkning {
   const blockerad = valutaBlockerarBelopp(o.valuta);
   const belopp = (varde: unknown) => (blockerad ? null : tolkaBelopp(varde));
   const rotBelopp = belopp(o.rot_utnyttjat);
-  const { totalbelopp, avvikelser } = kontrolleraTotalbelopp({
+  const { totalbelopp, avvikelser, rotAvrakningOklar } = kontrolleraTotalbelopp({
     attBetala: belopp(o.att_betala),
     rot: rotBelopp,
     netto: belopp(o.netto),
     moms: belopp(o.moms),
     summaForeRot: belopp(o.summa_fore_rot),
+    rotAvraknat: tolkaAvrakning(o.rot_avraknat, o.rot_avraknat_citat),
   });
 
   const dokumentdatum = tolkaDatum(o.dokumentdatum);
@@ -285,6 +327,7 @@ export function tolkaDokumentsvarMedKontroll(text: unknown): Dokumenttolkning {
       totalbelopp,
       leverantor: tolkaLeverantor(o.leverantor),
       rot_utnyttjat: rotBelopp,
+      rot_avrakning_oklar: rotAvrakningOklar,
     },
     tolkbart: true,
     avvikelser,

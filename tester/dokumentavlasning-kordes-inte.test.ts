@@ -34,6 +34,7 @@ describe("analyseraDokumentbuffert utan ANTHROPIC_API_KEY", () => {
         totalbelopp: null,
         leverantor: null,
         rot_utnyttjat: null,
+        rot_avrakning_oklar: false,
       },
     });
   });

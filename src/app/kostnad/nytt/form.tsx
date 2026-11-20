@@ -103,6 +103,7 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { skapaUtkast, sparaKostnad, sparaUtkastfalten, type KostnadResultat } from "./actions";
 import type { Utkastfalt } from "@/lib/utkastfalt";
+import { ROT_AVRAKNING_OKLAR_BESKED } from "@/lib/dokumentavlasning/tolkning";
 import { analyseraBilaga, taBortBilaga } from "@/app/kostnad/bilaga-actions";
 import { UtkastRaderaKnapp } from "@/app/kostnad/utkast-radera";
 import { BekraftaBorttagning } from "@/components/bekrafta-borttagning";
@@ -439,6 +440,9 @@ export function NyKostnadForm({
   // inte"). autoFalt hall reda pa VILKA av de tre falten avlasningen fyllde i
   // just nu, sa varje falt kan visa sitt eget tillstand.
   const [avlasningKord, setAvlasningKord] = useState<boolean | null>(null);
+  // Beloppet lamnades tomt for att det inte gick att avgora om ROT redan ar
+  // avraknat (docs/design.md, "Totalbeloppet är summan före ROT", punkt 3).
+  const [rotAvrakningOklar, setRotAvrakningOklar] = useState(false);
   const [autoFalt, setAutoFalt] = useState({
     belopp: false,
     datum: false,
@@ -700,6 +704,7 @@ export function NyKostnadForm({
     try {
       const { kord, falt: data } = await analyseraBilaga({ bilagaId });
       setAvlasningKord(kord);
+      setRotAvrakningOklar(data.rot_avrakning_oklar);
 
       const nu = faltRef.current;
       const nasta = { ...nu };
@@ -1500,7 +1505,9 @@ export function NyKostnadForm({
         obligatoriskt
         fel={faltfel.totalbelopp}
         hjalp={
-          faltStatus(falt.belopp.trim() === "") ??
+          (rotAvrakningOklar && avlasningKord === true && falt.belopp.trim() === ""
+            ? ROT_AVRAKNING_OKLAR_BESKED
+            : faltStatus(falt.belopp.trim() === "")) ??
           totalbeloppHjalptext(rotUtnyttjat)
         }
       >
