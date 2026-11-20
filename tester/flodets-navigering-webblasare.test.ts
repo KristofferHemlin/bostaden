@@ -66,9 +66,11 @@ import { SkickForsaljningFlode } from "@/app/forsaljning/skick/skick-forsaljning
 createRoot(document.getElementById("rot")!).render(
   <SkickForsaljningFlode
     atgarder={[
-      { id: "p1", namn: "Nya fönster", ar: 2023, skickForvarv: 1 },
-      { id: "p2", namn: "Nytt golv i hallen", ar: 2024, skickForvarv: 2 },
+      { id: "p1", namn: "Nya fönster", arText: "2023", skickForvarv: 1 },
+      { id: "p2", namn: "Nytt golv i hallen", arText: "2024", skickForvarv: 2 },
     ]}
+    antal={2}
+    besvarade={0}
     nasta={{ href: "/export", text: "Till deklarationsunderlaget" }}
   />,
 );

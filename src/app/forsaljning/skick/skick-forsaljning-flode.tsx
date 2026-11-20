@@ -29,7 +29,8 @@ const START: SkickForsaljningResultat = {};
 interface Atgard {
   id: string;
   namn: string;
-  ar: number;
+  /** Aret ur kvittona (projektarTextKarta), null utan betalt kvitto. */
+  arText: string | null;
   /** Fraga 6:s svar, satt i klassificeringsgenomgangen. Alltid ifyllt for en
    *  atgard med atgardstyp "utbytt" – fragetradet kraver det innan hogen kan
    *  klassificeras (src/lib/fragetradet-formdata.ts). */
@@ -38,9 +39,18 @@ interface Atgard {
 
 export function SkickForsaljningFlode({
   atgarder,
+  antal,
+  besvarade,
   nasta,
 }: {
+  /** De obesvarade, i tur och ordning. */
   atgarder: Atgard[];
+  /** Raknarens namnare: alla atgarder fragan galler, besvarade eller inte.
+   *  Den ligger still medan hon svarar (docs/design.md, "En räknare säger
+   *  var hon är"). */
+  antal: number;
+  /** Hur manga av dem som redan har ett svar – taljaren borjar efter dem. */
+  besvarade: number;
   /** Vart "Du hoppade över resten" leder: fragan om samma del av bostaden
    *  nar den stalls, annars underlaget. */
   nasta: { href: string; text: string };
@@ -69,8 +79,8 @@ export function SkickForsaljningFlode({
     <AtgardFormular
       key={atgard.id}
       atgard={atgard}
-      antal={atgarder.length}
-      position={index + 1}
+      antal={antal}
+      position={besvarade + index + 1}
       onHoppaOver={() => setIndex((i) => i + 1)}
     />
   );
@@ -102,10 +112,14 @@ function AtgardFormular({
       <div className="border-b border-linje px-4 py-3">
         <p className="font-rubrik text-lg text-text-primar">{atgard.namn}</p>
         <p className="mt-0.5 font-granssnitt text-sm text-text-sekundar">
-          {atgard.ar}
-          {atgard.skickForvarv !== null
-            ? ` · Skick vid förvärvet: ${atgard.skickForvarv} – ${SKICK_ORD[atgard.skickForvarv]}`
-            : null}
+          {[
+            atgard.arText,
+            atgard.skickForvarv !== null
+              ? `Skick vid förvärvet: ${atgard.skickForvarv} – ${SKICK_ORD[atgard.skickForvarv]}`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         </p>
       </div>
 

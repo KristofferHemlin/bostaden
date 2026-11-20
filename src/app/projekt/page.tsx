@@ -105,7 +105,8 @@ export default async function ProjektlistaSida() {
       namn: projektnamn.get(p.id) ?? p.namn,
       // Aren ur kvittonas betaldatum, samma harledning som varje annan
       // skarm (projektarTextKarta): "2025–2026" over ett arsskifte.
-      arText: arText.get(p.id) ?? String(p.ar),
+      // Inget ar utan betalt kvitto – aldrig etiketten projekt.ar.
+      arText: arText.get(p.id) ?? null,
       harKvitton: kvitton.length > 0,
       belopp,
       // En hog fran klassificeringsgenomgangens fas 1 (atgardstyp = null) har

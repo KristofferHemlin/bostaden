@@ -131,6 +131,8 @@ export default async function ProjektSida({
         await antalMedlemmar(bostadId),
       );
 
+  const arText = projektarTextKarta([projekt], kostnadRader).get(id) ?? null;
+
   return (
     <Skarm
       bostadsnamn={bostadsnamn}
@@ -144,20 +146,21 @@ export default async function ProjektSida({
           med en egen Ändra (docs/design.md, "Räknas som står kvar på läsvyn
           och är inte en del"): att ge det en vore att pasta att det ar en
           installning. */}
-      <section className={`${FAKTARUTA_KLASS} border-b border-linje p-4`}>
-        {/* Utelamnas tills fragorna ar besvarade (docs/design.md,
-            "Projektlistan"): faltet rymmer en kategori, inte ett tillstand.
-            Att svaren saknas sags under Frågorna. */}
-        {oklassificerad ? null : (
-          <Rad etikett="Räknas som" varde={kategoriText} />
-        )}
-        {/* Kvittonas betaldatum, inte etiketten projekt.ar – samma ar som
-            underlaget (src/lib/projektar.ts). */}
-        <Rad
-          etikett="År"
-          varde={projektarTextKarta([projekt], kostnadRader).get(id) ?? String(projekt.ar)}
-        />
-      </section>
+      {/* Kvittonas betaldatum, inte etiketten projekt.ar – samma ar som
+          underlaget (src/lib/projektar.ts). Utan betalt kvitto inget ar, och
+          raden utelamnas (docs/design.md, "Årtalet bredvid en åtgärd räknas
+          ur dess kvitton"); har rutan da inget alls att visa utelamnas den. */}
+      {oklassificerad && arText === null ? null : (
+        <section className={`${FAKTARUTA_KLASS} border-b border-linje p-4`}>
+          {/* Utelamnas tills fragorna ar besvarade (docs/design.md,
+              "Projektlistan"): faltet rymmer en kategori, inte ett tillstand.
+              Att svaren saknas sags under Frågorna. */}
+          {oklassificerad ? null : (
+            <Rad etikett="Räknas som" varde={kategoriText} />
+          )}
+          {arText === null ? null : <Rad etikett="År" varde={arText} />}
+        </section>
+      )}
 
       {/* Tre delar med var sin Ändra, i installningssidans form
           (docs/design.md, "Projektsidan ändras i delar"). Varje Ändra leder

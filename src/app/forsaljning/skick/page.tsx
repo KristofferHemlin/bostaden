@@ -22,6 +22,7 @@ import { bostadHeader } from "@/lib/bostad-header";
 import { prisma } from "@/lib/prisma";
 import { FORSALJNINGSSTEG_SIDA, nastaForsaljningssteg } from "@/doman/forsaljningsflode";
 import { hamtaForsaljningslage } from "@/lib/forsaljningsflode";
+import { iKvittonasArsordning, projektarTextKarta } from "@/lib/projektar";
 import { kravBostad } from "@/lib/session";
 
 export const metadata = { title: "Skick vid försäljningen" };
@@ -48,7 +49,8 @@ export default async function SkickForsaljningSida() {
 
   const kandidater = await prisma.projekt.findMany({
     where: { bostad_id: bostadId, atgardstyp: "utbytt" },
-    orderBy: [{ ar: "asc" }, { skapad_at: "asc" }],
+    // Skapad_at bara som andra nyckel: ordningen ar kvittonas ar, nedan.
+    orderBy: { skapad_at: "asc" },
     select: {
       id: true,
       namn: true,
@@ -58,9 +60,38 @@ export default async function SkickForsaljningSida() {
       skick_forsaljning: true,
     },
   });
-  const atgarder = kandidater
+  // Aret bredvid atgarden ur dess kvitton, inte etiketten projekt.ar
+  // (docs/design.md, "Årtalet bredvid en åtgärd räknas ur dess kvitton"):
+  // etiketten sattes nar projektet skapades och foljer inte med nar kvitton
+  // flyttas, och skickflodet visade "Slipade golven · 2026" for ett kvitto
+  // fran 2020. Samma harledning som projektlistan (src/lib/projektar.ts).
+  const kvitton = await prisma.kostnad.findMany({
+    where: {
+      bostad_id: bostadId,
+      rader: { some: { fordelningar: { some: { projekt_id: { in: kandidater.map((p) => p.id) } } } } },
+    },
+    select: {
+      betaldatum: true,
+      rader: { select: { fordelningar: { select: { projekt_id: true } } } },
+    },
+  });
+  const arText = projektarTextKarta(kandidater, kvitton);
+  // I kvittonas ordning, inte etikettens: aret star bredvid varje atgard.
+  const atgarder = iKvittonasArsordning(kandidater, kvitton)
     .filter(behoverSkickForsaljning)
-    .map((p) => ({ id: p.id, namn: p.namn, ar: p.ar, skickForvarv: p.skick_forvarv }));
+    .map((p) => ({
+      id: p.id,
+      namn: p.namn,
+      arText: arText.get(p.id) ?? null,
+      skickForvarv: p.skick_forvarv,
+    }));
+  // Raknaren sager var hon ar, inte hur mycket som ar kvar (docs/design.md,
+  // "En räknare säger var hon är"): namnaren ar alla atgarder som fragan
+  // galler, besvarade eller inte, och taljaren borjar efter de besvarade.
+  // Varje svar sparas och sidan hamtar en atgard farre – med atgarder.length
+  // som namnare gick raknaren 1 av 8, 1 av 7, 1 av 6.
+  const antal = kandidater.filter((p) => p.atgardstyp === "utbytt").length;
+  const besvarade = antal - atgarder.length;
 
   // Efter skickfragorna: nasta steg som galler bostaden – samma del, nar den
   // kan andra ett tal, och agarandelen nar den inte ar bekraftad
@@ -91,6 +122,8 @@ export default async function SkickForsaljningSida() {
       ) : (
         <SkickForsaljningFlode
           atgarder={atgarder}
+          antal={antal}
+          besvarade={besvarade}
           nasta={
             nasta === FORSALJNINGSSTEG_SIDA.export
               ? { href: nasta, text: "Till deklarationsunderlaget" }

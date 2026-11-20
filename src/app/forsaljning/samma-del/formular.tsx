@@ -65,7 +65,7 @@ export function SammaDelFormular({
             <Kortval
               key={k.id}
               vald={markerade.includes(k.id)}
-              text={`${k.ar} · ${k.namn}`}
+              text={k.ar === null ? k.namn : `${k.ar} · ${k.namn}`}
               onClick={() => vaxla(k.id)}
             />
           ))}

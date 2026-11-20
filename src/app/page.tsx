@@ -208,7 +208,11 @@ export default async function Oversikt({
       // kvittona (docs/design.md, "Året i kortet härleds som i
       // projektlistan"). Samma uppgift som ser olika ut pa tva skarmar
       // lases som tva uppgifter.
-      status: `${projektar.get(p.id) ?? p.ar} · ${atgardKategoriText(p.atgardstyp, p.battre_kvalitet)}`,
+      // Utan betalt kvitto inget ar, bara kategorin (docs/design.md, "Årtalet
+      // bredvid en åtgärd räknas ur dess kvitton").
+      status: [projektar.get(p.id), atgardKategoriText(p.atgardstyp, p.battre_kvalitet)]
+        .filter(Boolean)
+        .join(" · "),
     }));
 
   return (

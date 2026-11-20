@@ -7,8 +7,10 @@ import { REGELPARAMETRAR } from "./_hjalp";
 //   * Ett projekt utan kvitton visar inget belopp, och aldrig "0 kr" – noll
 //     kronor är ett mätt tal och påstår att åtgärden inte kostade något. I
 //     beloppets plats står en dämpad "Inga kvitton än".
-//   * Året i raden härleds ur kvittona när det finns betalda: det tidigaste
-//     betaldatumet. Den lagrade etiketten ar gäller bara utan dem.
+//   * Året i raden härleds ur kvittona när det finns betalda. Utan dem står
+//     inget år alls – inte den lagrade etiketten ar, som gällde till
+//     2026-11-20 (docs/design.md, "Årtalet bredvid en åtgärd räknas ur dess
+//     kvitton").
 
 const h = await vi.hoisted(async () => {
   const { skapaFalskDatabas } = await import("./_falsk-databas");
@@ -36,6 +38,7 @@ vi.mock("@/lib/supabase/server", () => ({
 
 import { renderToStaticMarkup } from "react-dom/server";
 import ProjektlistaSida from "@/app/projekt/page";
+import { atgardKategoriText } from "@/doman/fragetradet";
 import { formateraKronor } from "@/lib/format";
 
 const ANNA = "a0000000-0000-4000-8000-000000000031";
@@ -85,16 +88,18 @@ async function listan(): Promise<HTMLElement> {
 /** Projektets rad – länken med projektets namn – och året som står på den
  *  (docs/design.md, "Listan grupperas inte på år, och året står på raden"):
  *  raden under namnet, "2024–2025 · Grundförbättring", läst som hela
- *  elementets text. Stannar om raden eller året saknas. */
-function raden(s: HTMLElement, namn: string): { text: string; ar: string; saknas: Element | null } {
+ *  elementets text. Stannar om raden eller statusraden saknas; utan år är
+ *  statusraden bara vad projektet räknas som, och `ar` är null. */
+function raden(s: HTMLElement, namn: string): { text: string; ar: string | null; saknas: Element | null } {
   const lank = [...s.querySelectorAll("a")].find((a) => a.textContent?.startsWith(namn));
   if (!lank) throw new Error(`projektlistan saknar ${namn}`);
   // Hela raden – en utsträckt länk: namnet är länken, beloppet står bredvid.
   const rad = lank.closest("div.relative");
   if (!rad) throw new Error(`${namn}: raden hittades inte`);
   const statusrad = [...rad.querySelectorAll("p, span")].find((e) => /^\d{4}(?:[–,] ?\d{4})* · .+$/.test(e.textContent ?? ""));
-  if (!statusrad) throw new Error(`${namn}: raden bär inget år`);
-  const ar = statusrad.textContent!.split(" · ")[0];
+  const kategorin = [...rad.querySelectorAll("p, span")].find((e) => e.textContent === atgardKategoriText("nybyggnad", null));
+  if (!statusrad && !kategorin) throw new Error(`${namn}: raden saknar sin statusrad`);
+  const ar = statusrad ? statusrad.textContent!.split(" · ")[0] : null;
   const saknas = [...rad.querySelectorAll("span")].find((e) => e.textContent === "Inga kvitton än") ?? null;
   return { text: rad.textContent ?? "", ar, saknas };
 }
@@ -134,10 +139,12 @@ describe("året i raden", () => {
     expect(raden(await listan(), "Nytt kök").ar).toBe("2024–2025");
   });
 
-  it("är etiketten när projektet saknar kvitton, eller bara har obetalda", async () => {
+  it("saknas när projektet saknar kvitton, eller bara har obetalda – etiketten visas inte", async () => {
     const s = await listan();
-    expect(raden(s, "Badrum 2022").ar).toBe("2022");
-    expect(raden(s, "Nya fönster").ar).toBe("2023");
+    // Förutsättningen: etiketterna finns och hade kunnat visas.
+    expect(h.db.tabell("projekt").find((p) => p.namn === "Nya fönster")!.ar).toBe(2023);
+    expect(raden(s, "Badrum 2022").ar).toBeNull();
+    expect(raden(s, "Nya fönster").ar).toBeNull();
   });
 });
 

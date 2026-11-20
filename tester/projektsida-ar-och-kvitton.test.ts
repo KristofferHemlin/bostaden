@@ -122,10 +122,18 @@ describe("projektsidans ar foljer kvittonas betaldatum", () => {
     expect(html).toContain("2021, 2024");
   });
 
-  it("inget betalt kvitto: etiketten, som forut", async () => {
+  // Till 2026-11-20 stod etiketten har. Ett projekt utan betalt kvitto har
+  // inget ar att visa (docs/design.md, "Årtalet bredvid en åtgärd räknas ur
+  // dess kvitton"), och raden utelamnas.
+  it("inget betalt kvitto: ingen rad for aret – inte etiketten 2023", async () => {
     kvitto("Ekstrands", null);
-    const html = await arraden();
-    expect(html).toContain(">2023<");
+    const d = document.createElement("div");
+    d.innerHTML = renderToStaticMarkup(await ProjektSida({ params: Promise.resolve({ id: P }) }));
+    const texter = [...d.querySelectorAll("span")].map((e) => e.textContent);
+    // Forutsattningen: rutan dar raden skulle sta finns, med vad det raknas som.
+    expect(texter, "raden Räknas som").toContain("Räknas som");
+    expect(texter).not.toContain("År");
+    expect(texter).not.toContain("2023");
   });
 });
 

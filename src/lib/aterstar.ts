@@ -55,7 +55,7 @@ export interface Aterstarrad {
 export const BOSTADSFRAGOR_BESKED = {
   rubrik: "Vi vet inte om bostaden var nybyggd när du köpte den",
   rad: "Svaret avgör om reparationer räknas med.",
-  lank: "Svara på två frågor",
+  lank: "Svara på frågan",
 } as const;
 
 /** Ett kvittos namn i listan: anteckningen, annars leverantoren. */

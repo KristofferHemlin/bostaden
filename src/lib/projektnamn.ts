@@ -39,7 +39,7 @@ export async function hamtaProjektnamn(
 export async function hamtaProjektval(
   bostadId: string,
   projekt: { id: string; namn: string; ar: number }[],
-): Promise<{ id: string; namn: string; ar: number; arText: string }[]> {
+): Promise<{ id: string; namn: string; ar: number; arText: string | null }[]> {
   const kvitton = await prisma.kostnad.findMany({
     where: {
       bostad_id: bostadId,
@@ -62,7 +62,7 @@ export async function hamtaProjektval(
       id: p.id,
       namn: namn.get(p.id) ?? p.namn,
       ar: ar.get(p.id) ?? p.ar,
-      arText: arText.get(p.id) ?? String(p.ar),
+      arText: arText.get(p.id) ?? null,
     }))
     .sort((a, b) => b.ar - a.ar);
 }
