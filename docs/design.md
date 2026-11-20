@@ -598,7 +598,11 @@ Projekt visas som rader avdelade med 1px linjer, inte som separata kort. Varje r
 
 **Varje nytt steg i ett flerstegsflöde börjar överst.** Efter ett besvarat projekt står användaren längst ned på mobilen, och nästa öppnas där. Rulla till toppen när steget byts – annars ser det ut som om ingenting hände.
 
-**De tre rutorna måste bära fältets namn.** Skrivet 2026-11-19. Rutorna heter *År*, *Månad* och *Dag*, och de namnen **tar över fältets etikett** — i webbläsarens tillgänglighetsträd heter rutorna bara *"År"*, *"Månad"*, *"Dag"*, ingenstans *Betaldatum*. Uppmätt två gånger oberoende: i min genomklickning 2026-11-18 och av agenten i koden dagen efter. **Sedan formuläret kan visa två datumfält samtidigt är de omöjliga att skilja åt** för den som hör skärmen i stället för att se den, och för röststyrning och ifyllnadshjälp. Varje ruta ska bära både fältets namn och sin egen del, och det gäller alla fyra ställen: registreringen, inmatningen, ändringsläget och inställningarna.
+**De tre rutorna måste bära fältets namn.** Skrivet 2026-11-19. Rutorna heter *År*, *Månad* och *Dag*, och de namnen **tar över fältets etikett** — i webbläsarens tillgänglighetsträd heter rutorna bara *"År"*, *"Månad"*, *"Dag"*, ingenstans *Betaldatum*. Uppmätt två gånger oberoende: i min genomklickning 2026-11-18 och av agenten i koden dagen efter. **Sedan formuläret kan visa två datumfält samtidigt är de omöjliga att skilja åt** för den som hör skärmen i stället för att se den, och för röststyrning och ifyllnadshjälp. Varje ruta ska bära både fältets namn och sin egen del — *"Betaldatum, år"*.
+
+**Ställena är fem, inte fyra:** registreringen, inmatningen, ändringsläget, inställningarna **och försäljningen**. Jag skrev fyra, och agenten räknade upp dem ur koden och hittade det femte. Sju fält sammanlagt, eftersom inmatningen och ändringsläget har två var. **Och uppräkningen hålls inte längre för hand:** namnet ges vidare från `Falt` till rutorna på ett enda ställe, och ett prov räknar upp filerna med datumfält ur `src/` och faller när en ny fil inte mäts. Det är den billiga varianten av regeln om listor som inte får hållas för hand — listan finns, men den vaktar sig själv.
+
+**Registreringens klumpiga namn får stå kvar.** Dess etikett är en fråga, så rutan heter *"När fick du nycklarna?, år"*. Det låter illa och är ändå rätt: **den som styr sin dator med rösten säger det som står på skärmen**, och byter vi namnet mot ett prydligare *Tillträdesdatum* finns det visade ordet inte längre i rutans namn.
 
 **Alla datum matas in i tre fält – aldrig med den infödda datumväljaren.** År, månad, dag, med automatiskt hopp framåt när ett fält är fullt och backsteg genom tomma fält. Numeriskt tangentbord. Gäller kvittodatum, betaldatum och tillträdesdatum, i registreringen, inmatningen, redigeringen och inställningarna.
 
@@ -1139,6 +1143,8 @@ Den kortade lydelsen är **45 tecken och ryms på en rad från 360 px och uppåt
 Följden går inte förlorad: **rutan vid sparandet säger den, och den går inte att gå förbi.** Ett kvitto daterat före tillträdet kan inte sparas utan att frågan ställs, och där finns plats för hela meningen. Informationen kommer alltså i det ögonblick beslutet fattas i stället för medan datumet skrivs.
 
 #### Bekräftelsen vid sparandet
+
+**Två skäl att fråga ger en fråga, och det är den som rör talen.** Uppmätt 2026-11-19: ett kvitto daterat före tillträdet och utan bilaga ställde tillträdesfrågan och hoppade över *Inget kvitto bifogat*. **Det är rätt ordning och står här för att den ska vara avsiktlig** — tillträdesfrågan avgör om beloppet räknas med alls, bilagepåminnelsen avgör hur starkt underlaget blir. Två rutor i rad på ett sparande är dessutom en rad för mycket.
 
 Sparas ett kvitto daterat före tillträdet ställs en fråga. En enda, med båda talen i:
 
@@ -2098,9 +2104,17 @@ Fältet står därför i projektets redigering, direkt under skickfrågan där d
 
 **Frågan ställs bara när skicket vid förvärvet är 0–2.** Agentens val, och det är rätt: ett lågt skick vid förvärvet är det som **ökar** avdraget, alltså det påstående som behöver bäras av något. Ett högt skick hjälper henne inte, och då är bevisningen ingen hon behöver. Finns redan ett svar visas fältet oavsett, så att ingenting hon skrivit blir oåtkomligt.
 
+**En räknare säger var hon är, inte hur mycket som är kvar.** Uppmätt 2026-11-19 i skickflödet vid försäljningen: det stod *1 AV 8*, och efter ett besvarat prov *1 AV 7*, sedan *1 AV 6*. Siffran före *AV* stod stilla medan den efter krympte. **Att svara såg ut som att ingenting hände** — och den som räknar fel på det slutar räkna. Räknaren ska gå *1 av 8*, *2 av 8*, *3 av 8*: nämnaren ligger still, täljaren rör sig.
+
 **Framsteget räknas i steg, inte i frågor och inte i kvitton.** *"1 av 3"* räcker, utan ordet före. Stegen är alltid tre; frågorna inuti steg två varierar med grenen, och **det antalet sägs aldrig** – regeln under *Frågeträdet* gäller oförändrad. Rättat 2026-11-13 efter att agenten såg att orden sa *frågor* medan räknaren räknade steg, och minskat från fyra till tre 2026-11-19.
 
 Här stod tidigare att skärmen också skulle säga *"N kvitton kvar"* och *"N projekt väntar på frågor"* — två räknare för två faser, från en modell som inte finns längre.
+
+**Årtalet bredvid en åtgärd räknas ur dess kvitton, varje gång det visas.** Uppmätt 2026-11-19: skickflödet visade *Slipade golven · 2026* fast kvittot är från 2020, och *Målade om vardagsrummet · 2020* fast kvittot är från 2019. Projektlistan visade samtidigt rätt år för samma projekt. **Talet räknas alltså om på ett ställe och ligger lagrat på ett annat**, och det lagrade följer inte med när kvitton flyttas in eller ut.
+
+Det är inte en prydnad: årtalet står bredvid frågan *"hur var skicket när du sålde?"* och är det enda som placerar åtgärden i tiden när hon ska minnas den. **Ett fel årtal där ber om ett svar på fel fråga.**
+
+**Och ett projekt utan kvitton visar inget år alls**, inte innevarande. Ett projekt utan kvitton har inget belopp — regeln står direkt nedan — och av samma skäl har det inget år. *2026* på ett nyskapat tomt projekt är ett påstående appen inte har täckning för.
 
 **Ett projekt ska gå att skapa av ett enda kvitto, och av inget kvitto alls.** Allt man gör består inte av flera inköp, och ordet får inte göra ett bytt blandare till något större än det var. Ett projekt utan kvitton har inget belopp; summan uppstår när kvitton kopplas till det.
 
@@ -2740,7 +2754,9 @@ Utan försäljningsdatum visas:
 Bandet ligger ovanför tabellerna, alltså ovanför de tal det handlar om, och i samma form som varningen om merkostnaden som redan står där:
 
 > **Vi vet inte om bostaden var nybyggd när du köpte den**
-> Svaret avgör om reparationer räknas med. **Svara på två frågor**
+> Svaret avgör om reparationer räknas med. **Svara på frågan**
+
+**Bandet lovar inget antal.** Det stod *Svara på två frågor* till 2026-11-20, och uppmätt samma dag ställdes **en**: svaret *Nej* på första ägaren gör ombildningsfrågan onödig. Det är rätt att hoppa över den, men lydelsen hade räknat frågor den inte kunde garantera. **Regeln under *Frågeträdet* säger redan att antalet frågor aldrig sägs i förväg**, eftersom det beror på svaren — och den gäller här lika mycket som där.
 
 **Men det är ett band och inte en spärr.** Sidan går fortfarande alltid att öppna, raderna visas, och den som bara vill se vad hon samlat ihop får göra det. Skälet står två stycken upp och gäller oförändrat: att kräva ett svar för att ens få titta lär användaren att sidan inte är för henne.
 

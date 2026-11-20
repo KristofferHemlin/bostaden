@@ -690,6 +690,8 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **En kommentar i koden är också ett påstående, och den ruttnar som alla andra.** 2026-11-20 mättes två kommentarer mot verkligheten: en sa att ett återupptaget utkast *"visar da sina sparade varden direkt"* — fälten var tomma — och en sa att analysen körs om *"om falten ar tomma"*, när villkoret i själva verket var om bilagan var omarkerad. **Båda hade lästs av en människa och trotts.** En kommentar som beskriver ett beteende ska prövas när beteendet prövas, annars är den en regel ingen vaktar.
 
+**Och det gäller också en mening i din egen förra rapport.** 2026-11-19 inledde agenten en omgång med att rätta sitt eget förbehåll från dagen innan: provet den sagt öppnar kvittots ändringsläge öppnar i själva verket projektets redigeringssida, och förbehållet var alltså fel. **Ett påstående som förts vidare från en tidigare rapport är lika oläst som ett som förts vidare från någon annan** — och det egna är det man minst av allt tänker kontrollera.
+
 **Det här är samma familj som *Ett tal som förts vidare är inte mätt***, med en mening i stället för ett tal. Och botemedlet är detsamma: fråga vad som faktiskt mättes, eller mät själv.
 
 **Agenten som rättar berömmet gör det dyraste och nyttigaste den kan göra.** Den här rättelsen kom oombedd, mot sitt eget intresse, och den räddade en regel från att bli en lögn om produkten.
@@ -805,6 +807,10 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 **Ett dolt fält är obekvämt; ett dolt fält som blockerar är en återvändsgränd.** Varje gång ett värde flyttas ur synfältet: leta upp det som prövar det, och fråga om någon av dem kan säga nej till henne. Säger en av dem nej måste värdet tillbaka — synligt och ändringsbart på det ställe där nejet kommer.
 
 **Och samma fråga gäller åt andra hållet:** en regel som skrivs om på ett ställe har nästan alltid en äldre lydelse någon annanstans. *Ett enda datumfält … fältet heter "Datum" och sätter båda värdena* stod kvar i `docs/design.md` medan årsregeln tre avsnitt bort sade motsatsen, och ett felmeddelande hette fortfarande *"Fyll i kvittots datum."* under ett fält som bytt namn. Agenten hittade båda. **Den som skriver om en regel söker efter dess gamla lydelse innan omgången är klar.**
+
+### Datumstämplarna kring 2026-11-20 är inte senare än 2026-11-18
+
+**Skrivet 2026-11-19.** Ett antal regler i `CLAUDE.md`, `docs/design.md` och `docs/produktspec.md` är stämplade **2026-11-20** — utkastets minne, `utkast_belopp`, kommentarsregeln och deras släkt. De skrevs i samma sträcka som posterna stämplade 11-18 och 11-19, och **ordningen i filerna är inte stämplarnas ordning.** Stämpeln säger vilken omgång en regel kom ur, inte vilken som kom först. Stöter du på en motsägelse mellan två regler, **avgör den inte på datumen.**
 
 ### Vem skriver reglerna
 
