@@ -2114,6 +2114,8 @@ Här stod tidigare att skärmen också skulle säga *"N kvitton kvar"* och *"N p
 
 Det är inte en prydnad: årtalet står bredvid frågan *"hur var skicket när du sålde?"* och är det enda som placerar åtgärden i tiden när hon ska minnas den. **Ett fel årtal där ber om ett svar på fel fråga.**
 
+**Ordningen kommer ur samma tal som visas.** Skrivet 2026-11-20, sedan agenten sett att skickflödet och frågan om samma del **sorterade** på det lagrade året medan de **visade** kvittonas. Då kan en lista stå i en ordning som motsäger årtalen bredvid raderna, och den som läser tror att sorteringen är sönder. Båda är ändrade, och projekt utan kvitton hamnar sist. **Samma krav gäller varje annan lista som sorterar på ett projektår** — talet och ordningen får inte komma ur olika källor.
+
 **Och ett projekt utan kvitton visar inget år alls**, inte innevarande. Ett projekt utan kvitton har inget belopp — regeln står direkt nedan — och av samma skäl har det inget år. *2026* på ett nyskapat tomt projekt är ett påstående appen inte har täckning för.
 
 **Ett projekt ska gå att skapa av ett enda kvitto, och av inget kvitto alls.** Allt man gör består inte av flera inköp, och ordet får inte göra ett bytt blandare till något större än det var. Ett projekt utan kvitton har inget belopp; summan uppstår när kvitton kopplas till det.
