@@ -671,6 +671,14 @@ Utkast som blivit liggande utan att kompletteras hör hemma i kvittolistan som a
 
 **HEIC måste konverteras före analys.** Språkmodellen kan inte läsa formatet, och det är standardformatet på iPhone – alltså exakt de bilder produkten finns till för. Samma konvertering som används för miniatyrer körs i minnet före anropet. Att hoppa över HEIC tyst innebär att funktionen inte fungerar för majoriteten av kvittofoton.
 
+**Svaret sparas på bilagan, i en egen kolumn.** Tillagd 2026-11-21, nullbar, och den bär modellens svar som det kom – inklusive fältet om ROT-basen och dess citat. Skälet är att en avläsning annars inte går att pröva i efterhand: när totalbeloppet uteblev den 18 november fick undersökningen **härleda** vad modellen måste ha svarat, eftersom svaret var borta. En härledning är ett sämre bevis än en avläsning, och den kostar varje gång.
+
+**Tre villkor gör det försvarbart**, och de hör ihop: kolumnen innehåller **samma uppgifter som redan står på kvittot** – belopp, datum, leverantör – bara i svarets form; den **lämnar aldrig appen**; och den **raderas med kvittot**, i samma operation som bilagan och filerna, utan egen livslängd. Den är därmed inte en ny sorts uppgift om användaren, bara en ny plats för den hon redan lämnat.
+
+**Integritetspolicyn säger det i avsnitt 2**, under kvitton och fakturor. En användare som vill veta vad vi sparar om henne ska kunna se allt på ett ställe; en kolumn som bara står i en migrering är ett löfte som inte hålls.
+
+**Kolumnen är additiv och får vara tom.** Befintliga bilagor saknar svaret och ska inte fyllas i efterhand – det fanns inte att spara. Tomt betyder *vet inte*, aldrig *inget svar gavs*.
+
 ### Visningsversion
 
 Varje bildbilaga lagras i tre former:

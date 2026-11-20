@@ -824,6 +824,20 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Och felet går åt det farliga hållet.** Ett för högt tal i ett underlag är ett yrkande hon inte har rätt till. **Kan basen inte fastställas lämnas fältet tomt** — tio sekunders inmatning är billigare än ett avdrag som inte håller.
 
+**Regeln gäller också de tal hon skriver själv.** Ett fält som ber om ett belopp utan att säga vilken bas det har gissar genom henne i stället för genom koden, och utfallet är detsamma. Hjälptexten vid *Privat del* sa inte om beloppet var med eller utan moms; läser hon en nettorad från kvittot drar hon av för lite, och bostadens del blir för hög. **Står två tal i samma subtraktion måste fältet säga att de har samma bas** — annars är det vi som lagt felet i hennes hand och kallat det inmatning.
+
+**Och ett svar som ska gå att pröva måste gå att läsa i efterhand.** Avläsningen den 18 november kunde bara härledas, inte mätas, eftersom modellens svar inte sparades. Svaret sparas nu med kvittot och raderas med det.
+
+### En spärr som fäller det normala fallet skyddar ingenting
+
+**Skriven 2026-11-21, ur valutafrågan.** Säger ett kvitto ingen valuta läses beloppet som kronor. Det är ett antagande, och regeln ovan säger att antaganden om ett tals bas är farliga — men här är antagandet rätt, och skälet är vad alternativet kostar. **Svenska kvitton trycker sällan *SEK*.**
+
+**Så vägs en spärr: inte mot felet den fångar, utan mot vad den kostar i det vanligaste fallet.** En kontroll som tömmer beloppsfältet på varje butikskvitto för att skydda mot en norsk faktura flyttar bara felkällan — hon fyller i allt för hand, varje gång, och det är hennes uppmärksamhet som bär risken i stället. **Den spärr som utlöses för ofta slutar bli läst.**
+
+**Gränsen går mellan tyst och felaktigt, inte mellan känt och okänt.** Tystnad får tolkas av sammanhanget när sammanhanget är entydigt — en svensk app för svenska bostäder. **Men ett utskrivet värde som motsäger antagandet måste fälla**, alltid: står `EUR` på kvittot blockeras beloppet. Felet är då en faktor och inte en procent.
+
+**Och ett antagande som accepteras ska stå skrivet som ett beslut.** Ett val ingen dokumenterat ser nästa gång ut som en glömska, och den som hittar det bygger bort det.
+
 ### Ett rött utfall är ett påstående om maskinen lika mycket som om koden
 
 **Skriven 2026-11-20, efter två undersökningar och en halv vecka.** `anteckning-tva-rader-layout` föll på tidsgräns en kväll och hängde i 18,7 minuter dagen efter. Vi mätte marginaler, misstänkte riggen, misstänkte Chrome, misstänkte belastningen. **Orsaken var att datorn somnade mitt i sviten.** Agenten läste systemets energilogg: sömnperioderna på 31, 92, 474 och 307 sekunder motsvarar provens uppehåll på 16, 90, 471 och 300. Natten innan stängdes locket 23:52:08 och öppnades 00:02:01, och tidsgränserna rapporterades 00:02:17.

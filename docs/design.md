@@ -1358,6 +1358,22 @@ Raden går att lämna tom. Vet man inte beloppet just nu sparas kvittot ändå, 
 
 **Det tomma fältet den 20 november var alltså skyddet som fungerade** — kontrollen mot netto och moms såg att talen inte gick ihop. Utan de raderna hade det stått 56 767,50 kr på skärmen, ett rimligt tal som är fel med hela ROT-beloppet.
 
+**Svaret på frågan kräver ett citat, och ett citat är inte en tolkning.** Första bygget bad modellen om ett ja eller nej och fick `ja` av att ROT-raden fanns på fakturan — alltså en slutsats, precis det avläsningen aldrig får dra. Rättat med en uttrycklig instruktion om att en ROT-rad i sig inte säger någonting om basen, och med ett obligatoriskt fält där orden som svaret bygger på ska stå ordagrant. **Finns inget citat finns inget svar, och då är basen okänd.** Citatets innehåll tolkas aldrig; det är kravet att kunna peka som gör skillnaden, inte texten i sig.
+
+**Modellens svar sparas med kvittot, i vår egen databas.** Beslutat 2026-11-21, efter att en avläsning den 18 november inte gick att pröva i efterhand: svaret var borta, och undersökningen fick härleda vad modellen måste ha sagt i stället för att läsa det. Det är den dyraste sortens brist, eftersom den kostar nästa undersökning också.
+
+Villkoren är tre, och de är hela skälet att det är försvarbart: **det är samma uppgifter som redan står på kvittot** — belopp, datum, leverantör — bara i den form modellen svarade; **det lämnar aldrig appen**; och **det raderas med kvittot**, i samma operation, utan egen livslängd. Integritetspolicyn säger det i en mening, eftersom en användare som läser avsnitt 2 ska kunna se allt vi sparar om henne på ett ställe.
+
+### Kronor antas, och det är ett beslut
+
+**Säger kvittot ingen valuta läses beloppet som kronor.** Hittat av agenten 2026-11-21 i samma uppräkning som ROT-basen, och det hör till samma regel: ett tal vars bas tas för given. Men till skillnad från ROT-fallet är antagandet här rätt, och det ska stå att det är valt och inte glömt.
+
+**Skälet är att svenska kvitton nästan aldrig trycker *SEK*.** Ett ICA-kvitto säger `248,50`, en hantverkarfaktura säger `50 287,50`, och båda är kronor. Ett krav på utskriven valuta hade tömt beloppsfältet på det stora flertalet riktiga kvitton — alltså en spärr som fäller det normala fallet för att skydda mot ett sällsynt.
+
+**Det som däremot aldrig får passera är en utskriven valuta som inte är kronor.** Står det `EUR`, `NOK` eller `$` på kvittot blockeras beloppet och fylls i för hand. Felet åt det hållet är en faktor, inte en procent, och ett tal som är tio gånger för stort i ett deklarationsunderlag är värre än ett tomt fält. Spärren finns i `valutaBlockerarBelopp`.
+
+**Gränsen går alltså mellan tyst och felaktigt, inte mellan känt och okänt.** Tystnad i Sverige betyder kronor. En utskriven annan valuta betyder att vi inte vet vad talet är värt.
+
 **Hjälptexten under Totalbelopp ändras när ROT är ifyllt.** "Hela kvittosumman" räcker för ett butikskvitto men säger ingenting på en faktura där avdraget redan är avräknat – fakturans egen slutsumma är då inte totalbeloppet, och den som skriver in den för hand får ett underlag som är för lågt med hela ROT-beloppet. Står det ett belopp i ROT-fältet säger hjälptexten i stället att beloppet är summan innan ROT drogs av, alltså fakturans summa inklusive moms men före avdraget.
 
 Det är det enda stället i formuläret där en hjälptext byter lydelse, och det är motiverat: fältet betyder faktiskt olika saker i de två fallen, och det är den enda punkt där en användare kan göra ett fel på tiotusen kronor utan att något ser konstigt ut.
@@ -1368,7 +1384,11 @@ Det är det enda stället i formuläret där en hjälptext byter lydelse, och de
 
 **Frågan "Var något på kvittot privat?" står på två ställen: i inmatningen och i kvittots ändringsläge.** Skälet är att säkerställa att uppgiften kommer med. En omarkerad privat del är ett tyst fel — den ger ett för högt underlag utan att något ser konstigt ut.
 
-**Formen är densamma som ROT-frågan.** Frågan syns som text; beloppsfältet fälls ut först när svaret är ja. Inget förval, ingen tom ruta att passera, och inget svar krävs för att spara. Lydelserna är desamma på båda ställena: *"Var något på kvittot privat?"* och *"Ange beloppet som inte hörde till bostaden. Resten räknas med."*
+**Formen är densamma som ROT-frågan.** Frågan syns som text; beloppsfältet fälls ut först när svaret är ja. Inget förval, ingen tom ruta att passera, och inget svar krävs för att spara. Lydelserna är desamma på båda ställena: *"Var något på kvittot privat?"* och *"Ange beloppet som inte hörde till bostaden, inklusive moms. Resten räknas med."*
+
+**Momsen står i hjälptexten, och det är inte en detalj.** Hittat 2026-11-21: texten sa bara *"Ange beloppet som inte hörde till bostaden"*, och kvittot hon läser av trycker ofta raderna utan moms medan totalsumman är med. Tar hon då nettoraden för en vara på 1 000 kr plus moms drar hon av 800 kr i stället för 1 000 — **och bostadens del blir för hög**, alltså felet åt det farliga hållet igen. Ett avdrag hon inte har rätt till, av ett ord som fattades i en hjälptext.
+
+**Samma bas som totalbeloppet, av samma skäl.** Kvittots belopp är inklusive moms, så det som dras ifrån måste vara det också — två tal i samma subtraktion kan inte ha olika baser. Det gäller båda ställena frågan står på.
 
 I inmatningen står den efter ROT-frågan och före datum. De två hör ihop: båda minskar det belopp som räknas med. Avvisar servern beloppet fälls frågan ut av sig själv, så att felet står vid sitt fält och inte bakom en hopfälld rad.
 

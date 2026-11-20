@@ -18,6 +18,8 @@ Delar du en bostad med någon ser de andra medlemmarna din e-postadress, bland a
 
 **Dina kvitton och fakturor.** Den bild eller PDF du laddar upp, och de uppgifter som hör till kvittot: belopp, datum, leverantör, eventuellt ROT-avdrag, en eventuell privat del och de anteckningar du skriver.
 
+Avläsningens svar sparas tillsammans med kvittot, så att en avläsning som blev fel går att undersöka i efterhand. Det innehåller samma uppgifter som kvittot i övrigt, det lämnar aldrig tjänsten, och det raderas när kvittot raderas.
+
 **Teknisk information om din inloggning.** När du loggar in sparar vår inloggningsleverantör din IP-adress och vilken webbläsare du använde, så att en session kan avslutas och missbruk upptäckas.
 
 Inga uppgifter hämtas om dig från andra källor. Tjänsten begär inte tillgång till din e-post, dina bankuppgifter eller din telefon utöver de filer du själv väljer att ladda upp.
