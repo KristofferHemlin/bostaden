@@ -828,6 +828,14 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Det är samma familj som en förutsättning som faller före provet:** felet som visas är inte felet som hände. **En yttre gräns ska alltid ligga utanför den inre**, annars är den inre meningslös.
 
+### Integritetspolicyn är påståenden om koden, och de ruttnar som alla andra
+
+**Skriven 2026-11-20.** Policyn lovar att Sentry-rapporterna inte innehåller kvittobilder, belopp, leverantörer eller adresser, och att Resend bara skickar lösenordsmejl. **Det är påståenden om vad koden skickar**, skrivna en gång i oktober och vaktade av ingenting — samtidigt som vi lagt till nya `rapporteraFel`-anrop och mejl om inbjudningar sedan dess.
+
+**Skillnaden mot en vanlig lydelse är följden.** En kommentar som ruttnar vilseleder nästa utvecklare. En policy som ruttnar är ett löfte till användaren som inte hålls, i det dokument hon läser innan hon lämnar ifrån sig sina kvitton.
+
+**Varje mening i policyn som säger vad appen gör ska gå att mäta**, och den som inte går att mäta ska skrivas om till något som går. Det som skickas ut ur appen räknas upp ur koden, inte ur minnet.
+
 ### En svit som hämtar något över nätet mäter inte bara koden
 
 **Skriven 2026-11-20.** Fyra provfiler hämtar Googles typsnitt över internet. En sida som väntar på `document.fonts.ready` mot ett typsnitt som aldrig svarar faller med *"Väntade mer än 15 s på Chromes svar på Runtime.evaluate"* — uppmätt av agenten mot en server som tar emot anslutningen men aldrig svarar, alltså precis som ett nät som försvinner.
