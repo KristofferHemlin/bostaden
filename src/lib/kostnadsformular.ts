@@ -155,6 +155,15 @@ export function tolkaKostnadsformular(
   };
 }
 
+/**
+ * Hjalptexten vid Privat del, i inmatningen och i kvittots andringslage
+ * (docs/design.md, "Momsen står i hjälptexten"). Samma bas som totalbeloppet:
+ * kvittots belopp ar inklusive moms, och det som dras ifran maste vara det
+ * ocksa. Till 2026-11-21 sa texten inte vilken bas beloppet hade, och en
+ * nettorad avlast fran kvittot drog av for lite – bostadens del blev for hog.
+ */
+export const PRIVAT_DEL_HJALPTEXT = "Ange beloppet som inte hörde till bostaden, inklusive moms. Resten räknas med.";
+
 /** En fraga om sparandet som inmatningen kan stalla. */
 export type Sparfraga = "tilltrade" | "bilaga";
 

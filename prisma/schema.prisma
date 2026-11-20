@@ -321,6 +321,13 @@ model bilaga {
   // gjorts – oavsett utfall – sa att ett aterupptaget utkast hoppar over
   // avlasningen och visar sina redan sparade varden direkt.
   dokument_analyserad   Boolean  @default(false)
+  // Sprakmodellens svar som det kom, sparat nar avlasningen fick ett svar
+  // (docs/design.md, "Modellens svar sparas med kvittot"). Null betyder "vet
+  // inte": avlasningen fick inget svar, eller bilagan ar aldre an kolumnen
+  // (2026-11-21) – inte att modellen svarade tomt. Lamnar aldrig appen och
+  // raderas med raden. Ingen kod laser den: avlasningen kors om varje gang
+  // den behovs, och sviten mater avlasningen, inte lagringen.
+  avlasningssvar        String?
   // Flersidiga PDF:er (docs/design.md, "Bilagor"). Sidantalet lases ur PDF:ens
   // sidtrad vid uppladdningen (ingen rendering, se src/lib/lagring/pdf-sidor.ts) –
   // sjalva sidorna renderas i webblasaren (src/lib/pdfjs-klient.ts) och lagras

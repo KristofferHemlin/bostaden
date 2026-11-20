@@ -1,0 +1,22 @@
+-- Avlasningens svar pa bilagan (docs/produktspec.md, datamodellen; docs/design.md,
+-- "Modellens svar sparas med kvittot"). Sprakmodellens svar som det kom,
+-- sa att en avlasning som blev fel gar att prova i efterhand. Den 18
+-- november 2026 gick det inte: svaret var borta, och undersokningen fick
+-- harleda vad modellen maste ha svarat.
+--
+-- Samma uppgifter som redan star pa kvittot – belopp, datum, leverantor –
+-- i svarets form. Lamnar aldrig appen: inget i koden skickar kolumnen till
+-- webblasaren, en export eller en felrapport. Raderas med bilagaraden,
+-- alltsa med kvittot.
+--
+-- Additiv: en ny kolumn som far vara tom. Ingen default, ingen backfill –
+-- null betyder "vet inte", eftersom svaret for befintliga bilagor inte
+-- sparades. Gammal kod laser inte kolumnen, sa den kan laggas till fore
+-- driftsattningen. Driftsattningen kor inga migreringar: kolumnen maste in
+-- FORE koden, annars gar varje sida som laser bilaga sonder.
+--
+-- Ror inte RLS – en ny kolumn andrar inte tabellens RLS-lage. Kontrollera
+-- anda efterat, som alltid.
+
+-- AlterTable
+ALTER TABLE "bilaga" ADD COLUMN "avlasningssvar" TEXT;

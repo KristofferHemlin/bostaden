@@ -143,6 +143,7 @@ import {
   type Faltfel,
 } from "@/lib/formularfel";
 import {
+  PRIVAT_DEL_HJALPTEXT,
   sparfragor,
   tolkaKostnadsformular,
   type Kostnadsfalt,
@@ -1565,7 +1566,7 @@ export function NyKostnadForm({
         <Falt
           etikett="Privat del"
           fel={faltfel.privatbelopp}
-          hjalp="Ange beloppet som inte hörde till bostaden. Resten räknas med."
+          hjalp={PRIVAT_DEL_HJALPTEXT}
         >
           <BeloppFalt
             name="privatbelopp"

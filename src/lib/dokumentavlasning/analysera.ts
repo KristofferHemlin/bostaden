@@ -101,7 +101,14 @@ export interface Dokumentavlasning {
   falt: Dokumentfalt;
 }
 
-const KORDES_INTE: Dokumentavlasning = { kord: false, falt: { ...TOMT_DOKUMENTFALT } };
+/** Avlasningen med modellens svar som det kom – bara for servern, som sparar
+ *  det pa bilagan (./lagring.ts). Null nar inget svar kom. Svaret gar aldrig
+ *  vidare till webblasaren. */
+export interface DokumentavlasningMedSvar extends Dokumentavlasning {
+  svar: string | null;
+}
+
+const KORDES_INTE: DokumentavlasningMedSvar = { kord: false, falt: { ...TOMT_DOKUMENTFALT }, svar: null };
 
 /**
  * Skickar ett redan inlast dokument till modellen och returnerar datum,
@@ -116,7 +123,7 @@ const KORDES_INTE: Dokumentavlasning = { kord: false, falt: { ...TOMT_DOKUMENTFA
 export async function analyseraDokumentbuffert(
   original: Buffer,
   format: Bilageformat,
-): Promise<Dokumentavlasning> {
+): Promise<DokumentavlasningMedSvar> {
   try {
     const nyckel = process.env.ANTHROPIC_API_KEY;
     if (!nyckel) {
@@ -192,7 +199,7 @@ export async function analyseraDokumentbuffert(
         SAMMANHANG,
       );
     }
-    return { kord: true, falt: tolkning.falt };
+    return { kord: true, falt: tolkning.falt, svar: text };
   } catch (fel) {
     // Aldrig ett kastat fel – men en modell som slutat svara (fel nyckel, kvot,
     // API-driftstorning) ska synas nagonstans i stallet for att bara sluta

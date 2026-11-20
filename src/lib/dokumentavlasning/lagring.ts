@@ -65,7 +65,7 @@ export async function analyseraKostnadsbilaga(params: {
     if (error || !blob) return KORDES_INTE;
 
     const original = Buffer.from(await blob.arrayBuffer());
-    const resultat = await analyseraDokumentbuffert(original, format);
+    const { svar, ...resultat } = await analyseraDokumentbuffert(original, format);
 
     // Anropet ar gjort. Markera bilagan oavsett utfall sa att avlasningen inte
     // gors om. En misslyckad markering far inte svalja resultatet – det hon
@@ -75,7 +75,11 @@ export async function analyseraKostnadsbilaga(params: {
     try {
       await prisma.bilaga.update({
         where: { id: params.bilagaId },
-        data: { dokument_analyserad: true },
+        // Svaret som det kom, sa att avlasningen gar att prova i efterhand
+        // (docs/design.md, "Modellens svar sparas med kvittot"). Null nar
+        // inget svar kom. Det gar aldrig vidare till webblasaren – resultatet
+        // nedan bar det inte.
+        data: { dokument_analyserad: true, avlasningssvar: svar },
       });
     } catch (fel) {
       rapporteraFel(fel, {

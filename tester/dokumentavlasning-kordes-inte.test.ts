@@ -36,6 +36,8 @@ describe("analyseraDokumentbuffert utan ANTHROPIC_API_KEY", () => {
         rot_utnyttjat: null,
         rot_avrakning_oklar: false,
       },
+      // Inget svar kom, alltså inget att spara (src/lib/dokumentavlasning/lagring.ts).
+      svar: null,
     });
   });
 });

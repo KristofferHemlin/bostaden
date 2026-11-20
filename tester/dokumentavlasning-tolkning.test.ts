@@ -664,3 +664,32 @@ describe("totalbeloppet ar summan fore ROT – i designfilens ordning", () => {
     expect(t.falt.rot_avrakning_oklar).toBe(false);
   });
 });
+
+// Kronor antas när kvittot är tyst, och en utskriven annan valuta blockerar
+// (docs/design.md, "Kronor antas, och det är ett beslut"; CLAUDE.md, "En spärr
+// som fäller det normala fallet skyddar ingenting"). Uppräknat 2026-11-21:
+// varje form, både den som ska blockera och den som ska släppas igenom.
+describe("valutan: tystnad är kronor, en annan valuta blockerar", () => {
+  const KVITTO = { att_betala: 1020.95, rot_utnyttjat: null, netto: 816.76, moms: 204.19 };
+
+  it.each(["EUR", "eur", "€", "NOK", "nok", "$", "USD", "DKK", "euro", "GBP", "£"])(
+    "%s blockerar beloppet – och bara beloppen",
+    (valuta) => {
+      const f = tolkaDokumentsvar(svar({ ...KVITTO, valuta, leverantor: "Byggmax", dokumentdatum: "2026-05-01" }));
+      expect(f.totalbelopp).toBe(null);
+      expect(f.leverantor).toBe("Byggmax");
+      expect(f.dokumentdatum).toBe("2026-05-01");
+    },
+  );
+
+  it.each([["utan valuta", undefined], ["null", null], ["tom", ""], ["SEK", "SEK"], ["kr", "kr"], ["kronor", "kronor"], ["Kr.", "Kr."]])(
+    "%s läses som kronor",
+    (_namn, valuta) => {
+      expect(tolkaDokumentsvar(svar({ ...KVITTO, valuta })).totalbelopp).toBe(102095);
+    },
+  );
+
+  it("en valuta av fel typ blockerar", () => {
+    expect(tolkaDokumentsvar(svar({ ...KVITTO, valuta: 978 })).totalbelopp).toBe(null);
+  });
+});

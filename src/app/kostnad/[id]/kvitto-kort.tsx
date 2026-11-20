@@ -70,6 +70,7 @@ import {
   type Innehavsgranser,
 } from "@/lib/kvittodatum-notis";
 import type { Bilagevy } from "@/lib/lagring/bilagor";
+import { PRIVAT_DEL_HJALPTEXT } from "@/lib/kostnadsformular";
 import { useNarKlar } from "@/lib/nar-klar";
 import { skickaUtanNollstallning } from "@/lib/skicka-utan-nollstallning";
 import { Projektalternativ, type Projektval } from "@/components/projektval";
@@ -554,7 +555,7 @@ export function RedigeraVy({
         {privatDel ? (
           <Falt
             etikett="Var något på kvittot privat?"
-            hjalp="Ange beloppet som inte hörde till bostaden. Resten räknas med."
+            hjalp={PRIVAT_DEL_HJALPTEXT}
             fel={felFor("privatbelopp")}
           >
             <BeloppFalt
