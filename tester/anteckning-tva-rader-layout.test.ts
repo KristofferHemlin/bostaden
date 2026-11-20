@@ -5,7 +5,14 @@ import postcss from "postcss";
 import tailwindcss from "tailwindcss";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import tailwindKonfig from "../tailwind.config";
-import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
+import {
+  CHROME,
+  kastaOmSidanKastade,
+  startaWebblasare,
+  TYPSNITT_LANK,
+  VANTA_PA_TYPSNITT,
+  type Webblasare,
+} from "./_webblasare";
 
 // docs/design.md, "Anteckningen får två rader där den är radens huvudtext":
 // kryssrutelistan dar kvitton valjs till ett projekt, Senaste kvitton pa
@@ -96,9 +103,6 @@ const { createElement } = await import("react");
 const { utkastNyckel } = await import("@/app/projekt/nytt/flode");
 
 const ROT = process.cwd();
-const TYPSNITT = readFileSync(join(ROT, "src/app/layout.tsx"), "utf-8").match(
-  /href="(https:\/\/fonts\.googleapis\.com\/css2[^"]+)"/,
-)![1];
 
 // Riktiga anteckningar ur testkontot (2026-11-04).
 const KORT = "Nytt ekgolv i vardagsrum och hall, det gamla var uppsvallat";
@@ -237,7 +241,7 @@ beforeAll(async () => {
     for (const t of vantade) expect(kropp, `${namn}: "${t}" renderades inte`).toContain(t);
     SIDOR[namn] = `<!doctype html><html lang="sv"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="${TYPSNITT}"><style>${css}</style></head>
+${TYPSNITT_LANK}<style>${css}</style></head>
 <body class="font-granssnitt">${kropp}</body></html>`;
   }
 
@@ -311,8 +315,7 @@ async function mat(sida: string, text: string, plats = 0, antal = 1): Promise<Ra
     awaitPromise: true,
     returnByValue: true,
     expression: `(async () => {
-      for (let i = 0; i < 100 && document.readyState !== 'complete'; i++) await new Promise(r => setTimeout(r, 100));
-      await document.fonts.ready;
+      ${VANTA_PA_TYPSNITT}
       const text = ${JSON.stringify(text)};
       const traffar = [...document.body.querySelectorAll('*')].filter(
         el => el.textContent === text && el.parentElement.textContent !== text);
@@ -338,6 +341,9 @@ async function mat(sida: string, text: string, plats = 0, antal = 1): Promise<Ra
       };
     })()`,
   });
+  // Sidans eget besked – "typsnitten laddades inte" – i stallet for ett
+  // tomt varde langre fram (tester/_webblasare.ts, VANTA_PA_TYPSNITT).
+  kastaOmSidanKastade(svar);
   const m = svar.result.value;
   expect(m.typsnittLaddade, "Fraunces och Instrument Sans måste laddas – med reservtypsnitt mäts fel").toBe(true);
   expect(m.antal, `${sida}: "${text}" ska stå på ${antal} rad(er)`).toBe(antal);

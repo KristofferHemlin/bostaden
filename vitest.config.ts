@@ -1,6 +1,8 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 import { felNodeversion } from "./scripts/nodeversion.mjs";
+import { hallVakenUnder } from "./scripts/hall-vaken.mjs";
+import { STADNINGENS_GRANS_MS } from "./tester/_webblasare";
 
 // Node 22, och bara 22 (CLAUDE.md): samma version i installation, tester och
 // produktion. Kontrollen ligger har, i konfigurationen, for att den ska kasta
@@ -12,10 +14,20 @@ import { felNodeversion } from "./scripts/nodeversion.mjs";
 const felVersion = felNodeversion(process.version);
 if (felVersion) throw new Error(felVersion);
 
+// Datorn hålls vaken under körningen, på macOS (scripts/hall-vaken.mjs).
+hallVakenUnder();
+
 export default defineConfig({
   test: {
     include: ["tester/**/*.test.ts"],
     environment: "node",
+    // En hook utan egen grans – i praktiken varje afterAll som stanger en
+    // webblasare – far mer tid an riggens langsta stadning, sa att riggens
+    // namngivna besked hinner fore vitests anonyma "Hook timed out in
+    // 10000ms" (CLAUDE.md, "En anonym gräns som löser ut före en namngiven
+    // gör felet oläsbart"). Raknad ur riggens egna granser, inte skriven
+    // bredvid dem, sa att den foljer med nar de andras.
+    hookTimeout: STADNINGENS_GRANS_MS + 15_000,
   },
   // Kallkoden anvander den automatiska JSX-korkorningen (som Next/SWC anvander
   // i appen) och importerar aldrig React sjalv – utan detta faller Vitests

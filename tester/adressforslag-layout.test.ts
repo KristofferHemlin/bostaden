@@ -4,7 +4,14 @@ import postcss from "postcss";
 import tailwindcss from "tailwindcss";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import tailwindKonfig from "../tailwind.config";
-import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
+import {
+  CHROME,
+  kastaOmSidanKastade,
+  startaWebblasare,
+  TYPSNITT_LANK,
+  VANTA_PA_TYPSNITT,
+  type Webblasare,
+} from "./_webblasare";
 
 // docs/design.md, Adressfaltet: "Ett flytande lager får täcka fälten i samma
 // steg. Det får aldrig täcka kontrollen som avslutar eller lämnar steget."
@@ -34,9 +41,6 @@ const { RegistreraFlode } = await import("@/app/registrera/flode");
 const { Forslagslista } = await import("@/app/registrera/adress-falt");
 
 const ROT = process.cwd();
-const TYPSNITT = readFileSync(join(ROT, "src/app/layout.tsx"), "utf-8").match(
-  /href="(https:\/\/fonts\.googleapis\.com\/css2[^"]+)"/,
-)![1];
 
 const FORSLAG = [
   ["Kvarnvägen 12 B", "Enköping, Sverige"],
@@ -70,7 +74,7 @@ beforeAll(async () => {
   expect(medLista).not.toBe(steg);
   const html = `<!doctype html><html lang="sv"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="${TYPSNITT}"><style>${css}</style></head>
+${TYPSNITT_LANK}<style>${css}</style></head>
 <body class="font-granssnitt">${medLista}</body></html>`;
 
   // Samma sida for varje matning; storleken star i fragan efter "?".
@@ -106,8 +110,7 @@ async function mat(bredd: number, hojd: number): Promise<Matning> {
     awaitPromise: true,
     returnByValue: true,
     expression: `(async () => {
-      for (let i = 0; i < 100 && document.readyState !== 'complete'; i++) await new Promise(r => setTimeout(r, 100));
-      await document.fonts.ready;
+      ${VANTA_PA_TYPSNITT}
       const lista = document.getElementById('adress-forslag');
       const l = lista.getBoundingClientRect();
       const knapp = [...document.querySelectorAll('button[type="submit"]')].find(b => b.textContent.trim() === 'Spara bostad');
@@ -123,6 +126,9 @@ async function mat(bredd: number, hojd: number): Promise<Matning> {
       };
     })()`,
   });
+  // Sidans eget besked – "typsnitten laddades inte" – i stallet for ett
+  // tomt varde langre fram (tester/_webblasare.ts, VANTA_PA_TYPSNITT).
+  kastaOmSidanKastade(svar);
   const m = svar.result.value;
   expect(m.typsnittLaddade, "Fraunces och Instrument Sans måste laddas – med reservtypsnitt mäts fel").toBe(true);
   return m;

@@ -4,7 +4,14 @@ import postcss from "postcss";
 import tailwindcss from "tailwindcss";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import tailwindKonfig from "../tailwind.config";
-import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
+import {
+  CHROME,
+  kastaOmSidanKastade,
+  startaWebblasare,
+  TYPSNITT_LANK,
+  VANTA_PA_TYPSNITT,
+  type Webblasare,
+} from "./_webblasare";
 import { knapptabellen } from "./_bostadsdelar-design";
 import { BOSTADSDEL_ETIKETT } from "@/doman/bostadsdel";
 
@@ -37,9 +44,6 @@ const { renderToStaticMarkup } = await import("react-dom/server");
 const { BostadsdelFraga } = await import("@/app/projekt/bostadsdel-fraga");
 
 const ROT = process.cwd();
-const TYPSNITT = readFileSync(join(ROT, "src/app/layout.tsx"), "utf-8").match(
-  /href="(https:\/\/fonts\.googleapis\.com\/css2[^"]+)"/,
-)![1];
 
 const ANNAT = BOSTADSDEL_ETIKETT.ANNAT;
 
@@ -57,7 +61,7 @@ beforeAll(async () => {
   const fraga = renderToStaticMarkup(createElement(BostadsdelFraga, { upplatelseform: "fastighet" }));
   const html = `<!doctype html><html lang="sv"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="${TYPSNITT}"><style>${css}</style></head>
+${TYPSNITT_LANK}<style>${css}</style></head>
 <body class="font-granssnitt"><main class="mx-auto max-w-md px-4 py-6">${fraga}</main></body></html>`;
   webblasare = await startaWebblasare({ "": html }, "kvittobo-bostadsdel-");
 }, 60_000);
@@ -97,8 +101,7 @@ async function mat(rubriker: string[]): Promise<Matning> {
     awaitPromise: true,
     returnByValue: true,
     expression: `(async () => {
-      for (let i = 0; i < 100 && document.readyState !== 'complete'; i++) await new Promise(r => setTimeout(r, 100));
-      await document.fonts.ready;
+      ${VANTA_PA_TYPSNITT}
       const stil = (e) => {
         const s = getComputedStyle(e);
         return { text: e.textContent, storlek: parseFloat(s.fontSize), vikt: s.fontWeight, farg: s.color };
@@ -145,6 +148,9 @@ async function mat(rubriker: string[]): Promise<Matning> {
       };
     })()`,
   });
+  // Sidans eget besked – "typsnitten laddades inte" – i stallet for ett
+  // tomt varde langre fram (tester/_webblasare.ts, VANTA_PA_TYPSNITT).
+  kastaOmSidanKastade(svar);
   const m = svar.result.value;
   expect(m.typsnittLaddade, "Instrument Sans måste laddas – med reservtypsnitt mäts fel. Fraunces används inte här och laddas därför inte").toBe(true);
   return m;

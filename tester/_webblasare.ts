@@ -28,6 +28,18 @@
 // ingen process har profilen pa sin kommandorad, och tar bort katalogen
 // asynkront, bada med en grans.
 //
+// TYPSNITTEN SERVERAS LOKALT (CLAUDE.md, "En svit som hämtar något över nätet
+// mäter inte bara koden"). Fyra filer lankade till 2026-11-20 Googles typsnitt
+// over internet, och en sida som vantar pa document.fonts.ready mot ett
+// typsnitt som aldrig svarar foll med "Väntade mer än 15 s på Chromes svar på
+// Runtime.evaluate" – uppmatt mot en server som tar emot anslutningen och
+// aldrig svarar, som ett nat som forsvinner nar datorn somnar. Nu serveras
+// tester/typsnitt/ (scripts/hamta-typsnitt.mjs) pa /_typsnitt/ av varje
+// server riggen startar, och vantan inne i sidan har en egen grans,
+// VANTA_PA_TYPSNITT_MS, under CDP-anropets 15 s – sa att beskedet ar
+// "typsnitten laddades inte" och inte en anonym tidsgrans. Provat i
+// tester/typsnitt-lokalt.test.ts.
+//
 // CSS-OVERGANGAR AR AVSTANGDA I VARJE SIDA RIGGEN OPPNAR (CLAUDE.md, "Mät
 // aldrig mitt i en övergång"). En animerad egenskap har inget varde medan den
 // andras: 2026-11-13 lastes en kvittorads yta 400 ms efter en aterkomst och
@@ -50,6 +62,25 @@ import { extname, join } from "node:path";
 
 export const CHROME =
   process.env.CHROME_SOKVAG ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+
+/**
+ * Stadningens granser, steg for steg (se overst). De ar namngivna for att
+ * vitests egen grans for en hook raknas ur summan i vitest.config.ts: en
+ * yttre grans som loser ut fore den inre ger "Hook timed out in 10000ms" i
+ * stallet for vad som inte blev klart (CLAUDE.md, "En anonym gräns som löser
+ * ut före en namngiven gör felet oläsbart"). Uppmatt 2026-11-20: vid
+ * belastning 44 foll en afterAll pa vitests 10 s medan riggens egna granser
+ * hade tillatit 30.
+ */
+export const STADNINGENS_GRANSER_MS = {
+  chromeEfterSigterm: 5_000,
+  chromeEfterSigkill: 5_000,
+  server: 5_000,
+  hjalpprocesser: 10_000,
+  profilkatalog: 5_000,
+} as const;
+/** Den langsta stadningen riggen kan ta innan den faller med ett namngivet besked. */
+export const STADNINGENS_GRANS_MS = Object.values(STADNINGENS_GRANSER_MS).reduce((a, b) => a + b, 0);
 
 /** Later `lofte` vanta hogst `ms`, och faller annars med vad det vantade pa. */
 export function medGrans<T>(lofte: Promise<T>, ms: number, vad: string): Promise<T> {
@@ -90,7 +121,51 @@ const UTAN_OVERGANGAR = `(() => {
   document.adoptedStyleSheets = [...document.adoptedStyleSheets, ark];
 })()`;
 
-const FILTYPER: Record<string, string> = { ".jpg": "image/jpeg", ".png": "image/png", ".svg": "image/svg+xml" };
+const FILTYPER: Record<string, string> = {
+  ".jpg": "image/jpeg", ".png": "image/png", ".svg": "image/svg+xml", ".css": "text/css", ".woff2": "font/woff2",
+};
+
+/** Katalogen med appens typsnitt, och adressen varje server riggen startar
+ *  serverar den pa – se overst. */
+export const TYPSNITTSKATALOG = join(process.cwd(), "tester/typsnitt");
+export const TYPSNITT_ADRESS = "/_typsnitt/typsnitt.css";
+/** Lanken en sida lagger i sitt <head> for appens typsnitt. */
+export const TYPSNITT_LANK = `<link rel="stylesheet" href="${TYPSNITT_ADRESS}">`;
+
+/** Hur lange sidan far vanta pa att bli klar och pa sina typsnitt. Under
+ *  CDP-anropets 15 s, sa att det namngivna beskedet hinner forst. */
+export const VANTA_PA_TYPSNITT_MS = 8_000;
+
+/**
+ * En sats att lagga forst i ett asynkront uttryck i sidan: vantar tills
+ * sidan ar klar och typsnitten laddade, och kastar annars med vad som inte
+ * blev klart. Kontrollera undantaget med `kastaOmSidanKastade`.
+ */
+export const VANTA_PA_TYPSNITT = `await (async () => {
+  const slut = Date.now() + ${VANTA_PA_TYPSNITT_MS};
+  const vanta = (ms) => new Promise((r) => setTimeout(r, ms));
+  while (document.readyState !== 'complete' && Date.now() < slut) await vanta(50);
+  const klara = await Promise.race([
+    document.fonts.ready.then(() => true),
+    vanta(Math.max(0, slut - Date.now())).then(() => false),
+  ]);
+  if (document.readyState === 'complete' && klara) return;
+  const tystaStilark = [...document.querySelectorAll('link[rel="stylesheet"]')].filter((l) => !l.sheet).map((l) => l.href);
+  const ejKlara = [...document.fonts].filter((f) => f.status !== 'loaded').map((f) => f.family + ' ' + f.status);
+  throw new Error('typsnitten laddades inte inom ${VANTA_PA_TYPSNITT_MS / 1000} s: ' + (
+    tystaStilark.length > 0 ? 'stilarket svarade inte (' + tystaStilark.join(', ') + ')'
+    : ejKlara.length > 0 ? ejKlara.join(', ')
+    : 'sidan blev aldrig klar (readyState ' + document.readyState + ')'));
+})();`;
+
+/** Kastar sidans eget undantag fran ett Runtime.evaluate, med dess text – i
+ *  stallet for att provet faller langre fram pa ett tomt varde. */
+export function kastaOmSidanKastade(svar: object): void {
+  const { exceptionDetails } = svar as { exceptionDetails?: { exception?: { description?: string } } };
+  if (exceptionDetails) {
+    throw new Error(`fel i sidan: ${exceptionDetails.exception?.description ?? JSON.stringify(exceptionDetails)}`);
+  }
+}
 
 /**
  * Startar servern och en headless Chrome. `sidor` ar namn -> html, dar namnet
@@ -108,6 +183,15 @@ export async function startaWebblasare(
 ): Promise<Webblasare> {
   const server: Server = createServer((req, res) => {
     const namn = new URL(req.url ?? "/", "http://x").pathname.slice(1);
+    if (namn.startsWith("_typsnitt/")) {
+      const fil = join(TYPSNITTSKATALOG, namn.slice("_typsnitt/".length));
+      if (fil.startsWith(TYPSNITTSKATALOG + "/") && existsSync(fil) && statSync(fil).isFile()) {
+        res.writeHead(200, { "content-type": FILTYPER[extname(fil)] ?? "application/octet-stream" }).end(readFileSync(fil));
+      } else {
+        res.writeHead(404).end();
+      }
+      return;
+    }
     const html = sidor[namn];
     if (html !== undefined) {
       res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(html);
@@ -188,7 +272,7 @@ export async function startaWebblasare(
       returnByValue: true,
       expression: uttryck,
     });
-    if (svar.exceptionDetails) throw new Error(`fel i sidan: ${JSON.stringify(svar.exceptionDetails)}`);
+    kastaOmSidanKastade(svar);
     return svar.result.value;
   }
 
@@ -199,24 +283,24 @@ export async function startaWebblasare(
       const avslutad = new Promise((r) => chrome.once("exit", r));
       chrome.kill();
       try {
-        await medGrans(avslutad, 5_000, "att Chrome ska avslutas efter SIGTERM");
+        await medGrans(avslutad, STADNINGENS_GRANSER_MS.chromeEfterSigterm, "att Chrome ska avslutas efter SIGTERM");
       } catch (e) {
         fel.push((e as Error).message);
         chrome.kill("SIGKILL");
-        await medGrans(avslutad, 5_000, "att Chrome ska avslutas efter SIGKILL").catch((e2) => fel.push((e2 as Error).message));
+        await medGrans(avslutad, STADNINGENS_GRANSER_MS.chromeEfterSigkill, "att Chrome ska avslutas efter SIGKILL").catch((e2) => fel.push((e2 as Error).message));
       }
     }
-    await medGrans(new Promise<void>((r) => server.close(() => r())), 5_000, "att servern ska stängas").catch((e) =>
+    await medGrans(new Promise<void>((r) => server.close(() => r())), STADNINGENS_GRANSER_MS.server, "att servern ska stängas").catch((e) =>
       fel.push((e as Error).message),
     );
     // Chromes hjalpprocesser skriver i profilen en stund efter att
     // huvudprocessen avslutats (ENOTEMPTY, 2026-11-11). Vanta pa dem, och ta
     // sedan bort katalogen asynkront – aldrig en synkron vantan som stoppar
     // varje timer, se overst.
-    await medGrans(vantaTillsProfilenArFri(profil), 10_000, "att Chromes hjälpprocesser ska lämna profilkatalogen").catch(
+    await medGrans(vantaTillsProfilenArFri(profil), STADNINGENS_GRANSER_MS.hjalpprocesser, "att Chromes hjälpprocesser ska lämna profilkatalogen").catch(
       (e) => fel.push((e as Error).message),
     );
-    await medGrans(rm(profil, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }), 5_000, "att profilkatalogen ska gå att ta bort").catch(
+    await medGrans(rm(profil, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }), STADNINGENS_GRANSER_MS.profilkatalog, "att profilkatalogen ska gå att ta bort").catch(
       (e) => fel.push((e as Error).message),
     );
     if (fel.length > 0) throw new Error(fel.join("; "));

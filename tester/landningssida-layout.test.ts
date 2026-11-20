@@ -6,7 +6,14 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Landningssida } from "@/app/landningssida";
 import tailwindKonfig from "../tailwind.config";
-import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
+import {
+  CHROME,
+  kastaOmSidanKastade,
+  startaWebblasare,
+  TYPSNITT_LANK,
+  VANTA_PA_TYPSNITT,
+  type Webblasare,
+} from "./_webblasare";
 
 // docs/design.md, "Landningssidans luft" och "Sidans sektioner ska synas som
 // sektioner": hela Skapa konto ska synas utan att rulla – inom 700 px vid
@@ -28,9 +35,6 @@ import { CHROME, startaWebblasare, type Webblasare } from "./_webblasare";
 const ROT = process.cwd();
 
 // Typsnittslanken lases ur rotlayouten, sa att testet laddar exakt det appen laddar.
-const TYPSNITT = readFileSync(join(ROT, "src/app/layout.tsx"), "utf-8").match(
-  /href="(https:\/\/fonts\.googleapis\.com\/css2[^"]+)"/,
-)![1];
 
 let webblasare: Webblasare;
 let adress: string;
@@ -48,7 +52,7 @@ beforeAll(async () => {
   ).css;
   const html = `<!doctype html><html lang="sv"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="${TYPSNITT}"><style>${css}</style></head>
+${TYPSNITT_LANK}<style>${css}</style></head>
 <body class="font-granssnitt">${renderToStaticMarkup(Landningssida())}</body></html>`;
 
   // Sidan och public/, sa att bilden laddas som i appen.
@@ -91,8 +95,7 @@ async function mat(bredd: number, hojd: number): Promise<Matning> {
     awaitPromise: true,
     returnByValue: true,
     expression: `(async () => {
-      for (let i = 0; i < 100 && document.readyState !== 'complete'; i++) await new Promise(r => setTimeout(r, 100));
-      await document.fonts.ready;
+      ${VANTA_PA_TYPSNITT}
       const knapp = [...document.querySelectorAll('a')].find(a => a.textContent.trim() === 'Skapa konto');
       const k = knapp.getBoundingClientRect();
       return {
@@ -130,9 +133,7 @@ async function mat(bredd: number, hojd: number): Promise<Matning> {
   // kontrollen nedan – typsnitten – fa skulden for nagot helt annat. Uppmatt
   // 2026-11-10: en borttagen valjare rapporterades som "typsnitten laddades
   // inte". Felet ska fallas med sin egen text.
-  if (svar.exceptionDetails) {
-    throw new Error(`mätningen kastade i webbläsaren: ${svar.exceptionDetails.exception?.description ?? JSON.stringify(svar.exceptionDetails)}`);
-  }
+  kastaOmSidanKastade(svar);
   const m = svar.result.value;
   expect(m.typsnittLaddade, "Fraunces och Instrument Sans måste laddas – med reservtypsnitt mäts fel radbrytningar").toBe(true);
   return m;

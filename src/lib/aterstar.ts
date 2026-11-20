@@ -67,8 +67,13 @@ export function kvittonamn(k: {
 }
 
 /**
- * Raderna i Återstår: forst hogar som vantar pa fragor, sedan kvitton utanfor
- * sidorna – i den ordning exportvyn alltid visat dem.
+ * Raderna i Återstår, i arsordning (docs/design.md, "Kvittoraderna under
+ * Återstår står i årsordning"): listan visar ett ar per rad och sorteras pa
+ * det, sa att talet och ordningen kommer ur samma kalla. Till 2026-11-20 stod
+ * kvittoraderna i den ordning de lades in, med aret bredvid – 2025, 2019, 2024
+ * under varandra. Inom ett ar star hogar fore kvitton och kvitton i
+ * inlaggningsordning, som forut; rader utan ar (utan betaldatum, utkast)
+ * star sist.
  */
 export function aterstarRader(
   ex: Pick<K6aExport, "oklassificerade_hogar" | "aterstaende_kvitton">,
@@ -78,7 +83,7 @@ export function aterstarRader(
    *  anropare skriver ut det tomma namnet rakt av. */
   hognamnFor: (projektId: string) => string,
 ): Aterstarrad[] {
-  return [
+  const rader: Aterstarrad[] = [
     ...ex.oklassificerade_hogar.map((h) => ({
       // Projektets id, inte namnet: tva namnlosa hogar fran samma ar fick
       // forut samma nyckel ("hog--2025"), och React aterstallde fel rad.
@@ -102,6 +107,8 @@ export function aterstarRader(
       projektId: null,
     })),
   ];
+  // Stabil sortering: lika ar behaller ordningen ovan.
+  return rader.sort((a, b) => Number(a.ar === null) - Number(b.ar === null) || (a.ar ?? 0) - (b.ar ?? 0));
 }
 
 /** Raden pa PDF:ens forsattssida som pekar till Återstår – PDF:en har inte
