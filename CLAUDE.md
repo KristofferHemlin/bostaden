@@ -828,6 +828,14 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Det är samma familj som en förutsättning som faller före provet:** felet som visas är inte felet som hände. **En yttre gräns ska alltid ligga utanför den inre**, annars är den inre meningslös.
 
+### Ett filter som rensar strukturen men inte meddelandet rensar ingenting
+
+**Skrivet 2026-11-20.** Sentry-filtret tar bort nycklar i `extra` och `contexts`, cookies, `Authorization`, IP-huvuden och kroppen. **Felets eget meddelande rensas inte** — och det är där uppgifterna står: Prismas valideringsfel skriver ut anropets argument ordagrant, så en leverantör och en adress följde med i klartext i en mätning.
+
+**Den som bygger ett filter räknar upp fälten han tänker på.** Meddelandet är inte ett fält, det är en sträng någon annan har skrivit — ofta ett bibliotek som gärna visar vad som matades in för att vara hjälpsamt. **Fråga alltid vad den strängen kan innehålla**, inte bara vilka nycklar som finns bredvid den.
+
+Samma sak gäller brödsmulor: anropen till backend saneras, men navigeringarna bär sidans adress med sökparametrar som den står.
+
 ### Integritetspolicyn är påståenden om koden, och de ruttnar som alla andra
 
 **Skriven 2026-11-20.** Policyn lovar att Sentry-rapporterna inte innehåller kvittobilder, belopp, leverantörer eller adresser, och att Resend bara skickar lösenordsmejl. **Det är påståenden om vad koden skickar**, skrivna en gång i oktober och vaktade av ingenting — samtidigt som vi lagt till nya `rapporteraFel`-anrop och mejl om inbjudningar sedan dess.
