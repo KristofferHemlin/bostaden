@@ -435,7 +435,7 @@ Radnivå är obligatoriskt, inte en finess. Ett typiskt byggvarukvitto innehåll
 Appen behöver inte veta vad som köptes, bara hur mycket som inte räknas. Kvittots detaljvy får därför ett enda fält:
 
 > **Var något på kvittot privat?**
-> Ange beloppet som inte hörde till bostaden. Resten räknas med.
+> *(hjälptexten står ordagrant i `docs/design.md` under* Uppdelning av kvitto*, och bara där)*
 
 Fältet skapar de två raderna i bakgrunden: en privat rad med det angivna beloppet, och en rad med resten som ärver kvittots projektkoppling. Datamodellen är oförändrad, beräkningen likaså, och den som vill se detaljerna kan öppna uppdelningen.
 

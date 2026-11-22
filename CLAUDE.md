@@ -732,6 +732,20 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Och det är prompten som är felet, inte konstanten.** Agenten gjorde rätt som byggde det den fick och sa var hålet satt. Lydelsen flyttar till filen, inte till nästa prompt.
 
+**Den står dessutom på ett enda ställe i filen.** Tillagt 2026-11-21: privatfrågans hjälptext stod ordagrant på tre ställen i `docs/` — ett där regeln bor och två avskrifter. Jag ändrade den där regeln bor, och **de två avskrifterna blev tysta motsägelser i samma ögonblick.** Agenten hittade dem och rörde dem inte, eftersom `docs/` inte är dess.
+
+**Ett prov kan bara läsa ett ställe.** Står lydelsen på tre vaktas en av dem, och de andra två ser ut som regler men är minnen av en. **Den som behöver nämna texten någon annanstans hänvisar till var den står, och skriver inte av den** — samma skäl som att en regel aldrig definieras som *"samma som X"*.
+
+### Ett prov som jämför hela objektet mäter dess form, inte sitt påstående
+
+**Skriven 2026-11-21, efter samma röda körning två omgångar i rad.** Förra omgången saknade två prov det nya fältet `rot_avrakning_oklar`; den här föll `dokumentavlasning-kordes-inte` på att det saknade `svar: null`. Båda gångerna var koden rätt och provet rött.
+
+**Provet heter något och påstår något annat.** *Avläsningen kördes inte* är ett påstående om en sak; en likhet mot hela objektet är ett påstående om varenda fält det råkar ha den dagen. **Det faller alltså varje gång objektet växer, och aldrig av det skäl namnet lovar.**
+
+**Och den sortens rött är dyrt på ett särskilt sätt:** det ser ut som ett fynd, det utreds som ett fynd, och det är bokföring. Det är samma släkte som *ett rött utfall är ett påstående om maskinen* — ett rött som inte handlar om koden.
+
+**Alltså: pröva det provet heter.** Behövs en exakt jämförelse för att fånga ett oväntat extrafält ska det vara ett eget prov som säger just det, med ett namn som gör det förväntat att det faller när objektet ändras.
+
 ### Ett dolt element är dolt först när appens riktiga CSS mäter det
 
 **Skriven 2026-11-19.** I Tailwind 3 vinner klassen `flex` över attributet `hidden`: `display: flex` i ett stilark slår `display: none` från webbläsarens egen stilmall. En layoutklass på ett dolt skal gör alltså det dolda synligt — i projektflödet hade namnet och delen av bostaden stått kvar i alla tre stegen.

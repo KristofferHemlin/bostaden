@@ -754,12 +754,17 @@ Kortet inleds med en rubrik i stil med "Spara kvittona nu, dra av dem när du s�
 
 **Inte *måste kunna styrkas*.** Så stod det här till 2026-10-27, och det bryter mot regeln under *Landningssidan*: avdraget vilar på att utgiften går att göra trolig, aldrig på att det krävs ett kvitto. Den lydelsen är lätt att skriva tillbaka eftersom den låter försiktig och ansvarsfull — den är bara inte sann, och den avskräcker den som tappat ett kvitto från att lägga in resten.
 
-**Under knappen står tre rader om hur det går till.** Ett kort och en knapp lämnar två tredjedelar av skärmen tom, och den som just skapat kontot vet inte att appen läser av kvittot åt en eller att inga skattefrågor kommer att ställas vid inmatningen. Det är produktens starkaste argument och det står ingenstans annars.
+**Under knappen står två rader om hur det går till** – tre fram till 2026-11-22, se strykningen nedan. Ett kort och en knapp lämnar två tredjedelar av skärmen tom, och den som just skapat kontot vet inte att appen läser av kvittot åt en eller att inga skattefrågor kommer att ställas vid inmatningen. Det är produktens starkaste argument och det står ingenstans annars.
 
 > **Så fungerar det**
 > Fota kvittot eller ladda upp fakturan. Appen läser av belopp, datum och leverantör.
 > Berätta vad du gjorde när du har tid. Kvitton som hörde ihop samlas i ett projekt, och några frågor om det gör talen i underlaget exakta.
-> Allt ligger kvar tills du behöver det. Även om det dröjer tjugo år.
+
+**Tredje raden är struken 2026-11-22:** *"Allt ligger kvar tills du behöver det. Även om det dröjer tjugo år."*
+
+**Den var den enda av de tre som lovade något i stället för att beskriva något.** De två andra säger vad appen gör — den läser av kvittot, den ställer frågorna senare. Den tredje säger vad vi kommer att göra under tjugo år, och det är ett löfte en tjänst som drivs av en privatperson inte kan skriva under på en välkomstskärm. **Det gör den dessutom till den enda raden som inte går att pröva** — de andra två kan en användare se att vi håller inom en minut.
+
+**Värdet den bar finns kvar på andra ställen där det hör hemma:** landningssidan förklarar varför kvitton försvinner och att försäljningen kan ligga tjugo år bort, och integritetspolicyns avsnitt 6 säger rakt ut att uppgifterna ligger kvar så länge kontot finns och varför. **Ett löfte om lagringstid hör hemma där det är ett åtagande, inte där det är en säljande rad.**
 
 **Mittenraden löd till 2026-11-16: *"Skattefrågorna kommer senare, inte nu. Du svarar på dem när du vill, och senast när du säljer."*** Den är den enskilda mening vi har starkast skäl att tro skadade oss: den första riktiga användaren la in tjugo kvitton, kände sig klar och gick aldrig vidare, och appen hade uttryckligen gett henne lov att sluta. Efter omläggningen var den dessutom inte längre sann — frågorna kommer när hon skapar ett projekt, inte vid försäljningen.
 
@@ -767,9 +772,9 @@ Kortet inleds med en rubrik i stil med "Spara kvittona nu, dra av dem när du s�
 
 Raderna är dämpad brödtext i samma kort, under knappen. Inget eget kort, ingen egen rubriknivå som konkurrerar med kortets, och framför allt ingen andra knapp.
 
-**Avstånden avgör om det läses rätt.** Mellanrummet upp till rubriken "Så fungerar det" ska vara ungefär dubbelt så stort som mellanrummet mellan de tre raderna. Ligger rubriken tätt under primärknappen läses den som knappens underrubrik, och har de tre raderna styckesavstånd läses de som tre fristående påståenden i stället för som tre steg i en ordning.
+**Avstånden avgör om det läses rätt.** Mellanrummet upp till rubriken "Så fungerar det" ska vara ungefär dubbelt så stort som mellanrummet mellan raderna. Ligger rubriken tätt under primärknappen läses den som knappens underrubrik, och har raderna styckesavstånd läses de som fristående påståenden i stället för som steg i en ordning.
 
-**Ingen introduktionsrundtur och inga påhittade siffror.** Rundturer läses inte och skjuter upp det man ska göra. Löften om hur mycket man sparar vet vi ingenting om. De tre raderna beskriver vad appen gör, aldrig vad användaren tjänar.
+**Ingen introduktionsrundtur och inga påhittade siffror.** Rundturer läses inte och skjuter upp det man ska göra. Löften om hur mycket man sparar vet vi ingenting om. Raderna beskriver vad appen gör, aldrig vad användaren tjänar — och aldrig vad vi lovar att göra i framtiden.
 
 Förstaskärmen har fortfarande exakt en sak att göra. Text som förklarar är inte en andra uppgift; en andra knapp vore det.
 
@@ -815,7 +820,7 @@ Det är samma mönster som inställningssidans kort, och `design.md` har hela ti
 
 Finns det projekt står rutan där som vanligt, både för att se vilket projekt kvittot hör till och för att flytta det.
 
-**Privatfrågan står här med sin hjälptext**, bland de andra uppgifterna: *"Ange beloppet som inte hörde till bostaden. Resten räknas med."* Den står också i inmatningen — regeln står under *Uppdelning av kvitto*.
+**Privatfrågan står här med sin hjälptext**, bland de andra uppgifterna. Den står också i inmatningen, med samma lydelse — **texten själv står på ett enda ställe, under *Uppdelning av kvitto***, och ska inte skrivas av hit.
 
 **Och direkt under den står handlingen för hela kvittot: "Hör inte till bostaden".** Beslutad 2026-11-13. Privatfältet delar ett kvitto; det här markerar ett kvitto som helt och hållet utanför underlaget – matbutiken som råkade fotograferas, möbeln som följde med flytten. Den låg tidigare i grupperingsflödet och hade ingen annan hemvist när det flödet togs bort.
 
@@ -1162,6 +1167,10 @@ Sparas ett kvitto daterat före tillträdet ställs en fråga. En enda, med båd
 
 **Fältet står kvar sedan det visats**, också om hon ändrar det till samma dag som betaldagen. Ett fält som försvinner medan hon skriver i det är värre än ett fält för mycket.
 
+**De två datumen står alltid intill varandra, och i samma ordning på varje skärm.** Beslutat 2026-11-22, efter att de i kvittots ändringsläge låg med annat emellan. **Ordningen är *Betaldatum* först och *Kvittots datum* direkt under**, både i inmatningen och i ändringsläget.
+
+**Betaldatum går först därför att det är det som alltid finns och det som avgör året.** *Kvittots datum* dyker upp först när det skiljer sig, alltså som ett tillägg till det första — och ett tillägg står under det det hör till. **Den omvända ordningen på den ena skärmen vore två ordningar för samma par fält**, vilket är samma fel som ett värde med två namn: den som lärt sig var betaldagen står på en skärm letar efter den på samma plats på den andra.
+
 **Båda datumen står i texten.** Den som typat fel ser felet i samma mening som frågan, utan att behöva leta tillbaka i formuläret.
 
 ***Ändra datumet* är den tunga knappen**, eftersom ett feltypat årtal är det vanliga fallet. Samma viktning som i *Inget kvitto bifogat*: appens gissning får tyngden, användarens egen väg står kvar bredvid och är lika lätt att träffa. **Den stänger aldrig utan att spara** – svarar hon *Datumet stämmer* sparas kvittot, precis som *Spara ändå* sparar.
@@ -1177,6 +1186,12 @@ Den andra säger uttryckligen att det kan stämma. Utan den meningen rättar anv
 **Notisen utvärderas först när datumet är komplett.** Fälten är tre, med automatiskt hopp framåt, och ett halvskrivet årtal är inte ett datum. Utvärderas det löpande blinkar notisen till medan användaren skriver, vilket är värre än att den kommer en sekund senare.
 
 **Och den får inte flytta något när den dyker upp.** Ytan reserveras, så att fälten under ligger stilla. En rad som skjuter ner resten mitt i inmatningen gör att man trycker på fel sak – och det som ligger närmast under datumfältet är *Leverantör*, alltså precis det fingret är på väg mot.
+
+**Det är den reserven som syns som ett hål, uppmätt 2026-11-22.** I inmatningen står 74 px mellan hjälptexten under *Betaldatum* och etiketten *Leverantör*, mot ungefär 22 px mellan formulärets övriga fält. Utrymmet är en tom `<p>` med `min-h` på en radhöjd, och **den är den enda i hela formuläret** – inget annat fält reserverar plats för sitt meddelande. Mellanrummet är alltså inte slarv, det är den här regeln som syns.
+
+**Men reserven är en rad, och notisen är tre.** Mätningen 2026-10-18 gav 109 tecken i tre rader vid 390 px mot en reserv på en, alltså flyttades allt under datumfältet 40 px ändå. **En reserv som syns som ett hål och ändå inte räcker är det sämsta av två ting** – den kostar jämnheten i varje formulär och köper inte det den finns för.
+
+**Oavgjort, och det ska inte byggas av någon som bara tycker att hålet är fult.** Tre vägar finns: låt reserven vara och acceptera hålet, reservera den uppmätta höjden och få ett större hål, eller ta bort reserven och acceptera hoppet. Den fjärde — att flytta notisen någon annanstans — löser ingenting, eftersom allt ovanför *Leverantör* skjuter *Leverantör* nedåt. **Valet avgörs på en telefon med en riktig feltypning**, inte på en skärmbild av ett tomt formulär.
 
 **Reserven är en rad, och lydelsen ska rymmas i den.** Ändras texten ska den mätas om vid 360 px innan den går in. Att skriva en mening som är ett tecken för lång kostar inget att upptäcka och mycket att missa.
 
@@ -1474,7 +1489,15 @@ Regeln står i `CLAUDE.md` sedan den 18 oktober och är kontrollerad mot källan
 
 **Skalan har inget förval.** Värdet har större hävstång på slutsiffran än något annat i appen, och ett förval mitt på skalan blir det svar de flesta lämnar orört.
 
-**Friskrivningen hör till skärmen, inte till fältet.** Raden om att appen inte ger skatterådgivning ska stå avskild nederst, inte direkt under fritextfältets hjälptext – två dämpade rader under varandra läses som om båda gällde fältet.
+**Friskrivningen står inte i frågeträdet, struket 2026-11-22.** Raden om att appen inte ger skatterådgivning och att Skatteverkets upplysningstjänst svarar på gränsfall stod längst ned på frågeskärmen. **Den svarade på en fråga ingen ställde sig där.** Hon beskriver vad hon gjorde i sitt kök; hon funderar inte på rådgivningsansvar, och en friskrivning i det läget läser som att något är osäkert med frågan hon just fick.
+
+**Friskrivningen bor på exportvyn**, där talen lämnar appen och där påståendet faktiskt betyder något. Regeln står under *Deklarationsunderlaget*.
+
+**I stället står en rad som svarar på det hon undrar: varför frågar ni det här?** Frågeträdet följer Skatteverkets regler för förbättringsutgifter, och frågorna är ställda i samma ordning och på samma skillnader som deras egen e-tjänst – kontrollerat vid källan 2026-10-18, se *Merkostnaden* i `CLAUDE.md`. Att säga det gör frågorna till något som kommer någonstans ifrån i stället för något vi hittat på.
+
+**Men raden påstår aldrig ett samröre.** *Frågorna följer Skatteverkets regler* är sant; *frågorna kommer från Skatteverket* antyder att de godkänt appen, och det har de inte. **Ingen myndighets namn får stå så att det läser som ett intyg** – inte i knappar, inte i rubriker, inte i märken. Reglerna är allmänna och fria att följa; det är hela produktens idé. Det vi inte gör är att skriva av deras hjälptexter ordagrant i gränssnittet: citaten i `CLAUDE.md` finns där för att belägga en regel, och det användaren läser är våra egna ord.
+
+**Och där en friskrivning ändå behövs står den avskild nederst**, aldrig direkt under ett fälts hjälptext – två dämpade rader under varandra läses som om båda gällde fältet.
 
 **Svarsalternativ är klickbara kort med kort text, inte radioknappar.** "Det är nytt" och "Jag bytte ut något som fanns". "Ja" och "Nej". Inga underrubriker i korten.
 
@@ -1893,20 +1916,25 @@ Det är samma fel som att fråga efter andelar vid inbjudan: ett besked om någo
 
 Att adressen alltid finns gör också att erbjudandet om att bjuda in alltid går att visa, eftersom en inbjudan matchas mot adressen.
 
-**Köpeskillingens hjälptext säger varför fältet finns, och den är densamma på båda ställena:** *"Står på köpekontraktet eller överlåtelseavtalet. Du behöver talet själv på blankett K5 eller K6 den dag du säljer."*
+**Köpeskillingens hjälptext säger varför fältet finns:** *"Står på köpekontraktet eller överlåtelseavtalet. Du behöver talet själv på blankett K5 eller K6 den dag du säljer."*
 
 **Ordet *själv* bär meningen.** Utan det låter raden som att vi vill ha talet; med det säger den att hon kommer att behöva det oavsett. Det är skillnaden mellan ett fält som kräver något och ett som påminner om något.
 
 **Satsen *", men det går att fylla i senare."* är struken 2026-11-04**, i samma beslut som gjorde fältet obligatoriskt. Den stod bara i registreringen och var sann bara där. Nu går det inte att fylla i senare, och en kvarlämnad sats hade varit en osanning på den enda plats där den fanns.
 
-**Och i inställningarna står bara den första meningen.** Hjälptexten byggs av två delar, och varje plats använder dem som är sanna där:
+**Och varje plats använder de delar som är sanna och användbara där.** Hjälptexten byggs av två meningar:
 
 | Del | Var |
 |---|---|
-| *Står på köpekontraktet eller överlåtelseavtalet.* | Överallt – frågan *var hittar jag talet?* gäller alltid |
-| *Du behöver talet själv på blankett K5 eller K6 den dag du säljer.* | Där fältet möts första gången: registreringen och kortet |
+| *Står på köpekontraktet eller överlåtelseavtalet.* | Inställningarna och kortet – frågan *var hittar jag talet?* gäller där hon är inne med avsikt |
+| *Du behöver talet själv på blankett K5 eller K6 den dag du säljer.* | Kortet på startskärmen |
+| *(ingen hjälptext alls)* | **Registreringen**, struket 2026-11-22 |
 
-Den som ändrar köpeskillingen i inställningarna har redan mött skälet två gånger och är där med avsikt. Att upprepa det en tredje gång är brus på den skärm vars hela poäng är att visa värden i lugn och ro.
+Den som ändrar köpeskillingen i inställningarna är där med avsikt och behöver inte höra skälet igen. Att upprepa det är brus på den skärm vars hela poäng är att visa värden i lugn och ro.
+
+**Registreringen tappade hela hjälptexten 2026-11-22, och skälet är var hon befinner sig.** I registreringen svarar hon på frågor i följd för att komma in, och två meningar om en blankett hon aldrig sett är den enda texten i hela flödet som handlar om något annat än att komma igång. **Det är dessutom det enda stället där texten inte kan göra sin nytta:** den som inte minns köpeskillingen kan inte gå och hämta kontraktet mitt i en registrering — hon skriver ett tal eller vänder.
+
+**Det river delvis regeln *Ett fält utan uttalat syfte ska inte efterfrågas alls***, och det ska stå skrivet. Skälet finns kvar på kortet och i inställningarna, alltså överallt där hon möter fältet igen — men i registreringen frågar appen nu efter ett tal utan att säga varför. **Det som ska bevakas är detsamma som när fältet blev obligatoriskt:** registreringar som börjar och inte slutar i det steget. Händer det är första åtgärden att pröva skälet som en kort rad igen, inte att göra fältet valfritt.
 
 **Det är alltså inte två lydelser utan en text i delar.** Den som senare vill harmonisera dem ska läsa tabellen först: skillnaden är inte slarv, den är villkorad av var fältet står.
 
@@ -2280,6 +2308,20 @@ Grupprubriken sitter därför **tätt mot sina knappar och har luft ovanför** �
 **Frågan finns därför också i projektets redigering.** Ett sparat svar som ligger utanför upplåtelseformens knappar visas ändå där – annars försvinner det tyst nästa gång hon sparar något helt annat. En bostad kan ha bytt form i registreringen, och ett svar hon gett ska inte raderas av en lista hon aldrig såg.
 
 **Men inte i deklarationsunderlaget och inte i något tal.** Svaret rör ingen beräkning, ingen tröskel och ingen blankett. Den dagen vi visar *hur mycket som lagts på köket* är det en egen sak att bestämma, och den vilar på data vi ännu inte har.
+
+#### Vad svaret får göra senare, och vad det aldrig får göra
+
+**Frågan ställd 2026-11-22: listan känns inte färdig, och syftet är framtiden** — att se när någon gjort om samma sak två gånger, och att veta vad folk faktiskt gör i sina bostäder. De två syftena drar åt olika håll, och det är därför listan känns ofärdig.
+
+**Det andra syftet är listan redan bra nog för.** *Vad folk gör* kräver inga skarpa gränser, bara att samma sak hamnar på samma ställe hos olika användare. Grovt och konsekvent slår fint och olika. Men det är en användning av hennes uppgifter som inte finns i dag, och **den dagen den byggs ska integritetspolicyn säga det innan den gör det** – avsnitt 3 har *förbättra och utveckla tjänsten* som ändamål, och aggregerad statistik ryms där; en text som beskriver det gör det inte förrän någon skriver den.
+
+**Det första syftet går inte att lösa med en bättre lista, och det är det viktiga svaret.** Regeln det handlar om står i `CLAUDE.md` under *Samma byggnadsdel reparerad två gånger*: har samma byggnadsdel reparerats flera gånger får bara den senaste utgiften dras av. **Beslutet där, fattat 2026-10-21, är att appen inte bygger något begrepp för byggnadsdel** – Skatteverket definierar inte termen, varje gräns vi drar är vår egen uppfinning, och **en felaktig gruppering tar bort ett avdrag hon har rätt till utan att det syns.**
+
+**Och flervalet kan inte uttrycka det som behövs.** *Nytt kök* kryssar i Kök och Ytskikt; ett annat köksprojekt kryssar Kök och Vitvaror. Överlappet säger att båda rörde köket – det säger ingenting om huruvida det som gjordes andra gången tog bort det som gjordes första. **En lista över delar kan uttrycka *överlappande*, aldrig *samma*.** Fler alternativ gör den distinktionen finare, inte möjlig.
+
+**Det svaret får alltså göra en sak, och den är värd mycket:** göra frågan vid försäljningen kortare och konkretare. I dag frågas hon *har du gjort om samma del av bostaden mer än en gång?* och får sin egen lista att gå igenom. Med bostadsdelen kan de åtgärder som delar en del ställas först, med sina årtal — *de här två rörde båda köket* — och frågan blir en hon kan svara på utan att läsa hela arkivet. **Appen sorterar; hon avgör.**
+
+**Gränsen är alltså inte var listan går, utan vad listan får göra.** Den får aldrig sortera bort en åtgärd, aldrig varna av sig själv, och aldrig stå för ett svar hon inte gett. Så länge den bara ordnar en fråga kostar en ofullkomlig lista ingenting; i samma sekund den drar en slutsats kostar den ett avdrag.
 
 **I koden heter den fortfarande `bostadsdel`, aldrig `kategori`.** Ordet kategori betyder redan grundförbättring och reparation i den här appen, och ett borttaget fält hette `kategori`. Två betydelser av samma ord i samma produkt är hur en vecka av motsägelser börjar. **Namnbytet 2026-11-20 gäller det användaren ser**, inte kolumnen – användarens språk och kodens språk behöver inte vara samma, och en migrering för ett fält som inte rör ett tal vore fel pris.
 
@@ -2881,7 +2923,7 @@ Formuleringen följer Skatteverkets egen: *"Kostnaden för det året som åtgär
 
 Det här var ett verkligt hål, men ett annat än det jag trodde: av listans fyra varningar syntes tre redan, och den fjärde kunde knappt inträffa. **Det som faktiskt försvann tyst var det som stod under *Återstår* — och bara i PDF:en**, som saknar den rubriken helt. Se den kända luckan i `produktspec.md`.
 
-**Friskrivningen står på den här sidan.** En dämpad rad om att appen inte ger skatterådgivning och att Skatteverkets upplysningstjänst svarar på gränsfall. Exportvyn är den enda skärm där användaren tar med sig siffror ut ur appen, och därmed den enda där påståendet behöver stå. Samma rad hör hemma i frågeträdet, där bedömningarna faktiskt görs.
+**Friskrivningen står på den här sidan.** En dämpad rad om att appen inte ger skatterådgivning och att Skatteverkets upplysningstjänst svarar på gränsfall. Exportvyn är den enda skärm där användaren tar med sig siffror ut ur appen, och därmed den enda där påståendet behöver stå. **Frågeträdet har den inte, struket 2026-11-22** – där står i stället en rad om att frågorna följer Skatteverkets regler, vilket är det hon undrar i det läget. Skälet står under *Frågeflödet*.
 
 ### Sidan finns inte, och när något gick fel
 
