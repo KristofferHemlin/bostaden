@@ -39,7 +39,6 @@ import {
 import {
   Avdelningsrubrik,
   FALTFEL_KLASS,
-  Friskrivning,
   HJALPTEXT_KLASS,
   Meddelanderuta,
   PRIMARKNAPP_KLASS,
@@ -490,13 +489,11 @@ export function NyttProjektFlode({
           </button>
         ) : null}
 
-        {/* Avskild langst ned, nar fragorna star pa skarmen (docs/design.md,
-            "Projektfrågorna"). */}
-        {steg === 2 ? (
-          <div className="border-t border-linje pt-4">
-            <Friskrivning />
-          </div>
-        ) : null}
+        {/* Friskrivningen star inte har sedan 2026-11-22 (docs/design.md,
+            "Friskrivningen står inte i frågeträdet") – den bor pa exportvyn.
+            Platsen langst ned i steg 2 ar reserverad for en dampad rad om att
+            fragorna foljer Skatteverkets regler, och star tom tills lydelsen
+            finns i design.md. */}
       </div>
     </form>
   );

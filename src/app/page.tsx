@@ -275,7 +275,7 @@ export default async function Oversikt({
             Lägg till kvitto
           </Link>
 
-          {/* Tre rader om hur det gar till, i samma kort under knappen
+          {/* Tva rader om hur det gar till, i samma kort under knappen
               (docs/design.md, "Forstaskarmen for en ny anvandare"). Ett kort
               och en knapp lamnar tva tredjedelar av skarmen tom och sager
               inget om vad appen gor at en. Dampad brodtext – ingen egen
@@ -283,8 +283,10 @@ export default async function Oversikt({
 
               Avstanden (docs/design.md, "Avstanden avgor om det lases ratt"):
               stort mellanrum upp till rubriken sa den inte lases som knappens
-              underrubrik, tatt mellan de tre raderna sa de lases som steg i en
-              ordning i stallet for fristaende paastaenden. */}
+              underrubrik, tatt mellan raderna sa de lases som steg i en
+              ordning i stallet for fristaende paastaenden. Tredje raden ("Allt
+              ligger kvar ... tjugo år.") ar struken 2026-11-22: den lovade
+              nagot i stallet for att beskriva nagot. */}
           <div className="mt-8">
             <h2 className="font-granssnitt text-sm font-medium text-text-sekundar">
               Så fungerar det
@@ -303,10 +305,6 @@ export default async function Oversikt({
                 Berätta vad du gjorde när du har tid. Kvitton som hörde ihop
                 samlas i ett projekt, och några frågor om det gör talen i
                 underlaget exakta.
-              </p>
-              <p className="font-granssnitt text-sm text-text-sekundar">
-                Allt ligger kvar tills du behöver det. Även om det dröjer
-                tjugo år.
               </p>
             </div>
           </div>

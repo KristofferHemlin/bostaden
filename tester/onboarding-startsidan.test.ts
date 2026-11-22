@@ -213,7 +213,7 @@ describe("kortet är inte en spärr", () => {
 
   // Raderna under knappen, ordagrant ur design.md. Mittenraden byttes
   // 2026-11-16: den gamla gav henne lov att sluta.
-  it("Så fungerar det: designens tre rader, i ordning", async () => {
+  it("Så fungerar det: designens rader, i ordning", async () => {
     seeda({});
     const text = design();
     const start = text.indexOf("> **Så fungerar det**\n");
@@ -223,7 +223,8 @@ describe("kortet är inte en spärr", () => {
       if (!rad.startsWith("> ")) break;
       vantade.push(rad.slice(2));
     }
-    expect(vantade).toHaveLength(3);
+    // Två sedan 2026-11-22, då raden om tjugo år ströks.
+    expect(vantade).toHaveLength(2);
     const block = (await startsidan()).match(/<h2[^>]*>Så fungerar det<\/h2><div[^>]*>(.*?)<\/div>/)?.[1];
     expect(block, "ingen rubrik Så fungerar det med sina rader").toBeTruthy();
     const rader = [...block!.matchAll(/<p[^>]*>(.*?)<\/p>/g)].map((m) => m[1].replace(/\s+/g, " ").trim());
@@ -475,27 +476,33 @@ describe("texterna läses ur design.md", () => {
     expect(steg).not.toContain("flyttade du in");
   });
 
-  // **Köpeskillingens hjälptext säger varför fältet finns, och den är densamma
-  // på båda ställena:** *"…"* – och tabellen "| Del | Var |" säger vilka
-  // delar som står var. Läses i testet, inte när describe samlas: en
-  // omskriven mening ska fälla ett test, inte hela filen (CLAUDE.md, Tester).
+  // **Köpeskillingens hjälptext säger varför fältet finns:** *"…"* – och
+  // tabellen "| Del | Var |" säger vilka delar som står var. Registreringen har
+  // sedan 2026-11-22 en egen rad utan text. Läses i testet, inte när describe
+  // samlas: en omskriven mening ska fälla ett test, inte hela filen (CLAUDE.md,
+  // Tester).
   const kopeskillingensMening = () =>
-    ur(/\*\*Köpeskillingens hjälptext säger varför fältet finns, och den är densamma på båda ställena:\*\* \*"([^"]+)"\*/);
+    ur(/\*\*Köpeskillingens hjälptext säger varför fältet finns:\*\* \*"([^"]+)"\*/);
 
-  /** Tabellen över hjälptextens delar: varje dels text och dess Var-kolumn. */
-  function hjalptextensDelar(): { del: string; var: string }[] {
+  /** Tabellen över hjälptextens delar: varje rads text och dess Var-kolumn. */
+  function tabellensRader(): { del: string; var: string }[] {
     const rubrik = "| Del | Var |";
     const text = design();
     const start = text.indexOf(rubrik);
     if (start < 0) throw new Error("design.md saknar tabellen över köpeskillingens hjälptext");
-    const delar: { del: string; var: string }[] = [];
+    const rader: { del: string; var: string }[] = [];
     for (const rad of text.slice(start).split("\n").slice(2)) {
       if (!rad.startsWith("|")) break;
       const [del, var_] = rad.split("|").slice(1, -1).map((c) => c.trim());
-      delar.push({ del: del.replace(/^\*(.+)\*$/, "$1"), var: var_ });
+      rader.push({ del: del.replace(/^\*(.+)\*$/, "$1"), var: var_ });
     }
-    return delar;
+    if (rader.length === 0) throw new Error("tabellen över köpeskillingens hjälptext har inga rader");
+    return rader;
   }
+  /** Raden som säger att en plats inte har någon hjälptext. */
+  const ingenText = (d: { del: string }) => /^\(ingen hjälptext/.test(d.del);
+  /** Hjälptextens delar – raderna med en text. */
+  const hjalptextensDelar = () => tabellensRader().filter((d) => !ingenText(d));
 
   /** Hjälptexten för en plats: de delar vars Var-kolumn gäller där, i tabellens ordning. */
   function hjalptextFor(galler: (var_: string) => boolean): string {
@@ -504,9 +511,9 @@ describe("texterna läses ur design.md", () => {
       .map((d) => d.del)
       .join(" ");
   }
-  const overallt = (v: string) => v.startsWith("Överallt");
-  const registreringen = (v: string) => overallt(v) || /\bregistreringen\b/.test(v);
-  const iKortet = (v: string) => overallt(v) || /\bkortet\b/.test(v);
+  const iInstallningarna = (v: string) => /\bInställningarna\b/i.test(v);
+  const iKortet = (v: string) => /\bkortet\b/i.test(v);
+  const iRegistreringen = (v: string) => /\bregistreringen\b/i.test(v);
 
   it("hjälptexten har två delar sedan 2026-11-04, och ingen sats om att fylla i senare", () => {
     const delar = hjalptextensDelar();
@@ -514,16 +521,26 @@ describe("texterna läses ur design.md", () => {
     expect(delar.map((d) => d.del).join(" ")).toBe(kopeskillingensMening());
   });
 
-  it("köpeskillingen i registreringen: obligatorisk, och hjälptexten är tabellens delar för registreringen", () => {
+  it("köpeskillingen i registreringen: obligatorisk, och ingen hjälptext alls", () => {
+    // Förutsättningen: tabellen säger att registreringen inte har någon text,
+    // och ingen av delarna gäller där.
+    const registreringensRad = tabellensRader().filter((d) => iRegistreringen(d.var));
+    expect(registreringensRad, "tabellens rad för registreringen").toHaveLength(1);
+    expect(ingenText(registreringensRad[0]), "registreringens rad är raden utan text").toBe(true);
+    expect(hjalptextFor(iRegistreringen)).toBe("");
+
     const steg = bostadssteget();
-    expect(steg).toMatch(helText(hjalptextFor(registreringen)));
-    expect(hjalptextFor(registreringen)).toBe(kopeskillingensMening());
-    expect(steg).not.toContain("fylla i senare");
+    // Fältets etikett som helhet: etiketten, markeringen och fältet – ingen text till.
+    const etikett = steg.match(/<label[^>]*>(?:(?!<label).)*?name="kopeskilling"(?:(?!<label).)*?<\/label>/)?.[0];
+    expect(etikett, "köpeskillingens etikett i bostadssteget").toBeTruthy();
+    expect(text(etikett!).split("|").filter((t) => t.trim() !== "")).toEqual(["Köpeskilling", "*"]);
+    for (const d of hjalptextensDelar()) expect(steg, d.del).not.toContain(d.del);
+    expect(steg).not.toContain("K5 eller K6");
     // Samma markering vid etiketten som de andra obligatoriska fälten.
     expect(steg).toMatch(/<span class="mb-1\.5[^"]*">Köpeskilling<span aria-hidden="true"[^>]*>\*<\/span><\/span>/);
   });
 
-  it("köpeskillingen i kortets fråga: samma delar som registreringen", async () => {
+  it("köpeskillingen i kortets fråga: tabellens delar för kortet", async () => {
     seeda({});
     const sida = renderToStaticMarkup((await KopeskillingSida()) as ReactElement);
     expect(sida).toMatch(helText(hjalptextFor(iKortet)));
@@ -531,7 +548,7 @@ describe("texterna läses ur design.md", () => {
     expect(sida).toMatch(new RegExp(`<h1[^>]*>${esc(kopeskillingsfragan())}</h1>`));
   });
 
-  it("köpeskillingen i inställningarna: bara delen som står överallt", () => {
+  it("köpeskillingen i inställningarna: bara delen som står där", () => {
     const html = renderToStaticMarkup(
       createElement(ForvarvetKort, {
         data: {
@@ -550,7 +567,9 @@ describe("texterna läses ur design.md", () => {
         onKlar: ingenting,
       }),
     );
-    expect(html).toMatch(helText(hjalptextFor(overallt)));
+    // Förutsättningen: inställningarna har en del, inte båda.
+    expect(hjalptextFor(iInstallningarna)).not.toBe(hjalptextFor(iKortet));
+    expect(html).toMatch(helText(hjalptextFor(iInstallningarna)));
   });
 
   it("andelsfrågans hjälptext", async () => {

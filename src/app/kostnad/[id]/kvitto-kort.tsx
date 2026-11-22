@@ -449,6 +449,24 @@ export function RedigeraVy({
           </Falt>
         </UtfallbarSektion>
 
+        {/* De tva datumen star intill varandra, Betaldatum forst och Kvittots
+            datum direkt under – samma ordning som inmatningen (docs/design.md,
+            "De två datumen står alltid intill varandra"). Provat i
+            tester/datumens-ordning-dom.test.ts. */}
+        <div>
+          <Falt etikett="Betaldatum">
+            <DatumFalt
+              name="betaldatum"
+              defaultValue={varden.betaldatum}
+              fel={felFor("betaldatum")}
+              onChange={rensa}
+            />
+          </Falt>
+          <p className={`mt-1 ${HJALPTEXT_KLASS}`}>
+            Lämna tomt om fakturan inte är betald än.
+          </p>
+        </div>
+
         {/* Samma namn och hjalptext som i formularet (docs/design.md,
             "Fältet heter Kvittots datum överallt"). */}
         <Falt etikett={KVITTODATUM_ETIKETT} obligatoriskt hjalp={KVITTODATUM_HJALPTEXT}>
@@ -493,20 +511,6 @@ export function RedigeraVy({
             placeholder="t.ex. målade om sovrummet, väggarna var slitna sedan vi flyttade in"
           />
         </Falt>
-
-        <div>
-          <Falt etikett="Betaldatum">
-            <DatumFalt
-              name="betaldatum"
-              defaultValue={varden.betaldatum}
-              fel={felFor("betaldatum")}
-              onChange={rensa}
-            />
-          </Falt>
-          <p className={`mt-1 ${HJALPTEXT_KLASS}`}>
-            Lämna tomt om fakturan inte är betald än.
-          </p>
-        </div>
 
         {/* Projektkopplingen visas bara nar bostaden har minst ett projekt
             (docs/design.md, "Ett kvitto ar en skarm, inte tva"): en rullista

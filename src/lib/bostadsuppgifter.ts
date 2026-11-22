@@ -69,9 +69,10 @@ export const UPPGIFTENS_TEXT: Record<Bostadsuppgift, { fraga: string; rad: strin
 
 /**
  * Kopeskillingens hjalptext (docs/design.md, "Ägarandelen frågas från
- * startsidan"), densamma i kortets fraga och i registreringen. Ordet "själv"
- * bar meningen: hon behover talet oavsett vad appen gor med det.
- * Installningarna visar bara den forsta meningen.
+ * startsidan") pa kortets fraga. Ordet "själv" bar meningen: hon behover
+ * talet oavsett vad appen gor med det. Installningarna visar bara den forsta
+ * meningen, och registreringen ingen alls sedan 2026-11-22 – tabellen i
+ * design.md ar facit for vilken del som star var.
  */
 export const KOPESKILLINGENS_HJALPTEXT =
   "Står på köpekontraktet eller överlåtelseavtalet. Du behöver talet själv på blankett K5 eller K6 den dag du säljer.";

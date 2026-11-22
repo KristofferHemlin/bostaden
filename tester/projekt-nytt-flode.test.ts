@@ -61,7 +61,9 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 vi.mock("@/app/projekt/actions", () => ({ skapaProjekt: h.skapaProjekt }));
 
-import { act } from "react";
+import { act, createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { Friskrivning } from "@/components/skarm";
 import { createRoot, type Root } from "react-dom/client";
 import NyttProjektSida from "@/app/projekt/nytt/page";
 import { utkastNyckel } from "@/app/projekt/nytt/flode";
@@ -768,5 +770,33 @@ describe("ett utkast från fyra steg öppnas där hon var", () => {
     rot = createRoot(behallare);
     await rendera();
     expect(framsteg()).toBe("2 av 3");
+  });
+});
+
+// docs/design.md, "Friskrivningen står inte i frågeträdet" (struket
+// 2026-11-22): raden om skatterådgivning bor på exportvyn. Platsen i steg 2
+// står tom tills lydelsen om Skatteverkets regler finns i design.md.
+describe("friskrivningen står inte i frågeträdet", () => {
+  it("inte i något av de tre stegen", async () => {
+    const friskrivningen = renderToStaticMarkup(createElement(Friskrivning)).replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    expect(friskrivningen, "förutsättningen: friskrivningen har en text").toMatch(/skatterådgivning/);
+    const sidan = () => (behallare.textContent ?? "").replace(/\s+/g, " ");
+
+    await rendera();
+    expect(framsteg()).toBe("1 av 3");
+    expect(sidan()).not.toContain(friskrivningen);
+
+    await skrivNamn("Måla sovrummet");
+    await tryck("Nästa");
+    // Förutsättningen: frågorna står på skärmen – där raden stod.
+    expect(framsteg()).toBe("2 av 3");
+    expect(synligText()).toContain("Byggde du något nytt som inte fanns tidigare?");
+    expect(sidan()).not.toContain(friskrivningen);
+    expect(sidan()).not.toContain("upplysningstjänst");
+
+    await svaraUtbyttLiknande();
+    await tryck("Nästa");
+    expect(framsteg()).toBe("3 av 3");
+    expect(sidan()).not.toContain(friskrivningen);
   });
 });
