@@ -37,8 +37,7 @@
 // vanliga serverformular (installningar, redigering).
 
 import { useEffect, useId, useRef, useState } from "react";
-import { isoDatum } from "@/lib/format";
-import { datumfel } from "@/lib/datum";
+import { datumfel, idagISverige } from "@/lib/datum";
 import { FALTFEL_KLASS } from "@/components/skarm";
 import { delensNamn, useFaltEtikett } from "@/components/falt-etikett";
 import { datumfaltetsMeddelande, FALTFEL_ATTRIBUT } from "@/lib/formularfel";
@@ -55,6 +54,7 @@ export function DatumFalt({
   defaultValue = "",
   onChange,
   framtidsFelmeddelande,
+  tidigtFelmeddelande,
   fel: formularetsFel,
 }: {
   /** Namnet pa den dolda input som haller ISO-vardet vid formularinlamning. Utelamnas nar det anropande formularet redan hanterar submit-vardet sjalv (t.ex. via egna dolda falt). */
@@ -65,6 +65,8 @@ export function DatumFalt({
   onChange?: (iso: string) => void;
   /** Avvisar datum efter dagens med detta meddelande. Utelamnad ar framtida datum tillatna. */
   framtidsFelmeddelande?: string;
+  /** Avvisar datum fore TIDIGASTE_DATUM (@/lib/datum) med detta meddelande. Utelamnad finns ingen undre grans. */
+  tidigtFelmeddelande?: string;
   /** Formularets meddelande, t.ex. "Fyll i kvittots datum." – visas bara nar faltet inte har ett eget fel. */
   fel?: string;
 }) {
@@ -82,8 +84,9 @@ export function DatumFalt({
     setManad(nyttManad);
     setDag(nyttDag);
     const felNu = datumfel(nyttAr, nyttManad, nyttDag, {
-      idagIso: isoDatum(new Date()),
+      idagIso: idagISverige(),
       framtidsFelmeddelande,
+      tidigtFelmeddelande,
     });
     setFel(felNu);
     const fullstandigt =

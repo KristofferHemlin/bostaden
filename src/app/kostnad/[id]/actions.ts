@@ -37,6 +37,7 @@ import {
   taBortBilaga,
 } from "@/lib/lagring/bilagor";
 import { serverfelMeddelande } from "@/lib/databas-fel";
+import { fortidigtDatumFel, TIDIGASTE_DATUM } from "@/lib/datum";
 import { oreFranKronor } from "@/lib/format";
 import {
   byggRedigeradeRader,
@@ -69,7 +70,7 @@ export interface KostnadRedigeraResultat {
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 // Undre grans: regelparametrarna seedas med giltig_fran 1970-01-01. En kostnad
 // med betaldatum fore dess avvisas har i stallet for att berakningen kastar fel.
-const TIDIGASTE_BETALDATUM = "1970-01-01";
+// Undre gransen ar TIDIGASTE_DATUM i @/lib/datum.
 
 /** Ett belopp som anvandaren kan ha lamnat tomt eller pa noll blir null. */
 function positivtEllerNull(varde: number | null): number | null {
@@ -126,8 +127,8 @@ export async function redigeraKostnad(
     if (!DATUM.test(betaldatum)) {
       return { fel: "Betaldatum har fel format.", falt: "betaldatum" };
     }
-    if (betaldatum < TIDIGASTE_BETALDATUM) {
-      return { fel: "Betaldatum före 1970 stöds inte.", falt: "betaldatum" };
+    if (betaldatum < TIDIGASTE_DATUM) {
+      return { fel: fortidigtDatumFel("Betaldatum"), falt: "betaldatum" };
     }
   }
 

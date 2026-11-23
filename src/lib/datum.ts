@@ -10,6 +10,48 @@
  * bekraftat i anvandning.
  */
 
+/**
+ * Den svenska kalenderns tidszon (CLAUDE.md, "Ett datum utan sin tidszon är
+ * inte en dag"). Varje datum i appen ar en dag i den har kalendern.
+ */
+export const SVENSK_TIDSZON = "Europe/Stockholm";
+
+/**
+ * Den tidigaste dag appen tar emot, i varje datumfalt som har en undre grans
+ * – en gang, i webblasaren och pa servern. Regelparametrarna seedas med
+ * giltig_fran fran och med den dagen (src/doman/seeddata.ts), och ett datum
+ * fore den gar inte att rakna pa. Till 2026-11-23 stod den pa sex stallen.
+ */
+export const TIDIGASTE_DATUM = "1970-01-01";
+export const TIDIGASTE_ARET = TIDIGASTE_DATUM.slice(0, 4);
+
+/** Meddelandet for ett datum fore TIDIGASTE_DATUM, med faltets namn forst. */
+export function fortidigtDatumFel(vad: string): string {
+  return `${vad} före ${TIDIGASTE_ARET} stöds inte.`;
+}
+
+/**
+ * Dagens datum i Stockholm som ISO ("YYYY-MM-DD") – i webblasaren och pa
+ * servern, oavsett vilken zon maskinen star i. isoDatum av nuet ar
+ * dagen i UTC, och den ligger kvar pa gardagen till 01:00 svensk tid (02:00 pa
+ * sommaren): den som skrev in dagens datum strax efter midnatt fick hora att
+ * det lag i framtiden. Provat i tester/idag-i-stockholm.test.ts.
+ */
+export function idagISverige(nu: Date = new Date()): string {
+  const delar = new Intl.DateTimeFormat("en-CA", {
+    timeZone: SVENSK_TIDSZON,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(nu);
+  const del = (typ: Intl.DateTimeFormatPartTypes) => {
+    const v = delar.find((d) => d.type === typ)?.value;
+    if (!v) throw new Error(`Datumet saknar ${typ} i ${SVENSK_TIDSZON}`);
+    return v;
+  };
+  return `${del("year")}-${del("month")}-${del("day")}`;
+}
+
 /** Sista dagen i `manad` (1-indexerad) for ett givet ar. */
 export function sistaDagenIManaden(ar: number, manad: number): number {
   return new Date(Date.UTC(ar, manad, 0)).getUTCDate();
@@ -25,6 +67,12 @@ export interface DatumfelOpts {
    * tilltradesdatum spärras.
    */
   framtidsFelmeddelande?: string;
+  /**
+   * Satts denna avvisas datum fore TIDIGASTE_DATUM med detta meddelande –
+   * samma grans som servern provar, sa att hon far beskedet vid faltet medan
+   * hon skriver och inte forst efter att formularet skickats.
+   */
+  tidigtFelmeddelande?: string;
 }
 
 /**
@@ -56,6 +104,9 @@ export function datumfel(
   const dagN = Number(dag);
   if (dagN > sistaDagenIManaden(arN, manadN)) return "Ogiltig dag.";
 
+  if (opts.tidigtFelmeddelande && `${ar}-${manad}-${dag}` < TIDIGASTE_DATUM) {
+    return opts.tidigtFelmeddelande;
+  }
   if (
     opts.framtidsFelmeddelande &&
     opts.idagIso &&

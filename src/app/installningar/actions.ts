@@ -39,7 +39,8 @@ import {
 } from "@/doman/bostadsfragor";
 import { ANDEL_SAKNAS, agarandelFel, agarandelFranText } from "@/lib/agarandel";
 import { skrivEgenAndel } from "@/lib/egen-andel";
-import { isoDatum, oreFranKronor } from "@/lib/format";
+import { fortidigtDatumFel, idagISverige, TIDIGASTE_DATUM } from "@/lib/datum";
+import { oreFranKronor } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 import { tolkaGeokod } from "@/app/registrera/koordinater";
@@ -249,10 +250,10 @@ export async function sparaForvarvet(
       falt: "tilltradesdatum",
     };
   }
-  if (tilltradesdatum < "1970-01-01") {
-    return { fel: "Tillträdesdatum före 1970 stöds inte.", falt: "tilltradesdatum" };
+  if (tilltradesdatum < TIDIGASTE_DATUM) {
+    return { fel: fortidigtDatumFel("Tillträdesdatum"), falt: "tilltradesdatum" };
   }
-  if (tilltradesdatum > isoDatum(new Date())) {
+  if (tilltradesdatum > idagISverige()) {
     return { fel: "Tillträdesdatum kan inte ligga i framtiden.", falt: "tilltradesdatum" };
   }
 
@@ -317,7 +318,11 @@ export async function sparaForvarvet(
         where: { id: bostadId },
         data: {
           tilltradesdatum: new Date(`${tilltradesdatum}T00:00:00.000Z`),
-          kopeskilling,
+          // Ett tomt falt andrar ingenting, ocksa for kopeskillingen
+          // (docs/design.md, beslutat 2026-11-23): tomt betyder "jag andrade
+          // inget har", aldrig "radera det jag sagt". Till dess skrevs null, och
+          // ett svar som ar obligatoriskt i registreringen gick att radera har.
+          ...(kopeskilling === null ? {} : { kopeskilling }),
           kopkostnader,
           ...lagringAvBostadsfragor(bostadsfragor.svar),
         },

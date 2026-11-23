@@ -9,8 +9,9 @@ import { REGELPARAMETRAR } from "./_hjalp";
 // avskrift fälls av det första provet om den är ordagrann och av de andra om
 // den inte är det.
 //
-// Lydelserna står inte i designfilen, så proven vaktar att skärmen och PDF:en
-// säger samma sak, inte att de säger rätt sak.
+// Lydelserna står i designfilen sedan 2026-11-23, och det som renderas jämförs
+// med dem – inte med konstanten, som bara visar att skärmen och PDF:en säger
+// samma sak.
 
 const h = await vi.hoisted(async () => {
   const { skapaFalskDatabas } = await import("./_falsk-databas");
@@ -151,28 +152,53 @@ function filerMed(text: string): string[] {
   return traffar.sort();
 }
 
+/**
+ * De fyra lydelserna ur docs/design.md, i den ordning de står i citatet –
+ * läst i provet, inte på modulnivå.
+ */
+function designensLydelser(): string[] {
+  const rader = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8").split("\n");
+  const start = rader.findIndex((r) => r.startsWith("**Sammanställningens fyra texter har samma källa"));
+  if (start === -1) throw new Error("design.md saknar stycket om sammanställningens fyra texter");
+  const citat: string[] = [];
+  for (const r of rader.slice(start + 1)) {
+    if (r.startsWith("> ")) citat.push(r.slice(2).trim());
+    else if (citat.length > 0) break;
+  }
+  if (citat.length !== 4) throw new Error(`design.md: väntade fyra lydelser, fann ${citat.length}`);
+  return citat;
+}
+
 // Vilket projekt som ger texten på skärmen: en tom rad kräver en tom sida.
+// `plats` är lydelsens rad i designfilens citat.
 const TEXTERNA = [
-  { namn: "sida 1:s rubrik", text: SIDA1_RUBRIK, atgard: "utbytt" as const },
-  { namn: "sida 1:s tomma rad", text: SIDA1_TOMT, atgard: "utbytt" as const },
-  { namn: "sida 2:s rubrik", text: SIDA2_RUBRIK, atgard: "nybyggnad" as const },
-  { namn: "sida 2:s tomma rad", text: SIDA2_TOMT, atgard: "nybyggnad" as const },
+  { namn: "sida 1:s rubrik", text: SIDA1_RUBRIK, plats: 0, atgard: "utbytt" as const },
+  { namn: "sida 2:s rubrik", text: SIDA2_RUBRIK, plats: 1, atgard: "nybyggnad" as const },
+  { namn: "sida 1:s tomma rad", text: SIDA1_TOMT, plats: 2, atgard: "utbytt" as const },
+  { namn: "sida 2:s tomma rad", text: SIDA2_TOMT, plats: 3, atgard: "nybyggnad" as const },
 ];
 
-describe.each(TEXTERNA)("$namn: en text, två återgivningar", ({ text, atgard }) => {
+describe.each(TEXTERNA)("$namn: en text, två återgivningar", ({ text, plats, atgard }) => {
+  it("konstanten är designfilens lydelse", () => {
+    expect(text).toBe(designensLydelser()[plats]);
+  });
+
   it("står bara i källan", () => {
     expect(filerMed(text)).toEqual([KALLAN]);
   });
 
-  it("exportvyn visar den som hela elementets text, med besvarade bostadsfrågor", async () => {
-    expect((await exportvynsTexter(atgard, true)).filter((t) => t === text)).toHaveLength(1);
+  it("exportvyn visar designfilens lydelse som hela elementets text, med besvarade bostadsfrågor", async () => {
+    const lydelse = designensLydelser()[plats];
+    expect((await exportvynsTexter(atgard, true)).filter((t) => t === lydelse)).toHaveLength(1);
   });
 
   it("och i det väntande läget", async () => {
-    expect((await exportvynsTexter(atgard, false)).filter((t) => t === text)).toHaveLength(1);
+    const lydelse = designensLydelser()[plats];
+    expect((await exportvynsTexter(atgard, false)).filter((t) => t === lydelse)).toHaveLength(1);
   });
 
-  it("PDF:en har den som en egen rad", async () => {
-    expect((await pdfensRader()).filter((r) => r === text)).toHaveLength(1);
+  it("PDF:en har designfilens lydelse som en egen rad", async () => {
+    const lydelse = designensLydelser()[plats];
+    expect((await pdfensRader()).filter((r) => r === lydelse)).toHaveLength(1);
   });
 });

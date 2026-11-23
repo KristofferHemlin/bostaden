@@ -34,7 +34,8 @@
 
 import { redirect } from "next/navigation";
 import { KOPESKILLING_SOM_BELOPP } from "@/app/bostaden/validering";
-import { isoDatum, oreFranKronor } from "@/lib/format";
+import { idagISverige } from "@/lib/datum";
+import { oreFranKronor } from "@/lib/format";
 import { INGEN_KONTAKT_MED_INLOGGNINGEN } from "@/lib/inloggning";
 import { prisma } from "@/lib/prisma";
 import { hamtaAnvandare, sakerstallAnvandarrad } from "@/lib/session";
@@ -95,7 +96,7 @@ export async function slutforRegistrering(
   );
 
   // Samma regler och samma meningar som formularet (./validering.ts).
-  const faltfel = bostadsstegetsFel(formData, isoDatum(new Date()));
+  const faltfel = bostadsstegetsFel(formData, idagISverige());
   if (faltfel) return faltfel;
 
   // Kopeskillingen ar obligatorisk sedan 2026-11-04 (docs/design.md,

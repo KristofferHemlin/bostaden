@@ -13,6 +13,8 @@
 // skapa, men priset far lamnas tomt.
 
 import { redirect } from "next/navigation";
+import { idagISverige } from "@/lib/datum";
+import { forsaljningsdatumFel } from "./validering";
 import { isoDatum, oreFranKronor } from "@/lib/format";
 import { nastaSidaIForsaljningen } from "@/lib/forsaljningsflode";
 import { prisma } from "@/lib/prisma";
@@ -20,10 +22,9 @@ import { kravBostad } from "@/lib/session";
 
 export interface ForsaljningResultat {
   fel?: string;
+  /** Faltet felet galler – meningen visas vid det (docs/design.md, "När ett formulär vägrar"). */
+  falt?: "forsaljningsdatum" | "forsaljningspris";
 }
-
-const DATUM = /^\d{4}-\d{2}-\d{2}$/;
-const TIDIGASTE_DATUM = "1970-01-01";
 
 export async function markeraSald(
   _foreg: ForsaljningResultat,
@@ -40,18 +41,13 @@ export async function markeraSald(
   const forsaljningsdatum = String(formData.get("forsaljningsdatum") ?? "").trim();
   const prisText = String(formData.get("forsaljningspris") ?? "").trim();
 
-  if (!DATUM.test(forsaljningsdatum)) {
-    return { fel: "Fyll i försäljningsdatum." };
-  }
-  if (forsaljningsdatum < TIDIGASTE_DATUM) {
-    return { fel: "Försäljningsdatum före 1970 stöds inte." };
-  }
-  if (forsaljningsdatum > isoDatum(new Date())) {
-    return { fel: "Försäljningsdatum kan inte ligga i framtiden." };
-  }
+  // Samma regler och meningar som formularet (./validering.ts).
+  const datumfel = forsaljningsdatumFel(forsaljningsdatum, idagISverige());
+  if (datumfel) return { fel: datumfel, falt: "forsaljningsdatum" };
   if (forsaljningsdatum < tilltrade) {
     return {
       fel: `Försäljningsdatum kan inte ligga före tillträdet (${tilltrade}).`,
+      falt: "forsaljningsdatum",
     };
   }
 
@@ -61,7 +57,10 @@ export async function markeraSald(
   if (prisText !== "") {
     forsaljningsprisOren = oreFranKronor(prisText);
     if (forsaljningsprisOren === null || forsaljningsprisOren <= 0) {
-      return { fel: "Försäljningspriset går inte att tolka. Lämna tomt eller ange t.ex. 3 450 000." };
+      return {
+        fel: "Försäljningspriset går inte att tolka. Lämna tomt eller ange t.ex. 3 450 000.",
+        falt: "forsaljningspris",
+      };
     }
   }
   const forsaljningspris =

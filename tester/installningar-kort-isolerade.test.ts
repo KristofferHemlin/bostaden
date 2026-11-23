@@ -214,10 +214,15 @@ describe("sparaForvarvet ror bara Forvarvets egna falt", () => {
     expect(h.bostadUpdate).not.toHaveBeenCalled();
   });
 
-  it("tomma belopp sparas som null, och ett otolkbart avvisas", async () => {
+  // Ett tomt kopeskillingsfalt andrar ingenting sedan 2026-11-23 (docs/design.md,
+  // "Ett tomt fält ändrar ingenting, också för köpeskillingen") – det skrivs
+  // inte alls. Kopkostnaderna ar frivilliga, och ett tomt falt sparas som null.
+  it("tom köpeskilling skrivs inte, tomma köpkostnader sparas som null, och ett otolkbart avvisas", async () => {
     bostadenAr("bostadsratt");
     await sparaForvarvet({}, formulardata({ tilltradesdatum: "2018-06-01", agarandel: "100" }));
-    expect(h.bostadUpdate.mock.calls[0][0].data).toMatchObject({ kopeskilling: null, kopkostnader: null });
+    const data = h.bostadUpdate.mock.calls[0][0].data;
+    expect("kopeskilling" in data, "köpeskillingen skrivs inte").toBe(false);
+    expect(data).toMatchObject({ kopkostnader: null });
 
     h.bostadUpdate.mockClear();
     const fel = await sparaForvarvet(

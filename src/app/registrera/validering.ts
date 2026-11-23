@@ -4,6 +4,7 @@
 // meningen vid faltet med aria-invalid och bindning (docs/design.md, "När ett
 // formulär vägrar"): registreringen ar det forsta en ny anvandare moter.
 
+import { fortidigtDatumFel, TIDIGASTE_DATUM } from "@/lib/datum";
 import { epostfel } from "@/lib/epostfalt";
 import type { Faltfel } from "@/lib/formularfel";
 import { kopeskillingsfel } from "@/app/bostaden/validering";
@@ -30,7 +31,7 @@ export const TILLTRADESFALTETS_HJALPTEXT = "Motsvarar tillträdesdatum.";
 
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 // Undre grans: regelparametrarna seedas med giltig_fran 1970-01-01.
-const TIDIGASTE_TILLTRADE = "1970-01-01";
+// Undre gransen ar TIDIGASTE_DATUM i @/lib/datum.
 
 /**
  * Adressen ar obligatorisk i registreringen och i installningarnas kort
@@ -84,8 +85,8 @@ export function bostadsstegetsFel(
   if (!DATUM.test(tilltrade)) {
     return { falt: "tilltradesdatum", fel: "Fyll i tillträdesdatum." };
   }
-  if (tilltrade < TIDIGASTE_TILLTRADE) {
-    return { falt: "tilltradesdatum", fel: "Tillträdesdatum före 1970 stöds inte." };
+  if (tilltrade < TIDIGASTE_DATUM) {
+    return { falt: "tilltradesdatum", fel: fortidigtDatumFel("Tillträdesdatum") };
   }
   if (tilltrade > idagIso) {
     return { falt: "tilltradesdatum", fel: "Tillträdesdatum kan inte ligga i framtiden." };

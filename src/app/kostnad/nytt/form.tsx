@@ -115,6 +115,7 @@ import {
   Vantemarkering,
 } from "@/components/bilaga-sidbladdrare";
 import { DatumFalt } from "@/components/datum-falt";
+import { fortidigtDatumFel } from "@/lib/datum";
 import { Sparfraga, SPARFRAGA_TEXT } from "@/components/sparfraga";
 import { KvittodatumNotis } from "@/components/kvittodatum-notis";
 import {
@@ -1599,6 +1600,7 @@ export function NyKostnadForm({
         <div ref={datumfaltRef}>
         <DatumFalt
           defaultValue={falt.datum}
+          tidigtFelmeddelande={fortidigtDatumFel("Datum")}
           fel={visaKvittodatum ? faltfel.betaldatum : (faltfel.dokumentdatum ?? faltfel.betaldatum)}
           onChange={(iso) => {
             setFalt((f) => ({ ...f, datum: iso }));

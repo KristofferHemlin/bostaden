@@ -45,6 +45,7 @@ import { Bilagor } from "./bilagor";
 import { BeloppFalt } from "@/components/belopp-falt";
 import { Bekraftelsefraga } from "@/components/bekraftelsefraga";
 import { DatumFalt } from "@/components/datum-falt";
+import { fortidigtDatumFel } from "@/lib/datum";
 import { KvittodatumNotis } from "@/components/kvittodatum-notis";
 import {
   Falt,
@@ -458,6 +459,7 @@ export function RedigeraVy({
             <DatumFalt
               name="betaldatum"
               defaultValue={varden.betaldatum}
+              tidigtFelmeddelande={fortidigtDatumFel("Betaldatum")}
               fel={felFor("betaldatum")}
               onChange={rensa}
             />

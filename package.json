@@ -16,6 +16,7 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "prova": "node scripts/prova.mjs",
     "prisma:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",

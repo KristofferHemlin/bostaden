@@ -14,11 +14,12 @@
 import { ANDEL_SAKNAS, agarandelFel, agarandelFranText } from "@/lib/agarandel";
 import { serverfelMeddelande } from "@/lib/databas-fel";
 import { hamtaBilagepaketdata, type BilagepaketResultat } from "@/lib/bilagepaket/hamta";
+import { TIDIGASTE_DATUM } from "@/lib/datum";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
-const TIDIGASTE_DATUM = "1970-01-01";
+// Undre gransen ar TIDIGASTE_DATUM i @/lib/datum.
 
 export async function skapaBilagepaket(
   _foreg: BilagepaketResultat,

@@ -30,6 +30,7 @@
 // tryckta tal till samma summa inte overens lamnas beloppet tomt. En avvikande
 // summa_fore_rot rapporteras men vager inte ensam (se kontrolleraTotalbelopp).
 
+import { TIDIGASTE_ARET } from "@/lib/datum";
 import { oreFranKronor } from "@/lib/format";
 
 export interface Dokumentfalt {
@@ -75,7 +76,8 @@ export const TOMT_DOKUMENTFALT: Dokumentfalt = {
 };
 
 const DATUM_MONSTER = /^(\d{4})-(\d{2})-(\d{2})$/;
-const TIDIGASTE_AR = 1970;
+// Samma undre grans som varje datumfalt (@/lib/datum).
+const TIDIGASTE_AR = Number(TIDIGASTE_ARET);
 const SENASTE_AR = 2100;
 
 // Kombinerande diakriter, for att jamfora "Okänt" mot "okant".

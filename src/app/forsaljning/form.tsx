@@ -6,11 +6,18 @@
 
 import { useActionState, useState } from "react";
 import { markeraSald, type ForsaljningResultat } from "./actions";
+import {
+  FORSALJNINGSDATUM_FORE_GRANSEN,
+  FORSALJNINGSDATUM_I_FRAMTIDEN,
+  forsaljningsdatumFel,
+} from "./validering";
 import { BeloppFalt } from "@/components/belopp-falt";
 import { DatumFalt } from "@/components/datum-falt";
-import { Falt, INPUT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
-import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
+import { Falt, FALTFEL_KLASS, INPUT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
+import { idagISverige } from "@/lib/datum";
 import { formateraBeloppInmatning } from "@/lib/format";
+import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
+import { useFormularfel } from "@/lib/formularfel-klient";
 
 const START: ForsaljningResultat = {};
 
@@ -25,30 +32,52 @@ export function ForsaljningForm({
 }) {
   const [resultat, action, pagar] = useActionState(markeraSald, START);
   const [pris, setPris] = useState(() => formateraBeloppInmatning(forvaltPris));
-  const hanteraSubmit = useForhindraDubbelinskick(pagar);
+  // Meningen vid sitt falt (docs/design.md, "När ett formulär vägrar"), och
+  // datumet provas innan nagot skickas – samma regler som servern
+  // (./validering.ts). Till 2026-11-23 stod varje fel overst, och gransen 1970
+  // provades forst pa servern.
+  const { formRef, hanteraSubmit, felFor, markering, formularfel, rensa } = useFormularfel<
+    NonNullable<ForsaljningResultat["falt"]>
+  >({
+    pagar,
+    resultat,
+    validera: (data) => {
+      const fel = forsaljningsdatumFel(String(data.get("forsaljningsdatum") ?? ""), idagISverige());
+      return fel ? { fel, falt: "forsaljningsdatum" } : null;
+    },
+  });
 
   return (
-    <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-6 p-5">
+    <form ref={formRef} action={action} onSubmit={hanteraSubmit} noValidate className="flex flex-col gap-6 p-5">
       <Falt etikett="Försäljningsdatum" obligatoriskt>
         <DatumFalt
           name="forsaljningsdatum"
           defaultValue={forvaltDatum}
-          framtidsFelmeddelande="Försäljningsdatum kan inte ligga i framtiden."
+          fel={felFor("forsaljningsdatum")}
+          onChange={rensa}
+          framtidsFelmeddelande={FORSALJNINGSDATUM_I_FRAMTIDEN}
+          tidigtFelmeddelande={FORSALJNINGSDATUM_FORE_GRANSEN}
         />
       </Falt>
 
-      <Falt etikett="Försäljningspris">
+      <Falt etikett="Försäljningspris" fel={felFor("forsaljningspris")}>
         <BeloppFalt
           name="forsaljningspris"
+          {...markering("forsaljningspris")}
           value={pris}
-          onValueChange={setPris}
+          onValueChange={(v) => {
+            setPris(v);
+            rensa();
+          }}
           className={INPUT_KLASS}
           placeholder="t.ex. 3 450 000"
         />
       </Falt>
 
-      {resultat.fel ? (
-        <p role="alert" className="font-granssnitt text-sm text-accent">{resultat.fel}</p>
+      {formularfel ? (
+        <p role="alert" tabIndex={-1} {...{ [FORMULARFEL_ATTRIBUT]: "" }} className={`${FALTFEL_KLASS} outline-none`}>
+          {formularfel}
+        </p>
       ) : null}
 
       <button type="submit" disabled={pagar} className={PRIMARKNAPP_KLASS}>

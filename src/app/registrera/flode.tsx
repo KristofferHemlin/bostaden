@@ -37,7 +37,7 @@ import { forsokBorjaInskickning, useDubbelinskickRef } from "@/lib/dubbelinskick
 import { lasEpostForFliken } from "@/lib/epost-for-fliken";
 import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 import { useFormularfel } from "@/lib/formularfel-klient";
-import { isoDatum } from "@/lib/format";
+import { fortidigtDatumFel, idagISverige } from "@/lib/datum";
 import { slutforRegistrering, type RegistreringResultat } from "./actions";
 import { AdressFalt } from "./adress-falt";
 import { Ram } from "./ram";
@@ -119,7 +119,7 @@ export function RegistreraFlode({
     const data = new FormData(formular);
     return s === 1
       ? kontostegetsFel(data)
-      : bostadsstegetsFel(data, isoDatum(new Date()));
+      : bostadsstegetsFel(data, idagISverige());
   }
 
   function hanteraSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -287,6 +287,7 @@ export function RegistreraFlode({
             name="tilltradesdatum"
             fel={felFor("tilltradesdatum")}
             framtidsFelmeddelande="Tillträdesdatum kan inte ligga i framtiden."
+            tidigtFelmeddelande={fortidigtDatumFel("Tillträdesdatum")}
           />
         </Falt>
 

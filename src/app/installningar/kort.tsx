@@ -40,6 +40,7 @@ import { AgarandelFalt } from "@/components/agarandel-falt";
 import { BeloppFalt } from "@/components/belopp-falt";
 import { Bekraftelsefraga } from "@/components/bekraftelsefraga";
 import { DatumFalt } from "@/components/datum-falt";
+import { fortidigtDatumFel } from "@/lib/datum";
 import { SparfragaRuta, SPARFRAGA_TEXT } from "@/components/sparfraga";
 import {
   Falt,
@@ -714,6 +715,7 @@ function ForvarvetEditForm({
           name="tilltradesdatum"
           defaultValue={data.tilltradesdatum}
           framtidsFelmeddelande="Tillträdesdatum kan inte ligga i framtiden."
+          tidigtFelmeddelande={fortidigtDatumFel("Tillträdesdatum")}
           fel={felFor("tilltradesdatum")}
         />
       </Falt>

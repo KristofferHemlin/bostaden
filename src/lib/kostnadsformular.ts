@@ -11,6 +11,7 @@
 import { dateratForeTilltradet } from "@/doman/atgardsberakning";
 import type { Kostnadsrad } from "@/doman/typer";
 import type { Faltfel } from "@/lib/formularfel";
+import { fortidigtDatumFel, TIDIGASTE_DATUM } from "@/lib/datum";
 import { formateraKronor, oreFranKronor } from "@/lib/format";
 import { byggRedigeradeRader } from "@/lib/kostnadsuppdelning";
 
@@ -38,7 +39,7 @@ export interface TolkadKostnad {
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 // Undre grans: regelparametrarna seedas med giltig_fran 1970-01-01. En kostnad
 // med betaldatum fore dess avvisas har i stallet for att berakningen kastar fel.
-const TIDIGASTE_BETALDATUM = "1970-01-01";
+// Undre gransen ar TIDIGASTE_DATUM i @/lib/datum.
 
 /** Ett belopp som anvandaren kan ha lamnat tomt eller pa noll blir null. */
 function positivtEllerNull(varde: number | null): number | null {
@@ -128,8 +129,8 @@ export function tolkaKostnadsformular(
   } else {
     if (!DATUM.test(betaldatum)) {
       felen.push({ falt: "betaldatum", fel: "Datumet har fel format." });
-    } else if (betaldatum < TIDIGASTE_BETALDATUM) {
-      felen.push({ falt: "betaldatum", fel: "Datum före 1970 stöds inte." });
+    } else if (betaldatum < TIDIGASTE_DATUM) {
+      felen.push({ falt: "betaldatum", fel: fortidigtDatumFel("Datum") });
     }
     // Samma varde som betaldatumet ar samma falt pa skarmen, och dess fel
     // ar redan sagt ovan. Bara ett eget, synligt Kvittots datum provas for sig.

@@ -169,6 +169,16 @@ async function laggIn(modellsvar: string) {
   document.body.appendChild(beh);
   const rot = createRoot(beh);
   await act(async () => rot.render(sida.props.children));
+  // Vanta pa avlasningen, inte ett antal varv (CLAUDE.md, "varje steg som
+  // vantar pa nagot utanfor processen ska ha en egen tidsgrans"). Vagen dit gar
+  // genom en dynamisk import och en bildlasning, och under belastning rackte
+  // trettio varv inte: provet foll 2026-11-23 med 0 anrop, och det sena anropet
+  // raknades i nasta prov, som sag 2.
+  const grans = Date.now() + 10_000;
+  while (h.modellanrop < 1) {
+    if (Date.now() > grans) throw new Error("Väntade mer än 10 s på avläsningen av kvittot");
+    await act(async () => { await new Promise((r) => setTimeout(r, 5)); });
+  }
   for (let i = 0; i < 30; i++) await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
   expect(h.modellanrop, "forutsattningen: avlasningen kordes").toBe(1);
   const datumfaltet = beh.querySelector<HTMLInputElement>('input[name="betaldatum"]')!.value;
