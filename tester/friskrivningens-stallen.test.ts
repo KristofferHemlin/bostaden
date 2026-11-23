@@ -12,8 +12,10 @@ import { pdfText } from "./_pdf-text";
 
 // Friskrivningen står på exportvyn och på bilagepaketets försättssida, och
 // ingen annanstans (docs/design.md, "Friskrivningen står på tre ställen").
-// Lydelsen står en gång, i src/lib/friskrivning.ts, och båda återgivningarna
-// läser den därifrån ("Men texten får inte vara avskriven").
+// Lydelsen står en gång i koden, i src/lib/friskrivning.ts, och båda
+// återgivningarna läser den därifrån ("Texten får inte vara avskriven"). Det
+// som renderas jämförs med lydelsen i designfilen, inte med konstanten: annars
+// vaktar proven bara att skärmen och PDF:en säger samma sak.
 //
 // Ställena räknas upp ur koden. Landningssidans mening ("Appen ger ingen
 // skatterådgivning och ersätter inte …") är en annan text med ett annat
@@ -40,6 +42,14 @@ function filer(villkor: (text: string) => boolean): string[] {
 
 const normalisera = (t: string) => t.replace(/\s+/g, " ").trim();
 
+/** Lydelsen ur docs/design.md – läst i provet, inte på modulnivå. */
+function lydelsen(): string {
+  const design = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+  const m = design.match(/\*\*Lydelsen står här, och det är först nu den går att vakta:\*\*\s*\n\s*\n> (.+)\n/);
+  if (!m) throw new Error("design.md saknar friskrivningens lydelse");
+  return m[1].trim();
+}
+
 describe("friskrivningen: en text, två återgivningar", () => {
   it("texten står bara i källan – ingen fil i src/ bär en avskrift", () => {
     expect(BAR_TEXTEN.test(FRISKRIVNINGEN), "förutsättningen: mönstret träffar lydelsen").toBe(true);
@@ -56,12 +66,16 @@ describe("friskrivningen: en text, två återgivningar", () => {
     expect(filer((t) => /<Friskrivning\b/.test(t))).toEqual(["src/app/export/page.tsx"]);
   });
 
-  it("komponenten renderar lydelsen som hela elementets text", () => {
-    const html = renderToStaticMarkup(createElement(Friskrivning));
-    expect(normalisera(html.replace(/<[^>]+>/g, ""))).toBe(FRISKRIVNINGEN);
+  it("konstanten är designfilens lydelse", () => {
+    expect(FRISKRIVNINGEN).toBe(lydelsen());
   });
 
-  it("försättssidan i PDF:en bär lydelsen", async () => {
+  it("komponenten renderar designfilens lydelse som hela elementets text", () => {
+    const html = renderToStaticMarkup(createElement(Friskrivning));
+    expect(normalisera(html.replace(/<[^>]+>/g, ""))).toBe(lydelsen());
+  });
+
+  it("försättssidan i PDF:en bär designfilens lydelse", async () => {
     const ex = byggK6aExport({
       bostad: { upplatelseform: "fastighet", tilltradesdatum: "2016-06-01", forsaljningsdatum: "2026-09-15", nybyggd_vid_forvarv: false },
       medlemskap: { agarandel: 100 },
@@ -87,6 +101,6 @@ describe("friskrivningen: en text, två återgivningar", () => {
     );
     const text = normalisera(await pdfText(pdf));
     expect(text.length, "förutsättningen: PDF:ens text gick att läsa").toBeGreaterThan(0);
-    expect(text).toContain(FRISKRIVNINGEN);
+    expect(text).toContain(lydelsen());
   });
 });

@@ -37,6 +37,7 @@ import {
   type Aterstarrad,
 } from "@/lib/aterstar";
 import { FRISKRIVNINGEN } from "@/lib/friskrivning";
+import { SIDA1_RUBRIK, SIDA1_TOMT, SIDA2_RUBRIK, SIDA2_TOMT } from "@/lib/sammanstallningens-sidor";
 import { bilagepaketAvdragsforklaring, forsattssidansVarningar } from "./text";
 
 const [A4_BREDD, A4_HOJD] = PageSizes.A4;
@@ -77,7 +78,7 @@ export async function byggBilagepaketPdf(
 
   ritaForsattssida(rv, data, texter.blankett);
   ritaSammanstallningssida(rv, {
-    titel: "Sida 1 · Grundförbättringar",
+    titel: SIDA1_RUBRIK,
     rader: data.ex.sida1.rader,
     // Samma tva kolumner som sida 2 (docs/design.md, Skarmuppbyggnad).
     visaAvdragsgill: true,
@@ -86,11 +87,11 @@ export async function byggBilagepaketPdf(
     summaBrutto: data.ex.ruta4_brutto,
     summaIndividuellt: data.ex.ruta4_individuellt,
     agarandelProcent: data.forsattsdata.agarandelProcent,
-    tomtText: "Inga grundförbättringar registrerade.",
+    tomtText: SIDA1_TOMT,
     radavdrag: data.radavdrag,
   });
   ritaSammanstallningssida(rv, {
-    titel: "Sida 2 · Förbättrande reparationer",
+    titel: SIDA2_RUBRIK,
     rader: data.ex.sida2.rader,
     visaAvdragsgill: true,
     gemensam: data.ex.delagarvariant === "gemensam_med_andel",
@@ -98,7 +99,7 @@ export async function byggBilagepaketPdf(
     summaBrutto: data.ex.ruta5_brutto,
     summaIndividuellt: data.ex.ruta5_individuellt,
     agarandelProcent: data.forsattsdata.agarandelProcent,
-    tomtText: "Inga förbättrande reparationer registrerade.",
+    tomtText: SIDA2_TOMT,
     radavdrag: data.radavdrag,
   });
   // Återstår efter sammanstallningen, i samma ordning som exportvyn: det som

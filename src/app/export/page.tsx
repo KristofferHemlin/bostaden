@@ -72,6 +72,7 @@ import { hamtaBostadsdata, hamtaUtkastSomInteArTomma, tillDomanBostad } from "@/
 import { formateraKronor, formateraKronorEllerStreck, isoDatum } from "@/lib/format";
 import { hamtaAndelar } from "@/lib/andelar";
 import { UPPGIFTENS_SOKVAG } from "@/lib/bostadsuppgifter";
+import { SIDA1_RUBRIK, SIDA1_TOMT, SIDA2_RUBRIK, SIDA2_TOMT } from "@/lib/sammanstallningens-sidor";
 import {
   ANDEL_INTE_ANGIVEN,
   GALLER_HELA_BOSTADEN,
@@ -262,7 +263,7 @@ export default async function ExportSida() {
 
         <Kort className="divide-y divide-linje">
           <SidaBlock
-            etikett="Sida 1 · Grundförbättringar"
+            etikett={SIDA1_RUBRIK}
             rader={ex.sida1.rader}
             gemensam={gemensam}
             // Samma tva kolumner som sida 2 (docs/design.md, Skarmuppbyggnad).
@@ -273,7 +274,7 @@ export default async function ExportSida() {
             // kan ta ett ar under troskeln (src/doman/regeltext.ts,
             // foreForsaljningForklaring).
             visaAvdragsgill
-            tomtText="Inga grundförbättringar registrerade."
+            tomtText={SIDA1_TOMT}
           />
 
           <RutaCallout
@@ -289,11 +290,11 @@ export default async function ExportSida() {
 
         <Kort className="divide-y divide-linje">
           <SidaBlock
-            etikett="Sida 2 · Förbättrande reparationer"
+            etikett={SIDA2_RUBRIK}
             rader={ex.sida2.rader}
             gemensam={gemensam}
             visaAvdragsgill={ex.sald}
-            tomtText="Inga förbättrande reparationer registrerade."
+            tomtText={SIDA2_TOMT}
           />
 
           {ex.sald ? (
@@ -553,11 +554,11 @@ export default async function ExportSida() {
 
         <Kort className="divide-y divide-linje">
           <VantandeSidaBlock
-            etikett="Sida 1 · Grundförbättringar"
+            etikett={SIDA1_RUBRIK}
             rader={v.sida1}
             gemensam={v.gemensam}
             visaAvdragsgill
-            tomtText="Inga grundförbättringar registrerade."
+            tomtText={SIDA1_TOMT}
           />
           {v.ruta4 ? (
             <RutaCallout
@@ -578,11 +579,11 @@ export default async function ExportSida() {
 
         <Kort className="divide-y divide-linje">
           <VantandeSidaBlock
-            etikett="Sida 2 · Förbättrande reparationer"
+            etikett={SIDA2_RUBRIK}
             rader={v.sida2}
             gemensam={v.gemensam}
             visaAvdragsgill={v.sald}
-            tomtText="Inga förbättrande reparationer registrerade."
+            tomtText={SIDA2_TOMT}
           />
           {v.sald ? (
             v.ruta5 ? (
