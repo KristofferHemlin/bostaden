@@ -32,7 +32,7 @@ import { listaKostnadsbilagor } from "@/lib/lagring/bilagor";
 import { enkelPrivatUppdelning } from "@/lib/kostnadsuppdelning";
 import {
   formateraKronor,
-  isoDatum,
+  sparadDag,
   orenTillFalt,
   rotRadILaslage,
 } from "@/lib/format";
@@ -128,16 +128,16 @@ export default async function KostnadSida({
   // Betaldatumet avgor aret och star som datumet; dokumentdatumet visas under
   // bara nar det ar en annan dag. Ingen reserv: saknas betaldatum star "–",
   // eftersom kvittot da inte hor till nagot ar (docs/design.md, Listrader).
-  const betaldatum = kostnad.betaldatum ? isoDatum(kostnad.betaldatum) : null;
-  const dokumentdatum = kostnad.dokumentdatum ? isoDatum(kostnad.dokumentdatum) : null;
+  const betaldatum = kostnad.betaldatum ? sparadDag(kostnad.betaldatum) : null;
+  const dokumentdatum = kostnad.dokumentdatum ? sparadDag(kostnad.dokumentdatum) : null;
 
   // Kvittodatum utanfor innehavet (docs/design.md): provar dokumentdatumet,
   // aldrig betaldatumet – aven om raden ovan visar betaldatum i forsta hand.
   const kvittodatumNotisText = kostnad.dokumentdatum
-    ? kvittodatumNotis(isoDatum(kostnad.dokumentdatum), {
-        tilltradesdatum: isoDatum(bostad.tilltradesdatum),
+    ? kvittodatumNotis(sparadDag(kostnad.dokumentdatum), {
+        tilltradesdatum: sparadDag(bostad.tilltradesdatum),
         forsaljningsdatum: bostad.forsaljningsdatum
-          ? isoDatum(bostad.forsaljningsdatum)
+          ? sparadDag(bostad.forsaljningsdatum)
           : null,
       })
     : null;
@@ -187,9 +187,9 @@ export default async function KostnadSida({
           totalbelopp: orenTillFalt(kostnad.totalbelopp),
           totalbeloppVisning: kostnad.totalbelopp,
           dokumentdatum: kostnad.dokumentdatum
-            ? isoDatum(kostnad.dokumentdatum)
+            ? sparadDag(kostnad.dokumentdatum)
             : "",
-          betaldatum: kostnad.betaldatum ? isoDatum(kostnad.betaldatum) : "",
+          betaldatum: kostnad.betaldatum ? sparadDag(kostnad.betaldatum) : "",
           projektId: kopplatProjektId,
           rotUtnyttjat:
             kostnad.rot_utnyttjat !== null
@@ -198,9 +198,9 @@ export default async function KostnadSida({
           anteckning: kostnad.anteckning ?? "",
         }}
         innehav={{
-          tilltradesdatum: isoDatum(bostad.tilltradesdatum),
+          tilltradesdatum: sparadDag(bostad.tilltradesdatum),
           forsaljningsdatum: bostad.forsaljningsdatum
-            ? isoDatum(bostad.forsaljningsdatum)
+            ? sparadDag(bostad.forsaljningsdatum)
             : null,
         }}
         privatDel={

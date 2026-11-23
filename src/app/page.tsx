@@ -42,8 +42,9 @@ import {
   formateraAntal,
   formateraKronor,
   formateraKronorMetrikruta,
-  isoDatum,
+  sparadDag,
 } from "@/lib/format";
+import { aretISverige } from "@/lib/datum";
 import { avgarForKvitto, bilagemarke } from "@/lib/kvittolista";
 import { prisma } from "@/lib/prisma";
 import { Landningssida } from "@/app/landningssida";
@@ -168,7 +169,11 @@ export default async function Oversikt({
   // med, och prisma-frageordningen ovan ar redan skapad_at fallande.
   const senasteKvittonSorterade = senasteKvitton;
 
-  const VISAT_AR = new Date().getUTCFullYear();
+  // Aret i Stockholm, inte i UTC (CLAUDE.md, "Ett datum utan sin tidszon är
+  // inte en dag"): till 2026-11-23 visade rutan forra arets summa under forra
+  // arets rubrik fran midnatt till 01:00 pa nyarsnatten. Provat i
+  // tester/nyarsnatten-startskarmen.test.ts.
+  const VISAT_AR = aretISverige();
 
   // "Inlagt {ar}" ar summan av allt som lagts in i ar, klassificerat eller ej
   // (produktspec 2b, 7) – det som lagts in, inte ett avdrag. Ingen troskel
@@ -396,7 +401,7 @@ export default async function Oversikt({
                 const utkast = k.totalbelopp === null;
                 const domanKostnad = domanKostnadPerId.get(k.id);
                 const datumRad = k.betaldatum ?? k.dokumentdatum;
-                const datum = datumRad ? isoDatum(datumRad) : null;
+                const datum = datumRad ? sparadDag(datumRad) : null;
                 return (
                   <Listrad
                     key={k.id}

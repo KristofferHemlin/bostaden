@@ -18,7 +18,7 @@
 //   i produktspecen anvander: tva bilagor pa samma kostnad far identiskt
 //   grundnamn och kolliderar darfor automatiskt.
 
-import { formateraKronor } from "@/lib/format";
+import { formateraKronor, sparadDag } from "@/lib/format";
 
 /** Tecken Windows inte tillater i filnamn, plus styrtecken. */
 const OTILLATNA_TECKEN = /[<>:"/\\|?*\x00-\x1f]/g;
@@ -36,10 +36,6 @@ export function arkivmapp(betaldatum: Date | null): string {
   return betaldatum ? String(betaldatum.getUTCFullYear()) : "utan-datum";
 }
 
-function isoDatum(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
 /**
  * Filnamnet utan filandelse och utan kollisionsnumrering:
  * "AAAA-MM-DD Leverantor Belopp kr". Datum- och beloppsdelarna trunkeras
@@ -54,7 +50,7 @@ function grundnamn(params: {
 }): string {
   const { betaldatum, leverantor, anteckning, belopp } = params;
 
-  const datumDel = betaldatum ? isoDatum(betaldatum) : "";
+  const datumDel = betaldatum ? sparadDag(betaldatum) : "";
   const beloppDel = belopp === null ? "" : formateraKronor(belopp);
   const vemRa = sanera(leverantor?.trim() || anteckning?.trim() || "");
 

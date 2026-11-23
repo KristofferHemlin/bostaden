@@ -5,7 +5,7 @@
 
 import { hamtaAndelar } from "@/lib/andelar";
 import { bostadHeader } from "@/lib/bostad-header";
-import { isoDatum } from "@/lib/format";
+import { sparadDag } from "@/lib/format";
 import { lasBostadsfragor } from "@/doman/bostadsfragor";
 import { prisma } from "@/lib/prisma";
 import { kravAnvandare, kravBostad } from "@/lib/session";
@@ -56,7 +56,7 @@ export default async function InstallningarSida({
           sald: bostad.forsaljningsdatum != null,
         }}
         forvarvet={{
-          tilltradesdatum: isoDatum(bostad.tilltradesdatum),
+          tilltradesdatum: sparadDag(bostad.tilltradesdatum),
           kopeskillingOren: bostad.kopeskilling,
           kopkostnaderOren: bostad.kopkostnader,
           arBostadsratt,

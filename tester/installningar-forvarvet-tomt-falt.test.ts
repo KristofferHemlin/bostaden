@@ -51,18 +51,23 @@ import { sparaForvarvet } from "@/app/installningar/actions";
 import InstallningarSida from "@/app/installningar/page";
 import { formateraKronor } from "@/lib/format";
 
-// Ett tomt fält ändrar ingenting, också för köpeskillingen (docs/design.md,
-// beslutat 2026-11-23). Till dess skrev inställningarna null när fältet
-// tömdes: ett svar som är obligatoriskt i registreringen gick att radera, och
-// startskärmens kort började fråga igen. Båda hållen prövas – ett tomt fält
-// lämnar talet orört, ett nytt tal sparas – och att hon ser det sparade talet
-// på sidan efteråt, eftersom ett fält som tyst struntar i vad hon gjorde inte
-// är bättre än ett som tyst raderar.
+// Ett tomt fält ändrar ingenting, på varje rad i kortet Förvärvet
+// (docs/design.md, beslutat 2026-11-23). Till dess skrev inställningarna null
+// när ett belopp tömdes: en köpeskilling som är obligatorisk i registreringen
+// gick att radera, och startskärmens kort började fråga igen. Båda hållen
+// prövas för varje belopp – ett tomt fält lämnar talet orört, ett nytt tal
+// sparas – och att hon ser det sparade talet på sidan efteråt, eftersom ett
+// fält som tyst struntar i vad hon gjorde inte är bättre än ett som tyst
+// raderar.
 
 const ANNA = "a0000000-0000-4000-8000-0000000000e3";
 const X = "b0000000-0000-4000-8000-0000000000e3";
 const datum = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
-const SPARAD = 325_000_000n;
+
+const FALTEN = [
+  { namn: "köpeskillingen", falt: "kopeskilling", etikett: "Köpeskilling", sparad: 325_000_000n, nytt: "3 400 000", nyttOren: 340_000_000n },
+  { namn: "köpkostnaderna", falt: "kopkostnader", etikett: "Köpkostnader", sparad: 4_500_000n, nytt: "52 000", nyttOren: 5_200_000n },
+] as const;
 
 function formular(falt: Record<string, string>): FormData {
   const fd = new FormData();
@@ -79,55 +84,56 @@ beforeEach(() => {
   h.db.lagg("anvandare", { id: ANNA, epost: "anna@exempel.se" });
   h.db.lagg("bostad", {
     id: X, adress: "Kvarnvägen 3", upplatelseform: "fastighet", tilltradesdatum: datum("2019-06-01"),
-    nybyggd_vid_forvarv: false, kopeskilling: SPARAD,
+    nybyggd_vid_forvarv: false, kopeskilling: FALTEN[0].sparad, kopkostnader: FALTEN[1].sparad,
   });
   h.db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: X, agarandel: 100 });
   h.inloggad = { id: ANNA, email: "anna@exempel.se" };
 });
 
-async function sparad(): Promise<bigint | null> {
-  const b = await h.db.klient.bostad.findUniqueOrThrow({ where: { id: X } });
-  return b.kopeskilling == null ? null : BigInt(b.kopeskilling as bigint | number);
+async function sparad(falt: string): Promise<bigint | null> {
+  const b = (await h.db.klient.bostad.findUniqueOrThrow({ where: { id: X } })) as Record<string, unknown>;
+  const v = b[falt] as bigint | number | null | undefined;
+  return v == null ? null : BigInt(v);
 }
 
-/** Köpeskillingsradens värde på inställningssidan, som hela elementets text. */
-async function radensVarde(): Promise<string> {
+/** Radens värde på inställningssidan, som hela elementets text. */
+async function radensVarde(etikett: string): Promise<string> {
   const html = renderToStaticMarkup((await InstallningarSida({ searchParams: Promise.resolve({}) })) as Parameters<typeof renderToStaticMarkup>[0]);
-  const rader = [...html.matchAll(/<span class="text-text-sekundar">Köpeskilling<\/span><span[^>]*>([^<]*)<\/span>/g)];
-  expect(rader, "köpeskillingens rad på sidan").toHaveLength(1);
+  const rader = [...html.matchAll(new RegExp(`<span class="text-text-sekundar">${etikett}</span><span[^>]*>([^<]*)</span>`, "g"))];
+  expect(rader, `raden ${etikett} på sidan`).toHaveLength(1);
   return rader[0][1];
 }
 
-describe("köpeskillingen i inställningarna går inte att radera", () => {
+describe.each(FALTEN)("$namn i inställningarna går inte att radera", ({ falt, etikett, sparad: tal, nytt, nyttOren }) => {
   it("förutsättningen: sidan visar det sparade talet före sparandet", async () => {
-    expect(await radensVarde()).toBe(formateraKronor(Number(SPARAD)));
+    expect(await radensVarde(etikett)).toBe(formateraKronor(Number(tal)));
   });
 
   it("ett tömt fält lämnar det sparade talet orört, och sidan visar det", async () => {
-    const svar = await sparaForvarvet({}, formular({ kopeskilling: "" }));
+    const svar = await sparaForvarvet({}, formular({ [falt]: "" }));
     expect(svar.fel).toBeUndefined();
-    expect(await sparad()).toBe(SPARAD);
-    expect(await radensVarde()).toBe(formateraKronor(Number(SPARAD)));
+    expect(await sparad(falt)).toBe(tal);
+    expect(await radensVarde(etikett)).toBe(formateraKronor(Number(tal)));
   });
 
   it("ett fält med bara mellanslag är också tomt", async () => {
-    const svar = await sparaForvarvet({}, formular({ kopeskilling: "   " }));
+    const svar = await sparaForvarvet({}, formular({ [falt]: "   " }));
     expect(svar.fel).toBeUndefined();
-    expect(await sparad()).toBe(SPARAD);
+    expect(await sparad(falt)).toBe(tal);
   });
 
   it("ett nytt tal sparas som vanligt, och sidan visar det nya", async () => {
-    const svar = await sparaForvarvet({}, formular({ kopeskilling: "3 400 000" }));
+    const svar = await sparaForvarvet({}, formular({ [falt]: nytt }));
     expect(svar.fel).toBeUndefined();
-    expect(await sparad()).toBe(340_000_000n);
-    expect(await radensVarde()).toBe(formateraKronor(340_000_000));
+    expect(await sparad(falt)).toBe(nyttOren);
+    expect(await radensVarde(etikett)).toBe(formateraKronor(Number(nyttOren)));
   });
 
-  it("och resten av kortet sparas när köpeskillingen lämnas tom", async () => {
-    const svar = await sparaForvarvet({}, formular({ kopeskilling: "", tilltradesdatum: "2020-02-03" }));
+  it("och resten av kortet sparas när fältet lämnas tomt", async () => {
+    const svar = await sparaForvarvet({}, formular({ [falt]: "", tilltradesdatum: "2020-02-03" }));
     expect(svar.fel).toBeUndefined();
     const b = await h.db.klient.bostad.findUniqueOrThrow({ where: { id: X } });
     expect((b.tilltradesdatum as Date).toISOString().slice(0, 10)).toBe("2020-02-03");
-    expect(await sparad()).toBe(SPARAD);
+    expect(await sparad(falt)).toBe(tal);
   });
 });

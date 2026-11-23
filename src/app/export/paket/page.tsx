@@ -11,7 +11,7 @@ import { redirect } from "next/navigation";
 import { Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
 import { BILAGEPAKET_SYNLIGT } from "@/lib/bilagepaket/flagga";
-import { isoDatum } from "@/lib/format";
+import { sparadDag } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
 import { BilagepaketFlode } from "./flode";
@@ -43,7 +43,7 @@ export default async function BilagepaketSida() {
       <BilagepaketFlode
         // Tomt nar andelen inte ar angiven – aldrig "null", "0" eller "100".
         agarandel={agarandel === null ? "" : String(agarandel).replace(".", ",")}
-        tilltradesdatum={isoDatum(bostad.tilltradesdatum)}
+        tilltradesdatum={sparadDag(bostad.tilltradesdatum)}
         identifiering={bostad.identifiering ?? ""}
         upplatelseform={bostad.upplatelseform}
       />

@@ -192,8 +192,28 @@ export function orenTillFalt(oren: number | bigint): string {
   return `${negativ ? "-" : ""}${abs / 100n},${ore}`;
 }
 
-/** Date -> "YYYY-MM-DD" i UTC. Kolumnerna ar @db.Date, tid ar irrelevant. */
-export function isoDatum(d: Date): string {
+/**
+ * En sparad dag som "YYYY-MM-DD" (CLAUDE.md, "Det ska finnas ett sätt att
+ * fråga vilken dag det är"). Datumkolumnerna ar @db.Date och kommer ur
+ * databasen som midnatt UTC, och for dem ar UTC ratt.
+ *
+ * Funktionen svarar bara pa den fragan. Till 2026-11-23 hette den sparadDag och
+ * fick ocksa fragan "vilken dag ar det nu" – isoDatum av new Date() – och svarade
+ * da med dagen i UTC, som ligger kvar pa gardagen till 01:00 svensk tid. Ett
+ * ogonblick som inte ar midnatt UTC avvisas darfor har, med besked om var
+ * dagens datum finns: idagISverige() i @/lib/datum.
+ */
+export function sparadDag(d: Date): string {
+  if (
+    d.getUTCHours() !== 0 ||
+    d.getUTCMinutes() !== 0 ||
+    d.getUTCSeconds() !== 0 ||
+    d.getUTCMilliseconds() !== 0
+  ) {
+    throw new Error(
+      `sparadDag tar en sparad dag (midnatt UTC), inte ett ögonblick: ${d.toISOString()}. Dagens datum är idagISverige() i @/lib/datum.`,
+    );
+  }
   return d.toISOString().slice(0, 10);
 }
 

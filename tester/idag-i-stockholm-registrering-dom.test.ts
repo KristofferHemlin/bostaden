@@ -20,7 +20,6 @@ vi.mock("@/app/registrera/actions", () => ({ slutforRegistrering: h.slutforRegis
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { RegistreraFlode } from "@/app/registrera/flode";
-import { isoDatum } from "@/lib/format";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -92,7 +91,7 @@ describe.each(ZONER)("processens tidszon %s", (zon) => {
     beforeEach(() => {
       process.env.TZ = zon;
       vi.setSystemTime(new Date(nu));
-      expect(isoDatum(new Date())).not.toBe(idag);
+      expect(new Date().toISOString().slice(0, 10), "UTC-dagen").not.toBe(idag);
     });
 
     it("registreringen skickas med dagens tillträde", async () => {

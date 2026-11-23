@@ -11,7 +11,7 @@ import type {
   Projekt as DomanProjekt,
   Regelparameter as DomanRegelparameter,
 } from "@/doman/typer";
-import { isoDatum } from "@/lib/format";
+import { sparadDag } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 
@@ -35,8 +35,8 @@ type PrismaKostnadMedRader = Prisma.kostnadGetPayload<{
 export function tillDomanBostad(b: PrismaBostad): DomanBostad {
   return {
     upplatelseform: b.upplatelseform,
-    tilltradesdatum: isoDatum(b.tilltradesdatum),
-    forsaljningsdatum: b.forsaljningsdatum ? isoDatum(b.forsaljningsdatum) : null,
+    tilltradesdatum: sparadDag(b.tilltradesdatum),
+    forsaljningsdatum: b.forsaljningsdatum ? sparadDag(b.forsaljningsdatum) : null,
     ...bostadsfragorForBerakning(b),
     samma_del_besvarad_for: b.samma_del_besvarad_for,
   };
@@ -60,8 +60,8 @@ export function tillDomanKostnad(k: PrismaKostnadMedRader): DomanKostnad {
   return {
     id: k.id,
     totalbelopp: k.totalbelopp,
-    betaldatum: k.betaldatum ? isoDatum(k.betaldatum) : null,
-    dokumentdatum: k.dokumentdatum ? isoDatum(k.dokumentdatum) : null,
+    betaldatum: k.betaldatum ? sparadDag(k.betaldatum) : null,
+    dokumentdatum: k.dokumentdatum ? sparadDag(k.dokumentdatum) : null,
     rot_utnyttjat: k.rot_utnyttjat ?? 0,
     forsakringsersattning: k.forsakringsersattning ?? 0,
     arkiverad: k.arkiverad,
@@ -84,8 +84,8 @@ export function tillDomanRegelparameter(
     nyckel: r.nyckel,
     varde: r.varde,
     enhet: r.enhet,
-    giltig_fran: isoDatum(r.giltig_fran),
-    giltig_till: r.giltig_till ? isoDatum(r.giltig_till) : null,
+    giltig_fran: sparadDag(r.giltig_fran),
+    giltig_till: r.giltig_till ? sparadDag(r.giltig_till) : null,
   };
 }
 

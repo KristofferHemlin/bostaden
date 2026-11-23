@@ -30,6 +30,7 @@ import {
 } from "@/lib/fragetradet-formdata";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
+import { aretISverige } from "@/lib/datum";
 
 export interface ProjektResultat {
   fel?: string;
@@ -102,7 +103,7 @@ export async function skapaProjekt(
     k.betaldatum ? [k.betaldatum.getUTCFullYear()] : [],
   );
   const ar =
-    arKandidater.length > 0 ? Math.min(...arKandidater) : new Date().getUTCFullYear();
+    arKandidater.length > 0 ? Math.min(...arKandidater) : aretISverige();
 
   let projektId: string;
   try {

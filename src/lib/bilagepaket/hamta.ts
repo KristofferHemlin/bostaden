@@ -28,7 +28,8 @@ import {
   tillDomanProjekt,
   tillDomanRegelparameter,
 } from "@/lib/doman-fran-db";
-import { isoDatum } from "@/lib/format";
+import { idagISverige } from "@/lib/datum";
+import { sparadDag } from "@/lib/format";
 import { bilagelager } from "@/lib/lagring/klient";
 import { aterstarRader, kvittonamn, type Aterstarrad } from "@/lib/aterstar";
 import { projektnamnKarta } from "@/doman/genomgang";
@@ -197,7 +198,7 @@ export async function hamtaBilagepaketdata(
 
   for (const k of kostnadInfoRader) {
     bilageforteckningKostnader.set(k.id, {
-      betaldatum: k.betaldatum ? isoDatum(k.betaldatum) : null,
+      betaldatum: k.betaldatum ? sparadDag(k.betaldatum) : null,
       bilagaIder: k.bilagor.map((b) => b.id),
     });
     kostnadsinfo.set(k.id, {
@@ -276,7 +277,7 @@ export async function hamtaBilagepaketdata(
   });
 
   const { bostadsnamn } = bostadHeader(bostad);
-  const forsaljningsdatum = isoDatum(bostad.forsaljningsdatum);
+  const forsaljningsdatum = sparadDag(bostad.forsaljningsdatum);
   const forsaljningsAr = Number.parseInt(forsaljningsdatum.slice(0, 4), 10);
 
   // En hog utan namn heter som i fas 1 (src/doman/genomgang.ts).
@@ -291,10 +292,11 @@ export async function hamtaBilagepaketdata(
         ort: bostad.ort,
         identifiering: bostad.identifiering,
         upplatelseform: bostad.upplatelseform,
-        tilltradesdatum: isoDatum(bostad.tilltradesdatum),
+        tilltradesdatum: sparadDag(bostad.tilltradesdatum),
         forsaljningsdatum,
         agarandelProcent: agarandel,
-        skapadDatum: isoDatum(new Date()),
+        // Dagen i Stockholm som paketet skapades (idagISverige), inte i UTC.
+        skapadDatum: idagISverige(),
       },
       ex,
       aterstar: aterstarRader(

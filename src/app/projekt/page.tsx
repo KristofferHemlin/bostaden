@@ -20,7 +20,8 @@ import { projektnamnKarta } from "@/doman/genomgang";
 import { slaUppRegelparameter } from "@/doman/regelparameter";
 import { bostadHeader } from "@/lib/bostad-header";
 import { hamtaBostadsdata } from "@/lib/doman-fran-db";
-import { formateraKronor, isoDatum } from "@/lib/format";
+import { idagISverige } from "@/lib/datum";
+import { formateraKronor, sparadDag } from "@/lib/format";
 import { rotAvgarRad } from "@/lib/kvittolista";
 import { projektarTextKarta } from "@/lib/projektar";
 import { kravBostad } from "@/lib/session";
@@ -45,8 +46,8 @@ export default async function ProjektlistaSida() {
     regelparametrar,
     "reparationsfonster_ar",
     bostad.forsaljningsdatum
-      ? isoDatum(bostad.forsaljningsdatum)
-      : isoDatum(new Date()),
+      ? sparadDag(bostad.forsaljningsdatum)
+      : idagISverige(),
   );
 
   const domanKostnadPerId = new Map(kostnader.map((k) => [k.id, k]));
@@ -90,7 +91,7 @@ export default async function ProjektlistaSida() {
         return {
           id: k.id,
           leverantor: k.leverantor,
-          datum: datum ? isoDatum(datum) : null,
+          datum: datum ? sparadDag(datum) : null,
           belopp,
           // ROT som avgar fran just den har delen av kvittot – raden minus
           // ROT ar vad den bidrar med till projektets summa ovan

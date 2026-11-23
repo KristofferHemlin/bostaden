@@ -32,7 +32,7 @@ export function fortidigtDatumFel(vad: string): string {
 
 /**
  * Dagens datum i Stockholm som ISO ("YYYY-MM-DD") – i webblasaren och pa
- * servern, oavsett vilken zon maskinen star i. isoDatum av nuet ar
+ * servern, oavsett vilken zon maskinen star i. Dagen i UTC ar
  * dagen i UTC, och den ligger kvar pa gardagen till 01:00 svensk tid (02:00 pa
  * sommaren): den som skrev in dagens datum strax efter midnatt fick hora att
  * det lag i framtiden. Provat i tester/idag-i-stockholm.test.ts.
@@ -50,6 +50,11 @@ export function idagISverige(nu: Date = new Date()): string {
     return v;
   };
   return `${del("year")}-${del("month")}-${del("day")}`;
+}
+
+/** Aret i Stockholm just nu – nyarsnatten borjar vid svensk midnatt, inte UTC:s. */
+export function aretISverige(nu: Date = new Date()): number {
+  return Number(idagISverige(nu).slice(0, 4));
 }
 
 /** Sista dagen i `manad` (1-indexerad) for ett givet ar. */

@@ -15,7 +15,7 @@
 import { redirect } from "next/navigation";
 import { idagISverige } from "@/lib/datum";
 import { forsaljningsdatumFel } from "./validering";
-import { isoDatum, oreFranKronor } from "@/lib/format";
+import { sparadDag, oreFranKronor } from "@/lib/format";
 import { nastaSidaIForsaljningen } from "@/lib/forsaljningsflode";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -36,7 +36,7 @@ export async function markeraSald(
     where: { id: bostadId },
     select: { tilltradesdatum: true },
   });
-  const tilltrade = isoDatum(bostad.tilltradesdatum);
+  const tilltrade = sparadDag(bostad.tilltradesdatum);
 
   const forsaljningsdatum = String(formData.get("forsaljningsdatum") ?? "").trim();
   const prisText = String(formData.get("forsaljningspris") ?? "").trim();

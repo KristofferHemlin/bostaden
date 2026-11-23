@@ -14,7 +14,7 @@ import { notFound, redirect } from "next/navigation";
 import { NyKostnadForm } from "./form";
 import { Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
-import { formateraBeloppInmatning, isoDatum, orenTillFalt } from "@/lib/format";
+import { formateraBeloppInmatning, sparadDag, orenTillFalt } from "@/lib/format";
 import { listaKostnadsbilagor } from "@/lib/lagring/bilagor";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -82,10 +82,10 @@ export default async function NyKostnadSida({
         // Formularets datumfalt ar betaldatumet. Dokumentdatumet foljer med
         // bara nar det skiljer sig – annars ar det samma dag (form.tsx,
         // `dokumentdatum`).
-        datum: rad.betaldatum ? isoDatum(rad.betaldatum) : "",
+        datum: rad.betaldatum ? sparadDag(rad.betaldatum) : "",
         dokumentdatum:
-          rad.dokumentdatum && isoDatum(rad.dokumentdatum) !== (rad.betaldatum ? isoDatum(rad.betaldatum) : "")
-            ? isoDatum(rad.dokumentdatum)
+          rad.dokumentdatum && sparadDag(rad.dokumentdatum) !== (rad.betaldatum ? sparadDag(rad.betaldatum) : "")
+            ? sparadDag(rad.dokumentdatum)
             : "",
         leverantor: rad.leverantor ?? "",
         rot: rad.rot_utnyttjat === null ? "" : formateraBeloppInmatning(orenTillFalt(rad.rot_utnyttjat)),
@@ -105,9 +105,9 @@ export default async function NyKostnadSida({
         // finns fler an en (docs/design.md, "Att äga flera bostäder").
         bostad={{ id: bostadId, namn: antalBostader > 1 ? bostadsnamn : null }}
         innehav={{
-          tilltradesdatum: isoDatum(bostad.tilltradesdatum),
+          tilltradesdatum: sparadDag(bostad.tilltradesdatum),
           forsaljningsdatum: bostad.forsaljningsdatum
-            ? isoDatum(bostad.forsaljningsdatum)
+            ? sparadDag(bostad.forsaljningsdatum)
             : null,
         }}
       />

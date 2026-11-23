@@ -53,7 +53,6 @@ import { markeraSald } from "@/app/forsaljning/actions";
 import { sparaForvarvet } from "@/app/installningar/actions";
 import { slutforRegistrering } from "@/app/registrera/actions";
 import { DatumFalt } from "@/components/datum-falt";
-import { isoDatum } from "@/lib/format";
 import { REGELPARAMETRAR } from "./_hjalp";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -176,7 +175,7 @@ describe.each(ZONER)("processens tidszon %s", (zon) => {
       process.env.TZ = zon;
       vi.setSystemTime(new Date(nu));
       // Förutsättningen: UTC står kvar på gårdagen, så fel zon ger fel dag.
-      expect(isoDatum(new Date())).not.toBe(idag);
+      expect(new Date().toISOString().slice(0, 10), "UTC-dagen").not.toBe(idag);
     });
 
     it.each(Object.keys(SERVERN))("servern: %s tar emot dagens datum och avvisar morgondagens", async (stalle) => {
@@ -197,40 +196,58 @@ describe.each(ZONER)("processens tidszon %s", (zon) => {
   });
 });
 
-// Varje ställe i src/ som tar fram en dag ur klockan räknas upp ur koden. De
-// som prövar en gräns mot idag använder idagISverige; de som står kvar i UTC
-// har sitt skäl här. En ny väg till dagens datum fälls tills den står i listan
-// eller går genom idagISverige.
-const KVAR_I_UTC: Record<string, string> = {
-  "src/app/page.tsx":
-    "Startskärmens år för summan Inlagt i år. Rättelsen ändrar ett tal under en timme kring nyår, och den här omgången ändrar inga tal – väntar på beslut.",
-  "src/app/projekt/actions.ts":
-    "Projektets årsetikett när inget kvitto är betalt. En gruppering, inget som räknas – men den ändras under samma timme, och väntar på samma beslut.",
-  "src/app/projekt/page.tsx":
-    "Datumet regelparametern slås upp för innan försäljningen, för informationsknappens text. Ger ett annat svar bara om en parameter byter värde just den natten.",
-  "src/app/export/page.tsx":
-    "Samma uppslag som projektsidan, för exportvyns förklaring före försäljningen.",
-  "src/lib/bilagepaket/hamta.ts":
-    "Datumet som trycks på bilagepaketets försättssida. Bakom BILAGEPAKET_SYNLIGT; visar gårdagen mellan midnatt och 01:00.",
+// Varje ställe i src/ som läser klockan räknas upp ur koden, och vart och ett
+// står i listan med vad det använder ögonblicket till. Ett ögonblick som blir
+// en dag går genom idagISverige eller aretISverige; ingenting får göra en dag
+// av klockan på egen hand (CLAUDE.md, "Det ska finnas ett sätt att fråga
+// vilken dag det är"). En ny läsning av klockan fälls tills den står här.
+const KLOCKAN_LASES: Record<string, string> = {
+  "src/lib/datum.ts": "idagISverige och aretISverige – de enda som gör en dag av klockan",
+  "src/lib/inbjudan.ts": "besvarad_at, en tidsstämpel – ett ögonblick, ingen dag",
+  "src/app/registrera/adress-falt.tsx": "en sessionsnyckel för adressförslagen – ingen tid alls",
+  "src/lib/sakerhetskopior/rensning.ts":
+    "säkerhetskopiornas ålder i maskinens tid; kopiorna namnges och läses i samma zon, på samma dator",
 };
 
-/** Uttryck som gör ett ögonblick ur klockan till en dag eller ett år. */
-const DAG_UR_KLOCKAN = /isoDatum\(new Date\(\)\)|new Date\(\)\.(getUTCFullYear|getFullYear|toISOString)\(\)/;
+/** En läsning av klockan: ett Date utan argument, eller Date.now(). Kommentarer räknas inte. */
+const KLOCKAN = /new Date\(\)|Date\.now\(\)/;
+/** En dag eller ett år ur klockan utan att gå genom Stockholm. */
+const DAG_UR_KLOCKAN = /sparadDag\(new Date\(\)\)|new Date\(\)\.(getUTCFullYear|getFullYear|toISOString|getUTCDate|getDate)\(\)/;
+
+async function filerSom(villkor: (kod: string) => boolean): Promise<string[]> {
+  const { readdirSync, readFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const traffar: string[] = [];
+  const ga = (katalog: string) => {
+    for (const d of readdirSync(join(process.cwd(), katalog), { withFileTypes: true })) {
+      const fil = join(katalog, d.name);
+      if (d.isDirectory()) ga(fil);
+      else if (/\.tsx?$/.test(d.name)) {
+        const kod = readFileSync(join(process.cwd(), fil), "utf8")
+          .replace(/\/\*[\s\S]*?\*\//g, "")
+          .replace(/^\s*\/\/.*$/gm, "");
+        if (villkor(kod)) traffar.push(fil);
+      }
+    }
+  };
+  ga("src");
+  return traffar.sort();
+}
 
 describe("varje väg från klockan till en dag", () => {
-  it("går genom idagISverige, eller står i listan med sitt skäl", async () => {
-    const { readdirSync, readFileSync } = await import("node:fs");
-    const { join } = await import("node:path");
-    const traffar: string[] = [];
-    const ga = (katalog: string) => {
-      for (const d of readdirSync(join(process.cwd(), katalog), { withFileTypes: true })) {
-        const fil = join(katalog, d.name);
-        if (d.isDirectory()) ga(fil);
-        else if (/\.tsx?$/.test(d.name) && DAG_UR_KLOCKAN.test(readFileSync(join(process.cwd(), fil), "utf8"))) traffar.push(fil);
-      }
-    };
-    ga("src");
-    expect(traffar.sort()).toEqual(Object.keys(KVAR_I_UTC).sort());
+  it("ingen fil gör en dag av klockan på egen hand", async () => {
+    expect(await filerSom((kod) => DAG_UR_KLOCKAN.test(kod))).toEqual([]);
+  });
+
+  it("varje läsning av klockan står i listan, med vad den används till", async () => {
+    expect(await filerSom((kod) => KLOCKAN.test(kod))).toEqual(Object.keys(KLOCKAN_LASES).sort());
+  });
+
+  it("sparadDag vägrar ett ögonblick, och säger var dagens datum finns", async () => {
+    const { sparadDag } = await import("@/lib/format");
+    vi.setSystemTime(new Date("2026-11-23T23:30:00.000Z"));
+    expect(() => sparadDag(new Date())).toThrow(/idagISverige/);
+    expect(sparadDag(new Date("2026-11-23T00:00:00.000Z"))).toBe("2026-11-23");
   });
 
   it("och gränserna mot idag läser idagISverige", async () => {

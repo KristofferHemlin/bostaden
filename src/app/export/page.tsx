@@ -69,7 +69,8 @@ import { behoverSkickForsaljning } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { BILAGEPAKET_SYNLIGT } from "@/lib/bilagepaket/flagga";
 import { hamtaBostadsdata, hamtaUtkastSomInteArTomma, tillDomanBostad } from "@/lib/doman-fran-db";
-import { formateraKronor, formateraKronorEllerStreck, isoDatum } from "@/lib/format";
+import { idagISverige } from "@/lib/datum";
+import { formateraKronor, formateraKronorEllerStreck, sparadDag } from "@/lib/format";
 import { hamtaAndelar } from "@/lib/andelar";
 import { UPPGIFTENS_SOKVAG } from "@/lib/bostadsuppgifter";
 import { SIDA1_RUBRIK, SIDA1_TOMT, SIDA2_RUBRIK, SIDA2_TOMT } from "@/lib/sammanstallningens-sidor";
@@ -127,8 +128,8 @@ export default async function ExportSida() {
   // Talen ur regelparametern, aldrig bokstavliga (docs/design.md, Exportvyn);
   // utan forsaljningsdatum galler vardet for i dag.
   const regeldatum = bostad.forsaljningsdatum
-    ? isoDatum(bostad.forsaljningsdatum)
-    : isoDatum(new Date());
+    ? sparadDag(bostad.forsaljningsdatum)
+    : idagISverige();
   const fonsterAr = slaUppRegelparameter(regelparametrar, "reparationsfonster_ar", regeldatum);
   const troskelbelopp = slaUppRegelparameter(regelparametrar, "troskelbelopp", regeldatum);
 
@@ -550,7 +551,7 @@ export default async function ExportSida() {
           </p>
         </Meddelanderuta>
 
-        {uppgifterKort(bostad.forsaljningsdatum ? isoDatum(bostad.forsaljningsdatum) : null, v.sald, v.gemensam)}
+        {uppgifterKort(bostad.forsaljningsdatum ? sparadDag(bostad.forsaljningsdatum) : null, v.sald, v.gemensam)}
 
         <Kort className="divide-y divide-linje">
           <VantandeSidaBlock

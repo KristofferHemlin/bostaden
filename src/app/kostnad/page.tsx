@@ -35,7 +35,7 @@ import { arOklassificerad } from "@/doman/genomgang";
 import type { Kostnad } from "@/doman/typer";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
-import { formateraKronor, isoDatum } from "@/lib/format";
+import { formateraKronor, sparadDag } from "@/lib/format";
 import {
   antalKvittonText,
   arssektionerHopfallda,
@@ -128,7 +128,7 @@ export default async function KvittolistaSida() {
     const notering = k.anteckning?.trim();
     const leverantor = k.leverantor?.trim();
     const datumRad = k.betaldatum ?? k.dokumentdatum;
-    const datum = datumRad ? isoDatum(datumRad) : null;
+    const datum = datumRad ? sparadDag(datumRad) : null;
 
     // Samma andrarad som pa startskarmen: leverantor och datum dampat under
     // anteckningen. Saknas anteckning ar leverantoren huvudtext och andraraden

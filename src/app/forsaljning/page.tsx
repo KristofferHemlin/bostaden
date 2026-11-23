@@ -10,7 +10,7 @@ import type { Metadata } from "next";
 import { ForsaljningForm } from "./form";
 import { Meddelanderuta, Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
-import { isoDatum, orenTillFalt } from "@/lib/format";
+import { sparadDag, orenTillFalt } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { hamtaSammaDelVy } from "@/lib/samma-del-vy";
 import { kravBostad } from "@/lib/session";
@@ -64,7 +64,7 @@ export default async function ForsaljningSida() {
       </div>
       <ForsaljningForm
         forvaltDatum={
-          bostad.forsaljningsdatum ? isoDatum(bostad.forsaljningsdatum) : ""
+          bostad.forsaljningsdatum ? sparadDag(bostad.forsaljningsdatum) : ""
         }
         forvaltPris={
           bostad.forsaljningspris === null

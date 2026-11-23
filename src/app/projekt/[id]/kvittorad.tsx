@@ -11,7 +11,7 @@
 import { Listrad } from "@/components/skarm";
 import { arUtkast, beloppForKostnad, rotForBelopp } from "@/doman/berakningar";
 import type { Kostnad } from "@/doman/typer";
-import { formateraKronor, isoDatum } from "@/lib/format";
+import { formateraKronor, sparadDag } from "@/lib/format";
 import { bilagemarke } from "@/lib/kvittolista";
 
 /** Det ur databasraden som raden visar, utover domanens kostnad. */
@@ -36,7 +36,7 @@ export function ProjektetsKvittorad({
   const notering = original.anteckning?.trim();
   const leverantor = original.leverantor?.trim();
   const datumRad = original.betaldatum ?? original.dokumentdatum;
-  const datum = datumRad ? isoDatum(datumRad) : null;
+  const datum = datumRad ? sparadDag(datumRad) : null;
   return (
     <Listrad
       namn={notering || leverantor || "Kvitto"}

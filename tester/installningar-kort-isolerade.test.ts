@@ -214,15 +214,14 @@ describe("sparaForvarvet ror bara Forvarvets egna falt", () => {
     expect(h.bostadUpdate).not.toHaveBeenCalled();
   });
 
-  // Ett tomt kopeskillingsfalt andrar ingenting sedan 2026-11-23 (docs/design.md,
-  // "Ett tomt fält ändrar ingenting, också för köpeskillingen") – det skrivs
-  // inte alls. Kopkostnaderna ar frivilliga, och ett tomt falt sparas som null.
-  it("tom köpeskilling skrivs inte, tomma köpkostnader sparas som null, och ett otolkbart avvisas", async () => {
+  // Ett tomt falt andrar ingenting, pa varje rad i kortet sedan 2026-11-23
+  // (docs/design.md, "Regeln gäller hela kortet Förvärvet") – det skrivs inte alls.
+  it("tomma belopp skrivs inte, och ett otolkbart avvisas", async () => {
     bostadenAr("bostadsratt");
     await sparaForvarvet({}, formulardata({ tilltradesdatum: "2018-06-01", agarandel: "100" }));
     const data = h.bostadUpdate.mock.calls[0][0].data;
     expect("kopeskilling" in data, "köpeskillingen skrivs inte").toBe(false);
-    expect(data).toMatchObject({ kopkostnader: null });
+    expect("kopkostnader" in data, "köpkostnaderna skrivs inte").toBe(false);
 
     h.bostadUpdate.mockClear();
     const fel = await sparaForvarvet(

@@ -318,12 +318,13 @@ export async function sparaForvarvet(
         where: { id: bostadId },
         data: {
           tilltradesdatum: new Date(`${tilltradesdatum}T00:00:00.000Z`),
-          // Ett tomt falt andrar ingenting, ocksa for kopeskillingen
-          // (docs/design.md, beslutat 2026-11-23): tomt betyder "jag andrade
-          // inget har", aldrig "radera det jag sagt". Till dess skrevs null, och
-          // ett svar som ar obligatoriskt i registreringen gick att radera har.
+          // Ett tomt falt andrar ingenting, pa varje rad i kortet (docs/design.md,
+          // beslutat 2026-11-23): tomt betyder "jag andrade inget har", aldrig
+          // "radera det jag sagt". Till dess skrevs null for bada beloppen, och
+          // en kopeskilling som ar obligatorisk i registreringen gick att
+          // radera har.
           ...(kopeskilling === null ? {} : { kopeskilling }),
-          kopkostnader,
+          ...(kopkostnader === null ? {} : { kopkostnader }),
           ...lagringAvBostadsfragor(bostadsfragor.svar),
         },
       });

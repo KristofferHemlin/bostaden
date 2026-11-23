@@ -9,7 +9,7 @@ import "server-only";
 import type { ValbartKvitto } from "@/components/kvitto-kryssruta";
 import { beloppOmKopplade, harRotOmKopplade, kvittoGarAttKoppla } from "@/doman/kvittokoppling";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
-import { isoDatum } from "@/lib/format";
+import { sparadDag } from "@/lib/format";
 import { avgarForKvitto, kvittoradText, privatAvgarRad, rotAvgarRad } from "@/lib/kvittolista";
 
 /** Raderna i samma ordning som Listrad skriver dem: ROT, privat, räknas med. */
@@ -32,7 +32,7 @@ export async function hamtaValbaraKvitton(bostadId: string): Promise<ValbartKvit
       const text = kvittoradText({
         anteckning: k.anteckning,
         leverantor: k.leverantor,
-        datum: datum ? isoDatum(datum) : null,
+        datum: datum ? sparadDag(datum) : null,
       });
       return {
         id: k.id,
