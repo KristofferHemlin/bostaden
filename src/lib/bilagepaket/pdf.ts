@@ -36,6 +36,7 @@ import {
   ATERSTAR_RUBRIK,
   type Aterstarrad,
 } from "@/lib/aterstar";
+import { FRISKRIVNINGEN } from "@/lib/friskrivning";
 import { bilagepaketAvdragsforklaring, forsattssidansVarningar } from "./text";
 
 const [A4_BREDD, A4_HOJD] = PageSizes.A4;
@@ -44,10 +45,6 @@ const TEXT = rgb(0.13, 0.13, 0.13);
 const DAMPAD = rgb(0.45, 0.45, 0.45);
 const SAMTIDIGA_HAMTNINGAR = 4;
 
-// Matchar ordagrant components/skarm.tsx Friskrivning() – forsattssidan ar en
-// av de tva stallen i appen dar pastaendet star (docs/design.md, Exportvyn).
-const FRISKRIVNING_TEXT =
-  "Appen ger ingen skatterådgivning. Vid gränsfall svarar Skatteverkets upplysningstjänst.";
 
 const UPPLATELSEFORM_TEXT: Record<"bostadsratt" | "fastighet", string> = {
   bostadsratt: "Bostadsrätt",
@@ -212,8 +209,10 @@ function ritaForsattssida(
     }
   }
 
-  // Friskrivningen i sin helhet, langst ned (produktspec 8, punkt 1).
-  brytText(font, FRISKRIVNING_TEXT, 9, A4_BREDD - 2 * MARGIN).forEach((rad, i) => {
+  // Friskrivningen i sin helhet, langst ned (produktspec 8, punkt 1). Samma
+  // konstant som komponenten pa exportvyn – forsattssidan ar ett papper som
+  // lamnar appen och bar darfor sitt eget forbehall (docs/design.md).
+  brytText(font, FRISKRIVNINGEN, 9, A4_BREDD - 2 * MARGIN).forEach((rad, i) => {
     rita(sida, font, rad, { x: MARGIN, y: MARGIN + 24 - i * 12, storlek: 9, farg: DAMPAD });
   });
 }

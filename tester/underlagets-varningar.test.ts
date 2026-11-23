@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { inflateSync } from "node:zlib";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { UnderlagetsVarningar } from "@/app/export/underlagets-varningar";
@@ -15,6 +14,7 @@ import { forsattssidansVarningar } from "@/lib/bilagepaket/text";
 const hognamnIEx = (ex: K6aExport) => (id: string) =>
   ex.oklassificerade_hogar.find((h) => h.projekt_id === id)?.namn ?? "";
 import { REGELPARAMETRAR, kostnad, projekt } from "./_hjalp";
+import { pdfText } from "./_pdf-text";
 
 // Exportens samlade varningslista renderades ingenstans (uppmatt
 // 2026-10-18): "merkostnaden är inte ifylld" kunde inte synas for nagon, och
@@ -107,31 +107,6 @@ describe("exportvyn visar listan", () => {
     ).toBe("");
   });
 });
-
-/** Text pa sidorna i en PDF byggd med pdf-lib: dess innehallsstrommar
- *  packas upp och de hex-kodade textstrangarna avkodas (WinAnsi). */
-async function pdfText(blob: Blob): Promise<string> {
-  const bytes = Buffer.from(await blob.arrayBuffer());
-  const binar = bytes.toString("latin1");
-  const delar: string[] = [];
-  const strom = /stream\r?\n/g;
-  let m: RegExpExecArray | null;
-  while ((m = strom.exec(binar))) {
-    const start = m.index + m[0].length;
-    const slut = binar.indexOf("endstream", start);
-    const ra = bytes.subarray(start, slut);
-    let innehall: string;
-    try {
-      innehall = inflateSync(ra).toString("latin1");
-    } catch {
-      innehall = ra.toString("latin1");
-    }
-    for (const hex of innehall.matchAll(/<([0-9A-Fa-f]+)>\s*Tj/g)) {
-      delar.push(Buffer.from(hex[1], "hex").toString("latin1"));
-    }
-  }
-  return delar.join("\n");
-}
 
 function pdfData(ex: K6aExport) {
   return {

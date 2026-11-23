@@ -19,6 +19,7 @@ import {
 import { ToppradAdress } from "@/components/bostadsvaxlare";
 import { FaltEtikettGivare } from "@/components/falt-etikett";
 import { Installningslank, Toppnavigering } from "@/components/toppnavigering";
+import { FRISKRIVNINGEN } from "@/lib/friskrivning";
 import { privatAvgarRad, rotAvgarRad } from "@/lib/kvittolista";
 
 export const INPUT_KLASS =
@@ -67,14 +68,12 @@ export const DAMPAD_DIALOGVAG_KLASS =
  * Meddelanderuta. Den bor pa exportvyn, dar anvandaren tar med sig siffror ut
  * ur appen, och ingen annanstans: fragetradet och de tva skarmarna vid
  * forsaljningen har den inte sedan 2026-11-22. Listan halls av
- * tester/friskrivningens-stallen.test.ts.
+ * tester/friskrivningens-stallen.test.ts. Lydelsen ligger i
+ * src/lib/friskrivning.ts, som bilagepaketets forsattssida ocksa laser.
  */
 export function Friskrivning() {
   return (
-    <p className="font-granssnitt text-sm text-text-sekundar">
-      Appen ger ingen skatterådgivning. Vid gränsfall svarar Skatteverkets
-      upplysningstjänst.
-    </p>
+    <p className="font-granssnitt text-sm text-text-sekundar">{FRISKRIVNINGEN}</p>
   );
 }
 
