@@ -491,9 +491,16 @@ export function NyttProjektFlode({
 
         {/* Friskrivningen star inte har sedan 2026-11-22 (docs/design.md,
             "Friskrivningen står inte i frågeträdet") – den bor pa exportvyn.
-            Platsen langst ned i steg 2 ar reserverad for en dampad rad om att
-            fragorna foljer Skatteverkets regler, och star tom tills lydelsen
-            finns i design.md. */}
+            I stallet en dampad rad om varfor fragorna stalls, en gang och i
+            forsta steget: fragan uppstar nar fragorna borjar, och flodet ar
+            linjart. Lydelsen vaktas av tester/projekt-nytt-flode.test.ts. */}
+        {steg === 1 ? (
+          <div className="border-t border-linje pt-4">
+            <p className="font-granssnitt text-sm text-text-sekundar">
+              Frågorna följer Skatteverkets regler för vad som får dras av när du säljer.
+            </p>
+          </div>
+        ) : null}
       </div>
     </form>
   );

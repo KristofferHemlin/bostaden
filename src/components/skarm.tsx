@@ -65,7 +65,9 @@ export const DAMPAD_DIALOGVAG_KLASS =
 /**
  * Friskrivningen (docs/design.md, Exportvyn): en dampad rad, inte en
  * Meddelanderuta. Den bor pa exportvyn, dar anvandaren tar med sig siffror ut
- * ur appen. Fragetradet har den inte sedan 2026-11-22.
+ * ur appen, och ingen annanstans: fragetradet och de tva skarmarna vid
+ * forsaljningen har den inte sedan 2026-11-22. Listan halls av
+ * tester/friskrivningens-stallen.test.ts.
  */
 export function Friskrivning() {
   return (

@@ -11,7 +11,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Fraga, Kortval } from "@/app/projekt/fragetradet";
-import { Friskrivning, Meddelanderuta, PRIMARKNAPP_KLASS } from "@/components/skarm";
+import { Meddelanderuta, PRIMARKNAPP_KLASS } from "@/components/skarm";
 import {
   SAMMA_DEL_ANDRAD,
   SAMMA_DEL_FRAGA,
@@ -92,9 +92,9 @@ export function SammaDelFormular({
       >
         Hoppa över
       </Link>
-      <div className="border-t border-linje pt-4">
-        <Friskrivning />
-      </div>
+      {/* Ingen friskrivning har sedan 2026-11-22 – den bor pa exportvyn
+          (docs/design.md, "de två skärmarna vid försäljningen tappar också
+          friskrivningen"). */}
     </form>
   );
 }

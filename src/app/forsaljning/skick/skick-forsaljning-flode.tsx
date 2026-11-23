@@ -15,7 +15,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { sparaSkickForsaljning, type SkickForsaljningResultat } from "./actions";
 import { Fraga, Kortval } from "@/app/projekt/fragetradet";
-import { Avdelningsrubrik, Friskrivning, PRIMARKNAPP_KLASS } from "@/components/skarm";
+import { Avdelningsrubrik, PRIMARKNAPP_KLASS } from "@/components/skarm";
 import {
   HJALP_SKICK_FORSALJNING,
   SKICK_FORSALJNING_FRAGA,
@@ -165,12 +165,9 @@ function AtgardFormular({
             lamna flodet ar tillbakalanken i huvudet, till underlaget
             varifran flodet startades (page.tsx). */}
 
-        {/* Avskild langst ned, samma monster som fragetradet.tsx – bedomningen
-            hor till de skarmar dar den faktiskt gors (docs/design.md,
-            Exportvyn). */}
-        <div className="border-t border-linje pt-4">
-          <Friskrivning />
-        </div>
+        {/* Ingen friskrivning har sedan 2026-11-22 (docs/design.md, "de två
+            skärmarna vid försäljningen tappar också friskrivningen"): den bor
+            pa exportvyn, en skarm eller tva bort i samma sittning. */}
       </form>
     </div>
   );

@@ -774,8 +774,8 @@ describe("ett utkast från fyra steg öppnas där hon var", () => {
 });
 
 // docs/design.md, "Friskrivningen står inte i frågeträdet" (struket
-// 2026-11-22): raden om skatterådgivning bor på exportvyn. Platsen i steg 2
-// står tom tills lydelsen om Skatteverkets regler finns i design.md.
+// 2026-11-22): raden om skatterådgivning bor på exportvyn. I stället står
+// raden om Skatteverkets regler, en gång och i första steget.
 describe("friskrivningen står inte i frågeträdet", () => {
   it("inte i något av de tre stegen", async () => {
     const friskrivningen = renderToStaticMarkup(createElement(Friskrivning)).replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
@@ -798,5 +798,42 @@ describe("friskrivningen står inte i frågeträdet", () => {
     await tryck("Nästa");
     expect(framsteg()).toBe("3 av 3");
     expect(sidan()).not.toContain(friskrivningen);
+  });
+});
+
+/** Raden om Skatteverkets regler ur docs/design.md – läst i provet, inte på modulnivå. */
+function radenOmReglerna(): string {
+  const design = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+  const m = design.match(/\*\*Lydelsen är fastställd 2026-11-22:\*\* \*"([^"]+)"\*/);
+  if (!m) throw new Error("design.md saknar lydelsen för raden om Skatteverkets regler");
+  return m[1];
+}
+
+describe("raden om Skatteverkets regler står en gång, i första steget", () => {
+  it("i steg 1 och inte i steg 2 eller 3", async () => {
+    const raden = radenOmReglerna();
+    // Elementets hela text, inte en delsträng, och bara element som står på skärmen.
+    const traffar = () =>
+      [...behallare.querySelectorAll("p")]
+        .filter((p) => !p.closest("[hidden]"))
+        .filter((p) => (p.textContent ?? "").replace(/\s+/g, " ").trim() === raden).length;
+
+    await rendera();
+    expect(framsteg()).toBe("1 av 3");
+    expect(traffar(), "steg 1").toBe(1);
+
+    await skrivNamn("Måla sovrummet");
+    await tryck("Nästa");
+    expect(framsteg()).toBe("2 av 3");
+    expect(synligText()).toContain("Byggde du något nytt som inte fanns tidigare?");
+    expect(traffar(), "steg 2").toBe(0);
+    // Inte heller dold i trädet: raden står bara i steg 1.
+    expect((behallare.textContent ?? "").replace(/\s+/g, " ")).not.toContain(raden);
+
+    await svaraUtbyttLiknande();
+    await tryck("Nästa");
+    expect(framsteg()).toBe("3 av 3");
+    expect(traffar(), "steg 3").toBe(0);
+    expect((behallare.textContent ?? "").replace(/\s+/g, " ")).not.toContain(raden);
   });
 });
