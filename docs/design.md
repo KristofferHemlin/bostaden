@@ -772,7 +772,11 @@ Kortet inleds med en rubrik i stil med "Spara kvittona nu, dra av dem när du s�
 
 Raderna är dämpad brödtext i samma kort, under knappen. Inget eget kort, ingen egen rubriknivå som konkurrerar med kortets, och framför allt ingen andra knapp.
 
-**Avstånden avgör om det läses rätt.** Mellanrummet upp till rubriken "Så fungerar det" ska vara ungefär dubbelt så stort som mellanrummet mellan raderna. Ligger rubriken tätt under primärknappen läses den som knappens underrubrik, och har raderna styckesavstånd läses de som fristående påståenden i stället för som steg i en ordning.
+**Avstånden avgör om det läses rätt, och regeln är skälet och inte talet.** Mellanrummet upp till rubriken *Så fungerar det* ska vara tydligt större än mellanrummet mellan raderna: ligger rubriken tätt under primärknappen läses den som knappens underrubrik, och har raderna styckesavstånd läses de som fristående påståenden i stället för som steg i en ordning.
+
+**Här stod *"ungefär dubbelt så stort"* till 2026-11-22, och det hade aldrig stämt.** Agenten mätte i Chrome med appens riktiga stilmall vid 390 och 360 px: **32 px upp till rubriken, 6 px mellan raderna** — alltså drygt fem gånger, inte två, och samma tal med tre rader som med två. **Koden gör rätt sak; det var måttet i regeln som var fel.** Dubbelt så mycket hade varit 12 px upp till rubriken, vilket är för lite för att skilja den från knappen.
+
+**De uppmätta talen är de som gäller.** De skrivs här som vad som faktiskt står på skärmen när skälet är uppfyllt, inte som ett krav att träffa på pixeln: ändrar någon typsnitt eller radhöjd är det de två läsfelen ovan som avgör om avståndet är rätt, inte 32 och 6.
 
 **Ingen introduktionsrundtur och inga påhittade siffror.** Rundturer läses inte och skjuter upp det man ska göra. Löften om hur mycket man sparar vet vi ingenting om. Raderna beskriver vad appen gör, aldrig vad användaren tjänar — och aldrig vad vi lovar att göra i framtiden.
 
@@ -1497,6 +1501,14 @@ Regeln står i `CLAUDE.md` sedan den 18 oktober och är kontrollerad mot källan
 
 **Men raden påstår aldrig ett samröre.** *Frågorna följer Skatteverkets regler* är sant; *frågorna kommer från Skatteverket* antyder att de godkänt appen, och det har de inte. **Ingen myndighets namn får stå så att det läser som ett intyg** – inte i knappar, inte i rubriker, inte i märken. Reglerna är allmänna och fria att följa; det är hela produktens idé. Det vi inte gör är att skriva av deras hjälptexter ordagrant i gränssnittet: citaten i `CLAUDE.md` finns där för att belägga en regel, och det användaren läser är våra egna ord.
 
+**Lydelsen är fastställd 2026-11-22:** *"Frågorna följer Skatteverkets regler för vad som får dras av när du säljer."*
+
+**Inte *förbättringsutgifter*.** Agenten föreslog det ordet, och det är Skatteverkets eget — men regeln under *Språket* gäller här: frågeflödet är rensat från skatteord med flit, och *förbättringsutgifter* är ett sådant. **Raden ska säga följden, inte taxonomin**, precis som *Räknas som* i stället för *Kategori*.
+
+**Den står en gång, i första steget.** Frågan *varför får jag de här frågorna?* uppstår när frågorna börjar, och flödet är linjärt så hon kan inte komma in i mitten. Samma rad i alla tre stegen är en rad som slutar läsas.
+
+**Och de två skärmarna vid försäljningen tappar också friskrivningen** — skickfrågan och frågan om samma del av bostaden. Agenten hittade dem 2026-11-22 och frågade i stället för att röra dem. De bryter mot regeln ovan: exportvyn är den enda skärm där påståendet behöver stå, och vid en försäljning ligger den en skärm eller två bort i samma sittning. **Tre kopior av en friskrivning är inte tre gånger så tydligt.**
+
 **Och där en friskrivning ändå behövs står den avskild nederst**, aldrig direkt under ett fälts hjälptext – två dämpade rader under varandra läses som om båda gällde fältet.
 
 **Svarsalternativ är klickbara kort med kort text, inte radioknappar.** "Det är nytt" och "Jag bytte ut något som fanns". "Ja" och "Nej". Inga underrubriker i korten.
@@ -1888,7 +1900,9 @@ Gränsen går inte vid hur viktig uppgiften är utan vid om den kräver eftertan
 
 Det är samma fel som att fråga efter andelar vid inbjudan: ett besked om något som ännu inte hänt. **Korten av det slaget visas först när bostaden har minst ett kvitto**, och aldrig över välkomstkortet på en tom startskärm.
 
-**Det gäller båda korten: ägarandelen och köpeskillingen.** Jag namngav bara andelskortet i prompten 2026-11-16 och agenten byggde det jag bad om, så köpeskillingskortet står kvar på den tomma startskärmen. Regeln här var redan skriven i plural; det var prompten som var smalare än regeln.
+**Det gäller båda korten: ägarandelen och köpeskillingen.** Jag namngav bara andelskortet i prompten 2026-11-16 och trodde därför länge att köpeskillingskortet stod kvar på den tomma startskärmen. **Uppmätt 2026-11-22: det gör det inte.** Spärren gäller båda frågorna, ett prov fanns redan för köpeskillingen, och när spärren togs bort med flit föll båda proven. Agenten byggde alltså regeln och inte prompten — och meningen här stod kvar och anklagade koden i sex dagar.
+
+**Ett arkiverat kvitto räknas som innehåll, och det är avsiktligt.** En bostad vars enda kvitton är markerade *Hör inte till bostaden* har noll i underlaget men är inte ny: hon vet vad appen är, och ett välkomstkort vore det tomma svaret på fel fråga. **Kriteriet är *har hon lagt in något*, inte *finns det ett underlag*** — det första beskriver var hon är, det andra beskriver talen.
 
 **Kortet säger vad som är nästa, inte *Fortsätt*.** *Lägg till köpeskillingen*, *Hur stor del av bostaden äger du?*. Ett generiskt *Fortsätt* tvingar användaren att klicka för att få veta vad appen vill, och det är en klickning för att läsa en fråga.
 

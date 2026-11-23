@@ -736,6 +736,16 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Ett prov kan bara läsa ett ställe.** Står lydelsen på tre vaktas en av dem, och de andra två ser ut som regler men är minnen av en. **Den som behöver nämna texten någon annanstans hänvisar till var den står, och skriver inte av den** — samma skäl som att en regel aldrig definieras som *"samma som X"*.
 
+### Ett mått i en regel är ett påstående som ingen mätt
+
+**Skriven 2026-11-22.** `docs/design.md` sa att mellanrummet upp till rubriken *Så fungerar det* ska vara *"ungefär dubbelt så stort"* som mellanrummet mellan raderna. Agenten mätte i Chrome med appens riktiga stilmall: **32 px mot 6 px**, alltså drygt fem gånger — och samma tal före ändringen. **Måttet hade aldrig stämt, och skärmen hade hela tiden sett rätt ut.**
+
+**Det är så ett omätt tal beter sig:** det ligger stilla i filen tills någon mäter det, och i det ögonblicket anklagar det fungerande kod. Kostnaden är inte pixlarna, det är att den som mäter får välja mellan att ändra en skärm som är bra och att misstro filen.
+
+**Skälet åldras inte, talet gör det.** *Rubriken får inte läsas som knappens underrubrik* är sant oavsett typsnitt, radhöjd och skärmbredd. *Dubbelt så stort* är sant bara för de värden som rådde när någon gissade det. **Skriv skälet som regeln och talet som en mätning med datum** — då vet nästa läsare att talet beskriver och inte kräver.
+
+**Och ett tal som verkligen ska vara ett krav måste vaktas av ett prov.** Går det inte att vakta hör det inte hemma som ett krav. Det är samma regel som att en lydelse som ska vaktas står i regelfilen.
+
 ### Ett prov som jämför hela objektet mäter dess form, inte sitt påstående
 
 **Skriven 2026-11-21, efter samma röda körning två omgångar i rad.** Förra omgången saknade två prov det nya fältet `rot_avrakning_oklar`; den här föll `dokumentavlasning-kordes-inte` på att det saknade `svar: null`. Båda gångerna var koden rätt och provet rött.
