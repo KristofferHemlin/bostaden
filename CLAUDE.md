@@ -474,7 +474,7 @@ Dessa fall måste finnas och passera. De sex första är verifierade mot Skattev
 - Vid ägarandel 50 % halveras beloppen i det individuella underlaget, men inte tröskelprövningen
 - **Obesvarad andel ger samma tal som 100 %**, med etiketten *Förs till* kvar och avrundningen uppåt – och raden säger att andelen inte är angiven
 - **Ett lagrat 0 i `agarandel` avbryter beräkningen**, i stället för att ge ett underlag på 0 kr. Noll är ogiltigt, så ett nollvärde som nått fram betyder att en null lästs som ett tal
-- Ett tomt andelsfält i inställningarna avvisas och ändrar ingenting
+- Ett tomt andelsfält i inställningarna ändrar ingenting, och stoppar inte resten av kortet (ändrat 2026-11-23, se *Kortet Förvärvet*)
 - **Obesvarad `nybyggd_vid_forvarv` blockerar beräkningen; ett besvarat nej gör det inte.** Testet ska skilja de två, inte bara pröva att något blockerar
 - Obesvarad `ombildning_fran_hyresratt` blockerar när bostaden är en bostadsrätt och första ägaren är ja, men inte annars
 - Rad fördelad till 60 % på ett projekt bidrar med 60 % av beloppet, inte hela
@@ -524,6 +524,12 @@ Inga flöden får blockera. Ofullständiga uppgifter sparas som öppna poster i 
 **Regeln gäller inmatningen.** Den skrevs för den som står i en byggvaruhandel: stoppas hen läggs kvittot aldrig in, och ett kvitto som inte finns är dyrare än ett kvitto med luckor. Inställningssidan är inte det läget – där sitter användaren lugnt med köpekontraktet framme.
 
 `tilltradesdatum` är därför obligatoriskt i inställningarna. Det är baslinjen för skickbedömningen och gränsen för vilka utgifter som är dina; utan det blir underlaget fel i stället för ofullständigt. Datumet sätts redan vid registreringen, så kravet skapar aldrig ett dödläge – det hindrar bara att fältet töms.
+
+**Men det ska hindra det på rätt sätt, ändrat 2026-11-23.** Ett tomt tillträdesfält avvisade hela kortet, alltså också de ändringar hon gjort på andra rader. **Kravet gäller värdet, inte sparandet:** ett tomt fält lämnar det sparade datumet orört och resten av kortet sparas. Datumet kan fortfarande inte bli tomt — det är det kravet betyder.
+
+**Samma sak för ägarandelen**, och där var det dessutom inkonsekvent mot sig självt: med en sparad andel stoppades kortet, utan en sparad andel sparades resten. Agenten såg att min mening i `docs/design.md` om att *"ägarandelen följer redan regeln"* bara stämde till hälften — andelen raderades inte, men kortet sparades inte heller.
+
+**Och riktningen är den trygga i båda fallen.** Ett raderat tillträdesdatum gör underlaget fel i stället för ofullständigt; en raderad ägarandel får underlaget att visa hela bostaden, alltså ett för stort tal. **Att behålla det sparade värdet är det enda av alternativen som inte kan blåsa upp ett yrkande.**
 
 **Ingen knapp får skickas två gånger.** Så snart ett formulär börjat sparas ska knappen bli otillgänglig och förbli det tills sparandet lyckats eller misslyckats. Utan det skapar ett dubbelklick två identiska poster.
 

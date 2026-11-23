@@ -1977,6 +1977,10 @@ Den som ändrar köpeskillingen i inställningarna är där med avsikt och behö
 
 **Har något fält ett skäl att göra tvärtom ska skälet stå här**, och fältet ska i så fall ha ett uttryckligt sätt att nollställa — en knapp eller ett val, aldrig ett tomt fält som råkar betyda radera.
 
+**Två fält hade ett skrivet skäl, och båda är ändrade 2026-11-23.** Tillträdesdatumet och ägarandelen raderades inte av ett tomt fält — de **stoppade hela kortet**, alltså också de ändringar hon gjort på andra rader. Agenten lämnade dem och pekade på skälen i `CLAUDE.md` i stället för att välja, vilket var rätt.
+
+**Kravet gäller värdet, inte sparandet.** Att ett fält inte får bli tomt betyder att det sparade värdet står kvar, inte att resten av formuläret ska vägra. **Och min mening här om att *ägarandelen följer redan regeln* var bara halvsann** — andelen raderades inte, men kortet sparades inte heller, och med en sparad andel gjorde formuläret dessutom tvärtom mot utan.
+
 **Vill hon ändra talet skriver hon ett nytt.** Vägen till *inget svar* finns inte, och ska inte uppfinnas nu: den dag någon faktiskt inte vet talet är åtgärden det uttryckliga *Jag vet inte* som står beskrivet ovan, ett aktivt val som lagrar null — inte ett tomt fält som råkar göra det tyst.
 
 **Registreringen tappade hela hjälptexten 2026-11-22, och skälet är var hon befinner sig.** I registreringen svarar hon på frågor i följd för att komma in, och två meningar om en blankett hon aldrig sett är den enda texten i hela flödet som handlar om något annat än att komma igång. **Det är dessutom det enda stället där texten inte kan göra sin nytta:** den som inte minns köpeskillingen kan inte gå och hämta kontraktet mitt i en registrering — hon skriver ett tal eller vänder.
