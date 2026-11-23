@@ -1497,7 +1497,7 @@ Regeln står i `CLAUDE.md` sedan den 18 oktober och är kontrollerad mot källan
 
 **Friskrivningen bor på exportvyn**, där talen lämnar appen och där påståendet faktiskt betyder något. Regeln står under *Deklarationsunderlaget*.
 
-**I stället står en rad som svarar på det hon undrar: varför frågar ni det här?** Frågeträdet följer Skatteverkets regler för förbättringsutgifter, och frågorna är ställda i samma ordning och på samma skillnader som deras egen e-tjänst – kontrollerat vid källan 2026-10-18, se *Merkostnaden* i `CLAUDE.md`. Att säga det gör frågorna till något som kommer någonstans ifrån i stället för något vi hittat på.
+**I stället står en rad som svarar på det hon undrar: varför frågar ni det här?** Frågeträdet följer Skatteverkets regler för vad som får dras av vid en försäljning, och frågorna är ställda i samma ordning och på samma skillnader som deras egen e-tjänst – kontrollerat vid källan 2026-10-18, se *Merkostnaden* i `CLAUDE.md`. Att säga det gör frågorna till något som kommer någonstans ifrån i stället för något vi hittat på.
 
 **Men raden påstår aldrig ett samröre.** *Frågorna följer Skatteverkets regler* är sant; *frågorna kommer från Skatteverket* antyder att de godkänt appen, och det har de inte. **Ingen myndighets namn får stå så att det läser som ett intyg** – inte i knappar, inte i rubriker, inte i märken. Reglerna är allmänna och fria att följa; det är hela produktens idé. Det vi inte gör är att skriva av deras hjälptexter ordagrant i gränssnittet: citaten i `CLAUDE.md` finns där för att belägga en regel, och det användaren läser är våra egna ord.
 
@@ -1508,6 +1508,12 @@ Regeln står i `CLAUDE.md` sedan den 18 oktober och är kontrollerad mot källan
 **Den står en gång, i första steget.** Frågan *varför får jag de här frågorna?* uppstår när frågorna börjar, och flödet är linjärt så hon kan inte komma in i mitten. Samma rad i alla tre stegen är en rad som slutar läsas.
 
 **Och de två skärmarna vid försäljningen tappar också friskrivningen** — skickfrågan och frågan om samma del av bostaden. Agenten hittade dem 2026-11-22 och frågade i stället för att röra dem. De bryter mot regeln ovan: exportvyn är den enda skärm där påståendet behöver stå, och vid en försäljning ligger den en skärm eller två bort i samma sittning. **Tre kopior av en friskrivning är inte tre gånger så tydligt.**
+
+**Friskrivningen står på tre ställen, och listan vaktas av ett prov.** Uppräknat 2026-11-23: exportvyn, komponenten själv, och **bilagepaketets försättssida**. Den tredje är tillåten och hör inte till undantagen — **paketet är inte en skärm utan ett dokument som lämnar appen och sparas i åtta år**, och ett papper som ska kunna läggas fram för Skatteverket bär sitt eget förbehåll. Att exportvyns regel säger *enda skärmen* är sant och träffar inte ett papper.
+
+**Men texten får inte vara avskriven.** I dag bär PDF:en en kopia av lydelsen eftersom en PDF inte kan rendera komponenten. **Lydelsen ska stå i en konstant som både komponenten och PDF:en läser** — två återgivningar av en text, aldrig två texter. Det är den sortens avskrift som ruttnar i det tysta, och den har redan kostat oss två motsägelser den här veckan.
+
+**Landningssidans mening hör inte hit och ska inte slås ihop med den.** *"Appen ger ingen skatterådgivning och ersätter inte Skatteverkets information"* står i `landningssida.ts`, i stycket om vilka vi är, och är skriven för en besökare som ännu inte har ett konto. Den förklarar vad produkten **är**; friskrivningen förklarar vad ett **tal** är. **Den som senare vill harmonisera dem ska läsa det här stycket först** — skillnaden är inte slarv.
 
 **Och där en friskrivning ändå behövs står den avskild nederst**, aldrig direkt under ett fälts hjälptext – två dämpade rader under varandra läses som om båda gällde fältet.
 
