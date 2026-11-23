@@ -746,6 +746,22 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Och felet är osynligt för oss.** Ingen av oss sitter och lägger in kvitton 00:30, så det kan bara hittas genom läsning eller genom att ställa klockan. **Ett fel som bara finns under en timme om dygnet blir aldrig rapporterat — det blir en person som ger upp.**
 
+### Det ska finnas ett sätt att fråga vilken dag det är
+
+**Skriven 2026-11-23, efter lagningen.** `idagISverige()` räknar dagen i `Europe/Stockholm` oavsett maskinens zon, och de fem gränserna mot *idag* använder den. **Men faran som blev kvar är större än de fem ställena:** `isoDatum` används både för **sparade** datum, där UTC är rätt eftersom de lagras som midnatt UTC, och för **nu**, där det är fel.
+
+**En funktion som svarar på två frågor blir förr eller senare ställd den andra.** Det är samma släkte som *ett avläst tal utan sin bas*: inget i anropet säger vilken av de två betydelserna man bad om, så den som skriver `isoDatum(new Date())` får ett svar som ser rätt ut och är fel en timme om dygnet.
+
+**Regeln är därför inte *använd rätt funktion*, utan *gör den felaktiga oåtkomlig*.** Att formatera ett sparat datum och att fråga vilken dag det är i dag är två olika saker och ska ha två namn, där det ena inte går att råka skriva. **Det är samma princip som att ett misstag som upprepas rättas i kommandot och inte i uppmärksamheten** — en regel som kräver att man minns vilken variant som gäller kommer att missas.
+
+**Och en brytning som bara fäller ett av två skydd ska sägas.** Agenten tog bort den undre gränsen ur försäljningens datumfält; bara provet för meddelandet medan hon skriver föll, eftersom formuläret ändå stoppas vid sändningen. **Då är det inte skyddet som är mätt, utan det ena av två** — och nästa gång någon tar bort det andra ser det ut som att allt fortfarande håller.
+
+### En brytning som inte fäller något är ett resultat, inte en tystnad
+
+**Skriven 2026-11-23.** `npm run prova` kräver att varje namngiven fil verkligen körde minst ett prov, och med `--fa-falla` blir exitkoden noll **bara om något föll**. En brytning som inte fäller något blir därmed ett fel med egen text i stället för en rad i en rapport som ingen granskar.
+
+**Det är den rätta formen på regeln om upprepade misstag.** Skalfelet med två filnamn i ett argument kom tillbaka tre gånger, varje gång fångat av vaksamhet. **Fjärde gången fångas det av kommandot**, som frågar rakt ut om det är två filnamn i ett argument och stannar.
+
 ### Ett mått i en regel är ett påstående som ingen mätt
 
 **Skriven 2026-11-22.** `docs/design.md` sa att mellanrummet upp till rubriken *Så fungerar det* ska vara *"ungefär dubbelt så stort"* som mellanrummet mellan raderna. Agenten mätte i Chrome med appens riktiga stilmall: **32 px mot 6 px**, alltså drygt fem gånger — och samma tal före ändringen. **Måttet hade aldrig stämt, och skärmen hade hela tiden sett rätt ut.**

@@ -1973,6 +1973,10 @@ Den som ändrar köpeskillingen i inställningarna är där med avsikt och behö
 
 **Ägarandelen i samma formulär följer redan regeln**, och två fält bredvid varandra som behandlar ett tomt fält olika är inte en nyans, det är ett formulär som gör olika saker beroende på vilken rad man står på. **Tomt betyder *jag ändrade inget här***, aldrig *radera det jag sagt*.
 
+**Regeln gäller hela kortet *Förvärvet*, inte bara köpeskillingen.** Utvidgat 2026-11-23, efter att agenten påpekade att köpkostnaderna i samma kort fortfarande skrivs som `null` när fältet töms. Det är samma fråga, och att svara på den ett fält i taget är hur ett formulär slutar vara ett formulär och blir sju. **Tomt betyder *jag ändrade inget här*, på varje rad i kortet.**
+
+**Har något fält ett skäl att göra tvärtom ska skälet stå här**, och fältet ska i så fall ha ett uttryckligt sätt att nollställa — en knapp eller ett val, aldrig ett tomt fält som råkar betyda radera.
+
 **Vill hon ändra talet skriver hon ett nytt.** Vägen till *inget svar* finns inte, och ska inte uppfinnas nu: den dag någon faktiskt inte vet talet är åtgärden det uttryckliga *Jag vet inte* som står beskrivet ovan, ett aktivt val som lagrar null — inte ett tomt fält som råkar göra det tyst.
 
 **Registreringen tappade hela hjälptexten 2026-11-22, och skälet är var hon befinner sig.** I registreringen svarar hon på frågor i följd för att komma in, och två meningar om en blankett hon aldrig sett är den enda texten i hela flödet som handlar om något annat än att komma igång. **Det är dessutom det enda stället där texten inte kan göra sin nytta:** den som inte minns köpeskillingen kan inte gå och hämta kontraktet mitt i en registrering — hon skriver ett tal eller vänder.
