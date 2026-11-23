@@ -207,11 +207,15 @@ describe("sparaForvarvet ror bara Forvarvets egna falt", () => {
     expect(data.nybyggd_vid_forvarv).toBe(false);
   });
 
-  it("tillträdesdatum ar fortfarande obligatoriskt", async () => {
-    // Ingen bostad satt med flit: ett tomt datum avvisas innan bostaden lases.
+  // Kravet galler vardet, inte sparandet (andrat 2026-11-23, docs/design.md,
+  // "Kortet Förvärvet"): datumet kan inte bli tomt, men ett tomt falt stoppar
+  // inte kortet – det skrivs inte alls, och det sparade datumet star kvar.
+  it("tillträdesdatum kan fortfarande inte bli tomt: ett tomt fält skrivs inte", async () => {
+    bostadenAr("bostadsratt");
     const resultat = await sparaForvarvet({}, formulardata({ tilltradesdatum: "", agarandel: "100" }));
-    expect(resultat.fel).toContain("Tillträdesdatum");
-    expect(h.bostadUpdate).not.toHaveBeenCalled();
+    expect(resultat.fel).toBeUndefined();
+    const data = h.bostadUpdate.mock.calls[0][0].data;
+    expect("tilltradesdatum" in data, "tillträdesdatumet skrivs inte").toBe(false);
   });
 
   // Ett tomt falt andrar ingenting, pa varje rad i kortet sedan 2026-11-23

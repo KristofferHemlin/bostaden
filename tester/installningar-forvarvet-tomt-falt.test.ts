@@ -50,6 +50,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { sparaForvarvet } from "@/app/installningar/actions";
 import InstallningarSida from "@/app/installningar/page";
 import { formateraKronor } from "@/lib/format";
+import { formateraAndel } from "@/lib/samagande";
 
 // Ett tomt fält ändrar ingenting, på varje rad i kortet Förvärvet
 // (docs/design.md, beslutat 2026-11-23). Till dess skrev inställningarna null
@@ -135,5 +136,67 @@ describe.each(FALTEN)("$namn i inställningarna går inte att radera", ({ falt, 
     const b = await h.db.klient.bostad.findUniqueOrThrow({ where: { id: X } });
     expect((b.tilltradesdatum as Date).toISOString().slice(0, 10)).toBe("2020-02-03");
     expect(await sparad(falt)).toBe(tal);
+  });
+});
+
+// Tillträdesdatumet och ägarandelen stoppade hela kortet när de var tomma, i
+// stället för att lämna sitt värde orört (ändrat 2026-11-23, docs/design.md,
+// "Kortet Förvärvet"). Kravet gäller värdet, inte sparandet: datumet kan inte
+// bli tomt, och en sparad andel kan inte raderas – men resten av kortet sparas.
+// Det felet faktiskt kostade var ändringen på en annan rad, så den prövas.
+async function andelen(): Promise<number | null> {
+  const m = (await h.db.klient.medlemskap.findFirst({ where: { anvandare_id: ANNA, bostad_id: X } })) as { agarandel: unknown } | null;
+  return m?.agarandel == null ? null : Number(m.agarandel);
+}
+
+describe("tillträdesdatumet i inställningarna", () => {
+  it("ett tomt fält lämnar det sparade datumet orört, ändringen på en annan rad sparas, och sidan visar datumet", async () => {
+    const svar = await sparaForvarvet({}, formular({ tilltradesdatum: "", kopeskilling: "3 400 000" }));
+    expect(svar.fel).toBeUndefined();
+    const b = await h.db.klient.bostad.findUniqueOrThrow({ where: { id: X } });
+    expect((b.tilltradesdatum as Date).toISOString().slice(0, 10)).toBe("2019-06-01");
+    expect(await sparad("kopeskilling")).toBe(340_000_000n);
+    expect(await radensVarde("Tillträdesdatum")).toBe("2019-06-01");
+  });
+
+  it("ett nytt datum sparas som vanligt, och sidan visar det nya", async () => {
+    const svar = await sparaForvarvet({}, formular({ tilltradesdatum: "2020-02-03" }));
+    expect(svar.fel).toBeUndefined();
+    expect(await radensVarde("Tillträdesdatum")).toBe("2020-02-03");
+  });
+
+  it("ett påbörjat men ofullständigt datum är inte tomt: det avvisas vid fältet, och ingenting sparas", async () => {
+    const f = formular({ tilltradesdatum: "", kopeskilling: "3 400 000" });
+    f.set("tilltradesdatum__paborjat", "1");
+    const svar = await sparaForvarvet({}, f);
+    expect(svar).toMatchObject({ falt: "tilltradesdatum" });
+    expect(svar.fel).toBeTruthy();
+    expect(await sparad("kopeskilling")).toBe(FALTEN[0].sparad);
+  });
+});
+
+describe("ägarandelen i inställningarna", () => {
+  beforeEach(async () => {
+    await h.db.klient.medlemskap.updateMany({ where: { anvandare_id: ANNA, bostad_id: X }, data: { agarandel: 60 } });
+  });
+
+  it("förutsättningen: sidan visar den sparade andelen", async () => {
+    expect(await andelen()).toBe(60);
+    expect(await radensVarde("Ägarandel")).toBe(formateraAndel(60));
+  });
+
+  it("ett tomt fält lämnar den sparade andelen orörd, ändringen på en annan rad sparas, och sidan visar andelen", async () => {
+    const svar = await sparaForvarvet({}, formular({ agarandel: "", kopeskilling: "3 400 000" }));
+    expect(svar.fel).toBeUndefined();
+    expect(await andelen()).toBe(60);
+    expect(await sparad("kopeskilling")).toBe(340_000_000n);
+    expect(await radensVarde("Ägarandel")).toBe(formateraAndel(60));
+  });
+
+  it("en ny andel sparas som vanligt, och sidan visar den nya", async () => {
+    const svar = await sparaForvarvet({}, formular({ agarandel: "50" }));
+    expect(svar.fel).toBeUndefined();
+    expect(await andelen()).toBe(50);
+    expect(await radensVarde("Ägarandel")).toBe(formateraAndel(50));
   });
 });

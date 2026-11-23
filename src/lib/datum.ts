@@ -52,6 +52,13 @@ export function idagISverige(nu: Date = new Date()): string {
   return `${del("year")}-${del("month")}-${del("day")}`;
 }
 
+/**
+ * Datumfaltets andra dolda falt heter som faltet med detta tillagt, och ar "1"
+ * nar hon borjat skriva ett datum som inte ar klart eller inte ar giltigt.
+ * Det dolda ISO-faltet ar da tomt, precis som nar faltet ar tomt.
+ */
+export const PABORJAT_SUFFIX = "__paborjat";
+
 /** Aret i Stockholm just nu – nyarsnatten borjar vid svensk midnatt, inte UTC:s. */
 export function aretISverige(nu: Date = new Date()): number {
   return Number(idagISverige(nu).slice(0, 4));

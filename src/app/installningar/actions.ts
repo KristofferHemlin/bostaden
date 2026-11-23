@@ -39,7 +39,7 @@ import {
 } from "@/doman/bostadsfragor";
 import { ANDEL_SAKNAS, agarandelFel, agarandelFranText } from "@/lib/agarandel";
 import { skrivEgenAndel } from "@/lib/egen-andel";
-import { fortidigtDatumFel, idagISverige, TIDIGASTE_DATUM } from "@/lib/datum";
+import { fortidigtDatumFel, idagISverige, PABORJAT_SUFFIX, TIDIGASTE_DATUM } from "@/lib/datum";
 import { oreFranKronor } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { kravBostad } from "@/lib/session";
@@ -231,11 +231,11 @@ export async function sparaBostaden(
  * forsaljningen, men med andelssummaVidAndrings undantag). Utestaende
  * inbjudningar raknas med – de har redan sin andel reserverad.
  *
- * Ett tomt andelsfalt ar ett fel nar en andel redan ar angiven: man kan inte
- * ta tillbaka sitt svar, bara skriva ett nytt tal (CLAUDE.md, "Andelen ar
- * null tills den besvarats"). Ar andelen inte angiven an lamnar ett tomt falt
- * den obesvarad och resten av kortet sparas – annars gar kopeskillingen inte
- * att spara forran andelen ar kand.
+ * Ett tomt falt andrar ingenting, pa varje rad, och stoppar inte resten av
+ * kortet (docs/design.md, "Kortet Förvärvet"; CLAUDE.md, testlistan, andrat
+ * 2026-11-23). En sparad andel star kvar och en obesvarad forblir obesvarad;
+ * man tar inte tillbaka sitt svar, man skriver ett nytt tal. Samma for
+ * tilltradesdatumet, kopeskillingen och kopkostnaderna.
  */
 export async function sparaForvarvet(
   _foreg: InstallningarResultat,
@@ -243,18 +243,24 @@ export async function sparaForvarvet(
 ): Promise<InstallningarResultat> {
   const { anvandareId, bostadId } = await kravBostad();
 
+  // Ett tomt falt andrar ingenting, pa varje rad i kortet (docs/design.md,
+  // "Kortet Förvärvet", andrat 2026-11-23). Tilltradesdatumet far inte bli
+  // tomt, och kravet galler vardet, inte sparandet: ett tomt falt lamnar det
+  // sparade datumet orort och resten av kortet sparas. Till dess avvisades hela
+  // kortet. Ett paborjat men ofullstandigt datum ar daremot inte tomt – det
+  // avvisas vid faltet, annars ignorerades det hon skrev.
   const tilltradesdatum = las(formData, "tilltradesdatum");
-  if (!DATUM.test(tilltradesdatum)) {
-    return {
-      fel: "Tillträdesdatum behövs som baslinje för skickbedömningen och gränsen för vilka utgifter som är dina.",
-      falt: "tilltradesdatum",
-    };
-  }
-  if (tilltradesdatum < TIDIGASTE_DATUM) {
-    return { fel: fortidigtDatumFel("Tillträdesdatum"), falt: "tilltradesdatum" };
-  }
-  if (tilltradesdatum > idagISverige()) {
-    return { fel: "Tillträdesdatum kan inte ligga i framtiden.", falt: "tilltradesdatum" };
+  const tilltradetTomt = tilltradesdatum === "" && las(formData, `tilltradesdatum${PABORJAT_SUFFIX}`) === "";
+  if (!tilltradetTomt) {
+    if (!DATUM.test(tilltradesdatum)) {
+      return { fel: "Fyll i hela tillträdesdatumet: år, månad och dag.", falt: "tilltradesdatum" };
+    }
+    if (tilltradesdatum < TIDIGASTE_DATUM) {
+      return { fel: fortidigtDatumFel("Tillträdesdatum"), falt: "tilltradesdatum" };
+    }
+    if (tilltradesdatum > idagISverige()) {
+      return { fel: "Tillträdesdatum kan inte ligga i framtiden.", falt: "tilltradesdatum" };
+    }
   }
 
   const kopeskilling = beloppFranText(las(formData, "kopeskilling"));
@@ -303,13 +309,11 @@ export async function sparaForvarvet(
       // Andelen forst: provningen mot de andras ar samma som vid
       // bekraftelsen (src/lib/egen-andel.ts). Ett fel avbryter fore bostaden
       // skrivs.
-      if (agarandel === undefined) {
-        const egen = await tx.medlemskap.findFirst({
-          where: { anvandare_id: anvandareId, bostad_id: bostadId },
-          select: { agarandel: true },
-        });
-        if (egen && egen.agarandel !== null) return ANDEL_SAKNAS;
-      } else {
+      // Ett tomt andelsfalt andrar ingenting och stoppar inte resten av kortet
+      // (CLAUDE.md, testlistan, andrat 2026-11-23): en sparad andel star kvar,
+      // en obesvarad forblir obesvarad. Till dess avvisades kortet nar en
+      // andel fanns. En raderad andel hade gett underlaget hela bostadens tal.
+      if (agarandel !== undefined) {
         const fel = await skrivEgenAndel(tx, { bostadId, anvandareId, agarandel, bekrafta: false });
         if (fel) return fel;
       }
@@ -317,7 +321,7 @@ export async function sparaForvarvet(
       await tx.bostad.update({
         where: { id: bostadId },
         data: {
-          tilltradesdatum: new Date(`${tilltradesdatum}T00:00:00.000Z`),
+          ...(tilltradetTomt ? {} : { tilltradesdatum: new Date(`${tilltradesdatum}T00:00:00.000Z`) }),
           // Ett tomt falt andrar ingenting, pa varje rad i kortet (docs/design.md,
           // beslutat 2026-11-23): tomt betyder "jag andrade inget har", aldrig
           // "radera det jag sagt". Till dess skrevs null for bada beloppen, och

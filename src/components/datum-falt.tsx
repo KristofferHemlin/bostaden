@@ -37,7 +37,7 @@
 // vanliga serverformular (installningar, redigering).
 
 import { useEffect, useId, useRef, useState } from "react";
-import { datumfel, idagISverige } from "@/lib/datum";
+import { datumfel, idagISverige, PABORJAT_SUFFIX } from "@/lib/datum";
 import { FALTFEL_KLASS } from "@/components/skarm";
 import { delensNamn, useFaltEtikett } from "@/components/falt-etikett";
 import { datumfaltetsMeddelande, FALTFEL_ATTRIBUT } from "@/lib/formularfel";
@@ -216,6 +216,13 @@ export function DatumFalt({
         />
       </div>
       {name ? <input type="hidden" name={name} value={iso} /> : null}
+      {/* Skiljer ett tomt falt fran ett paborjat: bada ger "" ovan. Ett
+          formular dar tomt betyder "jag andrade inget har" (installningarnas
+          Forvarvet) maste kunna se att hon borjat skriva ett datum som inte ar
+          klart, annars ignoreras det tyst. */}
+      {name ? (
+        <input type="hidden" name={`${name}${PABORJAT_SUFFIX}`} value={iso === "" && (ar || manad || dag) ? "1" : ""} />
+      ) : null}
       {meddelande ? (
         <p id={meddelandeId} role="alert" className={`mt-1.5 ${FALTFEL_KLASS}`}>
           {meddelande}

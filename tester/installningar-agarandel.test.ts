@@ -104,15 +104,15 @@ describe("agarandel valideras aven pa servern", () => {
     );
   });
 
-  // CLAUDE.md, testlistan: "Ett tomt andelsfalt i installningarna avvisas och
-  // andrar ingenting."
-  it("avvisar ett tomt falt nar en andel ar angiven, och andrar ingenting", async () => {
+  // CLAUDE.md, testlistan (andrat 2026-11-23): "Ett tomt andelsfalt i
+  // installningarna andrar ingenting, och stoppar inte resten av kortet."
+  it("ett tomt falt nar en andel ar angiven: andelen star kvar, resten sparas", async () => {
     h.medlemskapFindFirst.mockResolvedValue({ agarandel: 100 });
     const resultat = await sparaForvarvet({}, formulardata({ agarandel: "", kopeskilling: "3 250 000" }));
 
-    expect(resultat).toEqual({ fel: ANDEL_SAKNAS, falt: "agarandel" });
+    expect(resultat.fel).toBeUndefined();
     expect(h.medlemskapUpdateMany).not.toHaveBeenCalled();
-    expect(h.bostadUpdate).not.toHaveBeenCalled();
+    expect(h.bostadUpdate.mock.calls[0][0].data.kopeskilling).toBe(325_000_000n);
   });
 
   it("ett tomt falt nar andelen inte ar angiven: andelen forblir null, resten sparas", async () => {

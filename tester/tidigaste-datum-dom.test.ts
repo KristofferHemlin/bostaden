@@ -222,3 +222,40 @@ describe("försäljningen: formuläret skickas inte, och beskedet står vid fäl
     expect(behallare.querySelector(`[${FORMULARFEL_ATTRIBUT}]`), "inget formulärfel överst").toBeNull();
   });
 });
+
+// Ett tomt tillträdesfält lämnar det sparade datumet orört (docs/design.md,
+// "Kortet Förvärvet"), och servern måste då kunna skilja ett tömt fält från
+// ett påbörjat: båda ger ett tomt ISO-fält. Datumfältet säger det i ett eget
+// dolt fält.
+describe("inställningarnas tillträde: tomt är inte detsamma som påbörjat", () => {
+  async function tom(del: "år" | "månad" | "dag") {
+    const ruta = behallare.querySelector<HTMLInputElement>(`input[aria-label="Tillträdesdatum, ${del}"]`)!;
+    await act(async () => {
+      satt().call(ruta, "");
+      ruta.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  }
+  const dolda = () => ({
+    iso: behallare.querySelector<HTMLInputElement>('input[type="hidden"][name="tilltradesdatum"]')!.value,
+    paborjat: behallare.querySelector<HTMLInputElement>('input[type="hidden"][name="tilltradesdatum__paborjat"]')!.value,
+  });
+
+  it("ett ifyllt datum: ISO-värdet, inte påbörjat", async () => {
+    await SKARMARNA[2].oppna();
+    expect(dolda()).toEqual({ iso: "2019-06-01", paborjat: "" });
+  });
+
+  it("ett helt tömt fält: tomt, inte påbörjat", async () => {
+    await SKARMARNA[2].oppna();
+    await tom("år");
+    await tom("månad");
+    await tom("dag");
+    expect(dolda()).toEqual({ iso: "", paborjat: "" });
+  });
+
+  it("ett halvt tömt fält: tomt ISO-värde, men påbörjat", async () => {
+    await SKARMARNA[2].oppna();
+    await tom("dag");
+    expect(dolda()).toEqual({ iso: "", paborjat: "1" });
+  });
+});
