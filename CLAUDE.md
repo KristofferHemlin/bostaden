@@ -736,6 +736,16 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Ett prov kan bara läsa ett ställe.** Står lydelsen på tre vaktas en av dem, och de andra två ser ut som regler men är minnen av en. **Den som behöver nämna texten någon annanstans hänvisar till var den står, och skriver inte av den** — samma skäl som att en regel aldrig definieras som *"samma som X"*.
 
+### Ett datum utan sin tidszon är inte en dag
+
+**Skriven 2026-11-23, och den är tvillingen till *ett avläst tal utan sin bas*.** Agenten läste i koden att *dagens datum* räknas i UTC, i både webbläsaren och på servern. **Följden: mellan midnatt och 01:00 svensk tid — 02:00 på sommaren — får den som skriver in dagens datum höra att det ligger i framtiden.** Både vid försäljningen och för tillträdet.
+
+**Det är inte en glidning mellan två kopior.** Båda sidorna har samma fel, så de är överens — om fel dag. **Två ställen som gör samma fel ser ut som en bekräftelse och är en upprepning.**
+
+**Regeln:** ett datum i den här appen är en **dag i en svensk kalender**, aldrig ett ögonblick. Tillträde, betaldag, kvittodatum, försäljningsdag och gränsen *idag* hör alla till `Europe/Stockholm`. **Räknas *idag* i UTC flyttas dygnsgränsen en eller två timmar in i natten**, och appen avvisar ett sant datum precis när hon skrivit det.
+
+**Och felet är osynligt för oss.** Ingen av oss sitter och lägger in kvitton 00:30, så det kan bara hittas genom läsning eller genom att ställa klockan. **Ett fel som bara finns under en timme om dygnet blir aldrig rapporterat — det blir en person som ger upp.**
+
 ### Ett mått i en regel är ett påstående som ingen mätt
 
 **Skriven 2026-11-22.** `docs/design.md` sa att mellanrummet upp till rubriken *Så fungerar det* ska vara *"ungefär dubbelt så stort"* som mellanrummet mellan raderna. Agenten mätte i Chrome med appens riktiga stilmall: **32 px mot 6 px**, alltså drygt fem gånger — och samma tal före ändringen. **Måttet hade aldrig stämt, och skärmen hade hela tiden sett rätt ut.**

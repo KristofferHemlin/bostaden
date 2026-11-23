@@ -1519,6 +1519,15 @@ Regeln står i `CLAUDE.md` sedan den 18 oktober och är kontrollerad mot källan
 
 **Fram till dess vaktade proven att skärmen och PDF:en sa *samma* sak, aldrig att de sa *rätt* sak.** Agenten visade det med flit: en ändrad konstant gick igenom alla fem proven, eftersom ingen av dem hade något att jämföra mot. **Två kopior som följs åt är fortfarande en enda osanning om de båda är fel.** Det är samma regel som att en lydelse som ska vaktas står i regelfilen.
 
+**Sammanställningens fyra texter har samma källa sedan 2026-11-23**, i `src/lib/sammanstallningens-sidor.ts`, och lydelserna står här av samma skäl som friskrivningens:
+
+> Sida 1 · Grundförbättringar
+> Sida 2 · Förbättrande reparationer
+> Inga grundförbättringar registrerade.
+> Inga förbättrande reparationer registrerade.
+
+**De två rubrikerna vaktades redan** av `underlaget-vantar.test.ts`, som bär dem som egna strängar. **De två tomma raderna vaktades av ingenting** — agenten ändrade raden för sida 1 i konstanten och hela sviten gick igenom. Det är samma hål som friskrivningens, en vecka senare och en våning ned.
+
 **Skärmen och PDF:en delar fler texter än den här.** Uppräknat 2026-11-23: *Sida 1 · Grundförbättringar*, *Sida 2 · Förbättrande reparationer* och de två raderna om att ingenting är registrerat står skrivna i både exportvyn och `pdf.ts`, och inget prov läser dem. **De ska ha samma källa av samma skäl som friskrivningen**, och här är skälet dessutom hennes: paketets hela poäng är att gå från ett tal i sammanställningen till rätt kvitto, och två rubriker som glidit isär bryter just den vägen.
 
 **Landningssidans mening hör inte hit och ska inte slås ihop med den.** *"Appen ger ingen skatterådgivning och ersätter inte Skatteverkets information"* står i `landningssida.ts`, i stycket om vilka vi är, och är skriven för en besökare som ännu inte har ett konto. Den förklarar vad produkten **är**; friskrivningen förklarar vad ett **tal** är. **Den som senare vill harmonisera dem ska läsa det här stycket först** — skillnaden är inte slarv.
@@ -1959,6 +1968,12 @@ Att adressen alltid finns gör också att erbjudandet om att bjuda in alltid gå
 | *(ingen hjälptext alls)* | **Registreringen**, struket 2026-11-22 |
 
 Den som ändrar köpeskillingen i inställningarna är där med avsikt och behöver inte höra skälet igen. Att upprepa det är brus på den skärm vars hela poäng är att visa värden i lugn och ro.
+
+**Ett tomt fält ändrar ingenting, också för köpeskillingen.** Beslutat 2026-11-23, efter att agenten läste att inställningarna skriver `null` när fältet töms — **ett svar som är obligatoriskt i registreringen gick alltså att radera i inställningarna**, varpå kortet på startskärmen började fråga igen.
+
+**Ägarandelen i samma formulär följer redan regeln**, och två fält bredvid varandra som behandlar ett tomt fält olika är inte en nyans, det är ett formulär som gör olika saker beroende på vilken rad man står på. **Tomt betyder *jag ändrade inget här***, aldrig *radera det jag sagt*.
+
+**Vill hon ändra talet skriver hon ett nytt.** Vägen till *inget svar* finns inte, och ska inte uppfinnas nu: den dag någon faktiskt inte vet talet är åtgärden det uttryckliga *Jag vet inte* som står beskrivet ovan, ett aktivt val som lagrar null — inte ett tomt fält som råkar göra det tyst.
 
 **Registreringen tappade hela hjälptexten 2026-11-22, och skälet är var hon befinner sig.** I registreringen svarar hon på frågor i följd för att komma in, och två meningar om en blankett hon aldrig sett är den enda texten i hela flödet som handlar om något annat än att komma igång. **Det är dessutom det enda stället där texten inte kan göra sin nytta:** den som inte minns köpeskillingen kan inte gå och hämta kontraktet mitt i en registrering — hon skriver ett tal eller vänder.
 
@@ -2951,7 +2966,7 @@ Formuleringen följer Skatteverkets egen: *"Kostnaden för det året som åtgär
 
 Det här var ett verkligt hål, men ett annat än det jag trodde: av listans fyra varningar syntes tre redan, och den fjärde kunde knappt inträffa. **Det som faktiskt försvann tyst var det som stod under *Återstår* — och bara i PDF:en**, som saknar den rubriken helt. Se den kända luckan i `produktspec.md`.
 
-**Friskrivningen står på den här sidan.** En dämpad rad om att appen inte ger skatterådgivning och att Skatteverkets upplysningstjänst svarar på gränsfall. Exportvyn är den enda skärm där användaren tar med sig siffror ut ur appen, och därmed den enda där påståendet behöver stå. **Frågeträdet har den inte, struket 2026-11-22** – där står i stället en rad om att frågorna följer Skatteverkets regler, vilket är det hon undrar i det läget. Skälet står under *Frågeflödet*.
+**Friskrivningen står på den här sidan.** En dämpad rad om att appen inte ger skatterådgivning och att Skatteverkets upplysningstjänst svarar på gränsfall. Exportvyn är den enda skärm där användaren tar med sig siffror ut ur appen, och därmed den enda där påståendet behöver stå. **Frågeträdet har den inte, struket 2026-11-22** – där står i stället en rad om att frågorna följer Skatteverkets regler, vilket är det hon undrar i det läget. Skälet står under *Projektfrågorna*.
 
 ### Sidan finns inte, och när något gick fel
 
