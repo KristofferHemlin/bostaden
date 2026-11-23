@@ -906,6 +906,8 @@ Samma sak gäller brödsmulor: anropen till backend saneras, men navigeringarna 
 
 **Agenten rör inga md-filer — inte heller den här.** Regeln har alltid varit att `docs/` är mitt, och `CLAUDE.md` ligger utanför `docs/` men lyder under samma ordning: den som skriver prompten skriver reglerna, agenten läser dem och säger emot dem. Skriven 2026-10-21 efter att agenten frågade, vilket var befogat eftersom regeln bara stått som *"ändra ingenting i `docs/`"*.
 
+**En prompt får aldrig nämna en fil som inte finns i repot.** Skrivet 2026-11-23: jag skrev *"`docs/design.md` och `att-fixa` är uppdaterade och ligger i trädet"*. `att-fixa-infor-lansering.md` är min arbetslista och har aldrig legat i repot. Agenten letade i trädet, letade bland de ignorerade filerna, och rapporterade att den antagligen ligger utanför — **alltså en hel letning för en mening jag skrev på autopilot.** Listan är min, inte arbetets. Den nämns inte, den hänvisas inte till, och inget i en prompt får bero på den.
+
 **Och en prompt får aldrig hänvisa till en regel som inte ligger i repot än.** Samma dag stannade agenten med rätta: prompten sa att beslutet stod i den här filen, men filen i repot sa fortfarande *"ännu obeslutad"* eftersom ändringen låg hos mig och inte var inlagd. Agenten gjorde exakt rätt i att inte bygga på en rad i `regelkallor.md`, som uttryckligen inte får användas för att härleda regler.
 
 **Ordningen är alltså: filerna in först, prompten sedan.** Går det inte — står regeln bara i prompten — ska prompten säga det rakt ut i stället för att påstå att den står någon annanstans.

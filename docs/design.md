@@ -1511,7 +1511,15 @@ Regeln står i `CLAUDE.md` sedan den 18 oktober och är kontrollerad mot källan
 
 **Friskrivningen står på tre ställen, och listan vaktas av ett prov.** Uppräknat 2026-11-23: exportvyn, komponenten själv, och **bilagepaketets försättssida**. Den tredje är tillåten och hör inte till undantagen — **paketet är inte en skärm utan ett dokument som lämnar appen och sparas i åtta år**, och ett papper som ska kunna läggas fram för Skatteverket bär sitt eget förbehåll. Att exportvyns regel säger *enda skärmen* är sant och träffar inte ett papper.
 
-**Men texten får inte vara avskriven.** I dag bär PDF:en en kopia av lydelsen eftersom en PDF inte kan rendera komponenten. **Lydelsen ska stå i en konstant som både komponenten och PDF:en läser** — två återgivningar av en text, aldrig två texter. Det är den sortens avskrift som ruttnar i det tysta, och den har redan kostat oss två motsägelser den här veckan.
+**Texten får inte vara avskriven, och är det inte längre sedan 2026-11-23.** Lydelsen ligger i `src/lib/friskrivning.ts`, och både komponenten och PDF:en läser den därifrån — två återgivningar av en text, aldrig två texter. Det är den sortens avskrift som ruttnar i det tysta.
+
+**Lydelsen står här, och det är först nu den går att vakta:**
+
+> Appen ger ingen skatterådgivning. Vid gränsfall svarar Skatteverkets upplysningstjänst.
+
+**Fram till dess vaktade proven att skärmen och PDF:en sa *samma* sak, aldrig att de sa *rätt* sak.** Agenten visade det med flit: en ändrad konstant gick igenom alla fem proven, eftersom ingen av dem hade något att jämföra mot. **Två kopior som följs åt är fortfarande en enda osanning om de båda är fel.** Det är samma regel som att en lydelse som ska vaktas står i regelfilen.
+
+**Skärmen och PDF:en delar fler texter än den här.** Uppräknat 2026-11-23: *Sida 1 · Grundförbättringar*, *Sida 2 · Förbättrande reparationer* och de två raderna om att ingenting är registrerat står skrivna i både exportvyn och `pdf.ts`, och inget prov läser dem. **De ska ha samma källa av samma skäl som friskrivningen**, och här är skälet dessutom hennes: paketets hela poäng är att gå från ett tal i sammanställningen till rätt kvitto, och två rubriker som glidit isär bryter just den vägen.
 
 **Landningssidans mening hör inte hit och ska inte slås ihop med den.** *"Appen ger ingen skatterådgivning och ersätter inte Skatteverkets information"* står i `landningssida.ts`, i stycket om vilka vi är, och är skriven för en besökare som ännu inte har ett konto. Den förklarar vad produkten **är**; friskrivningen förklarar vad ett **tal** är. **Den som senare vill harmonisera dem ska läsa det här stycket först** — skillnaden är inte slarv.
 
