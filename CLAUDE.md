@@ -776,6 +776,26 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Och det gäller varje sådant prov vi har** — lydelserna, facit, sammanställningens texter. De är alla byggda på att jag inte ändrar en rubrik, och **jag ändrar rubriker.**
 
+### Ett fält som ändrar vilka kvitton som räknas ska säga vad det kostar
+
+**Skriven 2026-11-25, uppmätt av agenten.** Tillträdesdatumet flyttades två månader framåt. **Sparandet svarade `{}`, inställningssidan visade det nya datumet, och ingenting annat hände** — men sida 1 gick från 16 000 till 10 000 kr.
+
+**Och det tal som försvann var inte kvittots.** Kvittot som hamnade utanför innehavet var på **2 000 kr**. De andra 4 000 föll därför att året då blev 4 000 kr totalt och **tröskeln vände.** Skillnaden var alltså tre gånger beloppet på det kvitto hon flyttade gränsen förbi.
+
+**Det är regelns kärna: följden går inte att läsa ur ändringen.** Hon flyttar ett datum två månader och tror sig rätta en uppgift. **En summa som ingen nämner har ändrats med en sjättedel.**
+
+**Fyra värden gör det, och inget av dem säger något:** tillträdesdatum, försäljningsdatum, upplåtelseform (som dessutom nollställer bostadsfrågorna) och *första ägaren*. **Tre är mätta, det fjärde läst.**
+
+**Regeln:** ett värde som ändrar **vilka** kvitton som räknas — inte bara hur de räknas — säger vad ändringen gör med underlaget **innan den sparas**.
+
+**Tre krav på det beskedet:**
+
+1. **Talet är skillnaden i underlaget**, aldrig summan av de kvitton som berörs. Tröskeln kan vända ett helt år, och då är de två talen olika
+2. **Det sägs åt båda hållen.** Ett underlag som **växer** av en ändring är den farliga riktningen i en deklaration — samma riktning som ROT-felet och momsfelet
+3. **Ändringen stoppas aldrig.** Hon får rätta sitt tillträdesdatum. Beskedet finns för att hon ska se priset, inte för att vi ska tvivla på henne
+
+**Och det här är vad vår egen förbättring kostade.** Sedan *Preliminärt* smalnade ser det nya, lägre talet **färdigt** ut. Regeln var rätt och följden är verklig: **när en skärm slutar varna måste ögonblicket före den göra det.**
+
 ### Fokus och fel får aldrig dela färg
 
 **Skriven 2026-11-24, ur agentens uppräkning.** Fälten får en orange ring när de har **fokus**, i samma ton som feltexterna, och har **ingen egen stil för ogiltigt**. Alltså ser ett markerat fält felaktigt ut, och ett felaktigt fält ser markerat ut.

@@ -3019,13 +3019,50 @@ Poängen är att sidan ska vara meningsfull under hela ägandet i stället för 
 
 #### Att flytta tillträdet
 
-**Öppen fråga, väckt 2026-11-24.** Tillträdesdatumet går att ändra i inställningarna, och det är gränsen för vilka utgifter som är hennes. **Flyttas det framåt faller kvitton ur underlaget** — tyst, vad vi vet.
+**Mätt 2026-11-25, och det är värre än gissningen.** Tillträdet flyttades två månader framåt på en villa. **Sparandet svarade `{}`, sidan visade det nya datumet, och ingenting mer sades** — men sida 1 gick från **16 000 till 10 000 kr**.
 
-**Det är den största enskilda ändring ett fält kan göra i den här appen.** Ett kvitto som räknades i går räknas inte i dag, summan på sida 1 sjunker, och tröskelprövningen för ett helt år kan vända. Hon får inget besked och har inget att jämföra med.
+**Kvittot som föll ut var på 2 000 kr.** De andra 4 000 försvann för att årets kostnader då blev 4 000 totalt och **tröskeln vände**. Altanen står kvar på sida 1 med 0 kr och skälet *Årets kostnader blev sammanlagt mindre än 5 000 kr*.
 
-**Vad som ska mätas innan något byggs:** säger appen något i dag när ändringen görs? Och vad händer med kvitton som redan ligger inne — flyttas de till *Återstår* med sitt skäl, eller försvinner de bara ur talen?
+**Åt andra hållet är det lika tyst:** tillbaka till det gamla datumet gav `{}`, kvittot kom in igen, och summan blev 16 000 kr.
 
-**Och vad som sannolikt ska byggas**, när svaret finns: en fråga vid ändringen som säger hur många kvitton och hur mycket som faller bort, innan den sparas. Samma form som dialogen *Inget kvitto bifogat* — appen sparar gärna, men den säger vad det kostar.
+**Och efter att *Preliminärt* smalnade ser det nya talet färdigt ut.** Det är rätt — ett kvitto före tillträdet ändrar inte talet — men hon har aldrig bekräftat det här kvittots datum. **Vår egen förbättring tog bort det sista spåret.**
+
+#### Beskedet när ett värde ändrar vilka kvitton som räknas
+
+**Fyra värden gör det**, och inget av dem säger något i dag:
+
+| Värde | Vad det gör | Mätt? |
+|---|---|---|
+| Tillträdesdatum | Kvitton in eller ut under *Återstår*, och tröskeln kan vända | **ja** – 16 000 → 10 000 kr |
+| Försäljningsdatum, ändrat efter försäljningen | Flyttar femårsfönstret | **ja** – en målning från 2020 gick 0 → 6 000 kr |
+| Upplåtelseform, före försäljningen | Flyttar den bakre gränsen, **och nollställer bostadsfrågorna** | **ja** – en tillbyggnad från 1972 gick 20 000 → 0 kr |
+| Första ägaren / ombildning | Nollar alla reparationsdelar; kan vända tröskeln | läst, inte mätt |
+
+**Formen är en fråga före sparandet, i samma form som *Inget kvitto bifogat*:**
+
+> **Ändringen påverkar ditt underlag**
+>
+> Sida 1 blir **10 000 kr** i stället för 16 000 kr.
+>
+> Ett kvitto hamnar utanför ditt innehav, och ett år faller under 5 000-gränsen.
+>
+> [ **Spara ändå** ]  ·  Avbryt
+
+**Talet är skillnaden i underlaget, aldrig summan av de berörda kvittona.** Det var hela fyndet: 2 000 kr i kvitton gav 6 000 kr i skillnad. **Ett tal som räknas på kvittona i stället för på underlaget är fel i precis det fall beskedet finns för.**
+
+**Andra raden namnger orsakerna, inte kvittona.** *Ett kvitto hamnar utanför ditt innehav* och *ett år faller under 5 000-gränsen* är två olika saker som hänt, och den som ser bara den första förstår inte talet. Listan på enskilda kvitton hör hemma i *Återstår*, där den redan står.
+
+**Beskedet visas åt båda hållen.** Ett underlag som **växer** av en ändring är den farliga riktningen i en deklaration, och det är precis vad ett felflyttat försäljningsdatum gör. **Att bara varna för förluster vore att vakta fel håll.**
+
+***Spara ändå* är den tunga knappen.** Hon har gått till inställningarna, öppnat ändringsläget, skrivit ett datum och tryckt spara — fyra avsiktliga handlingar. **Beskedet finns för att hon ska se priset, inte för att vi ska tvivla på henne**, och ändringen stoppas aldrig.
+
+**Upplåtelseformen säger en sak till:** att bostadsfrågorna nollställs. Det är en andra förlust i samma tryck, och den syns inte i talet.
+
+#### Vad som inte behöver beskedet
+
+**Ett kvitto som faller ut av försäljningsdatumet eller upplåtelseformen hamnar inte under *Återstår*** — det står kvar på sin sida med 0 kr och skälet på raden. **Raden förklarar sig alltså själv efteråt.** Beskedet behövs ändå, eftersom hon inte går till underlaget efter varje inställningsändring.
+
+**Och *samma del gjord om* behöver inget besked.** Frågan visar redan vilka åtgärder den gäller, i samma ögonblick som hon svarar.
 
 #### Preliminärt följer bara de skäl som kan ändra talen
 
