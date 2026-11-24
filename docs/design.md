@@ -2283,6 +2283,12 @@ Frågan skjuts då upp i stället för att stoppa sparandet. Projektet sparas me
 
 **Och felet tar hjälptextens plats.** Hjälptexten namnger både talet och basen; felet som ersätter den gör det inte. **Siffran försvinner alltså i precis det läge hon ännu inte skrivit något**, vilket är när hon behöver den mest. Det tomma fältets fel ska därför namnge projektets belopp på samma sätt.
 
+**Och det talet räknas på de kvitton som faktiskt ingår, ändrat 2026-11-25.** Uppmätt i produktionen: med tillträdet flyttat så att ett kvitto hamnade utanför innehavet sa hjälptexten fortfarande *62 287,50 kr* medan underlaget räknade på *12 000*. **Hjälptexten är också spärren**, så hon fick skriva vilket belopp som helst under ett tal som inte längre fanns.
+
+**Det gäller alla skäl att ett kvitto inte räknas**, inte bara tillträdet: ett kvitto utanför den bakre tidsgränsen hör inte heller till projektets belopp när merkostnaden ska mätas mot det.
+
+**Och projektsidan ska säga samma sak.** Raden *Kvittona* visade 55 807,50 kr med det utelämnade kvittot inräknat och utan märke på raden. **Ett kvitto som inte räknas ska synas som sådant där det står**, med samma skäl som i *Återstår* — annars är projektsidan och underlaget två olika påståenden om samma projekt, och bara det ena är sant.
+
 **Talet som visas och dras ifrån är spärrens tal: projektets belopp före ROT, utan en privat del.** Här stod först *"efter ROT"*, och det var fel — agenten såg motsägelsen och frågade innan den byggde. **Fördelningens bas är brutto**, eftersom reduktionsfaktorn bär ROT och minskar båda delarna i efterhand; se *Spärren och taket* i `CLAUDE.md`. Ett svar draget från nettot hade lagrats som ett nettotal och sedan reducerats för ROT en gång till.
 
 **Och det är också rätt fråga att ställa.** Hon jämför med vad arbetet hade kostat, och det står på fakturan. Ett pris mot ett ROT-reducerat tal är två olika sorters tal. Den privata delen är däremot aldrig med, eftersom den aldrig var ett arbete på bostaden.
@@ -3049,6 +3055,21 @@ Poängen är att sidan ska vara meningsfull under hela ägandet i stället för 
 > [ **Spara ändå** ]  ·  Avbryt
 
 **Talet är skillnaden i underlaget, aldrig summan av de berörda kvittona.** Det var hela fyndet: 2 000 kr i kvitton gav 6 000 kr i skillnad. **Ett tal som räknas på kvittona i stället för på underlaget är fel i precis det fall beskedet finns för.**
+
+**Lydelserna i sin helhet, skrivna 2026-11-25 efter att agenten byggt tre av dem och sagt att de inte stod här:**
+
+| Läge | Orsaksrad |
+|---|---|
+| Ett kvitto, ett år | *Ett kvitto hamnar utanför ditt innehav, och ett år faller under 5 000-gränsen.* |
+| Flera | *Två kvitton hamnar utanför ditt innehav, och två år faller under 5 000-gränsen.* |
+| Bara kvitton, inget år vänder | *Ett kvitto hamnar utanför ditt innehav.* |
+| Bara tröskeln vänder | *Ett år faller under 5 000-gränsen.* |
+| Underlaget **växer** | *Ett kvitto kommer innanför ditt innehav, och ett år når över 5 000-gränsen.* |
+| Upplåtelseformen byts | raden ovan, plus *Frågorna om bostaden behöver besvaras igen.* |
+
+**Antalet skrivs med bokstäver till och med tolv.** *Två kvitton*, inte *2 kvitton* — raden är en mening och inte en tabell, och siffror i löpande text läses som tal man ska räkna med. Talet i raden ovanför är det enda som ska läsas som ett belopp.
+
+**Och orsaksraden finns också när underlaget växer.** Agenten lät den vara borta där, eftersom den här filen bara hade orsakerna för när något faller bort — rätt läst, och ändå fel utfall. **Ett växande underlag är den farliga riktningen**, och det är just då hon behöver se *varför* för att kunna tänka *vänta, det där ska väl inte räknas*. Ett ensamt tal som blivit större ser ut som goda nyheter.
 
 **Andra raden namnger orsakerna, inte kvittona.** *Ett kvitto hamnar utanför ditt innehav* och *ett år faller under 5 000-gränsen* är två olika saker som hänt, och den som ser bara den första förstår inte talet. Listan på enskilda kvitton hör hemma i *Återstår*, där den redan står.
 

@@ -796,6 +796,14 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Och det här är vad vår egen förbättring kostade.** Sedan *Preliminärt* smalnade ser det nya, lägre talet **färdigt** ut. Regeln var rätt och följden är verklig: **när en skärm slutar varna måste ögonblicket före den göra det.**
 
+### En ersättning över hela trädet vet inte vad den ändrar
+
+**Skriven 2026-11-25.** Agenten bytte datumstämplar i sina **egna kommentarer** med en `sed` över hela `src` och `tester`. Samma mönster träffade **morgondagens datum i en tabell i två tidszonsprov**, och 19 prov föll. Filerna återställdes ur senaste commit och `docs/` rördes inte.
+
+**Felet är inte mönstret utan räckvidden.** En ersättning som får gå över allt frågar aldrig vad en träff betyder — den ser en sträng, inte en kommentar eller ett testdatum. **Och den sortens ändring är osynlig i efterhand**: den ser ut som avsiktlig redigering i varje fil den rört.
+
+**Alltså: begränsa vägen innan mönstret.** Ändra i de filer som ska ändras, räkna upp träffarna först, och **läs varje träff** när mönstret är ett datum, ett belopp eller något annat som också är data. Det här gick bra därför att sviten var röd direkt. **Hade mönstret träffat ett tal i `docs/verifieringen.md` hade det varit facit som tyst flyttade sig.**
+
 ### Fokus och fel får aldrig dela färg
 
 **Skriven 2026-11-24, ur agentens uppräkning.** Fälten får en orange ring när de har **fokus**, i samma ton som feltexterna, och har **ingen egen stil för ogiltigt**. Alltså ser ett markerat fält felaktigt ut, och ett felaktigt fält ser markerat ut.
