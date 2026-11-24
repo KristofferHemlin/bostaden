@@ -280,12 +280,18 @@ describe("talen ändras inte", () => {
 });
 
 describe("bostadsfrågornas sida", () => {
-  // Lydelsen ur produktspec 4.1, läst inne i testet (CLAUDE.md, Tester).
+  // Frågan ur produktspec 4.1, läst inne i testet (CLAUDE.md, Tester).
+  // Hjälptexten läses sedan 2026-11-24 ur docs/design.md, "Hjälptexten till
+  // första ägaren gäller båda upplåtelseformerna" – där den nya lydelsen
+  // bor. Specens citat bär fortfarande den gamla, med tomten och huset.
   function specensFraga(): { fraga: string; hjalp: string } {
     const spec = readFileSync(join(process.cwd(), "docs", "produktspec.md"), "utf-8");
     const m = spec.match(/^> \*\*(Var du första ägaren av bostaden\?)\*\*\n> (.+)$/m);
     if (!m) throw new Error("produktspec.md saknar frågan om första ägaren");
-    return { fraga: m[1], hjalp: m[2] };
+    const design = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+    const d = design.match(/^\*\*Den nya lydelsen är:\*\* \*"([^"]+)"\*/m);
+    if (!d) throw new Error('design.md saknar "Den nya lydelsen är:" under hjälptexten till första ägaren');
+    return { fraga: m[1], hjalp: d[1] };
   }
 
   it("ställer frågan om första ägaren med specens lydelse, och ombildningen först efter ett ja på en bostadsrätt", async () => {

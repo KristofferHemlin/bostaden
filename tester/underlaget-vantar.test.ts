@@ -87,10 +87,17 @@ function bandet(s: HTMLElement): HTMLElement {
 }
 
 /** Beskedet om bostadsfrågorna, ur design.md under Exportvyn. */
+// Rubriken läses där regeln om den bor sedan 2026-11-24 (docs/design.md,
+// "Bandet och frågan ska heta samma sak": "Bandet ska säga: …"), raden och
+// länken ur bandets citat under Exportvyn, som står kvar. Citatets egen rubrik
+// läses inte: den bär fortfarande den bortvalda lydelsen. Punkten i regelns
+// citat är meningens; bandets rubrik har ingen, som citatet under Exportvyn.
 function aterstarRaden(): { rubrik: string; rad: string; lank: string } {
-  const m = design().match(/^> \*\*(Vi vet inte om bostaden var nybyggd[^*]+)\*\*\n> ([^*\n]+?) \*\*([^*]+)\*\*$/m);
+  const r = design().match(/^\*\*Bandet ska säga:\*\* \*"([^"]+?)\.?"\*/m);
+  if (!r) throw new Error('design.md saknar "Bandet ska säga:" under "Bandet och frågan ska heta samma sak"');
+  const m = design().match(/^> \*\*Vi vet inte om [^*]+\*\*\n> ([^*\n]+?) \*\*([^*]+)\*\*$/m);
   if (!m) throw new Error("design.md saknar raden om bostadsfrågorna under Exportvyn");
-  return { rubrik: m[1], rad: m[2], lank: m[3] };
+  return { rubrik: r[1], rad: m[1], lank: m[2] };
 }
 
 /**
@@ -329,6 +336,16 @@ describe("underlaget väntar i stället för att misslyckas", () => {
     const sida1 = [...s.querySelectorAll("*")].find((e) => e.textContent === "Sida 1 · Grundförbättringar");
     expect(sida1, "sida 1:s rubrik").toBeTruthy();
     expect(band.compareDocumentPosition(sida1!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  // docs/design.md, "Bandet och frågan ska heta samma sak" (2026-11-24):
+  // bandet, frågan det leder till och raden i Förvärvet – tre ställen, ett namn.
+  it("bandet heter som frågan det leder till, och inte som lydelsen vi valde bort", async () => {
+    const s = await sidan();
+    const rubrik = bandet(s).children[0]?.textContent ?? "";
+    expect(rubrik).toMatch(/första ägaren/);
+    expect(rubrik).not.toMatch(/nybyggd/);
+    expect(VANTAR_PA_BOSTADSFRAGOR_TEXT).not.toMatch(/nybyggd/);
   });
 
   it("och inte längre i Återstår, där bara det hon lagt in står", async () => {

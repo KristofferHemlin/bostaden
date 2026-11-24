@@ -19,6 +19,7 @@ import type { Bostadsfragesvar } from "@/doman/bostadsfragor";
 import { Fraga, Kortval } from "@/app/projekt/fragetradet";
 import { PRIMARKNAPP_KLASS } from "@/components/skarm";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
+import { HJALP_FORSTA_AGARE } from "@/lib/forsta-agaren";
 
 export interface BostadsfragorResultat {
   fel?: string;
@@ -26,10 +27,8 @@ export interface BostadsfragorResultat {
 
 const START: BostadsfragorResultat = {};
 
-// Formuleringarna foljer Skatteverkets egna (produktspec 4.1).
-const HJALP_FORSTA_AGARE =
-  "Svara ja om bostaden var nybyggd eller nyproduktion när du köpte den, eller om du köpte en tomt och byggde hus på den.";
-
+// Formuleringarna foljer Skatteverkets egna (produktspec 4.1). Hjalptexten
+// till forsta agaren delas med kortet Forvarvet (src/lib/forsta-agaren.ts).
 const HJALP_OMBILDNING =
   "Den som köpte sin hyresrätt vid ombildningen är formellt första ägare av bostadsrätten, men lägenheten fanns och var använd sedan tidigare – då gäller vanliga regler för reparationer.";
 

@@ -31,6 +31,7 @@ import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import { skickaUtanNollstallning } from "@/lib/skicka-utan-nollstallning";
 import {
   andelssummaNotis,
+  andelssummaVidInbjudan,
   formateraAndel,
   formateraAndelEllerInteAngiven,
   HOGSTA_ANDELSSUMMA,
@@ -154,6 +155,12 @@ export function SkapaInbjudan({
   const inbjuden = inbjudenText.trim() === "" ? undefined : agarandelFranText(inbjudenText);
   const summa = summeraAndelar([...ovriga, egen ?? null, inbjuden ?? null]);
   const ovrigaSumma = summeraAndelar(ovriga);
+  // Over taket bar tre saker beskedet, och ingen av dem ar en farg
+  // (docs/design.md, "Summan av andelarna får inte överstiga 100 %"): en
+  // mening vid faltet, faltet market ogiltigt, och en inbjudan som inte gar att
+  // skapa. Meningen och regeln ar serverns egna (andelssummaVidInbjudan), sa att
+  // de tva sidorna inte kan vagra olika. Under 100 % ar tillatet.
+  const overSumma = andelssummaVidInbjudan(summa);
 
   return (
     // Skickas fran onSubmit, inte via action-propen: React nollstaller annars
@@ -161,6 +168,12 @@ export function SkapaInbjudan({
     // (src/lib/skicka-utan-nollstallning.ts).
     <form
       onSubmit={(e) => {
+        // Knappen ar avstangd over taket; det har stoppar ocksa Enter i ett
+        // falt. Servern vagrar anda (src/lib/inbjudan.ts).
+        if (overSumma) {
+          e.preventDefault();
+          return;
+        }
         hanteraSubmit(e);
         skickaUtanNollstallning(e, action);
       }}
@@ -183,12 +196,13 @@ export function SkapaInbjudan({
         <AgarandelFalt name="egen_andel" defaultValue={egenText} onVarde={setEgenText} />
       </Falt>
       <Falt etikett="Den inbjudnas ägarandel">
-        <AgarandelFalt name="inbjuden_andel" onVarde={setInbjudenText} />
+        <AgarandelFalt name="inbjuden_andel" onVarde={setInbjudenText} fel={overSumma ?? undefined} />
       </Falt>
       <div className="flex justify-between gap-3">
         <span className="text-text-sekundar">
           {ovrigaSumma > 0 ? `Tillsammans, med övrigas ${formateraAndel(ovrigaSumma)}` : "Tillsammans"}
         </span>
+        {/* Fargen forstarker, meningen vid faltet ovan bar beskedet. */}
         <span className={`tabular-nums ${summa > HOGSTA_ANDELSSUMMA ? "text-accent" : "text-text-primar"}`}>
           {formateraAndel(summa)}
         </span>
@@ -197,7 +211,13 @@ export function SkapaInbjudan({
         Andelen avgör vad som står i ditt deklarationsunderlag, och bekräftas när bostaden markeras som såld.
       </p>
       {resultat.fel ? <p role="alert" className={FALTFEL_KLASS}>{resultat.fel}</p> : null}
-      <button type="submit" disabled={pagar} className={SEKUNDARKNAPP_KLASS}>
+      {/* Sekundarknappen har ingen egen stil for avstangt lage; samma
+          nedtoning som primarknappen, sa att en spärrad knapp inte ser tand ut. */}
+      <button
+        type="submit"
+        disabled={pagar || overSumma !== null}
+        className={`${SEKUNDARKNAPP_KLASS} disabled:opacity-60`}
+      >
         {pagar ? "Skapar…" : "Skapa inbjudan"}
       </button>
       <button type="button" onClick={onKlar} className={`${TEXTLANK_KLASS} self-start`}>

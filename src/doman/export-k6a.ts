@@ -190,7 +190,7 @@ export interface K6aExport {
 // (docs/design.md, Exportvyn: "Sammanställningen går inte att göra" används
 // inte). Samma ord som raden i Återstår (src/lib/aterstar.ts).
 export const VANTAR_PA_BOSTADSFRAGOR_TEXT =
-  "Vi vet inte om bostaden var nybyggd när du köpte den. Svaret avgör om reparationer räknas med.";
+  "Vi vet inte om du var första ägaren av bostaden. Svaret avgör om reparationer räknas med.";
 
 /**
  * Kastas nar bostadsfragorna ar obesvarade och nagot klassificerat finns att

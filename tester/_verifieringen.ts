@@ -100,6 +100,28 @@ function hitta(rader: string[], borjan: string): number {
   return i;
 }
 
+function hittaMonster(rader: string[], monster: RegExp, beskrivning: string): number {
+  const i = rader.findIndex((r) => monster.test(r));
+  if (i === -1) throw new Error(`verifieringen.md saknar "${beskrivning}"`);
+  return i;
+}
+
+/**
+ * Läser facit för `describe.each`, som behöver raderna när filen samlas in.
+ * Kastar läsningen där faller hela filen och varje prov i den försvinner ur
+ * utfallet – uppmätt 2026-11-24, när rubriken "De nio åtgärderna" blev "De
+ * tio" och 72 prov försvann på en gång (CLAUDE.md, "Och läsningen av filen
+ * sker inne i testet"). Här blir felet i stället ett eget rött prov med vad
+ * som letades efter, och proven utanför `describe.each` körs som vanligt.
+ */
+export function lasVerifieringenVidInsamling(): { facit: Facit | null; fel: Error | null } {
+  try {
+    return { facit: lasVerifieringen(), fel: null };
+  } catch (e) {
+    return { facit: null, fel: e instanceof Error ? e : new Error(String(e)) };
+  }
+}
+
 export function lasVerifieringen(): Facit {
   const text = readFileSync(join(process.cwd(), "docs", "verifieringen.md"), "utf-8");
   const rader = text.split("\n");
@@ -119,7 +141,10 @@ export function lasVerifieringen(): Facit {
   };
 
   // Åtgärderna
-  const atgarder = tabell(rader, hitta(rader, "## De nio åtgärderna")).map((c): Verifieringsatgard => {
+  // Rubriken bär antalet i ord ("De nio", sedan 2026-11-23 "De tio"). Antalet
+  // prövas i provet mot tabellen, aldrig i rubriken – en ny åtgärd ska fälla
+  // förutsättningen, inte tolkningen.
+  const atgarder = tabell(rader, hittaMonster(rader, /^## De \S+ åtgärderna$/, "## De … åtgärderna")).map((c): Verifieringsatgard => {
     const [nr, namn, datumText, beloppText, rotText, privatText, grenText, merText, skickText] = c;
     const datum = [...utanFetstil(datumText).matchAll(/\d{4}-\d{2}-\d{2}/g)].map((m) => m[0]);
     const belopp = utanFetstil(beloppText).split(" + ").map(kronorTillOren);

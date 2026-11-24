@@ -66,7 +66,7 @@ import { reparationsfonsterForklaring, troskelForklaring } from "@/doman/regelte
 import { formateraKronor } from "@/lib/format";
 import { formateraAndel } from "@/lib/samagande";
 import { REGELPARAMETRAR } from "./_hjalp";
-import { lasVerifieringen, type Facit, type Facitrad } from "./_verifieringen";
+import { lasVerifieringen, lasVerifieringenVidInsamling, type Facit, type Facitrad } from "./_verifieringen";
 import { seedaVerifieringen, verifieringensIndata } from "./_verifieringen-indata";
 
 const varde = (nyckel: string) => REGELPARAMETRAR.find((r) => r.nyckel === nyckel)!.varde;
@@ -103,7 +103,17 @@ describe("förutsättningarna: filen gick att läsa som facit", () => {
   });
 });
 
-describe.each(lasVerifieringen().rader.map((r) => ({ ...r, namn: `${r.ar} ${r.atgard}` })))("facit, rad för rad: $namn", (rad) => {
+// Raderna behövs när filen samlas in. En läsning som kastar blir ett eget
+// rött prov, inte en fil som försvinner (tester/_verifieringen.ts).
+const vidInsamling = lasVerifieringenVidInsamling();
+if (vidInsamling.fel) {
+  const fel = vidInsamling.fel;
+  it("facit går att läsa när filen samlas in", () => {
+    throw fel;
+  });
+}
+
+describe.each((vidInsamling.facit?.rader ?? []).map((r) => ({ ...r, namn: `${r.ar} ${r.atgard}` })))("facit, rad för rad: $namn", (rad) => {
   it("raden hör till ett kvitto i åtgärdstabellen, med det beloppet det året", () => {
     const f = lasVerifieringen();
     const a = atgardenFor(f, rad);
@@ -144,7 +154,7 @@ describe.each(lasVerifieringen().rader.map((r) => ({ ...r, namn: `${r.ar} ${r.at
   });
 });
 
-describe.each(lasVerifieringen().troskel)("tröskelprövningen $ar", (t) => {
+describe.each(vidInsamling.facit?.troskel ?? [])("tröskelprövningen $ar", (t) => {
   it(t.under ? `under tröskeln: det tröskeln såg, ${t.summa / 100} kr, ger noll` : "som facit", () => {
     const { ex } = rakna();
     const arets = [...ex.sida1.rader, ...ex.sida2.rader].filter((r) => r.ar === t.ar);

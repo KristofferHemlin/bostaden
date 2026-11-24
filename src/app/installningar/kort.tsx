@@ -41,6 +41,7 @@ import { BeloppFalt } from "@/components/belopp-falt";
 import { Bekraftelsefraga } from "@/components/bekraftelsefraga";
 import { DatumFalt } from "@/components/datum-falt";
 import { fortidigtDatumFel } from "@/lib/datum";
+import { HJALP_FORSTA_AGARE } from "@/lib/forsta-agaren";
 import { SparfragaRuta, SPARFRAGA_TEXT } from "@/components/sparfraga";
 import {
   Falt,
@@ -595,8 +596,7 @@ interface KortProps<T> {
 // (docs/design.md, "Installningssidan").
 // ---------------------------------------------------------------------------
 
-const HJALP_FORSTA_AGARE =
-  "Svara ja om bostaden var nybyggd eller nyproduktion när du köpte den, eller om du köpte en tomt och byggde hus på den.";
+// Hjalptexten till forsta agaren delas med /bostaden/fragor (src/lib/forsta-agaren.ts).
 const HJALP_OMBILDNING =
   "Den som köpte sin hyresrätt vid ombildningen är formellt första ägare av bostadsrätten, men lägenheten fanns och var använd sedan tidigare – då gäller vanliga regler för reparationer.";
 

@@ -48,12 +48,15 @@ export interface Aterstarrad {
 /**
  * Bandet overst i underlaget nar bostadsfragorna ar obesvarade (docs/design.md,
  * Exportvyn: "Beskedet står i ett band överst, inte under Återstår") –
- * ordagrant. Underlaget vantar pa ett svar; det har inte misslyckats, och
+ * ordagrant. Rubriken heter som fragan den leder till och som raden i
+ * Forvarvet, "första ägaren" (docs/design.md, "Bandet och frågan ska heta
+ * samma sak", 2026-11-24); till dess sa den "bostaden var nybyggd", den
+ * lydelse vi valt bort. Underlaget vantar pa ett svar; det har inte misslyckats, och
  * bandet namnger det som fattas. Det ar ett band, inte en spärr: raderna
  * visas anda.
  */
 export const BOSTADSFRAGOR_BESKED = {
-  rubrik: "Vi vet inte om bostaden var nybyggd när du köpte den",
+  rubrik: "Vi vet inte om du var första ägaren av bostaden",
   rad: "Svaret avgör om reparationer räknas med.",
   lank: "Svara på frågan",
 } as const;
