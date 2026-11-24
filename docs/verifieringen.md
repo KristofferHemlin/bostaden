@@ -29,8 +29,9 @@ Femårsfönstret blir **2021–2026**. Allt före 2020-03-01 ligger före tilltr
 | 7 | Nytt tätskikt under diskbänk | 2025-09-18 | 2 000 | – | – | bytte ut, liknande | – | 1 → 3 |
 | 8 | Nya fönster | 2026-02-10 | 100 000 | 18 000 | **10 000** | bytte ut, **bättre** | 30 000 | 0 → 5 |
 | 9 | Nytt kök | 2022-11-15 **och** 2023-01-20 | 30 000 + 20 000 | 6 000 på den första | – | bytte ut, **bättre** | 12 000 | 1 → 3 |
+| 10 | Inbyggd garderob i hallen | 2020-09-20 | 3 000 | – | – | byggde nytt | – | – |
 
-**Varje rad finns av ett skäl.** Åtgärd 1 är en ren grundförbättring utan tidsgräns. 2 prövar ROT och merkostnad tillsammans. 3 ligger före tillträdet. 4 ligger innanför tillträdet men utanför femårsfönstret. 5 är en vitvara som byts mot en likvärdig. 6 och 7 är de två som tillsammans ligger under tröskeln. 8 prövar att den privata delen dras före ROT. 9 är ett projekt som spänner över ett årsskifte och vars merkostnad ska fördelas på bruttot.
+**Varje rad finns av ett skäl.** Åtgärd 1 är en ren grundförbättring utan tidsgräns. 2 prövar ROT och merkostnad tillsammans. 3 ligger före tillträdet. 4 ligger innanför tillträdet men utanför femårsfönstret. 5 är en vitvara som byts mot en likvärdig. 6 och 7 är de två som tillsammans ligger under tröskeln. 8 prövar att den privata delen dras före ROT. 9 är ett projekt som spänner över ett årsskifte och vars merkostnad ska fördelas på bruttot. **10 tillkom 2026-11-23 och finns bara för att göra påstående 2 prövbart** — skälet står under *Tillägget*.
 
 ## Facit
 
@@ -40,6 +41,7 @@ Talen är exakta; exportvyn avrundar till hela kronor.
 |---|---|---|---|---|---|---|
 | 2019 | Målade om vardagsrummet | 12 000 | **0** | **0** | 0,4 | **0** |
 | 2020 | Slipade golven | 25 000 | 0 | **0** | 0,4 | **0** |
+| 2020 | Inbyggd garderob | 3 000 | **0** | 0 | – | 0 |
 | 2022 | Inglasad balkong | 48 000 | **48 000** | 0 | – | 0 |
 | 2022 | Nytt kök | 30 000 | **5 760** | 18 240 | 0,4 | **7 296** |
 | 2023 | Nytt klinkergolv | 60 000 | **17 000** | 34 000 | 0,6 | **20 400** |
@@ -54,7 +56,7 @@ Talen är exakta; exportvyn avrundar till hela kronor.
 | År | Summa | Utfall |
 |---|---|---|
 | 2019 | 0 | före tillträdet, allt borta redan i steg 3 |
-| 2020 | 0 | reparationen utanför fönstret räknas **inte in** — året är tomt |
+| **2020** | **3 000** | reparationen utanför fönstret räknas **inte in**; kvar är garderoben, som är **under 5 000 och faller** |
 | 2022 | 72 000 | över |
 | 2023 | 71 000 | över |
 | 2024 | 8 000 | över |
@@ -72,7 +74,7 @@ Talen är exakta; exportvyn avrundar till hela kronor.
 Varje rad i facit bär ett påstående. **En avvikelse är ett fynd oavsett åt vilket håll den går.**
 
 1. 2025 års två kvitton ger **noll**, inte 4 500.
-2. 2020 års reparation lyfter **inte** 2020 över tröskeln.
+2. 2020 års reparation lyfter **inte** 2020 över tröskeln. Året innehåller också garderoben på 3 000 kr: faller reparationen bort före tröskeln blir årets summa 3 000, och **garderoben faller med den**. Räknas reparationen in blir summan 28 000, garderoben överlever, och **sida 1 blir 102 560 i stället för 99 560.**
 3. Kvittot från 2019 ger noll och **syns ändå** under *Återstår*.
 4. Köket ger **5 760 + 4 800**, inte 6 000 + 6 000 och inte 12 000 på ett år.
 5. Köksmerkostnaden fördelas på **bruttot** — blir talet 10 690,91 totalt är ROT avdraget två gånger.
@@ -83,6 +85,16 @@ Varje rad i facit bär ett påstående. **En avvikelse är ett fynd oavsett åt 
 10. Balkongen har **ingen** skickfråga.
 11. Ägarandelen tillämpas **sist**, på båda kategorierna.
 12. Varje belopp i underlaget är ett **helt krontal**.
+
+## Tillägget 2026-11-23: en tionde åtgärd
+
+**Påstående 2 gick inte att pröva med de nio.** Agenten läste det i koden: 2020 hade bara ett kvitto, reparationen, och den nollas av femårsfönstret. **Prövades fönstret efter tröskeln i stället för före skulle året ändå bli noll**, så ordningen mellan beräkningens steg 5 och 6 syntes inte i något utfall. En av de bindande reglerna var alltså oskyddad.
+
+**Garderoben är tillagd för att göra skillnaden synlig.** Den är en grundförbättring, och grundförbättringar har inget femårsfönster — alltså är den kvar i 2020 när reparationen fallit. Årets summa blir då 3 000 och garderoben faller på tröskeln. Byter stegen plats blir summan 28 000, garderoben överlever, och slutsumman flyttar sig.
+
+**Och de tre summorna är oförändrade**, vilket är själva konstruktionen: rätt ordning ger exakt samma 99 560 och 83 376 som förut, fel ordning ger 102 560. **Ett tillägg som ändrade facit hade varit en rättelse; det här är ett prov som saknades.**
+
+**Det här är ett tillägg, aldrig en rättelse.** Inget befintligt tal är ändrat. Regeln ovan gäller fortsatt: ett tal som redan står här ändras bara efter en ny verifiering mot källan, med skäl och datum.
 
 ## Skatteverkets räknare som orakel
 
@@ -95,4 +107,4 @@ Formeln kontrollerades 2026-11-19 mot *Räkna ut avdrag för renoveringar och ny
 - **Försäkringsersättning** — inget inmatningsfält finns.
 - **Samma byggnadsdel två gånger** — köket görs två gånger, men som ett projekt och inte som två.
 
-**Luckorna står här för att ingen ska läsa ett grönt prov som att hela regelverket är verifierat.** Det är nio åtgärder, inte alla fall som finns.
+**Luckorna står här för att ingen ska läsa ett grönt prov som att hela regelverket är verifierat.** Det är tio åtgärder, inte alla fall som finns.
