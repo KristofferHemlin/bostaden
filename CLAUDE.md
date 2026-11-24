@@ -752,6 +752,16 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Och felet är osynligt för oss.** Ingen av oss sitter och lägger in kvitton 00:30, så det kan bara hittas genom läsning eller genom att ställa klockan. **Ett fel som bara finns under en timme om dygnet blir aldrig rapporterat — det blir en person som ger upp.**
 
+### Ett besked som bara bärs av en färg finns inte
+
+**Skriven 2026-11-24, uppmätt i produktionen.** Vid inbjudan: din andel 50, den inbjudnas 60. Summan blir **110 %**, talet blir rött och fältet får röd ram — **och det är allt.** Ingen mening som säger vad som är fel, inget `aria-invalid` på fältet, ingen `role=alert`, och knappen *Skapa inbjudan* är inte avstängd.
+
+**Alltså bärs hela beskedet av en nyans.** Den som inte ser röd, den som lyssnar på sidan, och den som tittar i starkt solljus på en telefon får ingenting alls. **Och ett besked ingen får är ett besked som inte finns.**
+
+**Regeln är densamma som `docs/design.md` redan har för bilagemärket — *formen bär betydelsen, färgen förstärker den*** — och den gäller varje tillstånd, inte bara ett märke: **ett fel säger i ord vad som är fel**, fältet märks så att en uppläsare hör det, och **en spärr som ska stoppa något stoppar det**.
+
+**Att knappen är tänd är den allvarligaste halvan.** Antingen är 110 % tillåtet, och då är färgen en lögn — eller så är det inte, och då är en tänd knapp ett löfte som bryts efter trycket. **Och går det igenom äger två personer 110 % av en bostad**, vilket ger minst en av dem ett för stort underlag. Det är den farliga riktningen.
+
 ### Det ska finnas ett sätt att fråga vilken dag det är
 
 **Skriven 2026-11-23, efter lagningen.** `idagISverige()` räknar dagen i `Europe/Stockholm` oavsett maskinens zon, och de fem gränserna mot *idag* använder den. **Men faran som blev kvar är större än de fem ställena:** `isoDatum` används både för **sparade** datum, där UTC är rätt eftersom de lagras som midnatt UTC, och för **nu**, där det är fel.

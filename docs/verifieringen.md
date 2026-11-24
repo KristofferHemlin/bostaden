@@ -16,7 +16,7 @@ Bostadsrätt · tillträde **2020-03-01** · köpeskilling 3 000 000 kr · förs
 
 Femårsfönstret blir **2021–2026**. Allt före 2020-03-01 ligger före tillträdet.
 
-## De nio åtgärderna
+## De tio åtgärderna
 
 | # | Åtgärd | Kvitto, betaldatum | Belopp | ROT | Privat | Gren i frågeträdet | Merkostnad | Skick |
 |---|---|---|---|---|---|---|---|---|
@@ -95,6 +95,18 @@ Varje rad i facit bär ett påstående. **En avvikelse är ett fynd oavsett åt 
 **Och de tre summorna är oförändrade**, vilket är själva konstruktionen: rätt ordning ger exakt samma 99 560 och 83 376 som förut, fel ordning ger 102 560. **Ett tillägg som ändrade facit hade varit en rättelse; det här är ett prov som saknades.**
 
 **Det här är ett tillägg, aldrig en rättelse.** Inget befintligt tal är ändrat. Regeln ovan gäller fortsatt: ett tal som redan står här ändras bara efter en ny verifiering mot källan, med skäl och datum.
+
+**Prövat 2026-11-23, och ordningen är rätt:** med garderoben i facit ger koden fortfarande 99 560 och 83 376, och 49 780 och 41 688 vid 50 %. Brytningen som kastar om steg 5 och 6 fäller sex prov, och **sida 1 blir 102 560 — exakt det tal facit förutsäger för fel ordning.** Sida 2 rör sig inte, eftersom golven nollas av fönstret oavsett ordning.
+
+**Den nya brytningen har ingen egen rad, och det är värt att veta.** Garderobsraden och tröskelåret 2020 fälls också av *tröskeln borttagen* och av *ett längre fönster* — i båda fallen överlever garderoben, av olika skäl. **Det som skiljer de tre åt är mönstret:**
+
+| Brytning | Garderoben | 2025 | Golven |
+|---|---|---|---|
+| Steg 5 och 6 omkastade | faller | – | – |
+| Tröskeln borttagen | faller | faller | – |
+| Femårsfönstret ett år längre | faller | – | faller |
+
+**Ordningsbytet fäller alltså en äkta delmängd av de andra två.** Det räcker för att upptäcka det — provet blir rött — men inte för att peka ut det utan att läsa mönstret. **Den som en dag ser garderoben falla ensam ska läsa tabellen här innan hon letar i tröskeln eller i fönstret.**
 
 ## Skatteverkets räknare som orakel
 

@@ -1890,6 +1890,22 @@ Förklaringsraden under rubriken är **valfri** och ritas inte som ett tomt styc
 >
 > **Lärdomen är att det här inte gick att avgöra från filen.** Resonemanget höll hela vägen och utfallet blev ändå fel. Den sortens beslut ska prövas på skärmen innan det skrivs som en regel.
 
+#### Bandet och frågan ska heta samma sak
+
+**Uppmätt i produktionen 2026-11-24.** Deklarationsunderlaget bar bandet *"Vi vet inte om bostaden var nybyggd när du köpte den"*, medan frågan det leder till heter *"Var du första ägaren av bostaden?"* och inställningarnas rad heter *Första ägaren*.
+
+**Bandet återupplivar alltså den lydelse vi valde bort.** Stycket nedan säger uttryckligen att vi tog Skatteverkets *"Var du första ägaren av bostaden?"* framför *"var bostaden nybyggd"* — och sedan står den bortvalda formuleringen i det enda band som pekar dit.
+
+**Bandet ska säga:** *"Vi vet inte om du var första ägaren av bostaden."* Andra raden, om att svaret avgör om reparationer räknas med, står kvar. **Tre ställen, ett namn.**
+
+#### Hjälptexten till första ägaren gäller båda upplåtelseformerna
+
+**Lydelsen sa till 2026-11-24:** *"Svara ja om bostaden var nybyggd eller nyproduktion när du köpte den, eller om du köpte en tomt och byggde hus på den."* **Den sista satsen kan aldrig gälla en bostadsrätt**, och texten visas för båda formerna — på `/bostaden/fragor` och i inställningarnas *Förvärvet*.
+
+**Den nya lydelsen är:** *"Svara ja om bostaden var nybyggd eller nyproduktion när du köpte den – alltså om ingen bott i den före dig."*
+
+**Det löser det utan att dela texten i två.** Den som köpt en tomt och byggt hus på den är också den första som bott där, så satsen täcker fallet utan att nämna det. **En lydelse som är sann för båda formerna är bättre än två villkorade** — den kan inte glida isär.
+
 **Tillträdesfältet heter "När fick du nycklarna?"** med hjälptexten *"Motsvarar tillträdesdatum."* under. Versal och punkt som appens övriga hjälptexter – en glosa som sätts i småtext är ändå en mening, och en som saknar punkt bland tio som har det läses som oavslutad. Frågan ställs med de ord folk använder och bär termen bredvid för den som vill ha den – samma princip som gjorde att vi tog Skatteverkets *"Var du första ägaren av bostaden?"* framför *"var bostaden nybyggd"*.
 
 **Och aldrig "När flyttade du in?".** De två dagarna är inte samma: man kan få nycklarna i mars och flytta in i maj, eller hyra ut och aldrig flytta in alls. Tillträdet är den dag gränsen går för vilka utgifter som är dina, och en renovering mellan nycklarna och flytten hamnar på fel sida av en fråga som ställts med fel ord.
@@ -2244,6 +2260,10 @@ Frågan skjuts då upp i stället för att stoppa sparandet. Projektet sparas me
 **Och frågan ställs bakvänt mot hur den löstes till 2026-11-18.** Fältet hette *"Merkostnaden för den högre kvaliteten"* och bad om en **skillnad mot något som aldrig hände** – en motfaktisk uppskattning, svår även för den som vet exakt vad hon köpte. Uppmätt av Kristoffer på skärmen: frågan gick inte att förstå.
 
 **Den andra halvan av samma räknesak är lätt att svara på.** Etiketten lyder därför **"Vad hade ett likvärdigt byte kostat?"**, och appen drar själv ifrån. Ett enklare kök, plastmatta i stället för parkett — den siffran kan en människa uppskatta. Skatteverkets eget exempel är dessutom formulerat precis så, som två priser och inte som en differens.
+
+**Felet för ett tomt fält ska bära samma tal som felet för ett för stort.** Uppmätt 2026-11-24: skrivs ett belopp över gränsen lyder felet *"Ange ett belopp lägre än 62 287,50 kr – det är vad arbetet kostade före ROT-avdraget…"*, men lämnas fältet tomt lyder det *"Ange vad ett likvärdigt byte hade kostat, mer än 0 kr."* — **utan talet.**
+
+**Och felet tar hjälptextens plats.** Hjälptexten namnger både talet och basen; felet som ersätter den gör det inte. **Siffran försvinner alltså i precis det läge hon ännu inte skrivit något**, vilket är när hon behöver den mest. Det tomma fältets fel ska därför namnge projektets belopp på samma sätt.
 
 **Talet som visas och dras ifrån är spärrens tal: projektets belopp före ROT, utan en privat del.** Här stod först *"efter ROT"*, och det var fel — agenten såg motsägelsen och frågade innan den byggde. **Fördelningens bas är brutto**, eftersom reduktionsfaktorn bär ROT och minskar båda delarna i efterhand; se *Spärren och taket* i `CLAUDE.md`. Ett svar draget från nettot hade lagrats som ett nettotal och sedan reducerats för ROT en gång till.
 
@@ -2745,6 +2765,20 @@ Här stod motsatsen fram till 2026-10-20: *"Andelarna ändrar ingenting i underl
 **Raden finns oavsett ägarandel.** Den villkorades tidigare på att andelen var under 100 %, vilket var rimligt när inbjudan handlade om ägande. Nu handlar den om åtkomst till ett arkiv, och den som äger sin bostad helt kan mycket väl vilja dela det med någon som bor där. Appen ska inte ha en åsikt om vem som får se ens egna kvitton.
 
 **Och den försvinner när inbjudan är skapad.** Texten är en upplysning *före* ett beslut. När QR-koden visas är beslutet fattat, och då konkurrerar den med det enda den skärmen ska säga: visa koden eller skicka länken. Gäller på båda ställena – inbjudningsformuläret och erbjudandet på startsidan.
+
+#### Summan av andelarna får inte överstiga 100 %
+
+**Uppmätt i produktionen 2026-11-24.** Din andel 50 och den inbjudnas 60 ger raden *Tillsammans 110 %*. Talet blir rött och fältet får röd ram — **och det är allt som händer.** Ingen mening säger vad som är fel, fältet är inte märkt som ogiltigt, och **knappen *Skapa inbjudan* är tänd.**
+
+**Tre saker ska gälla, och ingen av dem är en färg:**
+
+1. **En mening säger vad som är fel**, vid fältet: att andelarna tillsammans blir mer än 100 %, och att en bostad inte kan ägas till mer än sin helhet
+2. **Fältet märks ogiltigt**, så att den som lyssnar på sidan hör det
+3. **Inbjudan går inte att skapa.** Och servern vägrar den också — en spärr som bara finns i webbläsaren är ingen spärr
+
+**Skälet är ett tal, inte en prydlighet.** Andelen multiplicerar hela underlaget och tillämpas sist. Två personer som tillsammans äger 110 % ger minst en av dem ett **för stort** underlag, alltså ett yrkande någon inte har rätt till — samma riktning som ROT-felet och momsfelet.
+
+**Summan får däremot gärna vara under 100 %.** Resten kan ägas av någon som aldrig kommer att använda appen, och det är ett riktigt och vanligt fall. **Det är bara taket som är en gräns.**
 
 **Varningen står i formuläret, inte före det.** Att bjuda in kräver i dag två tryck innan man kan skriva något: ett på *Bjud in någon till bostaden*, ett på *Fortsätt* förbi texten om vad den inbjudna får se. **Texten ska vara kvar** – att dela hela sitt arkiv med en annan person är ett beslut som förtjänar att sägas rakt ut – men den hör hemma ovanför fälten på samma skärm, inte som ett eget steg. Då läses den fortfarande före man skickar, och vägen in är ett tryck.
 
