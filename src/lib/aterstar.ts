@@ -66,9 +66,12 @@ export const PRELIMINART = "Preliminärt";
  * ger inte ordet. Ett kvitto markerat "Hör inte till bostaden" ar arkiverat
  * och ligger inte under Återstår alls.
  *
- * Dampningen ar bredare och ror inte av det har: den foljer varje rad under
- * Återstår (export/page.tsx, harAterstaende). Obesvarade bostadsfragor ger
- * ordet i vantelaget, dar det inte gar via den har funktionen.
+ * Samma villkor styr dampningen av talen (docs/design.md, "Dämpningen följer
+ * samma villkor som ordet", 2026-11-24): fargen och ordet sager samma sak.
+ * Till dess foljde dampningen varje rad under Återstår, och ett kvitto fore
+ * tilltradet gav ett dampat tal utan ord – ett besked som bara bars av en
+ * farg. Obesvarade bostadsfragor ger bada i vantelaget, dar det inte gar via
+ * den har funktionen.
  *
  * En uttommande tabell over skalen, sa att ett nytt skal inte kan byggas utan
  * att nagon tar stallning till ordet.

@@ -590,8 +590,11 @@ describe("ett tal som inte är färdigt säger det vid talet", () => {
 // Återstår. Förutsättningen prövas i varje fall: raden står under Återstår
 // med sitt skäl – annars säger ett uteblivet ord ingenting.
 //
-// Dämpningen rörs inte: den följer varje rad under Återstår, och provet
-// läser den på klassen (text-text-sekundar), alltså i koden och inte mätt.
+// Dämpningen följer samma villkor som ordet sedan 2026-11-24 ("Dämpningen
+// följer samma villkor som ordet"). Provet läser dämpningen på klassen
+// (text-text-sekundar), alltså i koden och inte mätt, och varje läsning av
+// summan kräver att färgen och ordet säger samma sak – så att ett tal som
+// dämpas utan ord, eller bär ord utan dämpning, fäller vilket fall som helst.
 describe("Preliminärt följer bara det som kan ändra talen", () => {
   function ordet(): string {
     const m = design().match(/följs av \*\*([^*]+)\*\* i samma element/);
@@ -605,7 +608,10 @@ describe("Preliminärt följer bara det som kan ändra talen", () => {
       /^(\p{L}+ )?[\d\s]+ kr$/u.test((e.textContent ?? "").replace(/\u00a0/g, " ")),
     );
     expect(tal, "ett belopp vid sida 1").toHaveLength(1);
-    return { text: (tal[0].textContent ?? "").replace(/\u00a0/g, " "), dampad: tal[0].classList.contains("text-text-sekundar") };
+    const text = (tal[0].textContent ?? "").replace(/\u00a0/g, " ");
+    const dampad = tal[0].classList.contains("text-text-sekundar");
+    expect(dampad, `färgen och ordet säger samma sak: "${text}"`).toBe(text.startsWith(`${ordet()} `));
+    return { text, dampad };
   }
   /** Raden under Återstår med namnet, och skälet under den. */
   function aterstarSkal(s: HTMLElement, namn: string): string {
@@ -632,7 +638,7 @@ describe("Preliminärt följer bara det som kan ändra talen", () => {
   // Kvitto utan projekt och obesvarade bostadsfrågor prövas ensamma i blocket
   // ovan ("något under Återstår", "obesvarade bostadsfrågor").
 
-  it("kvitto före tillträdet: inget ord – men talet är fortfarande dämpat och raden står kvar", async () => {
+  it("kvitto före tillträdet: talet är färdigt och ser färdigt ut – odämpat, ordlöst, och raden står kvar under Återstår", async () => {
     seeda({ nybyggd: false, fri: false, till: ["fore_tilltradet"] });
     const s = await sidan();
     expect(aterstarSkal(s, "Virke före tillträdet"), "förutsättningen: raden står under Återstår").toContain(
@@ -640,7 +646,7 @@ describe("Preliminärt följer bara det som kan ändra talen", () => {
     );
     const t = summan(s);
     expect(t.text).toMatch(/^\d[\d ]* kr$/);
-    expect(t.dampad, "dämpningen följer varje rad under Återstår").toBe(true);
+    expect(t.dampad, "ett färdigt tal dämpas inte").toBe(false);
     expect(s.textContent).not.toContain(ordet());
   });
 
@@ -661,11 +667,13 @@ describe("Preliminärt följer bara det som kan ändra talen", () => {
     ["före tillträdet och utan betaldatum", ["fore_tilltradet", "utan_betaldatum"], false],
     ["utan betaldatum och före tillträdet", ["utan_betaldatum", "fore_tilltradet"], false],
   ] as [string, Tillagg[], boolean][]) {
-    it(`blandningen ${namn}: ordet står vid talet`, async () => {
+    it(`blandningen ${namn}: både ordet och dämpningen`, async () => {
       seeda({ nybyggd: false, fri, till });
       const s = await sidan();
       expect(aterstarSkal(s, "Virke före tillträdet"), "förutsättningen").toContain("Daterat före tillträdet");
-      expect(summan(s).text).toMatch(new RegExp(`^${ordet()} \\d`));
+      const t = summan(s);
+      expect(t.text).toMatch(new RegExp(`^${ordet()} \\d`));
+      expect(t.dampad).toBe(true);
     });
   }
 

@@ -235,9 +235,11 @@ export default async function ExportSida() {
     // sidorna – sa att blicken gar till listan over det som aterstar.
     const harAterstaende =
       ex.oklassificerade_hogar.length > 0 || ex.aterstaende_kvitton.length > 0;
-    // Ordet ar smalare an dampningen: det foljer bara det som kan andra talen
-    // (src/lib/aterstar.ts, arPreliminart). Ett kvitto fore tilltradet dampar
-    // talen men gor dem inte preliminara.
+    // Dampningen och ordet foljer samma villkor: det som kan andra talen
+    // (src/lib/aterstar.ts, arPreliminart; docs/design.md, "Dämpningen följer
+    // samma villkor som ordet"). Ett kvitto fore tilltradet star under
+    // Återstår med sitt skal men gor inte talen preliminara – de ar fardiga och
+    // ser fardiga ut. harAterstaende avgor bara om Återstår visas.
     const preliminart = arPreliminart(ex);
     // Kvitton utan projekt behover ett projekt – vagen dit ar Skapa projekt.
     // En hog som vantar pa fragor har en egen lank pa sin rad (aterstarHref),
@@ -291,7 +293,6 @@ export default async function ExportSida() {
             gemensam={gemensam}
             agarandel={ex.agarandel_procent}
             andelInteAngiven={andelInteAngiven}
-            dampad={harAterstaende}
             preliminart={preliminart}
           />
         </Kort>
@@ -313,7 +314,6 @@ export default async function ExportSida() {
               gemensam={gemensam}
               agarandel={ex.agarandel_procent}
               andelInteAngiven={andelInteAngiven}
-              dampad={harAterstaende}
               preliminart={preliminart}
             />
           ) : null}
@@ -577,10 +577,8 @@ export default async function ExportSida() {
               gemensam={v.gemensam}
               agarandel={v.agarandel_procent}
               andelInteAngiven={andelslage.slag === "inte_angiven"}
-              // Bostadsfragorna fattas – bandet overst sager det – sa summan
-              // ar ofullstandig och dampas som varje sadan – och svaret kan
-              // andra den, sa den ar preliminar.
-              dampad
+              // Bostadsfragorna fattas – bandet overst sager det – och svaret
+              // kan andra summan, sa den ar preliminar.
               preliminart
             />
           ) : (
@@ -605,7 +603,6 @@ export default async function ExportSida() {
                 gemensam={v.gemensam}
                 agarandel={v.agarandel_procent}
                 andelInteAngiven={andelslage.slag === "inte_angiven"}
-                dampad
                 preliminart
               />
             ) : (
@@ -874,7 +871,6 @@ function RutaCallout({
   gemensam,
   agarandel,
   andelInteAngiven,
-  dampad,
   preliminart,
 }: {
   /** Etikett och tal ur rutorForLasaren: "Förs till" bara bredvid läsarens eget tal. */
@@ -887,13 +883,10 @@ function RutaCallout({
   /** Läsarens andel är inte angiven: talet är hela bostadens, och raden intill
    *  det säger det (CLAUDE.md, "Andelen är null tills den besvarats"). */
   andelInteAngiven: boolean;
-  /** Väntar något på frågor är talet ofullständigt och sätts i
-   *  --text-sekundar i stället för --text-primar (docs/design.md, Exportvyn). */
-  dampad: boolean;
-  /** Kan talet fortfarande andras av nagot hon gor? Da star PRELIMINART vid
-   *  det. Smalare an dampad: ett kvitto fore tilltradet dampar men andrar
-   *  aldrig talet (docs/design.md, "Preliminärt följer bara de skäl som kan
-   *  ändra talen"). */
+  /** Kan talet fortfarande andras av nagot hon gor? Da dampas det
+   *  (--text-sekundar i stallet for --text-primar) OCH PRELIMINART star vid
+   *  det. Ett enda varde for bada, sa att fargen och ordet inte kan glida isar
+   *  (docs/design.md, "Dämpningen följer samma villkor som ordet"). */
   preliminart: boolean;
 }) {
   return (
@@ -904,7 +897,7 @@ function RutaCallout({
         </span>
         <span
           className={`font-rubrik text-3xl tabular-nums ${
-            dampad ? "text-text-sekundar" : "text-text-primar"
+            preliminart ? "text-text-sekundar" : "text-text-primar"
           }`}
         >
           {/* Dampningen ar inte ensam om beskedet: ordet star i samma element
