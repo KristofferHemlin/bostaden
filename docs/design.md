@@ -1321,11 +1321,21 @@ Jämför med Skatteverkets egen lydelse, *"Beloppet måste vara mindre än kostn
 
 Andra meningen finns därför att det här felet nästan alltid betyder att hon svarat fel på en **tidigare** fråga, inte att hon skrivit fel tal. Den visar vägen vidare i stället för att upprepa gränsen, vilket är regeln under *När ett formulär vägrar*.
 
-**Svaret är noll eller tomt.** En lydelse, eftersom ROT inte spelar någon roll här:
+**Svaret är noll eller tomt. Två lydelser, ändrat 2026-11-24**, av samma skäl som felet ovan har två: *före ROT-avdraget* är brus på ett projekt utan ROT.
 
-> **Ange vad ett likvärdigt byte hade kostat, mer än 0 kr. Uppskatta om du inte vet exakt.**
+**Utan ROT:**
+
+> **Ange vad ett likvärdigt byte hade kostat, mer än 0 kr och lägre än 24 000 kr – det är vad projektet kostade. Uppskatta om du inte vet exakt.**
+
+**Med ROT:**
+
+> **Ange vad ett likvärdigt byte hade kostat, mer än 0 kr och lägre än 62 287,50 kr – det är vad arbetet kostade före ROT-avdraget. Uppskatta om du inte vet exakt.**
 
 Den argumenterar inte om att ett gratis byte vore omöjligt. Den säger vad fältet vill ha och ger lov att gissa — samma lov som hjälptexten redan ger.
+
+**Den sa fram till 2026-11-24 bara *mer än 0 kr*, och det var ett hål.** Felet **ersätter** hjälptexten, och hjälptexten är det enda ställe som namnger projektets belopp och dess bas. Ett tomt fält gav alltså ett besked utan talet — **i precis det läge hon ännu inte skrivit något**, alltså när hon behöver det mest. Felet för ett för stort tal hade talet hela tiden.
+
+**Talen i citaten är exempel och byts mot projektets.** Det är gränsen som är regeln, inte siffran.
 
 **Samma regel gäller en upplysning om ett tal appen räknat om åt användaren.** Upplysningen i exporten när taket slagit till, uppmätt i produktionen 2026-10-18 och värd att behålla ordagrant:
 
@@ -2772,11 +2782,17 @@ Här stod motsatsen fram till 2026-10-20: *"Andelarna ändrar ingenting i underl
 
 **Tre saker ska gälla, och ingen av dem är en färg:**
 
-1. **En mening säger vad som är fel**, vid fältet: att andelarna tillsammans blir mer än 100 %, och att en bostad inte kan ägas till mer än sin helhet
+1. **En mening säger vad som är fel**, vid fältet, och det är serverns egen så att de två sidorna inte kan vägra olika:
+
+   > **Tillsammans blir andelarna 110 %. En bostad kan inte ägas till mer än 100 %.**
+
+   Talet är exempel och byts mot det verkliga. **Båda procenttecknen föregås av ett hårt mellanslag** — den gamla lydelsen hade det bara på det ena, och kunde brytas mellan *100* och *%*
 2. **Fältet märks ogiltigt**, så att den som lyssnar på sidan hör det
 3. **Inbjudan går inte att skapa.** Och servern vägrar den också — en spärr som bara finns i webbläsaren är ingen spärr
 
-**Skälet är ett tal, inte en prydlighet.** Andelen multiplicerar hela underlaget och tillämpas sist. Två personer som tillsammans äger 110 % ger minst en av dem ett **för stort** underlag, alltså ett yrkande någon inte har rätt till — samma riktning som ROT-felet och momsfelet.
+**Skälet är inte det jag först skrev, och agenten mätte det.** Jag antog att 110 % ger någon ett **för stort** underlag. **Det stämmer inte.** Med spärren tillfälligt borttagen skapades inbjudan, accepterades, och databasen bar 50 och 60 — men underlaget blåstes inte upp: **båda såg hela bostadens tal**, utan *Förs till*, med raden *Sammanställningen gäller hela bostaden*. **Skadan är alltså inte ett uppblåst yrkande utan ett underlag ingen av dem kan använda** — och en bostad som i databasen ägs till 110 %, vilket inget senare steg kan reda ut.
+
+**Det är fortfarande skäl nog**, men det är ett annat skäl, och det ska stå rätt. **Serverns spärr har funnits hela tiden** — det som saknades var att beskedet nådde fram före trycket.
 
 **Summan får däremot gärna vara under 100 %.** Resten kan ägas av någon som aldrig kommer att använda appen, och det är ett riktigt och vanligt fall. **Det är bara taket som är en gräns.**
 
@@ -2914,8 +2930,10 @@ Utan försäljningsdatum visas:
 
 Bandet ligger ovanför tabellerna, alltså ovanför de tal det handlar om, och i samma form som varningen om merkostnaden som redan står där:
 
-> **Vi vet inte om bostaden var nybyggd när du köpte den**
+> **Vi vet inte om du var första ägaren av bostaden**
 > Svaret avgör om reparationer räknas med. **Svara på frågan**
+
+**Lydelsen ändrades 2026-11-24**, och den gamla — *"Vi vet inte om bostaden var nybyggd när du köpte den"* — står beskriven under *Bandet och frågan ska heta samma ting*. Ingen punkt på slutet, som varje annat band.
 
 **Bandet lovar inget antal.** Det stod *Svara på två frågor* till 2026-11-20, och uppmätt samma dag ställdes **en**: svaret *Nej* på första ägaren gör ombildningsfrågan onödig. Det är rätt att hoppa över den, men lydelsen hade räknat frågor den inte kunde garantera. **Regeln under *Frågeträdet* säger redan att antalet frågor aldrig sägs i förväg**, eftersom det beror på svaren — och den gäller här lika mycket som där.
 

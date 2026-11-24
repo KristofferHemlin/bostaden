@@ -760,7 +760,21 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Regeln är densamma som `docs/design.md` redan har för bilagemärket — *formen bär betydelsen, färgen förstärker den*** — och den gäller varje tillstånd, inte bara ett märke: **ett fel säger i ord vad som är fel**, fältet märks så att en uppläsare hör det, och **en spärr som ska stoppa något stoppar det**.
 
-**Att knappen är tänd är den allvarligaste halvan.** Antingen är 110 % tillåtet, och då är färgen en lögn — eller så är det inte, och då är en tänd knapp ett löfte som bryts efter trycket. **Och går det igenom äger två personer 110 % av en bostad**, vilket ger minst en av dem ett för stort underlag. Det är den farliga riktningen.
+**Att knappen är tänd är den allvarligaste halvan.** Antingen är 110 % tillåtet, och då är färgen en lögn — eller så är det inte, och då är en tänd knapp ett löfte som bryts efter trycket.
+
+**Och här hade jag fel om följden, vilket hör till regeln.** Jag skrev att 110 % ger någon ett **för stort** underlag. Agenten mätte med spärren borttagen: talet blåses **inte** upp — båda ser hela bostadens belopp, utan *Förs till*. **Skadan är ett underlag ingen kan använda, inte ett uppblåst yrkande.** Servern vägrade dessutom hela tiden; det som saknades var att beskedet nådde fram före trycket.
+
+**Att jag gissade följden och skrev den som mätt är samma fel som regeln handlar om**, en våning upp: ett påstående utan sin grund. **Säg vad som är mätt och vad som är slutsats, också när slutsatsen låter självklar.**
+
+### Ett prov som läser ett dokument ska falla högt när dokumentet ändras
+
+**Skriven 2026-11-24, och felet var mitt.** Jag döpte om rubriken *De nio åtgärderna* till *De tio* i `docs/verifieringen.md`. Provets tolkare letade efter *De nio*, hittade ingenting, och **filen samlade in noll prov.** Alla 72 försvann på en gång — inte som röda, utan som icke-existerande.
+
+**Det är den värsta formen av fel som finns i en svit.** En röd rad syns; en fil som inte längre finns syns inte. Sviten var fortfarande nästan grön, och det enda som avslöjade det var att någon tittade på antalet.
+
+**Regeln:** ett prov som hämtar sin sanning ur en fil ska **kasta med namn** när filen inte går att läsa, aldrig tiga. Efter lagningen ger en trasig rubrik **elva namngivna röda prov** i stället för en försvunnen fil.
+
+**Och det gäller varje sådant prov vi har** — lydelserna, facit, sammanställningens texter. De är alla byggda på att jag inte ändrar en rubrik, och **jag ändrar rubriker.**
 
 ### Det ska finnas ett sätt att fråga vilken dag det är
 

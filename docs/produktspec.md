@@ -153,7 +153,7 @@ Frågorna ligger därför på **en egen sida med rubriken "Frågor om bostaden"*
 Formuleringarna följer Skatteverkets:
 
 > **Var du första ägaren av bostaden?**
-> Svara ja om bostaden var nybyggd eller nyproduktion när du köpte den, eller om du köpte en tomt och byggde hus på den.
+> *(hjälptexten står ordagrant i `docs/design.md` under* Hjälptexten till första ägaren gäller båda upplåtelseformerna*, och bara där)*
 >
 > **Köpte du bostaden i samband med ombildning från hyresrätt?**
 > Visas bara när svaret ovan är ja.
