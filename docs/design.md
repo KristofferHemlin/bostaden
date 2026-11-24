@@ -1012,6 +1012,14 @@ Rutan är därför stående, ungefär 3:4, med bilden centrerad och inpassad mot
 
 I stället är sista rutan i miniatyrraden en streckad ruta i samma storlek som miniatyrerna, med ett plustecken och texten "Lägg till". Den är hela uppladdningskontrollen: filinputen ligger dold bakom den. Under raden står en dämpad rad med tillåtna format och storleksgräns.
 
+**Den bilaga som inte gick att ladda upp namnges.** Lydelsen, skriven av agenten 2026-11-24 och inflyttad hit för att kunna vaktas:
+
+> **faktura-sida-2.jpg kunde inte laddas upp. Ta bort den och välj filen igen.**
+
+**Filnamnet är hela poängen.** Före det lydde meningen *"En bilaga kunde inte laddas upp"*, och med flera valda filer var det bara den orange ramen som pekade ut vilken — alltså ett besked som bars av en färg. **Namnet gör meningen fullständig utan ramen**, och den läses upp, eftersom den är ett svar på något hon just gjort.
+
+**Och den säger vad hon ska göra**, inte bara vad som hänt. *Ta bort den och välj filen igen* är en handling; *kunde inte laddas upp* ensamt är ett konstaterande hon får lösa själv.
+
 **Formathjälpen hör till uppladdningen, inte till visningen** – och bara till det ögonblick då valet görs. Raden med tillåtna format och storleksgräns står under den tomma rutan, i inmatningen och i kvittots ändringsläge. Så snart en bilaga finns försvinner den: valet är gjort och syns på skärmen, och en regel för vad som hade gått att välja är då samma brus som "Kvitto eller faktura" över en ifylld rad. I läsläget, dit man går för att titta, finns den aldrig.
 
 **Samma formattext på båda ställena, och HEIC står med.** De två vägarna – formuläret för nytt kvitto och bilagevyn – hade olika lydelser, och den ena räknade inte upp HEIC. En iPhone-användares foton är HEIC, och en text som utelämnar formatet får henne att tro att kameran inte duger. Formatnamnen skrivs med versaler, som i hjälpraden under fältet.
@@ -3003,7 +3011,30 @@ Poängen är att sidan ska vara meningsfull under hela ägandet i stället för 
 
 **Kvittoraderna under *Återstår* står i årsordning, inte i inläggningsordning.** Funnet av agenten 2026-11-20: högarna står i årsordning men raderna inom dem i den ordning de lades in, med årtalet bredvid — alltså 2025, 2019, 2024 under varandra. **Det bryter mot regeln att talet och ordningen ska komma ur samma källa**, och den regeln gäller inte bara projektår. En lista som visar ett tal per rad sorteras på det talet.
 
-**Och inledningsmeningen gäller inte varje rad.** *"Det här har du lagt in, men det ingår inte i talen ovan"* stämmer för ett kvitto och inte för raden om bostadsfrågorna, som är något hon **inte** lagt in. Meningen lyder i stället *"Det här ingår inte i talen ovan än."*
+**Och inledningsmeningen gäller inte varje rad.** *"Det här har du lagt in, men det ingår inte i talen ovan"* stämmer för ett kvitto och inte för raden om bostadsfrågorna, som är något hon **inte** lagt in.
+
+**Ordet *än* är struket 2026-11-24, och det är samma fynd som Preliminärt.** *Återstår* blandar två sorters rader: sådant som **kan börja räknas** när hon gör något, och sådant som **aldrig kommer att räknas.** Ett kvitto utan projekt är det första; ett kvitto daterat före tillträdet, med datumet bekräftat, är det andra. **För den andra sorten är *än* en osanning**, och den lovar en förändring som inte kommer.
+
+**Meningen lyder därför *"Det här ingår inte i talen ovan."*** Varje rad bär redan sitt eget skäl, och det är skälet som säger om det någonsin ändras — inte en gemensam inledning som gissar åt båda hållen.
+
+#### Preliminärt följer bara de skäl som kan ändra talen
+
+**Avgjort 2026-11-24, efter att agenten såg följden på facits egen bostad:** kvittot från 2019 ligger under *Återstår* för att det är daterat före tillträdet, och ordet **Preliminärt** hamnade därmed vid 99 560 kr — ett tal som i själva verket är färdigt.
+
+**Regeln: ordet följer det som kan ändra talet, aldrig det som är avgjort.**
+
+| Skäl att ligga under *Återstår* | Preliminärt |
+|---|---|
+| Kvitto utan projekt | **ja** – det räknas så snart hon berättar vad det gällde |
+| Kvitto utan betaldatum | **ja** |
+| Utkast | **ja** |
+| Obesvarade bostadsfrågor | **ja** – svaret avgör om reparationer räknas med |
+| Kvitto daterat före tillträdet, datumet bekräftat | **nej** – det kommer aldrig att räknas |
+| Kvitto markerat *Hör inte till bostaden* | **nej** |
+
+**Skälet är att ordet är ett löfte om rörelse.** *Preliminärt* säger *det här kan bli ett annat tal*. Står det vid ett tal som är färdigt lär det henne att ordet inte betyder något, och då är det borta den dag talet verkligen är preliminärt. **En varning som står där för ofta slutar bli läst** — samma regel som spärren som fäller det normala fallet.
+
+**Och det går åt det ofarliga hållet att ha fel här**, vilket är precis därför det är värt att göra rätt: ingen räknar fel av ett ord för mycket, men ingen läser heller ett ord de vant sig vid.
 
 **Samma information står aldrig två gånger.** Det som inte räknas med redovisas i en enda lista med namn, år och belopp, en åtgärdsprick och vägen dit. Ingen andra lista som upprepar samma rader i längre meningar – konsekvensen sägs en gång, i en rad ovanför listan.
 
