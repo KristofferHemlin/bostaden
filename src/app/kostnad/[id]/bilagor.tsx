@@ -399,6 +399,11 @@ export function Bilagor({
                   aria-label={
                     storForhandsvisning ? `Visa ${b.filnamn}` : `Öppna ${b.filnamn}`
                   }
+                  // Valet av vilken bilaga som visas stort bars annars bara av
+                  // ringen. Samma som miniatyrerna i inmatningen
+                  // (kostnad/nytt/form.tsx). Utan stor forhandsvisning oppnar
+                  // knappen en vy och ar ingen vaxel – da inget aria-pressed.
+                  aria-pressed={storForhandsvisning ? valdForStor : undefined}
                 >
                   <Miniatyrinnehall bilaga={b} />
                 </button>
@@ -480,7 +485,8 @@ export function Bilagor({
 
       {uppladdningsfel ? (
         <div className="mt-2 font-granssnitt text-sm text-accent">
-          <p>{uppladdningsfel}</p>
+          {/* Meningen, inte behallaren – den bar ocksa Försök igen. */}
+          <p role="alert">{uppladdningsfel}</p>
           {koa.length > 0 ? (
             <button
               type="button"

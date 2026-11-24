@@ -18,7 +18,7 @@ import { Falt, HJALPTEXT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
 import { agarandelFranText } from "@/lib/agarandel";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import {
-  andelssummaVidInbjudan,
+  andelssummaVidBekraftelse,
   formateraAndel,
   formateraAndelEllerInteAngiven,
   HOGSTA_ANDELSSUMMA,
@@ -61,9 +61,11 @@ export function BekraftaAndel({
   // i inbjudan (docs/design.md, "Summan av andelarna får inte överstiga 100 %"):
   // meningen vid faltet, faltet market ogiltigt, och en bekraftelse som inte
   // gar att skicka. Regeln och meningen ar serverns egna – bekraftelsen provas
-  // med andelssummaVidInbjudan over alla medlemmar och utestaende inbjudningar
+  // med andelssummaVidBekraftelse over alla medlemmar och utestaende inbjudningar
   // (src/lib/egen-andel.ts, bekrafta: true) – sa att sidorna inte kan vagra olika.
-  const overSumma = andelssummaVidInbjudan(summa);
+  // Ar de andras andelar redan 100 % finns inget tal att skriva, och meningen
+  // sager det i stallet (andelssummaVidBekraftelse).
+  const overSumma = andelssummaVidBekraftelse({ ovriga: summeraAndelar(ovriga), efter: summa });
 
   const alla = [...medlemmar.map((m) => m.andel), ...inbjudningar.map((i) => i.andel)];
   const angivna = alla.filter((a): a is number => a !== null);

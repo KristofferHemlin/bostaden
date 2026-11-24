@@ -89,6 +89,7 @@ import {
   ATERSTAR_INLEDNING,
   ATERSTAR_RUBRIK,
   BOSTADSFRAGOR_BESKED,
+  PRELIMINART,
   aterstarRader,
   kvittonamn,
   type Aterstarrad,
@@ -890,6 +891,14 @@ function RutaCallout({
             dampad ? "text-text-sekundar" : "text-text-primar"
           }`}
         >
+          {/* Dampningen ar inte ensam om beskedet: ordet star i samma element
+              som beloppet, sa att det lases med talet och inte som en
+              upplysning bredvid (src/lib/aterstar.ts, PRELIMINART). */}
+          {dampad ? (
+            <>
+              <span className="font-granssnitt text-sm">{PRELIMINART}</span>{" "}
+            </>
+          ) : null}
           {formateraKronor(ruta.belopp)}
         </span>
       </div>

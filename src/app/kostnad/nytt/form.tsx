@@ -269,6 +269,14 @@ interface Filstatus {
   fel?: string;
 }
 
+/** Beskedet nar en eller flera valda filer inte gick att ladda upp, med
+ *  filernas namn. Lydelsen ar inte bestamd i docs/design.md. */
+function uppladdningenFallerText(namn: string[]): string {
+  if (namn.length === 1) return `${namn[0]} kunde inte laddas upp. Ta bort den och välj filen igen.`;
+  const lista = `${namn.slice(0, -1).join(", ")} och ${namn[namn.length - 1]}`;
+  return `${lista} kunde inte laddas upp. Ta bort dem och välj filerna igen.`;
+}
+
 export function NyKostnadForm({
   utkast,
   bostad,
@@ -1687,11 +1695,17 @@ export function NyKostnadForm({
       {/* En misslyckad uppladdning vid filvalet blockerar inte sparningen
           (kvittot ligger kvar som utkast) men visas sa att den gar att gora om
           via krysset och ett nytt val. */}
-      {Object.values(filstatus).some((s) => s.fel) ? (
-        <p className="font-granssnitt text-sm text-accent">
-          En bilaga kunde inte laddas upp. Ta bort den och välj filen igen.
-        </p>
-      ) : null}
+      {/* Namnger filen: med flera valda filer var det annars bara ramen
+          runt miniatyren – en farg – som pekade ut vilken. role="alert", sa
+          att beskedet nar den som inte ser rutorna. */}
+      {(() => {
+        const felade = filer.filter((f) => filstatus[filnyckel(f)]?.fel).map((f) => f.name || "En bilaga");
+        return felade.length > 0 ? (
+          <p role="alert" className="font-granssnitt text-sm text-accent">
+            {uppladdningenFallerText(felade)}
+          </p>
+        ) : null;
+      })()}
 
       {/* Ett fel som inte hor till nagot falt – natverket, servern, en bilaga
           efter sparandet. Meddelas och tar fokus, sa att den som tryckte pa

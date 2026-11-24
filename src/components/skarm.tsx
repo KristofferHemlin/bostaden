@@ -22,8 +22,17 @@ import { Installningslank, Toppnavigering } from "@/components/toppnavigering";
 import { FRISKRIVNINGEN } from "@/lib/friskrivning";
 import { privatAvgarRad, rotAvgarRad } from "@/lib/kvittolista";
 
+// Fokus och fel delar aldrig farg (docs/design.md, "Fokus är en plats, ett fel
+// är en dom"; CLAUDE.md, "Fokus och fel får aldrig dela färg"). Fokus ar en
+// ring UTANFOR faltet i --text-primar – samma ton som ett valt kort har – och
+// sager bara var hon star. Ogiltigt ar en kant INNANFOR i --accent, feltextens
+// ton, och hanger pa aria-invalid, sa att det som lases upp och det som syns ar
+// samma tillstand. Ring (box-shadow) och kant (border) ar olika egenskaper och
+// syns samtidigt: hon star oftast i faltet som ar fel. Kanten ar 2 px
+// genomskinlig i vila, och utfyllnaden 2 px mindre, sa att faltet har samma
+// matt som forut. Matt i Chrome i tester/fokus-och-fel-webblasare.test.ts.
 export const INPUT_KLASS =
-  "w-full rounded-lg border-0 bg-yta-nedsankt px-3 py-3 font-granssnitt text-base text-text-primar outline-none placeholder:text-text-dampad focus:ring-2 focus:ring-accent";
+  "w-full rounded-lg border-2 border-transparent bg-yta-nedsankt px-[10px] py-[10px] font-granssnitt text-base text-text-primar outline-none placeholder:text-text-dampad focus:ring-2 focus:ring-text-primar aria-[invalid=true]:border-accent";
 
 // Hjalptexter under falt (docs/design.md, "Tva textfarger bar information"):
 // --text-sekundar, aldrig --text-dampad, och aldrig mindre an 14px pa telefon.
@@ -438,7 +447,7 @@ export function UtfallbarSektion({
         type="button"
         onClick={onToggle}
         aria-expanded={oppen}
-        className="flex min-h-[44px] w-full items-center justify-between gap-3 rounded-lg bg-yta-nedsankt px-3 py-3 text-left font-granssnitt text-sm text-text-primar outline-none transition-colors hover:bg-yta-hover focus-visible:ring-2 focus-visible:ring-accent"
+        className="flex min-h-[44px] w-full items-center justify-between gap-3 rounded-lg bg-yta-nedsankt px-3 py-3 text-left font-granssnitt text-sm text-text-primar outline-none transition-colors hover:bg-yta-hover focus-visible:ring-2 focus-visible:ring-text-primar"
       >
         {etikett}
         <ChevronNed

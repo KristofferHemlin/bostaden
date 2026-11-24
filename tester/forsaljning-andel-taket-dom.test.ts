@@ -158,3 +158,36 @@ describe("under och på taket bekräftas som vanligt", () => {
     });
   }
 });
+
+// Låsningen: de andras andelar är redan 100 %, så inget tal hon skriver går
+// igenom (docs/design.md, "Vid försäljningen räcker det inte alltid att ändra
+// sitt eget fält"). Meningen säger att någon annan måste ändra sin.
+describe("de andras andelar är redan 100 %", () => {
+  function lasningensLydelse(): string {
+    const design = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+    const m = design.match(/^> \*\*(Övriga andelar är redan [^*]+)\*\*$/m);
+    if (!m) throw new Error("design.md saknar låsningens lydelse");
+    return m[1];
+  }
+
+  it("Doris 100 %: låsningens mening vid fältet, fältet ogiltigt och knappen avstängd – vad hon än skriver", async () => {
+    await skarmen({ egen: 50, annan: 100 });
+    for (const varde of ["50", "1"]) {
+      await skriv(varde);
+      expect(mellanslag(meningenVidFaltet() ?? ""), varde).toBe(lasningensLydelse());
+      expect(faltet().getAttribute("aria-invalid")).toBe("true");
+      expect(knappen().disabled).toBe(true);
+    }
+  });
+
+  it("en utestående inbjudan räknas till de andra: 60 + 40 är också redan 100 %", async () => {
+    await skarmen({ egen: 10, annan: 60, inbjuden: 40 });
+    expect(mellanslag(meningenVidFaltet() ?? "")).toBe(lasningensLydelse());
+  });
+
+  it("motprovet: de andra på 90 % ger den vanliga meningen när hon skriver för mycket", async () => {
+    await skarmen({ egen: 10, annan: 90 });
+    await skriv("20");
+    expect(mellanslag(meningenVidFaltet() ?? "")).toBe(designensMening());
+  });
+});

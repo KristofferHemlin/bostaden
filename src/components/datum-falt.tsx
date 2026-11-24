@@ -42,8 +42,9 @@ import { FALTFEL_KLASS } from "@/components/skarm";
 import { delensNamn, useFaltEtikett } from "@/components/falt-etikett";
 import { datumfaltetsMeddelande, FALTFEL_ATTRIBUT } from "@/lib/formularfel";
 
+// Samma fokus och samma ogiltigt som INPUT_KLASS (src/components/skarm.tsx).
 const FALT_BAS =
-  "rounded-lg border-0 bg-yta-nedsankt px-2 py-3 text-center font-granssnitt text-base tabular-nums text-text-primar outline-none placeholder:text-text-dampad focus:ring-2 focus:ring-accent";
+  "rounded-lg border-2 border-transparent bg-yta-nedsankt px-[6px] py-[10px] text-center font-granssnitt text-base tabular-nums text-text-primar outline-none placeholder:text-text-dampad focus:ring-2 focus:ring-text-primar aria-[invalid=true]:border-accent";
 
 function rensaSiffror(text: string, maxLangd: number): string {
   return text.replace(/\D/g, "").slice(0, maxLangd);

@@ -29,7 +29,7 @@ export function KategoriInfo({ fonsterAr }: { fonsterAr: number }) {
         >
           <span
             aria-hidden
-            className="flex h-5 w-5 items-center justify-center rounded-full border border-text-sekundar font-granssnitt text-xs leading-none text-text-sekundar transition-colors group-hover:bg-yta-nedsankt group-focus-visible:ring-2 group-focus-visible:ring-accent"
+            className="flex h-5 w-5 items-center justify-center rounded-full border border-text-sekundar font-granssnitt text-xs leading-none text-text-sekundar transition-colors group-hover:bg-yta-nedsankt group-focus-visible:ring-2 group-focus-visible:ring-text-primar"
           >
             i
           </span>

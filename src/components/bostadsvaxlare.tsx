@@ -78,7 +78,7 @@ export function ToppradAdress({ bostadsnamn }: { bostadsnamn: string }) {
       <Link
         href="/"
         aria-label="Till översikten"
-        className="flex min-w-0 flex-1 items-center gap-2.5 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="flex min-w-0 flex-1 items-center gap-2.5 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-text-primar"
       >
         <Logotyp />
         <Adresstext>{bostadsnamn}</Adresstext>
@@ -155,7 +155,7 @@ function Vaxlare({ bostadsnamn, lista }: { bostadsnamn: string; lista: Bostadsli
       <Link
         href="/"
         aria-label="Till översikten"
-        className="flex min-h-[44px] shrink-0 items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="flex min-h-[44px] shrink-0 items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-text-primar"
       >
         <Logotyp />
       </Link>
@@ -166,7 +166,7 @@ function Vaxlare({ bostadsnamn, lista }: { bostadsnamn: string; lista: Bostadsli
         aria-expanded={oppen}
         aria-controls={listId}
         onClick={() => setOppen((o) => !o)}
-        className="flex min-h-[44px] min-w-0 items-center gap-1.5 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="flex min-h-[44px] min-w-0 items-center gap-1.5 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-text-primar"
       >
         <Adresstext>{bostadsnamn}</Adresstext>
         <Nedatpil className={`h-4 w-4 shrink-0 text-text-sekundar transition-transform ${oppen ? "rotate-180" : ""}`} />
@@ -227,7 +227,7 @@ function Vaxlare({ bostadsnamn, lista }: { bostadsnamn: string; lista: Bostadsli
               </ul>
             </form>
             {resultat.fel ? (
-              <p className="px-4 pb-3 font-granssnitt text-sm text-accent">{resultat.fel}</p>
+              <p role="alert" className="px-4 pb-3 font-granssnitt text-sm text-accent">{resultat.fel}</p>
             ) : null}
           </div>
         </>

@@ -66,6 +66,7 @@ import { reparationsfonsterForklaring, troskelForklaring } from "@/doman/regelte
 import { formateraKronor } from "@/lib/format";
 import { formateraAndel } from "@/lib/samagande";
 import { REGELPARAMETRAR } from "./_hjalp";
+import { PRELIMINART } from "@/lib/aterstar";
 import { lasVerifieringen, lasVerifieringenVidInsamling, type Facit, type Facitrad } from "./_verifieringen";
 import { seedaVerifieringen, verifieringensIndata } from "./_verifieringen-indata";
 
@@ -247,10 +248,14 @@ async function exportvyn(agarandel: number): Promise<string[]> {
 }
 
 /** Texten direkt efter en rubrik, som hela elementets text. */
+/** Talet efter rubriken. Ett dämpat Förs till-tal bär sedan 2026-11-24
+ *  ordet Preliminärt framför beloppet, i samma element (docs/design.md,
+ *  Exportvyn) – och i facit står det där, eftersom kvittot från 2019 ligger
+ *  under Återstår. Provet här gäller talet; ordet hoppas över. */
 function efter(texter: string[], rubrik: RegExp): string {
   const i = texter.findIndex((t) => rubrik.test(t));
   expect(i, `rubriken ${rubrik}`).toBeGreaterThanOrEqual(0);
-  return texter[i + 1];
+  return texter[i + 1] === PRELIMINART ? texter[i + 2] : texter[i + 1];
 }
 
 /** Hela kronor, uppåt – exportvyn avrundar talet hon för in (CLAUDE.md, Beräkningen). */

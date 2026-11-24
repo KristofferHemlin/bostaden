@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { REGELPARAMETRAR } from "./_hjalp";
 
@@ -214,10 +216,42 @@ describe("servern vagrar en summa over 100 %", () => {
     medlemskap(DORIS).agarandel = 100;
     loggaIn(ANNA);
     const svar = await bekraftaAndel({}, fd({ agarandel: "100" }));
-    expect(svar.fel).toMatch(/200\u00a0%/);
+    // Doris har redan 100 %: inget tal Anna skriver går igenom, och sedan
+    // 2026-11-24 säger meningen det (docs/design.md, "Vid försäljningen
+    // räcker det inte alltid att ändra sitt eget fält").
+    expect(normalisera(svar.fel ?? "")).toBe(lasningensLydelse());
     expect(medlemskap(ANNA).bekraftad_andel).toBeNull();
   });
+
+  it("de andras andelar är redan 100 %: varje tal vägras med låsningens mening, också när hennes saknas", async () => {
+    seeda({ sald: true });
+    medlemskap(ANNA).agarandel = null;
+    medlemskap(DORIS).agarandel = 100;
+    loggaIn(ANNA);
+    for (const andel of ["1", "50"]) {
+      const svar = await bekraftaAndel({}, fd({ agarandel: andel }));
+      expect(normalisera(svar.fel ?? ""), andel).toBe(lasningensLydelse());
+    }
+    expect(medlemskap(ANNA).agarandel).toBeNull();
+  });
+
+  it("motprovet: under 100 % hos de andra ger den vanliga meningen, inte låsningens", async () => {
+    seeda({ sald: true });
+    loggaIn(ANNA);
+    const svar = await bekraftaAndel({}, fd({ agarandel: "60" }));
+    expect(normalisera(svar.fel ?? "")).not.toBe(lasningensLydelse());
+    expect(svar.fel).toMatch(/^Tillsammans blir andelarna/);
+  });
 });
+
+/** Låsningens mening, ordagrant ur design.md – läst inne i provet. */
+function lasningensLydelse(): string {
+  const design = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+  const m = design.match(/^> \*\*(Övriga andelar är redan [^*]+)\*\*$/m);
+  if (!m) throw new Error("design.md saknar låsningens lydelse under \"Summan av andelarna får inte överstiga 100 %\"");
+  return m[1];
+}
+const normalisera = (t: string) => t.replace(/\u00a0/g, " ");
 
 describe("fragan stalls med det som star lagrat", () => {
   it("tva delagare: ni har angett 50/50 – stämmer det?", async () => {

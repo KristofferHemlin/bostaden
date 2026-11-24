@@ -28,7 +28,7 @@ export function AnslutKnapp({
   return (
     <form action={action} onSubmit={hanteraSubmit} className="flex flex-col gap-2">
       <input type="hidden" name="inbjudan_id" value={inbjudanId} />
-      {resultat.fel ? <p className={FALTFEL_KLASS}>{resultat.fel}</p> : null}
+      {resultat.fel ? <p role="alert" className={FALTFEL_KLASS}>{resultat.fel}</p> : null}
       <button type="submit" disabled={pagar} className={sekundar ? SEKUNDARKNAPP_KLASS : PRIMARKNAPP_KLASS}>
         {pagar ? "Ansluter…" : "Anslut till bostaden"}
       </button>

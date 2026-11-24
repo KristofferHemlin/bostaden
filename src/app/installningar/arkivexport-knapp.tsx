@@ -152,7 +152,7 @@ export function ArkivexportKnapp({ bostadsnamn }: { bostadsnamn: string }) {
 
       {steg.fas === "fel" ? (
         <div className="flex flex-col gap-2">
-          <p className="font-granssnitt text-sm text-accent">{steg.melding}</p>
+          <p role="alert" className="font-granssnitt text-sm text-accent">{steg.melding}</p>
           {steg.saknade.length > 0 ? (
             <ul className="max-h-40 overflow-y-auto rounded-lg bg-yta-nedsankt p-3 font-granssnitt text-sm text-text-sekundar">
               {steg.saknade.map((sokvag) => (

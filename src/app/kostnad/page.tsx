@@ -274,7 +274,7 @@ export default async function KvittolistaSida() {
                       Kvittolistan): chevronen sager att den ar oppen.
                       Hovringsytan galler bara enheter som kan hovra –
                       future.hoverOnlyWhenSupported i tailwind.config.ts. */}
-                  <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2 outline-none transition-colors hover:bg-yta-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent [&::-webkit-details-marker]:hidden">
+                  <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2 outline-none transition-colors hover:bg-yta-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-text-primar [&::-webkit-details-marker]:hidden">
                     <span className="font-rubrik text-sm text-text-primar">
                       {etikett}
                     </span>

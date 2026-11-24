@@ -109,7 +109,7 @@ export function BostadsfragorFormular({
       {nasta !== undefined ? <input type="hidden" name="nasta" value={nasta} /> : null}
 
       {resultat.fel ? (
-        <p className="font-granssnitt text-sm text-accent">
+        <p role="alert" className="font-granssnitt text-sm text-accent">
           {resultat.fel}
         </p>
       ) : null}

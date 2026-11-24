@@ -46,6 +46,16 @@ export interface Aterstarrad {
 }
 
 /**
+ * Ordet vid ett *Förs till*-tal som inte ar fardigt (docs/design.md, Exportvyn:
+ * "Men dämpningen är ett ord som fattas"). Talet dampas nar nagot ligger under
+ * Återstår eller bostadsfragorna saknas, och till 2026-11-24 var dampningen
+ * det enda som sa det – en uppläsare hörde ett belopp som lät klart. Ordet star
+ * i samma element som beloppet, sa att det lases med talet. Bandet och
+ * Återstår sager varfor; ordet sager bara att.
+ */
+export const PRELIMINART = "Preliminärt";
+
+/**
  * Bandet overst i underlaget nar bostadsfragorna ar obesvarade (docs/design.md,
  * Exportvyn: "Beskedet står i ett band överst, inte under Återstår") –
  * ordagrant. Rubriken heter som fragan den leder till och som raden i

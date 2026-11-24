@@ -71,7 +71,7 @@ function Losenordsinmatning({
         aria-label={VISA_LOSENORDET}
         aria-pressed={synligt}
         onClick={() => setSynligt((s) => !s)}
-        className="absolute right-0.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-text-sekundar outline-none hover:text-text-primar focus-visible:ring-2 focus-visible:ring-accent"
+        className="absolute right-0.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-text-sekundar outline-none hover:text-text-primar focus-visible:ring-2 focus-visible:ring-text-primar"
       >
         {synligt ? <OgaOverstruket /> : <Oga />}
       </button>

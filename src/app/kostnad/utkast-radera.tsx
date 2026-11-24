@@ -115,7 +115,7 @@ export function UtkastRaderaKnapp({
           <SoptunnaGlyf />
         </button>
         {resultat.fel ? (
-          <span className="mt-0.5 max-w-[8rem] text-right font-granssnitt text-sm text-accent">
+          <span role="alert" className="mt-0.5 max-w-[8rem] text-right font-granssnitt text-sm text-accent">
             {resultat.fel}
           </span>
         ) : null}
@@ -128,7 +128,7 @@ export function UtkastRaderaKnapp({
       {dialog}
       <input type="hidden" name="kostnad_id" value={kostnadId} />
       {resultat.fel ? (
-        <p className="font-granssnitt text-sm text-accent">{resultat.fel}</p>
+        <p role="alert" className="font-granssnitt text-sm text-accent">{resultat.fel}</p>
       ) : null}
       <button
         type="submit"

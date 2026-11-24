@@ -269,7 +269,7 @@ export function Inbjudningskod({
         {kopierad === "ja" ? "Länken är kopierad" : "Kopiera länken"}
       </button>
       {kopierad === "fel" ? (
-        <p className={FALTFEL_KLASS}>Länken gick inte att kopiera – markera den och kopiera själv.</p>
+        <p role="alert" className={FALTFEL_KLASS}>Länken gick inte att kopiera – markera den och kopiera själv.</p>
       ) : null}
       <p className={HJALPTEXT_KLASS}>
         {resultat.harKonto

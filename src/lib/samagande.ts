@@ -93,6 +93,21 @@ export function andelssummaVidInbjudan(efter: number): string | null {
 }
 
 /**
+ * Proven for bekraftelsen vid forsaljningen, dar bara hennes eget falt gar att
+ * andra. Ar de andras andelar – medlemmar och utestaende inbjudningar – redan
+ * 100 % eller mer finns inget tal hon kan skriva, och den vanliga meningen
+ * sager inte att det ar nagon annans andel som maste andras (docs/design.md,
+ * "Summan av andelarna får inte överstiga 100 %", "Vid försäljningen räcker
+ * det inte alltid"). Annars samma prov och mening som vid inbjudan.
+ */
+export function andelssummaVidBekraftelse({ ovriga, efter }: { ovriga: number; efter: number }): string | null {
+  if (ovriga >= HOGSTA_ANDELSSUMMA) {
+    return `Övriga andelar är redan ${formateraAndel(ovriga)} tillsammans, så det finns inget kvar att ange. Någon av dem behöver ändra sin först.`;
+  }
+  return andelssummaVidInbjudan(efter);
+}
+
+/**
  * Proven nar en befintlig andel andras. En andring som tar summan over 100 %
  * avvisas. En andring som SANKER en redan for hog summa slapps igenom, aven
  * om den inte hinner ner till 100 % i ett steg – annars kan tva medlemmar som

@@ -11,7 +11,7 @@ import type { Prisma } from "@prisma/client";
 import { allaAndelar, hamtaAndelar } from "@/lib/andelar";
 import {
   andelssummaVidAndring,
-  andelssummaVidInbjudan,
+  andelssummaVidBekraftelse,
   summeraAndelar,
 } from "@/lib/samagande";
 
@@ -41,14 +41,14 @@ export async function skrivEgenAndel(
   const fore = summeraAndelar(allaAndelar(andelar));
   // Summan efter: de andras andelar och den nya egna. Den egna nuvarande –
   // ett tal eller null – byts ut, och en null bidrog aldrig till summan.
-  const efter = summeraAndelar([
-    ...allaAndelar({
+  const ovriga = summeraAndelar(
+    allaAndelar({
       ...andelar,
       medlemmar: andelar.medlemmar.filter((m) => m.anvandareId !== anvandareId),
     }),
-    agarandel,
-  ]);
-  const fel = bekrafta ? andelssummaVidInbjudan(efter) : andelssummaVidAndring({ fore, efter });
+  );
+  const efter = summeraAndelar([ovriga, agarandel]);
+  const fel = bekrafta ? andelssummaVidBekraftelse({ ovriga, efter }) : andelssummaVidAndring({ fore, efter });
   if (fel) return fel;
 
   // Agarandelen tillhor relationen person–bostad, inte bostaden (CLAUDE.md).
