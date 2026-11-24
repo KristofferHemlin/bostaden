@@ -59,7 +59,7 @@ import { sparaBostaden, sparaForvarvet } from "@/app/installningar/actions";
 import { markeraSald } from "@/app/forsaljning/actions";
 import { sparaFragorOmBostaden } from "@/app/bostaden/fragor/actions";
 import { UnderlagsfragaRuta } from "@/components/underlagsfraga";
-import { BEKRAFTAD_ANDRING, type Underlagsbesked } from "@/lib/underlagsbesked";
+import { BEKRAFTAD_ANDRING, orsaksraden, type Underlagsbesked } from "@/lib/underlagsbesked";
 
 const ANNA = "a0000000-0000-4000-8000-0000000000f3";
 const X = "b0000000-0000-4000-8000-0000000000f3";
@@ -185,6 +185,12 @@ describe("tillträdet flyttas", () => {
     expect(sida1.fore).toBe(fore.sida1);
     expect(sida1.efter).toBeGreaterThan(sida1.fore);
     expect(sida1.efter - sida1.fore).toBe(600_000);
+    expect(svar.underlag).toMatchObject({
+      kvittonInnanforInnehavet: 1,
+      kvittonUtanforInnehavet: 0,
+      arOverTroskeln: { antal: 1, troskelbelopp: 500_000 },
+      arUnderTroskeln: null,
+    });
   });
 
   it("ett oförändrat datum ger inget besked – kortet skickar alltid datumet, och köpeskillingen sparas direkt", async () => {
@@ -335,5 +341,71 @@ describe("rutan säger det design.md säger", () => {
     const d = document.createElement("div");
     d.innerHTML = renderToStaticMarkup(createElement(UnderlagsfragaRuta, { besked: svar.underlag!, onSpara: () => {}, onAvbryt: () => {} }));
     expect(kr(d.querySelector('[data-underlagsbesked="summa"] strong')?.textContent ?? "")).toBe("10 000 kr");
+  });
+});
+
+// Tabellen "Lydelserna i sin helhet" under samma avsnitt i design.md, läst
+// inne i provet. Varje rad prövas: de fyra formerna för när underlaget
+// sjunker och den för när det växer genom orsaksraden, växandet och
+// upplåtelseformen dessutom renderade ur appens egna serverfunktioner.
+describe("orsaksraden är tabellens, rad för rad", () => {
+  function tabellen(): Map<string, string> {
+    const design = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+    const start = design.indexOf("**Lydelserna i sin helhet");
+    if (start < 0) throw new Error('design.md saknar "Lydelserna i sin helhet" under beskedet');
+    const rader = new Map<string, string>();
+    for (const rad of design.slice(start).split("\n").slice(1)) {
+      if (rad.trim() === "") {
+        if (rader.size > 0) break;
+        continue;
+      }
+      const m = rad.match(/^\| (.+?) \| (.+) \|$/);
+      if (!m || /^-+$/.test(m[1]) || m[1] === "Läge") continue;
+      const kursiv = [...m[2].matchAll(/\*([^*]+)\*/g)].map((k) => k[1]);
+      if (kursiv.length === 0) throw new Error(`tabellraden "${m[1]}" har ingen lydelse i kursiv`);
+      rader.set(m[1].replace(/\*\*/g, ""), kursiv[kursiv.length - 1]);
+    }
+    return rader;
+  }
+  function rad(lage: string): string {
+    const t = tabellen().get(lage);
+    if (!t) throw new Error(`tabellen i design.md saknar raden "${lage}"`);
+    return t;
+  }
+  const inga = { kvittonUtanforInnehavet: 0, kvittonInnanforInnehavet: 0, arUnderTroskeln: null, arOverTroskeln: null };
+  const gransen = { troskelbelopp: 500_000 };
+
+  it.each([
+    ["Ett kvitto, ett år", { kvittonUtanforInnehavet: 1, arUnderTroskeln: { antal: 1, ...gransen } }],
+    ["Flera", { kvittonUtanforInnehavet: 2, arUnderTroskeln: { antal: 2, ...gransen } }],
+    ["Bara kvitton, inget år vänder", { kvittonUtanforInnehavet: 1 }],
+    ["Bara tröskeln vänder", { arUnderTroskeln: { antal: 1, ...gransen } }],
+    ["Underlaget växer", { kvittonInnanforInnehavet: 1, arOverTroskeln: { antal: 1, ...gransen } }],
+  ] as const)("%s", (lage, fall) => {
+    expect(kr(orsaksraden({ ...inga, ...fall }) ?? "")).toBe(rad(lage));
+  });
+
+  it("antalet med bokstäver till och med tolv, med siffror därefter", () => {
+    expect(orsaksraden({ ...inga, kvittonUtanforInnehavet: 12 })).toBe("Tolv kvitton hamnar utanför ditt innehav.");
+    expect(orsaksraden({ ...inga, kvittonUtanforInnehavet: 13 })).toBe("13 kvitton hamnar utanför ditt innehav.");
+  });
+
+  it("växandet, renderat: tillträdet bakåt i tröskelfallet ger tabellens rad under talet", async () => {
+    seeda({ tilltradesdatum: datum("2019-08-01") }, TRÖSKELFALLET);
+    const svar = await sparaForvarvet({}, forvarvet({ tilltradesdatum: "2019-06-01" }));
+    const d = document.createElement("div");
+    d.innerHTML = renderToStaticMarkup(createElement(UnderlagsfragaRuta, { besked: svar.underlag!, onSpara: () => {}, onAvbryt: () => {} }));
+    expect(kr(d.querySelector('[data-underlagsbesked="orsaker"]')?.textContent ?? "")).toBe(rad("Underlaget växer"));
+  });
+
+  it("upplåtelseformen, renderad: tabellens mening om frågorna står i rutan", async () => {
+    seeda({ tilltradesdatum: datum("1971-01-01"), forsaljningsdatum: null }, [
+      ["Tillbyggnad", "nybyggnad", 2_000_000, "1972-05-01"],
+      ["Plank", "nybyggnad", 1_000_000, "2024-05-01"],
+    ]);
+    const svar = await sparaBostaden({}, bostaden("bostadsratt"));
+    const d = document.createElement("div");
+    d.innerHTML = renderToStaticMarkup(createElement(UnderlagsfragaRuta, { besked: svar.underlag!, onSpara: () => {}, onAvbryt: () => {} }));
+    expect(d.querySelector('[data-underlagsbesked="bostadsfragor"]')?.textContent).toBe(rad("Upplåtelseformen byts"));
   });
 });

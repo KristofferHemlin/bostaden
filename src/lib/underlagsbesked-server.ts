@@ -57,7 +57,9 @@ export async function underlagsbeskedVidAndring(
   return {
     summor: jamforelse?.summor ?? [],
     kvittonUtanforInnehavet: jamforelse?.kvittonUtanforInnehavet ?? 0,
+    kvittonInnanforInnehavet: jamforelse?.kvittonInnanforInnehavet ?? 0,
     arUnderTroskeln: jamforelse?.arUnderTroskeln ?? null,
+    arOverTroskeln: jamforelse?.arOverTroskeln ?? null,
     bostadsfragorNollstalls,
     bekraftelse: bekraftelseFor(andring),
   };

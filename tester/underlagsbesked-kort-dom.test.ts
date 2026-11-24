@@ -42,7 +42,9 @@ import { BEKRAFTAD_ANDRING, UNDERLAGSBESKED_AVBRYT, UNDERLAGSBESKED_RUBRIK, UNDE
 const BESKED: Underlagsbesked = {
   summor: [{ sida: 1, fore: 1_600_000, efter: 1_000_000 }],
   kvittonUtanforInnehavet: 1,
+  kvittonInnanforInnehavet: 0,
   arUnderTroskeln: { antal: 1, troskelbelopp: 500_000 },
+  arOverTroskeln: null,
   bostadsfragorNollstalls: false,
   bekraftelse: '[["tilltradesdatum","2020-06-01"]]',
 };

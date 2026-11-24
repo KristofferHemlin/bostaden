@@ -188,6 +188,10 @@ export interface K6aExport {
    *  (src/doman/underlagsandring.ts): ett ar som vander ar en orsak som inte
    *  syns i de kvitton som andringen ror. */
   ar_under_troskeln: { ar: number; troskelbelopp: number }[];
+  /** Ar som provades och klarade troskeln i steg 4. Tillsammans med
+   *  ar_under_troskeln: ett ar som byter lista mellan tva berakningar har
+   *  vant, at ena eller andra hallet. */
+  ar_over_troskeln: number[];
 }
 
 /** Texten nar sammanstallningen vantar pa bostadsfragorna – samma pa skarmen
@@ -523,6 +527,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
   //    steg 4). Understiger aret troskeln faller allt det arets bidrag bort.
   const arGrupper = new Map<number, CellSplit[]>();
   const arUnderTroskeln: { ar: number; troskelbelopp: number }[] = [];
+  const arOverTroskeln: number[] = [];
   for (const s of splits) {
     const lista = arGrupper.get(s.cell.ar) ?? [];
     lista.push(s);
@@ -540,6 +545,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
       0,
     );
     if (arssumma > 0 && arssumma < troskelbelopp) arUnderTroskeln.push({ ar, troskelbelopp });
+    if (arssumma >= troskelbelopp) arOverTroskeln.push(ar);
     const provade = troskelprovaArspostar(
       grupp.map((s) => s.uppdelning),
       troskelbelopp,
@@ -799,6 +805,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
     samma_del_kandidater: sammaDelKandidater,
     samma_del: sammaDel,
     ar_under_troskeln: arUnderTroskeln.sort((a, b) => a.ar - b.ar),
+    ar_over_troskeln: arOverTroskeln.sort((a, b) => a - b),
   };
 }
 

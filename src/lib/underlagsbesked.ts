@@ -20,8 +20,9 @@ export interface Underlagsbesked extends Underlagsandring {
 /** Faltet "Spara ändå" skickar bekraftelsen i. */
 export const BEKRAFTAD_ANDRING = "bekraftad_andring";
 
-// Ordagrant ur docs/design.md, citatet under "Beskedet när ett värde ändrar
-// vilka kvitton som räknas" (tester/underlagsbesked.test.ts laser det dar).
+// Ordagrant ur docs/design.md, citatet och tabellen under "Beskedet när ett
+// värde ändrar vilka kvitton som räknas" (tester/underlagsbesked.test.ts
+// laser dem dar).
 export const UNDERLAGSBESKED_RUBRIK = "Ändringen påverkar ditt underlag";
 export const UNDERLAGSBESKED_SPARA = "Spara ändå";
 export const UNDERLAGSBESKED_AVBRYT = "Avbryt";
@@ -37,27 +38,38 @@ function gransen(oren: number): string {
   return formateraAntal(Math.round(oren / 100));
 }
 
+/** Antalet i ord till och med tolv, annars med siffror (docs/design.md,
+ *  "Antalet skrivs med bokstäver till och med tolv"). Neutrum: kvitto och år. */
+const ORD = ["noll", "ett", "två", "tre", "fyra", "fem", "sex", "sju", "åtta", "nio", "tio", "elva", "tolv"];
+function antal(n: number): string {
+  return n <= 12 ? ORD[n] : formateraAntal(n);
+}
+
 /**
- * Orsakerna, inte kvittona (docs/design.md: "Andra raden namnger orsakerna").
- * Ental ordagrant ur design.md; flertalet ("2 kvitton hamnar …", "2 år faller
- * …") ar agentens, 2026-11-24, och star inte i design.md. Null nar ingen av de
- * tva orsakerna galler – da star bara talet.
+ * Orsakerna, inte kvittona (docs/design.md: "Andra raden namnger orsakerna"),
+ * med lydelserna ur tabellen under "Beskedet när ett värde ändrar vilka
+ * kvitton som räknas" – också när underlaget växer, den farliga riktningen.
+ * Ordningen: kvitton ut, kvitton in, år under, år över. Null när ingen av de
+ * fyra gäller – då står bara talet.
  */
-export function orsaksraden(b: Pick<Underlagsandring, "kvittonUtanforInnehavet" | "arUnderTroskeln">): string | null {
+export function orsaksraden(
+  b: Pick<Underlagsandring, "kvittonUtanforInnehavet" | "kvittonInnanforInnehavet" | "arUnderTroskeln" | "arOverTroskeln">,
+): string | null {
+  const kvitton = (n: number) => `${antal(n)} ${n === 1 ? "kvitto" : "kvitton"}`;
   const delar: string[] = [];
-  const n = b.kvittonUtanforInnehavet;
-  if (n === 1) delar.push("ett kvitto hamnar utanför ditt innehav");
-  else if (n > 1) delar.push(`${formateraAntal(n)} kvitton hamnar utanför ditt innehav`);
+  if (b.kvittonUtanforInnehavet > 0) delar.push(`${kvitton(b.kvittonUtanforInnehavet)} hamnar utanför ditt innehav`);
+  if (b.kvittonInnanforInnehavet > 0) delar.push(`${kvitton(b.kvittonInnanforInnehavet)} kommer innanför ditt innehav`);
   if (b.arUnderTroskeln) {
-    const { antal, troskelbelopp } = b.arUnderTroskeln;
-    delar.push(`${antal === 1 ? "ett år faller" : `${formateraAntal(antal)} år faller`} under ${gransen(troskelbelopp)}-gränsen`);
+    delar.push(`${antal(b.arUnderTroskeln.antal)} år faller under ${gransen(b.arUnderTroskeln.troskelbelopp)}-gränsen`);
+  }
+  if (b.arOverTroskeln) {
+    delar.push(`${antal(b.arOverTroskeln.antal)} år når över ${gransen(b.arOverTroskeln.troskelbelopp)}-gränsen`);
   }
   if (delar.length === 0) return null;
   const text = delar.join(", och ");
   return `${text[0].toUpperCase()}${text.slice(1)}.`;
 }
 
-/** Agentens lydelse 2026-11-24, inte i design.md: design.md sager att
- *  upplatelseformen "säger en sak till" men inte med vilka ord. Sidan heter
- *  Frågor om bostaden, och dit leder underlaget sedan. */
+/** Ordagrant ur tabellen i design.md, raden "Upplåtelseformen byts". Sidan
+ *  heter Frågor om bostaden, och dit leder underlaget sedan. */
 export const BOSTADSFRAGOR_NOLLSTALLS = "Frågorna om bostaden behöver besvaras igen.";

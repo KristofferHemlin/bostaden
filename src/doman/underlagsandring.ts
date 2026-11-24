@@ -35,9 +35,20 @@ export interface Underlagsandring {
   /** Kvitton som hamnar fore tilltradet med det nya vardet men inte gjorde
    *  det forut. */
   kvittonUtanforInnehavet: number;
-  /** Ar som faller under troskeln med det nya vardet men inte gjorde det
-   *  forut, med troskelbeloppet for det forsta av dem. */
-  arUnderTroskeln: { antal: number; troskelbelopp: number } | null;
+  /** Kvitton som lag fore tilltradet och inte gor det med det nya vardet. */
+  kvittonInnanforInnehavet: number;
+  /** Ar som klarade troskeln och faller under den med det nya vardet, med
+   *  troskelbeloppet for det forsta av dem. */
+  arUnderTroskeln: Arsvandning | null;
+  /** Ar som lag under troskeln och nar over den med det nya vardet – den
+   *  farliga riktningen (docs/design.md, "Och orsaksraden finns också när
+   *  underlaget växer"). */
+  arOverTroskeln: Arsvandning | null;
+}
+
+export interface Arsvandning {
+  antal: number;
+  troskelbelopp: number;
 }
 
 interface Talen {
@@ -93,19 +104,26 @@ export function jamforUnderlag(
   if (summor.length === 0) return null;
 
   let kvittonUtanforInnehavet = 0;
-  let arUnderTroskeln: Underlagsandring["arUnderTroskeln"] = null;
+  let kvittonInnanforInnehavet = 0;
+  let arUnderTroskeln: Arsvandning | null = null;
+  let arOverTroskeln: Arsvandning | null = null;
   if (f.ex && e.ex) {
-    const foreUtanfor = new Set(
-      f.ex.aterstaende_kvitton.filter((k) => k.orsak === "fore_tilltradet").map((k) => k.kostnad_id),
-    );
-    kvittonUtanforInnehavet = e.ex.aterstaende_kvitton.filter(
-      (k) => k.orsak === "fore_tilltradet" && !foreUtanfor.has(k.kostnad_id),
-    ).length;
-    const foreUnder = new Set(f.ex.ar_under_troskeln.map((a) => a.ar));
-    const nyaUnder = e.ex.ar_under_troskeln.filter((a) => !foreUnder.has(a.ar));
-    if (nyaUnder.length > 0) {
-      arUnderTroskeln = { antal: nyaUnder.length, troskelbelopp: nyaUnder[0].troskelbelopp };
-    }
+    const utanfor = (ex: K6aExport) =>
+      new Set(ex.aterstaende_kvitton.filter((k) => k.orsak === "fore_tilltradet").map((k) => k.kostnad_id));
+    const foreUtanfor = utanfor(f.ex);
+    const efterUtanfor = utanfor(e.ex);
+    kvittonUtanforInnehavet = [...efterUtanfor].filter((id) => !foreUtanfor.has(id)).length;
+    kvittonInnanforInnehavet = [...foreUtanfor].filter((id) => !efterUtanfor.has(id)).length;
+    // Ett ar har vant nar det byter lista: klarade forut och faller nu,
+    // eller fall forut och klarar nu. Ett ar som uppstar eller forsvinner
+    // har inte vant – det fanns inte att prova pa ena sidan.
+    // Troskelbeloppet tas fran sidan dar aret lag under: dar provades det.
+    const vande = (under: { ar: number; troskelbelopp: number }[], over: number[]): Arsvandning | null => {
+      const ar = under.filter((a) => over.includes(a.ar));
+      return ar.length > 0 ? { antal: ar.length, troskelbelopp: ar[0].troskelbelopp } : null;
+    };
+    arUnderTroskeln = vande(e.ex.ar_under_troskeln, f.ex.ar_over_troskeln);
+    arOverTroskeln = vande(f.ex.ar_under_troskeln, e.ex.ar_over_troskeln);
   }
-  return { summor, kvittonUtanforInnehavet, arUnderTroskeln };
+  return { summor, kvittonUtanforInnehavet, kvittonInnanforInnehavet, arUnderTroskeln, arOverTroskeln };
 }
