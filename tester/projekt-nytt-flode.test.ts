@@ -70,7 +70,7 @@ import { utkastNyckel } from "@/app/projekt/nytt/flode";
 import { BOSTADSDEL_FRAGA } from "@/doman/bostadsdel";
 import { LIKVARDIGT_ETIKETT } from "@/app/projekt/fragetradet";
 import {
-  LIKVARDIGT_MASTE_ANGES,
+  likvardigtMasteAngesFel,
   likvardigtOverBeloppetFel,
   tolkaFragetradetFormData,
 } from "@/lib/fragetradet-formdata";
@@ -431,7 +431,7 @@ describe("merkostnaden ställs när det finns ett belopp att dela", () => {
     await spara();
     expect(h.skapaProjekt).not.toHaveBeenCalled();
     expect(framsteg()).toBe("3 av 3");
-    expect(synligaLarm()).toEqual([LIKVARDIGT_MASTE_ANGES]);
+    expect(synligaLarm()).toEqual([likvardigtMasteAngesFel(79_195, false)]);
 
     // Svaret är vad ett likvärdigt byte hade kostat. 791,95 kr är vad
     // målningsraderna kostade – torkstället var privat – och ett lika stort
@@ -445,7 +445,7 @@ describe("merkostnaden ställs när det finns ett belopp att dela", () => {
     await skriv(merkostnadsfalt()!, "0");
     await spara();
     expect(h.skapaProjekt).not.toHaveBeenCalled();
-    expect(synligaLarm()).toEqual([LIKVARDIGT_MASTE_ANGES]);
+    expect(synligaLarm()).toEqual([likvardigtMasteAngesFel(79_195, false)]);
 
     await skriv(merkostnadsfalt()!, "791,94");
     await spara();

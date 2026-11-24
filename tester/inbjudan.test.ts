@@ -804,7 +804,7 @@ describe("reglerna som star kvar, for den som redan har en bostad", () => {
     loggaIn(ANNA);
     const res = await skapaInbjudanAction({}, inbjudan_formular(EPOST[BERTIL], "80", "30"));
     expect(res).toHaveProperty("fel");
-    expect((res as { fel: string }).fel).toContain("Summan kan inte vara mer än 100 %");
+    expect((res as { fel: string }).fel).toBe("Tillsammans blir andelarna 110\u00a0%. En bostad kan inte ägas till mer än 100\u00a0%.");
     expect(h.db.tabell("inbjudan")).toHaveLength(0);
   });
 

@@ -43,7 +43,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@sentry/nextjs", () => ({ setUser: vi.fn(), captureException: vi.fn() }));
 
 import { skapaProjekt } from "@/app/projekt/actions";
-import { LIKVARDIGT_MASTE_ANGES, likvardigtOverBeloppetFel } from "@/lib/fragetradet-formdata";
+import { likvardigtMasteAngesFel, likvardigtOverBeloppetFel } from "@/lib/fragetradet-formdata";
 import { SEED_KOSTNADER } from "@/doman/seeddata";
 
 const ANNA = "a0000000-0000-4000-8000-0000000000e1";
@@ -263,7 +263,7 @@ describe("merkostnaden prövas mot de valda kvittonas belopp", () => {
   it("svaret 0 kr – hela beloppet som merkostnad – avvisas", async () => {
     const fore = h.db.ogonblick();
     const svar = await skapaProjekt({}, formular(battre("0"), [bauhausId]));
-    expect(svar).toEqual({ fel: LIKVARDIGT_MASTE_ANGES, falt: "merkostnad" });
+    expect(svar).toEqual({ fel: likvardigtMasteAngesFel(BAUHAUS_MALNING, false), falt: "merkostnad" });
     expect(h.db.ogonblick()).toEqual(fore);
   });
 

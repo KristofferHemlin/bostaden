@@ -65,7 +65,7 @@ import {
   tillDomanRegelparameter,
 } from "@/lib/doman-fran-db";
 import {
-  LIKVARDIGT_MASTE_ANGES,
+  likvardigtMasteAngesFel,
   likvardigtOverBeloppetFel,
   tolkaFragetradetFormData,
 } from "@/lib/fragetradet-formdata";
@@ -116,9 +116,24 @@ describe("avvisningarna, ordagrant ur design.md", () => {
     expect(normalisera(likvardigtOverBeloppetFel(6_081_250, true))).toBe(citat[1]);
   });
 
-  it("svaret noll eller tomt: en lydelse", () => {
-    const citat = citatEfter("**Svaret är noll eller tomt.**").map((c) => normalisera(c.join(" ")));
-    expect(citat).toEqual([normalisera(LIKVARDIGT_MASTE_ANGES)]);
+  // Två lydelser sedan 2026-11-24, och båda bär projektets belopp – felet
+  // ersätter hjälptexten, som annars är det enda stället talet står. Talen i
+  // citaten är exempel: provet ger funktionen just de beloppen.
+  it("svaret noll eller tomt: två lydelser, utan och med ROT, båda med beloppet", () => {
+    // Ankarna är generiska; de ska stå direkt under stycket om noll eller tomt.
+    const rader = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8").split("\n");
+    const stycke = rader.findIndex((r) => r.startsWith("**Svaret är noll eller tomt."));
+    const utan = rader.findIndex((r) => r.startsWith("**Utan ROT:**"));
+    const med = rader.findIndex((r) => r.startsWith("**Med ROT:**"));
+    expect(stycke, "stycket om noll eller tomt i design.md").toBeGreaterThanOrEqual(0);
+    expect([utan - stycke, med - utan].every((d) => d > 0 && d <= 4), "Utan ROT och Med ROT direkt under stycket").toBe(true);
+    const citat = citatEfter("**Utan ROT:**").slice(0, 1).concat(citatEfter("**Med ROT:**").slice(0, 1)).map((c) => normalisera(c.join(" ")));
+    expect(citat).toHaveLength(2);
+    expect(citat[0]).toMatch(/24 000 kr/);
+    expect(citat[0]).not.toMatch(/ROT/);
+    expect(citat[1]).toMatch(/62 287,50 kr/);
+    expect(normalisera(likvardigtMasteAngesFel(2_400_000, false))).toBe(citat[0]);
+    expect(normalisera(likvardigtMasteAngesFel(6_228_750, true))).toBe(citat[1]);
   });
 
   it("ROT avgör bara lydelsen, aldrig gränsen eller talet", () => {

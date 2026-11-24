@@ -201,7 +201,7 @@ describe("servern vagrar en summa over 100 %", () => {
     seeda({ sald: true });
     loggaIn(ANNA);
     const svar = await bekraftaAndel({}, fd({ agarandel: "60" }));
-    expect(svar.fel).toMatch(/110\u00a0%.*inte vara mer än 100 %/);
+    expect(svar.fel).toBe("Tillsammans blir andelarna 110\u00a0%. En bostad kan inte ägas till mer än 100\u00a0%.");
     expect(Number(medlemskap(ANNA).agarandel)).toBe(50);
     expect(medlemskap(ANNA).bekraftad_andel).toBeNull();
   });

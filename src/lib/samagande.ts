@@ -72,8 +72,16 @@ export function formateraAndelEllerInteAngiven(andel: number | null): string {
   return andel === null ? ANDEL_INTE_ANGIVEN : formateraAndel(andel);
 }
 
+/**
+ * Meningen nar summan gar over taket – serverns, och darmed ocksa den som
+ * visas vid faltet i inbjudan och vid bekraftelsen vid forsaljningen, sa att
+ * sidorna inte kan vagra olika (docs/design.md, "Summan av andelarna får inte
+ * överstiga 100 %", ordagrant). Bada procenttecknen far ett hart mellanslag via
+ * formateraAndel; till 2026-11-24 hade bara det forsta det, och "100 %" kunde
+ * brytas mellan talet och tecknet.
+ */
 function overSummaText(summa: number): string {
-  return `Tillsammans skulle andelarna bli ${formateraAndel(summa)}. Summan kan inte vara mer än 100 %.`;
+  return `Tillsammans blir andelarna ${formateraAndel(summa)}. En bostad kan inte ägas till mer än ${formateraAndel(HOGSTA_ANDELSSUMMA)}.`;
 }
 
 /**

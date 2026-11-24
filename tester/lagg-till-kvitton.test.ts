@@ -54,7 +54,7 @@ import KvittolistaSida from "@/app/kostnad/page";
 import ProjektSida from "@/app/projekt/[id]/page";
 import NyttProjektSida from "@/app/projekt/nytt/page";
 import { utkastNyckel } from "@/app/projekt/nytt/flode";
-import { LIKVARDIGT_MASTE_ANGES, likvardigtOverBeloppetFel } from "@/lib/fragetradet-formdata";
+import { likvardigtMasteAngesFel, likvardigtOverBeloppetFel } from "@/lib/fragetradet-formdata";
 import { LIKVARDIGT_ETIKETT } from "@/app/projekt/fragetradet";
 import { MERKOSTNAD_ANDRAD_FRAGA } from "@/doman/regeltext";
 
@@ -153,7 +153,7 @@ describe("merkostnaden som väntade", () => {
 
   it("får projektet ett belopp krävs svaret, och ingenting kopplas utan det", async () => {
     const fore = h.db.ogonblick();
-    expect(await laggTillKvitton({}, formular(["parkett"]))).toEqual({ fel: LIKVARDIGT_MASTE_ANGES, falt: "merkostnad" });
+    expect(await laggTillKvitton({}, formular(["parkett"]))).toEqual({ fel: likvardigtMasteAngesFel(1_200_000, false), falt: "merkostnad" });
     expect(h.db.ogonblick()).toEqual(fore);
   });
 
@@ -166,7 +166,7 @@ describe("merkostnaden som väntade", () => {
 
   it("och svaret 0 kr – merkostnaden hade varit hela beloppet – avvisas", async () => {
     expect(await laggTillKvitton({}, formular(["parkett", "lister"], "0"))).toEqual({
-      fel: LIKVARDIGT_MASTE_ANGES,
+      fel: likvardigtMasteAngesFel(1_280_000, false),
       falt: "merkostnad",
     });
   });
@@ -347,6 +347,29 @@ describe("ROT-lydelsen gäller också här", () => {
     await act(async () => form.requestSubmit());
     const larm = [...div.querySelectorAll('[role="alert"]')].map((e) => e.textContent);
     expect(larm).toEqual([likvardigtOverBeloppetFel(KOK, true)]);
+    act(() => rot.unmount());
+    div.remove();
+  });
+
+  // docs/design.md, "Svaret är noll eller tomt" (2026-11-24): felet ersätter
+  // hjälptexten, så ett tomt fält ska också få projektets belopp och bas.
+  // Prövar webbläsarens egen spärr – formulärets validera i
+  // src/app/projekt/[id]/kvitton/formular.tsx – som ingen annan fil når.
+  it("vid fältet: ett tomt svar ger felet med beloppet före ROT, innan något skickas", async () => {
+    const div = document.createElement("div");
+    document.body.appendChild(div);
+    const rot = createRoot(div);
+    await act(async () => rot.render((await LaggTillSida({ params: Promise.resolve({ id: P }), searchParams: Promise.resolve({}) })) as Parameters<typeof rot.render>[0]));
+    const ruta = [...div.querySelectorAll("label")].find((l) => l.textContent?.includes("Kvitto för köket"))!.querySelector("input")!;
+    await act(async () => ruta.click());
+    const label = [...div.querySelectorAll("label")].find((l) => l.textContent?.startsWith(LIKVARDIGT_ETIKETT));
+    expect(label, "merkostnadsfrågan").toBeTruthy();
+    expect(label!.querySelector("input")!.value, "förutsättningen: fältet är tomt").toBe("");
+    const form = div.querySelector("form")!;
+    await act(async () => form.requestSubmit());
+    const larm = [...div.querySelectorAll('[role="alert"]')].map((e) => e.textContent);
+    expect(larm).toEqual([likvardigtMasteAngesFel(KOK, true)]);
+    expect(kopplade(P), "ingenting kopplades").toEqual([]);
     act(() => rot.unmount());
     div.remove();
   });

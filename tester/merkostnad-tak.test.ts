@@ -13,7 +13,7 @@ import {
 } from "@/doman/regeltext";
 import type { Kostnad, Projekt } from "@/doman/typer";
 import {
-  LIKVARDIGT_MASTE_ANGES,
+  likvardigtMasteAngesFel,
   likvardigtOverBeloppetFel,
   tolkaFragetradetFormData,
 } from "@/lib/fragetradet-formdata";
@@ -55,7 +55,7 @@ describe("frågeträdet vägrar ett svar som inte ger en merkostnad mindre än p
 
   it("svaret 0 kr – merkostnaden hade varit hela beloppet – vägras, vid merkostnadsfrågan", () => {
     expect(tolkaFragetradetFormData(fragetradet("0"), PROJEKT_10_000)).toEqual({
-      fel: LIKVARDIGT_MASTE_ANGES,
+      fel: likvardigtMasteAngesFel(1_000_000, false),
       falt: "merkostnad",
     });
   });

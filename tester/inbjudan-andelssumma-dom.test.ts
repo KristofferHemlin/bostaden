@@ -10,8 +10,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // märkt ogiltigt, och en inbjudan som inte går att skapa. Det fjärde – att
 // servern vägrar – prövas i tester/inbjudan.test.ts mot den falska databasen.
 //
-// Meningens lydelse vaktas inte här: den är serverns (andelssummaVidInbjudan)
-// tills en lydelse står i design.md. Provet kräver att meningen säger summan.
+// Meningen är serverns (andelssummaVidInbjudan), och sedan 2026-11-24 står
+// dess lydelse i design.md under samma avsnitt; provet läser den därifrån.
 
 const h = vi.hoisted(() => ({ skapa: vi.fn(async () => ({})) }));
 
@@ -28,7 +28,19 @@ vi.mock("@/app/inbjudan/actions", () => ({
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { SkapaInbjudan } from "@/app/installningar/dela-bostaden";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { formateraAndel } from "@/lib/samagande";
+
+/** Meningen för 110 %, ordagrant ur design.md. Talen i citatet är exempel. */
+function designensMening(): string {
+  const design = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+  const avsnitt = design.indexOf("#### Summan av andelarna får inte överstiga 100 %");
+  if (avsnitt < 0) throw new Error('design.md saknar avsnittet "Summan av andelarna får inte överstiga 100 %"');
+  const m = design.slice(avsnitt).match(/^ *> \*\*(Tillsammans blir andelarna [^*]+)\*\*$/m);
+  if (!m) throw new Error("design.md saknar meningen om summan under avsnittet");
+  return m[1];
+}
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -101,8 +113,8 @@ describe("50 + 60: summan över 100 %", () => {
     await formularet({ egen: "50", inbjuden: "60" });
     const mening = meningenVidFaltet(falt("inbjuden_andel"));
     expect(mening, "fältet pekar på en mening").not.toBeNull();
+    expect(mening).toBe(designensMening());
     expect(mening).toContain(mellanslag(formateraAndel(110)));
-    expect(mening).toContain(mellanslag(formateraAndel(100)));
     expect(larm().map(mellanslag)).toContain(mening);
   });
 

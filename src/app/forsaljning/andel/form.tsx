@@ -18,6 +18,7 @@ import { Falt, HJALPTEXT_KLASS, PRIMARKNAPP_KLASS } from "@/components/skarm";
 import { agarandelFranText } from "@/lib/agarandel";
 import { useForhindraDubbelinskick } from "@/lib/dubbelinskick";
 import {
+  andelssummaVidInbjudan,
   formateraAndel,
   formateraAndelEllerInteAngiven,
   HOGSTA_ANDELSSUMMA,
@@ -56,6 +57,13 @@ export function BekraftaAndel({
   const egen = agarandelFranText(egenText);
   // Ett tomt eller ogiltigt falt raknas inte – det har sitt eget fel.
   const summa = summeraAndelar([...ovriga, egen ?? null]);
+  // Over taket bar tre saker beskedet, och ingen av dem ar en farg – samma som
+  // i inbjudan (docs/design.md, "Summan av andelarna får inte överstiga 100 %"):
+  // meningen vid faltet, faltet market ogiltigt, och en bekraftelse som inte
+  // gar att skicka. Regeln och meningen ar serverns egna – bekraftelsen provas
+  // med andelssummaVidInbjudan over alla medlemmar och utestaende inbjudningar
+  // (src/lib/egen-andel.ts, bekrafta: true) – sa att sidorna inte kan vagra olika.
+  const overSumma = andelssummaVidInbjudan(summa);
 
   const alla = [...medlemmar.map((m) => m.andel), ...inbjudningar.map((i) => i.andel)];
   const angivna = alla.filter((a): a is number => a !== null);
@@ -68,7 +76,20 @@ export function BekraftaAndel({
         : `Du har angett att du äger ${formateraAndel(egenAndel)} av bostaden – stämmer det?`;
 
   return (
-    <form action={action} onSubmit={hanteraSubmit} noValidate className="flex flex-col gap-4 p-5">
+    <form
+      action={action}
+      onSubmit={(e) => {
+        // Knappen ar avstangd over taket; det har stoppar ocksa Enter i
+        // faltet. Servern vagrar anda.
+        if (overSumma) {
+          e.preventDefault();
+          return;
+        }
+        hanteraSubmit(e);
+      }}
+      noValidate
+      className="flex flex-col gap-4 p-5"
+    >
       <input type="hidden" name="nasta" value={nasta} />
       <div>
         {fraga ? <p className="font-rubrik text-lg text-text-primar">{fraga}</p> : null}
@@ -105,13 +126,14 @@ export function BekraftaAndel({
           name="agarandel"
           defaultValue={startText}
           onVarde={setEgenText}
-          fel={resultat.falt === "agarandel" ? resultat.fel : undefined}
+          fel={overSumma ?? (resultat.falt === "agarandel" ? resultat.fel : undefined)}
         />
       </Falt>
 
       {delad ? (
         <div className="flex justify-between gap-3 font-granssnitt text-sm">
           <span className="text-text-sekundar">Tillsammans</span>
+          {/* Fargen forstarker, meningen vid faltet ovan bar beskedet. */}
           <span
             className={`tabular-nums ${summa > HOGSTA_ANDELSSUMMA ? "text-accent" : "text-text-primar"}`}
           >
@@ -120,7 +142,8 @@ export function BekraftaAndel({
         </div>
       ) : null}
 
-      <button type="submit" disabled={pagar} className={PRIMARKNAPP_KLASS}>
+      {/* Primarknappen har redan en egen stil for avstangt lage (disabled:opacity-60). */}
+      <button type="submit" disabled={pagar || overSumma !== null} className={PRIMARKNAPP_KLASS}>
         {pagar ? "Sparar…" : "Bekräfta ägarandelen"}
       </button>
     </form>

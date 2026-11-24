@@ -165,7 +165,10 @@ export function tolkaFragetradetSvaren(
     : tolkaFragetradet(svar);
   if (!resultat) {
     // Bara ett ofullstandigt trad kan hamna har – merkostnaden ar provad ovan.
-    return { fel: LIKVARDIGT_MASTE_ANGES, falt: "merkostnad" };
+    // Onabar i dag: varje obesvarad fraga avvisas ovan, och ett svar pa
+    // likvardigt byte som ger merkostnad <= 0 fangas av provaLikvardigtByte.
+    // Grenen star kvar som skyddsnat, med samma text som den riktiga vagen.
+    return { fel: likvardigtMasteAngesFel(projekt.belopp, projekt.harRot), falt: "merkostnad" };
   }
 
   const skick_forvarv = tolkaSkickForvarv(
@@ -183,12 +186,27 @@ export function tolkaFragetradetSvaren(
   };
 }
 
+/** Vad projektets belopp ar, i de tva avvisningarnas lydelse: "fore
+ *  ROT-avdraget" ar brus nar inget ROT finns (docs/design.md, "Svaret är noll
+ *  eller tomt" och "Svaret är lika med eller större än projektets belopp"). */
+function vadBeloppetAr(harRot: boolean): string {
+  return harRot ? "det är vad arbetet kostade före ROT-avdraget" : "det är vad projektet kostade";
+}
+
 /**
- * Avvisningen nar svaret ar noll eller tomt (docs/design.md, "En avvisning som
- * rör ett tal ska innehålla talet"). Merkostnaden hade da varit hela beloppet.
+ * Avvisningen nar svaret ar noll eller tomt (docs/design.md, "Svaret är noll
+ * eller tomt"). Merkostnaden hade da varit hela beloppet. Felet ersatter
+ * hjalptexten, och hjalptexten ar det enda stalle som namnger projektets
+ * belopp och dess bas – darfor bar felet talet, ocksa nar hon inte skrivit
+ * nagot. Till 2026-11-24 sa det bara "mer än 0 kr".
+ *
+ * Den enda kallan for texten: provaLikvardigtByte och tolkaFragetradetFormData
+ * laser den, och darigenom projektflodet och "Välj bland dina kvitton", i
+ * webblasaren och pa servern.
  */
-export const LIKVARDIGT_MASTE_ANGES =
-  "Ange vad ett likvärdigt byte hade kostat, mer än 0 kr. Uppskatta om du inte vet exakt.";
+export function likvardigtMasteAngesFel(beloppOren: number, harRot: boolean): string {
+  return `Ange vad ett likvärdigt byte hade kostat, mer än 0 kr och lägre än ${formateraKronor(beloppOren)} – ${vadBeloppetAr(harRot)}. Uppskatta om du inte vet exakt.`;
+}
 
 /**
  * Avvisningen nar svaret ar lika med eller storre an projektets belopp – da
@@ -197,8 +215,7 @@ export const LIKVARDIGT_MASTE_ANGES =
  * aldrig 0 har: utan belopp skjuts fragan upp i stallet.
  */
 export function likvardigtOverBeloppetFel(beloppOren: number, harRot: boolean): string {
-  const vad = harRot ? "det är vad arbetet kostade före ROT-avdraget" : "det är vad projektet kostade";
-  return `Ange ett belopp lägre än ${formateraKronor(beloppOren)} – ${vad}. Kostade ett likvärdigt byte lika mycket är svaret på kvalitetsfrågan ”Liknande som tidigare”.`;
+  return `Ange ett belopp lägre än ${formateraKronor(beloppOren)} – ${vadBeloppetAr(harRot)}. Kostade ett likvärdigt byte lika mycket är svaret på kvalitetsfrågan ”Liknande som tidigare”.`;
 }
 
 /**
@@ -215,7 +232,7 @@ export function provaLikvardigtByte(
   belopp: number,
   harRot: boolean,
 ): { merkostnad: number } | { fel: string } {
-  if (likvardigt === null || likvardigt <= 0) return { fel: LIKVARDIGT_MASTE_ANGES };
+  if (likvardigt === null || likvardigt <= 0) return { fel: likvardigtMasteAngesFel(belopp, harRot) };
   if (likvardigt >= belopp) return { fel: likvardigtOverBeloppetFel(belopp, harRot) };
   return { merkostnad: belopp - likvardigt };
 }
