@@ -90,6 +90,7 @@ import {
   ATERSTAR_RUBRIK,
   BOSTADSFRAGOR_BESKED,
   PRELIMINART,
+  arPreliminart,
   aterstarRader,
   kvittonamn,
   type Aterstarrad,
@@ -234,6 +235,10 @@ export default async function ExportSida() {
     // sidorna – sa att blicken gar till listan over det som aterstar.
     const harAterstaende =
       ex.oklassificerade_hogar.length > 0 || ex.aterstaende_kvitton.length > 0;
+    // Ordet ar smalare an dampningen: det foljer bara det som kan andra talen
+    // (src/lib/aterstar.ts, arPreliminart). Ett kvitto fore tilltradet dampar
+    // talen men gor dem inte preliminara.
+    const preliminart = arPreliminart(ex);
     // Kvitton utan projekt behover ett projekt – vagen dit ar Skapa projekt.
     // En hog som vantar pa fragor har en egen lank pa sin rad (aterstarHref),
     // och ett kvitto utan betaldatum behover sitt datum, pa kvittots skarm.
@@ -287,6 +292,7 @@ export default async function ExportSida() {
             agarandel={ex.agarandel_procent}
             andelInteAngiven={andelInteAngiven}
             dampad={harAterstaende}
+            preliminart={preliminart}
           />
         </Kort>
 
@@ -308,6 +314,7 @@ export default async function ExportSida() {
               agarandel={ex.agarandel_procent}
               andelInteAngiven={andelInteAngiven}
               dampad={harAterstaende}
+              preliminart={preliminart}
             />
           ) : null}
         </Kort>
@@ -571,8 +578,10 @@ export default async function ExportSida() {
               agarandel={v.agarandel_procent}
               andelInteAngiven={andelslage.slag === "inte_angiven"}
               // Bostadsfragorna fattas – bandet overst sager det – sa summan
-              // ar ofullstandig och dampas som varje sadan.
+              // ar ofullstandig och dampas som varje sadan – och svaret kan
+              // andra den, sa den ar preliminar.
               dampad
+              preliminart
             />
           ) : (
             <VantandeSumma underrad="Summa sida 1 – grundförbättringar" />
@@ -597,6 +606,7 @@ export default async function ExportSida() {
                 agarandel={v.agarandel_procent}
                 andelInteAngiven={andelslage.slag === "inte_angiven"}
                 dampad
+                preliminart
               />
             ) : (
               <VantandeSumma underrad="Summa sida 2 – avdragsgill del efter förslitning" />
@@ -865,6 +875,7 @@ function RutaCallout({
   agarandel,
   andelInteAngiven,
   dampad,
+  preliminart,
 }: {
   /** Etikett och tal ur rutorForLasaren: "Förs till" bara bredvid läsarens eget tal. */
   ruta: RutaForLasaren;
@@ -879,6 +890,11 @@ function RutaCallout({
   /** Väntar något på frågor är talet ofullständigt och sätts i
    *  --text-sekundar i stället för --text-primar (docs/design.md, Exportvyn). */
   dampad: boolean;
+  /** Kan talet fortfarande andras av nagot hon gor? Da star PRELIMINART vid
+   *  det. Smalare an dampad: ett kvitto fore tilltradet dampar men andrar
+   *  aldrig talet (docs/design.md, "Preliminärt följer bara de skäl som kan
+   *  ändra talen"). */
+  preliminart: boolean;
 }) {
   return (
     <section className="p-4">
@@ -894,7 +910,7 @@ function RutaCallout({
           {/* Dampningen ar inte ensam om beskedet: ordet star i samma element
               som beloppet, sa att det lases med talet och inte som en
               upplysning bredvid (src/lib/aterstar.ts, PRELIMINART). */}
-          {dampad ? (
+          {preliminart ? (
             <>
               <span className="font-granssnitt text-sm">{PRELIMINART}</span>{" "}
             </>

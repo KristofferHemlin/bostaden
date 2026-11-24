@@ -14,8 +14,10 @@ export const ATERSTAR_RUBRIK = "Återstår";
 
 // Till 2026-11-16: "Det här har du lagt in, men det ingår inte i talen ovan."
 // Raden om bostadsfragorna, som ar nagot hon inte lagt in, star sedan
-// 2026-11-18 i ett band overst och inte har (BOSTADSFRAGOR_BESKED).
-export const ATERSTAR_INLEDNING = "Det här ingår inte i talen ovan än.";
+// 2026-11-18 i ett band overst och inte har (BOSTADSFRAGOR_BESKED). Till
+// 2026-11-24 slutade meningen pa "än" – ett lofte om rorelse som inte galler
+// ett kvitto fore tilltradet (docs/design.md, "Ordet än är struket").
+export const ATERSTAR_INLEDNING = "Det här ingår inte i talen ovan.";
 
 /** Skalet under varje rad – samma ord i exportvyn och i PDF:en. */
 export const ATERSTAR_ORSAK: Record<
@@ -54,6 +56,35 @@ export interface Aterstarrad {
  * Återstår sager varfor; ordet sager bara att.
  */
 export const PRELIMINART = "Preliminärt";
+
+/**
+ * Om ordet PRELIMINART ska sta vid talen (docs/design.md, "Preliminärt följer
+ * bara de skäl som kan ändra talen"). Ordet ar ett lofte om rorelse, sa det
+ * foljer bara de skal under Återstår som kan andras av nagot hon gor: en hog
+ * som vantar pa fragor, ett kvitto utan projekt, utan betaldatum, och ett
+ * utkast. Ett kvitto daterat fore tilltradet kommer aldrig att raknas och
+ * ger inte ordet. Ett kvitto markerat "Hör inte till bostaden" ar arkiverat
+ * och ligger inte under Återstår alls.
+ *
+ * Dampningen ar bredare och ror inte av det har: den foljer varje rad under
+ * Återstår (export/page.tsx, harAterstaende). Obesvarade bostadsfragor ger
+ * ordet i vantelaget, dar det inte gar via den har funktionen.
+ *
+ * En uttommande tabell over skalen, sa att ett nytt skal inte kan byggas utan
+ * att nagon tar stallning till ordet.
+ */
+const KAN_ANDRA_TALEN: Record<AterstaendeKvitto["orsak"], boolean> = {
+  utan_hog: true,
+  utan_betaldatum: true,
+  utan_belopp: true,
+  fore_tilltradet: false,
+};
+
+export function arPreliminart(
+  ex: Pick<K6aExport, "oklassificerade_hogar" | "aterstaende_kvitton">,
+): boolean {
+  return ex.oklassificerade_hogar.length > 0 || ex.aterstaende_kvitton.some((k) => KAN_ANDRA_TALEN[k.orsak]);
+}
 
 /**
  * Bandet overst i underlaget nar bostadsfragorna ar obesvarade (docs/design.md,

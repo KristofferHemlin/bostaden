@@ -109,7 +109,10 @@ function aterstarRaden(): { rubrik: string; rad: string; lank: string } {
  * blir: det är talet som ska synas redan nu. Utan altanen (medAltan: false)
  * beror summan på sida 1 inte heller av svaret – men sida 2 gör det fortfarande.
  */
-function seeda({ nybyggd = null as boolean | null, sald = true, medAltan = true, agarandel = 100 as number | null, kvitton = true, fri = true } = {}) {
+/** Ett skäl att ligga under Återstår, utöver det fria kvittot (se tillagg nedan). */
+type Tillagg = "fore_tilltradet" | "utan_betaldatum" | "utkast" | "oklassificerad" | "hor_inte_till_bostaden";
+
+function seeda({ nybyggd = null as boolean | null, sald = true, medAltan = true, agarandel = 100 as number | null, kvitton = true, fri = true, till = [] as Tillagg[] } = {}) {
   const { db } = h;
   db.nollstall();
   for (const r of REGELPARAMETRAR) {
@@ -143,6 +146,44 @@ function seeda({ nybyggd = null as boolean | null, sald = true, medAltan = true,
     });
     const rad = db.lagg("kostnadsrad", { kostnad_id: k.id, artikel: "Material", belopp });
     db.lagg("radfordelning", { kostnadsrad_id: rad.id, projekt_id: projekt, andel: 1 });
+  }
+  // Ett kvitto per tillägg, vart och ett med ett eget skäl. Före tillträdet
+  // är kopplat till förrådet, så att det inte också är "utan projekt".
+  for (const t of till) {
+    if (t === "fore_tilltradet") {
+      const k = db.lagg("kostnad", {
+        bostad_id: X, leverantor: "Beijer", anteckning: "Virke före tillträdet", totalbelopp: 120_000,
+        dokumentdatum: datum("2019-03-01"), betaldatum: datum("2019-03-01"),
+      });
+      const r = db.lagg("kostnadsrad", { kostnad_id: k.id, artikel: "Virke", belopp: 120_000 });
+      db.lagg("radfordelning", { kostnadsrad_id: r.id, projekt_id: FORRAD, andel: 1 });
+    } else if (t === "utan_betaldatum") {
+      const k = db.lagg("kostnad", {
+        bostad_id: X, leverantor: "Byggmax", anteckning: "Skruv utan betaldag", totalbelopp: 30_000,
+        dokumentdatum: datum("2025-03-01"), betaldatum: null,
+      });
+      const r = db.lagg("kostnadsrad", { kostnad_id: k.id, artikel: "Skruv", belopp: 30_000 });
+      db.lagg("radfordelning", { kostnadsrad_id: r.id, projekt_id: FORRAD, andel: 1 });
+    } else if (t === "utkast") {
+      db.lagg("kostnad", {
+        bostad_id: X, leverantor: null, anteckning: "Fotat kvitto att fylla i", totalbelopp: null,
+        dokumentdatum: null, betaldatum: null,
+      });
+    } else if (t === "oklassificerad") {
+      const p = db.lagg("projekt", { bostad_id: X, namn: "Nytt golv", ar: 2025, atgardstyp: null });
+      const k = db.lagg("kostnad", {
+        bostad_id: X, leverantor: "Golvpoolen", anteckning: "Golv", totalbelopp: 80_000,
+        dokumentdatum: datum("2025-09-01"), betaldatum: datum("2025-09-01"),
+      });
+      const r = db.lagg("kostnadsrad", { kostnad_id: k.id, artikel: "Golv", belopp: 80_000 });
+      db.lagg("radfordelning", { kostnadsrad_id: r.id, projekt_id: p.id, andel: 1 });
+    } else {
+      const k = db.lagg("kostnad", {
+        bostad_id: X, leverantor: "Ica", anteckning: "Matkassen", totalbelopp: 50_000,
+        dokumentdatum: datum("2025-04-01"), betaldatum: datum("2025-04-01"), arkiverad: true,
+      });
+      db.lagg("kostnadsrad", { kostnad_id: k.id, artikel: "Mat", belopp: 50_000 });
+    }
   }
   // Ett kvitto utan projekt – det som hamnar under Återstår.
   if (!fri) {
@@ -540,5 +581,107 @@ describe("ett tal som inte är färdigt säger det vid talet", () => {
     const s = await sidan();
     for (const u of [SIDA1, SIDA2]) expect(summan(s, u)).toMatch(/^\d[\d ]* kr$/);
     expect(s.textContent).not.toContain(ordet());
+  });
+});
+
+// docs/design.md, "Preliminärt följer bara de skäl som kan ändra talen"
+// (2026-11-24). Varje skäl i tabellen prövas ensamt, med bostadsfrågorna
+// besvarade och utan det fria kvittot, så att skälet är det enda under
+// Återstår. Förutsättningen prövas i varje fall: raden står under Återstår
+// med sitt skäl – annars säger ett uteblivet ord ingenting.
+//
+// Dämpningen rörs inte: den följer varje rad under Återstår, och provet
+// läser den på klassen (text-text-sekundar), alltså i koden och inte mätt.
+describe("Preliminärt följer bara det som kan ändra talen", () => {
+  function ordet(): string {
+    const m = design().match(/följs av \*\*([^*]+)\*\* i samma element/);
+    if (!m) throw new Error('design.md saknar "följs av **…** i samma element" under Exportvyn');
+    return m[1];
+  }
+  function summan(s: HTMLElement): { text: string; dampad: boolean } {
+    const rad = [...s.querySelectorAll("p")].find((p) => p.textContent === "Summa sida 1 – grundförbättringar");
+    if (!rad) throw new Error("underraden för sida 1 finns inte");
+    const tal = [...rad.closest("section")!.querySelectorAll("span")].filter((e) =>
+      /^(\p{L}+ )?[\d\s]+ kr$/u.test((e.textContent ?? "").replace(/\u00a0/g, " ")),
+    );
+    expect(tal, "ett belopp vid sida 1").toHaveLength(1);
+    return { text: (tal[0].textContent ?? "").replace(/\u00a0/g, " "), dampad: tal[0].classList.contains("text-text-sekundar") };
+  }
+  /** Raden under Återstår med namnet, och skälet under den. */
+  function aterstarSkal(s: HTMLElement, namn: string): string {
+    const li = [...s.querySelectorAll("li")].find((l) => l.textContent?.includes(namn));
+    if (!li) throw new Error(`"${namn}" står inte under Återstår`);
+    return li.textContent ?? "";
+  }
+
+  const MED_ORDET: [string, Tillagg, string, string][] = [
+    ["kvitto utan betaldatum", "utan_betaldatum", "Skruv utan betaldag", "Saknar betaldatum"],
+    ["utkast", "utkast", "Fotat kvitto att fylla i", "Saknar belopp"],
+    ["projekt som väntar på frågor", "oklassificerad", "Nytt golv", "Väntar på frågor"],
+  ];
+  for (const [namn, till, rad, skal] of MED_ORDET) {
+    it(`${namn}: ordet står vid talet, och talet är dämpat`, async () => {
+      seeda({ nybyggd: false, fri: false, till: [till] });
+      const s = await sidan();
+      expect(aterstarSkal(s, rad), "förutsättningen: raden står under Återstår med sitt skäl").toContain(skal);
+      const t = summan(s);
+      expect(t.text).toMatch(new RegExp(`^${ordet()} \\d`));
+      expect(t.dampad).toBe(true);
+    });
+  }
+  // Kvitto utan projekt och obesvarade bostadsfrågor prövas ensamma i blocket
+  // ovan ("något under Återstår", "obesvarade bostadsfrågor").
+
+  it("kvitto före tillträdet: inget ord – men talet är fortfarande dämpat och raden står kvar", async () => {
+    seeda({ nybyggd: false, fri: false, till: ["fore_tilltradet"] });
+    const s = await sidan();
+    expect(aterstarSkal(s, "Virke före tillträdet"), "förutsättningen: raden står under Återstår").toContain(
+      "Daterat före tillträdet",
+    );
+    const t = summan(s);
+    expect(t.text).toMatch(/^\d[\d ]* kr$/);
+    expect(t.dampad, "dämpningen följer varje rad under Återstår").toBe(true);
+    expect(s.textContent).not.toContain(ordet());
+  });
+
+  it("kvitto markerat Hör inte till bostaden: inget ord, och ingenting under Återstår", async () => {
+    seeda({ nybyggd: false, fri: false, till: ["hor_inte_till_bostaden"] });
+    const s = await sidan();
+    expect(s.textContent).not.toContain("Matkassen");
+    const t = summan(s);
+    expect(t.text).toMatch(/^\d[\d ]* kr$/);
+    expect(t.dampad).toBe(false);
+    expect(s.textContent).not.toContain(ordet());
+  });
+
+  // Fallet en naiv lösning tappar: ett skäl som inte ger ordet får inte
+  // släcka ett som gör det, oavsett ordningen under Återstår.
+  for (const [namn, till, fri] of [
+    ["före tillträdet och utan projekt", ["fore_tilltradet"], true],
+    ["före tillträdet och utan betaldatum", ["fore_tilltradet", "utan_betaldatum"], false],
+    ["utan betaldatum och före tillträdet", ["utan_betaldatum", "fore_tilltradet"], false],
+  ] as [string, Tillagg[], boolean][]) {
+    it(`blandningen ${namn}: ordet står vid talet`, async () => {
+      seeda({ nybyggd: false, fri, till });
+      const s = await sidan();
+      expect(aterstarSkal(s, "Virke före tillträdet"), "förutsättningen").toContain("Daterat före tillträdet");
+      expect(summan(s).text).toMatch(new RegExp(`^${ordet()} \\d`));
+    });
+  }
+
+  it("före tillträdet med obesvarade bostadsfrågor: ordet står där, för frågornas skull", async () => {
+    seeda({ nybyggd: null, fri: false, medAltan: false, till: ["fore_tilltradet"] });
+    const s = await sidan();
+    expect(summan(s).text).toMatch(new RegExp(`^${ordet()} \\d`));
+  });
+
+  it("inledningen över Återstår är designens mening, utan ett än", async () => {
+    const m = design().match(/\*\*Meningen lyder därför \*"([^"]+)"\*\*\*/);
+    if (!m) throw new Error('design.md saknar "Meningen lyder därför *"…"*" under Återstår');
+    seeda({ nybyggd: false, fri: false, till: ["fore_tilltradet"] });
+    const s = await sidan();
+    const rubrik = [...s.querySelectorAll("p")].find((p) => p.textContent === "Återstår");
+    if (!rubrik) throw new Error("rubriken Återstår finns inte");
+    expect(rubrik.nextElementSibling?.textContent).toBe(m[1]);
   });
 });

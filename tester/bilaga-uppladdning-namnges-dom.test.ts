@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // En bilaga som inte gick att ladda upp namnges (uppräkningen 2026-11-24:
@@ -6,8 +8,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // "En bilaga", och med flera valda filer var det bara ramen runt miniatyren –
 // en färg – som pekade ut vilken. Beskedet bär nu filens namn och role=alert.
 //
-// Lydelsen står inte i docs/design.md och vaktas inte här; provet kräver att
-// den misslyckade filens namn står i beskedet och den lyckades inte gör det.
+// Lydelsen för en fil står i docs/design.md sedan 2026-11-24 ("Den bilaga som
+// inte gick att ladda upp namnges") och läses därifrån, inne i provet. Filnamnet
+// i citatet är ett exempel och byts mot den fil som föll. Pluralformen, för
+// flera filer, står inte i design.md; där kräver provet bara namnen.
 
 const h = vi.hoisted(() => ({ laddaUpp: vi.fn() }));
 
@@ -83,6 +87,16 @@ async function valj(filer: File[]) {
   await act(async () => input.dispatchEvent(new Event("change", { bubbles: true })));
 }
 
+/** Meningen ur design.md, med exemplets filnamn utbytt mot `namn`. */
+function designensMening(namn: string): string {
+  const design = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+  const avsnitt = design.indexOf("**Den bilaga som inte gick att ladda upp namnges.**");
+  if (avsnitt < 0) throw new Error('design.md saknar "Den bilaga som inte gick att ladda upp namnges."');
+  const m = design.slice(avsnitt).match(/^> \*\*(\S+)( kunde inte laddas upp\.[^*]+)\*\*$/m);
+  if (!m) throw new Error("design.md saknar meningen om den misslyckade uppladdningen");
+  return `${namn}${m[2]}`;
+}
+
 const fil = (namn: string) => new File([new Uint8Array([0xff, 0xd8, 0xff])], namn, { type: "image/jpeg" });
 
 describe("den bilaga som inte gick att ladda upp namnges", () => {
@@ -95,9 +109,8 @@ describe("den bilaga som inte gick att ladda upp namnges", () => {
     expect(h.laddaUpp, "förutsättningen: båda laddades upp").toHaveBeenCalledTimes(2);
     const besked = larm().filter((t) => t.includes("kunde inte laddas upp"));
     expect(besked).toHaveLength(1);
-    expect(besked[0]).toContain("faktura-sida-2.jpg");
+    expect(besked[0]).toBe(designensMening("faktura-sida-2.jpg"));
     expect(besked[0]).not.toContain("faktura-sida-1.jpg");
-    expect(besked[0]).not.toMatch(/^En bilaga/);
   });
 
   it("båda misslyckas: båda namnges i samma besked", async () => {
