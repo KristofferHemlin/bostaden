@@ -1,3 +1,4 @@
+import { BOSTADSRAD } from "./_hjalp";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // DEN VIKTIGASTE PUNKTEN pa installningssidan (docs/design.md,
@@ -29,7 +30,15 @@ const h = vi.hoisted(() => ({
 
 vi.mock("@/lib/prisma", () => {
   const klient = {
-    bostad: { findUniqueOrThrow: h.bostadFindUniqueOrThrow, update: h.bostadUpdate },
+    bostad: { findUniqueOrThrow: async (a: unknown) => ({ ...BOSTADSRAD, ...((await h.bostadFindUniqueOrThrow(a)) as object) }), update: h.bostadUpdate },
+    // Beskedet om underlaget (src/lib/underlagsbesked-server.ts) laser
+    // bostadens kvitton och projekt. Den har filen provar vilka falt som
+    // skrivs, inte beskedet: utan kvitton finns inget underlag att flytta,
+    // och sparandet gar igenom som forut (tester/underlagsbesked.test.ts
+    // provar beskedet).
+    projekt: { findMany: async () => [] },
+    kostnad: { findMany: async () => [] },
+    regelparameter: { findMany: async () => [] },
     medlemskap: { updateMany: h.medlemskapUpdateMany, findMany: h.medlemskapFindMany },
     inbjudan: { findMany: h.inbjudanFindMany },
   };

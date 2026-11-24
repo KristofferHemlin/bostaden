@@ -27,14 +27,15 @@ export async function sparaFragorOmBostaden(
   _foreg: BostadsfragorResultat,
   formData: FormData,
 ): Promise<BostadsfragorResultat> {
-  const { bostadId, anvandareId } = await kravBostad();
+  const { bostadId, anvandareId, agarandel } = await kravBostad();
 
-  const fel = await skrivBostadsfragor(bostadId, formData, {
+  const utfall = await skrivBostadsfragor(bostadId, formData, {
     sida: "bostaden/fragor",
     anrop: "sparaFragorOmBostaden",
     anvandareId,
+    egenAndel: agarandel,
   });
-  if (fel) return { fel };
+  if (utfall) return utfall;
 
   revalidatePath("/export");
   revalidatePath("/installningar");

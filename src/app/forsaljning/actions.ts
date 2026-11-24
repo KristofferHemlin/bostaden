@@ -18,23 +18,29 @@ import { forsaljningsdatumFel } from "./validering";
 import { sparadDag, oreFranKronor } from "@/lib/format";
 import { nastaSidaIForsaljningen } from "@/lib/forsaljningsflode";
 import { prisma } from "@/lib/prisma";
+import type { Underlagsbesked } from "@/lib/underlagsbesked";
+import { arBekraftat, underlagsbeskedVidAndring } from "@/lib/underlagsbesked-server";
 import { kravBostad } from "@/lib/session";
 
 export interface ForsaljningResultat {
   fel?: string;
   /** Faltet felet galler – meningen visas vid det (docs/design.md, "När ett formulär vägrar"). */
   falt?: "forsaljningsdatum" | "forsaljningspris";
+  /** Ett andrat forsaljningsdatum flyttar underlaget och ar inte bekraftat:
+   *  ingenting ar sparat (docs/design.md, "Beskedet när ett värde ändrar
+   *  vilka kvitton som räknas"). */
+  underlag?: Underlagsbesked;
 }
 
 export async function markeraSald(
   _foreg: ForsaljningResultat,
   formData: FormData,
 ): Promise<ForsaljningResultat> {
-  const { bostadId, anvandareId } = await kravBostad();
+  const { bostadId, anvandareId, agarandel: egenAndel } = await kravBostad();
 
   const bostad = await prisma.bostad.findUniqueOrThrow({
     where: { id: bostadId },
-    select: { tilltradesdatum: true },
+    select: { tilltradesdatum: true, forsaljningsdatum: true },
   });
   const tilltrade = sparadDag(bostad.tilltradesdatum);
 
@@ -65,6 +71,16 @@ export async function markeraSald(
   }
   const forsaljningspris =
     forsaljningsprisOren === null ? null : BigInt(forsaljningsprisOren);
+
+  // Ett datum som andras EFTER forsaljningen flyttar femarsfonstret, och det
+  // sags innan det sparas. Den forsta registreringen ar forsaljningen sjalv –
+  // dar ar det underlaget hon ska se, inte ett besked om det.
+  if (bostad.forsaljningsdatum !== null) {
+    const besked = await underlagsbeskedVidAndring(bostadId, egenAndel, {
+      forsaljningsdatum: new Date(`${forsaljningsdatum}T00:00:00.000Z`),
+    });
+    if (besked && !arBekraftat(formData, besked)) return { underlag: besked };
+  }
 
   await prisma.bostad.update({
     where: { id: bostadId },

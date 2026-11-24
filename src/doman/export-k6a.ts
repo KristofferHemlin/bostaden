@@ -182,6 +182,12 @@ export interface K6aExport {
    *  markeringen. Tom fore forsaljningen – fragan stalls forst da. */
   samma_del_kandidater: string[];
   samma_del: SammaDelStatus;
+  /** Ar som hade nagot att prova men foll under troskeln i steg 4, med det
+   *  troskelbelopp som provades. Ett ar utan nagot kvar efter steg 3 ar inte
+   *  med – det foll inte pa troskeln. Lases av beskedet fore ett sparande
+   *  (src/doman/underlagsandring.ts): ett ar som vander ar en orsak som inte
+   *  syns i de kvitton som andringen ror. */
+  ar_under_troskeln: { ar: number; troskelbelopp: number }[];
 }
 
 /** Texten nar sammanstallningen vantar pa bostadsfragorna – samma pa skarmen
@@ -516,6 +522,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
   //    bostaden – EFTER tidsgranserna, FORE skickbedomningen (CLAUDE.md,
   //    steg 4). Understiger aret troskeln faller allt det arets bidrag bort.
   const arGrupper = new Map<number, CellSplit[]>();
+  const arUnderTroskeln: { ar: number; troskelbelopp: number }[] = [];
   for (const s of splits) {
     const lista = arGrupper.get(s.cell.ar) ?? [];
     lista.push(s);
@@ -528,6 +535,11 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
       `${ar}-12-31`,
     );
     troskelPerAr.set(ar, troskelbelopp);
+    const arssumma = grupp.reduce(
+      (summa, s) => summa + s.uppdelning.grundforbattringsdel + s.uppdelning.reparationsunderlag,
+      0,
+    );
+    if (arssumma > 0 && arssumma < troskelbelopp) arUnderTroskeln.push({ ar, troskelbelopp });
     const provade = troskelprovaArspostar(
       grupp.map((s) => s.uppdelning),
       troskelbelopp,
@@ -786,6 +798,7 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
     varningar,
     samma_del_kandidater: sammaDelKandidater,
     samma_del: sammaDel,
+    ar_under_troskeln: arUnderTroskeln.sort((a, b) => a.ar - b.ar),
   };
 }
 

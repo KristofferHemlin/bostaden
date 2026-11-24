@@ -18,6 +18,7 @@ import { idagISverige } from "@/lib/datum";
 import { formateraBeloppInmatning } from "@/lib/format";
 import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 import { useFormularfel } from "@/lib/formularfel-klient";
+import { useUnderlagsfraga } from "@/components/underlagsfraga";
 
 const START: ForsaljningResultat = {};
 
@@ -46,6 +47,8 @@ export function ForsaljningForm({
       return fel ? { fel, falt: "forsaljningsdatum" } : null;
     },
   });
+
+  const underlagsfraga = useUnderlagsfraga(resultat.underlag, formRef);
 
   return (
     <form ref={formRef} action={action} onSubmit={hanteraSubmit} noValidate className="flex flex-col gap-6 p-5">
@@ -79,6 +82,9 @@ export function ForsaljningForm({
           {formularfel}
         </p>
       ) : null}
+
+      {underlagsfraga.falt}
+      {underlagsfraga.dialog}
 
       <button type="submit" disabled={pagar} className={PRIMARKNAPP_KLASS}>
         {pagar

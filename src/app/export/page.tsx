@@ -53,7 +53,6 @@ import {
   type K6aExport,
   VantarPaBostadsfragor,
   type K6aExportrad,
-  type K6aIndata,
   OgiltigAgarandel,
 } from "@/doman/export-k6a";
 import {
@@ -68,17 +67,14 @@ import { foreForsaljningForklaring } from "@/doman/regeltext";
 import { behoverSkickForsaljning } from "@/doman/fragetradet";
 import { bostadHeader } from "@/lib/bostad-header";
 import { BILAGEPAKET_SYNLIGT } from "@/lib/bilagepaket/flagga";
-import { hamtaBostadsdata, hamtaUtkastSomInteArTomma, tillDomanBostad } from "@/lib/doman-fran-db";
+import { hamtaUnderlagetsIndata } from "@/lib/underlagets-indata";
 import { idagISverige } from "@/lib/datum";
 import { formateraKronor, formateraKronorEllerStreck, sparadDag } from "@/lib/format";
-import { hamtaAndelar } from "@/lib/andelar";
 import { UPPGIFTENS_SOKVAG } from "@/lib/bostadsuppgifter";
 import { SIDA1_RUBRIK, SIDA1_TOMT, SIDA2_RUBRIK, SIDA2_TOMT } from "@/lib/sammanstallningens-sidor";
 import {
   ANDEL_INTE_ANGIVEN,
   GALLER_HELA_BOSTADEN,
-  andelAttMultiplicera,
-  andelForUnderlag,
   arDeladBostad,
   formateraAndel,
 } from "@/lib/samagande";
@@ -106,17 +102,12 @@ export const dynamic = "force-dynamic";
 
 export default async function ExportSida() {
   const { bostadId, anvandareId, agarandel } = await kravBostad();
-  const [{ bostad, projekt, projektRader, kostnader, kostnadRader, regelparametrar }, andelar, utkastSomInteArTomma] =
-    await Promise.all([
-      hamtaBostadsdata(bostadId),
-      hamtaAndelar(bostadId),
-      hamtaUtkastSomInteArTomma(bostadId),
-    ]);
+  // Samma indata som beskedet fore ett sparande raknar pa
+  // (src/lib/underlagets-indata.ts), sa att de tva visar samma tal.
+  const { bostad, projekt, projektRader, kostnadRader, regelparametrar, andelar, andelslage, andelarnaGarIhop, indata } =
+    await hamtaUnderlagetsIndata(bostadId, agarandel);
   const medlemmar = andelar.medlemmar.length;
   const delad = arDeladBostad(medlemmar);
-  const medlemsandelar = andelar.medlemmar.map((m) => m.andel);
-  const andelslage = andelForUnderlag({ egenAndel: agarandel, medlemsandelar });
-  const andelarnaGarIhop = andelslage.slag !== "gar_inte_ihop";
   // Bekraftad vid forsaljningen och oforandrad sedan (src/app/forsaljning/andel).
   const egenBekraftad =
     andelar.medlemmar.find((m) => m.anvandareId === anvandareId)?.bekraftad ?? false;
@@ -168,15 +159,6 @@ export default async function ExportSida() {
         </Kort>
       );
     }
-
-    const indata: K6aIndata = {
-      bostad: tillDomanBostad(bostad),
-      medlemskap: { agarandel: andelAttMultiplicera(andelslage) },
-      projekt,
-      kostnader,
-      utkast_som_inte_ar_tomma: utkastSomInteArTomma,
-      regelparametrar,
-    };
 
     let ex: K6aExport;
     try {

@@ -1,3 +1,4 @@
+import { BOSTADSRAD } from "./_hjalp";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Upplatelseformen gar att byta fram till forsaljningen, aldrig efter
@@ -18,10 +19,19 @@ const h = vi.hoisted(() => ({
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     bostad: {
-      findUniqueOrThrow: h.bostadFindUniqueOrThrow,
+      findUniqueOrThrow: async (a: unknown) => ({ ...BOSTADSRAD, ...((await h.bostadFindUniqueOrThrow(a)) as object) }),
       update: h.bostadUpdate,
     },
-    medlemskap: { updateMany: h.medlemskapUpdateMany },
+    medlemskap: { updateMany: h.medlemskapUpdateMany, findMany: async () => [] },
+    inbjudan: { findMany: async () => [] },
+    // Beskedet om underlaget (src/lib/underlagsbesked-server.ts) laser
+    // bostadens kvitton och projekt. Den har filen provar vilka falt som
+    // skrivs, inte beskedet: utan kvitton finns inget underlag att flytta,
+    // och sparandet gar igenom som forut (tester/underlagsbesked.test.ts
+    // provar beskedet).
+    projekt: { findMany: async () => [] },
+    kostnad: { findMany: async () => [] },
+    regelparameter: { findMany: async () => [] },
   },
 }));
 
@@ -38,6 +48,22 @@ vi.mock("next/cache", () => ({
 }));
 
 import { sparaBostaden } from "@/app/installningar/actions";
+import { BEKRAFTAD_ANDRING } from "@/lib/underlagsbesked";
+
+/**
+ * Ett byte som nollstaller ett lagrat nej sags innan det sparas (docs/design.md,
+ * "Upplåtelseformen säger en sak till"): forsta inskicket svarar med beskedet
+ * och skriver ingenting, och "Spara ändå" skickar igen med bekraftelsen.
+ * Bada stegen provas, sa att ett sparande utan fraga fäller provet.
+ */
+async function sparaEfterBeskedet(data: FormData) {
+  const forst = await sparaBostaden({}, data);
+  expect(forst.underlag?.bostadsfragorNollstalls, "beskedet säger att frågorna nollställs").toBe(true);
+  expect(h.bostadUpdate, "ingenting sparas före bekräftelsen").not.toHaveBeenCalled();
+  data.set(BEKRAFTAD_ANDRING, forst.underlag!.bekraftelse);
+  const sedan = await sparaBostaden({}, data);
+  expect(sedan).toEqual({});
+}
 
 function formulardata(over: Record<string, string> = {}): FormData {
   const data = new FormData();
@@ -119,7 +145,7 @@ describe("byte av upplatelseform gor ett lagrat nej obesvarat", () => {
       nybyggd_vid_forvarv: false,
       ombildning_fran_hyresratt: null,
     });
-    await sparaBostaden({}, formulardata({ upplatelseform: "bostadsratt" }));
+    await sparaEfterBeskedet(formulardata({ upplatelseform: "bostadsratt" }));
     const data = h.bostadUpdate.mock.calls[0][0].data;
     expect(data.nybyggd_vid_forvarv).toBeNull();
     expect(data).not.toHaveProperty("ombildning_fran_hyresratt");
@@ -132,7 +158,7 @@ describe("byte av upplatelseform gor ett lagrat nej obesvarat", () => {
       nybyggd_vid_forvarv: false,
       ombildning_fran_hyresratt: false,
     });
-    await sparaBostaden({}, formulardata({ upplatelseform: "fastighet" }));
+    await sparaEfterBeskedet(formulardata({ upplatelseform: "fastighet" }));
     const data = h.bostadUpdate.mock.calls[0][0].data;
     expect(data.nybyggd_vid_forvarv).toBeNull();
     expect(data.ombildning_fran_hyresratt).toBeNull();

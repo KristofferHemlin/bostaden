@@ -82,3 +82,21 @@ export function kostnad(over: KostnadOver = {}): Kostnad {
     ],
   };
 }
+
+/**
+ * En fullständig bostadsrad för prov som attrapperar prisma med en smal klient.
+ * Provets egna värden läggs ovanpå: `{ ...BOSTADSRAD, ...provetsRad }`. Behövs
+ * där ett anrop läser hela raden fast provet bara bryr sig om några kolumner –
+ * beskedet om underlaget (src/lib/underlagsbesked-server.ts) gör om raden till
+ * domänens bostad, och en halv rad har inget tillträdesdatum att göra om.
+ */
+export const BOSTADSRAD = {
+  id: "b0000000-0000-4000-8000-0000000000aa",
+  namn: null, adress: "Storgatan 1", place_id: null, latitud: null, longitud: null, ort: null,
+  storlek: null, identifiering: null, upplatelseform: "fastighet", husform: null,
+  tilltradesdatum: new Date("2019-06-01T00:00:00.000Z"),
+  nybyggd_vid_forvarv: null, ombildning_fran_hyresratt: null,
+  kopeskilling: null, kopkostnader: null, kapitaltillskott: null, uppskov_tidigare: null,
+  forsaljningsdatum: null, forsaljningspris: null, samma_del_besvarad_for: [],
+  skapad_at: new Date("2026-01-01T00:00:00.000Z"),
+} as const;

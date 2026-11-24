@@ -30,6 +30,8 @@
 // har ocksa ett byte nar forsaljningsdatum finns, oavsett vad formularet
 // faktiskt skickar.
 
+import { arBekraftat, underlagsbeskedVidAndring } from "@/lib/underlagsbesked-server";
+import type { Underlagsbesked } from "@/lib/underlagsbesked";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import {
@@ -48,6 +50,11 @@ import { adressfel } from "@/app/registrera/validering";
 
 export interface InstallningarResultat {
   fel?: string;
+  /** Andringen flyttar underlaget och ar inte bekraftad: ingenting ar sparat,
+   *  och kortet visar beskedet (docs/design.md, "Beskedet när ett värde
+   *  ändrar vilka kvitton som räknas"). "Spara ändå" skickar igen med
+   *  bekraftelsen. */
+  underlag?: Underlagsbesked;
   /** Faltet felet galler – kortet visar meningen vid faltet och inte langst
    *  ned (docs/design.md, "När ett formulär vägrar"). */
   falt?:
@@ -122,7 +129,7 @@ export async function sparaBostaden(
   _foreg: InstallningarResultat,
   formData: FormData,
 ): Promise<InstallningarResultat> {
-  const { bostadId } = await kravBostad();
+  const { bostadId, agarandel: egenAndel } = await kravBostad();
 
   const upplatelseform = las(formData, "upplatelseform");
   if (upplatelseform !== "bostadsratt" && upplatelseform !== "fastighet") {
@@ -184,6 +191,25 @@ export async function sparaBostaden(
     }
   }
 
+  // Ett byte av upplatelseform flyttar den bakre gransen och nollstaller
+  // lagrade nej i bostadsfragorna – bada sags innan bytet sparas. Priset i
+  // talen raknas med svaren kvar; nollstallningen ar en egen rad.
+  const nollstallning = lagringVidBytAvUpplatelseform(
+    bostadNu.upplatelseform,
+    upplatelseform as "bostadsratt" | "fastighet",
+    bostadNu,
+  );
+  if (upplatelseform !== bostadNu.upplatelseform) {
+    const nyForm = upplatelseform as "bostadsratt" | "fastighet";
+    const besked = await underlagsbeskedVidAndring(
+      bostadId,
+      egenAndel,
+      { upplatelseform: nyForm, ...nollstallning },
+      { forTalen: { upplatelseform: nyForm }, bostadsfragorNollstalls: Object.keys(nollstallning).length > 0 },
+    );
+    if (besked && !arBekraftat(formData, besked)) return { underlag: besked };
+  }
+
   await prisma.bostad.update({
     where: { id: bostadId },
     data: {
@@ -199,11 +225,7 @@ export async function sparaBostaden(
       // Ett byte av upplatelseform oppnar bostadsfragorna igen
       // (src/doman/bostadsfragor.ts) – den enda gang det har kortet ror
       // svaren, och da bara genom att gora ett nej obesvarat, aldrig ett ja.
-      ...lagringVidBytAvUpplatelseform(
-        bostadNu.upplatelseform,
-        upplatelseform as "bostadsratt" | "fastighet",
-        bostadNu,
-      ),
+      ...nollstallning,
     },
   });
 
@@ -241,7 +263,7 @@ export async function sparaForvarvet(
   _foreg: InstallningarResultat,
   formData: FormData,
 ): Promise<InstallningarResultat> {
-  const { anvandareId, bostadId } = await kravBostad();
+  const { anvandareId, bostadId, agarandel: egenAndel } = await kravBostad();
 
   // Ett tomt falt andrar ingenting, pa varje rad i kortet (docs/design.md,
   // "Kortet Förvärvet", andrat 2026-11-23). Tilltradesdatumet far inte bli
@@ -301,6 +323,18 @@ export async function sparaForvarvet(
     upplatelseform,
   );
   if ("fel" in bostadsfragor) return bostadsfragor;
+
+  // Tilltradet och forsta agaren andrar vilka kvitton och delar som raknas.
+  // Flyttar andringen ett tal hon kan se sags det innan nagot sparas
+  // (docs/design.md, "Beskedet när ett värde ändrar vilka kvitton som
+  // räknas"). Ett oforandrat varde ger samma tal och inget besked – kortet
+  // skickar alltid med datumet. Andelen ar inte med: den andrar hur, inte
+  // vilka, och raknas med den sparade andelen pa bada sidor.
+  const besked = await underlagsbeskedVidAndring(bostadId, egenAndel, {
+    ...(tilltradetTomt ? {} : { tilltradesdatum: new Date(`${tilltradesdatum}T00:00:00.000Z`) }),
+    ...lagringAvBostadsfragor(bostadsfragor.svar),
+  });
+  if (besked && !arBekraftat(formData, besked)) return { underlag: besked };
 
   // Provning och skrivning i samma transaktion, sa att tva samtidiga
   // andringar inte tillsammans kan ta summan over 100 %.

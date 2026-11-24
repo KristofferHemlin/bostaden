@@ -56,6 +56,7 @@ import { useFormularfel } from "@/lib/formularfel-klient";
 import { FORMULARFEL_ATTRIBUT } from "@/lib/formularfel";
 import { formateraBeloppInmatning, formateraKronor } from "@/lib/format";
 import { useNarKlar } from "@/lib/nar-klar";
+import { useUnderlagsfraga } from "@/components/underlagsfraga";
 import { skickaUtanNollstallning } from "@/lib/skicka-utan-nollstallning";
 import { ANDEL_INTE_ANGIVEN, formateraAndel } from "@/lib/samagande";
 import { ArkivexportKnapp } from "./arkivexport-knapp";
@@ -378,7 +379,9 @@ function BostadenEditForm({
   // ett formulär vägrar": ett langt formular tappar meningen utanfor skarmen).
   const { hanteraSubmit, felFor, markering, formularfel, rensa } =
     useFormularfel({ pagar, resultat, validera: ingenForhandskontroll, formRef });
-  useNarKlar(pagar, Boolean(resultat.fel), onKlar);
+  // Ett besked om underlaget ar inget sparande: kortet star kvar oppet.
+  useNarKlar(pagar, Boolean(resultat.fel || resultat.underlag), onKlar);
+  const underlagsfraga = useUnderlagsfraga(resultat.underlag, formRef);
 
   const [upplatelseformVal, setUpplatelseformVal] = useState(data.upplatelseform);
   const [kapitaltillskott, setKapitaltillskott] = useState(() =>
@@ -533,6 +536,8 @@ function BostadenEditForm({
         ) : null}
 
         <Formularfel fel={formularfel} />
+        {underlagsfraga.falt}
+        {underlagsfraga.dialog}
 
         <div className="flex flex-col gap-2">
           <button type="submit" disabled={pagar} className={PRIMARKNAPP_KLASS}>
@@ -685,7 +690,9 @@ function ForvarvetEditForm({
   // Meningen vid sitt falt, inte langst ned i kortet (docs/design.md).
   const { hanteraSubmit, felFor, markering, formularfel, rensa } =
     useFormularfel({ pagar, resultat, validera: ingenForhandskontroll, formRef });
-  useNarKlar(pagar, Boolean(resultat.fel), onKlar);
+  // Ett besked om underlaget ar inget sparande: kortet star kvar oppet.
+  useNarKlar(pagar, Boolean(resultat.fel || resultat.underlag), onKlar);
+  const underlagsfraga = useUnderlagsfraga(resultat.underlag, formRef);
 
   const [kopeskilling, setKopeskilling] = useState(() => beloppTillFalt(data.kopeskillingOren));
   const [kopkostnader, setKopkostnader] = useState(() => beloppTillFalt(data.kopkostnaderOren));
@@ -824,6 +831,8 @@ function ForvarvetEditForm({
       ) : null}
 
       <Formularfel fel={formularfel} />
+      {underlagsfraga.falt}
+      {underlagsfraga.dialog}
       <Spara pagar={pagar} onAvbryt={onAvbryt} />
     </form>
   );
