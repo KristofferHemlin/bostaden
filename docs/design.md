@@ -2776,6 +2776,16 @@ Här stod motsatsen fram till 2026-10-20: *"Andelarna ändrar ingenting i underl
 
 **Och den försvinner när inbjudan är skapad.** Texten är en upplysning *före* ett beslut. När QR-koden visas är beslutet fattat, och då konkurrerar den med det enda den skärmen ska säga: visa koden eller skicka länken. Gäller på båda ställena – inbjudningsformuläret och erbjudandet på startsidan.
 
+#### Fokus är en plats, ett fel är en dom
+
+**Uppräknat av agenten 2026-11-24, läst i koden.** Fälten får en **orange ring när de har fokus**, i samma ton som feltexterna, och har **ingen stil alls för ogiltigt**. Ett fält som bara är markerat ser alltså felaktigt ut, och ett fält som verkligen är fel ser ut som vilket markerat fält som helst.
+
+**Det bevisas av att jag själv gick på det.** Jag rapporterade *"röd ram"* vid 110 % som en del av fyndet, och såg samma ram vid 100 % — där ingenting var fel. **Tittade jag noga och kunde inte skilja dem åt, kan ingen det.**
+
+**Regeln: fokus och fel delar aldrig färg.** Fokus säger *här står du*, felet säger *det här går inte*. Den ena följer markören och betyder ingenting om innehållet; den andra är en bedömning av det hon skrivit. **Att ge dem samma ton gör den ena till brus och den andra till en falsk varning.**
+
+**Och ett ogiltigt fält ska ha en egen stil**, som finns samtidigt med fokus — hon står ofta i fältet som är fel.
+
 #### Summan av andelarna får inte överstiga 100 %
 
 **Uppmätt i produktionen 2026-11-24.** Din andel 50 och den inbjudnas 60 ger raden *Tillsammans 110 %*. Talet blir rött och fältet får röd ram — **och det är allt som händer.** Ingen mening säger vad som är fel, fältet är inte märkt som ogiltigt, och **knappen *Skapa inbjudan* är tänd.**
@@ -2795,6 +2805,14 @@ Här stod motsatsen fram till 2026-10-20: *"Andelarna ändrar ingenting i underl
 **Det är fortfarande skäl nog**, men det är ett annat skäl, och det ska stå rätt. **Serverns spärr har funnits hela tiden** — det som saknades var att beskedet nådde fram före trycket.
 
 **Summan får däremot gärna vara under 100 %.** Resten kan ägas av någon som aldrig kommer att använda appen, och det är ett riktigt och vanligt fall. **Det är bara taket som är en gräns.**
+
+**Vid försäljningen räcker det inte alltid att ändra sitt eget fält.** Där bekräftar varje medlem sin egen andel, och summan räknas över alla medlemmar, utestående inbjudningar och det hon skriver. **Är de andras andelar redan 100 % finns inget tal hon kan skriva** — knappen är avstängd vad hon än gör, och den vanliga meningen säger inte att det är någon annans andel som måste ändras.
+
+**Det läget har en egen lydelse:**
+
+> **Övriga andelar är redan 100 % tillsammans, så det finns inget kvar att ange. Någon av dem behöver ändra sin först.**
+
+**Inte *den andra delägaren*.** Appen vet inte hur många de är — regeln under *Appen räknar aldrig de andra delägarna* gäller här som överallt annars.
 
 **Varningen står i formuläret, inte före det.** Att bjuda in kräver i dag två tryck innan man kan skriva något: ett på *Bjud in någon till bostaden*, ett på *Fortsätt* förbi texten om vad den inbjudna får se. **Texten ska vara kvar** – att dela hela sitt arkiv med en annan person är ett beslut som förtjänar att sägas rakt ut – men den hör hemma ovanför fälten på samma skärm, inte som ett eget steg. Då läses den fortfarande före man skickar, och vägen in är ett tryck.
 
@@ -2962,6 +2980,12 @@ Finns ingen post alls visar sidan sitt tomma tillstånd, och lydelsen är:
 **Rubriken är ett undantag från att ett tomt tillstånd inleds med en uppmaning**, och undantaget är skrivet så att ingen tar bort det igen: handlingen som fyller den här sidan utförs någon annanstans, så rubriken namnger vad sidan blir i stället för att befalla något som inte går att göra härifrån. Knappen bär uppmaningen.
 
 Byggt 2026-11-13 i `522fd8b`: avdragsgill del, *Din andel*, förklaringen under raden och båda summorna visas där de blir lika. En summa som visas bär *Förs till* och är dämpad.
+
+**Men dämpningen är ett ord som fattas, hittat 2026-11-24.** När något ligger under *Återstår* eller bostadsfrågorna saknas sätts *Förs till*-talet i dämpad färg — **och det är allt som säger att talet inte är färdigt.** Orden finns, men längre ned under *Återstår* eller uppe i bandet, inte vid talet. **Den som lyssnar på sidan hör ett belopp som låter klart.**
+
+**Talet bär därför ordet självt:** *Förs till K6, ruta 4* följs av **Preliminärt** i samma element, så att det läses tillsammans med beloppet och inte som en upplysning bredvid. Bandet och *Återstår* säger fortfarande **varför**; det här säger bara **att**.
+
+**Och det här är det allvarligaste av färgfallen**, eftersom det är ett tal och inte ett tillstånd. Ett dämpat tal som kopieras till en blankett är fel på ett sätt inget senare steg fångar.
 
 **Och lydelsen *"Sammanställningen går inte att göra"* används inte.** Den säger att appen misslyckades. Appen väntar på ett svar, och ett väntande tillstånd namnger det som fattas — regeln står under *Ett tillstånd är inte en kategori*.
 

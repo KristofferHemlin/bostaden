@@ -776,6 +776,14 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Och det gäller varje sådant prov vi har** — lydelserna, facit, sammanställningens texter. De är alla byggda på att jag inte ändrar en rubrik, och **jag ändrar rubriker.**
 
+### Fokus och fel får aldrig dela färg
+
+**Skriven 2026-11-24, ur agentens uppräkning.** Fälten får en orange ring när de har **fokus**, i samma ton som feltexterna, och har **ingen egen stil för ogiltigt**. Alltså ser ett markerat fält felaktigt ut, och ett felaktigt fält ser markerat ut.
+
+**Jag gick själv på det**, och det är beviset som räknas: jag rapporterade *"röd ram"* som en del av 110 %-fyndet och såg samma ram vid 100 %, där ingenting var fel. **Den som tittar noga och ändå inte kan skilja dem åt har hittat en tvetydighet, inte en nyans.**
+
+**Fokus säger *här står du*. Ett fel säger *det här går inte.*** Den ena följer markören och påstår ingenting om innehållet; den andra är en bedömning av det hon skrivit. Samma ton gör den ena till brus och den andra till en falsk varning — och **ett ogiltigt fält behöver en egen stil som syns samtidigt med fokus**, eftersom hon oftast står i fältet som är fel.
+
 ### Det ska finnas ett sätt att fråga vilken dag det är
 
 **Skriven 2026-11-23, efter lagningen.** `idagISverige()` räknar dagen i `Europe/Stockholm` oavsett maskinens zon, och de fem gränserna mot *idag* använder den. **Men faran som blev kvar är större än de fem ställena:** `isoDatum` används både för **sparade** datum, där UTC är rätt eftersom de lagras som midnatt UTC, och för **nu**, där det är fel.
