@@ -3017,11 +3017,25 @@ Poängen är att sidan ska vara meningsfull under hela ägandet i stället för 
 
 **Meningen lyder därför *"Det här ingår inte i talen ovan."*** Varje rad bär redan sitt eget skäl, och det är skälet som säger om det någonsin ändras — inte en gemensam inledning som gissar åt båda hållen.
 
+#### Att flytta tillträdet
+
+**Öppen fråga, väckt 2026-11-24.** Tillträdesdatumet går att ändra i inställningarna, och det är gränsen för vilka utgifter som är hennes. **Flyttas det framåt faller kvitton ur underlaget** — tyst, vad vi vet.
+
+**Det är den största enskilda ändring ett fält kan göra i den här appen.** Ett kvitto som räknades i går räknas inte i dag, summan på sida 1 sjunker, och tröskelprövningen för ett helt år kan vända. Hon får inget besked och har inget att jämföra med.
+
+**Vad som ska mätas innan något byggs:** säger appen något i dag när ändringen görs? Och vad händer med kvitton som redan ligger inne — flyttas de till *Återstår* med sitt skäl, eller försvinner de bara ur talen?
+
+**Och vad som sannolikt ska byggas**, när svaret finns: en fråga vid ändringen som säger hur många kvitton och hur mycket som faller bort, innan den sparas. Samma form som dialogen *Inget kvitto bifogat* — appen sparar gärna, men den säger vad det kostar.
+
 #### Preliminärt följer bara de skäl som kan ändra talen
 
 **Avgjort 2026-11-24, efter att agenten såg följden på facits egen bostad:** kvittot från 2019 ligger under *Återstår* för att det är daterat före tillträdet, och ordet **Preliminärt** hamnade därmed vid 99 560 kr — ett tal som i själva verket är färdigt.
 
 **Regeln: ordet följer det som kan ändra talet, aldrig det som är avgjort.**
+
+**Och *bekräftat* står inte i tabellen, eftersom bekräftelsen inte lagras.** *Datumet stämmer* är en fråga innan kvittot sparas, inte ett sparat svar — agenten läste det i koden 2026-11-24. Varje kvitto före tillträdet ger alltså inget ord, också ett som hamnat där först när tillträdesdatumet flyttades i inställningarna, vilket ingen fått frågan om.
+
+**Det är rätt för det här talet och fel ställe att laga det på.** Flyttas tillträdet försvinner kvitton ur underlaget, och det är **den ändringen** som ska säga ifrån, inte ett ord på en annan skärm. Se *Att flytta tillträdet* nedan.
 
 | Skäl att ligga under *Återstår* | Preliminärt |
 |---|---|
@@ -3029,12 +3043,19 @@ Poängen är att sidan ska vara meningsfull under hela ägandet i stället för 
 | Kvitto utan betaldatum | **ja** |
 | Utkast | **ja** |
 | Obesvarade bostadsfrågor | **ja** – svaret avgör om reparationer räknas med |
-| Kvitto daterat före tillträdet, datumet bekräftat | **nej** – det kommer aldrig att räknas |
-| Kvitto markerat *Hör inte till bostaden* | **nej** |
+| Kvitto daterat före tillträdet | **nej** – det kommer aldrig att räknas |
+| Projekt som väntar på frågor | **ja** – svaret ändrar talet |
+| ~~Kvitto markerat *Hör inte till bostaden*~~ | **finns inte** – ett sådant kvitto är arkiverat och ligger inte under *Återstår* alls. Raden stod här på min gissning; agenten visade med ett prov att läget inte går att nå |
 
 **Skälet är att ordet är ett löfte om rörelse.** *Preliminärt* säger *det här kan bli ett annat tal*. Står det vid ett tal som är färdigt lär det henne att ordet inte betyder något, och då är det borta den dag talet verkligen är preliminärt. **En varning som står där för ofta slutar bli läst** — samma regel som spärren som fäller det normala fallet.
 
 **Och det går åt det ofarliga hållet att ha fel här**, vilket är precis därför det är värt att göra rätt: ingen räknar fel av ett ord för mycket, men ingen läser heller ett ord de vant sig vid.
+
+**Dämpningen följer samma villkor som ordet, ändrat 2026-11-24.** Agenten byggde regeln ovan och rapporterade följden: ett kvitto före tillträdet gav ett **dämpat tal utan ordet**, alltså ett besked som bara bärs av en färg — **precis det regeln om färg förbjuder.** Den såg motsägelsen i sitt eget bygge och lämnade den som ett fynd.
+
+**Lösningen är inte ett andra ord utan ett smalare villkor.** Talet dämpas när det kan ändras, och då står också *Preliminärt* där. Kan det inte ändras är talet färdigt och ser färdigt ut. **Färgen och ordet säger samma sak, och det är hela poängen med båda:** formen bär betydelsen, färgen förstärker den.
+
+**Att något ändå ligger utanför talen säger *Återstår* själv**, med sitt eget skäl per rad, på samma skärm. Det behöver inte sägas en andra gång av en nyans på ett tal.
 
 **Samma information står aldrig två gånger.** Det som inte räknas med redovisas i en enda lista med namn, år och belopp, en åtgärdsprick och vägen dit. Ingen andra lista som upprepar samma rader i längre meningar – konsekvensen sägs en gång, i en rad ovanför listan.
 
