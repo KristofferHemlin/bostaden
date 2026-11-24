@@ -164,7 +164,7 @@ export function lasVerifieringen(): Facit {
   // Tröskeln per år
   const troskel = tabell(rader, hitta(rader, "**Tröskelprövningen per år**")).map((c): Troskelrad => {
     const [ar, summa, utfall] = c.map(utanFetstil);
-    return { ar: Number(ar), summa: kronorTillOren(summa), utfall, under: /^under /.test(utfall) };
+    return { ar: Number(ar), summa: kronorTillOren(summa), utfall, under: /\bunder\b/.test(utfall) };
   });
 
   // Summorna

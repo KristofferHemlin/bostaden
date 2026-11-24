@@ -90,11 +90,11 @@ function raderna(ex: K6aExport, sida: 1 | 2, ar: number, namn: string) {
 const summa = (tal: number[]) => tal.reduce((s, t) => s + t, 0);
 
 describe("förutsättningarna: filen gick att läsa som facit", () => {
-  it("en bostad, nio åtgärder, tio rader, sju tröskelår och tolv påståenden", () => {
+  it("en bostad, tio åtgärder, elva rader, sju tröskelår och tolv påståenden", () => {
     const f = lasVerifieringen();
-    expect(f.atgarder).toHaveLength(9);
-    expect(f.atgarder.flatMap((a) => a.kvitton)).toHaveLength(10);
-    expect(f.rader).toHaveLength(10);
+    expect(f.atgarder).toHaveLength(10);
+    expect(f.atgarder.flatMap((a) => a.kvitton)).toHaveLength(11);
+    expect(f.rader).toHaveLength(11);
     expect(f.troskel).toHaveLength(7);
     expect(f.pastaenden).toHaveLength(12);
     // Tröskeln och fönstret i facit är reglernas värden i dag.
@@ -145,27 +145,37 @@ describe.each(lasVerifieringen().rader.map((r) => ({ ...r, namn: `${r.ar} ${r.at
 });
 
 describe.each(lasVerifieringen().troskel)("tröskelprövningen $ar", (t) => {
-  it(t.under ? `under tröskeln: ${t.summa / 100} kr ger noll, inte ${t.summa / 100}` : "som facit", () => {
+  it(t.under ? `under tröskeln: det tröskeln såg, ${t.summa / 100} kr, ger noll` : "som facit", () => {
     const { ex } = rakna();
     const arets = [...ex.sida1.rader, ...ex.sida2.rader].filter((r) => r.ar === t.ar);
     const bidrag = summa(arets.map((r) => r.belopp_brutto));
-    if (t.under) {
-      // Påstående 1: 2025 års två kvitton ger noll, inte summan.
-      expect(arets.length, "förutsättningen: året har rader").toBeGreaterThan(0);
-      expect(summa(arets.map((r) => r.kostnad_brutto)), "det som prövades mot tröskeln").toBe(t.summa);
-      expect(bidrag).toBe(0);
-      expect(arets.map((r) => r.forklaring)).toEqual(arets.map(() => troskelForklaring(varde("troskelbelopp"))));
-    } else if (/före tillträdet/.test(t.utfall)) {
+    const troskeltext = troskelForklaring(varde("troskelbelopp"));
+    const fonstertext = reparationsfonsterForklaring(varde("reparationsfonster_ar"));
+    // De rader som föll på tröskeln är det tröskeln prövade; en rad som redan
+    // fallit på ett tidigare steg bär sitt eget skäl och var aldrig med.
+    const provade = arets.filter((r) => r.forklaring === troskeltext);
+    if (/före tillträdet/.test(t.utfall)) {
       // Påstående 3, beräkningens halva: inget på sidorna, men kvittot är kvar i Återstår.
       expect(arets).toEqual([]);
       const ater = ex.aterstaende_kvitton.filter((k) => k.ar === t.ar);
       expect(ater.map((k) => [k.orsak, k.belopp_brutto])).toEqual([["fore_tilltradet", lasVerifieringen().rader.find((r) => r.ar === t.ar)!.belopp]]);
-    } else if (/utanför fönstret/.test(t.utfall)) {
-      // Påstående 2: reparationen utanför fönstret räknas inte in – året är tomt, och skälet är fönstret, inte tröskeln.
-      expect(arets.length, "förutsättningen: året har en rad").toBeGreaterThan(0);
-      expect(bidrag).toBe(t.summa);
-      expect(arets.map((r) => r.forklaring)).toEqual(arets.map(() => reparationsfonsterForklaring(varde("reparationsfonster_ar"))));
+      return;
+    }
+    if (/utanför fönstret/.test(t.utfall)) {
+      // Påstående 2: reparationen utanför fönstret räknas inte in i tröskeln –
+      // den faller på fönstret, med fönstrets skäl, och är inte med i det tröskeln såg.
+      const iFonstret = arets.filter((r) => r.forklaring === fonstertext);
+      expect(iFonstret.length, "förutsättningen: en rad föll på fönstret").toBeGreaterThan(0);
+      expect(iFonstret.map((r) => r.belopp_brutto)).toEqual(iFonstret.map(() => 0));
+    }
+    if (t.under) {
+      // Påstående 1 (2025) och 2 (2020): under tröskeln ger året noll, inte summan.
+      expect(provade.length, "förutsättningen: något föll på tröskeln").toBeGreaterThan(0);
+      expect(summa(provade.map((r) => r.kostnad_brutto)), "det tröskeln såg").toBe(t.summa);
+      expect(t.summa, "förutsättningen: facits summa ligger under tröskeln").toBeLessThan(varde("troskelbelopp"));
+      expect(bidrag).toBe(0);
     } else {
+      expect(provade, "ingen rad föll på tröskeln").toEqual([]);
       expect(bidrag).toBe(t.summa);
       expect(bidrag, "förutsättningen: året ligger över tröskeln").toBeGreaterThanOrEqual(varde("troskelbelopp"));
     }
