@@ -204,6 +204,13 @@ describe.each([390, 360])("vid %i px", (bredd) => {
     for (const tal of ["55 807,50 kr", "43 807,50 kr"]) {
       expect(m.summa.rader.some((r) => r.includes(tal)), `${tal} på en och samma rad`).toBe(true);
     }
+    // "varav" följer med sitt tal (docs/design.md, "Ett hårt mellanslag, och
+    // bara ett"): ett ensamt varav sist på en rad läses som ett avbrutet ord.
+    expect(m.summa.rader.some((r) => r.replace(/\u00a0/g, " ").includes("varav 43 807,50 kr")), "varav på samma rad som sitt tal").toBe(true);
+    // Negationen står aldrig ensam, och raden ovanför slutar aldrig på
+    // "räknas" (docs/design.md, "en negation står aldrig ensam på en rad").
+    expect(m.summa.rader.some((r) => r.replace(/\u00a0/g, " ").includes("räknas inte")), "räknas inte på samma rad").toBe(true);
+    expect(m.summa.rader.map((r) => r.trim()), "inte ensamt på en rad").not.toContain("inte");
     expect(m.summa.hoger, "summan inom fönstret").toBeLessThanOrEqual(bredd);
     for (const [namn, annan] of [["rubriken", m.rubrik], ["Ändra", m.andra]] as const) {
       if (annan) expect(overlappar(m.summa, annan), `summan överlappar ${namn}`).toBe(false);

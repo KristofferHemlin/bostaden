@@ -2291,6 +2291,16 @@ Frågan skjuts då upp i stället för att stoppa sparandet. Projektet sparas me
 
 **Det som var sant i fyndet är något annat: ingenting säger henne det.** Projektsidan visade *Kvittona 55 807,50 kr* och lät raden för det utelämnade kvittot stå som alla andra, medan underlaget gav 3 853,10. **Två skärmar, samma projekt, inget som binder ihop dem.**
 
+#### Ett arkiverat kvitto i ett projekt säger ingenting om att det är arkiverat
+
+**Mätt av agenten 2026-11-25, utanför det jag bett om.** Ett kvitto som är markerat *Hör inte till bostaden* men fortfarande kopplat till ett projekt visas på projektsidan som **"Obetald – räknas i underlaget när den är betald"**, med **odämpat** belopp, och utan att någonstans säga att det är arkiverat.
+
+**Tre fel i en rad.** Det räknas aldrig; det ingår inte i summan ovanför; och raden lovar motsatsen till båda.
+
+**Raden ska säga *Hör inte till bostaden*, med dämpat belopp**, precis som på kvittolistan — regeln finns redan, den når bara inte hit. **Och den hör inte till *varav*:** beloppet är inte med i summan, så det finns inget av summan att dra av.
+
+**Ordningen mellan tillstånden är densamma som för tillträdet:** det som gör kvittot permanent utanför vinner över det som bara dröjer. Arkiverat slår obetald, tillträdet slår obetald.
+
 #### Obetald lovar något den inte kan hålla
 
 **Hittat av agenten 2026-11-25, läst i koden.** Ett kvitto som är daterat **före tillträdet** och saknar betaldatum visar raden *"Obetald – räknas i underlaget när den är betald"*.
@@ -2319,7 +2329,28 @@ Frågan skjuts då upp i stället för att stoppa sparandet. Projektet sparas me
 
 **Och summan säger vad den innehåller**, i samma form som kvittoradens *räknas med*-rad:
 
-> **55 807,50 kr** · varav 43 807,50 kr räknas inte
+> **55 807,50 kr** · varav&nbsp;43 807,50 kr räknas&nbsp;inte
+
+**Ett hårt mellanslag, och bara ett: mellan *varav* och talet.** Lagt till 2026-11-25 efter agentens mätning, där raden bröts som *"55 807,50 kr · varav"* / *"43 807,50 kr räknas inte"* — **ordet hamnade sist på första raden, skilt från sitt tal.** Med mellanslaget bryts den efter punkten i stället, och *varav* följer med sitt belopp.
+
+**Resten av satsen ska kunna brytas, och det är mätt.** Jag band först ihop hela *varav 43 807,50 kr räknas inte* och mätte sedan upp den till **241 px** i sitt eget typsnitt. Raden delar plats med *Ändra*, så vid 360 px finns omkring 226 px kvar — **en obrytbar sats hade då runnit ut ur kortet i stället för att brytas.** Två hårda mellanslag för mycket är ett annat fel än ett för lite, och det här är det värre av de två.
+
+**Beloppen håller redan ihop av sina egna hårda mellanslag.** *Ett avslutande *·* läses som att något följer; ett ensamt *varav* läses som ett avbrutet ord* — det är hela skälet, och det kostar ett tecken.
+
+**Och ett andra mellanslag, inuti *räknas inte*, tillagt 2026-11-25.** Agenten mätte om efter det första och hittade något nytt: i tre fall av fyra blir raden tre rader, och **två gånger hamnar ordet *inte* ensamt sist.**
+
+> varav 43 807,50 kr räknas
+> **inte**
+
+**Den som skummar läser *"43 807,50 kr räknas"*.** Negationen är hela meningen, och den ligger på nästa rad — **en radbrytning som vänder på innebörden.**
+
+**Regeln: en negation står aldrig ensam på en rad**, och en rad får aldrig sluta så att den läses som sin egen motsats. Det gäller *inte*, *aldrig*, *utan* och deras släkt, var de än står i appen.
+
+**Två mellanslag, inte fler.** *räknas inte* är omkring 70 px som block och kan inte svämma över; hela satsen som block är 241 px och kan. **Gränsen går vid vad som får plats på en rad för sig själv** — det är provet, inte antalet tecken.
+
+**Och *varav* namnger det som aldrig kommer att räknas, inte det som inte räknas i dag.** Avgjort 2026-11-25. Ett obetalt kvitto **före tillträdet** hör dit: det ligger i summan, som räknar oavsett betaldatum, och det får aldrig avdrag. Ett obetalt kvitto **innanför** tillträdet hör inte dit — det räknas den dag det betalas, och *Obetald*-raden säger redan det.
+
+**Summan minus *varav* är alltså inte det som räknas**, och ska inte läsas så. Raden svarar på en smalare fråga: hur mycket av den här summan är borta för gott.
 
 **Skälet att summan inte bara krymper är regeln ovan.** Beloppet är kvar i fördelningens bas, så en summa som utelämnade det skulle göra hjälptextens 62 287,50 obegriplig. **Talet ska stämma med basen och raden ska säga vad som inte ger avdrag** — det är två olika upplysningar och båda behövs.
 
@@ -3060,6 +3091,22 @@ Poängen är att sidan ska vara meningsfull under hela ägandet i stället för 
 **Ordet *än* är struket 2026-11-24, och det är samma fynd som Preliminärt.** *Återstår* blandar två sorters rader: sådant som **kan börja räknas** när hon gör något, och sådant som **aldrig kommer att räknas.** Ett kvitto utan projekt är det första; ett kvitto daterat före tillträdet, med datumet bekräftat, är det andra. **För den andra sorten är *än* en osanning**, och den lovar en förändring som inte kommer.
 
 **Meningen lyder därför *"Det här ingår inte i talen ovan."*** Varje rad bär redan sitt eget skäl, och det är skälet som säger om det någonsin ändras — inte en gemensam inledning som gissar åt båda hållen.
+
+#### Gränsen vid 1970 är ett produktbeslut
+
+**Beslutat av Kristoffer 2026-11-25.** Appen tar inte emot ett tillträdesdatum före 1970, och det står kvar fast lagen räknar längre tillbaka. **Det är ett val och inte en lucka.**
+
+**Arv och gåva stöds inte i dag**, och de scenarierna är därmed utanför. **Gränsen gäller även den dag de stöds.**
+
+**Och gränsen sägs på ett enda ställe: vid fältet, när hon försöker sätta ett tidigare datum.** Ingen hjälptext, ingen rad i någon annan vy, inget i onboardingen. *"Tillträdesdatum före 1970 stöds inte."* står kvar som den är.
+
+#### Den bakre gränsen 1952 går inte att nå
+
+**Uppmätt 2026-11-25.** Tillträdesdatum före 1970 avvisas med *"Tillträdesdatum före 1970 stöds inte."*, och samma gräns gäller betaldatum. **Ingen utgift i appen kan därför ligga före 1970**, och småhusens bakre gräns vid **1952** kan aldrig bita.
+
+**Bostadsrättens gräns vid 1974 går däremot att nå**: tillträde 1970–1973 och en utgift 1972. Den är mätt — 20 000 kr blev 0.
+
+**Regeln står kvar i koden, och det är rätt.** Den dag `TIDIGASTE_DATUM` flyttas bakåt vaknar 1952-gränsen. **Men ett prov för den kan inte falla i dag**, och den som skriver ett ska veta det innan — annars ser ett grönt prov ut som ett bevis för något som aldrig prövades.
 
 #### Att flytta tillträdet
 

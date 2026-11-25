@@ -13,7 +13,11 @@ import { arUtkast, beloppForKostnad, rotForBelopp } from "@/doman/berakningar";
 import type { Kostnad } from "@/doman/typer";
 import { formateraKronor, sparadDag } from "@/lib/format";
 import { bilagemarke } from "@/lib/kvittolista";
-import { RAKNAS_INTE_FORE_TILLTRADET, raknasInteIUnderlaget } from "@/lib/raknas-inte-i-underlaget";
+import {
+  HOR_INTE_TILL_BOSTADEN,
+  RAKNAS_INTE_FORE_TILLTRADET,
+  projektradensTillstand,
+} from "@/lib/raknas-inte-i-underlaget";
 
 /** Det ur databasraden som raden visar, utover domanens kostnad. */
 export interface KvittoradKalla {
@@ -48,7 +52,14 @@ export function ProjektetsKvittorad({
   // raknas aldrig, och "Obetald – räknas … när den är betald" vore ett
   // lofte som inte halls (docs/design.md, "Obetald lovar något den inte kan
   // hålla").
-  const raknasInte = raknasInteIUnderlaget(k, tilltradesdatum);
+  // Arkiverat avgor fore bada (docs/design.md, "Ett arkiverat kvitto i ett
+  // projekt säger ingenting om att det är arkiverat"): det ingar inte i
+  // summan, sa raden sager "Hör inte till bostaden" med dampat belopp och
+  // utan ROT-rad – som i kvittolistan, dar ingenting raknas och inget finns
+  // att dra av fran.
+  const tillstand = projektradensTillstand(k, tilltradesdatum);
+  const arkiverad = tillstand === "hor_inte_till_bostaden";
+  const raknasInte = arkiverad || tillstand === "fore_tilltradet";
   const notering = original.anteckning?.trim();
   const leverantor = original.leverantor?.trim();
   const datumRad = original.betaldatum ?? original.dokumentdatum;
@@ -72,16 +83,18 @@ export function ProjektetsKvittorad({
       })}
       // Projektets summa raknar kvittot; det ar underlaget (exporten,
       // troskeln) som vantar pa betaldatumet.
-      tillstand={raknasInte ? RAKNAS_INTE_FORE_TILLTRADET : undefined}
-      underStatus={!raknasInte && !k.betaldatum ? "Obetald – räknas i underlaget när den är betald" : undefined}
-      atgard={!k.betaldatum}
+      tillstand={
+        arkiverad ? HOR_INTE_TILL_BOSTADEN : tillstand === "fore_tilltradet" ? RAKNAS_INTE_FORE_TILLTRADET : undefined
+      }
+      underStatus={tillstand === "obetald" ? "Obetald – räknas i underlaget när den är betald" : undefined}
+      atgard={!arkiverad && !k.betaldatum}
       // Beloppet pa pappret, inte det ROT-reducerade bidraget (docs/design.md,
       // "Samma belopp ska se likadant ut overallt").
       belopp={formateraKronor(beloppForKostnad(k, projektId))}
       beloppDampat={raknasInte}
       // ROT som avgar fran just den har delen av kvittot (docs/design.md,
       // Listrader: "ROT-raden hor till kvittoraden, overallt den visas").
-      rot={rotForBelopp(k, beloppForKostnad(k, projektId))}
+      rot={arkiverad ? null : rotForBelopp(k, beloppForKostnad(k, projektId))}
     />
   );
 }

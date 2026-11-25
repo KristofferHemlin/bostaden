@@ -28,10 +28,42 @@ import { formateraKronor } from "@/lib/format";
 // (tester/projekt-raknas-inte.test.ts laser dem dar).
 export const RAKNAS_INTE_FORE_TILLTRADET = "Daterat före tillträdet · räknas inte i underlaget";
 
+// Raden for ett arkiverat kvitto, samma lydelse som kvittolistan
+// (docs/design.md, "Raden visar tillståndet i stället för talet").
+export const HOR_INTE_TILL_BOSTADEN = "Hör inte till bostaden";
+
 /** "varav 43 807,50 kr räknas inte" – efter summan, i samma matt som den
- *  (projektSumma: utan privat del, efter ROT). */
+ *  (projektSumma: utan privat del, efter ROT). Tva harda mellanslag, inte
+ *  fler (docs/design.md, "Två mellanslag, inte fler"): mellan "varav" och
+ *  talet, sa att ordet aldrig blir sist pa en rad skilt fran sitt belopp, och
+ *  inuti "räknas inte", sa att negationen aldrig star ensam pa nasta rad och
+ *  raden ovanfor lases som sin motsats. Beloppet haller ihop av sina egna;
+ *  mellanslaget mellan beloppet och "räknas" ska kunna brytas – hela satsen
+ *  som block ar 241 px och svammar over vid 360 px. */
 export function varavRaknasInteText(oren: number): string {
-  return `varav ${formateraKronor(oren)} räknas inte`;
+  return `varav\u00a0${formateraKronor(oren)} räknas\u00a0inte`;
+}
+
+/**
+ * Vilket tillstand en kvittorad i ett projekt bar. Det som gor kvittot
+ * permanent utanfor vinner over det som bara drojer (docs/design.md, "Ett
+ * arkiverat kvitto i ett projekt säger ingenting om att det är arkiverat"):
+ *
+ * 1. arkiverat – ligger utanfor basen, sa tilltradesraden ("ingår i basen men
+ *    inte i avdraget") vore osann om det
+ * 2. daterat fore tilltradet – raknas aldrig, hur det an betalas
+ * 3. obetald – raknas den dag det betalas
+ *
+ * Varje steg provar sitt eget villkor och inte de andras uteslutningar, sa
+ * att en omkastad ordning andrar utfallet och faller i sitt prov.
+ */
+export type ProjektradensTillstand = "hor_inte_till_bostaden" | "fore_tilltradet" | "obetald" | null;
+
+export function projektradensTillstand(k: Kostnad, tilltradesdatum: string): ProjektradensTillstand {
+  if (k.arkiverad) return "hor_inte_till_bostaden";
+  if (!arUtkast(k) && dateratForeTilltradet(k.dokumentdatum, tilltradesdatum)) return "fore_tilltradet";
+  if (!k.betaldatum) return "obetald";
+  return null;
 }
 
 /** Sant for ett kvitto som steg 3 nollar helt, betalt eller inte. */

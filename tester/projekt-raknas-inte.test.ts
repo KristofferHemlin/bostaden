@@ -130,12 +130,21 @@ function citatgrupper(rubrik: string): string[][] {
 const utan = (t: string) => t.replace(/\*\*/g, "").replace(/\*/g, "").trim();
 
 /** Exempelraden, tillståndet ur den (raden som är helt i fetstil) och summan. */
-function citaten(): { exempel: string[]; rad: string; summa: string } {
+function citaten(): { exempel: string[]; rad: string; summa: string; summaKalla: string } {
   const [exempel, summa] = citatgrupper("#### Ett kvitto som ingår i basen men inte i avdraget säger det på sin rad");
   if (!exempel || !summa) throw new Error("design.md saknar exempelraden eller summans citat under avsnittet");
   const rad = exempel.find((r) => /^\*\*[^*]+\*\*$/.test(r));
   if (!rad) throw new Error("exempelraden i design.md saknar tillståndet i fetstil");
-  return { exempel: exempel.map((r) => utan(r.replace(/\(dämpat\)/, ""))), rad: utan(rad), summa: utan(summa[0]) };
+  // summa: som kr() läser sidan, alla mellanslag vanliga. summaKalla: med
+  // designens &nbsp; som det hårda mellanslag det står för.
+  const kalla = utan(summa[0]);
+  if (!kalla.includes("&nbsp;")) throw new Error("summans citat i design.md saknar sitt &nbsp;");
+  return {
+    exempel: exempel.map((r) => utan(r.replace(/\(dämpat\)/, ""))),
+    rad: utan(rad),
+    summa: kalla.replace(/&nbsp;/g, " "),
+    summaKalla: kalla.replace(/&nbsp;/g, "\u00a0"),
+  };
 }
 
 async function sida(vilken: "projekt" | "kvittona"): Promise<HTMLDivElement> {
@@ -191,6 +200,32 @@ describe.each(["projekt", "kvittona"] as const)("%s: ett kvitto före tillträde
   it("summan säger vad den innehåller, ordagrant designens", async () => {
     seeda([FORE, EFTER]);
     expect(summan(await sida(vilken))).toBe(citaten().summa);
+  });
+
+  it("summans hårda mellanslag sitter där designen sätter dem, och bara där", async () => {
+    seeda([FORE, EFTER]);
+    const s = (await sida(vilken)).querySelector("[data-projektsumma]");
+    if (!s) throw new Error("projektets summa finns inte");
+    const ra = s.textContent ?? "";
+    const { summaKalla } = citaten();
+    expect(kr(ra)).toBe(kr(summaKalla));
+    // Ett mellanslag inne i ett belopp ("43 807,50", "50 kr") hör till beloppet
+    // och är hårt i formateraKronor; det prövas inte här. Varje annat
+    // mellanslag ska vara det designen skriver: &nbsp; hårt, resten brytbart.
+    const iBelopp = (i: number) => /\d/.test(summaKalla[i - 1] ?? "") && /[\dk]/.test(summaKalla[i + 1] ?? "");
+    let harda = 0;
+    for (let i = 0; i < summaKalla.length; i++) {
+      const c = summaKalla[i];
+      if (c !== " " && c !== "\u00a0") continue;
+      if (iBelopp(i)) continue;
+      const vantat = c === "\u00a0" ? "hårt" : "brytbart";
+      const faktiskt = ra[i] === "\u00a0" ? "hårt" : ra[i] === " " ? "brytbart" : `"${ra[i]}"`;
+      expect(faktiskt, `mellanslaget efter "${summaKalla.slice(0, i)}"`).toBe(vantat);
+      if (c === "\u00a0") harda++;
+    }
+    // Antalet ur designens citat, inte en konstant: positionsprovet ovan
+    // fäller ett hårt mellanslag för mycket eller för lite, var det än sitter.
+    expect(harda, "förutsättningen: designens citat har hårda mellanslag utanför beloppen").toBeGreaterThan(0);
   });
 
   it("utan kvitto före tillträdet: summan står ensam, och ingen rad bär tillståndet", async () => {
@@ -263,5 +298,58 @@ describe("Obetald lovar något den inte kan hålla", () => {
   it("det obetalda kvittot före tillträdet är med i projektSumma och därför i varav", async () => {
     seeda([{ ...FORE, namn: "Obetald faktura", betald: false }, EFTER]);
     expect(summan(await sida("projekt"))).toBe(citaten().summa);
+  });
+});
+
+// Ett arkiverat kvitto som fortfarande är kopplat till projektet (docs/design.md,
+// "Ett arkiverat kvitto i ett projekt säger ingenting om att det är arkiverat").
+// Markeringen lossar kopplingen i appen, så läget finns bara i äldre rader och
+// i databasen – men projektsidan och Kvittona visar då raden.
+//
+// Ordningen prövas par för par: varje fall har bara de två tillstånd paret
+// gäller, så att en omkastad ordning fäller det fall som heter som paret.
+describe("Hör inte till bostaden, i ett projekt", () => {
+  const OBETALD = "Obetald – räknas i underlaget när den är betald";
+  /** Tillståndstexten för ett arkiverat kvitto, ur design.md. */
+  const horInte = () => {
+    const design = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
+    const m = design.match(/Raden ska i stället bära leverantör och datum som varje annan rad, tillståndstexten \*([^*]+)\*/);
+    if (!m) throw new Error('design.md saknar "tillståndstexten *…*" för ett arkiverat kvitto');
+    return m[1];
+  };
+  const tilltradesraden = () => citaten().rad;
+
+  it.each(["projekt", "kvittona"] as const)("%s: arkiverat slår obetald", async (vilken) => {
+    const kvitto: Kvitto = { ...EFTER, namn: "Arkiverad obetald", rot: 300_000, betald: false, arkiverad: true };
+    seeda([kvitto, EFTER]);
+    const r = raden(await sida(vilken), kvitto.namn);
+    expect(r.text).toContain(horInte());
+    expect(r.text).not.toContain(OBETALD);
+    expect(r.dampad).toBe(true);
+    expect(r.text, "ingen ROT-rad: ingenting räknas").not.toContain("avgår");
+  });
+
+  it.each(["projekt", "kvittona"] as const)("%s: arkiverat slår tillträdet", async (vilken) => {
+    const kvitto: Kvitto = { ...FORE, namn: "Arkiverad före tillträdet", arkiverad: true };
+    seeda([kvitto, EFTER]);
+    const r = raden(await sida(vilken), kvitto.namn);
+    expect(r.text).toContain(horInte());
+    expect(r.text, "ligger utanför basen, så tillträdesraden vore osann").not.toContain(tilltradesraden());
+    expect(r.dampad).toBe(true);
+    expect(r.text, "ingen ROT-rad: ingenting räknas").not.toContain("avgår");
+  });
+
+  it("förutsättningen: utan markeringen bär samma kvitton de andra tillstånden", async () => {
+    seeda([{ ...EFTER, namn: "Obetald", betald: false }, { ...FORE, namn: "Före" }]);
+    const d = await sida("projekt");
+    expect(raden(d, "Obetald").text).toContain(OBETALD);
+    expect(raden(d, "Före").text).toContain(tilltradesraden());
+    expect(raden(d, "Före").text).toContain("avgår");
+    expect(raden(d, "Obetald").text).not.toContain(horInte());
+  });
+
+  it("det arkiverade kvittot rör inte summan", async () => {
+    seeda([{ ...EFTER, namn: "Arkiverad", arkiverad: true }, EFTER]);
+    expect(summan(await sida("projekt"))).toBe(kr("12 000 kr"));
   });
 });
