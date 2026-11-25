@@ -796,6 +796,18 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Och det här är vad vår egen förbättring kostade.** Sedan *Preliminärt* smalnade ser det nya, lägre talet **färdigt** ut. Regeln var rätt och följden är verklig: **när en skärm slutar varna måste ögonblicket före den göra det.**
 
+### Att radera ett spann är en ersättning med ett annat namn
+
+**Skriven 2026-11-25, och jag gjorde det samma dag jag skrev regeln om `sed`.** Jag bytte ett stycke i `docs/design.md` genom att leta upp dess början och radera fram till nästa rubrik. **Mellan dem låg 52 rader jag inte läste** — merkostnadsfrågans båda hjälptexter, upplysningens två lydelser, regeln om ÅÄÖ, och tre regler till. De försvann.
+
+**Sju prov i fyra filer föll**, alla på lydelser de läser ur filen, och agenten stannade med rätta.
+
+**Felet är detsamma som `sed` över hela trädet, i liten skala:** jag angav var det skulle börja och litade på att slutet låg där jag trodde. **Ett spann definierat av *nästa rubrik* är inte ett spann jag läst.**
+
+**Regeln: ersätt det du kan citera, inte det som råkar ligga mellan två märken.** Och ska ett spann ändå bort, **skriv ut vad som låg i det** innan det raderas — om uppräkningen är svår att göra är det beviset för att spannet är fel.
+
+**Och det som är borta hämtas från den som har bytena, inte ur mitt minne.** Lydelser som prov läser kan inte skrivas om på nytt ungefär rätt; det är samma fel som att mäta en kopia.
+
 ### En ersättning över hela trädet vet inte vad den ändrar
 
 **Skriven 2026-11-25.** Agenten bytte datumstämplar i sina **egna kommentarer** med en `sed` över hela `src` och `tester`. Samma mönster träffade **morgondagens datum i en tabell i två tidszonsprov**, och 19 prov föll. Filerna återställdes ur senaste commit och `docs/` rördes inte.
@@ -815,6 +827,22 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 **Och den som skrev prompten ska ändra regeln först, med skäl och datum, eller ta tillbaka prompten.** Jag tog tillbaka den. En regel som rivs i förbigående av en mening i en prompt är ingen regel — det är ett påstående som råkade vara äldst.
 
 **Tredje gången den här veckan som min instruktion var fel och vägran var rätt.** De andra två var lydelsen som inte fanns i filen och följden jag gissade och skrev som mätt. **Mönstret är att jag har fel när jag skriver snabbt om något jag just mätt** — mätningen känns som förståelse, och är det inte.
+
+### En mätning av en kopia är inte en mätning
+
+**Skriven 2026-11-25, och felet var mitt.** Jag ville veta hur bred en textsats är, skapade en dold `<span>` med samma typsnitt och mätte den: **241 px**, för brett för raden. Jag skrev in slutsatsen i `docs/design.md` som skäl för ett beslut.
+
+**Agenten mätte elementet på sidan i stället, och fick 190 px.** Satsen rymdes. **Premissen jag byggt skälet på fanns inte.**
+
+**En kopia bär inte allt originalet bär.** Typsnittet följde med; tabulära siffror, bokstavsavstånd, ärvda regler och den plats elementet står på gjorde det inte. Och jag kan inte räkna upp vad jag missade — **det är just det som är poängen med att mäta saken själv.**
+
+**Regeln: mät det som renderas, på den plats det står.** Behövs en kopia för att komma åt något, säg att det är en kopia, och låt den aldrig ensam bära ett beslut.
+
+**Och *på den plats det står* bär mer än det låter.** Agenten mätte om: satsen är 190 px och rinner aldrig ut — men hopbunden trycker den **knappen bredvid** 49 px åt höger, ut ur kortet och ut ur skärmen vid 320 px. **Det som gick sönder var inte texten utan grannen.** Jag hade alltså fel om både talet och felet.
+
+**Ett hårt mellanslag vägs mot vad det tränger undan**, inte bara mot om texten får plats. En sats som håller ihop tar sin bredd från något annat på raden.
+
+**Och ett tal som blivit ett skäl i en regelfil ska vara märkt med hur det togs fram.** Mitt 241 stod där som ett faktum. Hade det stått *"uppmätt i en fristående span"* hade nästa läsare vetat vad som var värt att pröva om.
 
 ### Fokus och fel får aldrig dela färg
 
