@@ -2291,11 +2291,31 @@ Frågan skjuts då upp i stället för att stoppa sparandet. Projektet sparas me
 
 **Det som var sant i fyndet är något annat: ingenting säger henne det.** Projektsidan visade *Kvittona 55 807,50 kr* och lät raden för det utelämnade kvittot stå som alla andra, medan underlaget gav 3 853,10. **Två skärmar, samma projekt, inget som binder ihop dem.**
 
-#### Ett kvitto som ingår i basen men inte i avdraget säger det på sin rad
+#### Obetald lovar något den inte kan hålla
 
-**Raden bär tillståndet i stället för leverantör och datum**, som raderna för *Hör inte till bostaden*, med beloppet dämpat:
+**Hittat av agenten 2026-11-25, läst i koden.** Ett kvitto som är daterat **före tillträdet** och saknar betaldatum visar raden *"Obetald – räknas i underlaget när den är betald"*.
+
+**Det är inte sant.** Tillträdesgränsen prövar kvittots datum, inte betaldagen — regeln står under *Datum*. Kvittot räknas alltså **aldrig**, hur den än betalas.
+
+**Och det är en osanning av det slag som kostar.** Hon lämnar det i tron att en sak återstår, och den saken finns inte. Raden ska i det läget säga vad som faktiskt gäller:
 
 > **Daterat före tillträdet · räknas inte i underlaget**
+
+**Alltså samma rad som ovan, och det är rätt att de blir lika**: båda säger att kvittot inte räknas, och det ena skälet är starkare än det andra. **Tillträdet avgör först; betalningen spelar ingen roll när datumet redan är utanför.**
+
+#### Ett kvitto som ingår i basen men inte i avdraget säger det på sin rad
+
+**~~Raden bär tillståndet i stället för leverantör och datum~~ — rättat 2026-11-25, jag läste min egen fil fel.** Raderna för *Hör inte till bostaden* **behåller** leverantör och datum sedan 2026-11-16; det var just det fyndet den gången. Och här är datumet dessutom hela skälet.
+
+**Raden ser alltså ut som varje annan rad, plus tillståndstexten, med beloppet dämpat:**
+
+> nytt klinkergolv i badrummet, det gamla var sprucket sedan vi flyttade in
+> SNICKERI NORD AB · 2026-03-14
+> **Daterat före tillträdet · räknas inte i underlaget**
+> varav ROT 6 480 kr, avgår
+> *50 287,50 kr* (dämpat)
+
+**ROT-raden står kvar, till skillnad från *Hör inte till bostaden*.** Där togs den bort eftersom ingenting räknas och det då inte finns något att dra av från. **Här är kvittot med i summan ovanför**, och utan ROT-raden går 55 807,50 kr inte att stämma av mot raderna. **Skillnaden mellan de två fallen är om beloppet ingår i en summa på samma skärm**, och den skillnaden är skälet — inte en glömska.
 
 **Och summan säger vad den innehåller**, i samma form som kvittoradens *räknas med*-rad:
 
@@ -2303,7 +2323,9 @@ Frågan skjuts då upp i stället för att stoppa sparandet. Projektet sparas me
 
 **Skälet att summan inte bara krymper är regeln ovan.** Beloppet är kvar i fördelningens bas, så en summa som utelämnade det skulle göra hjälptextens 62 287,50 obegriplig. **Talet ska stämma med basen och raden ska säga vad som inte ger avdrag** — det är två olika upplysningar och båda behövs.
 
-**Det gäller varje skäl som nollar ett kvitto i steg 3**, inte bara tillträdet: den bakre tidsgränsen hör hit på samma sätt. Skälen som redan håller kvittot utanför *projektetsBelopp* — arkiverat, utkast, utan betaldatum — rör inte den här raden, eftersom de aldrig kom in i basen.
+**~~Det gäller varje skäl som nollar ett kvitto i steg 3~~ — också fel, och agenten läste koden.** Den bakre tidsgränsen nollar **grundförbättringsdelen**, inte kvittot: reparationsdelen lever vidare tills femårsfönstret prövas vid försäljningen. Det är alltså en nollad **del**, samma sort som femårsfönstret och nybyggd-regeln, och raden gäller den inte.
+
+**Raden gäller i dag bara ett kvitto daterat före tillträdet.** Vill vi ha något för en nollad del behövs både beslutet och en egen lydelse, och den säger något annat: *delen* räknas inte, inte kvittot. Skälen som redan håller kvittot utanför *projektetsBelopp* — arkiverat, utkast, utan betaldatum — rör inte den här raden, eftersom de aldrig kom in i basen.
 
 **Talet som visas och dras ifrån är spärrens tal: projektets belopp före ROT, utan en privat del.** Här stod först *"efter ROT"*, och det var fel — agenten såg motsägelsen och frågade innan den byggde. **Fördelningens bas är brutto**, eftersom reduktionsfaktorn bär ROT och minskar båda delarna i efterhand; se *Spärren och taket* i `CLAUDE.md`. Ett svar draget från nettot hade lagrats som ett nettotal och sedan reducerats för ROT en gång till.
 
