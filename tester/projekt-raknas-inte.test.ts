@@ -12,8 +12,14 @@ import { REGELPARAMETRAR } from "./_hjalp";
 //
 // Fallet är det uppmätta i produktionen 2026-11-25: två kvitton, det ena
 // före tillträdet. 50 287,50 kr med 6 480 kr ROT och 12 000 kr – summan
-// 55 807,50 kr, varav 43 807,50 kr före tillträdet. Lydelserna läses ur
-// design.md inne i provet, och citatets tal är just de här.
+// 55 807,50 kr, varav 43 807,50 kr före tillträdet. Kvittot före tillträdet
+// är exemplet i design.md, med samma anteckning, leverantör och datum, så att
+// raden kan jämföras med exemplet rad för rad. Lydelserna läses ur design.md
+// inne i provet.
+//
+// Och ett obetalt kvitto före tillträdet säger samma sak och inte "Obetald"
+// (docs/design.md, "Obetald lovar något den inte kan hålla"): tillträdet
+// avgör först. Innanför tillträdet står "Obetald" kvar, eftersom det då är sant.
 //
 // Renderat på båda skärmarna med raden: projektsidan och Kvittona.
 
@@ -61,6 +67,7 @@ const kr = (t: string) => t.replace(/ /g, " ");
 
 interface Kvitto {
   namn: string;
+  leverantor?: string;
   belopp: number;
   rot?: number;
   dag: string | null;
@@ -75,17 +82,17 @@ function seeda(kvitton: Kvitto[]) {
   for (const r of REGELPARAMETRAR) db.lagg("regelparameter", { ...r, giltig_fran: datum(r.giltig_fran), giltig_till: null });
   db.lagg("anvandare", { id: ANNA, epost: "anna@exempel.se" });
   db.lagg("bostad", {
-    id: X, adress: "Storgatan 1", upplatelseform: "bostadsratt", tilltradesdatum: datum("2024-06-01"),
+    id: X, adress: "Storgatan 1", upplatelseform: "bostadsratt", tilltradesdatum: datum("2026-06-01"),
     nybyggd_vid_forvarv: false, ombildning_fran_hyresratt: false,
   });
   db.lagg("medlemskap", { anvandare_id: ANNA, bostad_id: X, agarandel: 100 });
   db.lagg("projekt", {
-    id: P, bostad_id: X, namn: "Nytt kök", ar: 2024, atgardstyp: "utbytt", battre_kvalitet: true,
+    id: P, bostad_id: X, namn: "Nytt badrum", ar: 2026, atgardstyp: "utbytt", battre_kvalitet: true,
     merkostnad: 2_000_000, merkostnad_bas: 6_228_750, skick_forvarv: 1,
   });
   for (const k of kvitton) {
     const rad = db.lagg("kostnad", {
-      bostad_id: X, leverantor: "Byggfirman", anteckning: k.namn,
+      bostad_id: X, leverantor: k.leverantor ?? "Byggfirman", anteckning: k.namn,
       totalbelopp: k.utkast ? null : k.belopp, rot_utnyttjat: k.rot ?? 0,
       dokumentdatum: k.dag ? datum(k.dag) : null,
       betaldatum: k.dag && k.betald !== false && !k.utkast ? datum(k.dag) : null,
@@ -97,17 +104,38 @@ function seeda(kvitton: Kvitto[]) {
   h.inloggad = { id: ANNA, email: "anna@exempel.se" };
 }
 
-const FORE: Kvitto = { namn: "Köksbänk och montering", belopp: 5_028_750, rot: 648_000, dag: "2024-03-10" };
-const EFTER: Kvitto = { namn: "Blandare", belopp: 1_200_000, dag: "2024-09-01" };
+const FORE: Kvitto = {
+  namn: "nytt klinkergolv i badrummet, det gamla var sprucket sedan vi flyttade in",
+  leverantor: "SNICKERI NORD AB",
+  belopp: 5_028_750,
+  rot: 648_000,
+  dag: "2026-03-14",
+};
+const EFTER: Kvitto = { namn: "Blandare", belopp: 1_200_000, dag: "2026-09-01" };
 
-/** Lydelserna ur design.md: raden och summan, i den ordning citaten står. */
-function citaten(): { rad: string; summa: string } {
+/** Citaten under en rubrik i design.md, som grupper av på varandra följande
+ *  citatrader, utan markeringar. Stannar när rubriken eller citaten saknas. */
+function citatgrupper(rubrik: string): string[][] {
   const design = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8");
-  const start = design.indexOf("#### Ett kvitto som ingår i basen men inte i avdraget säger det på sin rad");
-  if (start < 0) throw new Error('design.md saknar "Ett kvitto som ingår i basen men inte i avdraget säger det på sin rad"');
-  const citat = [...design.slice(start, start + 2000).matchAll(/^> (.+)$/gm)].map((m) => m[1].replace(/\*\*/g, "").trim());
-  if (citat.length < 2) throw new Error("design.md saknar radens och summans citat under avsnittet");
-  return { rad: citat[0], summa: citat[1] };
+  const start = design.indexOf(rubrik);
+  if (start < 0) throw new Error(`design.md saknar "${rubrik}"`);
+  const slut = design.indexOf("\n#### ", start + rubrik.length);
+  const avsnitt = design.slice(start, slut < 0 ? undefined : slut);
+  const grupper = [...avsnitt.matchAll(/((?:^>.*\n?)+)/gm)].map((g) =>
+    g[1].split("\n").filter((r) => r.startsWith(">")).map((r) => r.replace(/^> ?/, "").trim()),
+  );
+  if (grupper.length === 0) throw new Error(`design.md har inga citat under "${rubrik}"`);
+  return grupper;
+}
+const utan = (t: string) => t.replace(/\*\*/g, "").replace(/\*/g, "").trim();
+
+/** Exempelraden, tillståndet ur den (raden som är helt i fetstil) och summan. */
+function citaten(): { exempel: string[]; rad: string; summa: string } {
+  const [exempel, summa] = citatgrupper("#### Ett kvitto som ingår i basen men inte i avdraget säger det på sin rad");
+  if (!exempel || !summa) throw new Error("design.md saknar exempelraden eller summans citat under avsnittet");
+  const rad = exempel.find((r) => /^\*\*[^*]+\*\*$/.test(r));
+  if (!rad) throw new Error("exempelraden i design.md saknar tillståndet i fetstil");
+  return { exempel: exempel.map((r) => utan(r.replace(/\(dämpat\)/, ""))), rad: utan(rad), summa: utan(summa[0]) };
 }
 
 async function sida(vilken: "projekt" | "kvittona"): Promise<HTMLDivElement> {
@@ -138,8 +166,19 @@ describe.each(["projekt", "kvittona"] as const)("%s: ett kvitto före tillträde
     seeda([FORE, EFTER]);
     const r = raden(await sida(vilken), FORE.namn);
     expect(r.text).toContain(citaten().rad);
-    expect(r.text, "datumet som skälet handlar om står kvar").toContain("2024-03-10");
+    expect(r.text, "datumet som skälet handlar om står kvar").toContain("2026-03-14");
     expect(r.dampad).toBe(true);
+  });
+
+  it("raden är exemplet i design.md, rad för rad och i den ordningen", async () => {
+    seeda([FORE, EFTER]);
+    const { text } = raden(await sida(vilken), FORE.namn);
+    let fran = 0;
+    for (const rad of citaten().exempel) {
+      const plats = text.indexOf(rad, fran);
+      expect(plats, `"${rad}" efter det föregående i raden`).toBeGreaterThanOrEqual(0);
+      fran = plats + rad.length;
+    }
   });
 
   it("kvittot efter tillträdet har ingen sådan rad och ett odämpat belopp", async () => {
@@ -155,7 +194,7 @@ describe.each(["projekt", "kvittona"] as const)("%s: ett kvitto före tillträde
   });
 
   it("utan kvitto före tillträdet: summan står ensam, och ingen rad bär tillståndet", async () => {
-    seeda([EFTER, { ...EFTER, namn: "Kakel", dag: "2024-10-01" }]);
+    seeda([EFTER, { ...EFTER, namn: "Kakel", dag: "2026-10-01" }]);
     const d = await sida(vilken);
     expect(summan(d)).toMatch(/^[\d ]+,?\d* kr$/);
     expect(d.textContent).not.toContain("räknas inte i underlaget");
@@ -165,11 +204,9 @@ describe.each(["projekt", "kvittona"] as const)("%s: ett kvitto före tillträde
 // Skälen som redan håller kvittot utanför projektetsBelopp kom aldrig in i
 // basen, och raden gäller inte dem (docs/design.md: "rör inte den här
 // raden"). Förutsättningen prövas: kvittot är daterat före tillträdet.
-describe("inte för det som aldrig kom in i basen", () => {
-  it.each([
-    ["ett utkast", { ...FORE, namn: "Fotat kvitto", utkast: true }],
-    ["ett kvitto utan betaldatum", { ...FORE, namn: "Obetald faktura", betald: false }],
-  ] as const)("%s före tillträdet får ingen rad, och summan inget varav", async (_namn, kvitto) => {
+describe("inte för det som har ett eget tillstånd", () => {
+  it("ett utkast före tillträdet får ingen rad, och summan inget varav", async () => {
+    const kvitto = { ...FORE, namn: "Fotat kvitto", utkast: true };
     seeda([kvitto, EFTER]);
     const d = await sida("projekt");
     expect(raden(d, kvitto.namn).text).not.toContain("räknas inte i underlaget");
@@ -191,5 +228,40 @@ describe("inga tal ändras", () => {
     expect(projektSumma(kostnader, P)).toBe(5_580_750);
     expect(projektetsBelopp(kostnader, P)).toBe(6_228_750);
     expect(summan(await sida("projekt")).startsWith("55 807,50 kr")).toBe(true);
+  });
+});
+
+describe("Obetald lovar något den inte kan hålla", () => {
+  const OBETALD = "Obetald – räknas i underlaget när den är betald";
+  const tillstandet = () => {
+    const [[rad]] = citatgrupper("#### Obetald lovar något den inte kan hålla");
+    return utan(rad);
+  };
+
+  it("förutsättningen: avsnittets rad är samma rad som för det betalda kvittot", () => {
+    expect(tillstandet()).toBe(citaten().rad);
+  });
+
+  it.each(["projekt", "kvittona"] as const)("%s: obetalt och före tillträdet – tillträdet avgör, och Obetald står inte där", async (vilken) => {
+    const kvitto = { ...FORE, namn: "Obetald faktura", betald: false };
+    seeda([kvitto, EFTER]);
+    const r = raden(await sida(vilken), kvitto.namn);
+    expect(r.text).toContain(tillstandet());
+    expect(r.text).not.toContain(OBETALD);
+    expect(r.dampad).toBe(true);
+  });
+
+  it("obetalt innanför tillträdet: Obetald står kvar, för där är den sann", async () => {
+    const kvitto = { ...EFTER, namn: "Obetald faktura", betald: false };
+    seeda([kvitto, FORE]);
+    const r = raden(await sida("projekt"), kvitto.namn);
+    expect(r.text).toContain(OBETALD);
+    expect(r.text).not.toContain("räknas inte i underlaget");
+    expect(r.dampad).toBe(false);
+  });
+
+  it("det obetalda kvittot före tillträdet är med i projektSumma och därför i varav", async () => {
+    seeda([{ ...FORE, namn: "Obetald faktura", betald: false }, EFTER]);
+    expect(summan(await sida("projekt"))).toBe(citaten().summa);
   });
 });

@@ -115,6 +115,7 @@ export function Bekraftelseruta({ children }: { children: ReactNode }) {
 export function Listrad({
   namn,
   status,
+  tillstand,
   underStatus,
   rot,
   privat,
@@ -133,6 +134,14 @@ export function Listrad({
 }: {
   namn: string;
   status?: string;
+  /**
+   * Kvittots tillstand, direkt under statusraden och fore avdragsraderna –
+   * t.ex. "Daterat före tillträdet · räknas inte i underlaget" (docs/design.md,
+   * "Ett kvitto som ingår i basen men inte i avdraget säger det på sin rad",
+   * exemplets ordning). Det ar vad som galler for hela kvittot, och lases
+   * fore det som dras av fran det.
+   */
+  tillstand?: string;
   /**
    * Valfri tredje rad, dampad precis som status men pa en egen rad i stallet
    * for hopslagen med "·" – anvands for ett faktum om posten som inte hor
@@ -265,6 +274,7 @@ export function Listrad({
           </p>
         ) : null}
         {[
+          tillstand,
           rotAvgarRad(rot ?? null),
           privatAvgarRad(privat ?? null),
           raknasMed,

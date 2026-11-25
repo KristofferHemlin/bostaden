@@ -44,6 +44,10 @@ export function ProjektetsKvittorad({
   // bostaden" i kvittolistan – datumet ar det skalet handlar om. ROT-raden
   // star ocksa kvar: kvittot ar med i summan ovanfor, och utan den gar
   // summan inte att stamma av mot raderna.
+  // Tillträdet avgor fore betalningen: ett obetalt kvitto fore tilltradet
+  // raknas aldrig, och "Obetald – räknas … när den är betald" vore ett
+  // lofte som inte halls (docs/design.md, "Obetald lovar något den inte kan
+  // hålla").
   const raknasInte = raknasInteIUnderlaget(k, tilltradesdatum);
   const notering = original.anteckning?.trim();
   const leverantor = original.leverantor?.trim();
@@ -68,13 +72,8 @@ export function ProjektetsKvittorad({
       })}
       // Projektets summa raknar kvittot; det ar underlaget (exporten,
       // troskeln) som vantar pa betaldatumet.
-      underStatus={
-        raknasInte
-          ? RAKNAS_INTE_FORE_TILLTRADET
-          : k.betaldatum
-            ? undefined
-            : "Obetald – räknas i underlaget när den är betald"
-      }
+      tillstand={raknasInte ? RAKNAS_INTE_FORE_TILLTRADET : undefined}
+      underStatus={!raknasInte && !k.betaldatum ? "Obetald – räknas i underlaget när den är betald" : undefined}
       atgard={!k.betaldatum}
       // Beloppet pa pappret, inte det ROT-reducerade bidraget (docs/design.md,
       // "Samma belopp ska se likadant ut overallt").

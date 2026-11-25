@@ -7,12 +7,17 @@
 // och summans "varav" berattar – de raknar ingenting nytt och andrar inget
 // tal.
 //
-// Vilka kvitton: de som ar i projektetsBelopp (inte arkiverade, inte utkast,
-// med betaldatum) och som steg 3 nollar HELT. I dag ar det ett skal: kvittot
-// ar daterat fore tilltradet – samma jamforelse som berakningen och Återstår
+// Vilka kvitton: de som steg 3 nollar HELT. I dag ar det ett skal: kvittot ar
+// daterat fore tilltradet – samma jamforelse som berakningen och Återstår
 // (dateratForeTilltradet). Den bakre tidsgransen nollar grundforbattringsdelen,
-// inte kvittot, och ar inte med (se rapporten 2026-11-25). Femarsfonstret,
-// nybyggd-regeln och troskeln nollar en del eller ett ar, inte kvittot.
+// inte kvittot, och ar inte med (docs/design.md, rattat 2026-11-25).
+// Femarsfonstret, nybyggd-regeln och troskeln nollar en del eller ett ar.
+//
+// Betaldatumet spelar ingen roll har (docs/design.md, "Obetald lovar något den
+// inte kan hålla"): tilltradesgransen provar kvittots datum, sa ett obetalt
+// kvitto fore tilltradet raknas aldrig, hur det an betalas. Tilltradet avgor
+// forst – fore raden "Obetald". Arkiverade kvitton och utkast ar inte med:
+// de har sina egna tillstand.
 
 import { arUtkast, bidragForKostnad } from "@/doman/berakningar";
 import { dateratForeTilltradet } from "@/doman/atgardsberakning";
@@ -29,13 +34,15 @@ export function varavRaknasInteText(oren: number): string {
   return `varav ${formateraKronor(oren)} räknas inte`;
 }
 
-/** Sant for ett kvitto i projektets bas som steg 3 nollar helt. */
+/** Sant for ett kvitto som steg 3 nollar helt, betalt eller inte. */
 export function raknasInteIUnderlaget(k: Kostnad, tilltradesdatum: string): boolean {
-  if (k.arkiverad || arUtkast(k) || k.betaldatum === null) return false;
+  if (k.arkiverad || arUtkast(k)) return false;
   return dateratForeTilltradet(k.dokumentdatum, tilltradesdatum);
 }
 
-/** Den del av projektSumma som kommer fran sadana kvitton, i oren. */
+/** Den del av projektSumma som kommer fran sadana kvitton, i oren. Ett
+ *  obetalt kvitto fore tilltradet ar med: det ar med i projektSumma, som
+ *  raknar oavsett betaldatum, och det raknas aldrig i underlaget. */
 export function projektSummaSomRaknasInte(
   kostnader: readonly Kostnad[],
   projektId: string,
