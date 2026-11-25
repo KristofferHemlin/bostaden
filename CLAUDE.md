@@ -804,6 +804,18 @@ Mätningen läser nu nod för nod, med ett eget prov för att läsningen bevarar
 
 **Alltså: begränsa vägen innan mönstret.** Ändra i de filer som ska ändras, räkna upp träffarna först, och **läs varje träff** när mönstret är ett datum, ett belopp eller något annat som också är data. Det här gick bra därför att sviten var röd direkt. **Hade mönstret träffat ett tal i `docs/verifieringen.md` hade det varit facit som tyst flyttade sig.**
 
+### En prompt som säger emot en regel här är prompten som har fel
+
+**Skriven 2026-11-25, efter att agenten vägrade bygga det jag bad om.** Jag skrev i `docs/design.md` att merkostnadens spärr ska räknas på de kvitton som faktiskt ger avdrag. **Agenten byggde det inte, och citerade regeln *Kostnader som faller bort senare får ändå sin del*** — som säger motsatsen, med skälet utskrivet.
+
+**Den hade rätt, och talen hade gått åt det farliga hållet.** En merkostnad på 11 000 kr hade med min ändring hamnat helt på det kvitto som ingår i stället för att fördelas, alltså ett större avdrag på samma utgift. **Precis vad regeln finns för att hindra.**
+
+**Regeln: står en ny instruktion mot en skriven regel vinner regeln, och agenten stannar.** Den gissar inte vilken av oss som menade vad, och den bygger inte det nyare bara för att det är nyare. **Den säger vilken regel som krockar och väntar.**
+
+**Och den som skrev prompten ska ändra regeln först, med skäl och datum, eller ta tillbaka prompten.** Jag tog tillbaka den. En regel som rivs i förbigående av en mening i en prompt är ingen regel — det är ett påstående som råkade vara äldst.
+
+**Tredje gången den här veckan som min instruktion var fel och vägran var rätt.** De andra två var lydelsen som inte fanns i filen och följden jag gissade och skrev som mätt. **Mönstret är att jag har fel när jag skriver snabbt om något jag just mätt** — mätningen känns som förståelse, och är det inte.
+
 ### Fokus och fel får aldrig dela färg
 
 **Skriven 2026-11-24, ur agentens uppräkning.** Fälten får en orange ring när de har **fokus**, i samma ton som feltexterna, och har **ingen egen stil för ogiltigt**. Alltså ser ett markerat fält felaktigt ut, och ett felaktigt fält ser markerat ut.

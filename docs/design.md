@@ -2283,11 +2283,27 @@ Frågan skjuts då upp i stället för att stoppa sparandet. Projektet sparas me
 
 **Och felet tar hjälptextens plats.** Hjälptexten namnger både talet och basen; felet som ersätter den gör det inte. **Siffran försvinner alltså i precis det läge hon ännu inte skrivit något**, vilket är när hon behöver den mest. Det tomma fältets fel ska därför namnge projektets belopp på samma sätt.
 
-**Och det talet räknas på de kvitton som faktiskt ingår, ändrat 2026-11-25.** Uppmätt i produktionen: med tillträdet flyttat så att ett kvitto hamnade utanför innehavet sa hjälptexten fortfarande *62 287,50 kr* medan underlaget räknade på *12 000*. **Hjälptexten är också spärren**, så hon fick skriva vilket belopp som helst under ett tal som inte längre fanns.
+**~~Och det talet räknas på de kvitton som faktiskt ingår~~ — struket samma dag det skrevs, 2026-11-25.**
 
-**Det gäller alla skäl att ett kvitto inte räknas**, inte bara tillträdet: ett kvitto utanför den bakre tidsgränsen hör inte heller till projektets belopp när merkostnaden ska mätas mot det.
+**Jag skrev att spärrens tal ska räknas på de kvitton som räknas. Det är fel, och agenten vägrade bygga det med rätt skäl:** regeln *Kostnader som faller bort senare får ändå sin del* i `CLAUDE.md` säger uttryckligen motsatsen. **62 287,50 kr är fördelningens bas, och den basen är hela projektet.** Ett kvitto daterat före tillträdet får sin andel av merkostnaden, och den andelen nollas sedan med resten av kostnaden — *premien hänger på utgiften, och en utgift som inte var din bär en premie som inte heller var din.*
 
-**Och projektsidan ska säga samma sak.** Raden *Kvittona* visade 55 807,50 kr med det utelämnade kvittot inräknat och utan märke på raden. **Ett kvitto som inte räknas ska synas som sådant där det står**, med samma skäl som i *Återstår* — annars är projektsidan och underlaget två olika påståenden om samma projekt, och bara det ena är sant.
+**Hade förslaget byggts hade talen gått åt det farliga hållet.** Agenten räknade: en merkostnad på 11 000 kr skulle med min ändring hamna **helt** på det kvitto som ingår i stället för att fördelas, alltså ett större avdrag på samma utgift. Det är precis vad regeln finns för att hindra.
+
+**Det som var sant i fyndet är något annat: ingenting säger henne det.** Projektsidan visade *Kvittona 55 807,50 kr* och lät raden för det utelämnade kvittot stå som alla andra, medan underlaget gav 3 853,10. **Två skärmar, samma projekt, inget som binder ihop dem.**
+
+#### Ett kvitto som ingår i basen men inte i avdraget säger det på sin rad
+
+**Raden bär tillståndet i stället för leverantör och datum**, som raderna för *Hör inte till bostaden*, med beloppet dämpat:
+
+> **Daterat före tillträdet · räknas inte i underlaget**
+
+**Och summan säger vad den innehåller**, i samma form som kvittoradens *räknas med*-rad:
+
+> **55 807,50 kr** · varav 43 807,50 kr räknas inte
+
+**Skälet att summan inte bara krymper är regeln ovan.** Beloppet är kvar i fördelningens bas, så en summa som utelämnade det skulle göra hjälptextens 62 287,50 obegriplig. **Talet ska stämma med basen och raden ska säga vad som inte ger avdrag** — det är två olika upplysningar och båda behövs.
+
+**Det gäller varje skäl som nollar ett kvitto i steg 3**, inte bara tillträdet: den bakre tidsgränsen hör hit på samma sätt. Skälen som redan håller kvittot utanför *projektetsBelopp* — arkiverat, utkast, utan betaldatum — rör inte den här raden, eftersom de aldrig kom in i basen.
 
 **Talet som visas och dras ifrån är spärrens tal: projektets belopp före ROT, utan en privat del.** Här stod först *"efter ROT"*, och det var fel — agenten såg motsägelsen och frågade innan den byggde. **Fördelningens bas är brutto**, eftersom reduktionsfaktorn bär ROT och minskar båda delarna i efterhand; se *Spärren och taket* i `CLAUDE.md`. Ett svar draget från nettot hade lagrats som ett nettotal och sedan reducerats för ROT en gång till.
 
