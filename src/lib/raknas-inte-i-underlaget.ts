@@ -25,8 +25,11 @@ import type { Kostnad } from "@/doman/typer";
 import { formateraKronor } from "@/lib/format";
 
 // Ordagrant ur docs/design.md, samma avsnitt
-// (tester/projekt-raknas-inte.test.ts laser dem dar).
-export const RAKNAS_INTE_FORE_TILLTRADET = "Daterat före tillträdet · räknas inte i underlaget";
+// (tester/projekt-raknas-inte.test.ts laser dem dar). Hart mellanslag i
+// "räknas inte": annars bryts raden vid 360 px som "… · räknas" / "inte i
+// underlaget", och forsta raden lases som sin motsats bredvid beloppet
+// (docs/design.md, "Tillträdesraden bryter på negationen").
+export const RAKNAS_INTE_FORE_TILLTRADET = "Daterat före tillträdet · räknas\u00a0inte i underlaget";
 
 // Raden for ett arkiverat kvitto, samma lydelse som kvittolistan
 // (docs/design.md, "Raden visar tillståndet i stället för talet").

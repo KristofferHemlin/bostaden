@@ -2301,6 +2301,23 @@ Frågan skjuts då upp i stället för att stoppa sparandet. Projektet sparas me
 
 **Ordningen mellan tillstånden är densamma som för tillträdet:** det som gör kvittot permanent utanför vinner över det som bara dröjer. Arkiverat slår obetald, tillträdet slår obetald.
 
+#### Tillträdesraden bryter på negationen
+
+**Uppmätt 2026-11-25, vid 360 px på både projektsidan och Kvittona:**
+
+> Daterat före tillträdet · räknas
+> **inte i underlaget**
+
+**Första raden slutar på *räknas*, bredvid ett belopp på 50 287,50 kr.** Den som skummar läser att kvittot räknas, och det är motsatsen. Samma fel som i summan, i en rad som står tätare intill ett tal.
+
+**Ett hårt mellanslag i *räknas inte*** — samma remedium, samma skäl. Raden står ensam i sin `<p>` och delar inte plats med någon knapp, så den tränger inte undan något. **Men det ska mätas efteråt**, eftersom det var grannen som fällde avgörandet i summan.
+
+#### Nybyggd-förklaringen håller ihop av en slump
+
+**Uppmätt samma dag:** *"Allt var nytt vid tillträdet, så reparationer räknas inte."* bryts över fem rader i en spalt på omkring 113 px, och **räknas inte.** hamnar ihop — men bara för att orden råkar falla så. **Ingenting håller dem.**
+
+**En slump är inte en design.** Ett hårt mellanslag kostar ett tecken och gör utfallet avsiktligt. Ändras ett ord i meningen, eller typsnittet, faller det annars isär utan att någon rör raden.
+
 #### Obetald lovar något den inte kan hålla
 
 **Hittat av agenten 2026-11-25, läst i koden.** Ett kvitto som är daterat **före tillträdet** och saknar betaldatum visar raden *"Obetald – räknas i underlaget när den är betald"*.
@@ -2309,7 +2326,7 @@ Frågan skjuts då upp i stället för att stoppa sparandet. Projektet sparas me
 
 **Och det är en osanning av det slag som kostar.** Hon lämnar det i tron att en sak återstår, och den saken finns inte. Raden ska i det läget säga vad som faktiskt gäller:
 
-> **Daterat före tillträdet · räknas inte i underlaget**
+> **Daterat före tillträdet · räknas&nbsp;inte i underlaget**
 
 **Alltså samma rad som ovan, och det är rätt att de blir lika**: båda säger att kvittot inte räknas, och det ena skälet är starkare än det andra. **Tillträdet avgör först; betalningen spelar ingen roll när datumet redan är utanför.**
 
@@ -2321,7 +2338,7 @@ Frågan skjuts då upp i stället för att stoppa sparandet. Projektet sparas me
 
 > nytt klinkergolv i badrummet, det gamla var sprucket sedan vi flyttade in
 > SNICKERI NORD AB · 2026-03-14
-> **Daterat före tillträdet · räknas inte i underlaget**
+> **Daterat före tillträdet · räknas&nbsp;inte i underlaget**
 > varav ROT 6 480 kr, avgår
 > *50 287,50 kr* (dämpat)
 
@@ -2331,9 +2348,9 @@ Frågan skjuts då upp i stället för att stoppa sparandet. Projektet sparas me
 
 > **55 807,50 kr** · varav&nbsp;43 807,50 kr räknas&nbsp;inte
 
-**Ett hårt mellanslag, och bara ett: mellan *varav* och talet.** Lagt till 2026-11-25 efter agentens mätning, där raden bröts som *"55 807,50 kr · varav"* / *"43 807,50 kr räknas inte"* — **ordet hamnade sist på första raden, skilt från sitt tal.** Med mellanslaget bryts den efter punkten i stället, och *varav* följer med sitt belopp.
+**Två hårda mellanslag: ett mellan *varav* och talet, ett inuti *räknas inte*.** Lagda till 2026-11-25, var och ett efter en mätning, och skälen står nedan.
 
-**Resten av satsen ska kunna brytas, och det är mätt.** Jag band först ihop hela *varav 43 807,50 kr räknas inte* och mätte sedan upp den till **241 px** i sitt eget typsnitt. Raden delar plats med *Ändra*, så vid 360 px finns omkring 226 px kvar — **en obrytbar sats hade då runnit ut ur kortet i stället för att brytas.** Två hårda mellanslag för mycket är ett annat fel än ett för lite, och det här är det värre av de två.
+**Det första:** utan det bröts raden som *"55 807,50 kr · varav"* / *"43 807,50 kr räknas inte"* — **ordet hamnade sist på första raden, skilt från sitt tal.** Med mellanslaget bryts den efter punkten i stället, och *varav* följer med sitt belopp.
 
 **Beloppen håller redan ihop av sina egna hårda mellanslag.** *Ett avslutande *·* läses som att något följer; ett ensamt *varav* läses som ett avbrutet ord* — det är hela skälet, och det kostar ett tecken.
 
@@ -2346,7 +2363,21 @@ Frågan skjuts då upp i stället för att stoppa sparandet. Projektet sparas me
 
 **Regeln: en negation står aldrig ensam på en rad**, och en rad får aldrig sluta så att den läses som sin egen motsats. Det gäller *inte*, *aldrig*, *utan* och deras släkt, var de än står i appen.
 
-**Två mellanslag, inte fler.** *räknas inte* är omkring 70 px som block och kan inte svämma över; hela satsen som block är 241 px och kan. **Gränsen går vid vad som får plats på en rad för sig själv** — det är provet, inte antalet tecken.
+**Två mellanslag, inte tre — och skälet är mätt 2026-11-25, efter att mitt första var fel två gånger.**
+
+**Jag skrev att hela satsen är 241 px och kan svämma över.** Båda halvorna var fel. Satsen är **190 px**, mätt på elementet på sidan, och den rinner aldrig ut — mina 241 kom ur en påhittad `<span>`, se *En mätning av en kopia är inte en mätning* i `CLAUDE.md`.
+
+**Det som faktiskt går sönder är grannen.** Vid **320 px** på projektsidan ryms den hopbundna satsen i sin spalt, men den trycker **Ändra** 49 px åt höger — från 247–287 till **312–352**, medan kortet slutar vid 303 och skärmen vid 320. **Knappen klipps.** Sidan rullar inte i sidled; den går bara inte att se.
+
+| | Två mellanslag | Tre mellanslag |
+|---|---|---|
+| projekt 320 | tre rader, *Ändra* vid 247–287 | två rader, ***Ändra* vid 312–352, utanför kortet** |
+| Kvittona 320 | tre rader | två rader, ryms |
+| 390 och 360 | — | ryms på båda skärmarna |
+
+**Alltså: ett hårt mellanslag vägs mot vad det tränger undan, inte bara mot om texten får plats.** En sats som håller ihop tar sin bredd från något annat på raden, och det andra kan vara en knapp.
+
+***inte* står aldrig ensamt i något av fallen**, med vare sig två eller tre. Det var det andra mellanslaget som löste det, och det står kvar av det skälet.
 
 **Och *varav* namnger det som aldrig kommer att räknas, inte det som inte räknas i dag.** Avgjort 2026-11-25. Ett obetalt kvitto **före tillträdet** hör dit: det ligger i summan, som räknar oavsett betaldatum, och det får aldrig avdrag. Ett obetalt kvitto **innanför** tillträdet hör inte dit — det räknas den dag det betalas, och *Obetald*-raden säger redan det.
 
@@ -3211,11 +3242,13 @@ En varning per projekt som fyller fyra rader var gör skärmen till en vägg av 
 | Året nådde inte tröskeln | Utgifterna för året understeg tröskeln, så inget avdrag medges för året |
 | Reparationen ligger utanför femårsfönstret | Åtgärden ligger utanför femårsfönstret, som är försäljningsåret och de fem kalenderåren närmast före |
 | Skicket förbättrades inte | Det du bytte ut var i samma eller sämre skick vid försäljningen än vid förvärvet |
-| Bostaden var nybyggd vid förvärvet | Allt var nytt vid tillträdet, så reparationer räknas inte |
+| Bostaden var nybyggd vid förvärvet | Allt var nytt vid tillträdet, så reparationer räknas&nbsp;inte |
 | Åtgärden ligger före den bakre gränsen | Grundförbättringar före gränsen för upplåtelseformen är inte avdragsgilla |
 | Samma byggnadsdel är åtgärdad senare | Bara den senaste utgiften på samma byggnadsdel får dras av |
 | Merkostnadens tak har slagit till | Hela kostnaden räknas som grundförbättring på sida 1 tills merkostnaden ändrats |
 | Försäkringen täckte hela kostnaden | Har försäkringen betalat allt finns ingen egen utgift att dra av |
+
+**Och nybyggd-raden bär sitt hårda mellanslag här, i tabellen.** Lagt till 2026-11-25: lydelsen i koden har det, och ett prov som vaktade mellanslaget med en konstant i provfilen vaktade provets kopia och inte regeln. **En lydelse som ska vaktas står i regelfilen**, med tecknet och allt — annars finns samma text i två former och bara en av dem är den som gäller.
 
 **Tabellen ändras i sin rad, aldrig genom ett stycke inuti den**, och den ska hållas lika med skälen i koden. Den sa *tre olika regler* ovanför fyra rader till 2026-10-27, och saknade de fyra sista – som alla fanns i koden.
 

@@ -116,7 +116,11 @@ beforeAll(async () => {
     ["kvittona", await KvittonaSida({ params })],
   ] as const) {
     const kropp = renderToStaticMarkup(vy as Parameters<typeof renderToStaticMarkup>[0]);
-    expect(kropp, `${namn}: summan med varav renderades`).toContain("räknas inte");
+    // Summans egen text, inte sidans: "räknas inte" står också på
+    // tillståndsraden, och med vanligt mellanslag träffade förutsättningen den
+    // i stället för summan. Hårda mellanslag läses som vanliga.
+    const summa = /data-projektsumma=""[^>]*>(.*?)<\/p>/s.exec(kropp)?.[1]?.replace(/<[^>]+>/g, "").replace(/\u00a0/g, " ");
+    expect(summa, `${namn}: summan med varav renderades`).toMatch(/varav [\d ]+,\d{2} kr räknas inte$/);
     sidor[namn] = `<!doctype html><html lang="sv"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ${TYPSNITT_LANK}<style>${css}</style></head><body class="font-granssnitt">${kropp}</body></html>`;

@@ -294,7 +294,10 @@ const FASTA_NOLLFORKLARINGAR = {
   skicket_forbattrades_inte:
     "Det du bytte ut var i samma eller sämre skick vid försäljningen än vid förvärvet.",
   nybyggd_vid_forvarv:
-    "Allt var nytt vid tillträdet, så reparationer räknas inte.",
+    // Hart mellanslag i "räknas inte": negationen star aldrig ensam, och
+    // utan det haller orden ihop bara av en slump (docs/design.md,
+    // "Nybyggd-förklaringen håller ihop av en slump").
+    "Allt var nytt vid tillträdet, så reparationer räknas\u00a0inte.",
   tidigare_gang_samma_del: SAMMA_DEL_SKAL,
 } as const;
 

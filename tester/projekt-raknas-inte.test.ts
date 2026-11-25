@@ -130,7 +130,7 @@ function citatgrupper(rubrik: string): string[][] {
 const utan = (t: string) => t.replace(/\*\*/g, "").replace(/\*/g, "").trim();
 
 /** Exempelraden, tillståndet ur den (raden som är helt i fetstil) och summan. */
-function citaten(): { exempel: string[]; rad: string; summa: string; summaKalla: string } {
+function citaten(): { exempel: string[]; rad: string; radKalla: string; summa: string; summaKalla: string } {
   const [exempel, summa] = citatgrupper("#### Ett kvitto som ingår i basen men inte i avdraget säger det på sin rad");
   if (!exempel || !summa) throw new Error("design.md saknar exempelraden eller summans citat under avsnittet");
   const rad = exempel.find((r) => /^\*\*[^*]+\*\*$/.test(r));
@@ -140,8 +140,11 @@ function citaten(): { exempel: string[]; rad: string; summa: string; summaKalla:
   const kalla = utan(summa[0]);
   if (!kalla.includes("&nbsp;")) throw new Error("summans citat i design.md saknar sitt &nbsp;");
   return {
-    exempel: exempel.map((r) => utan(r.replace(/\(dämpat\)/, ""))),
-    rad: utan(rad),
+    // Som summan: rad och exempel som kr() läser sidan, radKalla med designens
+    // &nbsp; som hårt mellanslag.
+    exempel: exempel.map((r) => utan(r.replace(/\(dämpat\)/, "")).replace(/&nbsp;/g, " ")),
+    rad: utan(rad).replace(/&nbsp;/g, " "),
+    radKalla: utan(rad).replace(/&nbsp;/g, "\u00a0"),
     summa: kalla.replace(/&nbsp;/g, " "),
     summaKalla: kalla.replace(/&nbsp;/g, "\u00a0"),
   };
@@ -202,6 +205,24 @@ describe.each(["projekt", "kvittona"] as const)("%s: ett kvitto före tillträde
     expect(summan(await sida(vilken))).toBe(citaten().summa);
   });
 
+  it("tillståndsradens hårda mellanslag sitter där designen sätter dem, och bara där", async () => {
+    seeda([FORE, EFTER]);
+    const d = await sida(vilken);
+    const { rad, radKalla } = citaten();
+    if (!radKalla.includes("\u00a0")) throw new Error("tillståndsraden i design.md saknar sitt &nbsp;");
+    const p = [...d.querySelectorAll("p")].find((e) => kr(e.textContent ?? "") === rad);
+    if (!p) throw new Error(`ingen rad med texten "${rad}"`);
+    const ra = p.textContent ?? "";
+    expect(ra.length, "samma längd som designens rad").toBe(radKalla.length);
+    for (let i = 0; i < radKalla.length; i++) {
+      const c = radKalla[i];
+      if (c !== " " && c !== "\u00a0") continue;
+      const vantat = c === "\u00a0" ? "hårt" : "brytbart";
+      const faktiskt = ra[i] === "\u00a0" ? "hårt" : ra[i] === " " ? "brytbart" : `"${ra[i]}"`;
+      expect(faktiskt, `mellanslaget efter "${radKalla.slice(0, i)}"`).toBe(vantat);
+    }
+  });
+
   it("summans hårda mellanslag sitter där designen sätter dem, och bara där", async () => {
     seeda([FORE, EFTER]);
     const s = (await sida(vilken)).querySelector("[data-projektsumma]");
@@ -232,7 +253,7 @@ describe.each(["projekt", "kvittona"] as const)("%s: ett kvitto före tillträde
     seeda([EFTER, { ...EFTER, namn: "Kakel", dag: "2026-10-01" }]);
     const d = await sida(vilken);
     expect(summan(d)).toMatch(/^[\d ]+,?\d* kr$/);
-    expect(d.textContent).not.toContain("räknas inte i underlaget");
+    expect(kr(d.textContent ?? "")).not.toContain("räknas inte i underlaget");
   });
 });
 
@@ -270,7 +291,7 @@ describe("Obetald lovar något den inte kan hålla", () => {
   const OBETALD = "Obetald – räknas i underlaget när den är betald";
   const tillstandet = () => {
     const [[rad]] = citatgrupper("#### Obetald lovar något den inte kan hålla");
-    return utan(rad);
+    return utan(rad).replace(/&nbsp;/g, " ");
   };
 
   it("förutsättningen: avsnittets rad är samma rad som för det betalda kvittot", () => {

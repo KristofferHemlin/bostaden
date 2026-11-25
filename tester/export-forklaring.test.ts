@@ -5,10 +5,23 @@
 // K6A-exporten, med ratt text for varje orsak, och att en rad med ett belopp
 // aldrig far nagon forklaring.
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { byggK6aExport, type K6aIndata } from "@/doman/export-k6a";
 import type { Regelparameter } from "@/doman/typer";
 import { REGELPARAMETRAR, kostnad, projekt } from "./_hjalp";
+
+/** Andra cellen i tabellraden under "En rad som ger 0 kr måste säga varför",
+ *  med &nbsp; som det hårda mellanslag det står för. Läses inne i provet och
+ *  stannar med namn när raden saknas. */
+function nollforklaringEnligtDesign(orsak: string): string {
+  const rad = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8")
+    .split("\n")
+    .find((r) => r.startsWith(`| ${orsak} |`));
+  if (!rad) throw new Error(`design.md saknar tabellraden "| ${orsak} |"`);
+  return rad.split("|")[2].trim().replace(/&nbsp;/g, "\u00a0");
+}
 
 function bygg(over: Partial<K6aIndata>): K6aIndata {
   return {
@@ -121,7 +134,10 @@ describe("forklaringen till en 0-kr-rad i K6A-exporten", () => {
     const rad = ex.sida2.rader.find((r) => r.atgard === "Nytt golv");
     expect(rad?.belopp_brutto).toBe(0);
     expect(rad?.avdragsgill_del_brutto).toBe(0);
-    expect(rad?.forklaring).toBe("Allt var nytt vid tillträdet, så reparationer räknas inte.");
+    // Lydelsen ur tabellen i docs/design.md, med dess &nbsp; som hårt
+    // mellanslag ("Nybyggd-förklaringen håller ihop av en slump"). Punkten
+    // står inte i tabellen, som för femårsfönstrets rad.
+    expect(rad?.forklaring).toBe(`${nollforklaringEnligtDesign("Bostaden var nybyggd vid förvärvet")}.`);
   });
 
   it("en rad med ett belopp far ingen forklaring", () => {
