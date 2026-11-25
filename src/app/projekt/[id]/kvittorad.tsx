@@ -13,6 +13,7 @@ import { arUtkast, beloppForKostnad, rotForBelopp } from "@/doman/berakningar";
 import type { Kostnad } from "@/doman/typer";
 import { formateraKronor, sparadDag } from "@/lib/format";
 import { bilagemarke } from "@/lib/kvittolista";
+import { RAKNAS_INTE_FORE_TILLTRADET, raknasInteIUnderlaget } from "@/lib/raknas-inte-i-underlaget";
 
 /** Det ur databasraden som raden visar, utover domanens kostnad. */
 export interface KvittoradKalla {
@@ -28,11 +29,22 @@ export function ProjektetsKvittorad({
   kostnad: k,
   original,
   projektId,
+  tilltradesdatum,
 }: {
   kostnad: Kostnad;
   original: KvittoradKalla & Parameters<typeof arUtkast>[0];
   projektId: string;
+  /** Bostadens tilltrade, "YYYY-MM-DD": ett kvitto fore det ingar i
+   *  projektets bas men inte i avdraget, och raden sager det. */
+  tilltradesdatum: string;
 }) {
+  // Kvittot ligger i fordelningens bas men nollas i steg 3 (docs/design.md,
+  // "Ett kvitto som ingår i basen men inte i avdraget säger det på sin rad").
+  // Leverantor och datum star kvar, som pa raden for "Hör inte till
+  // bostaden" i kvittolistan – datumet ar det skalet handlar om. ROT-raden
+  // star ocksa kvar: kvittot ar med i summan ovanfor, och utan den gar
+  // summan inte att stamma av mot raderna.
+  const raknasInte = raknasInteIUnderlaget(k, tilltradesdatum);
   const notering = original.anteckning?.trim();
   const leverantor = original.leverantor?.trim();
   const datumRad = original.betaldatum ?? original.dokumentdatum;
@@ -56,11 +68,18 @@ export function ProjektetsKvittorad({
       })}
       // Projektets summa raknar kvittot; det ar underlaget (exporten,
       // troskeln) som vantar pa betaldatumet.
-      underStatus={k.betaldatum ? undefined : "Obetald – räknas i underlaget när den är betald"}
+      underStatus={
+        raknasInte
+          ? RAKNAS_INTE_FORE_TILLTRADET
+          : k.betaldatum
+            ? undefined
+            : "Obetald – räknas i underlaget när den är betald"
+      }
       atgard={!k.betaldatum}
       // Beloppet pa pappret, inte det ROT-reducerade bidraget (docs/design.md,
       // "Samma belopp ska se likadant ut overallt").
       belopp={formateraKronor(beloppForKostnad(k, projektId))}
+      beloppDampat={raknasInte}
       // ROT som avgar fran just den har delen av kvittot (docs/design.md,
       // Listrader: "ROT-raden hor till kvittoraden, overallt den visas").
       rot={rotForBelopp(k, beloppForKostnad(k, projektId))}

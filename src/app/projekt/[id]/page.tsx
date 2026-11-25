@@ -30,7 +30,8 @@ import {
 import { SAMMA_DEL_SKAL } from "@/doman/samma-del";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad, tillDomanProjekt } from "@/lib/doman-fran-db";
-import { formateraKronor } from "@/lib/format";
+import { formateraKronor, sparadDag } from "@/lib/format";
+import { projektSummaSomRaknasInte, varavRaknasInteText } from "@/lib/raknas-inte-i-underlaget";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { arGiltigtId } from "@/lib/giltigt-id";
@@ -118,6 +119,8 @@ export default async function ProjektSida({
   // stalls har, dar projektet visas, och svaret ges i redigeringen dar det
   // gamla svaret star forifyllt.
   const belopp = projektetsBelopp(kostnader, id);
+  const tilltrade = sparadDag(bostad.tilltradesdatum);
+  const varav = projektSummaSomRaknasInte(kostnader, id, tilltrade);
   const besked = merkostnadBehoverBekraftas(tillDomanProjekt(projekt), belopp);
   const merkostnadFraga =
     besked === null ? null : merkostnadUpplysning(besked, projekt, belopp, "fraga");
@@ -304,6 +307,10 @@ export default async function ProjektSida({
           titel="Kvittona"
           andra={kostnader.length > 0 ? `/projekt/${id}/kvitton/andra` : undefined}
           summa={kostnader.length > 0 ? formateraKronor(projektSumma(kostnader, id)) : undefined}
+          // Summan krymper inte for ett kvitto som inte ger avdrag – det ar
+          // kvar i fordelningens bas – men den sager hur mycket av den som
+          // inte raknas (docs/design.md, "Och summan säger vad den innehåller").
+          varav={varav > 0 ? varavRaknasInteText(varav) : undefined}
         />
         {/* Flera kvitton i ett svep (docs/design.md, "Att lägga kvitton till
             ett projekt som redan finns"). Bara nar det finns kvitton att
@@ -330,6 +337,7 @@ export default async function ProjektSida({
                 kostnad={k}
                 original={kostnadRader.find((x) => x.id === k.id)!}
                 projektId={id}
+                tilltradesdatum={tilltrade}
               />
             ))}
           </div>
@@ -378,13 +386,29 @@ function ProjektDel({
 
 /** En dels rubrikrad – en enda for alla tre delar, sa att de inte kan
  *  glida isar i form. Summan, nar den finns, star hogerstalld fore Ändra. */
-function DelHuvud({ titel, andra, summa }: { titel: string; andra?: string; summa?: string }) {
+function DelHuvud({
+  titel,
+  andra,
+  summa,
+  varav,
+}: {
+  titel: string;
+  andra?: string;
+  summa?: string;
+  /** "varav … räknas inte", efter summan och dampad. */
+  varav?: string;
+}) {
   return (
     <div className="flex items-baseline justify-between gap-3 px-4 pt-4">
       <h2 className="font-rubrik text-base text-text-primar">{titel}</h2>
       {summa || andra ? (
         <div className="flex items-baseline gap-3">
-          {summa ? <p className="font-rubrik text-sm tabular-nums text-text-primar">{summa}</p> : null}
+          {summa ? (
+            <p className="text-right font-rubrik text-sm tabular-nums text-text-primar" data-projektsumma="">
+              {summa}
+              {varav ? <span className="font-granssnitt text-text-sekundar"> · {varav}</span> : null}
+            </p>
+          ) : null}
           {andra ? (
             <Link href={andra} className={ANDRA_KLASS}>
               Ändra

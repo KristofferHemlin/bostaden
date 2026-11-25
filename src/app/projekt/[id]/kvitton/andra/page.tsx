@@ -13,13 +13,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LyftUtKnapp } from "./lyft-ut";
 import { ProjektetsKvittorad } from "../../kvittorad";
+import { projektSummaSomRaknasInte, varavRaknasInteText } from "@/lib/raknas-inte-i-underlaget";
 import { FRAN_KVITTONA } from "../fran";
 import { Skarm } from "@/components/skarm";
 import { projektSumma } from "@/doman/berakningar";
 import { projektnamnKarta } from "@/doman/genomgang";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
-import { formateraKronor } from "@/lib/format";
+import { formateraKronor, sparadDag } from "@/lib/format";
 import { arGiltigtId } from "@/lib/giltigt-id";
 import { prisma } from "@/lib/prisma";
 import { hamtaProjektnamn } from "@/lib/projektnamn";
@@ -58,6 +59,8 @@ export default async function KvittonaSida({
     hamtaValbaraKvitton(bostadId).then((k) => k.length),
   ]);
   const kostnader = kostnadRader.map(tillDomanKostnad);
+  const tilltrade = sparadDag(bostad.tilltradesdatum);
+  const varav = projektSummaSomRaknasInte(kostnader, id, tilltrade);
 
   // Ett kvitto som ocksa ar uppdelat pa ett annat projekt hamnar inte bland
   // kvitton utan projekt – det ligger kvar dar. Raden sager vilket.
@@ -91,8 +94,10 @@ export default async function KvittonaSida({
           Ett kvitto du lyfter ut raderas inte.
         </p>
         {kostnader.length > 0 ? (
-          <p className="font-rubrik text-sm tabular-nums text-text-primar">
+          <p className="text-right font-rubrik text-sm tabular-nums text-text-primar" data-projektsumma="">
             {formateraKronor(projektSumma(kostnader, id))}
+            {/* Samma summa och samma "varav" som projektsidan. */}
+            {varav > 0 ? <span className="font-granssnitt text-text-sekundar"> · {varavRaknasInteText(varav)}</span> : null}
           </p>
         ) : null}
       </div>
@@ -113,7 +118,7 @@ export default async function KvittonaSida({
                 {/* Samma rad som pa projektets sida – samma komponent
                     (docs/design.md, "Kvittoraden ser likadan ut på Kvittona
                     som på projektsidan"). */}
-                <ProjektetsKvittorad kostnad={k} original={original} projektId={id} />
+                <ProjektetsKvittorad kostnad={k} original={original} projektId={id} tilltradesdatum={tilltrade} />
                 <div className="px-4 pb-3">
                   <LyftUtKnapp
                     projektId={id}

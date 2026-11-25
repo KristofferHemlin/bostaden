@@ -1,3 +1,4 @@
+import { BOSTADSRAD } from "./_hjalp";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -18,7 +19,10 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     projekt: { findFirst: h.projektFindFirst },
     bostad: {
+      // Hela raden: projektsidan läser tillträdet för kvitton före det
+      // (src/lib/raknas-inte-i-underlaget.ts).
       findUniqueOrThrow: vi.fn(async () => ({
+        ...BOSTADSRAD,
         adress: "Storgatan 1",
         upplatelseform: "bostadsratt",
       })),
