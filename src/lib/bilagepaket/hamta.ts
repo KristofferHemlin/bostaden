@@ -306,6 +306,8 @@ export async function hamtaBilagepaketdata(
           return k ? kvittonamn(k) : "Kvitto";
         },
         (id) => projektnamn.get(id) ?? "Projekt",
+        // Samma belopp och avgår-rader som exportvyn (src/lib/aterstar.ts).
+        (id) => indata.kostnader.find((k) => k.id === id),
       ),
       radavdrag,
       bilagesidor,

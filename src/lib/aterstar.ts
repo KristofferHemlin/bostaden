@@ -8,7 +8,10 @@
 // Ren modul utan databas, sa att den gar att anvanda i webblasaren dar PDF:en
 // byggs.
 
+import { avrunda, bostadensAndel, inlagtForKostnad, rotForBelopp } from "@/doman/berakningar";
 import type { AterstaendeKvitto, K6aExport } from "@/doman/export-k6a";
+import type { Kostnad } from "@/doman/typer";
+import { avgarForKvitto, avgarRader, rotAvgarRad } from "@/lib/kvittolista";
 
 export const ATERSTAR_RUBRIK = "Återstår";
 
@@ -39,8 +42,14 @@ export interface Aterstarrad {
   orsak: string;
   ar: number | null;
   /** Oren, eller null for ett utkast – inget belopp finns, och en nolla vore
-   *  ett pahittat tal. */
+   *  ett pahittat tal. For en kvittorad beloppet FORE avrakning: kvittots
+   *  totalbelopp, eller den okopplade delens belopp fore ROT
+   *  (beloppOchAvgar). */
   belopp: number | null;
+  /** De dampade avgår-raderna under skalet, i kvittolistans ordning och
+   *  lydelse (avgarRader i src/lib/kvittolista.ts). Tom nar ingenting
+   *  avgar, och alltid tom for en hog. */
+  avgar: string[];
   /** Kvittot raden galler, eller null for en hog. */
   kostnadId: string | null;
   /** Hogen raden galler, eller null for ett kvitto. */
@@ -129,6 +138,12 @@ export function aterstarRader(
    *  (projektnamnKarta i src/doman/genomgang.ts) – obligatorisk, sa att ingen
    *  anropare skriver ut det tomma namnet rakt av. */
   hognamnFor: (projektId: string) => string,
+  /** Kvittot bakom en kvittorad, for beloppet fore avrakning och dess
+   *  avgår-rader (beloppOchAvgar). Obligatorisk, av samma skal som
+   *  namnet: utan den visar raden det avraknade beloppet utan att saga
+   *  varfor det skiljer sig fran kvittot (docs/design.md, "Nettot under
+   *  Återstår"). Modulen ror ingen databas – anroparen slar upp. */
+  kostnadFor: (kostnadId: string) => Kostnad | undefined,
 ): Aterstarrad[] {
   const rader: Aterstarrad[] = [
     ...ex.oklassificerade_hogar.map((h) => ({
@@ -140,6 +155,7 @@ export function aterstarRader(
       orsak: ATERSTAR_ORSAK.vantar_pa_fragor,
       ar: h.ar,
       belopp: h.belopp_brutto,
+      avgar: [],
       kostnadId: null,
       projektId: h.projekt_id,
     })),
@@ -149,13 +165,62 @@ export function aterstarRader(
       orsakKod: k.orsak,
       orsak: ATERSTAR_ORSAK[k.orsak],
       ar: k.ar,
-      belopp: k.belopp_brutto,
+      ...beloppOchAvgar(k, kostnadFor(k.kostnad_id)),
       kostnadId: k.kostnad_id,
       projektId: null,
     })),
   ];
   // Stabil sortering: lika ar behaller ordningen ovan.
   return rader.sort((a, b) => Number(a.ar === null) - Number(b.ar === null) || (a.ar ?? 0) - (b.ar ?? 0));
+}
+
+/**
+ * Beloppet och avgår-raderna for en kvittorad under Återstår (docs/design.md,
+ * "Nettot under Återstår", 2026-11-26). Till dess visade raden det avraknade
+ * beloppet – 43 807,50 kr for ett kvitto som pa kvittolistan star som
+ * 50 287,50 kr med "varav ROT 6 480 kr, avgår" – utan nagon rad som sa varfor
+ * de skiljer sig.
+ *
+ * Tva fall:
+ *
+ * - Hela kvittot star har (utan betaldatum, fore tilltradet, eller utan
+ *   projekt helt och hallet): kvittots totalbelopp och samma rader som
+ *   kvittolistan, avgarForKvitto – ROT, privat del och "… räknas med".
+ * - Bara en del av kvittot saknar projekt (resten ligger i ett): den delens
+ *   belopp fore ROT och dess andel av ROT, samma form som projektlistans
+ *   kvittorader visar en del av ett kvitto. Ingen "räknas med"-rad – den
+ *   raden ar kvittots, och samma lydelse med en dels tal vore varre an ingen
+ *   rad (docs/design.md, Listrader, "Projektsidan är en egen fråga").
+ *
+ * Ett utkast har inget belopp och inga rader. Saknas kvittot i uppslaget
+ * star det avraknade beloppet kvar, utan rader – ett tal hellre an inget.
+ */
+function beloppOchAvgar(
+  k: AterstaendeKvitto,
+  kostnad: Kostnad | undefined,
+): { belopp: number | null; avgar: string[] } {
+  if (k.belopp_brutto === null) return { belopp: null, avgar: [] };
+  if (!kostnad || kostnad.totalbelopp === null) return { belopp: k.belopp_brutto, avgar: [] };
+  // Samma funktion som domanen raknade beloppet med (export-k6a.ts): ar
+  // ingenting kopplat ar talen identiska, och raden galler hela kvittot.
+  if (k.orsak === "utan_hog" && k.belopp_brutto !== inlagtForKostnad(kostnad)) {
+    const del = avrunda(okopplatForeAvrakning(kostnad));
+    const rot = rotAvgarRad(rotForBelopp(kostnad, del));
+    return { belopp: del, avgar: rot ? [rot] : [] };
+  }
+  return { belopp: kostnad.totalbelopp, avgar: avgarRader(avgarForKvitto(kostnad)) };
+}
+
+/** Den del av kvittots bostadsdel som inte ar fordelad pa nagot projekt,
+ *  fore ROT – radernas belopp ganger det som ar kvar av bostadens andel nar
+ *  projektens andelar dragits fran. */
+function okopplatForeAvrakning(kostnad: Kostnad): number {
+  let summa = 0;
+  for (const rad of kostnad.rader) {
+    const iProjekt = rad.fordelningar.reduce((s, f) => (!f.privat && f.projekt_id ? s + f.andel : s), 0);
+    summa += rad.belopp * Math.max(0, bostadensAndel(rad) - iProjekt);
+  }
+  return summa;
 }
 
 /** Raden pa PDF:ens forsattssida som pekar till Återstår – PDF:en har inte

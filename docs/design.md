@@ -3123,6 +3123,23 @@ Poängen är att sidan ska vara meningsfull under hela ägandet i stället för 
 
 **Meningen lyder därför *"Det här ingår inte i talen ovan."*** Varje rad bär redan sitt eget skäl, och det är skälet som säger om det någonsin ändras — inte en gemensam inledning som gissar åt båda hållen.
 
+#### Nettot under Återstår
+
+**Skrivet 2026-11-26, uppmätt 2026-11-24.** SNICKERI NORD AB stod på kvittolistan som **50 287,50 kr** med *varav ROT 6 480 kr, avgår* och *43 807,50 kr räknas med*, men under *Återstår* bara som **43 807,50 kr**, utan rader. Samma kvitto med två belopp och ingenting som sa varför — precis det *Samma belopp ska se likadant ut överallt* finns för att hindra.
+
+**En kvittorad under *Återstår* som gäller hela kvittot visar kvittots totalbelopp**, med samma dämpade rader under skälet som kvittolistan: ROT-raden, den privata delen och *… räknas med*, i den ordningen. Samma funktion som kvittolistan ger raderna, så att de inte kan få två lydelser. Det gäller ett kvitto utan betaldatum, ett daterat före tillträdet och ett som inte hör till något projekt alls.
+
+> SNICKERI NORD AB · 2026 · 50 287,50 kr
+> Daterat före tillträdet
+> varav ROT 6 480 kr, avgår
+> 43 807,50 kr räknas med
+
+**När bara en del av kvittot saknar projekt visar raden den delen, före ROT, och delens ROT** — samma form som projektlistan använder för en del av ett kvitto. Ett kvitto på 10 000 kr med 3 000 kr ROT, där 6 000 kr ligger i ett projekt, står som **4 000 kr** med *varav ROT 1 200 kr, avgår*. Valt så för att det är den form appen redan använder när en rad är en del av ett kvitto, och för att kvittots totalbelopp på 10 000 kr hade påstått att hela kvittot saknar projekt.
+
+**Den raden får ingen *räknas med*-rad.** Den raden är kvittots, och samma lydelse med en dels tal är värre än ingen rad — se *Projektsidan är en egen fråga* under *Listrader*. Vad en del av ett kvitto räknas med är fortfarande obeslutat.
+
+**Exportvyn och PDF:en visar samma rader med samma ord**, i vanliga underlaget och medan bostadsfrågorna väntar. Högarna som väntar på frågor rörs inte: de är inget kvitto och har inget belopp på papper att visa före avräkning.
+
 #### Gränsen vid 1970 är ett produktbeslut
 
 **Beslutat av Kristoffer 2026-11-25.** Appen tar inte emot ett tillträdesdatum före 1970, och det står kvar fast lagen räknar längre tillbaka. **Det är ett val och inte en lucka.**

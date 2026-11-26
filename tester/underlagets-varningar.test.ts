@@ -122,7 +122,7 @@ function pdfData(ex: K6aExport) {
       skapadDatum: "2026-10-19",
     },
     ex,
-    aterstar: aterstarRader(ex, () => "Kvitto", hognamnIEx(ex)),
+    aterstar: aterstarRader(ex, () => "Kvitto", hognamnIEx(ex), () => undefined),
     radavdrag: {},
     bilagesidor: [],
     filnamn: "Deklarationsunderlag.pdf",
@@ -173,6 +173,7 @@ describe("PDF:en har Återstår", () => {
         MED_AKTERSTAENDE,
         (id) => namn[id] ?? "Kvitto",
         hognamnIEx(MED_AKTERSTAENDE),
+        () => undefined,
       ),
     };
     return pdfText(await byggBilagepaketPdf(data, () => {}));

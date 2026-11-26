@@ -10,12 +10,7 @@ import type { ValbartKvitto } from "@/components/kvitto-kryssruta";
 import { beloppOmKopplade, harRotOmKopplade, kvittoGarAttKoppla } from "@/doman/kvittokoppling";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { sparadDag } from "@/lib/format";
-import { avgarForKvitto, kvittoradText, privatAvgarRad, rotAvgarRad } from "@/lib/kvittolista";
-
-/** Raderna i samma ordning som Listrad skriver dem: ROT, privat, räknas med. */
-function avgarRader(a: ReturnType<typeof avgarForKvitto>): string[] {
-  return [rotAvgarRad(a.rot), privatAvgarRad(a.privat), a.raknasMed].filter((r): r is string => !!r);
-}
+import { avgarForKvitto, avgarRader, kvittoradText } from "@/lib/kvittolista";
 import { prisma } from "@/lib/prisma";
 import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 

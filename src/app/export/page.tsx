@@ -124,6 +124,9 @@ export default async function ExportSida() {
     ? sparadDag(bostad.forsaljningsdatum)
     : idagISverige();
   const fonsterAr = slaUppRegelparameter(regelparametrar, "reparationsfonster_ar", regeldatum);
+  // Kvittona som beraknade, for Återstårs belopp fore avrakning och dess
+  // avgår-rader (src/lib/aterstar.ts, beloppOchAvgar).
+  const domanKostnad = new Map(indata.kostnader.map((k) => [k.id, k]));
   const troskelbelopp = slaUppRegelparameter(regelparametrar, "troskelbelopp", regeldatum);
 
   return (
@@ -234,6 +237,7 @@ export default async function ExportSida() {
       ex,
       (id) => kvittoNamn.get(id) ?? "Kvitto",
       (id) => projektnamn.get(id) ?? "Projekt",
+      (id) => domanKostnad.get(id),
     );
     // Fraga 7 (steg 4): atgarder med reparationsdel vars skick vid
     // forsaljningen annu inte ar bedomt. Samma urval som /forsaljning/skick
@@ -325,6 +329,7 @@ export default async function ExportSida() {
                     orsak={r.orsak}
                     ar={r.ar}
                     belopp={r.belopp}
+                    avgar={r.avgar}
                     href={aterstarHref(r)}
                   />
                 ))}
@@ -520,6 +525,7 @@ export default async function ExportSida() {
       v,
       (id) => kvittoNamn.get(id) ?? "Kvitto",
       (id) => projektnamn.get(id) ?? "Projekt",
+      (id) => domanKostnad.get(id),
     );
     const behoverProjekt = v.aterstaende_kvitton.some((k) => k.orsak === "utan_hog");
     return (
@@ -611,6 +617,7 @@ export default async function ExportSida() {
                   orsak={r.orsak}
                   ar={r.ar}
                   belopp={r.belopp}
+                  avgar={r.avgar}
                   href={aterstarHref(r)}
                 />
               ))}
@@ -931,12 +938,16 @@ function AterstarRad({
   orsak,
   ar,
   belopp,
+  avgar,
   href,
 }: {
   namn: string;
   orsak: string;
   ar: number | null;
   belopp: number | null;
+  /** "varav ROT … kr, avgår" och sladet – under skalet, aldrig under
+   *  beloppet (docs/design.md, Listrader). */
+  avgar: string[];
   href?: string;
 }) {
   return (
@@ -956,6 +967,11 @@ function AterstarRad({
           )}
         </span>
         <span className="mt-0.5 block text-sm text-text-sekundar">{orsak}</span>
+        {avgar.map((rad) => (
+          <span key={rad} className="mt-0.5 block text-sm text-text-sekundar" data-avgar="">
+            {rad}
+          </span>
+        ))}
       </span>
       <span className="flex shrink-0 items-baseline gap-3 tabular-nums">
         {ar !== null ? <span className="text-text-sekundar">{ar}</span> : null}

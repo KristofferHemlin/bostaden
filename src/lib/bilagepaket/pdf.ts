@@ -354,7 +354,7 @@ function ritaAterstar(rv: Ritverktyg, rader: readonly Aterstarrad[]) {
 
   const hoger = A4_BREDD - MARGIN;
   for (const rad of rader) {
-    if (y < MARGIN + 40) {
+    if (y < MARGIN + 40 + 12 * rad.avgar.length) {
       sida = doc.addPage([A4_BREDD, A4_HOJD]);
       y = A4_HOJD - MARGIN;
     }
@@ -373,6 +373,12 @@ function ritaAterstar(rv: Ritverktyg, rader: readonly Aterstarrad[]) {
     }
     y -= 13;
     rita(sida, font, rad.orsak, { x: MARGIN, y, storlek: 9, farg: DAMPAD });
+    // Samma avgår-rader och samma ord som exportvyn, under skalet
+    // (src/lib/aterstar.ts, beloppOchAvgar).
+    for (const avgar of rad.avgar) {
+      y -= 12;
+      rita(sida, font, avgar, { x: MARGIN, y, storlek: 9, farg: DAMPAD });
+    }
     y -= 20;
   }
 }

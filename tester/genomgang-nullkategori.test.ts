@@ -41,7 +41,7 @@ describe("hog utan atgardstyp (grupperad men inte klassificerad)", () => {
     ]);
     // Och i Återstår – i exportvyn och i PDF:en, med samma rad.
     const hognamn = (id: string) => (id === "p1" ? "Bauhaus i augusti" : "");
-    expect(aterstarRader(ex, () => "Kvitto", hognamn)).toMatchObject([
+    expect(aterstarRader(ex, () => "Kvitto", hognamn, () => undefined)).toMatchObject([
       { namn: "Bauhaus i augusti", orsak: "Väntar på frågor", ar: 2026, belopp: 800_000 },
     ]);
   });

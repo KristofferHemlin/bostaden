@@ -186,6 +186,17 @@ export function avgarForKvitto(kostnad: Kostnad): {
 }
 
 /**
+ * Avgår-raderna som text, i samma ordning som Listrad skriver dem: ROT,
+ * privat, räknas med. For de listor som skriver raderna sjalva i stallet for
+ * genom Listrad – valen bland kvittona till ett projekt och Återstår i
+ * exportvyn och PDF:en (src/lib/aterstar.ts). Ett stalle, sa att ordningen och
+ * lydelsen inte kan glida isar mellan dem.
+ */
+export function avgarRader(a: ReturnType<typeof avgarForKvitto>): string[] {
+  return [rotAvgarRad(a.rot), privatAvgarRad(a.privat), a.raknasMed].filter((r): r is string => !!r);
+}
+
+/**
  * Kvittoradens huvudtext och dampade rad (docs/design.md, Kvittolistan):
  * anteckningen som huvudtext med leverantor och datum under. Saknas
  * anteckningen ar leverantoren huvudtext och den dampade raden bara datumet –
