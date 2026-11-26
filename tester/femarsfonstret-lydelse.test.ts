@@ -5,6 +5,7 @@ import { act, createElement, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { lasDesign, lydelseITabellrad } from "./_designtabell";
 import { REGELPARAMETRAR } from "./_hjalp";
 
 // Exportvyn renderas pa riktigt, mot en falsk databas – samma uppstallning
@@ -92,11 +93,11 @@ function infoknappenEnligtDesign(): string[] {
   return utanRubrik.split(/ (?=Reparation: )/).map(normalisera);
 }
 
-/** Tabellraden under "En rad som ger 0 kr måste säga varför", andra cellen. */
+/** Tabellraden under "En rad som ger 0 kr måste säga varför", andra cellen
+ *  (tester/_designtabell.ts – att jämförelsen faller när raden ändras prövas
+ *  i tester/designtabell.test.ts). */
 function exportskaletEnligtDesign(): string {
-  const rad = designRader().find((r) => r.startsWith("| Reparationen ligger utanför femårsfönstret |"));
-  expect(rad, "exportskalets tabellrad i design.md").toBeTruthy();
-  return rad!.split("|")[2].trim();
+  return lydelseITabellrad(lasDesign(), "Reparationen ligger utanför femårsfönstret");
 }
 
 /** Rutans hela lydelse pa exportvyn fore forsaljningen, ur punkten om sida 2. */

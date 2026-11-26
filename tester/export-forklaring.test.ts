@@ -5,22 +5,18 @@
 // K6A-exporten, med ratt text for varje orsak, och att en rad med ett belopp
 // aldrig far nagon forklaring.
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { byggK6aExport, type K6aIndata } from "@/doman/export-k6a";
 import type { Regelparameter } from "@/doman/typer";
+import { lasDesign, lydelseITabellrad } from "./_designtabell";
 import { REGELPARAMETRAR, kostnad, projekt } from "./_hjalp";
 
 /** Andra cellen i tabellraden under "En rad som ger 0 kr måste säga varför",
  *  med &nbsp; som det hårda mellanslag det står för. Läses inne i provet och
- *  stannar med namn när raden saknas. */
+ *  stannar med namn när raden saknas (tester/_designtabell.ts – att
+ *  jämförelsen faller när raden ändras prövas i tester/designtabell.test.ts). */
 function nollforklaringEnligtDesign(orsak: string): string {
-  const rad = readFileSync(join(process.cwd(), "docs", "design.md"), "utf-8")
-    .split("\n")
-    .find((r) => r.startsWith(`| ${orsak} |`));
-  if (!rad) throw new Error(`design.md saknar tabellraden "| ${orsak} |"`);
-  return rad.split("|")[2].trim().replace(/&nbsp;/g, "\u00a0");
+  return lydelseITabellrad(lasDesign(), orsak);
 }
 
 function bygg(over: Partial<K6aIndata>): K6aIndata {
