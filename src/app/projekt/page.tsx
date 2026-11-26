@@ -24,6 +24,7 @@ import { idagISverige } from "@/lib/datum";
 import { formateraKronor, sparadDag } from "@/lib/format";
 import { rotAvgarRad } from "@/lib/kvittolista";
 import { projektarTextKarta } from "@/lib/projektar";
+import { projektSummaSomRaknasInte, varavRaknasInteText } from "@/lib/raknas-inte-i-underlaget";
 import { kravBostad } from "@/lib/session";
 
 export const metadata = { title: "Projekt" };
@@ -63,11 +64,17 @@ export default async function ProjektlistaSida() {
   );
 
   const arText = projektarTextKarta(projektRader, kostnadRader);
+  const tilltrade = sparadDag(bostad.tilltradesdatum);
 
   const rader = iOrdning.map((p) => {
     // Allt som kopplats hit, aven utan betaldatum – samma tal som projektets
     // egen sida (projektSumma).
     const belopp = projektSumma(kostnader, p.id);
+    // Hur mycket av summan som aldrig kommer att raknas – samma tal och samma
+    // lydelse som projektsidan och skarmen Kvittona, ur samma funktioner
+    // (docs/design.md, "Och summan säger vad den innehåller"), sa att de tre
+    // inte kan glida isar.
+    const varav = projektSummaSomRaknasInte(kostnader, p.id, tilltrade);
 
     // Projektlistan visar sina kvitton (docs/design.md, "Listrader"): direkt
     // under namnet, med leverantor, datum och belopp – annars ar raden ett
@@ -110,6 +117,7 @@ export default async function ProjektlistaSida() {
       arText: arText.get(p.id) ?? null,
       harKvitton: kvitton.length > 0,
       belopp,
+      varav: varav > 0 ? varavRaknasInteText(varav) : undefined,
       // En hog fran klassificeringsgenomgangens fas 1 (atgardstyp = null) har
       // annu inte gatt igenom fragetradet – prickas som en atgard.
       status: atgardKategoriText(p.atgardstyp, p.battre_kvalitet),
@@ -182,6 +190,11 @@ export default async function ProjektlistaSida() {
                       // vore ett matt tal (docs/design.md, Projektlistan).
                       belopp={r.harKvitton ? formateraKronor(r.belopp) : undefined}
                       beloppSaknas="Inga kvitton än"
+                      // Under namnet, bland de dampade raderna – aldrig i
+                      // beloppets spalt, som ar smal och delad med namnet
+                      // (docs/design.md, Projektlistan, "varav står under
+                      // namnet").
+                      underStatus={r.varav}
                     />
                     {r.kvitton.length > 0 ? (
                       <ul className="flex flex-col gap-1 px-4 pb-3">

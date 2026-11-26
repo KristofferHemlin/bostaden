@@ -2560,6 +2560,16 @@ Regeln om tunna ikoner i `--text-sekundar` står kvar och gäller där en symbol
 
 Det är samma regel som *Ett tillstånd är inte en kategori*, en rad längre ner i samma lista: ett fält med etikett måste besvaras av sitt värde, och ett belopp som inte finns utelämnas i stället för att skrivas som en nolla.
 
+**Summan säger vad den innehåller också här, sedan 2026-11-26.** Projektsidan och skärmen *Kvittona* visade *55 807,50 kr · varav 43 807,50 kr räknas inte*, och projektlistan samma summa utan *varav* — tre skärmar med samma tal och bara två som sa att en del av det aldrig ger avdrag. **Regeln under *Och summan säger vad den innehåller* gäller alltså projektlistan också**, med samma tal och samma lydelse, ur samma funktion, så att de tre inte kan glida isär.
+
+**Men *varav* står under namnet, inte efter beloppet.** På projektsidan delar summan rad med en kort rubrik; i listan delar beloppet rad med projektets namn, och beloppets spalt får inte växa på namnets bekostnad. Raden står därför bland de dämpade raderna under namnet, som varje annan upplysning om radens belopp — se *Listrader*, *aldrig under beloppet*:
+
+> Nytt klinkergolv i badrummet          55 807,50 kr
+> 2026 · Grundförbättring
+> varav 43 807,50 kr räknas inte
+
+**Uppmätt 2026-11-26 i Chrome med appens CSS och emulerad telefon**, med ett ord per Range mellan vanliga mellanslag: en rad vid 390 och 360 px, två vid 320 px (*varav 43 807,50 kr* / *räknas inte*), inget tal brutet, ingen sidledsrullning, beloppet inom kortet. **De hårda mellanslagen bär inte här:** byts de mot vanliga bryts raden ändå efter *kr* vid alla tre bredderna. De står kvar eftersom lydelsen är projektsidans, där de bär.
+
 **Och året i raden härleds ur kvittona när det finns några.** Det tidigaste betaldatumet avgör, inte den lagrade etiketten `ar`. Agenten hittade fallet: det gamla projektet låg under 2026 medan dess kvitton är från 2025, eftersom etiketten sätts till innevarande år för ett projekt som skapas fristående. `ar` är fortfarande etiketten och fortfarande förvalet — men en etikett som säger emot raderna under sig är värre än ingen etikett. Allt som räknas utgår sedan tidigare från betaldatumen.
 
 **Varje projekt har ett värde att visa**, eftersom frågeträdet besvaras när projektet skapas. Här stod till 2026-11-13 hur fältet skulle bete sig medan svaren saknades – det tillståndet finns inte längre.
