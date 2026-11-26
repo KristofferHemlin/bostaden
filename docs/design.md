@@ -3150,6 +3150,22 @@ Poängen är att sidan ska vara meningsfull under hela ägandet i stället för 
 
 **Exportvyn och PDF:en visar samma rader med samma ord**, i vanliga underlaget och medan bostadsfrågorna väntar. Högarna som väntar på frågor rörs inte: de är inget kvitto och har inget belopp på papper att visa före avräkning.
 
+#### Tabellen rullar aldrig i sidled
+
+**Beslutat av Kristoffer 2026-11-26.** Enligt arbetslistans mätning 2026-11-25 var sidornas tabeller 381–402 px breda i en ram på 303–373 px vid 390, 360 och 320 px, och fick dras i sidled inuti sin ram. Agentens mätning 2026-11-26, med ören i varje belopp och två delägare: 412–533 px i en ram på 286–356 px. Med två delägare och en såld bostad har en rad tre belopp, och tre belopp med ören ryms inte bredvid varandra på den minsta telefonen hur tätt cellerna än packas. **Uppmätt 2026-11-26 i Chrome med appens CSS:** ett belopp som *205 973,42 kr* är 89 px brett i 14 px, tre är 267 px, och ramen är 286 px vid 320 px.
+
+**Under 640 px blir varje rad ett block:** åtgärden överst, med varningar och förklaring under sig som förut, och därefter *År*, *Belopp*, *Avdragsgill del* och *Din andel* som etikett och värde på var sin rad – etiketten till vänster i radens grå, värdet till höger. Rubrikraden visas inte, eftersom varje rad bär sina egna etiketter. Kolumner som inte visas i tabellen visas inte i blocket heller.
+
+> Byggde ett uterum mot trädgården
+> År                        2024
+> Belopp           205 973,42 kr
+> Avdragsgill del  205 973,42 kr
+> Din andel        102 986,71 kr
+
+**Från 640 px är det tabellen som förut**, med rubrikrad och kolumner. Samma innehåll i båda lägena och ingenting bakom ett tryck: underlaget ska gå att läsa uppifrån och ned och skrivas av rad för rad.
+
+**Att göra texten mindre övervägdes och föll**, eftersom ingen text får vara under 14 px och det ändå inte hade räckt. **Att låta varje åtgärd öppnas för sina detaljer föll också**: den som skriver av talen till deklarationen hade fått ett tryck in och ett tillbaka per rad.
+
 #### Gränsen vid 1970 är ett produktbeslut
 
 **Beslutat av Kristoffer 2026-11-25.** Appen tar inte emot ett tillträdesdatum före 1970, och det står kvar fast lagen räknar längre tillbaka. **Det är ett val och inte en lucka.**

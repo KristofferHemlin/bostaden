@@ -648,6 +648,30 @@ export default async function ExportSida() {
   }
 }
 
+/**
+ * Sidornas tabeller pa telefon (docs/design.md, Exportvyn, "Tabellen rullar
+ * aldrig i sidled", 2026-11-26). Under 640 px blir varje rad ett block:
+ * atgarden overst, sedan År, Belopp, Avdragsgill del och Din andel som
+ * etikett och varde pa var sin rad. Tre belopp med oren ar 267 px och ryms
+ * inte bredvid varandra i en ram pa 286 px; tabellen rullade i sidled.
+ *
+ * Samma element i bada lagena – bara klasserna skiljer sig – sa att ingen
+ * text star tva ganger i sidan. Etiketten ar cellens data-etikett, utskriven
+ * av CSS fore vardet, och rubrikraden doljs: varje rad bar sina egna. Fran
+ * 640 px ar det tabellen som forut.
+ */
+const TABELL = {
+  tabell: "block w-full border-collapse font-granssnitt text-sm tabular-nums sm:table",
+  huvud: "hidden sm:table-header-group",
+  kropp: "block divide-y divide-linje border-t border-linje sm:table-row-group",
+  rad: "block py-3 align-top sm:table-row sm:py-0",
+  atgard: "block px-4 sm:table-cell sm:py-3",
+  /** En cell med etikett pa telefon: etiketten till vanster, vardet till
+   *  hoger. */
+  varde:
+    "flex items-baseline justify-between gap-3 px-4 pt-1 before:font-normal before:text-text-sekundar before:content-[attr(data-etikett)] sm:table-cell sm:py-3 sm:text-right sm:before:content-none",
+} as const;
+
 /** Raderna medan bostadsfragorna ar obesvarade: samma kolumner som
  *  SidaBlock, men ett tal som beror av svaret star som streck. */
 function VantandeSidaBlock({
@@ -670,8 +694,8 @@ function VantandeSidaBlock({
         <p className="px-4 py-3 font-granssnitt text-sm text-text-sekundar">{tomtText}</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse font-granssnitt text-sm tabular-nums">
-            <thead>
+          <table className={TABELL.tabell}>
+            <thead className={TABELL.huvud}>
               <tr className="text-left text-text-sekundar">
                 <th className="px-4 py-2 font-normal">Åtgärd</th>
                 <th className="px-4 py-2 font-normal">År</th>
@@ -682,10 +706,10 @@ function VantandeSidaBlock({
                 {gemensam ? <th className="px-4 py-2 text-right font-normal">Din andel</th> : null}
               </tr>
             </thead>
-            <tbody className="divide-y divide-linje border-t border-linje">
+            <tbody className={TABELL.kropp}>
               {rader.map((r, i) => (
-                <tr key={`${r.atgard}-${r.ar}-${i}`} className="align-top">
-                  <td className="px-4 py-3">
+                <tr key={`${r.atgard}-${r.ar}-${i}`} className={TABELL.rad}>
+                  <td className={TABELL.atgard}>
                     <span className="flex items-center gap-1.5 text-text-primar">{r.atgard}</span>
                     {r.varningar.map((v) => (
                       <span key={v} className="mt-0.5 block text-sm text-text-sekundar">
@@ -696,19 +720,20 @@ function VantandeSidaBlock({
                       <span className="mt-0.5 block text-sm text-text-sekundar">{r.forklaring}</span>
                     ) : null}
                   </td>
-                  <td className="px-4 py-3 text-text-sekundar">{r.ar}</td>
-                  <td className="px-4 py-3 text-right text-text-primar">
+                  <td data-etikett="År" className={`${TABELL.varde} text-text-sekundar`}>{r.ar}</td>
+                  <td data-etikett="Belopp" className={`${TABELL.varde} text-text-primar`}>
                     {formateraKronorEllerStreck(r.belopp)}
                   </td>
                   {visaAvdragsgill ? (
                     <td
-                      className={`px-4 py-3 text-right ${r.avdragsgill === null ? "text-text-sekundar" : "text-text-primar"}`}
+                      data-etikett="Avdragsgill del"
+                      className={`${TABELL.varde} ${r.avdragsgill === null ? "text-text-sekundar" : "text-text-primar"}`}
                     >
                       {formateraKronorEllerStreck(r.avdragsgill)}
                     </td>
                   ) : null}
                   {gemensam ? (
-                    <td className="px-4 py-3 text-right text-text-sekundar">
+                    <td data-etikett="Din andel" className={`${TABELL.varde} text-text-sekundar`}>
                       {formateraKronorEllerStreck(r.individuellt)}
                     </td>
                   ) : null}
@@ -778,8 +803,8 @@ function SidaBlock({
         </p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse font-granssnitt text-sm tabular-nums">
-            <thead>
+          <table className={TABELL.tabell}>
+            <thead className={TABELL.huvud}>
               <tr className="text-left text-text-sekundar">
                 <th className="px-4 py-2 font-normal">Åtgärd</th>
                 <th className="px-4 py-2 font-normal">År</th>
@@ -796,7 +821,7 @@ function SidaBlock({
                 ) : null}
               </tr>
             </thead>
-            <tbody className="divide-y divide-linje border-t border-linje">
+            <tbody className={TABELL.kropp}>
               {rader.map((r, i) => {
                 // Vilket tal delagarens "Din andel"-kolumn visar: pa sida 2 ar
                 // det den avdragsgilla delen (det som summeras till ruta 5), pa
@@ -805,8 +830,8 @@ function SidaBlock({
                   ? (r.avdragsgill_del_individuellt ?? 0)
                   : r.belopp_individuellt;
                 return (
-                  <tr key={`${r.atgard}-${r.ar}-${i}`} className="align-top">
-                    <td className="px-4 py-3">
+                  <tr key={`${r.atgard}-${r.ar}-${i}`} className={TABELL.rad}>
+                    <td className={TABELL.atgard}>
                       {/* Ingen orange prick pa nollrader (docs/design.md,
                           Exportvyn): pricken betyder att nagot kraver atgard, och
                           en rad som fallit pa en regel ar slutgiltig – forklaringen
@@ -828,17 +853,17 @@ function SidaBlock({
                         </span>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3 text-text-sekundar">{r.ar}</td>
-                    <td className="px-4 py-3 text-right text-text-primar">
+                    <td data-etikett="År" className={`${TABELL.varde} text-text-sekundar`}>{r.ar}</td>
+                    <td data-etikett="Belopp" className={`${TABELL.varde} text-text-primar`}>
                       {formateraKronor(beloppIKolumnen(r))}
                     </td>
                     {visaAvdragsgill ? (
-                      <td className="px-4 py-3 text-right text-text-primar">
+                      <td data-etikett="Avdragsgill del" className={`${TABELL.varde} text-text-primar`}>
                         {formateraKronor(r.avdragsgill_del_brutto ?? 0)}
                       </td>
                     ) : null}
                     {gemensam ? (
-                      <td className="px-4 py-3 text-right text-text-sekundar">
+                      <td data-etikett="Din andel" className={`${TABELL.varde} text-text-sekundar`}>
                         {formateraKronor(individuelltVarde)}
                       </td>
                     ) : null}
