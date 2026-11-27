@@ -11,14 +11,19 @@ import { beloppOmKopplade, harRotOmKopplade, kvittoGarAttKoppla } from "@/doman/
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { sparadDag } from "@/lib/format";
 import { avgarForKvitto, avgarRader, kvittoradText } from "@/lib/kvittolista";
+import { RAKNAS_INTE_FORE_TILLTRADET, raknasInteIUnderlaget } from "@/lib/raknas-inte-i-underlaget";
 import { prisma } from "@/lib/prisma";
 import { INTE_TOMT_UTKAST } from "@/lib/tomt-utkast";
 
 export async function hamtaValbaraKvitton(bostadId: string): Promise<ValbartKvitto[]> {
-  const kostnadRader = await prisma.kostnad.findMany({
-    where: { bostad_id: bostadId, ...INTE_TOMT_UTKAST },
-    include: { rader: { include: { fordelningar: true } } },
-  });
+  const [bostad, kostnadRader] = await Promise.all([
+    prisma.bostad.findUniqueOrThrow({ where: { id: bostadId }, select: { tilltradesdatum: true } }),
+    prisma.kostnad.findMany({
+      where: { bostad_id: bostadId, ...INTE_TOMT_UTKAST },
+      include: { rader: { include: { fordelningar: true } } },
+    }),
+  ]);
+  const tilltradesdatum = sparadDag(bostad.tilltradesdatum);
   return kostnadRader
     .map((k) => ({ rad: k, doman: tillDomanKostnad(k) }))
     .filter(({ doman }) => kvittoGarAttKoppla(doman))
@@ -43,7 +48,12 @@ export async function hamtaValbaraKvitton(bostadId: string): Promise<ValbartKvit
         rot: harRotOmKopplade([doman]),
         // Hon valjer efter beloppet, sa det ar har skillnaden mellan kvittot
         // och det som raknas betyder mest.
-        avgar: avgarRader(avgarForKvitto(doman)),
+        // Ett kvitto daterat fore tilltradet raknas aldrig, ocksa i ett
+        // projekt: tillstandet forst, sedan avdragen utan "räknas med"
+        // (docs/design.md, "Ett kvitto före tillträdet räknas inte med någonstans").
+        avgar: raknasInteIUnderlaget(doman, tilltradesdatum)
+          ? [RAKNAS_INTE_FORE_TILLTRADET, ...avgarRader(avgarForKvitto(doman, true))]
+          : avgarRader(avgarForKvitto(doman, false)),
         sortering: datum ? datum.getTime() : 0,
       };
     })

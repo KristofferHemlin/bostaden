@@ -186,6 +186,8 @@ export function aterstarRader(
  * - Hela kvittot star har (utan betaldatum, fore tilltradet, eller utan
  *   projekt helt och hallet): kvittots totalbelopp och samma rader som
  *   kvittolistan, avgarForKvitto – ROT, privat del och "… räknas med".
+ *   Ingen "räknas med" for ett kvitto daterat fore tilltradet: det raknas
+ *   aldrig.
  * - Bara en del av kvittot saknar projekt (resten ligger i ett): den delens
  *   belopp fore ROT och dess andel av ROT, samma form som projektlistans
  *   kvittorader visar en del av ett kvitto. Ingen "räknas med"-rad – den
@@ -208,7 +210,12 @@ function beloppOchAvgar(
     const rot = rotAvgarRad(rotForBelopp(kostnad, del));
     return { belopp: del, avgar: rot ? [rot] : [] };
   }
-  return { belopp: kostnad.totalbelopp, avgar: avgarRader(avgarForKvitto(kostnad)) };
+  // Ett kvitto fore tilltradet raknas aldrig: ROT och privat del star kvar,
+  // men ingen "räknas med" (avgarForKvitto, raknasAldrig).
+  return {
+    belopp: kostnad.totalbelopp,
+    avgar: avgarRader(avgarForKvitto(kostnad, k.orsak === "fore_tilltradet")),
+  };
 }
 
 /** Den del av kvittots bostadsdel som inte ar fordelad pa nagot projekt,

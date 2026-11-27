@@ -37,6 +37,13 @@ import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { formateraKronor, sparadDag } from "@/lib/format";
 import {
+  arssummaSomRaknasInte,
+  HOR_INTE_TILL_BOSTADEN,
+  RAKNAS_INTE_FORE_TILLTRADET,
+  raknasInteIUnderlaget,
+  varavRaknasInteText,
+} from "@/lib/raknas-inte-i-underlaget";
+import {
   antalKvittonText,
   arssektionerHopfallda,
   avgarForKvitto,
@@ -71,8 +78,9 @@ interface KvittoRad {
    * da kan ett nytt falt i avgarForKvitto inte tappas har i tysthet
    * (docs/design.md, Listrader: inga undantag per skarm). */
   avgar: ReturnType<typeof avgarForKvitto>;
-  /** Tillstandet pa en egen rad, eller undefined. Bara "Hör inte till
-   *  bostaden" i dag; beloppet dampas da. */
+  /** Tillstandet pa en egen rad, eller undefined: "Hör inte till
+   *  bostaden" eller "Daterat före tillträdet · räknas inte i underlaget".
+   *  Beloppet dampas da. */
   tillstand: string | undefined;
   atgard: boolean;
   utkast: boolean;
@@ -113,6 +121,7 @@ export default async function KvittolistaSida() {
     }),
   ]);
   const { bostadsnamn } = bostadHeader(bostad);
+  const tilltradesdatum = sparadDag(bostad.tilltradesdatum);
 
   // Ingangen till genomgangen: antal kvitton som varken ar arkiverade eller
   // kopplade till en hog. Kortet visas forst nar de ar tva eller fler
@@ -159,8 +168,18 @@ export default async function KvittolistaSida() {
       // ROT-rad och ingen privatrad (docs/design.md, "Raden visar tillståndet
       // i stället för talet"). Tillstandet star pa en egen rad under
       // leverantor och datum.
-      avgar: k.arkiverad ? { rot: 0, privat: 0, raknasMed: null } : avgarForKvitto(kostnad),
-      tillstand: k.arkiverad ? "Hör inte till bostaden" : undefined,
+      // Ett kvitto daterat fore tilltradet raknas aldrig och bar sitt
+      // tillstand: samma rad som projektsidan, ROT-raden kvar (beloppet ingar
+      // i arsrubriken), ingen "räknas med" och ett dampat belopp
+      // (docs/design.md, "Ett kvitto före tillträdet räknas inte med någonstans").
+      avgar: k.arkiverad
+        ? { rot: 0, privat: 0, raknasMed: null }
+        : avgarForKvitto(kostnad, raknasInteIUnderlaget(kostnad, tilltradesdatum)),
+      tillstand: k.arkiverad
+        ? HOR_INTE_TILL_BOSTADEN
+        : raknasInteIUnderlaget(kostnad, tilltradesdatum)
+          ? RAKNAS_INTE_FORE_TILLTRADET
+          : undefined,
       atgard,
       utkast,
       antalBilagor: k._count.bilagor,
@@ -264,6 +283,17 @@ export default async function KvittolistaSida() {
               // fyra avdelare dar tre beter sig lika och en inte gor det
               // laste den fjarde som vald (uppmatt 2026-11-16).
               const etikett = grupp.ar === null ? `Utan betaldatum · ${antal}` : `${grupp.ar} · ${antal}`;
+              // Det av summan som aldrig raknas: kvitton daterade fore
+              // tilltradet, i summans eget matt (docs/design.md, "Årsrubriken
+              // säger vad som inte räknas"). Under etiketten, som projektlistans
+              // varav under namnet, och synligt aven hopfallt.
+              const raknasInte =
+                grupp.ar === null
+                  ? 0
+                  : arssummaSomRaknasInte(
+                      grupp.poster.map((p) => p.kostnad),
+                      tilltradesdatum,
+                    );
               return (
                 <details key={grupp.ar ?? "utan-betaldatum"} open={!hopfallda} className="group">
                   {/* Arsrubrik: egen rad pa --yta-nedsankt med artalet och
@@ -275,8 +305,13 @@ export default async function KvittolistaSida() {
                       Hovringsytan galler bara enheter som kan hovra –
                       future.hoverOnlyWhenSupported i tailwind.config.ts. */}
                   <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 border-b border-linje bg-yta-nedsankt px-4 py-2 outline-none transition-colors hover:bg-yta-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-text-primar [&::-webkit-details-marker]:hidden">
-                    <span className="font-rubrik text-sm text-text-primar">
-                      {etikett}
+                    <span className="flex min-w-0 flex-col">
+                      <span className="font-rubrik text-sm text-text-primar">{etikett}</span>
+                      {raknasInte > 0 ? (
+                        <span data-arsrubrik-varav="" className="mt-0.5 font-granssnitt text-sm text-text-sekundar">
+                          {varavRaknasInteText(raknasInte)}
+                        </span>
+                      ) : null}
                     </span>
                     <span className="flex items-center gap-2">
                       {summa}
@@ -308,7 +343,7 @@ function Kvittorader({ poster }: { poster: KvittoRad[] }) {
           kursivStatus
           bilaga={r.bilaga}
           {...r.avgar}
-          underStatus={r.tillstand}
+          tillstand={r.tillstand}
           atgard={r.atgard}
           belopp={r.belopp}
           beloppDampat={r.tillstand !== undefined}

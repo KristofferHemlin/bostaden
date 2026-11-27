@@ -128,20 +128,25 @@ function rad(rader: Rad[], namn: string): Rad {
   return r;
 }
 
-/** Kvittolistans rader för samma kvitto, ur samma funktion som listan. */
+/** Kvittolistans rader för samma kvitto, ur samma funktion som listan.
+ *  SNICKERI NORD AB är daterat före tillträdet, så listan frågar med
+ *  raknasAldrig sant (docs/design.md, "Ett kvitto före tillträdet räknas
+ *  inte med någonstans"). */
 function kvittolistansRader(id: string): string[] {
   const k = h.db.tabell("kostnad").find((x) => x.id === id)!;
   const rader = h.db.tabell("kostnadsrad").filter((r) => r.kostnad_id === k.id)
     .map((r) => ({ ...r, fordelningar: h.db.tabell("radfordelning").filter((f) => f.kostnadsrad_id === r.id) }));
-  return avgarRader(avgarForKvitto(tillDomanKostnad({ ...k, rader } as never))).map(mellanslag);
+  return avgarRader(avgarForKvitto(tillDomanKostnad({ ...k, rader } as never), true)).map(mellanslag);
 }
 
 describe("Återstår visar kvittots belopp före avräkning, med samma avgår-rader som kvittolistan", () => {
-  it("ett helt kvitto före tillträdet: totalbeloppet, ROT-raden och räknas med", async () => {
+  it("ett helt kvitto före tillträdet: totalbeloppet och ROT-raden, aldrig räknas med", async () => {
     const { snickeri } = seeda();
     const r = rad(await aterstar(), "SNICKERI NORD AB");
     expect(mellanslag(r.belopp ?? "")).toBe("50 287,50 kr");
-    expect(r.avgar).toEqual(["varav ROT 6 480 kr, avgår", "43 807,50 kr räknas med"]);
+    // Till 2026-11-27 stod "43 807,50 kr räknas med" här, under skälet
+    // "Daterat före tillträdet" – två rader som sa emot varandra.
+    expect(r.avgar).toEqual(["varav ROT 6 480 kr, avgår"]);
     expect(r.avgar).toEqual(kvittolistansRader(snickeri));
   });
 
@@ -188,7 +193,7 @@ describe("Återstår visar kvittots belopp före avräkning, med samma avgår-ra
     };
     // Namn, år, belopp, skäl och avgår-raderna, i den ordning de ritas.
     expect(efter("SNICKERI NORD AB", 5)).toEqual([
-      "2026", "50 287,50 kr", "Daterat före tillträdet", "varav ROT 6 480 kr, avgår", "43 807,50 kr räknas med",
+      "2026", "50 287,50 kr", "Daterat före tillträdet", "varav ROT 6 480 kr, avgår", "Rörfirman",
     ]);
     expect(efter("Rörfirman", 4)).toEqual(["2026", "4 000 kr", "Hör inte till något projekt än", "varav ROT 1 200 kr, avgår"]);
   });

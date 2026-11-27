@@ -59,6 +59,7 @@ import Oversikt from "@/app/page";
 import { inlagtForKostnad } from "@/doman/berakningar";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { formateraKronor } from "@/lib/format";
+import { RAKNAS_INTE_FORE_TILLTRADET } from "@/lib/raknas-inte-i-underlaget";
 import { REGELPARAMETRAR } from "./_hjalp";
 
 const ANNA = "a0000000-0000-4000-8000-000000000001";
@@ -68,17 +69,18 @@ const BADA = "d0000000-0000-4000-8000-000000000001"; // 18 000, 6 000 privat, 11
 const PRIVAT = "d0000000-0000-4000-8000-000000000002"; // 18 000, 6 000 privat
 const ROT = "d0000000-0000-4000-8000-000000000003"; // 40 000, 9 000 ROT
 const HELT = "d0000000-0000-4000-8000-000000000004"; // 5 000, inget avdrag
+const FORE = "d0000000-0000-4000-8000-000000000005"; // 40 000, 9 000 ROT, före tillträdet
 const datum = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
-function kvitto(id: string, total: number, privat: number, rot: number | null) {
+function kvitto(id: string, total: number, privat: number, rot: number | null, dag = "2025-05-02") {
   h.db.lagg("kostnad", {
     id,
     bostad_id: X,
     leverantor: "Hantverkarna AB",
     totalbelopp: total,
     rot_utnyttjat: rot,
-    dokumentdatum: datum("2025-05-02"),
-    betaldatum: datum("2025-05-02"),
+    dokumentdatum: datum(dag),
+    betaldatum: datum(dag),
     skapad_av: ANNA,
   });
   const bostaden = h.db.lagg("kostnadsrad", { kostnad_id: id, artikel: "Arbete", belopp: total - privat });
@@ -111,6 +113,8 @@ function seeda() {
   kvitto(PRIVAT, 1_800_000, 600_000, null);
   kvitto(ROT, 4_000_000, 0, 900_000);
   kvitto(HELT, 500_000, 0, null);
+  // Tillträdet är 2019-06-01.
+  kvitto(FORE, 4_000_000, 0, 900_000, "2019-03-14");
   h.inloggad = { id: ANNA, email: "anna@exempel.se" };
 }
 
@@ -185,5 +189,46 @@ describe.each(listor)("%s", (_namn, sida) => {
     const rad = raderPerKvitto(await sida()).get(HELT);
     expect(rad).toBeTruthy();
     expect(rad!.some((t) => t.endsWith("räknas med"))).toBe(false);
+  });
+
+  // Uppmätt i produktionen 2026-11-26: ett kvitto daterat före tillträdet
+  // stod med "… räknas med" under sig, på båda listorna (docs/design.md,
+  // "Ett kvitto före tillträdet räknas inte med någonstans").
+  it("ett kvitto före tillträdet säger att det inte räknas, aldrig räknas med", async () => {
+    const rad = raderPerKvitto(await sida()).get(FORE);
+    expect(rad, "ingen rad för kvittot före tillträdet").toBeTruthy();
+    expect(rad!.some((t) => t.endsWith("räknas med"))).toBe(false);
+    expect(rad).toContain(RAKNAS_INTE_FORE_TILLTRADET);
+    // ROT-raden står kvar: beloppet ingår i årsrubrikens summa.
+    expect(rad).toContain("varav ROT 9\u00a0000\u00a0kr, avgår");
+  });
+});
+
+// Årsrubriken räknar kvittot före tillträdet, som "Inlagt {år}" gör, och säger
+// hur mycket av summan som aldrig räknas (docs/design.md, "Årsrubriken säger
+// vad som inte räknas"). Uppmätt i produktionen 2026-11-26: rubriken visade
+// summan utan ett ord om det.
+describe("kvittolistans årsrubrik", () => {
+  function rubriker(vy: unknown): Map<string, string[]> {
+    const dok = new DOMParser().parseFromString(renderToStaticMarkup(vy as ReactElement), "text/html");
+    const ut = new Map<string, string[]>();
+    for (const s of dok.querySelectorAll("summary")) {
+      const delar = [...s.querySelectorAll("span")].filter((e) => e.children.length === 0).map((e) => e.textContent ?? "");
+      ut.set(delar[0] ?? "", delar);
+    }
+    return ut;
+  }
+
+  it("säger varav … räknas inte för året med kvittot före tillträdet, och bara där", async () => {
+    const r = rubriker(await KvittolistaSida());
+    // 40 000 kr minus 9 000 kr ROT: årsrubrikens eget mått.
+    expect(r.get("2019 · 1 kvitto")).toContain("varav\u00a031\u00a0000\u00a0kr räknas\u00a0inte");
+    expect(r.get("2025 · 4 kvitton")?.some((t) => t.startsWith("varav"))).toBe(false);
+  });
+
+  it("tillståndet står före ROT-raden, som på projektsidan", async () => {
+    const rad = raderPerKvitto(await KvittolistaSida()).get(FORE)!;
+    expect(rad.indexOf(RAKNAS_INTE_FORE_TILLTRADET)).toBeGreaterThan(-1);
+    expect(rad.indexOf(RAKNAS_INTE_FORE_TILLTRADET)).toBeLessThan(rad.findIndex((t) => t.startsWith("varav ROT")));
   });
 });

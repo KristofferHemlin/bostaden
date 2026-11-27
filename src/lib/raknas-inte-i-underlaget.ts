@@ -19,7 +19,7 @@
 // forst – fore raden "Obetald". Arkiverade kvitton och utkast ar inte med:
 // de har sina egna tillstand.
 
-import { arUtkast, bidragForKostnad } from "@/doman/berakningar";
+import { arUtkast, bidragForKostnad, summeraInlagt } from "@/doman/berakningar";
 import { dateratForeTilltradet } from "@/doman/atgardsberakning";
 import type { Kostnad } from "@/doman/typer";
 import { formateraKronor } from "@/lib/format";
@@ -88,4 +88,14 @@ export function projektSummaSomRaknasInte(
     if (raknasInteIUnderlaget(k, tilltradesdatum)) summa += bidragForKostnad(k, projektId);
   }
   return summa;
+}
+
+/** Den del av en arsrubriks summa i kvittolistan som kommer fran kvitton
+ *  daterade fore tilltradet, i oren. Samma matt som summan (summeraInlagt:
+ *  utan privat del, efter ROT), sa att "varav" ar en del av talet bredvid
+ *  (docs/design.md, "Årsrubriken säger vad som inte räknas"). Arsrubriken
+ *  raknar dem, liksom "Inlagt {ar}" – de ar inlagda – men de raknas aldrig i
+ *  underlaget. */
+export function arssummaSomRaknasInte(kostnader: readonly Kostnad[], tilltradesdatum: string): number {
+  return summeraInlagt(kostnader.filter((k) => raknasInteIUnderlaget(k, tilltradesdatum)));
 }

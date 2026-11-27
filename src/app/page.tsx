@@ -46,6 +46,7 @@ import {
 } from "@/lib/format";
 import { aretISverige } from "@/lib/datum";
 import { avgarForKvitto, bilagemarke } from "@/lib/kvittolista";
+import { RAKNAS_INTE_FORE_TILLTRADET, raknasInteIUnderlaget } from "@/lib/raknas-inte-i-underlaget";
 import { prisma } from "@/lib/prisma";
 import { Landningssida } from "@/app/landningssida";
 import {
@@ -400,6 +401,10 @@ export default async function Oversikt({
                 // Ett utkast: kvittot valt men uppgifterna inte ifyllda an.
                 const utkast = k.totalbelopp === null;
                 const domanKostnad = domanKostnadPerId.get(k.id);
+                // Samma tillstand som kvittolistan: daterat fore tilltradet
+                // raknas aldrig, och raden sager det i stallet for "räknas med".
+                const raknasAldrig =
+                  !!domanKostnad && raknasInteIUnderlaget(domanKostnad, sparadDag(bostad.tilltradesdatum));
                 const datumRad = k.betaldatum ?? k.dokumentdatum;
                 const datum = datumRad ? sparadDag(datumRad) : null;
                 return (
@@ -430,7 +435,9 @@ export default async function Oversikt({
                     // Hela kvittot visas: samma avgar-rader som i kvittolistan
                     // (docs/design.md, Listrader: "ROT-raden hor till
                     // kvittoraden, overallt den visas").
-                    {...(domanKostnad && !utkast ? avgarForKvitto(domanKostnad) : {})}
+                    {...(domanKostnad && !utkast ? avgarForKvitto(domanKostnad, raknasAldrig) : {})}
+                    tillstand={raknasAldrig ? RAKNAS_INTE_FORE_TILLTRADET : undefined}
+                    beloppDampat={raknasAldrig}
                     slutknapp={
                       utkast ? (
                         <UtkastRaderaKnapp

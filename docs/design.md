@@ -2435,6 +2435,41 @@ Ett flöde har steg, en räknare och ett sparande i slutet. Det är där nedanst
 
 **ÅÄÖ i all text som användaren ser.** ASCII-translitterering gäller identifierare i koden, aldrig meddelanden. "battre skick vid forsaljningen ar inte bekraftat" ser ut som ett fel, för det är det.
 
+#### Ett kvitto före tillträdet räknas inte med någonstans
+
+**Beslutat av Kristoffer 2026-11-27, efter agentens test i produktionen 2026-11-26.** Ett kvitto daterat före tillträdet stod som *Daterat före tillträdet* under *Återstår* och samtidigt med raden *"… räknas med"* under sig. Samma sak på kvittolistan, startskärmens sex senaste, kvittosidan och listan att välja kvitton till ett projekt. **Två rader på samma kvitto som säger emot varandra.** Talen i underlaget var rätta; det var raden som ljög.
+
+**Ett kvitto daterat före tillträdet får aldrig raden *räknas med*.** Det räknas inte i deklarationsunderlaget, hur det än betalas och vilket projekt det än ligger i. Utgiften gjordes innan bostaden var hennes.
+
+**På kvittolistan och startskärmen bär raden i stället tillståndet, med beloppet dämpat**, samma rad som projektsidan:
+
+> nytt klinkergolv i badrummet, det gamla var sprucket sedan vi flyttade in
+> SNICKERI NORD AB · 2019-03-14
+> **Daterat före tillträdet · räknas&nbsp;inte i underlaget**
+> varav ROT 6 480 kr, avgår
+> *50 287,50 kr* (dämpat)
+
+**ROT-raden och den privata delen står kvar**, av samma skäl som på projektsidan: beloppet ingår i årsrubrikens summa, och utan raderna går summan inte att stämma av. *Räknas med* är den enda raden som går, eftersom den är den enda som påstår något om underlaget.
+
+**I listan att välja kvitton till ett projekt står tillståndet först bland de dämpade raderna**, före ROT. Hon ska se det innan hon kryssar i, inte efter.
+
+**Under *Återstår* räcker skälet.** Raden *Daterat före tillträdet* säger redan samma sak, så där tas bara *räknas med* bort. **Kvittosidan** visar sin egen notis om datumet och tappar likaså bara raden.
+
+**Det går fortfarande att lägga ett sådant kvitto i ett projekt**, valt av Kristoffer 2026-11-27 framför en spärr. Regeln *Aldrig en spärr* under *Datum* står kvar, och ett tillträdesdatum som ändras i inställningarna gör gamla kvitton till sådana i efterhand, vilket ingen spärr fångar.
+
+#### Årsrubriken säger vad som inte räknas
+
+**Beslutat 2026-11-27, på agentens förslag.** Årsrubriken räknar kvitton daterade före tillträdet, och det ska den fortsätta göra: den räknar samma sak som *Inlagt {år}* (se *Årsrubriken och Inlagt {år} måste räkna samma sak*), och de kvittona är inlagda. **Men den sa ingenting om att en del av summan aldrig räknas**, och för ett år som ligger helt före tillträdet stod hela summan där som om den gällde.
+
+**Rubriken får därför samma *varav* som projektlistan, under etiketten:**
+
+> 2019 · 2 kvitton                    163 807,50 kr ⌄
+> varav&nbsp;163 807,50 kr räknas&nbsp;inte
+
+**Talet är i summans eget mått**, utan privat del och efter ROT, så att *varav* är en del av talet bredvid. **Samma funktion för texten som projektlistan**, med samma två hårda mellanslag och samma skäl. Raden syns också när året är hopfällt, eftersom rubriken då är allt hon ser. *Utan betaldatum* får ingen sådan rad: den har ingen årssumma att vara en del av.
+
+*Totalt inlagt* på startskärmen ändras inte. Den heter *inlagt*, inte *avdrag*, och regeln *Livstidssumman räknar allt* står kvar.
+
 #### Namnfältet är tomt, och föreslår ingenting
 
 **Anteckningen och namnet svarar på olika frågor.** Anteckningen svarar på *"Vad gällde det?"* för ett kvitto och får vara en mening med detaljer och skäl. Namnet är en etikett för ett helt projekt, ofta flera kvitton, och hamnar i deklarationsunderlagets *Åtgärd*-kolumn. Det ena går inte att härleda ur det andra, och **fältet är därför tomt** med platshållaren som redan står där.
@@ -3140,9 +3175,11 @@ Poängen är att sidan ska vara meningsfull under hela ägandet i stället för 
 **En kvittorad under *Återstår* som gäller hela kvittot visar kvittots totalbelopp**, med samma dämpade rader under skälet som kvittolistan: ROT-raden, den privata delen och *… räknas med*, i den ordningen. Samma funktion som kvittolistan ger raderna, så att de inte kan få två lydelser. Det gäller ett kvitto utan betaldatum, ett daterat före tillträdet och ett som inte hör till något projekt alls.
 
 > SNICKERI NORD AB · 2026 · 50 287,50 kr
-> Daterat före tillträdet
+> Hör inte till något projekt än
 > varav ROT 6 480 kr, avgår
 > 43 807,50 kr räknas med
+
+**Ett kvitto daterat före tillträdet får ingen *räknas med*-rad**, rättat 2026-11-27 — se *Ett kvitto före tillträdet räknas inte med någonstans*. Exemplet ovan visade först ett sådant kvitto med raden kvar, och det var just den motsägelse som testet i produktionen hittade.
 
 **När bara en del av kvittot saknar projekt visar raden den delen, före ROT, och delens ROT** — samma form som projektlistan använder för en del av ett kvitto. Ett kvitto på 10 000 kr med 3 000 kr ROT, där 6 000 kr ligger i ett projekt, står som **4 000 kr** med *varav ROT 1 200 kr, avgår*. Valt så för att det är den form appen redan använder när en rad är en del av ett kvitto, och för att kvittots totalbelopp på 10 000 kr hade påstått att hela kvittot saknar projekt.
 

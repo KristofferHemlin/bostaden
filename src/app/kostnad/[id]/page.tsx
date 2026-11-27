@@ -28,6 +28,7 @@ import { Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
 import { tillDomanKostnad } from "@/lib/doman-fran-db";
 import { raknasMedRad } from "@/lib/kvittolista";
+import { raknasInteIUnderlaget } from "@/lib/raknas-inte-i-underlaget";
 import { listaKostnadsbilagor } from "@/lib/lagring/bilagor";
 import { enkelPrivatUppdelning } from "@/lib/kostnadsuppdelning";
 import {
@@ -179,7 +180,11 @@ export default async function KostnadSida({
               ? formateraKronor(privatDel.privatbelopp)
               : null,
           // Vad kvittot raknas med, nar nagot dragits av (src/lib/kvittolista.ts).
-          raknasMed: raknasMedRad(domanKostnad),
+          // Aldrig for ett kvitto fore tilltradet: det raknas inte alls.
+          raknasMed: raknasMedRad(
+            domanKostnad,
+            raknasInteIUnderlaget(domanKostnad, sparadDag(bostad.tilltradesdatum)),
+          ),
           tillagtAv: upphovsrad("Tillagt", kostnad.skapare, anvandareId, medlemmar),
         }}
         redigeraVarden={{

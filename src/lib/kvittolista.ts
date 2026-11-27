@@ -140,9 +140,16 @@ export function privatAvgarRad(privatBelopp: number | null): string | undefined 
  * Null nar ingenting dragits av – da ar talet beloppet, och raden vore en
  * upprepning – och for ett kvitto som satts at sidan, som inte raknas alls
  * och sager det med en egen rad.
+ *
+ * Null ocksa for ett kvitto daterat fore tilltradet (raknasAldrig): det
+ * raknas aldrig i underlaget, och "… räknas med" bredvid "Daterat före
+ * tillträdet" sa emot sig sjalv (docs/design.md, "Ett kvitto före
+ * tillträdet räknas inte med någonstans"). Uppmatt i produktionen
+ * 2026-11-26 pa kvittolistan, startskarmen, kvittosidan och Återstår.
+ * Parametern ar obligatorisk, sa att ingen skarm kan glomma fragan.
  */
-export function raknasMedRad(kostnad: Kostnad): string | null {
-  if (kostnad.arkiverad || kostnad.totalbelopp === null) return null;
+export function raknasMedRad(kostnad: Kostnad, raknasAldrig: boolean): string | null {
+  if (kostnad.arkiverad || kostnad.totalbelopp === null || raknasAldrig) return null;
   const raknas = avrunda(inlagtForKostnad(kostnad));
   if (raknas === kostnad.totalbelopp) return null;
   return `${formateraKronor(raknas)} räknas med`;
@@ -171,8 +178,19 @@ export function raknasMedRad(kostnad: Kostnad): string | null {
  * star kvar for att regeln ska halla om bostadensBelopp nagon gang andras.
  * Det som vaktar regeln ar tester/utkast-gransen.test.ts, som faller nar
  * bada skydden ar borta.
+ *
+ * Ett kvitto som aldrig raknas (raknasAldrig: daterat fore tilltradet)
+ * behaller ROT-raden och den privata delen men far ingen "… räknas med"
+ * (raknasMedRad). ROT-raden star kvar av samma skal som pa projektsidan
+ * (docs/design.md, "Ett kvitto som ingår i basen men inte i avdraget säger
+ * det på sin rad"): beloppet ingar i arsrubrikens summa, och utan raden gar
+ * summan inte att stamma av. Raden bar sitt tillstand
+ * (RAKNAS_INTE_FORE_TILLTRADET) och ett dampat belopp – det satter anroparen.
  */
-export function avgarForKvitto(kostnad: Kostnad): {
+export function avgarForKvitto(
+  kostnad: Kostnad,
+  raknasAldrig: boolean,
+): {
   rot: number;
   privat: number;
   raknasMed: string | null;
@@ -181,7 +199,7 @@ export function avgarForKvitto(kostnad: Kostnad): {
   return {
     rot: rotForBelopp(kostnad, bostadensBelopp(kostnad)),
     privat: privatBelopp(kostnad),
-    raknasMed: raknasMedRad(kostnad),
+    raknasMed: raknasMedRad(kostnad, raknasAldrig),
   };
 }
 
