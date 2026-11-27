@@ -8,9 +8,11 @@ import { REGELPARAMETRAR, kostnad, projekt } from "./_hjalp";
 
 // Obesvarade bostadsfragor i exporten. Svaret avgor om reparationerna raknas,
 // och darmed ocksa om ett ar passerar troskeln (CLAUDE.md, steg 3) – sa aven
-// sida 1 beror av det. Finns nagot klassificerat att rakna pa sammanstalls
+// sida 1 beror av det. Finns en reparationsdel att rakna pa sammanstalls
 // darfor ingenting alls: en summa som gar att lasa ar ett lofte om att den ar
-// komplett, aven nar den ar for lag.
+// komplett, aven nar den ar for lag. Finns bara grundforbattringar andrar
+// svaret ingenting, och underlaget gors som vanligt (docs/design.md, "Bandet
+// syns bara när svaret ändrar något", 2026-11-27).
 
 function bygg(
   nybyggd: boolean | null,
@@ -47,12 +49,21 @@ const KVITTON = [
   kostnad({ id: "k2", projekt_id: "p2", totalbelopp: 300_000, betaldatum: "2030-03-01" }),
 ];
 
-describe("obesvarade bostadsfragor och nagot klassificerat: ingenting sammanstalls", () => {
-  it("en ren grundforbattring – inte heller sida 1", () => {
-    expect(() =>
-      byggK6aExport(bygg(null, { projekt: [ALTAN], kostnader: [KVITTON[0]] })),
-    ).toThrow(VantarPaBostadsfragor);
+describe("obesvarade bostadsfragor och bara grundforbattringar: underlaget som vanligt", () => {
+  // Till 2026-11-27 vantade aven det har pa svaret, och bandet stod over en
+  // ren grundforbattring som svaret inte rorde. Talet ar detsamma vilket
+  // svaret an blir: provat mot bada.
+  it("en ren grundforbattring sammanstalls, med samma tal som vid bada svaren", () => {
+    const altan = kostnad({ id: "k3", projekt_id: "p1", totalbelopp: 800_000, betaldatum: "2030-03-01" });
+    const indata = { projekt: [ALTAN], kostnader: [altan] };
+    const ex = byggK6aExport(bygg(null, indata));
+    expect(ex.ruta4_brutto).toBe(800_000);
+    expect(ex.ruta4_brutto).toBe(byggK6aExport(bygg(true, indata)).ruta4_brutto);
+    expect(ex.ruta4_brutto).toBe(byggK6aExport(bygg(false, indata)).ruta4_brutto);
   });
+});
+
+describe("obesvarade bostadsfragor och en reparationsdel: ingenting sammanstalls", () => {
 
   it("en reparation – inte heller sida 2", () => {
     expect(() =>
@@ -64,6 +75,36 @@ describe("obesvarade bostadsfragor och nagot klassificerat: ingenting sammanstal
     expect(() =>
       byggK6aExport(bygg(null, { projekt: [ALTAN, GOLV], kostnader: KVITTON }, null)),
     ).toThrow(VantarPaBostadsfragor);
+  });
+});
+
+describe("obesvarade bostadsfragor och ett byte som inte raknas: underlaget som vanligt", () => {
+  // Svaret nollar bara en reparationsdel som annars hade raknats. Ar bytets
+  // reparationsdel redan borta efter resten av steg 3 andrar svaret ingenting,
+  // och underlaget vantar inte pa det (docs/design.md, "Bandet syns bara när
+  // svaret ändrar något"). Varje fall provar talet mot bada svaren.
+  const altan = kostnad({ id: "k3", projekt_id: "p1", totalbelopp: 800_000, betaldatum: "2030-03-01" });
+
+  it("ett utbytt projekt med bara ett kvitto fore tilltradet", () => {
+    const fore = kostnad({ id: "k4", projekt_id: "p2", totalbelopp: 300_000, betaldatum: "2009-06-01" });
+    const indata = { projekt: [ALTAN, GOLV], kostnader: [altan, fore] };
+    const ex = byggK6aExport(bygg(null, indata));
+    expect(ex.ruta4_brutto).toBe(800_000);
+    expect(ex.ruta5_brutto).toBe(0);
+    expect(ex.ruta4_brutto).toBe(byggK6aExport(bygg(true, indata)).ruta4_brutto);
+    expect(ex.ruta4_brutto).toBe(byggK6aExport(bygg(false, indata)).ruta4_brutto);
+    expect(ex.ruta5_brutto).toBe(byggK6aExport(bygg(false, indata)).ruta5_brutto);
+  });
+
+  it("ett utbytt projekt vars reparation ligger utanfor femarsfonstret", () => {
+    // Forsaljning 2032: fonstret borjar 2027, sa 2020 ar utanfor.
+    const gammal = kostnad({ id: "k5", projekt_id: "p2", totalbelopp: 300_000, betaldatum: "2020-06-01" });
+    const indata = { projekt: [ALTAN, GOLV], kostnader: [altan, gammal] };
+    const ex = byggK6aExport(bygg(null, indata));
+    expect(ex.ruta4_brutto).toBe(800_000);
+    expect(ex.ruta5_brutto).toBe(0);
+    expect(ex.ruta4_brutto).toBe(byggK6aExport(bygg(true, indata)).ruta4_brutto);
+    expect(ex.ruta5_brutto).toBe(byggK6aExport(bygg(false, indata)).ruta5_brutto);
   });
 });
 

@@ -477,23 +477,19 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
     klassificeradeCeller.push(cell);
   }
 
-  // Obesvarade bostadsfragor (src/doman/bostadsfragor.ts): med nagot
-  // klassificerat att rakna pa sammanstalls ingenting alls. Utan nagot
-  // klassificerat beror inget tal av svaret, och sidan ser ut som vanligt.
-  const nybyggdVidForvarv = bostad.nybyggd_vid_forvarv;
-  if (nybyggdVidForvarv === null && klassificeradeCeller.length > 0) {
-    throw new VantarPaBostadsfragor();
-  }
-
   // 3. Fragetradets steg 1-3 per cell: dela i grundforbattringsdel/
   //    reparationsunderlag, prova sedan tidsgranserna. INNAN troskeln
   //    (CLAUDE.md: "Tidsgransen raknas bort fore troskeln").
+  //
+  //    Ar svaret om forsta agaren obesvarat raknas cellerna som om det vore
+  //    nej, alltsa utan nybyggd-regeln – och sedan provas om svaret andrar
+  //    nagot (nedan). Berakningen ar fri fran sidoeffekter, sa att rakna
+  //    forst och kasta sedan ar samma sak som att kasta direkt.
+  const nybyggdVidForvarv = bostad.nybyggd_vid_forvarv;
   const splits: CellSplit[] = klassificeradeCeller.map((cell) =>
     buildCellSplit(
       cell,
       bostad,
-      // Bara nar inga celler finns kan svaret vara null – och da kors inte
-      // den har raden.
       nybyggdVidForvarv ?? false,
       regelparametrar,
       sald,
@@ -501,6 +497,26 @@ export function byggK6aExport(indata: K6aIndata): K6aExport {
       fonsterAr,
     ),
   );
+
+  // Obesvarade bostadsfragor (src/doman/bostadsfragor.ts): med en
+  // reparationsdel som raknas sammanstalls ingenting alls. Svaret nollar bara
+  // reparationsdelar (steg 3, nybyggd-regeln), sa utan nagon sadan beror inget
+  // tal av det – inte heller troskeln, som da bara provar grundforbattringar –
+  // och sidan ser ut som vanligt, utan band (docs/design.md, "Bandet syns
+  // bara när svaret ändrar något", beslutat 2026-11-27).
+  //
+  // "Raknas" ar efter resten av steg 3: ett byte vars kvitton alla ar
+  // daterade fore tilltradet har ingen cell alls, och en reparation utanfor
+  // femarsfonstret eller markerad som en tidigare gang av samma del har
+  // reparationsunderlag 0 redan utan svaret. Da kan svaret inte andra nagot,
+  // och underlaget vantar inte pa det. Till 2026-11-27 kravde varje
+  // klassificerad atgard svaret, och en kort stund darefter varje utbytt.
+  if (
+    nybyggdVidForvarv === null &&
+    splits.some((s) => s.uppdelning.reparationsunderlag > 0)
+  ) {
+    throw new VantarPaBostadsfragor();
+  }
 
   //    Fragan om samma del av bostaden (CLAUDE.md, steg 3): kandidaterna ar
   //    projekten med reparationsunderlag kvar efter steg 3 – fore troskeln,

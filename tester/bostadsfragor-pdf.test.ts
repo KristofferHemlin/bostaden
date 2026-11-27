@@ -58,6 +58,17 @@ beforeEach(() => {
       skick_forvarv: null,
       skick_forsaljning: null,
     },
+    // Vantlaget kraver sedan 2026-11-27 en atgard med reparationsdel
+    // (docs/design.md, "Bandet syns bara när svaret ändrar något").
+    {
+      id: "p2",
+      namn: "Golv",
+      atgardstyp: "utbytt",
+      battre_kvalitet: false,
+      merkostnad: null,
+      skick_forvarv: 1,
+      skick_forsaljning: null,
+    },
   ]);
   h.kostnadFindMany.mockResolvedValue([
     {
@@ -72,6 +83,22 @@ beforeEach(() => {
           artikel: "Altan",
           belopp: 800_000,
           fordelningar: [{ projekt_id: "p1", privat: false, andel: 1 }],
+        },
+      ],
+      bilagor: [],
+    },
+    {
+      id: "k2",
+      totalbelopp: 300_000,
+      betaldatum: dag("2030-04-01"),
+      rot_utnyttjat: null,
+      forsakringsersattning: null,
+      arkiverad: false,
+      rader: [
+        {
+          artikel: "Golv",
+          belopp: 300_000,
+          fordelningar: [{ projekt_id: "p2", privat: false, andel: 1 }],
         },
       ],
       bilagor: [],

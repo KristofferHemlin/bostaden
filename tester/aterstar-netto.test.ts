@@ -94,6 +94,20 @@ function seeda({ nybyggd = false as boolean | null, sald = false } = {}) {
   db.lagg("radfordelning", { kostnadsrad_id: iBadrum.id, projekt_id: BADRUM, andel: 1 });
   db.lagg("kostnadsrad", { kostnad_id: delvis.id, artikel: "Tvättstuga", belopp: 400_000 });
 
+  // Vantlaget kraver sedan 2026-11-27 en atgard med reparationsdel
+  // (docs/design.md, "Bandet syns bara när svaret ändrar något").
+  if (nybyggd === null) {
+    const golv = db.lagg("projekt", {
+      bostad_id: X, namn: "Golv", ar: 2026, atgardstyp: "utbytt", battre_kvalitet: false, skick_forvarv: 1,
+    });
+    const golvkvitto = db.lagg("kostnad", {
+      bostad_id: X, leverantor: "Golvhuset", totalbelopp: 300_000,
+      dokumentdatum: datum("2026-09-01"), betaldatum: datum("2026-09-01"), skapad_at: datum("2026-09-01"),
+    });
+    const golvrad = db.lagg("kostnadsrad", { kostnad_id: golvkvitto.id, artikel: "Golv", belopp: 300_000 });
+    db.lagg("radfordelning", { kostnadsrad_id: golvrad.id, projekt_id: golv.id, andel: 1 });
+  }
+
   h.inloggad = { id: ANNA, email: "anna@exempel.se" };
   return { snickeri: snickeri.id as string, delvis: delvis.id as string };
 }

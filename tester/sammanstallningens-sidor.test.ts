@@ -98,16 +98,56 @@ function seeda(atgard: "utbytt" | "nybyggnad", besvarade: boolean) {
   });
   const rad = db.lagg("kostnadsrad", { kostnad_id: k.id, artikel: "Material", belopp: 900_000 });
   db.lagg("radfordelning", { kostnadsrad_id: rad.id, projekt_id: P, andel: 1 });
+  // Vantlaget kraver sedan 2026-11-27 en atgard med reparationsdel
+  // (docs/design.md, "Bandet syns bara när svaret ändrar något"). Ett
+  // likvardigt byte har en redan; en nybyggnad far ett bredvid sig.
+  if (!besvarade && atgard === "nybyggnad") {
+    const golv = db.lagg("projekt", {
+      bostad_id: X, namn: "Golv", ar: 2025, atgardstyp: "utbytt",
+      battre_kvalitet: false, skick_forvarv: 1, skick_forsaljning: null, klassificerad_av: ANNA,
+    });
+    const gk = db.lagg("kostnad", {
+      bostad_id: X, leverantor: "Golvhuset", anteckning: "Golv", totalbelopp: 300_000,
+      dokumentdatum: datum("2025-06-02"), betaldatum: datum("2025-06-02"), skapad_at: datum("2026-01-02"),
+    });
+    const gr = db.lagg("kostnadsrad", { kostnad_id: gk.id, artikel: "Golv", belopp: 300_000 });
+    db.lagg("radfordelning", { kostnadsrad_id: gr.id, projekt_id: golv.id, andel: 1 });
+  }
   h.inloggad = { id: ANNA, email: "anna@exempel.se" };
 }
 
-/** Varje elements egen text i den renderade sidan, ett element i taget. */
-async function exportvynsTexter(atgard: "utbytt" | "nybyggnad", besvarade: boolean): Promise<string[]> {
+/** Den renderade exportvyn, efter att läget är prövat. */
+async function exportvynsHtml(atgard: "utbytt" | "nybyggnad", besvarade: boolean): Promise<string> {
   seeda(atgard, besvarade);
   const html = renderToStaticMarkup((await ExportSida()) as Parameters<typeof renderToStaticMarkup>[0]);
   // Förutsättningen: sidan står i det läge provet säger.
   expect(html.includes(BOSTADSFRAGOR_BESKED.rubrik), besvarade ? "besvarat läge" : "väntande läge").toBe(!besvarade);
+  return html;
+}
+
+/** Varje elements egen text, ett element i taget. */
+function elementtexter(html: string): string[] {
   return [...html.matchAll(/>([^<>]+)</g)].map((m) => m[1].replace(/&#x27;/g, "'").replace(/&amp;/g, "&").trim());
+}
+
+async function exportvynsTexter(atgard: "utbytt" | "nybyggnad", besvarade: boolean): Promise<string[]> {
+  return elementtexter(await exportvynsHtml(atgard, besvarade));
+}
+
+/** Sida 2:s sektion i exportvyn: från dess rubrik till sektionens slut. */
+function sida2(html: string): string {
+  const start = html.indexOf(`>${SIDA2_RUBRIK}<`);
+  if (start === -1) throw new Error(`exportvyn saknar rubriken "${SIDA2_RUBRIK}"`);
+  const slut = html.indexOf("</section>", start);
+  if (slut === -1) throw new Error("sida 2:s sektion tar aldrig slut");
+  return html.slice(start, slut);
+}
+
+/** Raderna i en sektions tabellkropp; en sektion utan tabell har noll. */
+function tabellrader(sektion: string): number {
+  const kropp = sektion.indexOf("<tbody");
+  if (kropp === -1) return 0;
+  return (sektion.slice(kropp).match(/<tr[ >]/g) ?? []).length;
 }
 
 async function pdfensRader(): Promise<string[]> {
@@ -178,7 +218,7 @@ const TEXTERNA = [
   { namn: "sida 2:s tomma rad", text: SIDA2_TOMT, plats: 3, atgard: "nybyggnad" as const },
 ];
 
-describe.each(TEXTERNA)("$namn: en text, två återgivningar", ({ text, plats, atgard }) => {
+describe.each(TEXTERNA)("$namn: en text, två återgivningar", ({ namn, text, plats, atgard }) => {
   it("konstanten är designfilens lydelse", () => {
     expect(text).toBe(designensLydelser()[plats]);
   });
@@ -192,10 +232,23 @@ describe.each(TEXTERNA)("$namn: en text, två återgivningar", ({ text, plats, a
     expect((await exportvynsTexter(atgard, true)).filter((t) => t === lydelse)).toHaveLength(1);
   });
 
-  it("och i det väntande läget", async () => {
-    const lydelse = designensLydelser()[plats];
-    expect((await exportvynsTexter(atgard, false)).filter((t) => t === lydelse)).toHaveLength(1);
-  });
+  // Sida 2:s tomma rad kan inte stå i det väntande läget: underlaget väntar
+  // sedan 2026-11-27 bara när en reparationsdel räknas, och den står alltid
+  // på sida 2 (docs/design.md, "Bandet syns bara när svaret ändrar något").
+  // Provet visar att läget inte uppstår i stället för att kräva det.
+  if (namn === "sida 2:s tomma rad") {
+    it("visas inte i det väntande läget, eftersom sida 2 då alltid har en rad", async () => {
+      const lydelse = designensLydelser()[plats];
+      const html = await exportvynsHtml("utbytt", false);
+      expect(elementtexter(html).filter((t) => t === lydelse)).toHaveLength(0);
+      expect(tabellrader(sida2(html))).toBeGreaterThanOrEqual(1);
+    });
+  } else {
+    it("och i det väntande läget", async () => {
+      const lydelse = designensLydelser()[plats];
+      expect((await exportvynsTexter(atgard, false)).filter((t) => t === lydelse)).toHaveLength(1);
+    });
+  }
 
   it("PDF:en har designfilens lydelse som en egen rad", async () => {
     const lydelse = designensLydelser()[plats];

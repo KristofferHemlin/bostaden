@@ -996,17 +996,20 @@ function AterstarRad({
   return (
     <li className="flex items-baseline justify-between gap-3 py-2 font-granssnitt text-sm">
       <span className="min-w-0">
-        <span className="flex items-center gap-1.5 text-text-primar">
+        {/* Namnet bryts till fler rader i stallet for att kapas
+            (docs/design.md, "Namnet under Återstår kapas aldrig"). Pricken
+            star vid forsta raden. */}
+        <span data-aterstar-namn="" className="flex items-start gap-1.5 text-text-primar">
           <span
             aria-hidden
-            className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
+            className="mt-[7px] inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
           />
           {href ? (
-            <Link href={href} className="truncate underline hover:text-accent-mork">
+            <Link href={href} className="min-w-0 break-words underline hover:text-accent-mork">
               {namn}
             </Link>
           ) : (
-            <span className="truncate">{namn}</span>
+            <span className="min-w-0 break-words">{namn}</span>
           )}
         </span>
         <span className="mt-0.5 block text-sm text-text-sekundar">{orsak}</span>

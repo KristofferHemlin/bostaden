@@ -3103,6 +3103,8 @@ Utan försäljningsdatum visas:
 
 **Underlaget frågar i stället, på sitt eget sätt.** Raderna visas med vad de kostade, och de tal svaret skulle ha ändrat står som ett dämpat **–** utan *Förs till*.
 
+**Bandet syns bara när svaret ändrar något.** Beslutat av Kristoffer 2026-11-27. Agentens test i produktionen 2026-11-26: ett konto med ett enda projekt, en ren grundförbättring, fick bandet *"Vi vet inte om du var första ägaren"*. Svaret nollar bara reparationsdelar, så det kunde inte ändra något tal på sidan, och tröskeln prövar då bara grundförbättringar. **Underlaget väntar därför bara när någon åtgärd har en reparationsdel**, alltså när något byttes ut. Finns bara grundförbättringar görs det som vanligt, utan band. Frågan ställs ändå alltid vid försäljningen.
+
 **Beskedet står i ett band överst, inte under *Återstår*.** Flyttat 2026-11-18. Raden låg bland kvittona i *Återstår* och såg ut som dem — men varje annan rad där är något hon **lagt in**, och den här är något hon **inte svarat på**. En fråga bland kvitton läses som ett kvitto.
 
 Bandet ligger ovanför tabellerna, alltså ovanför de tal det handlar om, och i samma form som varningen om merkostnaden som redan står där:
@@ -3183,6 +3185,12 @@ Poängen är att sidan ska vara meningsfull under hela ägandet i stället för 
 > **Ja, ta bort försäljningen** · Avbryt
 
 **Allt som sparades för försäljningen tas bort, och bara det:** datum och pris, skicket vid försäljningen och svaret om samma del på varje projekt, och varje delägares bekräftade andel. Ägarandelen och frågan om första ägaren står kvar, eftersom de gäller bostaden och inte försäljningen. Efteråt hamnar hon på *Markera som såld*, som visar att bostaden inte längre är såld.
+
+#### Namnet under Återstår kapas aldrig
+
+**Uppmätt i produktionen 2026-11-27, beslutat av Kristoffer samma dag.** Vid 320 px stod *"K-Bygg Sverige AB"* under *Återstår* som *"K-Bygg Sverige …"*. Namnet är det som säger vilket kvitto raden gäller, och det kapades för att år och belopp skulle få plats bredvid.
+
+**Namnet bryts till en andra rad i stället**, och pricken står vid första raden. Att trycka upp mer information om raden valdes bort: den som skriver av underlaget ska se allt utan att öppna varje rad, och raden går redan att trycka på för att öppna kvittot.
 
 #### Nettot under Återstår
 
