@@ -134,7 +134,7 @@ import { sparaAndelen, sparaKopeskillingen } from "@/app/bostaden/actions";
 import { bekraftaAndel } from "@/app/forsaljning/andel/actions";
 import { sparaSammaDel } from "@/app/forsaljning/samma-del/actions";
 import { sparaSkickForsaljning } from "@/app/forsaljning/skick/actions";
-import { markeraSald } from "@/app/forsaljning/actions";
+import { angraForsaljningen, markeraSald } from "@/app/forsaljning/actions";
 import { sparaBostaden, sparaForvarvet } from "@/app/installningar/actions";
 import { hamtaArkivexportlista } from "@/app/installningar/arkivexport-actions";
 import { skapaBilagepaket } from "@/app/export/paket/actions";
@@ -586,6 +586,7 @@ const VAGAR_UTAN_ID: Vag[] = [
     avslag: "fel",
   },
   { vag: "markeraSald", anrop: () => markeraSald(START, formular({ forsaljningsdatum: "2026-09-01" })), avslag: "fel" },
+  { vag: "angraForsaljningen", anrop: () => angraForsaljningen(START, formular({})), avslag: "fel" },
   { vag: "skapaInbjudanAction", anrop: () => skapaInbjudanAction({}, formular({ epost: "erik@exempel.se", egen_andel: "50", inbjuden_andel: "50" })), avslag: "fel" },
   {
     vag: "skapaBilagepaket",
@@ -1015,6 +1016,20 @@ describe.each([
     const svar = await hamtaBilaga(BX);
     expect(svar.status).toBe(307);
     expect(svar.headers.get("location")).toContain(BX_NYCKEL);
+  });
+
+  // Den allmanna kontrollen ovan kan inte se det har: i seeden ar X osald, sa
+  // en angring som traffade X hade inte andrat nagot. Har ar bada salda.
+  it("angraForsaljningen tar bort Y:s forsaljning och lamnar X:s forsaljningsdatum kvar", async () => {
+    const bostad = (id: string) => h.db.tabell("bostad").find((b) => b.id === id)!;
+    bostad(X).forsaljningsdatum = datum("2026-08-01");
+    bostad(Y).forsaljningsdatum = datum("2026-09-01");
+
+    const utfall = await kor(() => angraForsaljningen(START, formular({})));
+
+    expect("kastat" in utfall && utfall.kastat).toBeInstanceOf(h.Omdirigering);
+    expect(bostad(Y).forsaljningsdatum).toBeNull();
+    expect(bostad(X).forsaljningsdatum).toEqual(datum("2026-08-01"));
   });
 });
 

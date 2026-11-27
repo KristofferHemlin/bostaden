@@ -7,6 +7,7 @@
 // den (produktspec 4.1, CLAUDE.md "Vid markering som sald").
 
 import type { Metadata } from "next";
+import { AngraForsaljningen } from "./angra";
 import { ForsaljningForm } from "./form";
 import { Meddelanderuta, Skarm } from "@/components/skarm";
 import { bostadHeader } from "@/lib/bostad-header";
@@ -73,6 +74,9 @@ export default async function ForsaljningSida() {
         }
         redanSald={redanSald}
       />
+      {/* Langst ned, efter det som andras (docs/design.md, "En försäljning
+          går att ta bort"). */}
+      {redanSald ? <AngraForsaljningen /> : null}
     </Skarm>
   );
 }

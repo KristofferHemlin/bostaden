@@ -12,6 +12,7 @@
 // Flodet far inte blockera. Datum kravs for att exporten alls ska ga att
 // skapa, men priset far lamnas tomt.
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { idagISverige } from "@/lib/datum";
 import { forsaljningsdatumFel } from "./validering";
@@ -94,4 +95,52 @@ export async function markeraSald(
   // forsaljningsflode.ts): bostadsfragorna om de ar obesvarade, sedan
   // skicket, samma del, andelen och underlaget (produktspec 4.1).
   redirect(await nastaSidaIForsaljningen(bostadId, anvandareId, "datum"));
+}
+
+export interface AngraResultat {
+  fel?: string;
+}
+
+/**
+ * "Bostaden är inte såld" (docs/design.md, "En försäljning går att ta
+ * bort"). Beslutat av Kristoffer 2026-11-27: en markering som sald gick inte
+ * att ta tillbaka, och ett felklick, ett test eller en affar som sprack lamnade
+ * bostaden sald for gott.
+ *
+ * Allt som sparades for forsaljningen tas bort, och bara det: datum och pris,
+ * skicket vid forsaljningen och svaret om samma del pa varje projekt, vilka
+ * projekt samma del-fragan besvarades for, och varje delagares bekraftade
+ * andel – sa att alla bekraftar pa nytt om bostaden markeras som sald igen.
+ * Agarandelen, bostadsfragorna, kvitton och projekt rors inte. Allt i en
+ * transaktion: en halvt borttagen forsaljning vore en bostad som ar sald pa
+ * ett stalle och inte pa ett annat.
+ */
+export async function angraForsaljningen(
+  _foreg: AngraResultat,
+  _formData: FormData,
+): Promise<AngraResultat> {
+  const { bostadId } = await kravBostad();
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.bostad.update({
+        where: { id: bostadId },
+        data: { forsaljningsdatum: null, forsaljningspris: null, samma_del_besvarad_for: [] },
+      });
+      await tx.projekt.updateMany({
+        where: { bostad_id: bostadId },
+        data: { skick_forsaljning: null, tidigare_gang_samma_del: null },
+      });
+      await tx.medlemskap.updateMany({
+        where: { bostad_id: bostadId },
+        data: { bekraftad_andel: null },
+      });
+    });
+  } catch {
+    return { fel: "Försäljningen gick inte att ta bort. Försök igen." };
+  }
+  revalidatePath("/");
+  revalidatePath("/export");
+  revalidatePath("/installningar");
+  revalidatePath("/forsaljning");
+  redirect("/forsaljning");
 }

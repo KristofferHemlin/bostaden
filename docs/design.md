@@ -3168,6 +3168,22 @@ Poängen är att sidan ska vara meningsfull under hela ägandet i stället för 
 
 **Meningen lyder därför *"Det här ingår inte i talen ovan."*** Varje rad bär redan sitt eget skäl, och det är skälet som säger om det någonsin ändras — inte en gemensam inledning som gissar åt båda hållen.
 
+#### En försäljning går att ta bort
+
+**Beslutat av Kristoffer 2026-11-27, efter agentens test i produktionen 2026-11-26.** En bostad som markerats som såld gick inte att ta tillbaka. Under *Försäljningsuppgifter* gick bara datum och pris att ändra. Ett felklick, ett test eller en affär som sprack före tillträdet lämnade alltså bostaden såld för gott, och bara supporten kunde rätta det.
+
+**Längst ned under *Försäljningsuppgifter* står en dämpad länk:**
+
+> Bostaden är inte såld
+
+**Den frågar innan något händer**, i flödet under länken, som *Ta bort projektet*:
+
+> Ta bort försäljningen? Försäljningsdatum, pris och skicket vid försäljningen försvinner, och varje delägare får bekräfta sin andel på nytt om bostaden markeras som såld igen. Kvitton, projekt och ägarandelen påverkas inte.
+
+> **Ja, ta bort försäljningen** · Avbryt
+
+**Allt som sparades för försäljningen tas bort, och bara det:** datum och pris, skicket vid försäljningen och svaret om samma del på varje projekt, och varje delägares bekräftade andel. Ägarandelen och frågan om första ägaren står kvar, eftersom de gäller bostaden och inte försäljningen. Efteråt hamnar hon på *Markera som såld*, som visar att bostaden inte längre är såld.
+
 #### Nettot under Återstår
 
 **Skrivet 2026-11-26, uppmätt 2026-11-24.** SNICKERI NORD AB stod på kvittolistan som **50 287,50 kr** med *varav ROT 6 480 kr, avgår* och *43 807,50 kr räknas med*, men under *Återstår* bara som **43 807,50 kr**, utan rader. Samma kvitto med två belopp och ingenting som sa varför — precis det *Samma belopp ska se likadant ut överallt* finns för att hindra.
