@@ -906,8 +906,8 @@ function RutaCallout({
   return (
     <section className="p-4">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="font-granssnitt text-sm text-text-sekundar">
-          {ruta.etikett}
+        <span data-fors-till="" className="font-granssnitt text-sm text-text-sekundar">
+          {ruta.etikett ? <EtikettMedHelRuta etikett={ruta.etikett} /> : null}
         </span>
         <span
           className={`font-rubrik text-3xl tabular-nums ${
@@ -950,6 +950,24 @@ function RutaCallout({
   );
 }
 
+
+/**
+ * "Förs till K6, ruta 4" med "ruta 4" hopbundet (docs/design.md, "Rutans
+ * nummer står aldrig ensamt"). Uppmatt i produktionen 2026-11-26 vid 390 och
+ * 320 px: etiketten brots som "Förs till K6, ruta" / "4", och siffran – det
+ * hon ska leta upp pa blanketten – stod ensam pa en rad. Ett spann och inte
+ * ett hart mellanslag i texten: etiketten ar densamma i PDF:en och i proven,
+ * och bara skarmen bryter raden.
+ */
+function EtikettMedHelRuta({ etikett }: { etikett: string }) {
+  const m = /^(.*) (ruta \d)$/.exec(etikett);
+  if (!m) return <>{etikett}</>;
+  return (
+    <>
+      {m[1]} <span className="whitespace-nowrap">{m[2]}</span>
+    </>
+  );
+}
 
 /**
  * En rad i listan over det som aterstar: atgardsprick, namn och en dampad rad

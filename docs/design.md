@@ -3203,6 +3203,12 @@ Poängen är att sidan ska vara meningsfull under hela ägandet i stället för 
 
 **Att göra texten mindre övervägdes och föll**, eftersom ingen text får vara under 14 px och det ändå inte hade räckt. **Att låta varje åtgärd öppnas för sina detaljer föll också**: den som skriver av talen till deklarationen hade fått ett tryck in och ett tillbaka per rad.
 
+#### Rutans nummer står aldrig ensamt
+
+**Uppmätt i produktionen 2026-11-26, beslutat av Kristoffer 2026-11-27.** Vid 390 och 320 px bröts etiketten bredvid talet som *"Förs till K6, ruta"* / *"4"*. Siffran är det hon ska leta upp på blanketten, och den stod ensam på en egen rad.
+
+**"ruta 4" och "ruta 5" hålls ihop på skärmen**, så att hela "ruta 4" flyttar ner när etiketten inte ryms. Texten själv är densamma i PDF:en; det är bara skärmen som bryter raden.
+
 #### Gränsen vid 1970 är ett produktbeslut
 
 **Beslutat av Kristoffer 2026-11-25.** Appen tar inte emot ett tillträdesdatum före 1970, och det står kvar fast lagen räknar längre tillbaka. **Det är ett val och inte en lucka.**

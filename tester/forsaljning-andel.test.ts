@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { forsTillSomText } from "./_fors-till";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { REGELPARAMETRAR } from "./_hjalp";
 
@@ -144,7 +145,7 @@ async function steget(nasta?: string): Promise<string> {
 /** Underlagets forsta kort – uppgifterna overst – renderat. */
 async function underlagetsUppgifter(): Promise<string> {
   const vy = await ExportSida();
-  return elementFor(vy, "Kort").map((k) => renderToStaticMarkup(k)).join("\n");
+  return elementFor(vy, "Kort").map((k) => forsTillSomText(renderToStaticMarkup(k))).join("\n");
 }
 
 beforeEach(() => seeda());

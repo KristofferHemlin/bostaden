@@ -360,7 +360,12 @@ describe("underlaget väntar i stället för att misslyckas", () => {
     const s = await sidan();
     const forsTill = [...s.querySelectorAll("section")].filter((e) => e.textContent?.startsWith("Förs till"));
     expect(forsTill).toHaveLength(1);
-    const [etikett, tal] = [...forsTill[0].querySelectorAll("span")].map((e) => e.textContent);
+    // Bara de yttersta spannen: "ruta 4" har ett eget spann inne i etiketten
+    // (docs/design.md, "Rutans nummer står aldrig ensamt"), och det är inte en
+    // egen text bredvid talet.
+    const [etikett, tal] = [...forsTill[0].querySelectorAll("span")]
+      .filter((e) => !e.parentElement?.closest("span"))
+      .map((e) => e.textContent);
     // Sedan 2026-11-24 bär det dämpade talet ordet i samma element (se
     // "ett tal som inte är färdigt säger det vid talet" nedan).
     const ord = design().match(/följs av \*\*([^*]+)\*\* i samma element/)?.[1];

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { REGELPARAMETRAR, kostnad, projekt } from "./_hjalp";
+import { forsTillSomText } from "./_fors-till";
 
 // CLAUDE.md, "Andelen ar null tills den besvarats". Tre saker provas har:
 //
@@ -170,7 +171,8 @@ function seeda(andelar: { anna: number | null; doris?: number | null }) {
 
 async function vy(vem: string): Promise<string> {
   h.inloggad = { id: vem, email: vem === ANNA ? "anna@exempel.se" : "doris@exempel.se" };
-  const html = renderToStaticMarkup((await ExportSida()) as ReactElement);
+  // Förs till-etiketten läses som elementets text (tester/_fors-till.ts).
+  const html = forsTillSomText(renderToStaticMarkup((await ExportSida()) as ReactElement));
   // Text utan taggar, med | dar element gransar mot varandra.
   return html
     .replace(/<[^>]+>/g, "|")

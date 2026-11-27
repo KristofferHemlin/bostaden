@@ -60,6 +60,7 @@ vi.mock("@/lib/lagring/klient", () => ({
 }));
 
 import { renderToStaticMarkup } from "react-dom/server";
+import { forsTillSomText } from "./_fors-till";
 import ExportSida from "@/app/export/page";
 import { byggK6aExport, type K6aExport } from "@/doman/export-k6a";
 import { reparationsfonsterForklaring, troskelForklaring } from "@/doman/regeltext";
@@ -240,7 +241,7 @@ const X = "b0000000-0000-4000-8000-0000000000fa";
 async function exportvyn(agarandel: number): Promise<string[]> {
   seedaVerifieringen(h.db as never, lasVerifieringen(), { anvandareId: ANNA, bostadId: X, agarandel });
   h.inloggad = { id: ANNA, email: "verifiering@exempel.se" };
-  const html = renderToStaticMarkup((await ExportSida()) as Parameters<typeof renderToStaticMarkup>[0]);
+  const html = forsTillSomText(renderToStaticMarkup((await ExportSida()) as Parameters<typeof renderToStaticMarkup>[0]));
   // Reacts kommentarer mellan intilliggande textdelar tas bort, så att en rad som
   // "Hela bostaden 99 560 kr · din andel 50 %" läses som ett element.
   return [...html.replace(/<!-- -->/g, "").matchAll(/>([^<>]+)</g)].map((m) => m[1].replace(/&#x27;/g, "'").replace(/&amp;/g, "&").trim()).filter(Boolean);

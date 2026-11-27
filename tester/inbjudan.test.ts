@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { REGELPARAMETRAR } from "./_hjalp";
+import { forsTillSomText } from "./_fors-till";
 import { ANDEL_SAKNAS } from "@/lib/agarandel";
 
 // Samagande, del 2: inbjudan (docs/design.md, "Att bjuda in en delagare").
@@ -772,7 +773,7 @@ describe("exportvyns rad om samagandet", () => {
         expect(ruta4.brutto).toBe(1_249_000);
         // Renderad, inte bara last: text() gar inte in i RutaCallout, sa det
         // som star i rutan syns forst nar rutan renderas.
-        const t = elementFor(vy, "RutaCallout").map((e) => renderToStaticMarkup(e)).join("");
+        const t = elementFor(vy, "RutaCallout").map((e) => forsTillSomText(renderToStaticMarkup(e))).join("");
         if (vantat[i].etikett === null) expect(t).not.toContain("Förs till");
         else expect(t).toContain(vantat[i].etikett!);
         // Meningen om avrundningen star bara dar talet faktiskt avrundats.

@@ -238,6 +238,89 @@ describe.each([390, 360, 320])("vid %i px", (bredd) => {
   }, 30_000);
 });
 
+// "Förs till K5, ruta 4" bredvid talet (docs/design.md, "Rutans nummer står
+// aldrig ensamt"). Uppmätt i produktionen 2026-11-26: "Förs till K6, ruta" /
+// "4" vid 390 och 320 px. Var etiketten bryts beror på talet bredvid och på
+// blanketten, så provet trycker ihop etiketten pixel för pixel i stället för
+// att vänta på att provdatan råkar bryta på rätt ställe.
+//
+// Metoden: etiketten får display inline-block, flex-shrink 0 och en bredd
+// från sin fulla bredd (max-content, Math.ceil) ner till 40 px, en pixel i taget. Vid varje
+// bredd delas orden in i rader som i resten av filen – varje ord mellan
+// vanliga mellanslag får sin rad ur topp på getClientRects() för sin Range –
+// och en bredd där någon rad, trimmad, är bara en siffra är en träff.
+// Display, bredd och flex-shrink återställs efteråt.
+async function etiketter(sida: string, bredd: number) {
+  await w.cdp("Emulation.setDeviceMetricsOverride", { width: bredd, height: 844, deviceScaleFactor: 3, mobile: true });
+  await w.cdp("Page.navigate", { url: `${w.adress}${sida}` });
+  await new Promise((r) => setTimeout(r, 300));
+  return w.utvardera<{ fonster: number; antal: number; utanfor: number; provade: number; traffar: string[]; startbredder: string[] }>(`(async () => {
+    ${VANTA_PA_TYPSNITT}
+    const el = [...document.querySelectorAll('[data-fors-till]')].filter((e) => e.textContent.startsWith('Förs till'));
+    let utanfor = 0;
+    for (const e of el) if (e.getBoundingClientRect().right > window.innerWidth) utanfor++;
+    const rader = (e) => {
+      const ord = [];
+      const gang = document.createTreeWalker(e, NodeFilter.SHOW_TEXT);
+      for (let n = gang.nextNode(); n; n = gang.nextNode()) {
+        const re = /[^ \\t\\n]+/g;
+        for (let m = re.exec(n.textContent); m; m = re.exec(n.textContent)) {
+          const rg = document.createRange();
+          rg.setStart(n, m.index);
+          rg.setEnd(n, m.index + m[0].length);
+          const rekt = rg.getClientRects();
+          if (rekt.length === 0) throw new Error('ordet ' + m[0] + ' har ingen rektangel');
+          ord.push({ ord: m[0], topp: Math.round(rekt[0].top) });
+        }
+      }
+      const toppar = [...new Set(ord.map((o) => o.topp))].sort((a, b) => a - b);
+      return toppar.map((t) => ord.filter((o) => o.topp === t).map((o) => o.ord).join(' '));
+    };
+    let provade = 0;
+    const traffar = [];
+    const startbredder = [];
+    for (const e of el) {
+      const display = e.style.display;
+      const width = e.style.width;
+      const flexShrink = e.style.flexShrink;
+      e.style.display = 'inline-block';
+      e.style.width = 'max-content';
+      // Full bredd mäts före flexShrink: i ett smalt kort trycker flexraden
+      // annars ihop etiketten redan vid max-content, och de bredaste
+      // bredderna provas aldrig.
+      const fullFore = Math.ceil(e.getBoundingClientRect().width);
+      e.style.flexShrink = '0';
+      const full = Math.ceil(e.getBoundingClientRect().width);
+      startbredder.push(fullFore + '→' + full);
+      for (let b = full; b >= 40; b--) {
+        e.style.width = b + 'px';
+        provade++;
+        const r = rader(e);
+        if (r.some((x) => /^\\d$/.test(x.trim()))) traffar.push(b + ' px: ' + r.map((x) => '"' + x + '"').join(' / '));
+      }
+      e.style.display = display;
+      e.style.width = width;
+      e.style.flexShrink = flexShrink;
+    }
+    return { fonster: window.innerWidth, antal: el.length, utanfor, provade, traffar, startbredder };
+  })()`);
+}
+
+describe.each([390, 360, 320])("Förs till vid %i px", (bredd) => {
+  it.each(["ensam", "delad"])("%s: rutans nummer står aldrig ensamt på en rad, vid någon bredd", async (sida) => {
+    const m = await etiketter(sida, bredd);
+    console.log(
+      `${sida} ${bredd} px: ${m.antal} etiketter (startbredd utan → med flexShrink 0: ${m.startbredder.join(", ")} px), ` +
+        `${m.provade} bredder provade, ${m.traffar.length} träffar` +
+        (m.traffar.length ? `, första: ${m.traffar[0]}` : ""),
+    );
+    expect(m.fonster, "förutsättningen: emuleringen gav bredden").toBe(bredd);
+    expect(m.antal, "förutsättningen: minst en Förs till-etikett").toBeGreaterThan(0);
+    expect(m.utanfor, "etiketten utanför fönstret").toBe(0);
+    expect(m.traffar, "bredder där siffran står ensam på en rad").toEqual([]);
+  }, 60_000);
+});
+
 // Från 640 px är det tabellen som förut: rubrikraden syns och cellerna har
 // inga etiketter. Mätt vid 1024 px, så att ett block som läckt upp till
 // skrivbordet faller.
